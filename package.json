@@ -1,0 +1,42 @@
+{
+  "name": "taqfeelah-v2",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0 --port 3000",
+    "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
+    "dev:clean": "pnpm clean && next dev --hostname 0.0.0.0 --port 3000",
+    "mobile:sync": "pnpm clean && node scripts/print-lan-url.mjs && next dev --hostname 0.0.0.0 --port 3000",
+    "predev": "node scripts/print-lan-url.mjs",
+    "lan": "node scripts/print-lan-url.mjs",
+    "preview:lan": "pnpm build && node scripts/print-lan-url.mjs && next start --hostname 0.0.0.0 --port 3000",
+    "firewall:allow": "powershell -ExecutionPolicy Bypass -File scripts/allow-firewall-port.ps1",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0 --port 3000",
+    "start:lan": "node scripts/print-lan-url.mjs && next start --hostname 0.0.0.0 --port 3000",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "framer-motion": "^12.23.12",
+    "html-to-image": "^1.11.13",
+    "lucide-react": "^0.542.0",
+    "next": "^15.5.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@tailwindcss/postcss": "^4.1.12",
+    "@types/node": "^22.18.0",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "eslint": "^9.34.0",
+    "eslint-config-next": "^15.5.2",
+    "tailwindcss": "^4.1.12",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
