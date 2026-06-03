@@ -390,7 +390,17 @@ pnpm build
 
 ---
 
-## 16. مرجع الاعتماد والوثائق
+## 16. كيان DailyCloseout (مستقبلي — البروتايب حاليًا Demo UI فقط)
+
+واجهة الموظف والمالك تعتمد مستقبلًا على كيان **`DailyCloseout`**: تقفيلة يوم واحد لمحل واحد، بحالات `draft` / `submitted` / `reviewed` / `returned`، مرتبطة بالداخل (قنوات المحل)، الخارج، المرفقات، وسجل المراجعة.
+
+التنفيذ الحالي في `src/features/daily-closeouts/` و`src/features/employee-closeouts/` هو **Demo UI State** (`localStorage` + Context) ولا يمثل Schema أو API نهائيًا.
+
+مراجعة تقفيلات الموظفين **اختيارية** لكل محل (`closeoutReviewEnabled` في إعدادات المحل، افتراضيًا معطّلة).
+
+---
+
+## 17. مراجع الاعتماد والوثائق
 
 | البند | القيمة |
 |--------|--------|

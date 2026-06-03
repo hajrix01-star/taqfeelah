@@ -1,7 +1,25 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PROTOTYPE_BUILD_STAMP } from "@/prototype-build-stamp.mjs";
+import { DailyCloseoutsProvider, useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
+import { buildOperationalEntriesFromCloseout } from "@/features/daily-closeouts/daily-closeouts-demo-store";
+import { closeoutEventMessage, readCloseoutEvents } from "@/features/daily-closeouts/daily-closeouts-demo-store";
+import { notebookLinesBackground, notebookThemes, resolveNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
+import EmployeeCloseoutsView from "@/features/employee-closeouts/EmployeeCloseoutsView";
+import EmployeeFooterNav from "@/features/employee-closeouts/EmployeeFooterNav";
+import { readEmployeeNotebookTheme, writeEmployeeNotebookTheme } from "@/features/employee-closeouts/employee-theme-storage";
+import PendingCloseoutsNotice from "@/features/owner-closeout-review/PendingCloseoutsNotice";
+import OwnerCloseoutReviewPanel from "@/features/owner-closeout-review/OwnerCloseoutReviewPanel";
+import ReturnCloseoutModal from "@/features/owner-closeout-review/ReturnCloseoutModal";
+import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
+import LanHintBanner from "@/features/demo/LanHintBanner";
+import { readLocalStorageJson } from "@/features/demo/prototype-storage";
+import {
+  createPrototypeMonthDemoOperationalEntries,
+  PROTOTYPE_DEMO_LAST_CLOSEOUT_KEY,
+  PROTOTYPE_DEMO_OPERATIONAL_ENTRIES_KEY,
+} from "@/features/demo/prototype-month-demo-seed";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
@@ -40,6 +58,18 @@ function AppFontStyles() {
       .taq-screen { height: 100dvh !important; max-height: 100dvh !important; min-height: 100dvh !important; display: grid !important; grid-template-rows: auto 1fr auto !important; overflow: hidden !important; }
       .taq-scroll { min-height: 0 !important; -webkit-overflow-scrolling: touch; }
       .taq-owner-nav { position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; transform: none !important; width: 100% !important; max-width: none !important; border-radius: 0 !important; box-shadow: none !important; }
+      .taq-notebook-surface .taq-notebook-content {
+        box-sizing: border-box;
+        padding-inline-start: calc(2rem + 1.25px + 14px);
+        padding-inline-end: 14px;
+        max-width: 100%;
+      }
+      .taq-notebook-surface .taq-owner-page.taq-notebook-body {
+        width: 100%;
+        max-width: none;
+        margin-inline: 0;
+        padding-inline: 0 !important;
+      }
       @media (min-width: 640px) and (max-width: 1023px) {
         .taq-topbar { max-width: 540px; margin-inline: auto; }
         .taq-owner-page { max-width: 530px; margin-inline: auto; padding-inline: 0 !important; }
@@ -1090,9 +1120,9 @@ const PROTOTYPE_OWNER_USERNAME = "owner";
 const PROTOTYPE_OWNER_PASSWORD = "demo123";
 const PROTOTYPE_EMPLOYEE_PIN_DEFAULT = "1234";
 const CLOSEOUT_ALERTS_STORAGE_KEY = "taqfeelah_closeout_alerts_v1";
-const OPERATIONAL_ENTRIES_STORAGE_KEY = "taqfeelah_operational_entries_v3_demo";
+const OPERATIONAL_ENTRIES_STORAGE_KEY = PROTOTYPE_DEMO_OPERATIONAL_ENTRIES_KEY;
 const ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY = "taqfeelah_acknowledged_duplicate_sales_v1";
-const LAST_CLOSEOUT_STORAGE_KEY = "taqfeelah_last_closeout_dates_v3_demo";
+const LAST_CLOSEOUT_STORAGE_KEY = PROTOTYPE_DEMO_LAST_CLOSEOUT_KEY;
 const employeeActorAhmed = { role: "employee", userId: "ahmed", nameAr: "أحمد", nameEn: "Ahmed" };
 const employeeActorSara = { role: "employee", userId: "sara", nameAr: "سارة", nameEn: "Sara" };
 const entryHasAttachment = (entry) => Boolean(entry.attachment);
@@ -1294,219 +1324,33 @@ function createDemoOperationalEntry(partial) {
   };
 }
 function createDemoOperationalEntries() {
-  const today = todayIsoDate();
-  const yesterday = isoDaysAgo(1);
-  const twoDaysAgo = isoDaysAgo(2);
-  const shamiChannelsMorning = [
-    { channelId: "cash", name: "نقدي", amount: 2850 },
-    { channelId: "mada", name: "مدى", amount: 3920 },
-    { channelId: "apple", name: "Apple Pay", amount: 760 },
-    { channelId: "jahez", name: "جاهز", amount: 980 },
-    { channelId: "hunger", name: "هنقرستيشن", amount: 540 },
-  ];
-  const shamiChannelsAfternoon = [
-    { channelId: "cash", name: "نقدي", amount: 420 },
-    { channelId: "mada", name: "مدى", amount: 680 },
-  ];
-  const shamiChannelsYesterday = [
-    { channelId: "cash", name: "نقدي", amount: 3100 },
-    { channelId: "mada", name: "مدى", amount: 3650 },
-    { channelId: "jahez", name: "جاهز", amount: 1120 },
-  ];
-  const arzChannelsToday = [
-    { channelId: "cash", name: "نقدي", amount: 1640 },
-    { channelId: "mada", name: "مدى", amount: 2180 },
-    { channelId: "apple", name: "Apple Pay", amount: 520 },
-  ];
-  return [
-    createDemoOperationalEntry({
-      id: "demo-shami-summary-today-1",
-      businessId: "shami",
-      date: today,
-      type: "summary",
-      createdAt: entryCreatedAt(today, 14, 20),
-      enteredBy: employeeActorAhmed,
-      salesChannels: shamiChannelsMorning,
-      noteKey: "salesSummary",
-      reviewed: true,
-    }),
-    createDemoOperationalEntry({
-      id: "demo-shami-summary-today-2",
-      businessId: "shami",
-      date: today,
-      type: "summary",
-      createdAt: entryCreatedAt(today, 22, 5),
-      enteredBy: ownerActor,
-      salesChannels: shamiChannelsAfternoon,
-      note: "تقفيلة إضافية بعد السحب على مدى",
-      reviewed: true,
-    }),
-    createDemoOperationalEntry({
-      id: "demo-shami-summary-yesterday",
-      businessId: "shami",
-      date: yesterday,
-      type: "summary",
-      createdAt: entryCreatedAt(yesterday, 23, 10),
-      enteredBy: employeeActorAhmed,
-      salesChannels: shamiChannelsYesterday,
-      noteKey: "salesSummary",
-      reviewed: true,
-    }),
-    createDemoOperationalEntry({
-      id: "demo-shami-purchases-today",
-      businessId: "shami",
-      date: today,
-      type: "purchases",
-      createdAt: entryCreatedAt(today, 11, 15),
-      enteredBy: employeeActorAhmed,
-      amountInput: 315,
-      note: "لحم ودجاج للمطبخ",
-      attachment: demoAttachment("demo-att-shami-meat"),
-      reviewed: false,
-    }),
-    createDemoOperationalEntry({
-      id: "demo-shami-expense-today",
-      businessId: "shami",
-      date: today,
-      type: "expense",
-      categoryId: "utility",
-      createdAt: entryCreatedAt(today, 10, 40),
-      enteredBy: ownerActor,
-      amountInput: 420,
-      note: "فاتورة كهرباء جزئية",
-      reviewed: true,
-    }),
-    createDemoOperationalEntry({
-      id: "demo-shami-expense-2days",
-      businessId: "shami",
-      date: twoDaysAgo,
-      type: "expense",
-      categoryId: "rent",
-      createdAt: entryCreatedAt(twoDaysAgo, 9, 30),
-      enteredBy: ownerActor,
-      amountInput: 8000,
-      noteKey: "rentMay",
-      reviewed: true,
-    }),
-    createDemoOperationalEntry({
-      id: "demo-shami-voided-sample",
-      businessId: "shami",
-      date: yesterday,
-      type: "expense",
-      categoryId: "other",
-      createdAt: entryCreatedAt(yesterday, 16, 0),
-      enteredBy: ownerActor,
-      amountInput: 95,
-      note: "قيد مكرر — ملغى",
-      status: "voided",
-      voidedAt: entryCreatedAt(yesterday, 16, 45),
-      voidedBy: ownerActor,
-      voidReason: "إدخال مكرر بالخطأ",
-      auditTrail: [
-        { action: "created", at: entryCreatedAt(yesterday, 16, 0), by: ownerActor, reason: "" },
-        { action: "voided", at: entryCreatedAt(yesterday, 16, 45), by: ownerActor, reason: "إدخال مكرر بالخطأ" },
-      ],
-    }),
-    createDemoOperationalEntry({
-      id: "demo-arz-summary-today",
-      businessId: "arz",
-      date: today,
-      type: "summary",
-      createdAt: entryCreatedAt(today, 21, 40),
-      enteredBy: employeeActorSara,
-      salesChannels: arzChannelsToday,
-      noteKey: "salesSummary",
-      reviewed: true,
-    }),
-    createDemoOperationalEntry({
-      id: "demo-arz-summary-yesterday",
-      businessId: "arz",
-      date: yesterday,
-      type: "summary",
-      createdAt: entryCreatedAt(yesterday, 22, 30),
-      enteredBy: employeeActorSara,
-      salesChannels: [
-        { channelId: "cash", name: "نقدي", amount: 1420 },
-        { channelId: "mada", name: "مدى", amount: 1980 },
-      ],
-      noteKey: "salesSummary",
-      reviewed: true,
-    }),
-    createDemoOperationalEntry({
-      id: "demo-arz-expense-today",
-      businessId: "arz",
-      date: today,
-      type: "expense",
-      categoryId: "salary",
-      createdAt: entryCreatedAt(today, 13, 5),
-      enteredBy: ownerActor,
-      amountInput: 2200,
-      note: "سلفة موظف استقبال",
-      reviewed: true,
-    }),
-    createDemoOperationalEntry({
-      id: "demo-arz-purchases-yesterday",
-      businessId: "arz",
-      date: yesterday,
-      type: "purchases",
-      createdAt: entryCreatedAt(yesterday, 12, 20),
-      enteredBy: employeeActorSara,
-      amountInput: 540,
-      note: "مستلزمات ضيافة",
-      attachment: demoAttachment("demo-att-arz-supplies"),
-      reviewed: false,
-    }),
-    createDemoOperationalEntry({
-      id: "demo-arz-withdrawal-today",
-      businessId: "arz",
-      date: today,
-      type: "withdrawal",
-      createdAt: entryCreatedAt(today, 18, 0),
-      enteredBy: ownerActor,
-      amountInput: 500,
-      note: "سحب نقدي للصندوق",
-      reviewed: true,
-    }),
-  ];
+  return createPrototypeMonthDemoOperationalEntries();
 }
 function readOperationalEntries() {
   if (typeof window === "undefined") return createDemoOperationalEntries();
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(OPERATIONAL_ENTRIES_STORAGE_KEY) || "null");
-    if (!Array.isArray(stored) || stored.length === 0) {
-      const demo = createDemoOperationalEntries();
-      window.localStorage.setItem(OPERATIONAL_ENTRIES_STORAGE_KEY, JSON.stringify(stripEmbeddedAttachmentImages(demo)));
-      return demo;
-    }
-    return stored.map((entry) => ({
-      ...entry,
-      auditTrail: Array.isArray(entry.auditTrail) && entry.auditTrail.length
-        ? entry.auditTrail
-        : [{ action: "created", at: entry.createdAt || new Date().toISOString(), by: entry.enteredBy || ownerActor, reason: "" }],
-    }));
-  } catch {
-    const demo = createDemoOperationalEntries();
-    window.localStorage.setItem(OPERATIONAL_ENTRIES_STORAGE_KEY, JSON.stringify(stripEmbeddedAttachmentImages(demo)));
-    return demo;
-  }
+  const stored = readLocalStorageJson(OPERATIONAL_ENTRIES_STORAGE_KEY, null);
+  if (!Array.isArray(stored) || stored.length === 0) return createDemoOperationalEntries();
+  return stored.map((entry) => ({
+    ...entry,
+    auditTrail: Array.isArray(entry.auditTrail) && entry.auditTrail.length
+      ? entry.auditTrail
+      : [{ action: "created", at: entry.createdAt || new Date().toISOString(), by: entry.enteredBy || ownerActor, reason: "" }],
+  }));
 }
 function readDemoLastCloseoutDates() {
-  const today = todayIsoDate();
-  return { shami: today, arz: today };
+  const stored = readLocalStorageJson(LAST_CLOSEOUT_STORAGE_KEY, null);
+  if (stored && typeof stored === "object" && !Array.isArray(stored)) return stored;
+  return { shami: "2026-06-02", arz: "2026-06-02" };
 }
 function readAcknowledgedDuplicateSales() {
   if (typeof window === "undefined") return {};
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY) || "null");
-    return stored && typeof stored === "object" ? stored : {};
-  } catch { return {}; }
+  const stored = readLocalStorageJson(ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY, null);
+  return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
 }
 function readCloseoutAlerts() {
   if (typeof window === "undefined") return [];
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(CLOSEOUT_ALERTS_STORAGE_KEY) || "[]");
-    return Array.isArray(stored) ? stored : [];
-  } catch { return []; }
+  const stored = readLocalStorageJson(CLOSEOUT_ALERTS_STORAGE_KEY, []);
+  return Array.isArray(stored) ? stored : [];
 }
 function writeCloseoutAlerts(alerts) {
   if (typeof window === "undefined") return;
@@ -1637,7 +1481,13 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
               <div dir="ltr" className="flex items-center gap-3 rounded-2xl bg-[#F7F5EF] px-4 py-4 ring-1 ring-[#E8E1D4]">
                 <Smartphone className="h-5 w-5 text-[#B99844]" />
                 <span className="border-r border-[#DDD3C0] pr-3 text-sm font-black text-[#112A46]">+966</span>
-                <input value={phone} onChange={(event) => setPhone(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm font-black outline-none" />
+                <input
+                  value={phone}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  onChange={(event) => setPhone(event.target.value.replace(/\D/g, ""))}
+                  className="min-w-0 flex-1 bg-transparent text-sm font-black outline-none"
+                />
               </div>
               <p className="mt-2 text-[11px] font-bold text-[#827762]">{text(lang, "mobileHint")}</p>
               <button type="button" onClick={() => { setStage("code"); setError(""); }} className="mt-5 w-full rounded-2xl bg-[#112A46] py-4 text-sm font-black text-white">{text(lang, "sendCode")}</button>
@@ -1646,7 +1496,16 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
             <>
               <p className="text-xs font-bold text-[#716753]">{text(lang, "verificationCode")}</p>
               <p className="mt-2 text-[11px] font-bold text-[#827762]">{text(lang, "codeSentTo")} <span dir="ltr" className="text-[#112A46]">+966 {phone}</span></p>
-              <input dir="ltr" value={code} onChange={(event) => setCode(event.target.value)} placeholder="• • • •" className="mt-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]" />
+              <input
+                dir="ltr"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                value={code}
+                onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 4))}
+                placeholder="• • • •"
+                className="mt-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]"
+              />
               <button type="button" onClick={submitOtp} className="mt-5 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white">{text(lang, "verifyContinue")}</button>
               <button type="button" onClick={() => { setStage("phone"); setError(""); }} className="mt-4 w-full text-xs font-black text-[#9A823E]">{text(lang, "changeNumber")}</button>
             </>
@@ -1663,6 +1522,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
         {error && <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-[10px] font-bold text-[#B44747]">{error}</p>}
       </div>
       <button type="button" onClick={onEmployeePortal} className="mt-4 w-full rounded-2xl bg-white py-3.5 text-xs font-black text-[#112A46] ring-1 ring-black/[0.06]">{text(lang, "employeeLogin")}</button>
+      <LanHintBanner lang={lang} />
       <div className="mt-4 rounded-2xl bg-[#FFF4D2] p-4 text-center">
         <p className="text-[11px] font-black leading-5 text-[#806528]">{text(lang, "prototypeDemoAccess")}</p>
         <p className="mt-1 text-[10px] font-bold text-[#957D43]">{text(lang, "linkedAccountNote")}</p>
@@ -1733,6 +1593,7 @@ function HelpCenterSheet({ lang, open, onClose }) {
           <p className="mt-3 rounded-xl bg-white px-3 py-2 text-center text-[10px] font-black text-[#112A46] ring-1 ring-black/[0.06]">
             {text(lang, "prototypeBuildLabel")}: <span dir="ltr">{PROTOTYPE_BUILD_STAMP}</span>
           </p>
+          <LanHintBanner lang={lang} />
           <button type="button" onClick={() => { openWhatsAppSupport(lang); onClose(); }} className="mt-4 w-full rounded-2xl bg-[#25D366] py-3.5 text-xs font-black text-white">{text(lang, "whatsappSupport")}</button>
         </motion.div>
       </motion.div>
@@ -1740,7 +1601,7 @@ function HelpCenterSheet({ lang, open, onClose }) {
   );
 }
 
-function TopBar({ lang, setLang, employee, onRoleChange, onLogout = () => {}, onNotifications = () => {}, reviewEnabled = true, notebookMode = false }) {
+function TopBar({ lang, setLang, employee, employeeName = "", onRoleChange, onLogout = () => {}, onNotifications = () => {}, onEmployeeSettings = () => {}, reviewEnabled = true, notebookMode = false, notebookTheme = "yellow" }) {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef(null);
   useEffect(() => {
@@ -1751,38 +1612,72 @@ function TopBar({ lang, setLang, employee, onRoleChange, onLogout = () => {}, on
     document.addEventListener("keydown", closeEscape);
     return () => { document.removeEventListener("pointerdown", closeOutside); document.removeEventListener("keydown", closeEscape); };
   }, [accountMenuOpen]);
+  const headerSurfaceStyle = notebookMode ? notebookLinesBackground(notebookTheme) : { backgroundColor: "#F8F6F0" };
+  const headerStyle = {
+    ...headerSurfaceStyle,
+    minHeight: "calc(70px + env(safe-area-inset-top, 0px))",
+    paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
+  };
   return (
-    <header dir="ltr" className={`taq-topbar sticky top-0 z-40 h-[70px] shrink-0 bg-transparent px-5 pb-2 pt-4`}>
-      <div className={`absolute top-[22px] flex h-10 w-10 items-center justify-center ${lang === "ar" ? "left-[14px]" : "right-[14px]"}`}>
-        {!employee ? (
+    <header dir="ltr" className="taq-topbar sticky top-0 z-40 shrink-0 px-5 pb-2" style={headerStyle}>
+      <div className={`absolute top-[calc(22px+env(safe-area-inset-top,0px))] flex h-10 w-10 items-center justify-center ${lang === "ar" ? "left-[14px]" : "right-[14px]"}`}>
+        {!employee && (
           <button onClick={onNotifications} className="relative flex h-9 w-9 items-center justify-center text-[#112A46]">
             <Bell className="h-5 w-5" />
             {reviewEnabled && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#CE4642]" />}
           </button>
-        ) : <LanguageSwitch lang={lang} setLang={setLang} />}
-      </div>
-      <div className="absolute left-1/2 top-[15px] -translate-x-1/2"><Logo compact centered /></div>
-      <div className={`absolute top-[22px] flex h-10 w-10 items-center justify-center ${lang === "ar" ? "right-[36px]" : "left-[36px]"}`}>
-        {employee ? (
-          <span className="h-9 w-9" aria-hidden />
-        ) : (
-          <div ref={accountMenuRef} className="relative">
-            <button onClick={() => setAccountMenuOpen((open) => !open)} aria-label={text(lang, "account")} aria-expanded={accountMenuOpen} aria-haspopup="menu" className={`flex h-9 w-9 items-center justify-center rounded-full text-[#112A46] transition ${accountMenuOpen ? "text-[#9A823E]" : ""}`}>
-              <UserRound className="h-[21px] w-[21px]" strokeWidth={2} />
-            </button>
-            <AnimatePresence>
-              {accountMenuOpen && (
-                <motion.div dir={lang === "ar" ? "rtl" : "ltr"} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} role="menu" className={`absolute top-[44px] z-50 w-[126px] overflow-hidden rounded-xl bg-white p-1.5 shadow-lg ring-1 ring-black/[0.06] ${lang === "ar" ? "right-0" : "left-0"}`}>
-                  <div className="flex justify-center px-1 py-1.5"><LanguageSwitch lang={lang} setLang={setLang} /></div>
-                  <div className="my-1 border-t border-[#F0ECE2]" />
-                  <button role="menuitem" onClick={() => { setAccountMenuOpen(false); onLogout(); }} className="flex w-full items-center justify-center rounded-lg px-2 py-2.5 text-[10px] font-black text-[#B44747] transition hover:bg-[#FFF1EE]">
-                    <span>{text(lang, "logout")}</span>
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
         )}
+      </div>
+      <div className="absolute left-1/2 top-[calc(12px+env(safe-area-inset-top,0px))] -translate-x-1/2 text-center">
+        <Logo compact centered />
+        {employee && employeeName ? (
+          <p className="mx-auto mt-0.5 max-w-[160px] truncate text-[10px] font-extrabold text-[#716753]">{employeeName}</p>
+        ) : null}
+      </div>
+      <div className={`absolute top-[calc(22px+env(safe-area-inset-top,0px))] flex h-10 w-10 items-center justify-center ${lang === "ar" ? "right-[36px]" : "left-[36px]"}`}>
+        <div ref={accountMenuRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setAccountMenuOpen((open) => !open)}
+            aria-label={text(lang, "account")}
+            aria-expanded={accountMenuOpen}
+            aria-haspopup="menu"
+            className={`flex h-9 w-9 items-center justify-center rounded-full text-[#112A46] transition ${accountMenuOpen ? "text-[#9A823E]" : ""}`}
+          >
+            <UserRound className="h-[21px] w-[21px]" strokeWidth={2} />
+          </button>
+          <AnimatePresence>
+            {accountMenuOpen && (
+              <motion.div
+                dir={lang === "ar" ? "rtl" : "ltr"}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                role="menu"
+                className={`absolute top-[44px] z-50 overflow-hidden rounded-xl bg-white p-1.5 shadow-lg ring-1 ring-black/[0.06] ${employee ? "w-[148px]" : "w-[126px]"} ${lang === "ar" ? "right-0" : "left-0"}`}
+              >
+                <div className="flex justify-center px-1 py-1.5"><LanguageSwitch lang={lang} setLang={setLang} /></div>
+                {employee ? (
+                  <>
+                    <div className="my-1 border-t border-[#F0ECE2]" />
+                    <button
+                      role="menuitem"
+                      type="button"
+                      onClick={() => { setAccountMenuOpen(false); onEmployeeSettings(); }}
+                      className="flex w-full items-center justify-center rounded-lg px-2 py-2.5 text-[10px] font-black text-[#112A46] transition hover:bg-[#F7F5EF]"
+                    >
+                      {text(lang, "settings")}
+                    </button>
+                  </>
+                ) : null}
+                <div className="my-1 border-t border-[#F0ECE2]" />
+                <button role="menuitem" type="button" onClick={() => { setAccountMenuOpen(false); onLogout(); }} className="flex w-full items-center justify-center rounded-lg px-2 py-2.5 text-[10px] font-black text-[#B44747] transition hover:bg-[#FFF1EE]">
+                  <span>{text(lang, "logout")}</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </header>
   );
@@ -1801,9 +1696,9 @@ function InkTab({ active, children, onClick, className = "", titleUnderline = fa
   );
 }
 
-function BackTitle({ title, onBack, lang }) {
+function BackTitle({ title, onBack, lang, inNotebook = false }) {
   const BackIcon = lang === "ar" ? ChevronRight : ChevronLeft;
-  return <div className="mb-5 flex items-center gap-3 px-5"><button onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]"><BackIcon className="h-5 w-5" /></button><h2 className="text-xl font-black">{title}</h2></div>;
+  return <div className={`mb-5 flex items-center gap-3 ${inNotebook ? "" : "px-5"}`}><button onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]"><BackIcon className="h-5 w-5" /></button><h2 className="text-xl font-black">{title}</h2></div>;
 }
 
 function EmployeeStoreContext({ lang, currentStore, assignedStores, onSelect, dark = false }) {
@@ -2047,10 +1942,57 @@ function OwnerExpenseScreen({ lang, onBack, onSave, saving = false, selectedBusi
 function SmallInfo({ label, value }) { return <div className="rounded-2xl bg-white p-3 ring-1 ring-black/[0.05]"><p className="text-[10px] font-bold text-[#716753]">{label}</p><p className="mt-1 text-xs font-black">{value}</p></div>; }
 
 function SettingToggle({ enabled, onToggle, disabled = false }) { return <button disabled={disabled} onClick={onToggle} className={`relative h-6 w-11 rounded-full transition ${disabled ? "cursor-not-allowed opacity-55" : ""} ${enabled ? "bg-[#39A160]" : "bg-[#D9D3C7]"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition ${enabled ? "left-1" : "left-6"}`} /></button>; }
-function EmployeeSettingsScreen({ lang, currentStore, assignedStores, onSelectStore, employeeName, onLogout, onOpenSupport, onOpenHelp }) {
+function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedStores, onSelectStore, employeeNotebookTheme, setEmployeeNotebookTheme, onOpenSupport, onOpenHelp }) {
   const perms = ["permissionSummary", "permissionOutflow", "permissionAttach"];
-  const initial = employeeName ? employeeName.trim().charAt(0) : (lang === "ar" ? "م" : "E");
-  return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><div className="mb-5"><p className="text-xs font-bold text-[#8B8274]">{text(lang, "account")}</p><h1 className="text-xl font-black">{text(lang, "settings")}</h1></div><div className="mb-5 flex items-center gap-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#112A46] text-lg font-black text-white">{initial}</div><div className="flex-1"><p className="text-sm font-black">{employeeName || (lang === "ar" ? "موظف" : "Employee")}</p><p className="mt-0.5 text-[11px] font-bold text-[#827762]">{text(lang, "employee")}</p></div><Badge tone="success">{text(lang, "active")}</Badge></div><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "linkedStores")}</p><div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><EmployeeStoreContext lang={lang} currentStore={currentStore} assignedStores={assignedStores} onSelect={onSelectStore} /><div className="mt-4 space-y-2 border-t border-[#F0ECE2] pt-3">{assignedStores.map((business) => <div key={business.id} className="flex items-center gap-2 text-[11px] font-bold text-[#716753]"><Check className="h-4 w-4 text-[#39A160]" />{businessName(business, lang)}</div>)}</div></div><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "permissions")}</p><div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><p className="mb-4 text-[11px] font-bold text-[#806528]">{text(lang, "employeeEntryOnly")}</p>{perms.map((key) => <div key={key} className="mb-3 flex items-center gap-2 last:mb-0"><Check className="h-4 w-4 text-[#39A160]" /><span className="text-xs font-bold">{text(lang, key)}</span></div>)}<p className="mt-4 border-t border-[#F0ECE2] pt-3 text-[11px] font-bold text-[#827762]">{text(lang, "ownerOnly")}</p></div><div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]"><ActionRow label={text(lang, "support")} lang={lang} border onClick={onOpenSupport} /><ActionRow label={text(lang, "helpCenter")} lang={lang} border onClick={onOpenHelp} /><ActionRow label={text(lang, "logout")} lang={lang} danger onClick={onLogout} /></div></motion.section>;
+  const [draftTheme, setDraftTheme] = useState(employeeNotebookTheme);
+  const [savedNotice, setSavedNotice] = useState(false);
+  useEffect(() => { setDraftTheme(employeeNotebookTheme); }, [employeeNotebookTheme]);
+  const saveTheme = () => {
+    setEmployeeNotebookTheme(draftTheme);
+    setSavedNotice(true);
+    window.setTimeout(() => setSavedNotice(false), 2200);
+  };
+  const themeDirty = draftTheme !== employeeNotebookTheme;
+  return (
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-28 pt-1">
+      <BackTitle lang={lang} title={text(lang, "settings")} onBack={onBack} inNotebook />
+      <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "linkedStores")}</p>
+      <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
+        <EmployeeStoreContext lang={lang} currentStore={currentStore} assignedStores={assignedStores} onSelect={onSelectStore} />
+        <div className="mt-4 space-y-2 border-t border-[#F0ECE2] pt-3">
+          {assignedStores.map((business) => (
+            <div key={business.id} className="flex items-center gap-2 text-[11px] font-bold text-[#716753]">
+              <Check className="h-4 w-4 text-[#39A160]" />
+              {businessName(business, lang)}
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="mb-2 text-xs font-bold text-[#716753]">{lang === "ar" ? "شكل دفتر واجهتي" : "My notebook theme"}</p>
+      <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
+        <ThemePicker lang={lang} theme={draftTheme} onChange={setDraftTheme} />
+        <p className="mt-3 text-[10px] font-bold leading-5 text-[#806528]">{lang === "ar" ? "يُطبّق على قائمة التقفيلات وشاشة الإدخال فقط. الافتراضي من إعدادات المحل." : "Applies to your closeout list and entry flow. Defaults to store settings."}</p>
+        <button type="button" onClick={saveTheme} disabled={!themeDirty} className={`mt-4 w-full rounded-2xl py-3.5 text-xs font-extrabold text-white transition ${themeDirty ? "bg-[#112A46]" : "cursor-not-allowed bg-[#B8C0B7]"}`}>
+          {text(lang, savedNotice ? "savedNotice" : "save")}
+        </button>
+      </div>
+      <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "permissions")}</p>
+      <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
+        <p className="mb-4 text-[11px] font-bold text-[#806528]">{text(lang, "employeeEntryOnly")}</p>
+        {perms.map((key) => (
+          <div key={key} className="mb-3 flex items-center gap-2 last:mb-0">
+            <Check className="h-4 w-4 text-[#39A160]" />
+            <span className="text-xs font-bold">{text(lang, key)}</span>
+          </div>
+        ))}
+        <p className="mt-4 border-t border-[#F0ECE2] pt-3 text-[11px] font-bold text-[#827762]">{text(lang, "ownerOnly")}</p>
+      </div>
+      <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
+        <ActionRow label={text(lang, "support")} lang={lang} border onClick={onOpenSupport} />
+        <ActionRow label={text(lang, "helpCenter")} lang={lang} onClick={onOpenHelp} />
+      </div>
+    </motion.section>
+  );
 }
 function readSavedSettings() {
   if (typeof window === "undefined") return null;
@@ -2228,7 +2170,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
     if (storePanel === "profile") return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={lang === "ar" ? "بيانات المحل" : "Shop details"} onBack={backFromStorePanel} /><div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "shopName")}</p><input value={draftStoreName} onChange={(event) => setDraftStoreName(event.target.value)} maxLength={80} className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" /><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "newStoreLocation")}</p><input value={draftStoreLocation} onChange={(event) => setDraftStoreLocation(event.target.value)} maxLength={100} className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" /><p className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-[10px] font-bold leading-5 text-[#806528]">{text(lang, "renameStoreHint")}</p><button disabled={!draftStoreName.trim()} onClick={saveStoreProfile} className={`mt-5 w-full rounded-2xl py-3.5 text-xs font-black text-white ${draftStoreName.trim() ? "bg-[#112A46]" : "bg-[#B8C0B7]"}`}>{text(lang, "saveSettings")}</button></div><DeleteDialog /></motion.section>;
     if (storePanel === "channels") return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={text(lang, "salesChannels")} onBack={backFromStorePanel} /><p className="mb-3 rounded-2xl bg-[#FFF4D2] p-3 text-[10px] font-bold leading-5 text-[#806528]">{text(lang, "channelControlHint")}</p><div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">{visibleChannels.map((channel, index) => <div key={channel.id} className={`flex items-center justify-between gap-3 px-4 py-4 ${index < visibleChannels.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}><div className="min-w-0"><p className="text-xs font-black">{channelName(channel, lang)}</p><p className="mt-1 text-[10px] font-bold text-[#827762]">{channelConfig.activeIds.includes(channel.id) ? text(lang, "active") : text(lang, "stopChannel")}</p></div><div className="flex items-center gap-2"><SettingToggle enabled={channelConfig.activeIds.includes(channel.id)} onToggle={() => toggleChannel(channel.id)} /><button onClick={() => requestRetireChannel(channel)} className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFF1EE] text-[#B44747]"><Trash2 className="h-3.5 w-3.5" /></button></div></div>)}</div><div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><p className="mb-3 text-xs font-black">{text(lang, "addChannel")}</p><div className="flex gap-2"><input value={newChannelName} onChange={(event) => setNewChannelName(event.target.value)} placeholder={text(lang, "newChannelName")} className="min-w-0 flex-1 rounded-2xl bg-[#F7F5EF] px-3 py-3 text-xs font-bold outline-none" /><button onClick={addSalesChannel} className="rounded-2xl bg-[#112A46] px-4 text-xs font-black text-white"><Plus className="h-4 w-4" /></button></div>{retiredChannels.length > 0 && <div className="mt-4 border-t border-[#F0ECE2] pt-4"><p className="mb-2 text-[10px] font-bold text-[#827762]">{text(lang, "stoppedChannels")}</p>{retiredChannels.map((channel) => <button key={channel.id} onClick={() => restoreSalesChannel(channel)} className="mb-2 flex w-full items-center justify-between rounded-xl bg-[#F7F5EF] px-3 py-3 text-[10px] font-black text-[#257844]"><span>{channelName(channel, lang)}</span><span>{text(lang, "restoreChannel")}</span></button>)}</div>}</div>{settingsNotice && <p className="mb-3 rounded-xl bg-[#FFF1EE] p-3 text-[10px] font-bold text-[#B44747]">{settingsNotice}</p>}<div className="grid grid-cols-[0.9fr_1.35fr] gap-3"><button onClick={backFromStorePanel} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button><button onClick={saveChannelSettings} className="rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white">{text(lang, "saveSettings")}</button></div><DeleteDialog /></motion.section>;
     if (storePanel === "expenses") return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={text(lang, "outflowCategories")} onBack={backFromStorePanel} /><p className="mb-3 rounded-2xl bg-[#FFF4D2] p-3 text-[10px] font-bold leading-5 text-[#806528]">{lang === "ar" ? "تظهر هذه البنود عند اختيار نوع العملية: مصروف. إيقاف البند لا يغير التقارير السابقة." : "These items appear only for Expense entries. Disabling an item does not change historical reports."}</p><div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">{expenseCategories.map((item, index) => <div key={item.id} className={`flex items-center justify-between px-4 py-4 ${index < expenseCategories.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}><p className="text-xs font-black">{text(lang, item.label)}</p><SettingToggle enabled={operationalConfig.activeCategories.includes(item.id)} onToggle={() => toggleCategory(item.id)} /></div>)}</div>{settingsNotice && <p className="mb-3 rounded-xl bg-[#FFF1EE] p-3 text-[10px] font-bold text-[#B44747]">{settingsNotice}</p>}<p className="mb-4 text-[10px] font-bold leading-5 text-[#827762]">{lang === "ar" ? "إضافة بنود مخصصة ستنفذ في النسخة الإنتاجية بعد بناء نموذج البيانات الموحد." : "Custom expense items will be implemented in the production build with the unified data model."}</p><div className="grid grid-cols-[0.9fr_1.35fr] gap-3"><button onClick={backFromStorePanel} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button><button onClick={saveOperationalSettings} className="rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white">{text(lang, "saveSettings")}</button></div></motion.section>;
-    if (storePanel === "review") return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={lang === "ar" ? "مراجعة الصور والتنبيهات" : "Photo review & notifications"} onBack={backFromStorePanel} /><div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]"><SettingRow border title={text(lang, "reviewWorkflow")} desc={text(lang, "reviewWorkflowDesc")} toggle={<SettingToggle enabled={operationalConfig.reviewEnabled} onToggle={() => updateOperationalDraft({ reviewEnabled: !operationalConfig.reviewEnabled })} />} /><SettingRow border title={text(lang, "pendingAttachmentAlert")} desc={text(lang, "pendingAttachmentAlertDesc")} toggle={<SettingToggle disabled={!operationalConfig.reviewEnabled} enabled={operationalConfig.attachmentAlert} onToggle={() => updateOperationalDraft({ attachmentAlert: !operationalConfig.attachmentAlert })} />} /><SettingRow title={text(lang, "dailyCloseoutAlert")} desc={text(lang, "dailyCloseoutAlertPrototype")} toggle={<SettingToggle enabled={operationalConfig.closeoutAlert} onToggle={() => updateOperationalDraft({ closeoutAlert: !operationalConfig.closeoutAlert })} />} /></div><div className="grid grid-cols-[0.9fr_1.35fr] gap-3"><button onClick={backFromStorePanel} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button><button onClick={saveOperationalSettings} className="rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white">{text(lang, "saveSettings")}</button></div></motion.section>;
+    if (storePanel === "review") return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={lang === "ar" ? "مراجعة الصور والتنبيهات" : "Photo review & notifications"} onBack={backFromStorePanel} /><div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]"><SettingRow border title={text(lang, "reviewWorkflow")} desc={text(lang, "reviewWorkflowDesc")} toggle={<SettingToggle enabled={operationalConfig.reviewEnabled} onToggle={() => updateOperationalDraft({ reviewEnabled: !operationalConfig.reviewEnabled })} />} /><SettingRow border title={lang === "ar" ? "مراجعة تقفيلات الموظفين" : "Employee closeout review"} desc={lang === "ar" ? "عند التفعيل يجب على المالك اعتماد أو إرجاع تقفيلة اليوم قبل اعتبارها نهائية. الافتراضي: معطّل." : "When enabled, owner must approve or return employee daily closeouts. Default: off."} toggle={<SettingToggle enabled={operationalConfig.closeoutReviewEnabled} onToggle={() => updateOperationalDraft({ closeoutReviewEnabled: !operationalConfig.closeoutReviewEnabled })} />} /><SettingRow border title={text(lang, "pendingAttachmentAlert")} desc={text(lang, "pendingAttachmentAlertDesc")} toggle={<SettingToggle disabled={!operationalConfig.reviewEnabled} enabled={operationalConfig.attachmentAlert} onToggle={() => updateOperationalDraft({ attachmentAlert: !operationalConfig.attachmentAlert })} />} /><SettingRow title={text(lang, "dailyCloseoutAlert")} desc={text(lang, "dailyCloseoutAlertPrototype")} toggle={<SettingToggle enabled={operationalConfig.closeoutAlert} onToggle={() => updateOperationalDraft({ closeoutAlert: !operationalConfig.closeoutAlert })} />} /></div><div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><p className="mb-2 text-xs font-black">{lang === "ar" ? "شكل دفتر هذا المحل" : "This store notebook theme"}</p><ThemePicker lang={lang} theme={operationalConfig.notebookTheme || notebookTheme} onChange={(nextTheme) => updateOperationalDraft({ notebookTheme: nextTheme })} /><p className="mt-3 text-[10px] font-bold leading-5 text-[#806528]">{lang === "ar" ? "يُستخدم في واجهة الموظف لهذا المحل ما لم يغيّر الموظف لونه الشخصي." : "Used for this store's employee UI unless the employee picks a personal theme."}</p></div><div className="grid grid-cols-[0.9fr_1.35fr] gap-3"><button onClick={backFromStorePanel} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button><button onClick={saveOperationalSettings} className="rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white">{text(lang, "saveSettings")}</button></div></motion.section>;
     if (storePanel === "staff") return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={text(lang, "linkedEmployees")} onBack={backFromStorePanel} /><div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">{linkedStaff.length ? linkedStaff.map((person, index) => <div key={person.id} className={`flex items-center gap-3 py-3 ${index < linkedStaff.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}><UserRound className="h-5 w-5 text-[#806528]" /><div><p className="text-xs font-black">{lang === "ar" ? person.nameAr : person.nameEn}</p><p dir="ltr" className="text-[10px] text-[#827762]">{person.mobile}</p></div></div>) : <p className="text-xs font-bold text-[#827762]">{text(lang, "noLinkedEmployees")}</p>}</div><button onClick={() => { closeStore(); setSection("team"); }} className="w-full rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white">{lang === "ar" ? "إدارة الفريق والصلاحيات" : "Manage team access"}</button></motion.section>;
     return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={text(lang, "storeSettings")} onBack={closeStore} /><div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#112A46] text-[#E4B84A]"><Building2 className="h-6 w-6" /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{displayBusinessName(selectedStore)}</p><p className="mt-1 truncate text-[11px] font-bold text-[#827762]">{displayLocation(selectedStore)}</p></div><Badge tone={archived ? "warning" : "success"}>{text(lang, archived ? "archivedStore" : "storeActive")}</Badge></div></div><div className="mb-5 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]"><SettingsLink icon={Building2} title={lang === "ar" ? "بيانات المحل" : "Shop details"} desc={displayLocation(selectedStore)} onClick={() => openStorePanel("profile")} /><SettingsLink icon={CreditCard} title={text(lang, "salesChannels")} value={`${activeChannelCount}`} onClick={() => openStorePanel("channels")} /><SettingsLink icon={ReceiptText} title={text(lang, "outflowCategories")} value={`${activeCategoryCount}`} onClick={() => openStorePanel("expenses")} /><SettingsLink icon={Bell} title={lang === "ar" ? "مراجعة الصور والتنبيهات" : "Photo review & notifications"} value={operationalConfig.reviewEnabled ? text(lang, "active") : text(lang, "stopChannel")} onClick={() => openStorePanel("review")} /><SettingsLink icon={UserRound} title={text(lang, "linkedEmployees")} value={`${linkedStaff.length}`} onClick={() => openStorePanel("staff")} border={false} /></div>{archived && <div className="mb-5 rounded-3xl bg-[#FFF4D2] p-4"><Badge tone="warning">{text(lang, "archivedReadOnly")}</Badge><p className="mt-3 text-[11px] font-bold text-[#806528]">{text(lang, "archiveNotice")}</p><div className="mt-4 grid grid-cols-2 gap-2"><button onClick={() => { setArchivedReadOnlyBusinessId(selectedStore.id); setSelectedBusiness(selectedStore.id); setOwnerPage("reports"); }} className="rounded-xl bg-white py-3 text-[10px] font-black">{text(lang, "viewPastReports")}</button><button onClick={() => { setArchivedReadOnlyBusinessId(selectedStore.id); setSelectedBusiness(selectedStore.id); setOwnerPage("register"); }} className="rounded-xl bg-white py-3 text-[10px] font-black">{text(lang, "viewPastAttachments")}</button></div></div>}<p className="mb-2 text-xs font-bold text-[#716753]">{lang === "ar" ? "الإدارة" : "Management"}</p>{archived ? <button onClick={() => toggleArchive(selectedStore.id)} className="w-full rounded-2xl bg-white py-3.5 text-xs font-black text-[#257844] ring-1 ring-black/[0.05]">{text(lang, "storeActive")}</button> : <div className="flex gap-3"><button onClick={() => requestArchiveStore(selectedStore)} className="flex-1 rounded-2xl bg-white py-3.5 text-xs font-black text-[#B96725] ring-1 ring-black/[0.05]">{text(lang, "archiveStore")}</button><button onClick={() => openStoreDelete(selectedStore)} className="flex-1 rounded-2xl bg-[#FFF1EE] py-3.5 text-xs font-black text-[#B44747]">{text(lang, "deleteStore")}</button></div>}{settingsSuccess && <div className="mt-4 rounded-2xl bg-[#E6F5E9] p-3 text-center text-[11px] font-black text-[#257844]">{text(lang, "changesSaved")}</div>}<DeleteDialog /></motion.section>;
   }
@@ -2244,67 +2186,6 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
 
 function SettingRow({ title, desc, toggle, border }) { return <div className={`flex items-center justify-between px-4 py-4 ${border ? "border-b border-[#F0ECE2]" : ""}`}><div><p className="text-sm font-black">{title}</p><p className="mt-1 text-[11px] text-[#827762]">{desc}</p></div>{toggle}</div>; }
 function ActionRow({ label, lang, danger = false, border = false, onClick = () => {} }) { const Arrow = lang === "ar" ? ChevronLeft : ChevronRight; return <button type="button" onClick={onClick} className={`flex w-full items-center justify-between px-4 py-4 text-sm font-black ${border ? "border-b border-[#F0ECE2]" : ""} ${danger ? "text-[#B44747]" : "text-[#112A46]"}`}><span>{label}</span><Arrow className="h-4 w-4" /></button>; }
-
-const notebookThemes = {
-  yellow: {
-    paper: "#F7DE85",
-    line: "rgba(66,90,111,0.14)",
-    margin: "rgba(204,105,96,0.46)",
-    shadow: "0 12px 24px rgba(160,118,31,0.16)",
-    ring: false,
-  },
-  softYellow: {
-    paper: "#FFF0B8",
-    line: "rgba(66,90,111,0.12)",
-    margin: "rgba(204,105,96,0.44)",
-    shadow: "0 12px 24px rgba(160,118,31,0.11)",
-    ring: false,
-  },
-  ivory: {
-    paper: "#FFF8E8",
-    line: "rgba(84,116,154,0.13)",
-    margin: "rgba(204,105,96,0.42)",
-    shadow: "0 12px 24px rgba(120,96,53,0.09)",
-    ring: true,
-  },
-  white: {
-    paper: "#FFFDF8",
-    line: "rgba(84,116,154,0.15)",
-    margin: "rgba(204,105,96,0.45)",
-    shadow: "0 12px 24px rgba(17,42,70,0.08)",
-    ring: true,
-  },
-  greenTint: {
-    paper: "#EEF2DF",
-    line: "rgba(62,91,84,0.13)",
-    margin: "rgba(204,105,96,0.41)",
-    shadow: "0 12px 24px rgba(64,88,70,0.09)",
-    ring: true,
-  },
-};
-
-function notebookLinesBackground(theme) {
-  const activeTheme = notebookThemes[theme] || notebookThemes.yellow;
-  return {
-    backgroundColor: activeTheme.paper,
-    backgroundImage: `repeating-linear-gradient(180deg, transparent 0px, transparent 43px, ${activeTheme.line} 43px, ${activeTheme.line} 44px)`,
-  };
-}
-
-/** Scrollable notebook page: lines and red margin move with content (full scroll height). */
-function NotebookScrollSurface({ theme = "yellow", lang = "ar", children }) {
-  const activeTheme = notebookThemes[theme] || notebookThemes.yellow;
-  const isArabic = lang === "ar";
-  return (
-    <div className="relative min-h-full" style={notebookLinesBackground(theme)}>
-      <div
-        className={`taq-notebook-margin pointer-events-none absolute inset-y-0 z-0 w-[1.25px] ${isArabic ? "right-8" : "left-8"}`}
-        style={{ backgroundColor: activeTheme.margin }}
-      />
-      <div className="relative z-[1] min-h-full">{children}</div>
-    </div>
-  );
-}
 
 function Notebook({ children, theme = "yellow", lang = "ar", marginContent = null, fullPage = false }) {
   const isArabic = lang === "ar";
@@ -2648,7 +2529,7 @@ function NotebookDateBar({ dateSelector }) {
   return <NotebookRow className="justify-end">{dateSelector}</NotebookRow>;
 }
 
-function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], closeoutAlerts = [], onReviewCloseout = () => {}, onDismissCloseout = () => {}, onReviewDuplicate = () => {}, onAcknowledgeDuplicate = () => {}, reviewEnabledForBusiness = () => true, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, reviewEnabled = true, businessesList = businesses }) {
+function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], closeoutAlerts = [], pendingEmployeeCloseouts = [], onViewPendingCloseouts = () => {}, onReviewCloseout = () => {}, onDismissCloseout = () => {}, onReviewDuplicate = () => {}, onAcknowledgeDuplicate = () => {}, reviewEnabledForBusiness = () => true, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, reviewEnabled = true, businessesList = businesses }) {
   const [period, setPeriod] = useState("day");
   const [selectedDay, setSelectedDay] = useState(() => todayIsoDate());
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
@@ -2674,7 +2555,8 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
     setShowAttachments(false);
   };
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page px-3 pb-6 pt-1 sm:px-8 md:px-12 lg:px-3">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-6 pt-1">
+      {pendingEmployeeCloseouts.length > 0 && <PendingCloseoutsNotice lang={lang} pending={pendingEmployeeCloseouts} onView={onViewPendingCloseouts} />}
       {closeoutAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#E6F5E9] p-3 ring-1 ring-[#39A160]/15"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#257844]" /><div className="min-w-0 flex-1"><p className="text-[11px] font-black text-[#257844]">{text(lang, "closeoutInAppAlert")}</p><p className="mt-1 text-[10px] font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === closeoutAlerts[0].businessId), lang)} · {formatCalendarDate(closeoutAlerts[0].date, lang)} · {lang === "ar" ? closeoutAlerts[0].employeeNameAr : closeoutAlerts[0].employeeNameEn}</p><p className="mt-1 text-[10px] font-bold text-[#827762]">{text(lang, "closeoutInAppHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onReviewCloseout(closeoutAlerts[0])} className="rounded-xl bg-white py-2.5 text-[10px] font-black text-[#257844] ring-1 ring-[#39A160]/15">{text(lang, "reviewCloseout")}</button><button type="button" onClick={() => onDismissCloseout(closeoutAlerts[0].id)} className="rounded-xl bg-[#112A46] py-2.5 text-[10px] font-black text-white">{text(lang, "dismissAlert")}</button></div></div>}
       {duplicateSalesAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#FFF1EE] p-3 ring-1 ring-[#B44747]/10"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#B44747]" /><div className="min-w-0 flex-1"><p className="text-[11px] font-black text-[#B44747]">{text(lang, "duplicateSalesOwnerAlert")}</p><p className="mt-1 text-[10px] font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === duplicateSalesAlerts[0].businessId), lang)} · {formatCalendarDate(duplicateSalesAlerts[0].date, lang)} · {duplicateSalesAlerts[0].entries.length} {text(lang, "summary")}</p><p className="mt-1 text-[10px] font-bold text-[#827762]">{text(lang, "duplicateSalesOwnerHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onReviewDuplicate(duplicateSalesAlerts[0])} className="rounded-xl bg-white py-2.5 text-[10px] font-black text-[#B44747] ring-1 ring-[#B44747]/10">{text(lang, "reviewInLog")}</button><button type="button" onClick={() => onAcknowledgeDuplicate(duplicateSalesAlerts[0])} title={text(lang, "approveMultipleSalesHint")} className="rounded-xl bg-[#112A46] py-2.5 text-[10px] font-black text-white">{text(lang, "approveMultipleSales")}</button></div></div>}
       <Notebook fullPage theme={notebookTheme} lang={lang}>
@@ -2782,7 +2664,7 @@ function LogStoreFilter({ lang, businessesList = businesses, selectedBusiness, s
   return <div ref={filterRef} className="relative"><button onClick={() => setOpen(!open)} className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3 text-xs font-black ring-1 ring-black/[0.05]"><span>{selectedBusiness === "all" ? text(lang, "allStores") : businessName(selectedStore, lang)}</span><ChevronDown className="h-4 w-4 text-[#806528]" /></button><AnimatePresence>{open && <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute start-0 end-0 top-[50px] z-40 rounded-2xl bg-white p-3 shadow-xl ring-1 ring-[#E8E1D4]"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text(lang, "searchStore")} className="mb-2 w-full rounded-xl bg-[#F7F5EF] px-3 py-2.5 text-[11px] font-bold outline-none" /><button onClick={() => { setSelectedBusiness("all"); setOpen(false); setQuery(""); }} className={`mb-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-start text-[11px] font-black ${selectedBusiness === "all" ? "bg-[#FFF4D2]" : ""}`}>{text(lang, "allStores")}{selectedBusiness === "all" && <Check className="h-4 w-4" />}</button><div className="max-h-48 overflow-y-auto">{filtered.map((business) => <button key={business.id} onClick={() => { setSelectedBusiness(business.id); setOpen(false); setQuery(""); }} className={`mb-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-start ${selectedBusiness === business.id ? "bg-[#FFF4D2]" : ""}`}><div><p className="text-[11px] font-black">{businessName(business, lang)}</p><p className="text-[9px] font-bold text-[#827762]">{businessLocation(business, lang)}</p></div>{selectedBusiness === business.id && <Check className="h-4 w-4" />}</button>)}</div></motion.div>}</AnimatePresence></div>;
 }
 
-function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, reviewFocus = null, attachmentReviewRequest = null }) {
+function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], closeoutEvents = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, reviewFocus = null, attachmentReviewRequest = null }) {
   const [period, setPeriod] = useState("day");
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
@@ -2831,6 +2713,14 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
     return entryCategory(entry) === expenseCategoryFilter;
   };
   const visibleEntries = newestEntries(periodEntries.filter((entry) => (statusFilter === "all" || (statusFilter === "active" ? entryIsActive(entry) : entryIsVoided(entry))) && (typeFilter === "all" || entry.type === typeFilter) && matchesExpenseCategory(entry) && (!attachmentOnly || entryHasAttachment(entry)) && (!pendingReviewOnly || (entryIsActive(entry) && entryHasAttachment(entry) && !entry.reviewed))));
+  const scopedCloseoutEvents = closeoutEvents.filter((event) => {
+    if (safeBusinessId !== "all" && event.storeId !== safeBusinessId) return false;
+    if (period === "day") return event.date === selectedDate;
+    if (period === "month") return event.date?.startsWith(selectedMonth);
+    if (period === "year") return event.date?.startsWith(selectedYear);
+    if (period === "custom") return event.date >= customFrom && event.date <= customTo;
+    return true;
+  });
   const selectionTotals = summarizeEntries(visibleEntries);
   const periodScopeLabel = logPeriodScopeLabel(lang, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo);
   const voidedInView = visibleEntries.filter(entryIsVoided).length;
@@ -2917,10 +2807,20 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
       </div>
     </div>
 
-    <p className="mb-1.5 text-[10px] font-bold text-[#827762]">{text(lang, "logResults")} ({visibleEntries.length})</p>
-    {visibleEntries.length === 0 ? (
+    <p className="mb-1.5 text-[10px] font-bold text-[#827762]">{text(lang, "logResults")} ({visibleEntries.length + scopedCloseoutEvents.length})</p>
+    {scopedCloseoutEvents.length > 0 && (
+      <div className="mb-2 overflow-hidden rounded-2xl bg-[#FFF8E8] ring-1 ring-[#E8E1D4]">
+        {scopedCloseoutEvents.map((event, index) => (
+          <div key={event.id} className={`px-3 py-2.5 text-[10px] font-bold text-[#716753] ${index < scopedCloseoutEvents.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}>
+            {closeoutEventMessage(event, lang)}
+          </div>
+        ))}
+      </div>
+    )}
+    {visibleEntries.length === 0 && scopedCloseoutEvents.length === 0 ? (
       <div className="rounded-2xl bg-white px-4 py-6 text-center text-[11px] font-bold text-[#827762] ring-1 ring-black/[0.045]">{text(lang, "noOperationsMatch")}</div>
-    ) : (
+    ) : null}
+    {visibleEntries.length > 0 ? (
       <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.045]">
         {visibleEntries.map((entry, index) => {
           const store = businessesList.find((business) => business.id === entry.businessId);
@@ -2958,7 +2858,7 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
           );
         })}
       </div>
-    )}
+    ) : null}
   </motion.section>;
 }
 
@@ -3045,7 +2945,7 @@ function ReportsScreen({ lang, operationalEntries = [], archivedReadOnlyBusiness
     if (nextTab !== "expenses" && (period === "year" || period === "custom")) setPeriod("month");
   };
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page px-3 pb-6 pt-1 sm:px-8 md:px-12 lg:px-3">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-6 pt-1">
       <Notebook fullPage theme={notebookTheme} lang={lang}>
         {archivedReadOnlyBusiness && <div className="mx-2 mb-2 flex justify-center"><Badge tone="warning">{text(lang, "archivedReadOnly")}</Badge></div>}<NotebookHeading lang={lang} label={text(lang, "reportNotebook")} onShare={() => onShareNotebook({ theme: notebookTheme, period, selectedBusiness: safeSelectedBusiness, includedBusinessIds: activeReportBusinesses.map((business) => business.id), selectedDay: reportDay.id, selectedDate: selectedReportDate, selectedMonth: selectedReportMonth, selectedYear: selectedReportYear, customFrom, customTo, screen: "reports", tab, outflowCategory, reviewEnabled: effectiveReviewEnabled, showSummaryDetails: tab === "summary" && showSummaryDetails, showOutflowTransactions: tab === "expenses" && showOutflowTransactions, reportChannels: configuredChannels })} dateSelector={<DateSelector compact lang={lang} period={period} setPeriod={changeReportPeriod} allowedPeriods={tab === "expenses" ? ["day", "month", "year", "custom"] : ["day", "month"]} selectedDay={selectedReportDay} setSelectedDay={setSelectedReportDay} selectedDate={selectedReportDate} setSelectedDate={setSelectedReportDate} fullCalendar selectedMonth={selectedReportMonth} setSelectedMonth={setSelectedReportMonth} selectedYear={selectedReportYear} setSelectedYear={setSelectedReportYear} customFrom={customFrom} setCustomFrom={setCustomFrom} customTo={customTo} setCustomTo={setCustomTo} />} />
         <StoreScopeTabs lang={lang} businessesList={visibleReportBusinesses} selectedBusiness={safeSelectedBusiness} setSelectedBusiness={(id) => { if (!archivedReadOnlyBusiness) setSelectedBusiness(id); setShowSummaryDetails(false); }} />
@@ -3658,13 +3558,22 @@ function buildInitialStoreOperationalSettings(savedSettings, storeList) {
   const legacy = {
     activeCategories: savedSettings?.activeCategories || expenseCategories.map((item) => item.id),
     reviewEnabled: savedSettings?.reviewEnabled ?? true,
+    closeoutReviewEnabled: savedSettings?.closeoutReviewEnabled ?? false,
     closeoutAlert: savedSettings?.closeoutAlert ?? true,
     attachmentAlert: savedSettings?.attachmentAlert ?? true,
+    notebookTheme: savedSettings?.notebookTheme ?? null,
   };
   return Object.fromEntries(storeList.map((business) => [business.id, { ...legacy, activeCategories: [...legacy.activeCategories] }]));
 }
 function getStoreOperationalConfig(settings, storeId) {
-  return settings[storeId] || { activeCategories: expenseCategories.map((item) => item.id), reviewEnabled: true, closeoutAlert: true, attachmentAlert: true };
+  return settings[storeId] || {
+    activeCategories: expenseCategories.map((item) => item.id),
+    reviewEnabled: true,
+    closeoutReviewEnabled: false,
+    closeoutAlert: true,
+    attachmentAlert: true,
+    notebookTheme: null,
+  };
 }
 function buildInitialStoreChannelSettings(savedSettings, storeList) {
   if (savedSettings?.storeChannelSettings) return savedSettings.storeChannelSettings;
@@ -3711,11 +3620,82 @@ function QuickAddSheet({ lang, employee, open, onClose, onSummary, onExpense }) 
   );
 }
 
+function OwnerHomeConnected(props) {
+  const { pendingSubmittedCloseouts } = useDailyCloseouts();
+  const storeIds = props.businessesList?.map((business) => business.id) || [];
+  const pending = pendingSubmittedCloseouts(storeIds);
+  return (
+    <OwnerHome
+      {...props}
+      pendingEmployeeCloseouts={pending}
+      onViewPendingCloseouts={() => {
+        const first = pending[0];
+        if (first) props.onViewPendingCloseouts?.(first);
+      }}
+    />
+  );
+}
+
+function OwnerRegisterConnected(props) {
+  const { events } = useDailyCloseouts();
+  return <OwnerRegisterScreen {...props} closeoutEvents={events} />;
+}
+
+function formatDateTimeLabel(iso, lang) {
+  if (!iso) return "";
+  const datePart = iso.slice(0, 10);
+  const time = new Date(iso).toLocaleTimeString(lang === "ar" ? "ar-SA" : "en-US", { hour: "2-digit", minute: "2-digit" });
+  return `${formatCalendarDate(datePart, lang)} · ${time}`;
+}
+
+function OwnerCloseoutModals({
+  lang,
+  ownerReviewCloseout,
+  returnCloseoutTarget,
+  ownerDisplayName,
+  reviewWorkflowEnabled,
+  onCloseReview,
+  onRequestReturn,
+}) {
+  const { approveCloseout, returnCloseout } = useDailyCloseouts();
+  return (
+    <>
+      <OwnerCloseoutReviewPanel
+        lang={lang}
+        closeout={ownerReviewCloseout}
+        formatCalendarDate={formatCalendarDate}
+        formatDateTime={formatDateTimeLabel}
+        reviewWorkflowEnabled={reviewWorkflowEnabled}
+        onClose={onCloseReview}
+        onApprove={async () => {
+          if (!ownerReviewCloseout) return;
+          await approveCloseout(ownerReviewCloseout.id, ownerDisplayName);
+          onCloseReview();
+        }}
+        onReturn={() => {
+          if (!ownerReviewCloseout) return;
+          onRequestReturn(ownerReviewCloseout);
+        }}
+      />
+      <ReturnCloseoutModal
+        lang={lang}
+        open={Boolean(returnCloseoutTarget)}
+        closeout={returnCloseoutTarget}
+        onCancel={onCloseReview}
+        onConfirm={(reason) => {
+          if (!returnCloseoutTarget) return;
+          returnCloseout(returnCloseoutTarget.id, ownerDisplayName, reason);
+          onCloseReview();
+        }}
+      />
+    </>
+  );
+}
+
 function BottomNav({ lang, employee, active, onChange, onAdd = () => {} }) {
   const NavButton = ({ item }) => { const Icon = item.icon; return <button onClick={() => onChange(item.id)} className={`flex min-w-[64px] flex-col items-center gap-1 text-[10px] font-bold ${active === item.id ? "text-[#112A46]" : "text-[#A99D87]"}`}><Icon className="h-5 w-5" />{text(lang, item.key)}</button>; };
   if (employee) {
-    const employeeItems = [{ id: "home", key: "home", icon: Home }, { id: "entries", key: "entries", icon: ReceiptText }, { id: "settings", key: "settings", icon: Settings }];
-    return <nav className="taq-owner-nav relative z-30 grid h-[72px] w-full shrink-0 grid-cols-3 items-center border-t border-[#ECE6DA] bg-white/95 px-6 pb-[env(safe-area-inset-bottom,0px)]">{employeeItems.map((item) => <NavButton key={item.id} item={item} />)}</nav>;
+    return <EmployeeFooterNav lang={lang} onAdd={onAdd} />;
   }
   const leftItems = [{ id: "home", key: "home", icon: Home }, { id: "reports", key: "reports", icon: FileText }];
   const rightItems = [{ id: "register", key: "register", icon: ReceiptText }, { id: "settings", key: "settings", icon: Settings }];
@@ -3737,7 +3717,13 @@ export default function TaqfeelahPrototypeRuntime() {
   const [loggedInEmployeeId, setLoggedInEmployeeId] = useState(null);
   const [closeoutAlerts, setCloseoutAlerts] = useState(() => readCloseoutAlerts());
   const [helpOpen, setHelpOpen] = useState(false);
-  const [employeePage, setEmployeePage] = useState("home");
+  const [employeePage, setEmployeePage] = useState("closeouts");
+  const [ownerReviewCloseout, setOwnerReviewCloseout] = useState(null);
+  const [returnCloseoutTarget, setReturnCloseoutTarget] = useState(null);
+  const [employeeThemeOverride, setEmployeeThemeOverride] = useState(null);
+  const employeeAddHandlerRef = useRef(() => {});
+  const employeeSettingsOpenerRef = useRef(() => {});
+  const [employeeEntryActive, setEmployeeEntryActive] = useState(false);
   const [ownerPage, setOwnerPage] = useState("home");
   const [selected, setSelected] = useState(null);
   const [voidTarget, setVoidTarget] = useState(null);
@@ -3768,16 +3754,7 @@ export default function TaqfeelahPrototypeRuntime() {
   const currentOwnerActor = { ...ownerActor, nameAr: ownerProfile.name, nameEn: ownerProfile.name };
   const [storeChannelSettings, setStoreChannelSettings] = useState(() => buildInitialStoreChannelSettings(initialSettings, initialBusinesses));
   const [storeOperationalSettings, setStoreOperationalSettings] = useState(() => buildInitialStoreOperationalSettings(initialSettings, initialBusinesses));
-  const [lastCloseoutDates, setLastCloseoutDates] = useState(() => {
-    if (typeof window === "undefined") return readDemoLastCloseoutDates();
-    try {
-      const savedDates = JSON.parse(window.localStorage.getItem(LAST_CLOSEOUT_STORAGE_KEY) || "null");
-      if (savedDates && typeof savedDates === "object" && Object.keys(savedDates).length > 0) return savedDates;
-      const demoDates = readDemoLastCloseoutDates();
-      window.localStorage.setItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(demoDates));
-      return demoDates;
-    } catch { return readDemoLastCloseoutDates(); }
-  });
+  const [lastCloseoutDates, setLastCloseoutDates] = useState(() => readDemoLastCloseoutDates());
   const [employeeBusinessId, setEmployeeBusinessId] = useState("shami");
   const activeBusinesses = configuredBusinesses.filter((business) => !archivedBusinessIds.includes(business.id));
   const reportingBusinesses = configuredBusinesses;
@@ -3795,6 +3772,13 @@ export default function TaqfeelahPrototypeRuntime() {
   const reportSettingsStoreId = archivedReadOnlyBusinessId || activeOwnerStoreId;
   const reportChannelConfig = getStoreChannelConfig(storeChannelSettings, reportSettingsStoreId);
   const reviewEnabledForBusiness = (businessId) => getStoreOperationalConfig(storeOperationalSettings, businessId).reviewEnabled;
+  const closeoutReviewEnabledForBusiness = (businessId) => Boolean(getStoreOperationalConfig(storeOperationalSettings, businessId).closeoutReviewEnabled);
+  const employeeNotebookTheme = resolveNotebookTheme({
+    storeOperationalSettings,
+    storeId: currentEmployeeBusiness?.id,
+    globalTheme: notebookTheme,
+    employeeThemeOverride: employeeThemeOverride || (activeEmployee ? readEmployeeNotebookTheme(activeEmployee.id) : null),
+  });
   const attachmentAlertEnabledForBusiness = (businessId) => { const config = getStoreOperationalConfig(storeOperationalSettings, businessId); return config.reviewEnabled && config.attachmentAlert; };
   const closeoutAlertEnabledForBusiness = (businessId) => getStoreOperationalConfig(storeOperationalSettings, businessId).closeoutAlert;
   const ownerReviewEnabled = activeViewBusiness === "all" ? activeBusinesses.some((business) => reviewEnabledForBusiness(business.id)) : reviewEnabledForBusiness(activeOwnerStoreId);
@@ -3979,9 +3963,44 @@ export default function TaqfeelahPrototypeRuntime() {
     setEmployee(true);
     setLoggedInEmployeeId(person.id);
     setEmployeeBusinessId(person.storeIds?.[0] || "shami");
-    setEmployeePage("home");
+    setEmployeeThemeOverride(readEmployeeNotebookTheme(person.id));
+    setEmployeePage("closeouts");
     setAuthScreen("owner");
   };
+  const syncCloseoutToOperationalEntries = useCallback(async (closeout) => {
+    if (!closeout || closeout.syncedToEntries) return;
+    const actor = {
+      role: "employee",
+      userId: closeout.submittedByUserId || closeout.openedByUserId,
+      nameAr: closeout.submittedByName || closeout.openedByName,
+      nameEn: closeout.submittedByName || closeout.openedByName,
+    };
+    const { entries } = buildOperationalEntriesFromCloseout(closeout, actor);
+    const created = [];
+    for (const item of entries) {
+      const entry = buildEntry(item.payload, actor);
+      if (item.payload.attachment || item.attachment) {
+        const attachmentPayload = item.payload.attachment || item.attachment;
+        try {
+          await storeAttachmentPayload(attachmentPayload);
+          entry.attachment = makeAttachment(entry.id, attachmentPayload);
+        } catch {
+          window.alert(text(lang, "attachmentSaveFailed"));
+        }
+      }
+      created.push(entry);
+    }
+    if (created.length) {
+      setOperationalEntries((current) => [...created, ...current]);
+      const summaryEntry = created.find((entry) => entry.type === "summary");
+      if (summaryEntry) {
+        setLastCloseoutDates((current) => ({
+          ...current,
+          [summaryEntry.businessId]: !current[summaryEntry.businessId] || summaryEntry.date > current[summaryEntry.businessId] ? summaryEntry.date : current[summaryEntry.businessId],
+        }));
+      }
+    }
+  }, [lang]);
   const reviewCloseoutAlert = (alert) => {
     if (!alert?.businessId || !alert?.date) return;
     setArchivedReadOnlyBusinessId(null);
@@ -3998,8 +4017,10 @@ export default function TaqfeelahPrototypeRuntime() {
     setEmployee(false);
     setLoggedInEmployeeId(null);
     setAuthScreen("owner");
-    setEmployeePage("home");
+    setEmployeePage("closeouts");
     setOwnerPage("home");
+    setOwnerReviewCloseout(null);
+    setReturnCloseoutTarget(null);
     setSelected(null);
     setVoidTarget(null);
     setRestoreTarget(null);
@@ -4012,6 +4033,8 @@ export default function TaqfeelahPrototypeRuntime() {
     setArchivedReadOnlyBusinessId(null);
     setSelectedBusiness("all");
   };
+  const ownerDisplayName = ownerProfile?.name || (lang === "ar" ? "المالك" : "Owner");
+
   if (!loggedIn) {
     return (
       <div dir={lang === "ar" ? "rtl" : "ltr"} className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
@@ -4025,19 +4048,40 @@ export default function TaqfeelahPrototypeRuntime() {
     );
   }
   return (
+    <DailyCloseoutsProvider lang={lang} ownerName={ownerDisplayName} onSyncToOperationalEntries={syncCloseoutToOperationalEntries}>
     <div dir={lang === "ar" ? "rtl" : "ltr"} className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
       <AppFontStyles />
       <main className="taq-shell relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#F8F6F0]">
-        <div className="taq-screen relative grid h-[100dvh] max-h-[100dvh] grid-rows-[auto_1fr_auto] overflow-hidden bg-[#F8F6F0] pt-5">
-          <TopBar lang={lang} setLang={setLang} employee={employee} notebookMode={!employee && (ownerPage === "home" || ownerPage === "reports")} onLogout={logout} onNotifications={() => { setArchivedReadOnlyBusinessId(null); if (duplicateSalesAlerts.length > 0) { setAttachmentReviewRequest(null); reviewDuplicateSales(duplicateSalesAlerts[0]); } else if (firstPendingAttachmentReview) { setDuplicateReviewFocus(null); setAttachmentReviewRequest({ businessId: firstPendingAttachmentReview.businessId, date: firstPendingAttachmentReview.date, entryId: firstPendingAttachmentReview.id, openedAt: Date.now() }); setOwnerPage("register"); } else if (unseenCloseoutAlerts[0]) { reviewCloseoutAlert(unseenCloseoutAlerts[0]); } }} reviewEnabled={ownerHasPendingReview || duplicateSalesAlerts.length > 0 || unseenCloseoutAlerts.length > 0}
+        <div className="taq-screen relative grid h-[100dvh] max-h-[100dvh] grid-rows-[auto_1fr_auto] overflow-hidden bg-[#F8F6F0]">
+          <TopBar
+            lang={lang}
+            setLang={setLang}
+            employee={employee}
+            employeeName={employee && activeEmployee ? (lang === "ar" ? activeEmployee.nameAr : activeEmployee.nameEn) : ""}
+            notebookMode={employee || (!employee && (ownerPage === "home" || ownerPage === "reports"))}
+            notebookTheme={employee ? employeeNotebookTheme : notebookTheme}
+            onLogout={logout}
+            onEmployeeSettings={() => employeeSettingsOpenerRef.current?.()}
+            onNotifications={() => { setArchivedReadOnlyBusinessId(null); if (duplicateSalesAlerts.length > 0) { setAttachmentReviewRequest(null); reviewDuplicateSales(duplicateSalesAlerts[0]); } else if (firstPendingAttachmentReview) { setDuplicateReviewFocus(null); setAttachmentReviewRequest({ businessId: firstPendingAttachmentReview.businessId, date: firstPendingAttachmentReview.date, entryId: firstPendingAttachmentReview.id, openedAt: Date.now() }); setOwnerPage("register"); } else if (unseenCloseoutAlerts[0]) { reviewCloseoutAlert(unseenCloseoutAlerts[0]); } }}
+            reviewEnabled={ownerHasPendingReview || duplicateSalesAlerts.length > 0 || unseenCloseoutAlerts.length > 0}
           />
-          <div className="taq-scroll relative min-h-0 overflow-y-auto overscroll-y-contain">{employee && !activeEmployee && <section className="px-5 pb-24"><div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">{text(lang, "noActiveEmployee")}</div></section>}{employee && activeEmployee && employeePage === "home" && <EmployeeHome lang={lang} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} activeEmployeeId={activeEmployee?.id} operationalEntries={operationalEntries} onSummary={() => setEmployeePage("summary")} onExpense={() => setEmployeePage("expense")} onViewAll={() => setEmployeePage("entries")} />}{employee && activeEmployee && employeePage === "summary" && <SummaryScreen lang={lang} saving={saving} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} salesChannels={currentEmployeeChannelConfig.channels.filter((channel) => currentEmployeeChannelConfig.activeIds.includes(channel.id) && !channel.retired)} suggestedDate={suggestedEntryDate} showDateSuggestion={hasPreviousCloseout} onBack={() => setEmployeePage("home")} onSave={saveEmployee} />}{employee && activeEmployee && employeePage === "entries" && <EmployeeEntriesScreen lang={lang} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} activeEmployeeId={activeEmployee?.id} reviewEnabled={currentEmployeeOperationalConfig.reviewEnabled} operationalEntries={operationalEntries} />}{employee && activeEmployee && employeePage === "expense" && <ExpenseScreen lang={lang} saving={saving} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} activeCategories={currentEmployeeCategories} initialDate={todayDate} onBack={() => setEmployeePage("home")} onSave={saveEmployee} />}{employee && activeEmployee && employeePage === "settings" && <EmployeeSettingsScreen lang={lang} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} employeeName={lang === "ar" ? activeEmployee.nameAr : activeEmployee.nameEn} onLogout={logout} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />}{!employee && ownerPage === "home" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><OwnerHome lang={lang} operationalEntries={operationalEntries} duplicateSalesAlerts={duplicateSalesAlerts} closeoutAlerts={unseenCloseoutAlerts} onReviewCloseout={reviewCloseoutAlert} onDismissCloseout={dismissCloseoutAlert} onReviewDuplicate={reviewDuplicateSales} onAcknowledgeDuplicate={acknowledgeDuplicateSales} reviewEnabledForBusiness={reviewEnabledForBusiness} onOpenOperation={setSelected} onAddExpense={() => setOwnerPage("add-expense")} onAddSummary={() => setOwnerPage("add-summary")} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} selectedBusiness={activeViewBusiness} setSelectedBusiness={setSelectedBusiness} reviewEnabled={ownerReviewEnabled} businessesList={activeBusinesses} /></NotebookScrollSurface>}{!employee && ownerPage === "add-summary" && <OwnerSummaryScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeChannelSettings={storeChannelSettings} onBack={() => setOwnerPage("home")} onSave={saveOwnerSummary} />}{!employee && ownerPage === "add-expense" && <OwnerExpenseScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeOperationalSettings={storeOperationalSettings} onBack={() => setOwnerPage("home")} onSave={saveOwner} />}{!employee && ownerPage === "reports" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><ReportsScreen lang={lang} operationalEntries={operationalEntries} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} reviewEnabledForBusiness={reviewEnabledForBusiness} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} configuredChannels={reportChannelConfig.channels} reviewEnabled={ownerReviewEnabled} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} /></NotebookScrollSurface>}{!employee && ownerPage === "register" && <OwnerRegisterScreen lang={lang} onOpenOperation={setSelected} reviewFocus={duplicateReviewFocus} attachmentReviewRequest={attachmentReviewRequest} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} />}{!employee && ownerPage === "settings" && <OwnerSettingsScreen lang={lang} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} setOwnerPage={setOwnerPage} setArchivedReadOnlyBusinessId={setArchivedReadOnlyBusinessId} setLastCloseoutDates={setLastCloseoutDates} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} storeChannelSettings={storeChannelSettings} setStoreChannelSettings={setStoreChannelSettings} storeOperationalSettings={storeOperationalSettings} setStoreOperationalSettings={setStoreOperationalSettings} configuredBusinesses={configuredBusinesses} setConfiguredBusinesses={setConfiguredBusinesses} archivedBusinessIds={archivedBusinessIds} setArchivedBusinessIds={setArchivedBusinessIds} staff={staff} setStaff={setStaff} ownerProfile={ownerProfile} setOwnerProfile={setOwnerProfile} onLogout={logout} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />}{saved && <div className="sticky bottom-4 left-4 right-4 z-30 mx-auto max-w-md rounded-2xl bg-[#112A46] p-4 text-xs font-bold text-white">{text(lang, "savedNotice")}</div>}
+          <div className="taq-scroll relative min-h-0 overflow-y-auto overscroll-y-contain">{employee && !activeEmployee && <section className="px-5 pb-24"><div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">{text(lang, "noActiveEmployee")}</div></section>}{employee && activeEmployee && employeePage === "closeouts" && <EmployeeCloseoutsView lang={lang} employee={activeEmployee} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} salesChannels={currentEmployeeChannelConfig.channels.filter((channel) => currentEmployeeChannelConfig.activeIds.includes(channel.id) && !channel.retired).map((channel) => ({ ...channel, displayName: channelName(channel, lang) }))} notebookTheme={employeeNotebookTheme} reviewWorkflowEnabled={closeoutReviewEnabledForBusiness(currentEmployeeBusiness?.id)} formatCalendarDate={formatCalendarDate} channelLabel={(channel) => channel.displayName || channelName(channel, lang)} settingsPanel={({ onBack }) => <EmployeeSettingsScreen lang={lang} onBack={onBack} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} employeeNotebookTheme={employeeThemeOverride || readEmployeeNotebookTheme(activeEmployee.id) || employeeNotebookTheme} setEmployeeNotebookTheme={(theme) => { writeEmployeeNotebookTheme(activeEmployee.id, theme); setEmployeeThemeOverride(theme); }} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />} onEntryActiveChange={setEmployeeEntryActive} onRegisterAdd={(handler) => { employeeAddHandlerRef.current = handler || (() => {}); }} onRegisterSettingsOpener={(handler) => { employeeSettingsOpenerRef.current = handler || (() => {}); }} saving={saving} />}{!employee && ownerPage === "home" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><OwnerHomeConnected lang={lang} operationalEntries={operationalEntries} duplicateSalesAlerts={duplicateSalesAlerts} closeoutAlerts={unseenCloseoutAlerts} onViewPendingCloseouts={(closeout) => { setOwnerReviewCloseout(closeout); setSelectedBusiness(closeout.storeId); }} onReviewCloseout={reviewCloseoutAlert} onDismissCloseout={dismissCloseoutAlert} onReviewDuplicate={reviewDuplicateSales} onAcknowledgeDuplicate={acknowledgeDuplicateSales} reviewEnabledForBusiness={reviewEnabledForBusiness} onOpenOperation={setSelected} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} selectedBusiness={activeViewBusiness} setSelectedBusiness={setSelectedBusiness} reviewEnabled={ownerReviewEnabled} businessesList={activeBusinesses} /></NotebookScrollSurface>}{!employee && ownerPage === "add-summary" && <OwnerSummaryScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeChannelSettings={storeChannelSettings} onBack={() => setOwnerPage("home")} onSave={saveOwnerSummary} />}{!employee && ownerPage === "add-expense" && <OwnerExpenseScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeOperationalSettings={storeOperationalSettings} onBack={() => setOwnerPage("home")} onSave={saveOwner} />}{!employee && ownerPage === "reports" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><ReportsScreen lang={lang} operationalEntries={operationalEntries} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} reviewEnabledForBusiness={reviewEnabledForBusiness} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} configuredChannels={reportChannelConfig.channels} reviewEnabled={ownerReviewEnabled} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} /></NotebookScrollSurface>}{!employee && ownerPage === "register" && <OwnerRegisterConnected lang={lang} onOpenOperation={setSelected} reviewFocus={duplicateReviewFocus} attachmentReviewRequest={attachmentReviewRequest} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} />}{!employee && ownerPage === "settings" && <OwnerSettingsScreen lang={lang} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} setOwnerPage={setOwnerPage} setArchivedReadOnlyBusinessId={setArchivedReadOnlyBusinessId} setLastCloseoutDates={setLastCloseoutDates} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} storeChannelSettings={storeChannelSettings} setStoreChannelSettings={setStoreChannelSettings} storeOperationalSettings={storeOperationalSettings} setStoreOperationalSettings={setStoreOperationalSettings} configuredBusinesses={configuredBusinesses} setConfiguredBusinesses={setConfiguredBusinesses} archivedBusinessIds={archivedBusinessIds} setArchivedBusinessIds={setArchivedBusinessIds} staff={staff} setStaff={setStaff} ownerProfile={ownerProfile} setOwnerProfile={setOwnerProfile} onLogout={logout} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />}{saved && <div className="sticky bottom-4 left-4 right-4 z-30 mx-auto max-w-md rounded-2xl bg-[#112A46] p-4 text-xs font-bold text-white">{text(lang, "savedNotice")}</div>}
           </div>
-          <BottomNav lang={lang} employee={employee} active={employee ? employeePage : ownerPage} onAdd={() => setQuickAddOpen(true)} onChange={(page) => { setQuickAddOpen(false); if (employee) setEmployeePage(page); else { setArchivedReadOnlyBusinessId(null); setDuplicateReviewFocus(null); setAttachmentReviewRequest(null); setSelectedBusiness("all"); setOwnerPage(page); } }} />{!employee && <QuickAddSheet lang={lang} employee={false} open={quickAddOpen} onClose={() => setQuickAddOpen(false)} onSummary={() => { setQuickAddOpen(false); setOwnerPage("add-summary"); }} onExpense={() => { setQuickAddOpen(false); setOwnerPage("add-expense"); }} />}<OperationModal lang={lang} item={selected} onClose={() => setSelected(null)} onReview={confirmReview} onVoid={requestVoidOperation} onRestore={requestRestoreOperation} reviewEnabled={selectedOperationReviewEnabled} canVoid={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} canRestore={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} /><DuplicateSalesDialog lang={lang} draft={pendingDuplicateSummary?.payload || null} previousEntries={pendingDuplicateSummary?.previousEntries || []} businessesList={activeBusinesses} onCancel={() => setPendingDuplicateSummary(null)} onConfirm={confirmDuplicateSummary} /><VoidOperationDialog lang={lang} item={voidTarget} onCancel={() => setVoidTarget(null)} onConfirm={confirmVoidOperation} /><RestoreOperationDialog lang={lang} item={restoreTarget} onCancel={() => setRestoreTarget(null)} onConfirm={confirmRestoreOperation} /><SavedOutflowShareDialog lang={lang} item={savedOutflowShareTarget} businessesList={activeBusinesses} onClose={() => setSavedOutflowShareTarget(null)} /><NotebookShareModal lang={lang} snapshot={shareSnapshot} onClose={() => setShareSnapshot(null)} businessesList={reportingBusinesses} operationalEntries={operationalEntries} archivedBusinessIds={archivedBusinessIds} />
+          {!(employee && employeeEntryActive) && <BottomNav lang={lang} employee={employee} active={employee ? employeePage : ownerPage} onAdd={() => { if (employee) employeeAddHandlerRef.current?.(); else setQuickAddOpen(true); }} onChange={(page) => { setQuickAddOpen(false); if (employee) { if (page === "home") setEmployeePage("closeouts"); else setEmployeePage(page); } else { setArchivedReadOnlyBusinessId(null); setDuplicateReviewFocus(null); setAttachmentReviewRequest(null); setSelectedBusiness("all"); setOwnerPage(page); } }} />}{!employee && <QuickAddSheet lang={lang} employee={false} open={quickAddOpen} onClose={() => setQuickAddOpen(false)} onSummary={() => { setQuickAddOpen(false); setOwnerPage("add-summary"); }} onExpense={() => { setQuickAddOpen(false); setOwnerPage("add-expense"); }} />}<OperationModal lang={lang} item={selected} onClose={() => setSelected(null)} onReview={confirmReview} onVoid={requestVoidOperation} onRestore={requestRestoreOperation} reviewEnabled={selectedOperationReviewEnabled} canVoid={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} canRestore={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} /><DuplicateSalesDialog lang={lang} draft={pendingDuplicateSummary?.payload || null} previousEntries={pendingDuplicateSummary?.previousEntries || []} businessesList={activeBusinesses} onCancel={() => setPendingDuplicateSummary(null)} onConfirm={confirmDuplicateSummary} /><VoidOperationDialog lang={lang} item={voidTarget} onCancel={() => setVoidTarget(null)} onConfirm={confirmVoidOperation} /><RestoreOperationDialog lang={lang} item={restoreTarget} onCancel={() => setRestoreTarget(null)} onConfirm={confirmRestoreOperation} /><SavedOutflowShareDialog lang={lang} item={savedOutflowShareTarget} businessesList={activeBusinesses} onClose={() => setSavedOutflowShareTarget(null)} /><NotebookShareModal lang={lang} snapshot={shareSnapshot} onClose={() => setShareSnapshot(null)} businessesList={reportingBusinesses} operationalEntries={operationalEntries} archivedBusinessIds={archivedBusinessIds} />
+          <OwnerCloseoutModals
+            lang={lang}
+            ownerReviewCloseout={ownerReviewCloseout}
+            returnCloseoutTarget={returnCloseoutTarget}
+            ownerDisplayName={ownerDisplayName}
+            reviewWorkflowEnabled={ownerReviewCloseout ? closeoutReviewEnabledForBusiness(ownerReviewCloseout.storeId) : false}
+            onCloseReview={() => { setOwnerReviewCloseout(null); setReturnCloseoutTarget(null); }}
+            onRequestReturn={(closeout) => { setReturnCloseoutTarget(closeout); setOwnerReviewCloseout(null); }}
+          />
           <HelpCenterSheet lang={lang} open={helpOpen} onClose={() => setHelpOpen(false)} />
         </div>
       </main>
     </div>
+    </DailyCloseoutsProvider>
   );
 }
 
