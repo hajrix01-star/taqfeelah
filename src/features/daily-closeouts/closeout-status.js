@@ -5,7 +5,7 @@ export const CLOSEOUT_STATUS = {
   RETURNED: "returned",
 };
 
-export function closeoutStatusLabel(status, lang = "ar", { reviewWorkflowEnabled = true, autoRecorded = false } = {}) {
+export function closeoutStatusLabel(status, lang = "ar", { reviewWorkflowEnabled = false, autoRecorded = false } = {}) {
   const ar = {
     draft: "مسودة (غير مرسلة)",
     submitted: "بانتظار المراجعة",
