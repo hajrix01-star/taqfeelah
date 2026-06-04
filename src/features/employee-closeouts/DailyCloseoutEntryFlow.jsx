@@ -112,6 +112,7 @@ export default function DailyCloseoutEntryFlow({
       ...initialCloseout,
       date,
       storeName,
+      notebookTheme: initialCloseout?.notebookTheme || notebookTheme || "yellow",
       sales: salesRecord,
       outflows,
       attachments,
@@ -165,15 +166,6 @@ export default function DailyCloseoutEntryFlow({
       window.alert(lang === "ar" ? "لا يمكن اختيار تاريخ مستقبلي" : "Future dates are not allowed");
       return false;
     }
-    const existing = findForStoreDate?.(date);
-    if (existing && existing.id !== initialCloseout?.id) {
-      if (existing.status === "draft" || existing.status === "returned") {
-        window.alert(lang === "ar" ? "توجد تقفيلة لهذا اليوم — افتحها من القائمة." : "Closeout exists — open it from the list.");
-        return false;
-      }
-      window.alert(lang === "ar" ? "توجد تقفيلة لهذا اليوم بالفعل." : "A closeout already exists for this day.");
-      return false;
-    }
     return true;
   };
 
@@ -224,17 +216,17 @@ export default function DailyCloseoutEntryFlow({
                   onChange={(event) => setDate(event.target.value)}
                   className="w-full rounded-2xl bg-white px-4 py-3 text-center text-sm font-bold ring-1 ring-black/[0.06]"
                 />
-                <p className="text-center text-[11px] font-bold text-[#827762]">{storeName}</p>
+                <p className="text-center text-taq-meta font-bold text-[#827762]">{storeName}</p>
               </EntrySection>
             )}
             {phase === "form" && (
               <>
                 <div className="mb-4 flex items-center justify-between rounded-2xl border border-[#E8E1D4] bg-[rgba(255,253,248,0.9)] px-4 py-3">
                   <div>
-                    <p className="text-[10px] font-bold text-[#827762]">{lang === "ar" ? "تاريخ التقفيلة" : "Closeout date"}</p>
+                    <p className="text-taq-meta font-bold text-[#827762]">{lang === "ar" ? "تاريخ التقفيلة" : "Closeout date"}</p>
                     <p className="text-sm font-black tabular-nums text-[#112A46]">{date}</p>
                   </div>
-                  <button type="button" onClick={() => setPhase("date")} className="rounded-xl bg-white px-3 py-2 text-[10px] font-black ring-1 ring-black/[0.06]">
+                  <button type="button" onClick={() => setPhase("date")} className="rounded-xl bg-white px-3 py-2 text-taq-meta font-black ring-1 ring-black/[0.06]">
                     {lang === "ar" ? "تغيير" : "Change"}
                   </button>
                 </div>
@@ -245,7 +237,7 @@ export default function DailyCloseoutEntryFlow({
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                       {salesChannels.map((channel) => (
                         <label key={channel.id} className="flex flex-col items-center rounded-2xl bg-white px-2 py-3 text-center ring-1 ring-black/[0.05]">
-                          <span className="mb-2 block w-full text-[10px] font-bold text-[#827762]">{labelChannel(channel)}</span>
+                          <span className="mb-2 block w-full text-taq-meta font-bold text-[#827762]">{labelChannel(channel)}</span>
                           <input
                             inputMode="decimal"
                             dir="ltr"
@@ -270,7 +262,7 @@ export default function DailyCloseoutEntryFlow({
                         key={item.id}
                         type="button"
                         onClick={() => setOutType(item.id)}
-                        className={`rounded-full px-3 py-2 text-[11px] font-black ${outType === item.id ? "bg-[#112A46] text-white" : "bg-white text-[#716753] ring-1 ring-[#E8E1D4]"}`}
+                        className={`rounded-full px-3 py-2 text-taq-meta font-black ${outType === item.id ? "bg-[#112A46] text-white" : "bg-white text-[#716753] ring-1 ring-[#E8E1D4]"}`}
                       >
                         {lang === "ar" ? item.ar : item.en}
                       </button>
@@ -283,7 +275,7 @@ export default function DailyCloseoutEntryFlow({
                           key={item.id}
                           type="button"
                           onClick={() => setExpenseCategory(item.id)}
-                          className={`rounded-full px-2.5 py-1.5 text-[10px] font-black ${expenseCategory === item.id ? "bg-[#E4B84A] text-[#112A46]" : "bg-white ring-1 ring-[#E8E1D4]"}`}
+                          className={`rounded-full px-2.5 py-1.5 text-taq-meta font-black ${expenseCategory === item.id ? "bg-[#E4B84A] text-[#112A46]" : "bg-white ring-1 ring-[#E8E1D4]"}`}
                         >
                           {lang === "ar" ? item.ar : item.en}
                         </button>
@@ -337,7 +329,7 @@ export default function DailyCloseoutEntryFlow({
                       <div key={`thumb-${index}`} className="relative">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={src} alt="" className="h-16 w-16 rounded-xl object-cover" />
-                        <button type="button" onClick={() => setAttachments((current) => current.filter((_, i) => i !== index))} className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#B44747] text-[10px] text-white">×</button>
+                        <button type="button" onClick={() => setAttachments((current) => current.filter((_, i) => i !== index))} className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#B44747] text-taq-meta text-white">×</button>
                       </div>
                     ))}
                   </div>

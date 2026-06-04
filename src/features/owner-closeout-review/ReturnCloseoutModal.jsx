@@ -28,7 +28,7 @@ export default function ReturnCloseoutModal({ lang, open, closeout, onCancel, on
                 key={item.ar}
                 type="button"
                 onClick={() => setReason(lang === "ar" ? item.ar : item.en)}
-                className={`rounded-full px-3 py-1.5 text-[10px] font-black ${reason === (lang === "ar" ? item.ar : item.en) ? "bg-[#112A46] text-white" : "bg-white ring-1 ring-[#E8E1D4]"}`}
+                className={`rounded-full px-3 py-1.5 text-taq-meta font-black ${reason === (lang === "ar" ? item.ar : item.en) ? "bg-[#112A46] text-white" : "bg-white ring-1 ring-[#E8E1D4]"}`}
               >
                 {lang === "ar" ? item.ar : item.en}
               </button>

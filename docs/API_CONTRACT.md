@@ -214,6 +214,45 @@ Links to `entry_id` after entry created.
 
 ---
 
+## SaaS Admin API (final phase — planned)
+
+> Separate API surface for `/saas-admin` (desktop-first console).
+
+### `GET /saas-admin/kpis/overview`
+
+Query: `from=YYYY-MM-DD`, `to=YYYY-MM-DD`  
+Returns: `newOrganizations`, `activeOrganizations`, `churnedOrganizations`, `MRR`, `ARR`, `collections`, `failedPayments`.
+
+### `GET /saas-admin/kpis/usage`
+
+Query: `from`, `to`, optional `organizationId`  
+Returns: `DAU`, `WAU`, `MAU`, activation ratio, dormant organizations.
+
+### `GET /saas-admin/organizations`
+
+Query: pagination + filters (`status`, `plan`, `risk`, `lastActiveBefore`)  
+Returns tenant health rows: subscription state, recent usage, payment risk flags.
+
+### `GET /saas-admin/organizations/:organizationId`
+
+Returns detailed tenant profile: plan, invoices summary, payment events, usage trends, operational totals.
+
+### `PATCH /saas-admin/organizations/:organizationId/subscription`
+
+Body: `planCode`, `status`, `cancelAtPeriodEnd`  
+Used by privileged roles only; writes `audit_events`.
+
+### `GET /saas-admin/investor-report`
+
+Query: `period=month|quarter|year`, `from`, `to`  
+Returns investor-oriented aggregates and trends for export workflows.
+
+### `GET /saas-admin/exports/investor.csv`
+
+CSV export endpoint for KPI and cohort slices (phase-final operational requirement).
+
+---
+
 ## Prototype mapping
 
 | Prototype concept | API |

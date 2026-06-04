@@ -381,6 +381,9 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
         safe_print("STDERR:")
         safe_print(err.strip())
 
+    print_section("Ensure SSL remains active after deploy")
+    cmd_enable_ssl(vps, domain, www_domain)
+
 
 def cmd_repair_docker(vps: VPS) -> None:
     repair_cmd = textwrap.dedent(

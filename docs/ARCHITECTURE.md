@@ -111,8 +111,16 @@ Prototype stays at `src/components/TaqfeelahPrototypeRuntime.jsx` until `/app` p
 | `/prototype-runtime` | Now | Frozen UI baseline reference |
 | `/app` | Backend phase | Production operational app (visual parity) |
 | `/` | Later | Marketing + plans + “Enter app” CTA |
+| `/saas-admin` | Final phase | SaaS management console (desktop-first) |
 
 Current checkpoint: **no landing page** — direct prototype runtime.
+
+### SaaS admin route (final phase)
+
+- `/saas-admin` is **separate** from the operational app UI.
+- Target audience: owner/super-admin operators and investors (authorized roles only).
+- UX policy: **desktop-first** (>= 1280px primary), tablet/mobile as limited responsive fallback.
+- Purpose: subscription operations, investor KPIs, tenant health, and growth analytics.
 
 ---
 
@@ -170,12 +178,33 @@ Calculations live only in `domain/cash-movement` (see `docs/CONVENTIONS.md` §4)
 
 ---
 
-## 11. Implementation order (after owner approval)
+## 11. SaaS analytics and investor reporting (final phase)
+
+### KPI scope
+
+- Tenant lifecycle: `newOrganizations`, `activeOrganizations`, `suspendedOrganizations`, `churnedOrganizations`.
+- Revenue: `MRR`, `ARR`, `collections`, `failedPayments`, `refunds` (provider-dependent).
+- Product usage: `DAU`, `WAU`, `MAU` (organization + user levels).
+- Engagement/retention: cohorts, activation funnel, dormant organizations.
+- Operational value: aggregate daily `inside/outside/net` at organization/store portfolio level.
+
+### UI scope — desktop-first console
+
+- SaaS overview dashboard (time range + KPI cards + trend charts).
+- Subscription and plan management workspace.
+- Organization health table (usage, status, risk flags, last activity).
+- Investor-ready exports (CSV first, PDF optional later).
+- Strict role gating and audit logging for admin actions.
+
+---
+
+## 12. Implementation order (after owner approval)
 
 1. Drizzle + PostgreSQL + first migration (schema in `DATABASE_SCHEMA.md`).
 2. `domain/cash-movement` + unit tests.
 3. Session/auth skeleton (no production credentials in repo).
 4. Entry APIs + audit.
 5. `/app` screens one-by-one matching prototype.
+6. Final phase: `/saas-admin` (desktop-first) + SaaS analytics + investor reporting.
 
 Stop after documentation + checkpoint until owner approves schema work.

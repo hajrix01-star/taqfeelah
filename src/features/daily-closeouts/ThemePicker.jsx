@@ -23,7 +23,7 @@ export default function ThemePicker({ lang = "ar", theme, onChange }) {
             >
               {active && <Check className="absolute inset-0 m-auto h-4 w-4 text-[#112A46]" strokeWidth={3} />}
             </span>
-            <span className={`max-w-[50px] text-center text-[9px] font-bold leading-3 ${active ? "text-[#112A46]" : "text-[#827762]"}`}>{labels[id]}</span>
+            <span className={`max-w-[50px] text-center text-taq-nav font-bold leading-3 ${active ? "text-[#112A46]" : "text-[#827762]"}`}>{labels[id]}</span>
           </button>
         );
       })}

@@ -7,8 +7,13 @@ import DailyCloseoutCard from "./DailyCloseoutCard";
 import DailyCloseoutEntryFlow from "./DailyCloseoutEntryFlow";
 import CloseoutShareModal from "./CloseoutShareModal";
 import { useDailyCloseouts } from "../daily-closeouts/DailyCloseoutsProvider";
-import { createDraftCloseout } from "../daily-closeouts/daily-closeouts-demo-store";
+import { createDraftCloseout, sortCloseoutsNewestFirst } from "../daily-closeouts/daily-closeouts-demo-store";
 import { CLOSEOUT_STATUS } from "../daily-closeouts/closeout-status";
+import {
+  closeoutBelongsToEmployee,
+  employeeHistoryVisibilityLabel,
+  isCloseoutWithinEmployeeHistory,
+} from "./employee-closeout-history";
 
 export default function EmployeeCloseoutsView({
   lang,
@@ -19,6 +24,7 @@ export default function EmployeeCloseoutsView({
   salesChannels,
   notebookTheme,
   reviewWorkflowEnabled,
+  employeeHistoryVisibility = "all",
   formatCalendarDate,
   channelLabel,
   settingsPanel,
@@ -44,10 +50,43 @@ export default function EmployeeCloseoutsView({
   const [shareNewlySubmitted, setShareNewlySubmitted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  const storeCloseouts = useMemo(
-    () => closeouts.filter((item) => item.storeId === currentStore?.id && item.openedByUserId === employee.id),
-    [closeouts, currentStore?.id, employee.id],
+  const myStoreCloseouts = useMemo(
+    () => closeouts.filter((item) => item.storeId === currentStore?.id && closeoutBelongsToEmployee(item, employee)),
+    [closeouts, currentStore?.id, employee],
   );
+
+  const storeCloseouts = useMemo(
+    () => sortCloseoutsNewestFirst(myStoreCloseouts.filter((item) => isCloseoutWithinEmployeeHistory(item, employeeHistoryVisibility))),
+    [myStoreCloseouts, employeeHistoryVisibility],
+  );
+
+  const hiddenCloseoutCount = useMemo(
+    () => myStoreCloseouts.filter((item) => !isCloseoutWithinEmployeeHistory(item, employeeHistoryVisibility)).length,
+    [myStoreCloseouts, employeeHistoryVisibility],
+  );
+
+  const hasOlderHiddenCloseouts = hiddenCloseoutCount > 0;
+  const historyScopeLabel = employeeHistoryVisibilityLabel(employeeHistoryVisibility, lang);
+
+  const dailySequenceById = useMemo(() => {
+    const byDate = new Map();
+    myStoreCloseouts.forEach((item) => {
+      const list = byDate.get(item.date) || [];
+      list.push(item);
+      byDate.set(item.date, list);
+    });
+    const serialMap = new Map();
+    byDate.forEach((items) => {
+      const ordered = [...items].sort((a, b) => {
+        const aTime = a.submittedAt || a.openedAt || "";
+        const bTime = b.submittedAt || b.openedAt || "";
+        if (aTime !== bTime) return aTime < bTime ? -1 : 1;
+        return String(a.id).localeCompare(String(b.id));
+      });
+      ordered.forEach((item, index) => serialMap.set(item.id, index + 1));
+    });
+    return serialMap;
+  }, [myStoreCloseouts]);
 
   const displayCloseouts = useMemo(() => {
     if (!storeCloseouts.length) return [];
@@ -56,8 +95,9 @@ export default function EmployeeCloseoutsView({
       ...item,
       uiExpanded: expandedId ? expandedId === item.id : index === 0 && item.id === newestId,
       isPrevious: index > 0,
+      dailySequence: dailySequenceById.get(item.id) || 1,
     }));
-  }, [storeCloseouts, expandedId]);
+  }, [storeCloseouts, expandedId, dailySequenceById]);
 
   const storeLabel = lang === "ar" ? currentStore?.nameAr : currentStore?.nameEn;
 
@@ -73,9 +113,10 @@ export default function EmployeeCloseoutsView({
         storeName: storeLabel,
         date: todayIso,
         employee: { id: employee.id, nameAr: employee.nameAr, nameEn: employee.nameEn },
+        notebookTheme,
       }),
     );
-  }, [currentStore.id, employee, storeLabel]);
+  }, [currentStore.id, employee, storeLabel, notebookTheme]);
 
   useEffect(() => {
     onRegisterAdd?.(startNewCloseout);
@@ -150,12 +191,37 @@ export default function EmployeeCloseoutsView({
           settingsPanel({ onBack: () => setShowSettings(false) })
         ) : (
           <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-28 pt-1">
-            <h1 className="relative mx-auto mb-6 w-fit pb-3 text-center text-[27px] font-extrabold tracking-tight text-[#112A46] after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-[68px] after:-translate-x-1/2 after:bg-[#D69C2F]">
+            <h1 className="relative mx-auto mb-6 w-fit pb-3 text-center text-taq-hero font-extrabold tracking-tight text-[#112A46] after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-[68px] after:-translate-x-1/2 after:bg-[#D69C2F]">
               {lang === "ar" ? "تقفيلاتي اليومية" : "My daily closeouts"}
             </h1>
             {!channelsReady && (
-              <div className="mb-4 rounded-2xl bg-[#FFF1EE]/90 p-3 text-[11px] font-bold text-[#B44747] ring-1 ring-[#B44747]/10 backdrop-blur-sm">
+              <div className="mb-4 rounded-2xl bg-[#FFF1EE]/90 p-3 text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10 backdrop-blur-sm">
                 {lang === "ar" ? "لا توجد قنوات بيع مفعّلة لهذا المحل. اطلب من المالك تفعيلها من الإعدادات." : "No active sales channels for this store. Ask the owner to enable them in settings."}
+              </div>
+            )}
+            {hasOlderHiddenCloseouts && employeeHistoryVisibility !== "all" && (
+              <div className="mb-4 rounded-2xl bg-[#FFF4D2]/95 p-3 text-taq-meta font-bold leading-5 text-[#806528] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
+                {lang === "ar" ? (
+                  <>
+                    <p>
+                      يعرض المالك للموظف تقفيلات آخر <strong className="text-[#112A46]">{historyScopeLabel}</strong> فقط (
+                      {hiddenCloseoutCount} تقفيلة أقدم مخفية).
+                    </p>
+                    <p className="mt-2 text-taq-nav">
+                      لتظهر كل التقفيلات السابقة: الإعدادات → المحل → مراجعة الصور والتنبيهات → اختر «الكل» ثم احفظ.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      Owner limits history to the last <strong className="text-[#112A46]">{historyScopeLabel}</strong> (
+                      {hiddenCloseoutCount} older closeout(s) hidden).
+                    </p>
+                    <p className="mt-2 text-taq-nav">
+                      For full history: Settings → Shop → Photo review & notifications → choose All → Save.
+                    </p>
+                  </>
+                )}
               </div>
             )}
             {assignedStores.length > 1 && (
@@ -165,7 +231,7 @@ export default function EmployeeCloseoutsView({
                     key={store.id}
                     type="button"
                     onClick={() => onSelectStore(store.id)}
-                    className={`rounded-full px-3 py-1.5 text-[10px] font-black ${currentStore.id === store.id ? "bg-[#112A46] text-white" : "bg-white/90 text-[#716753] ring-1 ring-[#E8E1D4]"}`}
+                    className={`rounded-full px-3 py-1.5 text-taq-meta font-black ${currentStore.id === store.id ? "bg-[#112A46] text-white" : "bg-white/90 text-[#716753] ring-1 ring-[#E8E1D4]"}`}
                   >
                     {lang === "ar" ? store.nameAr : store.nameEn}
                   </button>
@@ -187,6 +253,7 @@ export default function EmployeeCloseoutsView({
                     closeout={day}
                     expanded={day.uiExpanded}
                     reviewWorkflowEnabled={reviewWorkflowEnabled}
+                    closeoutNumber={day.dailySequence}
                     formatDate={(date) => formatCalendarDate(date, lang)}
                     onToggle={() => setExpandedId((current) => (current === day.id ? null : day.id))}
                     onShare={() => {
@@ -200,8 +267,14 @@ export default function EmployeeCloseoutsView({
                   />
                 </div>
               )) : (
-                <div className="rounded-3xl bg-[rgba(255,252,244,0.94)] p-8 text-center text-xs font-bold text-[#827762] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
-                  {lang === "ar" ? "لا توجد تقفيلات بعد. اضغط + لفتح يوم جديد." : "No closeouts yet. Tap + to open a new day."}
+                <div className="rounded-3xl bg-[rgba(255,252,244,0.94)] p-8 text-center text-xs font-bold leading-5 text-[#827762] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
+                  {hasOlderHiddenCloseouts ? (
+                    lang === "ar"
+                      ? `لا توجد تقفيلات ضمن نطاق «${historyScopeLabel}». اطلب من المالك تغيير الإعداد إلى «شهر» أو «الكل».`
+                      : `No closeouts in the «${historyScopeLabel}» window. Ask the owner to switch to Month or All.`
+                  ) : (
+                    lang === "ar" ? "لا توجد تقفيلات بعد. اضغط + لفتح يوم جديد." : "No closeouts yet. Tap + to open a new day."
+                  )}
                 </div>
               )}
             </div>
@@ -213,6 +286,9 @@ export default function EmployeeCloseoutsView({
         open={Boolean(shareTarget)}
         closeout={shareTarget}
         storeName={storeLabel}
+        employeeName={lang === "ar" ? employee.nameAr : employee.nameEn}
+        notebookTheme={notebookTheme}
+        formatCalendarDate={formatCalendarDate}
         reviewWorkflowEnabled={reviewWorkflowEnabled}
         newlySubmitted={shareNewlySubmitted}
         onClose={() => {

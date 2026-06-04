@@ -26,17 +26,17 @@ export default function LanHintBanner({ lang = "ar" }) {
 
   return (
     <div className="mt-4 rounded-2xl border border-dashed border-[#C9B896] bg-[#FFF9EA] p-3 text-center">
-      <p className="text-[10px] font-black text-[#806528]">
+      <p className="text-taq-meta font-black text-[#806528]">
         {lang === "ar" ? "للفتح من الجوال (نفس الواي‑فاي)" : "Open on phone (same Wi‑Fi)"}
       </p>
       <a
         href={primary}
         dir="ltr"
-        className="mt-2 block break-all text-[11px] font-black text-[#112A46] underline"
+        className="mt-2 block break-all text-taq-meta font-black text-[#112A46] underline"
       >
         {primary}
       </a>
-      <p className="mt-2 text-[9px] font-bold leading-5 text-[#827762]">
+      <p className="mt-2 text-taq-nav font-bold leading-5 text-[#827762]">
         {lang === "ar"
           ? "لا تستخدم localhost على الجوال. إن لم يفتح: pnpm firewall:allow ثم أعد المحاولة."
           : "Do not use localhost on your phone. If it fails, run pnpm firewall:allow on the PC."}

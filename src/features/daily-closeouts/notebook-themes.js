@@ -36,12 +36,35 @@ export const notebookThemes = {
   },
 };
 
+function blendHex(hex, targetHex, ratio) {
+  const parse = (value) => {
+    const normalized = value.replace("#", "");
+    return [
+      Number.parseInt(normalized.slice(0, 2), 16),
+      Number.parseInt(normalized.slice(2, 4), 16),
+      Number.parseInt(normalized.slice(4, 6), 16),
+    ];
+  };
+  const [r1, g1, b1] = parse(hex);
+  const [r2, g2, b2] = parse(targetHex);
+  const mix = (from, to) => Math.round(from + (to - from) * ratio);
+  const channel = (value) => value.toString(16).padStart(2, "0");
+  return `#${channel(mix(r1, r2))}${channel(mix(g1, g2))}${channel(mix(b1, b2))}`;
+}
+
 export function notebookLinesBackground(theme) {
   const activeTheme = notebookThemes[theme] || notebookThemes.yellow;
   return {
     backgroundColor: activeTheme.paper,
     backgroundImage: `repeating-linear-gradient(180deg, transparent 0px, transparent 43px, ${activeTheme.line} 43px, ${activeTheme.line} 44px)`,
   };
+}
+
+/** Slightly lighter than notebook paper so cards read as surfaces on the page. */
+export function notebookCardBackground(theme, variant = "card") {
+  const paper = (notebookThemes[theme] || notebookThemes.yellow).paper;
+  const ratio = variant === "inset" ? 0.34 : 0.2;
+  return blendHex(paper, "#FFFFFF", ratio);
 }
 
 export function resolveNotebookTheme({ storeOperationalSettings, storeId, globalTheme, employeeThemeOverride }) {

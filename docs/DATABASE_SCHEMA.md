@@ -241,6 +241,112 @@ See `docs/PERFORMANCE_RULES.md`.
 
 ---
 
+## Future tables (final phase): SaaS analytics & investor reporting
+
+> These tables are **out of phase 1** and planned for the final SaaS management phase.
+
+### subscriptions
+
+| Column | Type | Notes |
+|--------|------|--------|
+| `id` | uuid PK | |
+| `organization_id` | uuid FK → organizations | |
+| `plan_code` | text | e.g. `starter`, `growth`, `enterprise` |
+| `status` | text | `trialing` \| `active` \| `past_due` \| `canceled` |
+| `billing_cycle` | text | `monthly` \| `yearly` |
+| `current_period_start` | timestamptz | |
+| `current_period_end` | timestamptz | |
+| `cancel_at_period_end` | boolean | |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | |
+
+**Index:** `(organization_id, status, current_period_end)`
+
+### invoices
+
+| Column | Type | Notes |
+|--------|------|--------|
+| `id` | uuid PK | |
+| `organization_id` | uuid FK | |
+| `subscription_id` | uuid FK → subscriptions | |
+| `provider_invoice_id` | text nullable | billing provider reference |
+| `status` | text | `open` \| `paid` \| `void` \| `uncollectible` |
+| `amount_halalas` | bigint | SAR halalas |
+| `currency` | text | `SAR` |
+| `issued_at` | timestamptz | |
+| `due_at` | timestamptz nullable | |
+| `paid_at` | timestamptz nullable | |
+| `created_at` | timestamptz | |
+
+**Indexes:** `(organization_id, issued_at DESC)`, `(status, due_at)`
+
+### payment_events
+
+| Column | Type | Notes |
+|--------|------|--------|
+| `id` | uuid PK | |
+| `organization_id` | uuid FK | |
+| `invoice_id` | uuid FK → invoices nullable | |
+| `provider_event_id` | text nullable | idempotency + reconciliation |
+| `event_type` | text | `payment_succeeded` \| `payment_failed` \| `refund` |
+| `amount_halalas` | bigint | |
+| `currency` | text | `SAR` |
+| `metadata` | jsonb nullable | |
+| `occurred_at` | timestamptz | |
+| `created_at` | timestamptz | |
+
+**Index:** `(organization_id, event_type, occurred_at DESC)`
+
+### usage_events
+
+| Column | Type | Notes |
+|--------|------|--------|
+| `id` | uuid PK | |
+| `organization_id` | uuid FK | |
+| `store_id` | uuid FK nullable | |
+| `user_id` | uuid FK nullable | |
+| `event_name` | text | e.g. `closeout_submitted`, `entry_created`, `login_success` |
+| `event_date` | date | normalized UTC date for analytics |
+| `event_at` | timestamptz | |
+| `metadata` | jsonb nullable | |
+
+**Indexes:** `(organization_id, event_date)`, `(event_name, event_date)`, `(user_id, event_date)`
+
+### daily_org_metrics
+
+| Column | Type | Notes |
+|--------|------|--------|
+| `organization_id` | uuid FK | |
+| `metric_date` | date | |
+| `dau_users_count` | integer | |
+| `entries_count` | integer | |
+| `closeouts_submitted_count` | integer | |
+| `sales_halalas` | bigint | |
+| `outflow_halalas` | bigint | |
+| `net_halalas` | bigint | |
+| `updated_at` | timestamptz | |
+
+**Unique:** `(organization_id, metric_date)`  
+**Purpose:** fast tenant-health and engagement dashboards.
+
+### daily_saas_metrics
+
+| Column | Type | Notes |
+|--------|------|--------|
+| `metric_date` | date PK | |
+| `active_organizations_count` | integer | |
+| `new_organizations_count` | integer | |
+| `churned_organizations_count` | integer | |
+| `mrr_halalas` | bigint | |
+| `arr_halalas` | bigint | derived snapshot |
+| `collections_halalas` | bigint | |
+| `failed_payments_count` | integer | |
+| `updated_at` | timestamptz | |
+
+**Purpose:** executive + investor trend reporting.
+
+---
+
 ## Entity diagram (logical)
 
 ```text

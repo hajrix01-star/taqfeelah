@@ -39,7 +39,7 @@ export default function PrototypeClientGate({ children }) {
         style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <p className="text-[#112A46]">جاري تحضير البيانات التجريبية…</p>
-        <p className="text-[11px] font-bold text-[#A99D87]" dir="ltr">
+        <p className="text-taq-meta font-bold text-[#A99D87]" dir="ltr">
           {PROTOTYPE_BUILD_STAMP}
         </p>
       </div>

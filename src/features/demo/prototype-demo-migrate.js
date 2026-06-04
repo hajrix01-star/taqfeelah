@@ -13,7 +13,18 @@ let migrateInFlight = false;
 export function migratePrototypeDemoDatasetIfNeeded() {
   if (typeof window === "undefined") return { migrated: false };
   const current = window.localStorage.getItem(PROTOTYPE_DEMO_DATASET_VERSION_KEY);
-  if (current === PROTOTYPE_DEMO_DATASET_VERSION) return { migrated: false };
+  if (current === PROTOTYPE_DEMO_DATASET_VERSION) {
+    // Repair path: dataset version is set, but closeouts key may be missing/cleared.
+    try {
+      const parsedCloseouts = JSON.parse(window.localStorage.getItem(DAILY_CLOSEOUTS_STORAGE_KEY) || "[]");
+      if (Array.isArray(parsedCloseouts) && parsedCloseouts.length > 0) return { migrated: false };
+    } catch {
+      // Continue to repair write below.
+    }
+    const dataset = createPrototypeMonthDemoDataset();
+    const repaired = safeSetLocalStorageItem(DAILY_CLOSEOUTS_STORAGE_KEY, JSON.stringify(dataset.closeouts));
+    return repaired.ok ? { migrated: true, repaired: "closeouts" } : { migrated: false, error: repaired.error || "storage" };
+  }
   if (migrateInFlight) return { migrated: false };
   migrateInFlight = true;
 

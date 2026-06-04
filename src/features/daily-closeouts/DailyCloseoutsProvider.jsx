@@ -52,13 +52,6 @@ export function DailyCloseoutsProvider({ children, lang = "ar", ownerName = "", 
   }, [persistCloseouts]);
 
   const openOrResumeDraft = useCallback(({ store, date, employee }) => {
-    const existing = findCloseoutForStoreDate(closeouts, store.id, date);
-    if (existing) {
-      if (existing.status === CLOSEOUT_STATUS.DRAFT || existing.status === CLOSEOUT_STATUS.RETURNED) return existing;
-      if (existing.status === CLOSEOUT_STATUS.SUBMITTED || existing.status === CLOSEOUT_STATUS.REVIEWED) {
-        return { conflict: "exists", closeout: existing };
-      }
-    }
     const draft = createDraftCloseout({
       storeId: store.id,
       storeName: store.nameAr || store.nameEn || store.id,
@@ -76,7 +69,7 @@ export function DailyCloseoutsProvider({ children, lang = "ar", ownerName = "", 
       actorName: lang === "ar" ? employee.nameAr : employee.nameEn,
     });
     return draft;
-  }, [closeouts, lang, logEvent, upsertCloseout]);
+  }, [lang, logEvent, upsertCloseout]);
 
   const submitCloseout = useCallback(async ({ closeout, employee, reviewWorkflowEnabled }) => {
     const now = new Date().toISOString();

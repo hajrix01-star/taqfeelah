@@ -43,7 +43,7 @@ export function withCloseoutTotals(closeout) {
   return { ...closeout, totals };
 }
 
-export function createDraftCloseout({ storeId, storeName, date, employee }) {
+export function createDraftCloseout({ storeId, storeName, date, employee, notebookTheme = "yellow" }) {
   const id = `dc-${Date.now()}`;
   return withCloseoutTotals({
     id,
@@ -55,6 +55,7 @@ export function createDraftCloseout({ storeId, storeName, date, employee }) {
     submittedByUserId: null,
     submittedByName: null,
     status: CLOSEOUT_STATUS.DRAFT,
+    notebookTheme,
     sales: {},
     outflows: [],
     attachments: [],

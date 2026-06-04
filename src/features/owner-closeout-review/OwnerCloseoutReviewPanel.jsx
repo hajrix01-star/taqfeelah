@@ -18,6 +18,8 @@ export default function OwnerCloseoutReviewPanel({
   onClose,
   onApprove,
   onReturn,
+  onEdit,
+  onDelete,
 }) {
   if (!closeout) return null;
   const totals = closeout.totals || computeCloseoutTotals(closeout.sales, closeout.outflows);
@@ -30,13 +32,13 @@ export default function OwnerCloseoutReviewPanel({
         <motion.div initial={{ y: 20 }} animate={{ y: 0 }} className="max-h-[90dvh] w-full overflow-y-auto rounded-t-[28px] bg-[#F8F6F0] p-5 sm:max-w-lg sm:rounded-[28px]">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-bold text-[#827762]">{closeout.storeName}</p>
+              <p className="text-taq-meta font-bold text-[#827762]">{closeout.storeName}</p>
               <h3 className="text-lg font-black">{formatCalendarDate(closeout.date, lang)}</h3>
-              <p className="mt-1 text-[11px] font-bold text-[#716753]">
+              <p className="mt-1 text-taq-meta font-bold text-[#716753]">
                 {lang === "ar" ? "أرسلها:" : "Sent by:"} {closeout.submittedByName}
                 {closeout.submittedAt ? ` · ${formatDateTime(closeout.submittedAt, lang)}` : ""}
               </p>
-              <p className="mt-1 text-[11px] font-black text-[#806528]">{statusText}</p>
+              <p className="mt-1 text-taq-meta font-black text-[#806528]">{statusText}</p>
             </div>
             <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]"><X className="h-4 w-4" /></button>
           </div>
@@ -61,7 +63,7 @@ export default function OwnerCloseoutReviewPanel({
             <p className="border-t border-[#F0ECE2] pt-2 text-sm font-black text-[#B44747]">{lang === "ar" ? "إجمالي الخارج" : "Total out"}: {money(totals.totalOutflow, lang)} ر.س</p>
           </div>
           <div className="mb-4 rounded-2xl bg-[#112A46] p-4 text-white">
-            <p className="text-[11px] font-bold text-white/70">{lang === "ar" ? "الناتج" : "Net"}</p>
+            <p className="text-taq-meta font-bold text-white/70">{lang === "ar" ? "الناتج" : "Net"}</p>
             <p className="text-2xl font-black tabular-nums">{money(totals.netMovement, lang)} ر.س</p>
           </div>
           {(closeout.attachments || []).length > 0 && (
@@ -72,6 +74,14 @@ export default function OwnerCloseoutReviewPanel({
               ))}
             </div>
           )}
+          <div className="mb-3 grid grid-cols-2 gap-3">
+            <button type="button" onClick={onEdit} className="rounded-2xl bg-white py-3.5 text-xs font-black text-[#112A46] ring-1 ring-black/[0.08]">
+              {lang === "ar" ? "تعديل التقفيلة" : "Edit closeout"}
+            </button>
+            <button type="button" onClick={onDelete} className="rounded-2xl bg-[#FFF1EE] py-3.5 text-xs font-black text-[#B44747] ring-1 ring-[#B44747]/15">
+              {lang === "ar" ? "حذف التقفيلة" : "Delete closeout"}
+            </button>
+          </div>
           {closeout.status === "submitted" && reviewWorkflowEnabled && (
             <div className="grid grid-cols-2 gap-3">
               <button type="button" onClick={onApprove} className="rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white">{lang === "ar" ? "اعتماد التقفيلة" : "Approve"}</button>

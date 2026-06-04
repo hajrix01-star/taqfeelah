@@ -18,6 +18,7 @@ const toneClass = {
 export default function DailyCloseoutCard({
   lang,
   closeout,
+  closeoutNumber = 1,
   expanded,
   onToggle,
   onShare,
@@ -40,9 +41,14 @@ export default function DailyCloseoutCard({
         <button type="button" onClick={onToggle} className="flex w-full items-center justify-between gap-2 px-4 py-4 text-start text-sm font-extrabold text-[#112A46]">
           <span className="flex items-center gap-2">
             <ChevronDown className={`h-4 w-4 shrink-0 transition ${expanded ? "rotate-180" : ""}`} />
-            <span>{formatDate(closeout.date)}</span>
+            <span className="flex flex-col text-start leading-tight">
+              <span>{formatDate(closeout.date)}</span>
+              <small className="mt-1 text-[10px] font-black text-[#82745A]">
+                {lang === "ar" ? `تقفيلة رقم ${closeoutNumber}` : `Closeout #${closeoutNumber}`}
+              </small>
+            </span>
           </span>
-          <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${toneClass[tone]}`}>{statusText}</span>
+          <span className={`rounded-full px-2.5 py-1 text-taq-meta font-black ${toneClass[tone]}`}>{statusText}</span>
         </button>
         <div className="mx-3.5 mb-3.5 grid grid-cols-4 overflow-hidden rounded-[14px] border border-[#E8E1D4] bg-[rgba(255,252,245,0.72)]">
           {[
@@ -51,15 +57,33 @@ export default function DailyCloseoutCard({
             { label: lang === "ar" ? "الناتج" : "Net", value: money(totals.netMovement, lang), className: totals.netMovement < 0 ? "text-[#BA4742]" : "text-[#26784C]", suffix: true },
             { label: lang === "ar" ? "صور" : "Photos", value: String(attachmentCount), className: "text-[#112A46]", suffix: false },
           ].map((stat, index) => (
-            <div key={stat.label} className={`border-s border-[#E8E1D4] px-1 py-3 text-center ${index === 0 ? "border-s-0" : ""}`}>
-              <span className="mb-1.5 block text-[11px] font-bold text-[#82745A]">{stat.label}</span>
-              <strong className={`block text-[19px] font-extrabold tabular-nums ${stat.className}`}>
-                {stat.value}
-                {stat.suffix ? <small className="ms-0.5 text-[9px]">ر.س</small> : null}
+            <div key={stat.label} className={`min-w-0 border-s border-[#E8E1D4] px-1 py-3 text-center ${index === 0 ? "border-s-0" : ""}`}>
+              <span className="mb-1.5 block text-taq-meta font-bold text-[#82745A]">{stat.label}</span>
+              <strong className={`flex items-end justify-center gap-0.5 text-[clamp(1.35rem,4.4vw,2.1rem)] leading-none font-extrabold tabular-nums ${stat.className}`}>
+                <span dir="ltr" className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{stat.value}</span>
+                {stat.suffix ? <small className="text-[0.62rem] font-black leading-none text-taq-nav">ر.س</small> : null}
               </strong>
             </div>
           ))}
         </div>
+        {(closeout.outflows || []).length > 0 && !expanded ? (
+          <p className="mx-3.5 mb-2 text-taq-nav font-bold text-[#806528]">
+            {lang === "ar"
+              ? `${(closeout.outflows || []).length} عملية خارج — اضغط اليوم لعرض التفاصيل`
+              : `${(closeout.outflows || []).length} outflow item(s) — tap the day to view details`}
+          </p>
+        ) : null}
+        {expanded && salesRows.length > 0 ? (
+          <div className="mx-3.5 mb-2 space-y-1 border-t border-dashed border-[#E8E1D4] pt-2">
+            <p className="text-taq-nav font-black text-[#806528]">{lang === "ar" ? "قنوات الداخل" : "Sales channels"}</p>
+            {salesRows.map((row) => (
+              <div key={row.channelId} className="flex items-center justify-between gap-2 text-taq-meta font-bold">
+                <span className="truncate text-[#716753]">{row.name}</span>
+                <span className="shrink-0 tabular-nums text-[#257844]">{money(row.amount, lang)} ر.س</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
         <div className="px-4 pb-3">
           <button
             type="button"
@@ -67,7 +91,7 @@ export default function DailyCloseoutCard({
               event.stopPropagation();
               onShare();
             }}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#112A46]/5 py-2.5 text-[11px] font-black text-[#112A46]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#112A46]/5 py-2.5 text-taq-meta font-black text-[#112A46]"
           >
             <span>↗</span>
             {lang === "ar" ? "إعادة إرسال كصورة عبر واتساب" : "Reshare image via WhatsApp"}
@@ -80,10 +104,10 @@ export default function DailyCloseoutCard({
               {statusText}
             </div>
             {closeout.status === "returned" && closeout.returnReason && (
-              <div className="rounded-2xl bg-[#FFF1EE] p-3 text-[11px] font-bold text-[#B44747]">
+              <div className="rounded-2xl bg-[#FFF1EE] p-3 text-taq-meta font-bold text-[#B44747]">
                 {lang === "ar" ? "سبب الإرجاع:" : "Return reason:"} {closeout.returnReason}
                 {onEditResubmit && (
-                  <button type="button" onClick={onEditResubmit} className="mt-3 w-full rounded-xl bg-[#112A46] py-2.5 text-[10px] font-black text-white">
+                  <button type="button" onClick={onEditResubmit} className="mt-3 w-full rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">
                     {lang === "ar" ? "تعديل وإعادة إرسال" : "Edit and resend"}
                   </button>
                 )}

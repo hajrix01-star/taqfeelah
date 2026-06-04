@@ -1,5 +1,27 @@
 @import "tailwindcss";
 
+/* Taqfeelah typography scale (aligned with iOS/Material mobile body standards) */
+@theme {
+  --text-taq-nav: 0.6875rem;
+  --text-taq-nav--line-height: 1.25;
+  --text-taq-meta: 0.75rem;
+  --text-taq-meta--line-height: 1.35;
+  --text-taq-body-sm: 0.875rem;
+  --text-taq-body-sm--line-height: 1.4;
+  --text-taq-body: 1rem;
+  --text-taq-body--line-height: 1.45;
+  --text-taq-title-sm: 1.125rem;
+  --text-taq-title-sm--line-height: 1.3;
+  --text-taq-title: 1.25rem;
+  --text-taq-title--line-height: 1.25;
+  --text-taq-display: 1.5rem;
+  --text-taq-display--line-height: 1.2;
+  --text-taq-hero: 1.75rem;
+  --text-taq-hero--line-height: 1.15;
+  --text-taq-stat: 1.25rem;
+  --text-taq-stat--line-height: 1.15;
+}
+
 html,
 body {
   height: 100%;
@@ -12,4 +34,6 @@ body {
   padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   -webkit-text-size-adjust: 100%;
   touch-action: manipulation;
+  font-size: var(--text-taq-body-sm);
+  line-height: 1.4;
 }
