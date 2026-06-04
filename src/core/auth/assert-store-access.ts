@@ -1,0 +1,76 @@
+import { and, eq } from "drizzle-orm";
+import { getDb } from "@/core/db/client";
+import { hasAtLeastRole, type MemberRole } from "@/core/auth/roles";
+import { ForbiddenError } from "@/core/errors/app-error";
+import { memberStoreAccess, organizationMembers, stores } from "@/core/db/schema";
+
+type AssertStoreAccessInput = {
+  organizationId: string;
+  storeId: string;
+  actorUserId: string;
+  actorRole: MemberRole;
+  minimumRole?: MemberRole;
+};
+
+export async function assertStoreAccess(input: AssertStoreAccessInput) {
+  const db = getDb();
+  const minimumRole = input.minimumRole || "employee";
+
+  const [storeRow] = await db
+    .select({ id: stores.id })
+    .from(stores)
+    .where(
+      and(
+        eq(stores.id, input.storeId),
+        eq(stores.organizationId, input.organizationId),
+        eq(stores.status, "active"),
+      ),
+    )
+    .limit(1);
+
+  if (!storeRow) {
+    throw new ForbiddenError("Store is not accessible for this organization.");
+  }
+
+  const [membership] = await db
+    .select({ id: organizationMembers.id, role: organizationMembers.role })
+    .from(organizationMembers)
+    .where(
+      and(
+        eq(organizationMembers.organizationId, input.organizationId),
+        eq(organizationMembers.userId, input.actorUserId),
+        eq(organizationMembers.status, "active"),
+      ),
+    )
+    .limit(1);
+
+  if (!membership) {
+    throw new ForbiddenError("User is not an active member of this organization.");
+  }
+
+  const memberRole = membership.role as MemberRole;
+  if (!hasAtLeastRole(memberRole, input.actorRole)) {
+    throw new ForbiddenError("Provided role does not match membership privileges.");
+  }
+
+  if (!hasAtLeastRole(memberRole, minimumRole)) {
+    throw new ForbiddenError("Insufficient role for this operation.");
+  }
+
+  if (memberRole === "employee") {
+    const [storePermission] = await db
+      .select({ storeId: memberStoreAccess.storeId })
+      .from(memberStoreAccess)
+      .where(
+        and(
+          eq(memberStoreAccess.organizationMemberId, membership.id),
+          eq(memberStoreAccess.storeId, input.storeId),
+        ),
+      )
+      .limit(1);
+
+    if (!storePermission) {
+      throw new ForbiddenError("Employee has no access to this store.");
+    }
+  }
+}

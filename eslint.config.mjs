@@ -15,7 +15,6 @@ const eslintConfig = [
       ".next/**",
       "node_modules/**",
       "TaqfeelahPrototypeReference.tsx",
-      "src/components/TaqfeelahPrototypeRuntime.jsx",
       "next-env.d.ts",
     ],
   },

@@ -56,6 +56,7 @@ import {
   X,
 } from "lucide-react";
 import { getEnabledOwnerLoginMethods, isOwnerLoginMethodEnabled } from "@/core/auth/owner-login-methods";
+import { isUuid, reviewCloseoutViaApi, submitCloseoutViaApi } from "@/features/closeouts/client/closeouts-api-client";
 
 function AppFontStyles() {
   return (
@@ -4684,6 +4685,35 @@ export default function TaqfeelahPrototypeRuntime() {
     setSelectedBusiness("all");
   };
   const ownerDisplayName = ownerProfile?.name || (lang === "ar" ? "المالك" : "Owner");
+  const closeoutsApiEnabled = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ENABLED === "true";
+  const closeoutsApiOrganizationId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
+  const closeoutsApiOwnerUserId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";
+
+  const syncSubmitCloseoutToApi = useCallback(async ({ action, closeout, employee }) => {
+    if (!closeoutsApiEnabled) return null;
+    const actorUserId = employee?.apiUserId || employee?.id;
+    if (!isUuid(closeoutsApiOrganizationId) || !isUuid(actorUserId) || !isUuid(closeout?.storeId)) return null;
+    return submitCloseoutViaApi({
+      organizationId: closeoutsApiOrganizationId,
+      actorUserId,
+      actorRole: "employee",
+      closeout,
+      mode: action === "resubmit" ? "resubmit" : "submit",
+    });
+  }, [closeoutsApiEnabled, closeoutsApiOrganizationId]);
+
+  const syncReviewCloseoutToApi = useCallback(async ({ action, closeout, reason = "" }) => {
+    if (!closeoutsApiEnabled) return null;
+    if (!isUuid(closeoutsApiOrganizationId) || !isUuid(closeoutsApiOwnerUserId) || !isUuid(closeout?.storeId)) return null;
+    return reviewCloseoutViaApi({
+      organizationId: closeoutsApiOrganizationId,
+      actorUserId: closeoutsApiOwnerUserId,
+      actorRole: "owner",
+      closeout,
+      action,
+      reason,
+    });
+  }, [closeoutsApiEnabled, closeoutsApiOrganizationId, closeoutsApiOwnerUserId]);
 
   if (!loggedIn) {
     return (
@@ -4698,7 +4728,13 @@ export default function TaqfeelahPrototypeRuntime() {
     );
   }
   return (
-    <DailyCloseoutsProvider lang={lang} ownerName={ownerDisplayName} onSyncToOperationalEntries={syncCloseoutToOperationalEntries}>
+    <DailyCloseoutsProvider
+      lang={lang}
+      ownerName={ownerDisplayName}
+      onSyncToOperationalEntries={syncCloseoutToOperationalEntries}
+      onSubmitCloseoutToApi={syncSubmitCloseoutToApi}
+      onReviewCloseoutInApi={syncReviewCloseoutToApi}
+    >
     <div dir={lang === "ar" ? "rtl" : "ltr"} className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
       <AppFontStyles />
       <main className="taq-shell relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#F8F6F0]">

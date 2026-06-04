@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+set -e
+
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm test

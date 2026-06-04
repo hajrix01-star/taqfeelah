@@ -22,13 +22,23 @@ export function useDailyCloseouts() {
   return ctx;
 }
 
-export function DailyCloseoutsProvider({ children, lang = "ar", ownerName = "", onSyncToOperationalEntries = async () => {} }) {
+export function DailyCloseoutsProvider({
+  children,
+  lang = "ar",
+  ownerName = "",
+  onSyncToOperationalEntries = async () => {},
+  onSubmitCloseoutToApi = null,
+  onReviewCloseoutInApi = null,
+}) {
   const [closeouts, setCloseouts] = useState(() => readDailyCloseouts());
   const [events, setEvents] = useState(() => readCloseoutEvents());
 
   const persistCloseouts = useCallback((next) => {
-    setCloseouts(next);
-    writeDailyCloseouts(next);
+    setCloseouts((current) => {
+      const resolved = typeof next === "function" ? next(current) : next;
+      writeDailyCloseouts(resolved);
+      return resolved;
+    });
   }, []);
 
   const logEvent = useCallback((payload) => {
@@ -88,6 +98,7 @@ export function DailyCloseoutsProvider({ children, lang = "ar", ownerName = "", 
       returnReason: null,
     });
     upsertCloseout(next);
+    const apiSubmitAction = "submit";
     logEvent({
       type: autoReview ? "submitted" : "submitted",
       closeoutId: next.id,
@@ -98,12 +109,19 @@ export function DailyCloseoutsProvider({ children, lang = "ar", ownerName = "", 
       actorName: employeeName,
       employeeName,
     });
+    if (typeof onSubmitCloseoutToApi === "function") {
+      try {
+        await onSubmitCloseoutToApi({ action: apiSubmitAction, closeout: next, employee, reviewWorkflowEnabled });
+      } catch (error) {
+        console.warn("closeout submit API sync failed", error);
+      }
+    }
     if (autoReview) {
       await onSyncToOperationalEntries(next);
       upsertCloseout({ ...next, syncedToEntries: true });
     }
     return next;
-  }, [lang, logEvent, onSyncToOperationalEntries, upsertCloseout]);
+  }, [lang, logEvent, onSubmitCloseoutToApi, onSyncToOperationalEntries, upsertCloseout]);
 
   const resubmitCloseout = useCallback(async ({ closeout, employee, reviewWorkflowEnabled }) => {
     const now = new Date().toISOString();
@@ -122,6 +140,7 @@ export function DailyCloseoutsProvider({ children, lang = "ar", ownerName = "", 
       reviewedByName: null,
     });
     upsertCloseout(next);
+    const apiSubmitAction = "resubmit";
     logEvent({
       type: "resubmitted",
       closeoutId: next.id,
@@ -132,12 +151,19 @@ export function DailyCloseoutsProvider({ children, lang = "ar", ownerName = "", 
       actorName: employeeName,
       employeeName,
     });
+    if (typeof onSubmitCloseoutToApi === "function") {
+      try {
+        await onSubmitCloseoutToApi({ action: apiSubmitAction, closeout: next, employee, reviewWorkflowEnabled });
+      } catch (error) {
+        console.warn("closeout resubmit API sync failed", error);
+      }
+    }
     if (autoReview) {
       await onSyncToOperationalEntries(next);
       upsertCloseout({ ...next, syncedToEntries: true });
     }
     return next;
-  }, [lang, logEvent, onSyncToOperationalEntries, upsertCloseout]);
+  }, [lang, logEvent, onSubmitCloseoutToApi, onSyncToOperationalEntries, upsertCloseout]);
 
   const approveCloseout = useCallback(async (closeoutId, reviewerName) => {
     const target = closeouts.find((item) => item.id === closeoutId);
@@ -160,12 +186,19 @@ export function DailyCloseoutsProvider({ children, lang = "ar", ownerName = "", 
       employeeName: next.submittedByName,
       actorName: reviewerName,
     });
+    if (typeof onReviewCloseoutInApi === "function") {
+      try {
+        await onReviewCloseoutInApi({ action: "approve", closeout: next, reviewerName });
+      } catch (error) {
+        console.warn("closeout approve API sync failed", error);
+      }
+    }
     await onSyncToOperationalEntries(next);
     upsertCloseout({ ...next, syncedToEntries: true });
     return next;
-  }, [closeouts, logEvent, onSyncToOperationalEntries, upsertCloseout]);
+  }, [closeouts, logEvent, onReviewCloseoutInApi, onSyncToOperationalEntries, upsertCloseout]);
 
-  const returnCloseout = useCallback((closeoutId, reviewerName, reason) => {
+  const returnCloseout = useCallback(async (closeoutId, reviewerName, reason) => {
     const target = closeouts.find((item) => item.id === closeoutId);
     if (!target || target.status !== CLOSEOUT_STATUS.SUBMITTED) return null;
     const now = new Date().toISOString();
@@ -188,8 +221,15 @@ export function DailyCloseoutsProvider({ children, lang = "ar", ownerName = "", 
       actorName: reviewerName,
       reason,
     });
+    if (typeof onReviewCloseoutInApi === "function") {
+      try {
+        await onReviewCloseoutInApi({ action: "return", closeout: next, reviewerName, reason });
+      } catch (error) {
+        console.warn("closeout return API sync failed", error);
+      }
+    }
     return next;
-  }, [closeouts, logEvent, upsertCloseout]);
+  }, [closeouts, logEvent, onReviewCloseoutInApi, upsertCloseout]);
 
   const value = useMemo(() => ({
     closeouts: sortCloseoutsNewestFirst(closeouts),

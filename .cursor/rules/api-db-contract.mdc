@@ -1,0 +1,25 @@
+---
+description: Enforce API and database contract quality for backend changes
+alwaysApply: true
+---
+
+# API and DB Contract Rule
+
+## Required for every API/DB change
+
+- Add strict request validation (schema-based) for params/query/body.
+- Enforce organization/store/user authorization on server side.
+- Keep write operations auditable (insert audit trail where relevant).
+- Use transactions for multi-step writes that must succeed together.
+- Keep API responses stable and documented in project docs.
+
+## Testing and verification
+
+- Add or update tests for new behavior (unit/integration as applicable).
+- Run real checks: `lint`, `typecheck`, `test`, and `build` when backend contract changes can affect runtime.
+
+## القاعدة بالعربية
+
+- أي تعديل على API/DB يجب أن يلتزم بعقد واضح: تحقق مدخلات + صلاحيات + تتبع تدقيق + استجابة ثابتة.
+- العمليات الكتابية متعددة الخطوات يجب أن تكون داخل `transaction`.
+- لا يُعتمد أي endpoint جديد بدون توثيق واختبارات مناسبة.

@@ -40,6 +40,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Test
+        run: pnpm test
+
       - name: Build
         run: pnpm build
 
@@ -89,6 +92,9 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
+          VPS_CONNECT_TIMEOUT: "20"
+          VPS_CONNECT_RETRIES: "5"
+          VPS_RETRY_DELAY_SECONDS: "8"
         run: |
           python scripts/vps_deploy.py deploy-pm2 \
             --domain taqfeelah.com \
@@ -100,6 +106,9 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
+          VPS_CONNECT_TIMEOUT: "20"
+          VPS_CONNECT_RETRIES: "5"
+          VPS_RETRY_DELAY_SECONDS: "8"
         run: |
           python scripts/vps_deploy.py verify \
             --domain taqfeelah.com \

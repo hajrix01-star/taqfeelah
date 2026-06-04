@@ -15,12 +15,14 @@
     "build": "next build",
     "start": "next start --hostname 0.0.0.0 --port 3000",
     "start:lan": "node scripts/print-lan-url.mjs && next start --hostname 0.0.0.0 --port 3000",
+    "prepare": "husky",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed:closeouts": "node scripts/seed-closeouts-foundation.mjs"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
@@ -43,6 +45,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.34.0",
     "eslint-config-next": "^15.5.2",
+    "husky": "^9.1.7",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"

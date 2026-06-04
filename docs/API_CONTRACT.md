@@ -1,7 +1,7 @@
-# تقفيلة — API Contract (planned — not implemented)
+# تقفيلة — API Contract (planned + partial implementation)
 
-> **Status:** Contract documentation only. No routes implemented in foundation phase.  
-> **Auth:** Session-based later; `organizationId` from server context, not trusted from client alone.  
+> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day` and snapshot `POST /stores/:storeId/summary/day` are implemented; remaining endpoints are planned.  
+> **Auth:** Session rollout in progress. Preferred source is signed session cookie (`AUTH_SESSION_COOKIE_NAME`), with optional temporary header fallback controlled by `ALLOW_HEADER_AUTH_CONTEXT`.  
 > **UI:** Must not require design changes — responses feed existing approved screens.
 
 Base path (proposal): `/api/v1`
@@ -58,6 +58,31 @@ Response:
 `outflowRatioStatus`: `calculable` | `notCalculable` (sales zero, outflow > 0 → ratio `—` in UI).
 
 **Implementation note:** aggregate active `entries` for that store+date in SQL — no full history dump.
+
+### `POST /stores/:storeId/summary/day` (implemented)
+
+Query: `date=YYYY-MM-DD`
+
+Headers:
+
+- `x-organization-id: <uuid>`
+- `x-user-id: <uuid>`
+- `x-member-role: owner|manager|employee`
+
+Body:
+
+```json
+{
+  "totalSalesHalalas": 125000,
+  "totalOutflowHalalas": 42000,
+  "note": "optional"
+}
+```
+
+Behavior:
+
+- Records an immutable day snapshot in `audit_events` (`action = summary_snapshot_recorded`) after organization/store/membership validation.
+- Returns computed current summary from `entries` plus snapshot metadata.
 
 ### `GET /stores/:storeId/summary/month`
 

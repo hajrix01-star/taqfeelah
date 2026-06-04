@@ -1,8 +1,8 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
-import { entries } from "@/core/db/schema";
-import { ValidationError } from "@/core/errors/app-error";
+import { entries, stores } from "@/core/db/schema";
+import { ForbiddenError, ValidationError } from "@/core/errors/app-error";
 import { calculateDaySummary } from "@/domain/cash-movement/calculations";
 
 const summaryInputSchema = z.object({
@@ -23,6 +23,22 @@ export async function getStoreDaySummary(rawInput: SummaryInput) {
 
   const input = parsed.data;
   const db = getDb();
+
+  const [storeRow] = await db
+    .select({ id: stores.id })
+    .from(stores)
+    .where(
+      and(
+        eq(stores.id, input.storeId),
+        eq(stores.organizationId, input.organizationId),
+        eq(stores.status, "active"),
+      ),
+    )
+    .limit(1);
+
+  if (!storeRow) {
+    throw new ForbiddenError("Store is not accessible for this organization.");
+  }
 
   const rows = await db
     .select({

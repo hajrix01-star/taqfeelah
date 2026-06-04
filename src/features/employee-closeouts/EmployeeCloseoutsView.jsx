@@ -99,24 +99,26 @@ export default function EmployeeCloseoutsView({
     }));
   }, [storeCloseouts, expandedId, dailySequenceById]);
 
+  const currentStoreId = currentStore?.id || null;
   const storeLabel = lang === "ar" ? currentStore?.nameAr : currentStore?.nameEn;
 
   const openSettings = useCallback(() => setShowSettings(true), []);
 
   const startNewCloseout = useCallback(() => {
+    if (!currentStoreId) return;
     const today = new Date();
     const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     setEntryResubmit(false);
     setEntryCloseout(
       createDraftCloseout({
-        storeId: currentStore.id,
+        storeId: currentStoreId,
         storeName: storeLabel,
         date: todayIso,
         employee: { id: employee.id, nameAr: employee.nameAr, nameEn: employee.nameEn },
         notebookTheme,
       }),
     );
-  }, [currentStore.id, employee, storeLabel, notebookTheme]);
+  }, [currentStoreId, employee, storeLabel, notebookTheme]);
 
   useEffect(() => {
     onRegisterAdd?.(startNewCloseout);
@@ -133,7 +135,10 @@ export default function EmployeeCloseoutsView({
     return () => onEntryActiveChange?.(false);
   }, [entryCloseout, showSettings, onEntryActiveChange]);
 
-  const resolveStoreDate = (date) => (findForStoreDateProp || findForStoreDate)(currentStore.id, date);
+  const resolveStoreDate = (date) => {
+    if (!currentStoreId) return null;
+    return (findForStoreDateProp || findForStoreDate)(currentStoreId, date);
+  };
 
   const handleSubmit = async (closeout, { isResubmit }) => {
     const fn = isResubmit ? resubmitCloseout : submitCloseout;

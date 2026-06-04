@@ -1,6 +1,6 @@
 # تقفيلة — Architecture (Backend Foundation)
 
-> **Status:** Foundation documentation only — no Drizzle install, migrations, or API in this phase.  
+> **Status:** Foundation completed partially — Drizzle schema/migration and initial API route exist; broader product APIs and auth/RBAC rollout are still in progress.  
 > **UI:** `APPROVED UI BASELINE` — frozen per `docs/APPROVED_UI_BASELINE.md`.
 
 ---

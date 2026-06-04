@@ -9,6 +9,10 @@ Usage examples:
 
 Environment variables:
   VPS_HOST, VPS_USER, VPS_PASS
+  VPS_PORT (optional, default: 22)
+  VPS_CONNECT_TIMEOUT (optional seconds, default: 25)
+  VPS_CONNECT_RETRIES (optional, default: 3)
+  VPS_RETRY_DELAY_SECONDS (optional seconds, default: 5)
 """
 
 from __future__ import annotations
@@ -16,10 +20,12 @@ from __future__ import annotations
 import argparse
 import os
 import shlex
+import socket
 import sys
 import tarfile
 import tempfile
 import textwrap
+import time
 from pathlib import Path
 from typing import Iterable
 
@@ -36,28 +42,108 @@ def safe_print(value: str) -> None:
 
 
 class VPS:
-    def __init__(self, host: str, user: str, password: str) -> None:
+    def __init__(
+        self,
+        host: str,
+        user: str,
+        password: str,
+        *,
+        port: int = 22,
+        connect_timeout: float = 25,
+        connect_retries: int = 3,
+        retry_delay_seconds: float = 5,
+    ) -> None:
         self.host = host
         self.user = user
         self.password = password
-        self.client = paramiko.SSHClient()
-        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.port = port
+        self.connect_timeout = connect_timeout
+        self.connect_retries = max(1, connect_retries)
+        self.retry_delay_seconds = max(0.0, retry_delay_seconds)
+        self.client: paramiko.SSHClient | None = None
+
+    def _new_client(self) -> paramiko.SSHClient:
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        return client
+
+    def _resolved_endpoints(self) -> list[tuple[socket.AddressFamily, tuple]]:
+        endpoints: list[tuple[socket.AddressFamily, tuple]] = []
+        seen: set[tuple[socket.AddressFamily, str, int]] = set()
+        for family, _, _, _, sockaddr in socket.getaddrinfo(
+            self.host,
+            self.port,
+            type=socket.SOCK_STREAM,
+        ):
+            ip = sockaddr[0]
+            port = sockaddr[1]
+            key = (family, ip, port)
+            if key in seen:
+                continue
+            seen.add(key)
+            endpoints.append((family, sockaddr))
+        if not endpoints:
+            raise RuntimeError(f"No SSH endpoints resolved for {self.host}:{self.port}")
+        return endpoints
 
     def __enter__(self) -> "VPS":
-        self.client.connect(
-            self.host,
-            username=self.user,
-            password=self.password,
-            timeout=25,
-            banner_timeout=25,
-            auth_timeout=25,
+        endpoints = self._resolved_endpoints()
+        errors: list[str] = []
+        for attempt in range(1, self.connect_retries + 1):
+            for family, sockaddr in endpoints:
+                sock: socket.socket | None = None
+                client = self._new_client()
+                ip = sockaddr[0]
+                try:
+                    sock = socket.socket(family, socket.SOCK_STREAM)
+                    sock.settimeout(self.connect_timeout)
+                    sock.connect(sockaddr)
+                    client.connect(
+                        self.host,
+                        port=self.port,
+                        username=self.user,
+                        password=self.password,
+                        sock=sock,
+                        timeout=self.connect_timeout,
+                        banner_timeout=self.connect_timeout,
+                        auth_timeout=self.connect_timeout,
+                        look_for_keys=False,
+                        allow_agent=False,
+                    )
+                    self.client = client
+                    return self
+                except Exception as exc:
+                    errors.append(f"attempt {attempt}, endpoint {ip}:{self.port}: {exc!r}")
+                    try:
+                        client.close()
+                    except Exception:
+                        pass
+                    try:
+                        if sock is not None:
+                            sock.close()
+                    except Exception:
+                        pass
+            if attempt < self.connect_retries:
+                time.sleep(self.retry_delay_seconds)
+
+        unique_ips = ", ".join(sockaddr[0] for _, sockaddr in endpoints)
+        details = "\n".join(errors[-6:])
+        raise RuntimeError(
+            "Unable to establish SSH connection to "
+            f"{self.host}:{self.port} after {self.connect_retries} retries.\n"
+            f"Resolved endpoints: {unique_ips}\n"
+            "Common causes: blocked port 22, incorrect VPS_HOST, or provider firewall rules.\n"
+            f"Last failures:\n{details}"
         )
-        return self
 
     def __exit__(self, exc_type, exc, tb) -> None:
-        self.client.close()
+        if self.client is not None:
+            self.client.close()
+            self.client = None
 
     def run(self, command: str, check: bool = True) -> tuple[int, str, str]:
+        if self.client is None:
+            raise RuntimeError("VPS SSH client is not connected")
         stdin, stdout, stderr = self.client.exec_command(command, get_pty=True)
         out = stdout.read().decode("utf-8", errors="ignore")
         err = stderr.read().decode("utf-8", errors="ignore")
@@ -69,6 +155,8 @@ class VPS:
         return code, out, err
 
     def upload(self, local_path: str, remote_path: str) -> None:
+        if self.client is None:
+            raise RuntimeError("VPS SSH client is not connected")
         sftp = self.client.open_sftp()
         try:
             sftp.put(local_path, remote_path)
@@ -505,8 +593,20 @@ def main() -> int:
     host = get_required_env("VPS_HOST")
     user = get_required_env("VPS_USER")
     password = get_required_env("VPS_PASS")
+    port = int(os.environ.get("VPS_PORT", "22"))
+    connect_timeout = float(os.environ.get("VPS_CONNECT_TIMEOUT", "25"))
+    connect_retries = int(os.environ.get("VPS_CONNECT_RETRIES", "3"))
+    retry_delay_seconds = float(os.environ.get("VPS_RETRY_DELAY_SECONDS", "5"))
 
-    with VPS(host, user, password) as vps:
+    with VPS(
+        host,
+        user,
+        password,
+        port=port,
+        connect_timeout=connect_timeout,
+        connect_retries=connect_retries,
+        retry_delay_seconds=retry_delay_seconds,
+    ) as vps:
         if args.action == "audit":
             cmd_audit(vps)
         elif args.action == "deploy":

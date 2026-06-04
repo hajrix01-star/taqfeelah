@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 import NotebookScrollSurface from "../daily-closeouts/NotebookScrollSurface";
 import { notebookLinesBackground } from "../daily-closeouts/notebook-themes";
@@ -97,13 +97,7 @@ export default function DailyCloseoutEntryFlow({
     review: lang === "ar" ? "المراجعة" : "Review",
   };
 
-  useEffect(() => {
-    if (phase !== "form") return;
-    onSaveDraft(buildCloseout(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, date, salesValues, outflows, attachments]);
-
-  function buildCloseout(finalize) {
+  const buildCloseout = useCallback(() => {
     const salesRecord = salesRecordFromChannels(
       salesChannels,
       Object.fromEntries(salesChannels.map((ch) => [ch.id, salesValues[ch.id] || 0])),
@@ -118,7 +112,12 @@ export default function DailyCloseoutEntryFlow({
       attachments,
     };
     return withCloseoutTotals(base);
-  }
+  }, [attachments, date, initialCloseout, notebookTheme, outflows, salesChannels, salesValues, storeName]);
+
+  useEffect(() => {
+    if (phase !== "form") return;
+    onSaveDraft(buildCloseout());
+  }, [phase, onSaveDraft, buildCloseout]);
 
   const pushOutflow = () => {
     const amount = Number(outAmount || 0);
@@ -171,12 +170,12 @@ export default function DailyCloseoutEntryFlow({
 
   const continueToForm = () => {
     if (!validateDate()) return;
-    onSaveDraft(buildCloseout(false));
+    onSaveDraft(buildCloseout());
     setPhase("form");
   };
 
   const saveDraft = () => {
-    onSaveDraft(buildCloseout(false));
+    onSaveDraft(buildCloseout());
     window.alert(lang === "ar" ? "تم حفظ المسودة" : "Draft saved");
   };
 
@@ -189,7 +188,7 @@ export default function DailyCloseoutEntryFlow({
       window.alert(lang === "ar" ? "أدخل مبلغ الداخل" : "Enter sales amount");
       return;
     }
-    await onSubmit(buildCloseout(true), { isResubmit });
+    await onSubmit(buildCloseout(), { isResubmit });
   };
 
   return (

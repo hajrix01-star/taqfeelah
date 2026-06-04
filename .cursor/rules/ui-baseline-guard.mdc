@@ -1,0 +1,23 @@
+---
+description: Protect approved UI baseline and prevent unapproved visual drift
+alwaysApply: true
+---
+
+# UI Baseline Guard
+
+## Baseline policy
+
+- Respect `docs/APPROVED_UI_BASELINE.md` and `docs/CONVENTIONS.md` UI freeze rules.
+- Do not change prototype visual layout/flow unless explicitly requested by the product owner.
+- Prefer backend/domain refactors without touching approved prototype visuals.
+
+## Safe change behavior
+
+- If a task can be solved without UI changes, do not alter UI.
+- If UI change is required, keep it minimal, reversible, and documented.
+
+## القاعدة بالعربية
+
+- الواجهة المعتمدة baseline تعتبر مرجعًا ثابتًا: لا تعديل بصري أو تغيير تدفق بدون طلب صريح.
+- عند وجود بديل بدون تعديل واجهة، يجب اختياره.
+- أي تغيير بصري ضروري يجب أن يكون محدودًا وواضحًا وقابلًا للتراجع.

@@ -1,0 +1,48 @@
+---
+description: Enforce professional, modern, scalable, maintainable changes by default
+alwaysApply: true
+---
+
+# Engineering Excellence Rule
+
+For every change, prioritize the most professional and future-proof implementation that fits this project.
+
+## القاعدة بالعربية
+
+في كل تعديل، يجب اختيار الحل الأكثر احترافية وحداثة وقابلية للتوسع، مع الحفاظ على نظافة الكود وسهولة الصيانة واستقرار النظام.
+
+### معايير إلزامية
+
+- اختر الحلول الحديثة والمستقرة والمدعومة بدل الاختصارات المؤقتة.
+- صمّم من اليوم الأول بما يدعم التوسع (فصل مسؤوليات واضح، قابلية إضافة ميزات لاحقًا).
+- حافظ على كود نظيف وسهل الصيانة (وحدات صغيرة، أسماء واضحة، ترابط منخفض).
+- لا تكسر الواجهة أو مراحل العمل الحالية؛ أي تغيير يجب أن يحافظ على الاستقرار التشغيلي.
+- فضّل التحسينات التدريجية القابلة للتراجع بدل التغييرات الكبيرة عالية المخاطر.
+- بعد أي تعديل، نفّذ فحوصات حقيقية (`lint`, `typecheck`, `test`، و`build` عند الحاجة).
+
+### أولوية القرار
+
+عند وجود أكثر من حل صحيح، اختر بالترتيب:
+
+1. الأكثر صحة واعتمادية
+2. الأسهل صيانة وقراءة
+3. الأكثر قابلية للتوسع مستقبلًا
+4. الأقل تأثيرًا على السلوك الحالي
+
+## Required Standards
+
+- Prefer modern, stable, actively maintained approaches over legacy shortcuts.
+- Design for scalability from day one (clear boundaries, extensible structure, avoid hard-coded constraints).
+- Keep code clean and easy to maintain (small focused units, clear naming, low coupling).
+- Preserve system stability and UX/workflow continuity; avoid breaking existing flows.
+- Make incremental, reversible improvements instead of risky big-bang rewrites.
+- Validate changes with real checks (`lint`, `typecheck`, `test`, and build when relevant).
+
+## Decision Priority
+
+When multiple valid options exist, choose the one that is:
+
+1. Most correct and reliable
+2. Most maintainable and readable
+3. Most scalable for upcoming features
+4. Least disruptive to current behavior

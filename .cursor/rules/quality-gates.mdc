@@ -1,0 +1,27 @@
+---
+description: Require real quality gates before considering work complete
+alwaysApply: true
+---
+
+# Quality Gates Rule
+
+## Definition of done
+
+A change is not complete until relevant quality checks pass with real execution:
+
+- `lint`
+- `typecheck`
+- `test`
+- `build` (when changes can impact runtime packaging/startup)
+
+## Reliability rules
+
+- Do not claim success without command evidence.
+- Prefer fixing root causes over suppressing warnings/errors.
+- If a check cannot run, state the blocker explicitly and propose a concrete verification path.
+
+## القاعدة بالعربية
+
+- لا يعتبر التعديل مكتملًا إلا بعد فحوصات فعلية ناجحة.
+- لا يُقبل “نجاح نظري” بدون تشغيل أو دليل.
+- عند تعذر الفحص، يجب توضيح السبب وخطة التحقق البديلة بدقة.
