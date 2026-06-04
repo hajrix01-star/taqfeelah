@@ -47,7 +47,7 @@ export function entriesInPeriod(
   );
 }
 
-export function summarizeEntries(entries, reviewEnabledForBusiness = () => true) {
+export function summarizeEntries(entries, reviewEnabledForBusiness = () => false) {
   const activeEntries = entries.filter(entryIsActive);
   const sales = activeEntries.filter((entry) => entry.type === "summary").reduce((sum, entry) => sum + entry.amount, 0);
   const expense = activeEntries.filter(entryIsOutflow).reduce((sum, entry) => sum + entry.amount, 0);
@@ -59,7 +59,7 @@ export function summarizeEntries(entries, reviewEnabledForBusiness = () => true)
   return { sales, expense, net: sales - expense, ratio, proofs, pending };
 }
 
-export function summaryMonthFromEntries(entries, businessId, month, reviewEnabledForBusiness = () => true) {
+export function summaryMonthFromEntries(entries, businessId, month, reviewEnabledForBusiness = () => false) {
   return summarizeEntries(entriesInPeriod(entries, businessId, "month", "", month), reviewEnabledForBusiness);
 }
 

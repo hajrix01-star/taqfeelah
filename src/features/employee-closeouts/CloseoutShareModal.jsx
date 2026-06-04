@@ -26,7 +26,7 @@ export default function CloseoutShareModal({
   employeeName = "",
   notebookTheme = "yellow",
   formatCalendarDate,
-  reviewWorkflowEnabled = true,
+  reviewWorkflowEnabled = false,
   newlySubmitted = false,
   onClose,
 }) {

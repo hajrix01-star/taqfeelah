@@ -1199,7 +1199,7 @@ function readAcknowledgedDuplicateSales() {
 function entriesInPeriod(entries, businessId, period, selectedDate, selectedMonth, selectedYear = "2026", customFrom = "2026-01-01", customTo = "2026-12-31") {
   return entries.filter((entry) => (!businessId || entry.businessId === businessId) && entryDateMatches(entry, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo));
 }
-function summarizeEntries(entries, reviewEnabledForBusiness = () => true) {
+function summarizeEntries(entries, reviewEnabledForBusiness = () => false) {
   const activeEntries = entries.filter(entryIsActive);
   const sales = activeEntries.filter((entry) => entry.type === "summary").reduce((sum, entry) => sum + entry.amount, 0);
   const expense = activeEntries.filter(entryIsOutflow).reduce((sum, entry) => sum + entry.amount, 0);
@@ -1208,10 +1208,10 @@ function summarizeEntries(entries, reviewEnabledForBusiness = () => true) {
   const ratio = sales > 0 ? `${((expense / sales) * 100).toFixed(1)}%` : expense > 0 ? "—" : "0.0%";
   return { sales, expense, net: sales - expense, ratio, proofs, pending };
 }
-function summaryDayFromEntries(entries, businessId, date, reviewEnabledForBusiness = () => true) {
+function summaryDayFromEntries(entries, businessId, date, reviewEnabledForBusiness = () => false) {
   return { id: date, dayAr: formatCalendarDate(date, "ar"), dayEn: formatCalendarDate(date, "en"), fullAr: formatCalendarDate(date, "ar"), fullEn: formatCalendarDate(date, "en"), ...summarizeEntries(entriesInPeriod(entries, businessId, "day", date, "2026-05"), reviewEnabledForBusiness) };
 }
-function summaryMonthFromEntries(entries, businessId, month, reviewEnabledForBusiness = () => true) {
+function summaryMonthFromEntries(entries, businessId, month, reviewEnabledForBusiness = () => false) {
   return summarizeEntries(entriesInPeriod(entries, businessId, "month", "", month), reviewEnabledForBusiness);
 }
 function aggregateChannels(entries, businessId, period, selectedDate, selectedMonth, baseChannels = []) {
@@ -1376,7 +1376,7 @@ function DesktopLanding({ lang, setLang, onLogin }) {
   </div>;
 }
 
-function TopBar({ lang, setLang, employee, onRoleChange, onLogout = () => {}, onNotifications = () => {}, reviewEnabled = true, notebookMode = false }) {
+function TopBar({ lang, setLang, employee, onRoleChange, onLogout = () => {}, onNotifications = () => {}, reviewEnabled = false, notebookMode = false }) {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef(null);
   useEffect(() => {
@@ -1520,7 +1520,7 @@ function EmployeeHome({ lang, onSummary, onExpense, currentStore, assignedStores
   );
 }
 
-function EmployeeEntriesScreen({ lang, reviewEnabled = true, currentStore, assignedStores, onSelectStore, activeEmployeeId, operationalEntries = [] }) {
+function EmployeeEntriesScreen({ lang, reviewEnabled = false, currentStore, assignedStores, onSelectStore, activeEmployeeId, operationalEntries = [] }) {
   const entries = newestEntries(operationalEntries.filter((entry) => entry.businessId === currentStore?.id && entry.enteredBy?.userId === activeEmployeeId));
   return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
     <div className="mb-5"><p className="text-xs font-bold text-[#8B8274]">{text(lang, "tracking")}</p><h1 className="text-xl font-black">{text(lang, "myEntries")}</h1></div>
@@ -2184,7 +2184,7 @@ function StoreScopeTabs({ lang, selectedBusiness, setSelectedBusiness, businesse
   );
 }
 
-function StoreComparison({ lang, monthly, reviewEnabled = true, businessesList = businesses }) {
+function StoreComparison({ lang, monthly, reviewEnabled = false, businessesList = businesses }) {
   const [showStores, setShowStores] = useState(false);
   const total = combinedTotals(monthly, businessesList);
   if (businessesList.length > 2) {
@@ -2262,7 +2262,7 @@ function NotebookDateBar({ dateSelector }) {
   return <NotebookRow className="justify-end">{dateSelector}</NotebookRow>;
 }
 
-function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], onReviewDuplicate = () => {}, onAcknowledgeDuplicate = () => {}, reviewEnabledForBusiness = () => true, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, reviewEnabled = true, businessesList = businesses }) {
+function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], onReviewDuplicate = () => {}, onAcknowledgeDuplicate = () => {}, reviewEnabledForBusiness = () => false, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, reviewEnabled = false, businessesList = businesses }) {
   const [period, setPeriod] = useState("day");
   const [selectedDay, setSelectedDay] = useState(() => todayIsoDate());
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
@@ -2355,7 +2355,7 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], o
 }
 
 function ProofThumb({ paper = false }) { return <div className={`${paper ? "h-12 w-10" : "h-14 w-14 bg-[#E8E1D4]"} flex shrink-0 items-center justify-center rounded-xl`}><div className={`${paper ? "w-9 border border-[#CFBC82]" : "w-9"} rotate-[-3deg] rounded bg-white p-1.5 shadow-sm`}><div className="mb-1 h-1 w-5 rounded bg-[#D8D1C4]" /><div className="mb-1 h-1 w-full rounded bg-[#E9E2D6]" /><div className="h-1 w-7 rounded bg-[#E9E2D6]" /></div></div>; }
-function DayAttachments({ lang, group, reviewEnabled = true, onOpenOperation = () => {} }) { if (!group?.items?.length) return <NotebookRow><p className="text-xs font-bold text-[#806528]">{text(lang, "noAttachmentsDay")}</p></NotebookRow>; return <div className="py-3"><div className="flex gap-3 overflow-x-auto pb-1">{group.items.map((item) => <button key={item.id} onClick={() => onOpenOperation(item.entry)} className="min-w-[78px] text-center"><div className="mb-1 flex h-14 justify-center overflow-hidden rounded-xl"><AttachmentPreview attachment={item.attachment} className="h-14 w-14 rounded-xl" /></div><p className="truncate text-[10px] font-bold">{lang === "ar" ? item.title : item.titleEn}</p><p className={`mt-0.5 text-[10px] font-black ${item.entry.type === "summary" ? "text-[#257844]" : "text-[#B44747]"}`}><MoneyValue value={money(signedEntryAmount(item.entry), lang)} /></p>{reviewEnabled && !entryIsVoided(item.entry) && !item.reviewed && <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#B96725]" />}</button>)}</div></div>; }
+function DayAttachments({ lang, group, reviewEnabled = false, onOpenOperation = () => {} }) { if (!group?.items?.length) return <NotebookRow><p className="text-xs font-bold text-[#806528]">{text(lang, "noAttachmentsDay")}</p></NotebookRow>; return <div className="py-3"><div className="flex gap-3 overflow-x-auto pb-1">{group.items.map((item) => <button key={item.id} onClick={() => onOpenOperation(item.entry)} className="min-w-[78px] text-center"><div className="mb-1 flex h-14 justify-center overflow-hidden rounded-xl"><AttachmentPreview attachment={item.attachment} className="h-14 w-14 rounded-xl" /></div><p className="truncate text-[10px] font-bold">{lang === "ar" ? item.title : item.titleEn}</p><p className={`mt-0.5 text-[10px] font-black ${item.entry.type === "summary" ? "text-[#257844]" : "text-[#B44747]"}`}><MoneyValue value={money(signedEntryAmount(item.entry), lang)} /></p>{reviewEnabled && !entryIsVoided(item.entry) && !item.reviewed && <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#B96725]" />}</button>)}</div></div>; }
 
 function LogStoreFilter({ lang, businessesList = businesses, selectedBusiness, setSelectedBusiness, locked = false }) {
   const [open, setOpen] = useState(false);
@@ -2458,7 +2458,7 @@ function SummaryReportDetails({ lang, monthly, selectedBusiness, selectedDate, s
   return <>{(section === "sales" || section === "both") && dynamicChannels.map((channel) => <NotebookRow key={channel.id}><div className="flex w-full items-end justify-between ps-3 text-xs"><div className="flex items-center gap-2"><span className="font-medium text-[#716753]">{channelName(channel, lang)}</span><RatioBadge value={percentageOfSales(channel.amount)} /></div><strong className="tabular-nums font-bold text-[#112A46]"><MoneyValue value={money(channel.amount, lang)} /></strong></div></NotebookRow>)}{(section === "outflow" || section === "both") && outflowByCategory.map((item) => <NotebookRow key={item.id}><div className="flex w-full items-end justify-between ps-3 text-xs"><div className="flex items-center gap-2"><span className="font-medium text-[#716753]">{text(lang, item.label)}</span><RatioBadge value={percentageOfSales(item.amount)} /></div><strong className="tabular-nums font-bold text-[#B44747]"><MoneyValue value={money(item.amount, lang)} /></strong></div></NotebookRow>)}</>;
 }
 
-function ReportsScreen({ lang, operationalEntries = [], archivedReadOnlyBusinessId = null, reviewEnabledForBusiness = () => true, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, configuredChannels = channels, reviewEnabled = true, businessesList = businesses, archivedBusinessIds = [] }) {
+function ReportsScreen({ lang, operationalEntries = [], archivedReadOnlyBusinessId = null, reviewEnabledForBusiness = () => false, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, configuredChannels = channels, reviewEnabled = false, businessesList = businesses, archivedBusinessIds = [] }) {
   const [period, setPeriod] = useState("day");
   const [selectedReportDay, setSelectedReportDay] = useState(() => todayIsoDate());
   const [selectedReportDate, setSelectedReportDate] = useState(() => todayIsoDate());
@@ -2925,7 +2925,7 @@ ${text(lang, "note")}: ${item.note || "-"}`;
   return <AnimatePresence><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[60] flex items-end bg-[#112A46]/50 sm:items-center sm:justify-center sm:p-6 lg:items-end lg:justify-start lg:p-0"><motion.div initial={{ y: 18 }} animate={{ y: 0 }} exit={{ y: 18 }} className="relative z-10 w-full rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[560px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"><div className="mb-4 flex items-start justify-between"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E6F5E9] text-[#257844]"><Check className="h-5 w-5" /></div><button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]"><X className="h-4 w-4" /></button></div><h3 className="text-base font-black">{text(lang, "outflowSavedTitle")}</h3><p className="mt-2 text-[12px] font-bold leading-6 text-[#716753]">{text(lang, "outflowSavedDesc")}</p><div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-black/[0.045]"><div className="flex items-center justify-between gap-2"><div><p className="text-xs font-black text-[#112A46]">{categoryLabel}</p><p className="mt-1 text-[10px] font-bold text-[#827762]">{businessName(store, lang)} · {formatCalendarDate(item.date, lang)}</p></div><strong className="tabular-nums text-sm font-black text-[#B44747]">{money(signedEntryAmount(item), lang)}</strong></div></div><p className="mt-4 text-xs font-bold text-[#716753]">{text(lang, "sendOutflowQuestion")}</p><div className="mt-5 grid grid-cols-[1fr_1.15fr] gap-3"><button onClick={onClose} className="rounded-2xl bg-white py-3.5 text-[11px] font-black text-[#112A46] ring-1 ring-black/[0.06]">{text(lang, "keepWithoutSending")}</button><button onClick={sendWhatsApp} className="flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] py-3.5 text-[11px] font-black text-white"><Send className="h-4 w-4" />{text(lang, "saveShareWhatsApp")}</button></div></motion.div></motion.div></AnimatePresence>;
 }
 
-function OperationModal({ lang, item, onClose, onReview, onVoid, onRestore, reviewEnabled = true, canVoid = true, canRestore = true }) {
+function OperationModal({ lang, item, onClose, onReview, onVoid, onRestore, reviewEnabled = false, canVoid = true, canRestore = true }) {
   if (!item) return null;
   const isSale = item.type === "summary";
   const voided = entryIsVoided(item);
@@ -2958,14 +2958,14 @@ function buildInitialStoreOperationalSettings(savedSettings, storeList) {
   if (savedSettings?.storeOperationalSettings) return savedSettings.storeOperationalSettings;
   const legacy = {
     activeCategories: savedSettings?.activeCategories || expenseCategories.map((item) => item.id),
-    reviewEnabled: savedSettings?.reviewEnabled ?? true,
-    closeoutAlert: savedSettings?.closeoutAlert ?? true,
-    attachmentAlert: savedSettings?.attachmentAlert ?? true,
+    reviewEnabled: savedSettings?.reviewEnabled ?? false,
+    closeoutAlert: savedSettings?.closeoutAlert ?? false,
+    attachmentAlert: savedSettings?.attachmentAlert ?? false,
   };
   return Object.fromEntries(storeList.map((business) => [business.id, { ...legacy, activeCategories: [...legacy.activeCategories] }]));
 }
 function getStoreOperationalConfig(settings, storeId) {
-  return settings[storeId] || { activeCategories: expenseCategories.map((item) => item.id), reviewEnabled: true, closeoutAlert: true, attachmentAlert: true };
+  return settings[storeId] || { activeCategories: expenseCategories.map((item) => item.id), reviewEnabled: false, closeoutAlert: false, attachmentAlert: false };
 }
 function buildInitialStoreChannelSettings(savedSettings, storeList) {
   if (savedSettings?.storeChannelSettings) return savedSettings.storeChannelSettings;
