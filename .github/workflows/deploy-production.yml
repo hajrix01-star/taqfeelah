@@ -48,11 +48,33 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment:
-      name: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Verify VPS secrets are configured
+        run: |
+          missing=0
+          if [ -z "${{ secrets.VPS_HOST }}" ]; then
+            echo "::error::Missing GitHub secret VPS_HOST"
+            missing=1
+          fi
+          if [ -z "${{ secrets.VPS_USER }}" ]; then
+            echo "::error::Missing GitHub secret VPS_USER"
+            missing=1
+          fi
+          if [ -z "${{ secrets.VPS_PASS }}" ]; then
+            echo "::error::Missing GitHub secret VPS_PASS"
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            echo ""
+            echo "Add repository secrets at:"
+            echo "https://github.com/hajrix01-star/taqfeelah/settings/secrets/actions"
+            echo ""
+            echo "Required: VPS_HOST, VPS_USER, VPS_PASS"
+            exit 1
+          fi
 
       - name: Setup Python
         uses: actions/setup-python@v5
