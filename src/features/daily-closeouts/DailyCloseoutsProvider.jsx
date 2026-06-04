@@ -194,7 +194,7 @@ export function DailyCloseoutsProvider({ children, lang = "ar", ownerName = "", 
   const value = useMemo(() => ({
     closeouts: sortCloseoutsNewestFirst(closeouts),
     events,
-    pendingSubmittedCloseouts: (storeIds) => pendingSubmittedCloseouts(closeouts, storeIds),
+    pendingSubmittedCloseouts: (storeIds, reviewEnabledForStore) => pendingSubmittedCloseouts(closeouts, storeIds, reviewEnabledForStore),
     deleteCloseout,
     upsertCloseout,
     openOrResumeDraft,
