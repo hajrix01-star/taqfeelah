@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import NotebookScrollSurface from "../daily-closeouts/NotebookScrollSurface";
 import DailyCloseoutCard from "./DailyCloseoutCard";
@@ -14,6 +14,18 @@ import {
   employeeHistoryVisibilityLabel,
   isCloseoutWithinEmployeeHistory,
 } from "./employee-closeout-history";
+
+function resolveScrollContainer(node) {
+  if (typeof window === "undefined" || !node) return null;
+  let current = node.parentElement;
+  while (current) {
+    const styles = window.getComputedStyle(current);
+    const canScrollY = /(auto|scroll)/.test(styles.overflowY) && current.scrollHeight > current.clientHeight;
+    if (canScrollY) return current;
+    current = current.parentElement;
+  }
+  return null;
+}
 
 export default function EmployeeCloseoutsView({
   lang,
@@ -49,6 +61,43 @@ export default function EmployeeCloseoutsView({
   const [shareTarget, setShareTarget] = useState(null);
   const [shareNewlySubmitted, setShareNewlySubmitted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const cardRefs = useRef(new Map());
+  const pendingToggleAnchorRef = useRef(null);
+
+  const setCardRef = useCallback((closeoutId, node) => {
+    if (!closeoutId) return;
+    if (node) cardRefs.current.set(closeoutId, node);
+    else cardRefs.current.delete(closeoutId);
+  }, []);
+
+  const toggleExpandedCard = useCallback((closeoutId) => {
+    const node = cardRefs.current.get(closeoutId);
+    if (node) {
+      pendingToggleAnchorRef.current = {
+        closeoutId,
+        top: node.getBoundingClientRect().top,
+        scrollContainer: resolveScrollContainer(node),
+      };
+    } else {
+      pendingToggleAnchorRef.current = null;
+    }
+    setExpandedId((current) => (current === closeoutId ? null : closeoutId));
+  }, []);
+
+  useLayoutEffect(() => {
+    const anchor = pendingToggleAnchorRef.current;
+    if (!anchor) return;
+    pendingToggleAnchorRef.current = null;
+    const node = cardRefs.current.get(anchor.closeoutId);
+    if (!node) return;
+    const delta = node.getBoundingClientRect().top - anchor.top;
+    if (Math.abs(delta) < 1) return;
+    if (anchor.scrollContainer) {
+      anchor.scrollContainer.scrollTop += delta;
+      return;
+    }
+    window.scrollBy(0, delta);
+  }, [expandedId]);
 
   const myStoreCloseouts = useMemo(
     () => closeouts.filter((item) => item.storeId === currentStore?.id && closeoutBelongsToEmployee(item, employee)),
@@ -244,7 +293,7 @@ export default function EmployeeCloseoutsView({
             )}
             <div className="flex flex-col gap-3.5">
               {displayCloseouts.length ? displayCloseouts.map((day, index) => (
-                <div key={day.id}>
+                <div key={day.id} ref={(node) => setCardRef(day.id, node)}>
                   {day.isPrevious && index === 1 && (
                     <p className="mb-3 flex items-center gap-2 text-center text-xs font-extrabold text-[#82745A]">
                       <span className="h-px flex-1 bg-[rgba(141,116,69,0.32)]" />
@@ -259,7 +308,7 @@ export default function EmployeeCloseoutsView({
                     reviewWorkflowEnabled={reviewWorkflowEnabled}
                     closeoutNumber={day.dailySequence}
                     formatDate={(date) => formatCalendarDate(date, lang)}
-                    onToggle={() => setExpandedId((current) => (current === day.id ? null : day.id))}
+                    onToggle={() => toggleExpandedCard(day.id)}
                     onShare={() => {
                       setShareNewlySubmitted(false);
                       setShareTarget(day);
