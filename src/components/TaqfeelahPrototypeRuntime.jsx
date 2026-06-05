@@ -8,6 +8,7 @@ import { buildOperationalEntriesFromCloseout } from "@/features/daily-closeouts/
 import { autoResolveSubmittedCloseoutsWithoutReview, readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import { readCloseoutEvents } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import { notebookCardBackground, notebookLinesBackground, notebookThemes, resolveNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
+import { shareImageThroughSystem, shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
 import EmployeeCloseoutsView from "@/features/employee-closeouts/EmployeeCloseoutsView";
 import DailyCloseoutEntryFlow from "@/features/employee-closeouts/DailyCloseoutEntryFlow";
 import EmployeeHistoryVisibilityPicker from "@/features/employee-closeouts/EmployeeHistoryVisibilityPicker";
@@ -3525,43 +3526,12 @@ async function captureNotebookPreviewBlob(element, backgroundColor = "#FFFDF7") 
 
 /** Share image via OS sheet (WhatsApp on mobile). Never downloads — wa.me cannot attach files. */
 async function shareNotebookImageToWhatsApp(file, caption, lang) {
-  if (!file) return { ok: false, method: "none" };
-  const openWhatsAppText = (message) => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
-  };
-
-  if (typeof navigator !== "undefined" && navigator.share) {
-    const payloads = [{ files: [file] }, { files: [file], text: caption }];
-    for (const data of payloads) {
-      try {
-        if (navigator.canShare && !navigator.canShare(data)) continue;
-        await navigator.share(data);
-        return { ok: true, method: "share" };
-      } catch (error) {
-        if (error?.name === "AbortError") return { ok: true, method: "abort" };
-      }
-    }
-    try {
-      await navigator.share({ files: [file] });
-      return { ok: true, method: "share" };
-    } catch (error) {
-      if (error?.name === "AbortError") return { ok: true, method: "abort" };
-    }
-  }
-
-  if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
-    try {
-      const type = file.type || "image/png";
-      await navigator.clipboard.write([new ClipboardItem({ [type]: file })]);
-      openWhatsAppText(`${caption}${String.fromCharCode(10)}${String.fromCharCode(10)}${text(lang, "shareImagePasteHint")}`);
-      return { ok: true, method: "clipboard" };
-    } catch {
-      // fall through
-    }
-  }
-
-  openWhatsAppText(caption);
-  return { ok: false, method: "text-only" };
+  return shareImageThroughWhatsApp({
+    file,
+    caption,
+    lang,
+    pasteHint: text(lang, "shareImagePasteHint"),
+  });
 }
 
 function NotebookShareModal({ lang, snapshot, onClose, businessesList = businesses, operationalEntries = [], archivedBusinessIds = [] }) {
@@ -3797,8 +3767,12 @@ function NotebookShareModal({ lang, snapshot, onClose, businessesList = business
   };
   const downloadNotebookImage = () => runImageAction(async (file) => downloadBlobFile(file, imageFilename));
   const shareNotebookImage = () => runImageAction(async (file) => {
-    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-      await navigator.share({ files: [file], title: exportTitle, text: shareCaption });
+    const result = await shareImageThroughSystem({
+      file,
+      title: exportTitle,
+      caption: shareCaption,
+    });
+    if (result.method === "share" || result.method === "abort") {
       return;
     }
     downloadBlobFile(file, imageFilename);
