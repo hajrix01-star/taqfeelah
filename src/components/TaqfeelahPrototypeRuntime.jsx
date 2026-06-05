@@ -160,8 +160,57 @@ function formatSelectedMonth(value, lang) {
   return formatCalendarMonth(year, month, lang);
 }
 
+// ─── Prototype boot helpers (in-memory only, production returns defaults) ──
 
+const PROTOTYPE_EMPLOYEE_PIN_DEFAULT = process.env.NEXT_PUBLIC_DEMO_EMPLOYEE_PIN_DEFAULT || (APP_IN_PRODUCTION_MODE ? "" : "1234");
 
+const PROTOTYPE_DEFAULT_STAFF = [
+  { id: "ahmed", nameAr: "أحمد", nameEn: "Ahmed", mobile: "050 123 4567", active: true, storeIds: ["shami"], pin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT },
+  { id: "sara", nameAr: "سارة", nameEn: "Sara", mobile: "055 987 6543", active: true, storeIds: ["arz"], pin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT },
+];
+
+const DISABLE_REVIEW_ALERTS_MIGRATION_KEY = "disableReviewAlertsV1";
+
+function migrateSavedSettings(raw) {
+  if (!raw || typeof window === "undefined" || APP_IN_PRODUCTION_MODE || raw[DISABLE_REVIEW_ALERTS_MIGRATION_KEY]) return raw;
+  const migrated = { ...raw, [DISABLE_REVIEW_ALERTS_MIGRATION_KEY]: true };
+  if (migrated.storeOperationalSettings) {
+    migrated.storeOperationalSettings = Object.fromEntries(
+      Object.entries(migrated.storeOperationalSettings).map(([id, cfg]) => [
+        id,
+        { ...cfg, reviewEnabled: false, attachmentAlert: false, closeoutAlert: false, closeoutReviewEnabled: false },
+      ]),
+    );
+  } else {
+    migrated.reviewEnabled = false;
+    migrated.closeoutAlert = false;
+    migrated.attachmentAlert = false;
+    migrated.closeoutReviewEnabled = false;
+  }
+  try {
+    window.localStorage.setItem("taqfeelah_owner_settings", JSON.stringify(migrated));
+  } catch { /* ignore storage errors */ }
+  return migrated;
+}
+
+function readSavedSettings() {
+  if (APP_IN_PRODUCTION_MODE) return null;
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = JSON.parse(window.localStorage.getItem("taqfeelah_owner_settings") || "null");
+    return migrateSavedSettings(raw);
+  } catch {
+    return null;
+  }
+}
+
+function readPrototypeAuthBoot() {
+  if (APP_IN_PRODUCTION_MODE) {
+    return { loggedIn: false, employee: false, loggedInEmployeeId: null, employeeBusinessId: "" };
+  }
+  const settings = readSavedSettings();
+  return resolveAuthStateFromSession(settings?.staff || PROTOTYPE_DEFAULT_STAFF);
+}
 
 
 
