@@ -52,6 +52,22 @@ PRODUCTION_ENV_KEYS = [
     "NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP",
 ]
 
+REQUIRED_RUNTIME_ENV_KEYS = [
+    "APP_MODE",
+    "NEXT_PUBLIC_APP_MODE",
+    "DATABASE_URL",
+    "AUTH_SESSION_SECRET",
+    "AUTH_ORGANIZATION_ID",
+    "AUTH_OWNER_USER_ID",
+    "NEXT_PUBLIC_CLOSEOUTS_API_ENABLED",
+    "NEXT_PUBLIC_ENTRIES_API_ENABLED",
+    "NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID",
+    "NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID",
+    "NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP",
+    "NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP",
+    "NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP",
+]
+
 
 def safe_print(value: str) -> None:
     # Keep script resilient on Windows shells with legacy codepages.
@@ -197,6 +213,12 @@ def print_section(title: str) -> None:
 
 
 def build_production_env_payload() -> str:
+    missing_required = [key for key in REQUIRED_RUNTIME_ENV_KEYS if not os.environ.get(key)]
+    if missing_required:
+        raise RuntimeError(
+            "Missing required production environment values for runtime strict mode: "
+            + ", ".join(missing_required)
+        )
     lines: list[str] = []
     for key in PRODUCTION_ENV_KEYS:
         value = os.environ.get(key)
@@ -398,12 +420,14 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     ]
     for c in verify_cmds:
         print_section(c)
-        _, out, err = vps.run(c, check=False)
+        code, out, err = vps.run(c, check=False)
         if out.strip():
             safe_print(out.strip())
         if err.strip():
             safe_print("STDERR:")
             safe_print(err.strip())
+        if code != 0:
+            raise RuntimeError(f"Verification command failed ({code}): {c}")
 
 
 def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> None:

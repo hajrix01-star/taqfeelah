@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ServiceUnavailableError } from "@/core/errors/app-error";
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1).optional(),
@@ -114,7 +115,9 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
   }
 
   if (missing.length > 0) {
-    throw new Error(`Production runtime env is incomplete: ${missing.join(", ")}`);
+    throw new ServiceUnavailableError(
+      `Production runtime env is incomplete: ${missing.join(", ")}`,
+    );
   }
 }
 
