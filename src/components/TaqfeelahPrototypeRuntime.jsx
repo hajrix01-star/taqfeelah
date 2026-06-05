@@ -160,6 +160,9 @@ function formatSelectedMonth(value, lang) {
   return formatCalendarMonth(year, month, lang);
 }
 
+// ─── App mode constant ───────────────────────────────────────────────────────
+const APP_IN_PRODUCTION_MODE = isProductionAppMode();
+
 // ─── Prototype boot helpers (in-memory only, production returns defaults) ──
 
 const PROTOTYPE_EMPLOYEE_PIN_DEFAULT = process.env.NEXT_PUBLIC_DEMO_EMPLOYEE_PIN_DEFAULT || (APP_IN_PRODUCTION_MODE ? "" : "1234");

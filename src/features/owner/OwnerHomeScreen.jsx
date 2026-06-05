@@ -16,7 +16,6 @@ import { StoreComparison, DateSelector, NotebookHeading, NotebookMarginTools } f
 import { isProductionAppMode } from "@/core/config/app-mode";
 import OwnerLedgerPage from "@/features/owner/ledger/OwnerLedgerPage";
 
-const APP_IN_PRODUCTION_MODE = isProductionAppMode();
 
 
 // ─── StoreScopeTabs ───────────────────────────────────
