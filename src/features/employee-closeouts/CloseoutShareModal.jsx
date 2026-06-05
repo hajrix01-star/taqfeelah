@@ -38,12 +38,15 @@ export default function CloseoutShareModal({
   const [shareHint, setShareHint] = useState("");
 
   const periodLabel = closeout && formatCalendarDate ? formatCalendarDate(closeout.date, lang) : "";
+  const resolvedStoreName = storeName || closeout?.storeName || (lang === "ar" ? "المحل" : "Store");
+  const resolvedEmployeeName = employeeName || closeout?.employeeName || "";
+  const resolvedPeriodLabel = periodLabel || closeout?.date || "";
   const labels = useMemo(() => shareLabels(lang), [lang]);
   const totals = useMemo(() => (closeout ? closeoutShareTotals(closeout) : null), [closeout]);
   const operations = useMemo(() => (closeout ? buildCloseoutShareOperationRows(closeout, lang) : []), [closeout, lang]);
   const shareCaption = useMemo(
-    () => (storeName && periodLabel ? buildEmployeeShareCaption(lang, storeName, employeeName, periodLabel, closeout?.date) : ""),
-    [lang, storeName, employeeName, periodLabel, closeout?.date],
+    () => (closeout ? buildEmployeeShareCaption(lang, resolvedStoreName, resolvedEmployeeName, resolvedPeriodLabel, closeout.date) : ""),
+    [lang, closeout, resolvedStoreName, resolvedEmployeeName, resolvedPeriodLabel],
   );
   const selectedTheme = closeout?.notebookTheme || notebookTheme || "yellow";
   const paperColor = notebookThemes[selectedTheme]?.paper || notebookThemes.yellow?.paper || "#FFFDF7";
@@ -53,16 +56,16 @@ export default function CloseoutShareModal({
     return {
       lang,
       theme: selectedTheme,
-      periodLabel,
+      periodLabel: resolvedPeriodLabel,
       title: labels.myCloseout,
-      storeName,
-      employeeName,
+      storeName: resolvedStoreName,
+      employeeName: resolvedEmployeeName,
       captionFooter: shareCaption,
       labels,
       record: totals,
       operations,
     };
-  }, [totals, closeout, lang, periodLabel, labels, storeName, employeeName, shareCaption, operations, selectedTheme]);
+  }, [totals, closeout, lang, resolvedPeriodLabel, labels, resolvedStoreName, resolvedEmployeeName, shareCaption, operations, selectedTheme]);
 
   useEffect(() => {
     if (!open || !closeout) {
@@ -199,18 +202,18 @@ export default function CloseoutShareModal({
             <div className="min-w-0 text-start">
               <p className="text-taq-meta font-bold text-[#827762]">{lang === "ar" ? "خيارات المشاركة" : "Share options"}</p>
               <h3 className="text-base font-black text-[#112A46]">{lang === "ar" ? "معاينة صورة التقفيلة" : "Closeout image preview"}</h3>
-              {(storeName || employeeName) ? (
+              {(resolvedStoreName || resolvedEmployeeName) ? (
                 <p className="mt-1 text-taq-meta font-bold leading-snug text-[#827762]">
-                  {storeName ? (
+                  {resolvedStoreName ? (
                     <span className="block truncate">
                       {lang === "ar" ? "المحل: " : "Store: "}
-                      <span className="text-[#112A46]">{storeName}</span>
+                      <span className="text-[#112A46]">{resolvedStoreName}</span>
                     </span>
                   ) : null}
-                  {employeeName ? (
+                  {resolvedEmployeeName ? (
                     <span className="block truncate">
                       {lang === "ar" ? "الموظف: " : "Employee: "}
-                      <span className="text-[#112A46]">{employeeName}</span>
+                      <span className="text-[#112A46]">{resolvedEmployeeName}</span>
                     </span>
                   ) : null}
                 </p>
