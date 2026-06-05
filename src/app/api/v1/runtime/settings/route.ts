@@ -54,7 +54,11 @@ export async function PUT(request: Request) {
       reason,
     });
 
-    return ok(saved);
+    return ok({
+      id: saved.id,
+      createdAt: saved.createdAt,
+      settings: saved.settings,
+    });
   } catch (error) {
     return fail(error);
   }

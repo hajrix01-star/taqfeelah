@@ -101,7 +101,7 @@ export async function createAuthSession(rawInput: LoginInput) {
   }
 
   const runtimeSettingsEnvelope = await getRuntimeSettingsByOrganizationId(organizationId);
-  const runtimeSettings = runtimeSettingsEnvelope?.settings || null;
+  const runtimeSettings = (runtimeSettingsEnvelope?.settings || null) as Record<string, unknown> | null;
   const parsedAuthConfig = authConfigSchema.safeParse(runtimeSettings?.authConfig || {});
   const runtimeAuthConfig = parsedAuthConfig.success ? parsedAuthConfig.data : {};
 

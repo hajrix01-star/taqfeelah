@@ -67,6 +67,17 @@ export function notebookCardBackground(theme, variant = "card") {
   return blendHex(paper, "#FFFFFF", ratio);
 }
 
+export function applyNotebookThemeCssVariables(themeKey) {
+  if (typeof document === "undefined") return;
+  const activeTheme = notebookThemes[themeKey] || notebookThemes.yellow;
+  document.documentElement.style.setProperty("--taq-notebook-paper", activeTheme.paper);
+  document.documentElement.style.setProperty("--taq-shell-bg", activeTheme.paper);
+}
+
+export function isValidNotebookTheme(themeKey) {
+  return typeof themeKey === "string" && Object.prototype.hasOwnProperty.call(notebookThemes, themeKey);
+}
+
 export function resolveNotebookTheme({ storeOperationalSettings, storeId, globalTheme, employeeThemeOverride }) {
   if (employeeThemeOverride) return employeeThemeOverride;
   const storeTheme = storeOperationalSettings?.[storeId]?.notebookTheme;

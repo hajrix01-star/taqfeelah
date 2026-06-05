@@ -7,7 +7,7 @@ import { DailyCloseoutsProvider, useDailyCloseouts } from "@/features/daily-clos
 import { buildOperationalEntriesFromCloseout } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import { autoResolveSubmittedCloseoutsWithoutReview, readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import { readCloseoutEvents } from "@/features/daily-closeouts/daily-closeouts-demo-store";
-import { notebookCardBackground, notebookLinesBackground, notebookThemes, resolveNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
+import { applyNotebookThemeCssVariables, isValidNotebookTheme, notebookCardBackground, notebookLinesBackground, notebookThemes, resolveNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
 import { shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
 import EmployeeCloseoutsView from "@/features/employee-closeouts/EmployeeCloseoutsView";
 import DailyCloseoutEntryFlow from "@/features/employee-closeouts/DailyCloseoutEntryFlow";
@@ -72,6 +72,7 @@ import {
   voidStoreEntryViaApi,
 } from "@/features/entries/client/store-entries-api-client";
 import {
+  fetchEmployeeLoginRosterViaApi,
   fetchRuntimeSettingsViaApi,
   getSessionStatusViaApi,
   loginEmployeeSessionViaApi,
@@ -1733,10 +1734,37 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const loginStaff = APP_IN_PRODUCTION_MODE && staff.filter((person) => person.active && !person.removed).length === 0
-    ? PRODUCTION_EMPLOYEE_LOGIN_STAFF
+  const [rosterStaff, setRosterStaff] = useState([]);
+  const [rosterLoading, setRosterLoading] = useState(APP_IN_PRODUCTION_MODE);
+  const loginStaff = APP_IN_PRODUCTION_MODE
+    ? (staff.filter((person) => person.active && !person.removed).length > 0 ? staff : rosterStaff)
     : staff;
   const activeStaff = loginStaff.filter((person) => person.active && !person.removed);
+  useEffect(() => {
+    if (!APP_IN_PRODUCTION_MODE) return;
+    let cancelled = false;
+    fetchEmployeeLoginRosterViaApi()
+      .then((payload) => {
+        if (cancelled) return;
+        if (Array.isArray(payload?.staff)) {
+          setRosterStaff(payload.staff.map((person) => ({
+            ...person,
+            active: true,
+            removed: false,
+          })));
+        }
+      })
+      .catch((failure) => {
+        if (cancelled) return;
+        console.warn("employee roster load failed", failure);
+      })
+      .finally(() => {
+        if (!cancelled) setRosterLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   useEffect(() => {
     if (!selectedId && activeStaff[0]) setSelectedId(activeStaff[0].id);
   }, [activeStaff, selectedId]);
@@ -1794,6 +1822,10 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
               </button>
             ))}
           </div>
+        ) : rosterLoading ? (
+          <p className="mb-4 rounded-2xl bg-[#F7F5EF] px-4 py-3 text-center text-taq-meta font-bold text-[#827762]">
+            {lang === "ar" ? "جاري تحميل قائمة الموظفين..." : "Loading employee list..."}
+          </p>
         ) : (
           <input
             dir="ltr"
@@ -2287,11 +2319,6 @@ const PROTOTYPE_DEFAULT_STAFF = [
   { id: "sara", nameAr: "سارة", nameEn: "Sara", mobile: "055 987 6543", active: true, storeIds: ["arz"], pin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT },
 ];
 
-const PRODUCTION_EMPLOYEE_LOGIN_STAFF = [
-  { id: "ahmed", nameAr: "أحمد", nameEn: "Ahmed", mobile: "", active: true, removed: false, storeIds: ["shami"], apiUserId: "4cf1450d-08d8-4ca1-b180-1c2642174a79" },
-  { id: "sara", nameAr: "سارة", nameEn: "Sara", mobile: "", active: true, removed: false, storeIds: ["shami"], apiUserId: "85f696d6-f655-4f2d-9f56-1f13c2f4c66c" },
-];
-
 function readPrototypeAuthBoot() {
   if (APP_IN_PRODUCTION_MODE) {
     return {
@@ -2304,7 +2331,7 @@ function readPrototypeAuthBoot() {
   const settings = readSavedSettings();
   return resolveAuthStateFromSession(settings?.staff || (APP_IN_PRODUCTION_MODE ? [] : PROTOTYPE_DEFAULT_STAFF));
 }
-function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChannelSettings, setStoreChannelSettings, storeOperationalSettings, setStoreOperationalSettings, configuredBusinesses, setConfiguredBusinesses, archivedBusinessIds, setArchivedBusinessIds, staff, setStaff, ownerProfile, setOwnerProfile, authOwnerUsername, setAuthOwnerUsername, authOwnerPassword, setAuthOwnerPassword, authEmployeePins, setAuthEmployeePins, operationalEntries = [], selectedBusiness, setSelectedBusiness, setOwnerPage, setArchivedReadOnlyBusinessId, setLastCloseoutDates, onLogout = () => {}, onOpenSupport = () => {}, onOpenHelp = () => {} }) {
+function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChannelSettings, setStoreChannelSettings, storeOperationalSettings, setStoreOperationalSettings, configuredBusinesses, setConfiguredBusinesses, archivedBusinessIds, setArchivedBusinessIds, staff, setStaff, ownerProfile, setOwnerProfile, authOwnerUsername, setAuthOwnerUsername, authOwnerPassword, setAuthOwnerPassword, authEmployeePins, setAuthEmployeePins, operationalEntries = [], selectedBusiness, setSelectedBusiness, setOwnerPage, setArchivedReadOnlyBusinessId, setLastCloseoutDates, onPersistSettingsNow = null, onLogout = () => {}, onOpenSupport = () => {}, onOpenHelp = () => {} }) {
   const [section, setSection] = useState("home");
   const [settingsStoreId, setSettingsStoreId] = useState(null);
   const [storePanel, setStorePanel] = useState("overview");
@@ -2331,6 +2358,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   const [draftAuthOwnerUsername, setDraftAuthOwnerUsername] = useState(authOwnerUsername || "");
   const [draftAuthOwnerPassword, setDraftAuthOwnerPassword] = useState(authOwnerPassword || "");
   const [draftAuthEmployeePins, setDraftAuthEmployeePins] = useState(() => ({ ...(authEmployeePins || {}) }));
+  const [teamSaving, setTeamSaving] = useState(false);
 
   const activeStoredBusinesses = configuredBusinesses.filter((business) => !archivedBusinessIds.includes(business.id));
   const archivedStoredBusinesses = configuredBusinesses.filter((business) => archivedBusinessIds.includes(business.id));
@@ -2359,6 +2387,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
       archivedBusinessIds,
       storeChannelSettings,
       storeOperationalSettings,
+      notebookTheme,
       staff,
       ownerProfile,
       authConfig: {
@@ -2367,7 +2396,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
         employeePins: authEmployeePins,
       },
     }));
-  }, [configuredBusinesses, archivedBusinessIds, storeChannelSettings, storeOperationalSettings, staff, ownerProfile, authOwnerUsername, authOwnerPassword, authEmployeePins]);
+  }, [configuredBusinesses, archivedBusinessIds, storeChannelSettings, storeOperationalSettings, notebookTheme, staff, ownerProfile, authOwnerUsername, authOwnerPassword, authEmployeePins]);
   useEffect(() => { setDraftNotebookTheme(notebookTheme); setThemeDirty(false); }, [notebookTheme]);
   useEffect(() => { setDraftOwnerName(ownerProfile?.name || text(lang, "ownerName")); }, [ownerProfile?.name, lang]);
   useEffect(() => { setDraftAuthOwnerUsername(authOwnerUsername || ""); }, [authOwnerUsername]);
@@ -2461,15 +2490,44 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   };
   const startManagingTeam = () => { setDraftStaff(staff.map((person) => ({ ...person, storeIds: [...(person.storeIds || [])] }))); setManagingTeam(true); };
   const cancelManagingTeam = () => { setDraftStaff(null); setManagingTeam(false); setNewEmployeeName(""); setNewEmployeeMobile(""); setNewEmployeeStoreIds([]); };
-  const saveManagingTeam = () => {
-    if (!draftStaff) return;
-    setStaff(draftStaff);
-    const allowedIds = new Set(draftStaff.map((person) => person.id));
-    setAuthEmployeePins((current) => Object.fromEntries(
-      Object.entries({ ...(current || {}), ...(draftAuthEmployeePins || {}) })
+  const saveManagingTeam = async () => {
+    if (!draftStaff || teamSaving) return;
+    const nextStaff = draftStaff.map((person) => ({
+      ...person,
+      pin: draftAuthEmployeePins?.[person.id] || person.pin || "1234",
+    }));
+    const allowedIds = new Set(nextStaff.map((person) => person.id));
+    const nextPins = Object.fromEntries(
+      Object.entries({ ...(authEmployeePins || {}), ...(draftAuthEmployeePins || {}) })
         .filter(([personId]) => allowedIds.has(personId)),
-    ));
+    );
+    setStaff(nextStaff);
+    setAuthEmployeePins(nextPins);
     cancelManagingTeam();
+    if (APP_IN_PRODUCTION_MODE && typeof onPersistSettingsNow === "function") {
+      setTeamSaving(true);
+      setSettingsNotice("");
+      try {
+        await onPersistSettingsNow({
+          staff: nextStaff,
+          authConfig: {
+            ownerUsername: authOwnerUsername,
+            ownerPassword: authOwnerPassword,
+            employeePins: nextPins,
+          },
+        });
+        showSettingsSaved();
+      } catch (failure) {
+        setSettingsNotice(
+          failure instanceof Error && failure.message
+            ? failure.message
+            : (lang === "ar" ? "تعذر حفظ الفريق على الخادم." : "Failed to save team on server."),
+        );
+      } finally {
+        setTeamSaving(false);
+      }
+      return;
+    }
     showSettingsSaved();
   };
   const addStaff = () => {
@@ -2676,7 +2734,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
         {managingTeam && (
           <div className="grid grid-cols-[0.9fr_1.35fr] gap-3">
             <button onClick={cancelManagingTeam} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button>
-            <button onClick={saveManagingTeam} className="rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white">{text(lang, "saveTeamChanges")}</button>
+            <button type="button" disabled={teamSaving} onClick={() => { void saveManagingTeam(); }} className={`rounded-2xl py-3.5 text-xs font-black text-white ${teamSaving ? "bg-[#B8C0B7]" : "bg-[#112A46]"}`}>{text(lang, "saveTeamChanges")}</button>
           </div>
         )}
         <DeleteDialog />
@@ -4743,9 +4801,8 @@ export default function TaqfeelahPrototypeRuntime() {
         setLoggedIn(true);
         setAuthScreen("owner");
         if (session.role === "employee") {
-          const legacyEmployeeId = resolveLegacyEmployeeIdByApiUserId(session.userId);
           setEmployee(true);
-          setLoggedInEmployeeId(legacyEmployeeId || session.userId);
+          setLoggedInEmployeeId(session.userId);
           setEmployeePage("closeouts");
           return;
         }
@@ -4762,6 +4819,15 @@ export default function TaqfeelahPrototypeRuntime() {
       cancelled = true;
     };
   }, []);
+  useEffect(() => {
+    if (!APP_IN_PRODUCTION_MODE || !employee || !sessionUserId) return;
+    const matchedStaff = staff.find(
+      (person) => person.apiUserId === sessionUserId || person.id === loggedInEmployeeId,
+    );
+    if (matchedStaff?.id && matchedStaff.id !== loggedInEmployeeId) {
+      setLoggedInEmployeeId(matchedStaff.id);
+    }
+  }, [employee, loggedInEmployeeId, sessionUserId, staff]);
   const activeBusinesses = configuredBusinesses.filter((business) => !archivedBusinessIds.includes(business.id));
   const reportingBusinesses = configuredBusinesses;
   const activeViewBusiness = activeBusinesses.length === 1 ? activeBusinesses[0].id : selectedBusiness === "all" || activeBusinesses.some((business) => business.id === selectedBusiness) ? selectedBusiness : "all";
@@ -4799,6 +4865,7 @@ export default function TaqfeelahPrototypeRuntime() {
     archivedBusinessIds,
     storeChannelSettings,
     storeOperationalSettings,
+    notebookTheme,
     staff,
     ownerProfile,
     authConfig: {
@@ -4811,6 +4878,7 @@ export default function TaqfeelahPrototypeRuntime() {
     archivedBusinessIds,
     storeChannelSettings,
     storeOperationalSettings,
+    notebookTheme,
     staff,
     ownerProfile,
     authOwnerUsername,
@@ -4829,6 +4897,9 @@ export default function TaqfeelahPrototypeRuntime() {
     if (migrated.storeOperationalSettings && typeof migrated.storeOperationalSettings === "object") {
       setStoreOperationalSettings(migrated.storeOperationalSettings);
     }
+    if (typeof migrated.notebookTheme === "string" && isValidNotebookTheme(migrated.notebookTheme)) {
+      setNotebookTheme(migrated.notebookTheme);
+    }
     if (Array.isArray(migrated.staff)) setStaff(migrated.staff);
     if (migrated.ownerProfile && typeof migrated.ownerProfile === "object") setOwnerProfile(migrated.ownerProfile);
     if (migrated.authConfig && typeof migrated.authConfig === "object") {
@@ -4843,6 +4914,31 @@ export default function TaqfeelahPrototypeRuntime() {
       }
     }
   }, []);
+
+  const persistRuntimeSettingsNow = useCallback(async (partialSettings = {}) => {
+    if (!APP_IN_PRODUCTION_MODE) return null;
+    const settings = {
+      ...runtimeSettingsSnapshot,
+      ...partialSettings,
+      authConfig: {
+        ...runtimeSettingsSnapshot.authConfig,
+        ...(partialSettings.authConfig && typeof partialSettings.authConfig === "object" ? partialSettings.authConfig : {}),
+      },
+    };
+    const saved = await saveRuntimeSettingsViaApi({
+      settings,
+      reason: "owner_settings_explicit_save",
+    });
+    if (saved?.settings && typeof saved.settings === "object") {
+      applyRuntimeSettingsSnapshot(saved.settings);
+      try {
+        runtimeSettingsLastSavedSignatureRef.current = JSON.stringify(saved.settings);
+      } catch {
+        runtimeSettingsLastSavedSignatureRef.current = "";
+      }
+    }
+    return saved;
+  }, [applyRuntimeSettingsSnapshot, runtimeSettingsSnapshot]);
 
   const duplicateSalesAlerts = useMemo(() => {
     const grouped = new Map();
@@ -4860,6 +4956,9 @@ export default function TaqfeelahPrototypeRuntime() {
   const ownerNotificationsVisible = duplicateSalesAlerts.length > 0 || ownerHasPendingReview || unseenCloseoutAlerts.length > 0;
   const ownerNotificationBadge = ownerHasPendingReview || duplicateSalesAlerts.length > 0 || unseenCloseoutAlerts.length > 0;
   useEffect(() => { if (typeof window !== "undefined") window.localStorage.setItem("taqfeelah_notebook_theme", notebookTheme); }, [notebookTheme]);
+  useEffect(() => {
+    applyNotebookThemeCssVariables(employee ? employeeNotebookTheme : notebookTheme);
+  }, [employee, employeeNotebookTheme, notebookTheme]);
   useEffect(() => {
     if (APP_IN_PRODUCTION_MODE || typeof window === "undefined") return;
     window.localStorage.setItem(OPERATIONAL_ENTRIES_STORAGE_KEY, JSON.stringify(stripEmbeddedAttachmentImages(operationalEntries)));
