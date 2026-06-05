@@ -79,6 +79,7 @@ PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
         '"card":"bb16ea8f-8abf-4ca9-ab0d-e3a8f69f8db1",'
         '"online":"f0f8dd28-4fbe-4bf2-9074-2be703f10ccd"}'
     ),
+    "AUTH_EMPLOYEE_PIN_MAP": '{"ahmed":"1234","sara":"1234"}',
 }
 
 VPS_POSTGRES_CONTAINER = "taqfeelah-postgres"

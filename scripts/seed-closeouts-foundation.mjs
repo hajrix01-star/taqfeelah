@@ -180,6 +180,80 @@ async function upsertFoundation(client, cfg) {
   }
 }
 
+async function seedRuntimeSettings(client, cfg) {
+  const existing = await client.query(
+    `
+    select id
+    from audit_events
+    where organization_id = $1
+      and store_id is null
+      and action = 'runtime_settings_saved'
+    limit 1
+    `,
+    [cfg.organizationId],
+  );
+  if (existing.rowCount > 0) {
+    console.log("Runtime settings already seeded.");
+    return;
+  }
+
+  const settings = {
+    configuredBusinesses: [
+      {
+        id: "shami",
+        nameAr: cfg.storeName,
+        nameEn: "Al-Shami Grill",
+        location: "",
+      },
+    ],
+    staff: [
+      {
+        id: "ahmed",
+        nameAr: "أحمد",
+        nameEn: cfg.employeeOneName,
+        mobile: "",
+        active: true,
+        storeIds: ["shami"],
+        apiUserId: cfg.employeeOneUserId,
+      },
+      {
+        id: "sara",
+        nameAr: "سارة",
+        nameEn: cfg.employeeTwoName,
+        mobile: "",
+        active: true,
+        storeIds: ["shami"],
+        apiUserId: cfg.employeeTwoUserId,
+      },
+    ],
+    authConfig: {
+      ownerUsername: "hajri",
+      ownerPassword: "123",
+      employeePins: {
+        ahmed: "1234",
+        sara: "1234",
+      },
+    },
+  };
+
+  await client.query(
+    `
+    insert into audit_events (
+      organization_id,
+      store_id,
+      entry_id,
+      actor_user_id,
+      action,
+      reason,
+      metadata
+    )
+    values ($1, null, null, $2, 'runtime_settings_saved', 'seed_runtime_settings', $3::jsonb)
+    `,
+    [cfg.organizationId, cfg.ownerUserId, JSON.stringify({ settings, schemaVersion: 1 })],
+  );
+  console.log("Runtime settings seed completed.");
+}
+
 async function main() {
   const databaseUrl = valueFromEnv("DATABASE_URL");
   if (!databaseUrl) {
@@ -191,6 +265,7 @@ async function main() {
   try {
     const cfg = buildConfig();
     await upsertFoundation(client, cfg);
+    await seedRuntimeSettings(client, cfg);
   } finally {
     await client.end();
   }
