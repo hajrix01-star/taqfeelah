@@ -17,7 +17,6 @@ import {
   summarizeLedgerPeriod,
 } from "@/features/owner/ledger/owner-ledger-filters";
 
-const APP_IN_PRODUCTION_MODE = isProductionAppMode();
 
 
 // ─── DateSelector ───────────────────────────────────
