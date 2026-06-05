@@ -1,7 +1,7 @@
 // Bilingual (Arabic/English) copy dictionary for TaqfeelahPrototypeRuntime.
 // Keys map to text() helper: text(lang, key) → copy[key][lang]
 
-const copy = {
+const copy: Record<"ar" | "en", Record<string, string>> = {
   ar: {
     appName: "تقفيلة",
     restaurant: "مشويات المعلم الشامي",
@@ -965,3 +965,5 @@ const copy = {
 };
 
 export default copy;
+export type Lang = "ar" | "en";
+
