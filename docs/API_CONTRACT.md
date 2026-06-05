@@ -1,6 +1,6 @@
 # تقفيلة — API Contract (planned + partial implementation)
 
-> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day` and snapshot `POST /stores/:storeId/summary/day` are implemented; remaining endpoints are planned.  
+> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day`, snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, and `POST /stores/:storeId/closeouts/:closeoutId/review` are implemented; remaining endpoints are planned.  
 > **Auth:** Session rollout in progress. Preferred source is signed session cookie (`AUTH_SESSION_COOKIE_NAME`), with optional temporary header fallback controlled by `ALLOW_HEADER_AUTH_CONTEXT`.  
 > **UI:** Must not require design changes — responses feed existing approved screens.
 
@@ -95,6 +95,93 @@ Same shape with month-level totals.
 Query: `period=day|month`, `date` or `month`, optional store filter.
 
 For “all stores” home view — aggregates per store + combined totals.
+
+---
+
+## Closeouts (implemented core)
+
+### `POST /stores/:storeId/closeouts` (implemented)
+
+Headers:
+
+- `x-organization-id: <uuid>`
+- `x-user-id: <uuid>`
+- `x-member-role: owner|manager|employee`
+
+Body:
+
+```json
+{
+  "mode": "submit",
+  "autoReview": false,
+  "closeoutId": "client-closeout-id",
+  "date": "2026-06-05",
+  "salesChannels": [
+    {
+      "salesChannelId": "uuid",
+      "channelName": "Cash",
+      "amountHalalas": 120000
+    }
+  ],
+  "outflows": [
+    {
+      "type": "expense",
+      "amountHalalas": 5000,
+      "categoryId": null,
+      "note": "optional"
+    }
+  ],
+  "note": "optional"
+}
+```
+
+Behavior:
+
+- Validates organization/store/user authorization.
+- Creates operational `entries` + channel rows in one transaction.
+- Writes closeout audit trail (`closeout_submitted` / `closeout_resubmitted`).
+- When `autoReview=true`, writes `closeout_approved` audit event in the same transaction.
+
+### `GET /stores/:storeId/closeouts` (implemented)
+
+Headers:
+
+- `x-organization-id: <uuid>`
+- `x-user-id: <uuid>`
+- `x-member-role: owner|manager|employee`
+
+Query (optional):
+
+- `dateFrom=YYYY-MM-DD`
+- `dateTo=YYYY-MM-DD`
+
+Behavior:
+
+- Reads closeout timeline from `audit_events`.
+- Returns normalized closeouts list (status, totals, sales/outflows) for runtime hydration.
+
+### `POST /stores/:storeId/closeouts/:closeoutId/review` (implemented)
+
+Headers:
+
+- `x-organization-id: <uuid>`
+- `x-user-id: <uuid>`
+- `x-member-role: owner|manager|employee`
+
+Body:
+
+```json
+{
+  "action": "approve",
+  "date": "2026-06-05",
+  "reason": "optional when return"
+}
+```
+
+Behavior:
+
+- Role-gated review flow (`manager` and above).
+- Appends review audit (`closeout_approved` or `closeout_returned`).
 
 ---
 

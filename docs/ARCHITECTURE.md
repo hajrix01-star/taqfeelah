@@ -208,3 +208,23 @@ Calculations live only in `domain/cash-movement` (see `docs/CONVENTIONS.md` §4)
 6. Final phase: `/saas-admin` (desktop-first) + SaaS analytics + investor reporting.
 
 Stop after documentation + checkpoint until owner approves schema work.
+
+---
+
+## 13. Production runtime mode (current hardening)
+
+Runtime mode is controlled by environment:
+
+- `NEXT_PUBLIC_APP_MODE=production` (client mode gate)
+- `APP_MODE=production` (server mode gate)
+
+Closeout API mode for unified source in production:
+
+- `NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true`
+- `NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID=<organization-uuid>`
+- `NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID=<owner-user-uuid>`
+- `NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP=<json map>`
+- `NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP=<json map>`
+- `NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP=<json map>`
+
+In production mode, closeout sync is strict and should fail closed if required API mapping/env is missing.

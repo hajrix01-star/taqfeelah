@@ -58,7 +58,12 @@ import {
   X,
 } from "lucide-react";
 import { getEnabledOwnerLoginMethods, isOwnerLoginMethodEnabled } from "@/core/auth/owner-login-methods";
-import { isUuid, reviewCloseoutViaApi, submitCloseoutViaApi } from "@/features/closeouts/client/closeouts-api-client";
+import {
+  fetchStoreCloseoutsViaApi,
+  isUuid,
+  reviewCloseoutViaApi,
+  submitCloseoutViaApi,
+} from "@/features/closeouts/client/closeouts-api-client";
 import { isProductionAppMode } from "@/core/config/app-mode";
 
 function AppFontStyles() {
@@ -4313,7 +4318,11 @@ function OwnerCloseoutModals({
         onApprove={async () => {
           if (!ownerReviewCloseout) return;
           const approved = await approveCloseout(ownerReviewCloseout.id, ownerDisplayName);
-          if (approved) await onCloseoutUpdated(approved);
+          if (!approved) {
+            window.alert(lang === "ar" ? "تعذر اعتماد التقفيلة على الخادم." : "Failed to approve closeout on server.");
+            return;
+          }
+          await onCloseoutUpdated(approved);
           onCloseReview();
         }}
         onReturn={() => {
@@ -4338,10 +4347,15 @@ function OwnerCloseoutModals({
         open={Boolean(returnCloseoutTarget)}
         closeout={returnCloseoutTarget}
         onCancel={onCloseReview}
-        onConfirm={(reason) => {
+        onConfirm={async (reason) => {
           if (!returnCloseoutTarget) return;
-          const returned = returnCloseout(returnCloseoutTarget.id, ownerDisplayName, reason);
-          Promise.resolve(onCloseoutUpdated(returned)).finally(onCloseReview);
+          const returned = await returnCloseout(returnCloseoutTarget.id, ownerDisplayName, reason);
+          if (!returned) {
+            window.alert(lang === "ar" ? "تعذر إرجاع التقفيلة على الخادم." : "Failed to return closeout on server.");
+            return;
+          }
+          await onCloseoutUpdated(returned);
+          onCloseReview();
         }}
       />
     </>
@@ -4767,25 +4781,47 @@ export default function TaqfeelahPrototypeRuntime() {
   };
   const ownerDisplayName = ownerProfile?.name || (lang === "ar" ? "المالك" : "Owner");
   const closeoutsApiEnabled = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ENABLED === "true";
+  const closeoutsApiStrictMode = APP_IN_PRODUCTION_MODE;
   const closeoutsApiOrganizationId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
   const closeoutsApiOwnerUserId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";
+  const apiActorRole = employee ? "employee" : "owner";
+  const apiActorUserId = employee
+    ? (activeEmployee?.apiUserId || activeEmployee?.id || "")
+    : closeoutsApiOwnerUserId;
+  const apiTargetStoreIdsKey = (employee ? assignedEmployeeBusinesses : reportingBusinesses)
+    .map((store) => store.id)
+    .filter(Boolean)
+    .join("|");
 
-  const syncSubmitCloseoutToApi = useCallback(async ({ action, closeout, employee }) => {
-    if (!closeoutsApiEnabled) return null;
+  const syncSubmitCloseoutToApi = useCallback(async ({ action, closeout, employee, reviewWorkflowEnabled }) => {
+    if (!closeoutsApiEnabled) {
+      if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
+      return null;
+    }
     const actorUserId = employee?.apiUserId || employee?.id;
-    if (!isUuid(closeoutsApiOrganizationId) || !isUuid(actorUserId) || !isUuid(closeout?.storeId)) return null;
+    if (!isUuid(closeoutsApiOrganizationId) || !isUuid(actorUserId) || !isUuid(closeout?.storeId)) {
+      if (closeoutsApiStrictMode) throw new Error("closeouts API mapping is invalid for submit.");
+      return null;
+    }
     return submitCloseoutViaApi({
       organizationId: closeoutsApiOrganizationId,
       actorUserId,
       actorRole: "employee",
       closeout,
       mode: action === "resubmit" ? "resubmit" : "submit",
+      autoReview: !reviewWorkflowEnabled,
     });
-  }, [closeoutsApiEnabled, closeoutsApiOrganizationId]);
+  }, [closeoutsApiEnabled, closeoutsApiOrganizationId, closeoutsApiStrictMode]);
 
   const syncReviewCloseoutToApi = useCallback(async ({ action, closeout, reason = "" }) => {
-    if (!closeoutsApiEnabled) return null;
-    if (!isUuid(closeoutsApiOrganizationId) || !isUuid(closeoutsApiOwnerUserId) || !isUuid(closeout?.storeId)) return null;
+    if (!closeoutsApiEnabled) {
+      if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
+      return null;
+    }
+    if (!isUuid(closeoutsApiOrganizationId) || !isUuid(closeoutsApiOwnerUserId) || !isUuid(closeout?.storeId)) {
+      if (closeoutsApiStrictMode) throw new Error("closeouts API mapping is invalid for review.");
+      return null;
+    }
     return reviewCloseoutViaApi({
       organizationId: closeoutsApiOrganizationId,
       actorUserId: closeoutsApiOwnerUserId,
@@ -4794,7 +4830,54 @@ export default function TaqfeelahPrototypeRuntime() {
       action,
       reason,
     });
-  }, [closeoutsApiEnabled, closeoutsApiOrganizationId, closeoutsApiOwnerUserId]);
+  }, [closeoutsApiEnabled, closeoutsApiOrganizationId, closeoutsApiOwnerUserId, closeoutsApiStrictMode]);
+
+  const loadCloseoutsFromApi = useCallback(async () => {
+    if (!closeoutsApiEnabled) {
+      if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
+      return [];
+    }
+    if (!isUuid(closeoutsApiOrganizationId)) {
+      if (closeoutsApiStrictMode) throw new Error("organization id is missing/invalid for closeouts API.");
+      return [];
+    }
+
+    if (!isUuid(apiActorUserId)) {
+      if (closeoutsApiStrictMode) throw new Error("actor user id is missing/invalid for closeouts API.");
+      return [];
+    }
+
+    const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
+    if (!targetStoreIds.length) return [];
+
+    const fetched = await Promise.all(
+      targetStoreIds.map((storeId) => fetchStoreCloseoutsViaApi({
+        organizationId: closeoutsApiOrganizationId,
+        actorUserId: apiActorUserId,
+        actorRole: apiActorRole,
+        storeId,
+      })),
+    );
+
+    const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
+    const seen = new Set();
+    return merged.filter((item) => {
+      const itemId = typeof item?.id === "string" ? item.id : "";
+      const itemDate = typeof item?.date === "string" ? item.date : "";
+      if (!itemId || !itemDate) return false;
+      const key = `${itemId}:${itemDate}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [
+    apiActorRole,
+    apiActorUserId,
+    apiTargetStoreIdsKey,
+    closeoutsApiEnabled,
+    closeoutsApiOrganizationId,
+    closeoutsApiStrictMode,
+  ]);
 
   if (!loggedIn) {
     return (
@@ -4815,6 +4898,8 @@ export default function TaqfeelahPrototypeRuntime() {
       onSyncToOperationalEntries={syncCloseoutToOperationalEntries}
       onSubmitCloseoutToApi={syncSubmitCloseoutToApi}
       onReviewCloseoutInApi={syncReviewCloseoutToApi}
+      loadCloseoutsFromApi={loadCloseoutsFromApi}
+      apiStrictMode={closeoutsApiStrictMode}
     >
     <div dir={lang === "ar" ? "rtl" : "ltr"} className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
       <AppFontStyles />

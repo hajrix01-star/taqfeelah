@@ -82,4 +82,33 @@ describe("closeouts api client", () => {
     expect(result).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("fetches mapped closeouts list for store", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => new Response(JSON.stringify([{ id: "c-1" }]), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client.js");
+    const result = await fetchStoreCloseoutsViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      storeId: "shami",
+      dateFrom: "2026-06-01",
+      dateTo: "2026-06-30",
+    });
+
+    expect(result).toEqual([{ id: "c-1" }]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.lastCall!;
+    expect(String(url)).toContain("/api/v1/stores/302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c/closeouts");
+    expect(String(url)).toContain("dateFrom=2026-06-01");
+    expect(String(url)).toContain("dateTo=2026-06-30");
+    expect(init?.headers).toMatchObject({
+      "x-organization-id": "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      "x-member-role": "owner",
+    });
+  });
 });

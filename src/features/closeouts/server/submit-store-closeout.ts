@@ -30,6 +30,7 @@ const closeoutSubmitSchema = z.object({
   outflows: z.array(outflowSchema).default([]),
   note: z.string().trim().max(500).optional(),
   mode: z.enum(["submit", "resubmit"]).default("submit"),
+  autoReview: z.boolean().default(false),
 });
 
 type CloseoutSubmitInput = z.infer<typeof closeoutSubmitSchema>;
@@ -119,8 +120,36 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
         outflowEntryIds: outflowEntries.map((row) => row.id),
         totalSalesHalalas,
         totalOutflowHalalas,
+        salesChannels: normalizedChannels.map((row) => ({
+          salesChannelId: row.salesChannelId,
+          channelName: row.channelName,
+          amountHalalas: row.amountHalalas,
+        })),
+        outflows: input.outflows.map((row) => ({
+          type: row.type,
+          amountHalalas: row.amountHalalas,
+          categoryId: row.categoryId || null,
+          note: row.note || "",
+        })),
+        note: input.note || "",
       },
     });
+
+    if (input.autoReview) {
+      await tx.insert(auditEvents).values({
+        organizationId: input.organizationId,
+        storeId: input.storeId,
+        actorUserId: input.actorUserId,
+        action: "closeout_approved",
+        reason: null,
+        metadata: {
+          closeoutId: input.closeoutId,
+          date: input.date,
+          sourceSubmissionAuditId: null,
+          autoReview: true,
+        },
+      });
+    }
 
     return {
       summaryEntryId: summaryEntry.id,

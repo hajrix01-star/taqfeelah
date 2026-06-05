@@ -65,6 +65,7 @@ export async function submitCloseoutViaApi({
   actorRole,
   closeout,
   mode = "submit",
+  autoReview = false,
 }) {
   const { userIdMap, storeIdMap } = getMaps();
   const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
@@ -88,6 +89,7 @@ export async function submitCloseoutViaApi({
     },
     body: JSON.stringify({
       mode,
+      autoReview: autoReview === true,
       closeoutId: closeout.id,
       date: closeout.date,
       salesChannels,
@@ -100,6 +102,44 @@ export async function submitCloseoutViaApi({
     throw new Error(`closeout submit api failed: ${response.status}`);
   }
   return response.json();
+}
+
+export async function fetchStoreCloseoutsViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  storeId,
+  dateFrom = "",
+  dateTo = "",
+}) {
+  const { userIdMap, storeIdMap } = getMaps();
+  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
+  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
+  const mappedStoreId = mapToUuid(storeId, storeIdMap);
+
+  if (!mappedOrganizationId || !mappedActorUserId || !mappedStoreId) {
+    return null;
+  }
+
+  const search = new URLSearchParams();
+  if (typeof dateFrom === "string" && dateFrom) search.set("dateFrom", dateFrom);
+  if (typeof dateTo === "string" && dateTo) search.set("dateTo", dateTo);
+  const query = search.toString();
+
+  const response = await fetch(`/api/v1/stores/${mappedStoreId}/closeouts${query ? `?${query}` : ""}`, {
+    method: "GET",
+    headers: {
+      "x-organization-id": mappedOrganizationId,
+      "x-user-id": mappedActorUserId,
+      "x-member-role": actorRole,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`closeout fetch api failed: ${response.status}`);
+  }
+  const payload = await response.json();
+  return Array.isArray(payload) ? payload : [];
 }
 
 export async function reviewCloseoutViaApi({

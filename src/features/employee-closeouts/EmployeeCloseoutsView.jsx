@@ -54,6 +54,7 @@ export default function EmployeeCloseoutsView({
     submitCloseout,
     resubmitCloseout,
     findForStoreDate,
+    syncError,
   } = useDailyCloseouts();
 
   const [entryCloseout, setEntryCloseout] = useState(null);
@@ -192,6 +193,10 @@ export default function EmployeeCloseoutsView({
   const handleSubmit = async (closeout, { isResubmit }) => {
     const fn = isResubmit ? resubmitCloseout : submitCloseout;
     const next = await fn({ closeout, employee, reviewWorkflowEnabled });
+    if (!next) {
+      window.alert(lang === "ar" ? "تعذر إرسال التقفيلة إلى الخادم." : "Failed to submit closeout to server.");
+      return;
+    }
     setEntryCloseout(null);
     setEntryResubmit(false);
     setExpandedId(null);
@@ -253,6 +258,11 @@ export default function EmployeeCloseoutsView({
                 {lang === "ar" ? "لا توجد قنوات بيع مفعّلة لهذا المحل. اطلب من المالك تفعيلها من الإعدادات." : "No active sales channels for this store. Ask the owner to enable them in settings."}
               </div>
             )}
+            {syncError ? (
+              <div className="mb-4 rounded-2xl bg-[#FFF1EE]/90 p-3 text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10 backdrop-blur-sm">
+                {syncError}
+              </div>
+            ) : null}
             {hasOlderHiddenCloseouts && employeeHistoryVisibility !== "all" && (
               <div className="mb-4 rounded-2xl bg-[#FFF4D2]/95 p-3 text-taq-meta font-bold leading-5 text-[#806528] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
                 {lang === "ar" ? (
