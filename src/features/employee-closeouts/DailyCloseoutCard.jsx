@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { computeCloseoutTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
 import { closeoutStatusLabel, closeoutStatusTone } from "../daily-closeouts/closeout-status";
+import AttachmentLightbox from "../../components/AttachmentLightbox";
 
 function money(value, lang) {
   return Number(value || 0).toLocaleString(lang === "ar" ? "en-US" : "en-US");
@@ -34,6 +36,7 @@ export default function DailyCloseoutCard({
   });
   const tone = closeoutStatusTone(closeout.status);
   const attachmentCount = (closeout.attachments || []).length;
+  const [selectedAttachment, setSelectedAttachment] = useState("");
 
   return (
     <article className={`overflow-hidden rounded-[19px] border border-[#E8E1D4] bg-[rgba(255,252,244,0.94)] shadow-[0_8px_22px_rgba(17,42,70,0.08)] ${expanded ? "" : ""}`}>
@@ -136,14 +139,30 @@ export default function DailyCloseoutCard({
             {attachmentCount > 0 && (
               <div className="flex flex-wrap gap-2">
                 {(closeout.attachments || []).filter(Boolean).map((src, index) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={`${closeout.id}-att-${index}`} src={src} alt="" className="h-14 w-14 rounded-xl object-cover ring-1 ring-black/[0.06]" />
+                  <button
+                    key={`${closeout.id}-att-${index}`}
+                    type="button"
+                    className="rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setSelectedAttachment(src);
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={src} alt="" className="h-14 w-14 rounded-xl object-cover ring-1 ring-black/[0.06]" />
+                  </button>
                 ))}
               </div>
             )}
           </div>
         )}
       </div>
+      <AttachmentLightbox
+        open={Boolean(selectedAttachment)}
+        src={selectedAttachment}
+        lang={lang}
+        onClose={() => setSelectedAttachment("")}
+      />
     </article>
   );
 }

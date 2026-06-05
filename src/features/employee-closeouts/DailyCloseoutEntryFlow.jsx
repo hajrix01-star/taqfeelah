@@ -6,6 +6,7 @@ import NotebookScrollSurface from "../daily-closeouts/NotebookScrollSurface";
 import { notebookLinesBackground } from "../daily-closeouts/notebook-themes";
 import { computeCloseoutTotals, salesRecordFromChannels } from "../daily-closeouts/closeout-calculations";
 import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-demo-store";
+import AttachmentLightbox from "../../components/AttachmentLightbox";
 
 const EXPENSE_CATEGORIES = [
   { id: "electricity", ar: "كهرباء", en: "Electricity" },
@@ -76,6 +77,7 @@ export default function DailyCloseoutEntryFlow({
   });
   const [outflows, setOutflows] = useState(initialCloseout?.outflows || []);
   const [attachments, setAttachments] = useState(initialCloseout?.attachments || []);
+  const [previewAttachment, setPreviewAttachment] = useState("");
   const [outType, setOutType] = useState("purchases");
   const [expenseCategory, setExpenseCategory] = useState("maintenance");
   const [outAmount, setOutAmount] = useState("");
@@ -326,8 +328,14 @@ export default function DailyCloseoutEntryFlow({
                   <div className="flex flex-wrap gap-2">
                     {attachments.filter(Boolean).map((src, index) => (
                       <div key={`thumb-${index}`} className="relative">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt="" className="h-16 w-16 rounded-xl object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setPreviewAttachment(src)}
+                          className="rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={src} alt="" className="h-16 w-16 rounded-xl object-cover" />
+                        </button>
                         <button type="button" onClick={() => setAttachments((current) => current.filter((_, i) => i !== index))} className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#B44747] text-taq-meta text-white">×</button>
                       </div>
                     ))}
@@ -361,6 +369,12 @@ export default function DailyCloseoutEntryFlow({
           </div>
         )}
       </div>
+      <AttachmentLightbox
+        open={Boolean(previewAttachment)}
+        src={previewAttachment}
+        lang={lang}
+        onClose={() => setPreviewAttachment("")}
+      />
     </div>
   );
 }
