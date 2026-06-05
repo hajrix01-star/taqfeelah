@@ -81,6 +81,12 @@ PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
     ),
 }
 
+VPS_POSTGRES_CONTAINER = "taqfeelah-postgres"
+VPS_POSTGRES_USER = "taqfeelah"
+VPS_POSTGRES_PASSWORD = "taqfeelah_prod_local_v1"
+VPS_POSTGRES_DB = "taqfeelah"
+VPS_POSTGRES_PORT = 5433
+
 
 def safe_print(value: str) -> None:
     # Keep script resilient on Windows shells with legacy codepages.
@@ -223,6 +229,69 @@ def get_required_env(name: str) -> str:
 
 def print_section(title: str) -> None:
     safe_print(f"\n{'=' * 18} {title} {'=' * 18}")
+
+
+def build_local_vps_database_url() -> str:
+    return (
+        f"postgresql://{VPS_POSTGRES_USER}:{VPS_POSTGRES_PASSWORD}"
+        f"@127.0.0.1:{VPS_POSTGRES_PORT}/{VPS_POSTGRES_DB}"
+    )
+
+
+def ensure_vps_postgres(vps: VPS) -> str:
+    ensure_cmd = textwrap.dedent(
+        f"""
+        set -euo pipefail
+        export DEBIAN_FRONTEND=noninteractive
+        if ! command -v docker >/dev/null 2>&1; then
+          apt-get update -y
+          apt-get install -y ca-certificates curl gnupg
+          install -m 0755 -d /etc/apt/keyrings
+          if [ ! -f /etc/apt/keyrings/docker.gpg ]; then
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            chmod a+r /etc/apt/keyrings/docker.gpg
+          fi
+          arch="$(dpkg --print-architecture)"
+          codename="$(. /etc/os-release && echo "$VERSION_CODENAME")"
+          echo "deb [arch=$arch signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $codename stable" > /etc/apt/sources.list.d/docker.list
+          apt-get update -y
+          apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+          systemctl enable docker
+          systemctl restart docker
+        fi
+        if docker ps -a --format '{{{{.Names}}}}' | grep -qx '{VPS_POSTGRES_CONTAINER}'; then
+          docker start {VPS_POSTGRES_CONTAINER} >/dev/null
+        else
+          docker run -d \\
+            --name {VPS_POSTGRES_CONTAINER} \\
+            --restart unless-stopped \\
+            -e POSTGRES_USER={VPS_POSTGRES_USER} \\
+            -e POSTGRES_PASSWORD={VPS_POSTGRES_PASSWORD} \\
+            -e POSTGRES_DB={VPS_POSTGRES_DB} \\
+            -p 127.0.0.1:{VPS_POSTGRES_PORT}:5432 \\
+            postgres:16-alpine
+        fi
+        ready=0
+        for attempt in $(seq 1 45); do
+          if docker exec {VPS_POSTGRES_CONTAINER} pg_isready -U {VPS_POSTGRES_USER} -d {VPS_POSTGRES_DB} >/dev/null 2>&1; then
+            ready=1
+            break
+          fi
+          sleep 1
+        done
+        if [ "$ready" -ne 1 ]; then
+          echo "PostgreSQL container failed readiness check" >&2
+          exit 1
+        fi
+        """
+    ).strip()
+    print_section("Ensure local PostgreSQL on VPS")
+    vps.run(ensure_cmd)
+    safe_print(
+        f"Auto-provisioned local PostgreSQL on 127.0.0.1:{VPS_POSTGRES_PORT} "
+        f"(container: {VPS_POSTGRES_CONTAINER})"
+    )
+    return build_local_vps_database_url()
 
 
 def parse_env_file(content: str) -> dict[str, str]:
@@ -541,6 +610,10 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
     existing_env = read_remote_production_env(vps, app_dir)
     if existing_env.get("DATABASE_URL"):
         safe_print("Found existing DATABASE_URL on VPS.")
+    elif os.environ.get("DATABASE_URL"):
+        safe_print("Using DATABASE_URL from GitHub secret.")
+    else:
+        existing_env["DATABASE_URL"] = ensure_vps_postgres(vps)
 
     print_section("Upload application source")
     archive_path = build_source_archive(local_path)
@@ -586,6 +659,20 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             cd {shlex.quote(app_dir)}
             npm install
             npm run build
+            """
+        ).strip()
+    )
+
+    print_section("Apply database schema")
+    vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
+            cd {shlex.quote(app_dir)}
+            set -a
+            . ./.env.production
+            set +a
+            npm run db:push
             """
         ).strip()
     )
