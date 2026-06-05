@@ -5,6 +5,7 @@ const TAQFEELAH_LOGO_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIQAAA
 export default function Logo({ compact = false, centered = false }) {
   return (
     <div className={`shrink-0 ${centered ? "flex justify-center" : "flex items-center"}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={TAQFEELAH_LOGO_PNG}
         alt="تقفيلة - TAQFEELAH"

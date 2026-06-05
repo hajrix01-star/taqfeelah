@@ -1,6 +1,11 @@
 "use client";
 
-export default function LanguageSwitch({ lang, setLang }) {
+type Props = {
+  lang: "ar" | "en";
+  setLang: (lang: "ar" | "en") => void;
+};
+
+export default function LanguageSwitch({ lang, setLang }: Props) {
   return (
     <div className="flex shrink-0 items-center gap-1 rounded-full bg-white p-1 ring-1 ring-black/[0.05]">
       <button
