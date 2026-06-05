@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 
 import { notebookLinesBackground } from "./notebook-themes";
 
@@ -59,6 +60,55 @@ export function NumberLine({ label, value, valueClassName = "" }) {
       <strong className={`tabular-nums ${valueClassName}`}>
         <MoneyValue value={value} />
       </strong>
+    </div>
+  );
+}
+
+/** Tab button with animated gold underline. */
+export function InkTab({ active, children, onClick, className = "", showActiveUnderline = true }) {
+  return (
+    <button type="button" onClick={onClick} className={`relative pb-2 text-taq-meta font-black transition ${active ? "text-[#112A46]" : "text-[#957D43]"} ${className}`}>
+      <span className="relative inline-flex items-center whitespace-nowrap">
+        {children}
+        {active && showActiveUnderline && (
+          <span className="absolute -bottom-[9px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30] transition-all duration-200" />
+        )}
+      </span>
+    </button>
+  );
+}
+
+/** Two-column financial table: label left, value right, aligned to notebook lines. */
+export function FinancialRows({ lang, rows = [] }) {
+  return (
+    <div className="grid w-full grid-cols-[minmax(0,1fr)_max-content] items-baseline">
+      {rows.map((row) => (
+        <React.Fragment key={row.id || row.label}>
+          <div className="flex h-[44px] min-w-0 items-end pb-[8px] text-taq-body-sm font-medium text-[#112A46]">
+            <span className="truncate">{row.label}</span>
+          </div>
+          <strong
+            dir="ltr"
+            className={`flex h-[44px] min-w-[76px] items-end whitespace-nowrap pb-[8px] tabular-nums text-taq-body font-bold ${lang === "ar" ? "justify-start ps-4" : "justify-end pe-4"} ${row.valueClassName || "text-[#112A46]"}`}
+          >
+            <MoneyValue value={row.value} />
+          </strong>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+/** Back arrow + title used at the top of settings sub-panels. */
+import { ChevronLeft, ChevronRight } from "lucide-react";
+export function BackTitle({ title, onBack, lang, inNotebook = false }) {
+  const BackIcon = lang === "ar" ? ChevronRight : ChevronLeft;
+  return (
+    <div className={`mb-5 flex items-center gap-3 ${inNotebook ? "" : "px-5"}`}>
+      <button type="button" onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F0ECE2]">
+        <BackIcon className="h-5 w-5" />
+      </button>
+      <h2 className="text-base font-black">{title}</h2>
     </div>
   );
 }
