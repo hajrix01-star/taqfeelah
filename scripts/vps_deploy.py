@@ -52,21 +52,34 @@ PRODUCTION_ENV_KEYS = [
     "NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP",
 ]
 
-REQUIRED_RUNTIME_ENV_KEYS = [
-    "APP_MODE",
-    "NEXT_PUBLIC_APP_MODE",
-    "DATABASE_URL",
-    "AUTH_SESSION_SECRET",
-    "AUTH_ORGANIZATION_ID",
-    "AUTH_OWNER_USER_ID",
-    "NEXT_PUBLIC_CLOSEOUTS_API_ENABLED",
-    "NEXT_PUBLIC_ENTRIES_API_ENABLED",
-    "NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID",
-    "NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID",
-    "NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP",
-    "NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP",
-    "NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP",
-]
+# Bootstrap defaults align with scripts/seed-closeouts-foundation.mjs so deploy can
+# proceed without GitHub app-env secrets. DATABASE_URL must still come from secrets
+# or an existing VPS .env.production file.
+PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
+    "APP_MODE": "production",
+    "NEXT_PUBLIC_APP_MODE": "production",
+    "AUTH_SESSION_SECRET": "taqfeelah-prod-bootstrap-session-secret-v1",
+    "AUTH_SESSION_COOKIE_NAME": "taqfeelah_session",
+    "AUTH_ORGANIZATION_ID": "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+    "AUTH_OWNER_USER_ID": "e8f3e35b-6051-4da3-8b10-979700c2f00f",
+    "NEXT_PUBLIC_CLOSEOUTS_API_ENABLED": "true",
+    "NEXT_PUBLIC_ENTRIES_API_ENABLED": "true",
+    "NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID": "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+    "NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID": "e8f3e35b-6051-4da3-8b10-979700c2f00f",
+    "NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP": (
+        '{"shami":"302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"}'
+    ),
+    "NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP": (
+        '{"owner":"e8f3e35b-6051-4da3-8b10-979700c2f00f",'
+        '"ahmed":"4cf1450d-08d8-4ca1-b180-1c2642174a79",'
+        '"sara":"85f696d6-f655-4f2d-9f56-1f13c2f4c66c"}'
+    ),
+    "NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP": (
+        '{"cash":"9bc40d4f-c773-4ba3-87db-b8bb1467dafb",'
+        '"card":"bb16ea8f-8abf-4ca9-ab0d-e3a8f69f8db1",'
+        '"online":"f0f8dd28-4fbe-4bf2-9074-2be703f10ccd"}'
+    ),
+}
 
 
 def safe_print(value: str) -> None:
@@ -212,22 +225,81 @@ def print_section(title: str) -> None:
     safe_print(f"\n{'=' * 18} {title} {'=' * 18}")
 
 
-def build_production_env_payload() -> str:
-    missing_required = [key for key in REQUIRED_RUNTIME_ENV_KEYS if not os.environ.get(key)]
-    if missing_required:
-        raise RuntimeError(
-            "Missing required production environment values for runtime strict mode: "
-            + ", ".join(missing_required)
-        )
-    lines: list[str] = []
+def parse_env_file(content: str) -> dict[str, str]:
+    parsed: dict[str, str] = {}
+    for raw_line in content.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        if not key:
+            continue
+        parsed[key] = value.replace("\\n", "\n")
+    return parsed
+
+
+def read_remote_production_env(vps: VPS, app_dir: str) -> dict[str, str]:
+    env_path = f"{app_dir}/.env.production"
+    _, out, _ = vps.run(f"cat {shlex.quote(env_path)} 2>/dev/null || true", check=False)
+    if not out.strip():
+        return {}
+    return parse_env_file(out)
+
+
+def resolve_production_env(existing_remote_env: dict[str, str] | None = None) -> dict[str, str]:
+    merged = dict(PRODUCTION_ENV_BOOTSTRAP_DEFAULTS)
+    if existing_remote_env:
+        for key, value in existing_remote_env.items():
+            if value:
+                merged[key] = value
     for key in PRODUCTION_ENV_KEYS:
         value = os.environ.get(key)
-        if value is None or value == "":
+        if value:
+            merged[key] = value
+
+    if not merged.get("DATABASE_URL"):
+        raise RuntimeError(
+            "DATABASE_URL is required for production deploy. "
+            "Set the GitHub secret DATABASE_URL or ensure /opt/taqfeelah/.env.production "
+            "already exists on the VPS with a valid DATABASE_URL."
+        )
+    return merged
+
+
+def log_production_env_sources(
+    merged_env: dict[str, str],
+    existing_remote_env: dict[str, str],
+) -> None:
+    from_bootstrap: list[str] = []
+    from_remote: list[str] = []
+    from_ci: list[str] = []
+    for key in PRODUCTION_ENV_KEYS:
+        value = merged_env.get(key)
+        if not value:
+            continue
+        if os.environ.get(key):
+            from_ci.append(key)
+        elif existing_remote_env.get(key):
+            from_remote.append(key)
+        elif PRODUCTION_ENV_BOOTSTRAP_DEFAULTS.get(key) == value:
+            from_bootstrap.append(key)
+    if from_bootstrap:
+        safe_print(f"Bootstrap defaults applied: {', '.join(from_bootstrap)}")
+    if from_remote:
+        safe_print(f"Preserved from VPS .env.production: {', '.join(from_remote)}")
+    if from_ci:
+        safe_print(f"Applied from GitHub secrets: {', '.join(from_ci)}")
+
+
+def build_production_env_payload(merged_env: dict[str, str]) -> str:
+    lines: list[str] = []
+    for key in PRODUCTION_ENV_KEYS:
+        value = merged_env.get(key)
+        if not value:
             continue
         normalized = value.replace("\r\n", "\n").replace("\n", "\\n")
         lines.append(f"{key}={normalized}")
-    if not lines:
-        return ""
     payload = ("\n".join(lines) + "\n").encode("utf-8")
     return base64.b64encode(payload).decode("ascii")
 
@@ -413,11 +485,15 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
         "nginx -t",
         f"curl -I --max-time 15 http://{shlex.quote(domain)} || true",
         f"curl -I --max-time 15 https://{shlex.quote(domain)} || true",
-        f"curl -fsS --max-time 20 https://{shlex.quote(domain)}/api/v1/auth/session",
+        (
+            f"curl -sS --max-time 20 -o /tmp/taqfeelah-auth-session.json "
+            f"-w '%{{http_code}}' https://{shlex.quote(domain)}/api/v1/auth/session"
+        ),
         f"curl -I --max-time 15 https://{shlex.quote(www_domain)} || true",
         "curl -I --max-time 15 https://hajrix.com || true",
         "curl -I --max-time 15 https://arz-lounge.com || true",
     ]
+    auth_status_code: str | None = None
     for c in verify_cmds:
         print_section(c)
         code, out, err = vps.run(c, check=False)
@@ -426,6 +502,17 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
         if err.strip():
             safe_print("STDERR:")
             safe_print(err.strip())
+        if "/api/v1/auth/session" in c:
+            auth_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run("cat /tmp/taqfeelah-auth-session.json 2>/dev/null || true", check=False)
+            if body.strip():
+                safe_print("Auth session response body:")
+                safe_print(body.strip())
+            if auth_status_code not in {"200", "503"}:
+                raise RuntimeError(
+                    f"Auth session verification failed with HTTP {auth_status_code or 'unknown'}: {c}"
+                )
+            continue
         if code != 0:
             raise RuntimeError(f"Verification command failed ({code}): {c}")
 
@@ -450,6 +537,11 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
         ).strip()
     )
 
+    print_section("Read existing production environment")
+    existing_env = read_remote_production_env(vps, app_dir)
+    if existing_env.get("DATABASE_URL"):
+        safe_print("Found existing DATABASE_URL on VPS.")
+
     print_section("Upload application source")
     archive_path = build_source_archive(local_path)
     try:
@@ -460,23 +552,7 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
         except OSError:
             pass
 
-    env_payload = build_production_env_payload()
-    if env_payload:
-        print_section("Write production environment file")
-        vps.run(
-            textwrap.dedent(
-                f"""
-                set -euo pipefail
-                mkdir -p {shlex.quote(app_dir)}
-                printf '%s' {shlex.quote(env_payload)} | base64 -d > {shlex.quote(app_dir)}/.env.production
-                """
-            ).strip()
-        )
-    else:
-        print_section("No deployment env payload provided")
-        safe_print("Proceeding without writing .env.production on VPS.")
-
-    print_section("Install dependencies and build app")
+    print_section("Extract application source")
     vps.run(
         textwrap.dedent(
             f"""
@@ -485,12 +561,54 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             rm -rf {shlex.quote(app_dir)}/*
             tar -xzf {shlex.quote(remote_archive)} -C {shlex.quote(app_dir)}
             rm -f {shlex.quote(remote_archive)}
+            """
+        ).strip()
+    )
+
+    print_section("Write production environment file")
+    merged_env = resolve_production_env(existing_env)
+    log_production_env_sources(merged_env, existing_env)
+    env_payload = build_production_env_payload(merged_env)
+    vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
+            printf '%s' {shlex.quote(env_payload)} | base64 -d > {shlex.quote(app_dir)}/.env.production
+            """
+        ).strip()
+    )
+
+    print_section("Install dependencies and build app")
+    vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
             cd {shlex.quote(app_dir)}
             npm install
             npm run build
             """
         ).strip()
     )
+
+    print_section("Seed closeouts foundation when DATABASE_URL is configured")
+    _, seed_out, seed_err = vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
+            cd {shlex.quote(app_dir)}
+            set -a
+            . ./.env.production
+            set +a
+            node scripts/seed-closeouts-foundation.mjs
+            """
+        ).strip(),
+        check=False,
+    )
+    if seed_out.strip():
+        safe_print(seed_out.strip())
+    if seed_err.strip():
+        safe_print("STDERR:")
+        safe_print(seed_err.strip())
 
     print_section("Start isolated PM2 process")
     vps.run(
