@@ -229,3 +229,4 @@ Closeout API mode for unified source in production:
 - `NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP=<json map>`
 
 In production mode, closeout sync is strict and should fail closed if required API mapping/env is missing.
+Operational register reads and writes are now expected through store-scoped entries APIs (`/api/v1/stores/:storeId/entries` and action routes).

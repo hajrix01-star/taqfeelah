@@ -26,6 +26,11 @@ const closeoutSubmitMetadataSchema = z.object({
   outflowEntryIds: z.array(z.string().uuid()).optional(),
 });
 
+const closeoutReviewMetadataSchema = z.object({
+  closeoutId: z.string().trim().min(1).max(120),
+  date: dateSchema,
+});
+
 type Input = z.infer<typeof inputSchema>;
 
 function toRiyals(halalas: number): number {
@@ -88,7 +93,97 @@ export async function listStoreEntries(rawInput: Input) {
     .orderBy(desc(entries.date), desc(entries.createdAt), desc(entries.id))
     .limit(input.limit);
 
-  const entryIds = rows.map((row) => row.id);
+  const closeoutAuditRows = await db
+    .select({
+      action: auditEvents.action,
+      actorUserId: auditEvents.actorUserId,
+      createdAt: auditEvents.createdAt,
+      reason: auditEvents.reason,
+      metadata: auditEvents.metadata,
+    })
+    .from(auditEvents)
+    .where(
+      and(
+        eq(auditEvents.organizationId, input.organizationId),
+        eq(auditEvents.storeId, input.storeId),
+        inArray(auditEvents.action, [
+          "closeout_submitted",
+          "closeout_resubmitted",
+          "closeout_approved",
+          "closeout_returned",
+        ]),
+        input.dateFrom ? sql`${auditEvents.metadata} ->> 'date' >= ${input.dateFrom}` : undefined,
+        input.dateTo ? sql`${auditEvents.metadata} ->> 'date' <= ${input.dateTo}` : undefined,
+      ),
+    );
+
+  const closeoutIdByEntryId = new Map<string, string>();
+  const closeoutStateByKey = new Map<string, { submittedAt: number; approvedAt: number; returnedAt: number }>();
+  closeoutAuditRows.forEach((row) => {
+    if (row.action === "closeout_submitted" || row.action === "closeout_resubmitted") {
+      const parsedMetadata = closeoutSubmitMetadataSchema.safeParse(row.metadata);
+      if (!parsedMetadata.success) return;
+      const metadata = parsedMetadata.data;
+      if (metadata.summaryEntryId) {
+        closeoutIdByEntryId.set(metadata.summaryEntryId, metadata.closeoutId);
+      }
+      (metadata.outflowEntryIds || []).forEach((entryId) => {
+        closeoutIdByEntryId.set(entryId, metadata.closeoutId);
+      });
+      const key = `${metadata.closeoutId}:${metadata.date}`;
+      const currentState = closeoutStateByKey.get(key) || {
+        submittedAt: 0,
+        approvedAt: 0,
+        returnedAt: 0,
+      };
+      currentState.submittedAt = Math.max(currentState.submittedAt, row.createdAt.getTime());
+      closeoutStateByKey.set(key, currentState);
+      return;
+    }
+
+    const parsedMetadata = closeoutReviewMetadataSchema.safeParse(row.metadata);
+    if (!parsedMetadata.success) return;
+    const metadata = parsedMetadata.data;
+    const key = `${metadata.closeoutId}:${metadata.date}`;
+    const currentState = closeoutStateByKey.get(key) || {
+      submittedAt: 0,
+      approvedAt: 0,
+      returnedAt: 0,
+    };
+    const createdAtMs = row.createdAt.getTime();
+    if (row.action === "closeout_approved") {
+      currentState.approvedAt = Math.max(currentState.approvedAt, createdAtMs);
+    } else if (row.action === "closeout_returned") {
+      currentState.returnedAt = Math.max(currentState.returnedAt, createdAtMs);
+    }
+    closeoutStateByKey.set(key, currentState);
+  });
+
+  const closeoutStatusByKey = new Map<string, "submitted" | "reviewed" | "returned">();
+  closeoutStateByKey.forEach((state, key) => {
+    if (state.submittedAt === 0) {
+      closeoutStatusByKey.set(key, "submitted");
+      return;
+    }
+    if (state.approvedAt >= state.submittedAt && state.approvedAt >= state.returnedAt) {
+      closeoutStatusByKey.set(key, "reviewed");
+      return;
+    }
+    if (state.returnedAt >= state.submittedAt && state.returnedAt >= state.approvedAt) {
+      closeoutStatusByKey.set(key, "returned");
+      return;
+    }
+    closeoutStatusByKey.set(key, "submitted");
+  });
+
+  const filteredRows = rows.filter((row) => {
+    const closeoutId = closeoutIdByEntryId.get(row.id);
+    if (!closeoutId) return true;
+    const status = closeoutStatusByKey.get(`${closeoutId}:${row.date}`);
+    return status === "reviewed";
+  });
+
+  const entryIds = filteredRows.map((row) => row.id);
   if (entryIds.length === 0) return [];
 
   const salesRows = await db
@@ -118,46 +213,77 @@ export async function listStoreEntries(rawInput: Input) {
     salesByEntryId.set(row.entryId, current);
   });
 
-  const actorIds = [...new Set(rows.map((row) => row.enteredByUserId))];
-  const actorRows = await db
+  const entryAuditRows = await db
     .select({
-      id: users.id,
-      name: users.name,
-    })
-    .from(users)
-    .where(inArray(users.id, actorIds));
-  const actorNameById = new Map<string, string>();
-  actorRows.forEach((actorRow) => actorNameById.set(actorRow.id, actorRow.name));
-
-  const closeoutAuditRows = await db
-    .select({
-      metadata: auditEvents.metadata,
+      entryId: auditEvents.entryId,
+      action: auditEvents.action,
+      actorUserId: auditEvents.actorUserId,
+      reason: auditEvents.reason,
+      createdAt: auditEvents.createdAt,
     })
     .from(auditEvents)
     .where(
       and(
         eq(auditEvents.organizationId, input.organizationId),
         eq(auditEvents.storeId, input.storeId),
-        inArray(auditEvents.action, ["closeout_submitted", "closeout_resubmitted"]),
-        input.dateFrom ? sql`${auditEvents.metadata} ->> 'date' >= ${input.dateFrom}` : undefined,
-        input.dateTo ? sql`${auditEvents.metadata} ->> 'date' <= ${input.dateTo}` : undefined,
+        inArray(auditEvents.action, ["entry_reviewed", "entry_voided", "entry_restored"]),
+        inArray(auditEvents.entryId, entryIds),
       ),
     );
 
-  const closeoutIdByEntryId = new Map<string, string>();
-  closeoutAuditRows.forEach((row) => {
-    const parsedMetadata = closeoutSubmitMetadataSchema.safeParse(row.metadata);
-    if (!parsedMetadata.success) return;
-    const metadata = parsedMetadata.data;
-    if (metadata.summaryEntryId) {
-      closeoutIdByEntryId.set(metadata.summaryEntryId, metadata.closeoutId);
+  const latestAuditByEntryId = new Map<
+    string,
+    {
+      reviewed?: { actorUserId: string; reason: string | null; createdAt: Date };
+      voided?: { actorUserId: string; reason: string | null; createdAt: Date };
+      restored?: { actorUserId: string; reason: string | null; createdAt: Date };
     }
-    (metadata.outflowEntryIds || []).forEach((entryId) => {
-      closeoutIdByEntryId.set(entryId, metadata.closeoutId);
-    });
+  >();
+  entryAuditRows.forEach((row) => {
+    if (!row.entryId) return;
+    const current = latestAuditByEntryId.get(row.entryId) || {};
+    if (row.action === "entry_reviewed") {
+      if (!current.reviewed || row.createdAt > current.reviewed.createdAt) {
+        current.reviewed = { actorUserId: row.actorUserId, reason: row.reason, createdAt: row.createdAt };
+      }
+    } else if (row.action === "entry_voided") {
+      if (!current.voided || row.createdAt > current.voided.createdAt) {
+        current.voided = { actorUserId: row.actorUserId, reason: row.reason, createdAt: row.createdAt };
+      }
+    } else if (row.action === "entry_restored") {
+      if (!current.restored || row.createdAt > current.restored.createdAt) {
+        current.restored = { actorUserId: row.actorUserId, reason: row.reason, createdAt: row.createdAt };
+      }
+    }
+    latestAuditByEntryId.set(row.entryId, current);
   });
 
-  return rows.map((row) => {
+  const actorIds = new Set<string>();
+  filteredRows.forEach((row) => actorIds.add(row.enteredByUserId));
+  entryAuditRows.forEach((row) => actorIds.add(row.actorUserId));
+
+  const actorRows = await db
+    .select({
+      id: users.id,
+      name: users.name,
+    })
+    .from(users)
+    .where(inArray(users.id, [...actorIds]));
+
+  const actorNameById = new Map<string, string>();
+  actorRows.forEach((actorRow) => actorNameById.set(actorRow.id, actorRow.name));
+
+  const actorById = (userId: string) => {
+    const name = actorNameById.get(userId) || "";
+    return {
+      role: "owner",
+      userId,
+      nameAr: name,
+      nameEn: name,
+    };
+  };
+
+  return filteredRows.map((row) => {
     const actorName = actorNameById.get(row.enteredByUserId) || "";
     const createdAt = toIso(row.createdAt);
     const createdBy = {
@@ -166,6 +292,40 @@ export async function listStoreEntries(rawInput: Input) {
       nameAr: actorName,
       nameEn: actorName,
     };
+    const latestAudit = latestAuditByEntryId.get(row.id);
+    const reviewedAt = toIso(row.reviewedAt) || toIso(latestAudit?.reviewed?.createdAt || null);
+    const voidedAt = toIso(row.voidedAt) || toIso(latestAudit?.voided?.createdAt || null);
+    const restoredAt = toIso(row.restoredAt) || toIso(latestAudit?.restored?.createdAt || null);
+
+    const auditTrail = [];
+    if (createdAt) {
+      auditTrail.push({ action: "created", at: createdAt, by: createdBy, reason: "" });
+    }
+    if (latestAudit?.reviewed) {
+      auditTrail.push({
+        action: "reviewed",
+        at: toIso(latestAudit.reviewed.createdAt) || createdAt || new Date().toISOString(),
+        by: actorById(latestAudit.reviewed.actorUserId),
+        reason: latestAudit.reviewed.reason || "",
+      });
+    }
+    if (latestAudit?.voided) {
+      auditTrail.push({
+        action: "voided",
+        at: toIso(latestAudit.voided.createdAt) || createdAt || new Date().toISOString(),
+        by: actorById(latestAudit.voided.actorUserId),
+        reason: latestAudit.voided.reason || "",
+      });
+    }
+    if (latestAudit?.restored) {
+      auditTrail.push({
+        action: "restored",
+        at: toIso(latestAudit.restored.createdAt) || createdAt || new Date().toISOString(),
+        by: actorById(latestAudit.restored.actorUserId),
+        reason: latestAudit.restored.reason || "",
+      });
+    }
+    auditTrail.sort((a, b) => String(a.at).localeCompare(String(b.at)));
 
     return {
       id: row.id,
@@ -182,17 +342,17 @@ export async function listStoreEntries(rawInput: Input) {
       outflowId: null,
       enteredBy: createdBy,
       attachment: null,
-      reviewed: Boolean(row.reviewedAt),
-      reviewedAt: toIso(row.reviewedAt),
-      reviewedBy: null,
+      reviewed: Boolean(reviewedAt),
+      reviewedAt,
+      reviewedBy: latestAudit?.reviewed ? actorById(latestAudit.reviewed.actorUserId) : null,
       status: row.status,
-      voidedAt: toIso(row.voidedAt),
-      voidedBy: null,
-      voidReason: "",
-      restoredAt: toIso(row.restoredAt),
-      restoredBy: null,
-      restoreReason: "",
-      auditTrail: createdAt ? [{ action: "created", at: createdAt, by: createdBy, reason: "" }] : [],
+      voidedAt,
+      voidedBy: latestAudit?.voided ? actorById(latestAudit.voided.actorUserId) : null,
+      voidReason: latestAudit?.voided?.reason || "",
+      restoredAt,
+      restoredBy: latestAudit?.restored ? actorById(latestAudit.restored.actorUserId) : null,
+      restoreReason: latestAudit?.restored?.reason || "",
+      auditTrail,
     };
   });
 }

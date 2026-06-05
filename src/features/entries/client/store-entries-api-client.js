@@ -40,6 +40,10 @@ function reverseLookupKeyByUuid(uuidValue, map) {
   return "";
 }
 
+function toHalalas(value) {
+  return Math.round(Number(value || 0) * 100);
+}
+
 export async function fetchStoreEntriesViaApi({
   organizationId,
   actorUserId,
@@ -96,4 +100,143 @@ export async function fetchStoreEntriesViaApi({
       salesChannels: mappedSalesChannels,
     };
   });
+}
+
+export async function createStoreEntryViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  payload,
+}) {
+  const { userIdMap, storeIdMap, salesChannelIdMap } = getMaps();
+  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
+  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
+  const mappedStoreId = mapToUuid(payload?.businessId, storeIdMap);
+  if (!mappedOrganizationId || !mappedActorUserId || !mappedStoreId) return null;
+
+  const mappedSalesChannels = (payload?.salesChannels || [])
+    .map((row) => ({
+      salesChannelId: mapToUuid(row?.channelId || row?.id, salesChannelIdMap),
+      channelName: row?.name || row?.channelName || row?.channelLabel || row?.channelId || row?.id,
+      amountHalalas: toHalalas(row?.amount),
+    }))
+    .filter((row) => isUuid(row.salesChannelId) && row.amountHalalas > 0);
+
+  const body = {
+    date: payload?.date,
+    type: payload?.type,
+    amountHalalas: toHalalas(payload?.amount),
+    categoryId: isUuid(payload?.categoryId) ? payload.categoryId : null,
+    note: typeof payload?.note === "string" ? payload.note : "",
+    salesChannels: mappedSalesChannels,
+  };
+
+  const response = await fetch(`/api/v1/stores/${mappedStoreId}/entries`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-organization-id": mappedOrganizationId,
+      "x-user-id": mappedActorUserId,
+      "x-member-role": actorRole,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(`entry create api failed: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function reviewStoreEntryViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  entry,
+}) {
+  const { userIdMap, storeIdMap } = getMaps();
+  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
+  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
+  const mappedStoreId = mapToUuid(entry?.businessId, storeIdMap);
+  if (!mappedOrganizationId || !mappedActorUserId || !mappedStoreId || !isUuid(entry?.id)) return null;
+
+  const response = await fetch(
+    `/api/v1/stores/${mappedStoreId}/entries/${encodeURIComponent(entry.id)}/review`,
+    {
+      method: "POST",
+      headers: {
+        "x-organization-id": mappedOrganizationId,
+        "x-user-id": mappedActorUserId,
+        "x-member-role": actorRole,
+      },
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`entry review api failed: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function voidStoreEntryViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  entry,
+  reason = "",
+}) {
+  const { userIdMap, storeIdMap } = getMaps();
+  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
+  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
+  const mappedStoreId = mapToUuid(entry?.businessId, storeIdMap);
+  if (!mappedOrganizationId || !mappedActorUserId || !mappedStoreId || !isUuid(entry?.id)) return null;
+
+  const response = await fetch(
+    `/api/v1/stores/${mappedStoreId}/entries/${encodeURIComponent(entry.id)}/void`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-organization-id": mappedOrganizationId,
+        "x-user-id": mappedActorUserId,
+        "x-member-role": actorRole,
+      },
+      body: JSON.stringify({ reason }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`entry void api failed: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function restoreStoreEntryViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  entry,
+  reason = "",
+}) {
+  const { userIdMap, storeIdMap } = getMaps();
+  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
+  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
+  const mappedStoreId = mapToUuid(entry?.businessId, storeIdMap);
+  if (!mappedOrganizationId || !mappedActorUserId || !mappedStoreId || !isUuid(entry?.id)) return null;
+
+  const response = await fetch(
+    `/api/v1/stores/${mappedStoreId}/entries/${encodeURIComponent(entry.id)}/restore`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-organization-id": mappedOrganizationId,
+        "x-user-id": mappedActorUserId,
+        "x-member-role": actorRole,
+      },
+      body: JSON.stringify({ reason }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`entry restore api failed: ${response.status}`);
+  }
+  return response.json();
 }

@@ -208,6 +208,61 @@ Behavior:
 - Hydrates summary channels from `entry_sales_channels`.
 - Includes closeout linkage when entries were created from closeout submission audit metadata.
 
+### `POST /stores/:storeId/entries` (implemented)
+
+Headers:
+
+- `x-organization-id: <uuid>`
+- `x-user-id: <uuid>`
+- `x-member-role: owner|manager|employee`
+
+Body (summary example):
+
+```json
+{
+  "date": "2026-06-02",
+  "type": "summary",
+  "salesChannels": [
+    { "salesChannelId": "uuid", "channelName": "Cash", "amountHalalas": 50000 }
+  ],
+  "note": "optional"
+}
+```
+
+Body (outflow example):
+
+```json
+{
+  "date": "2026-06-02",
+  "type": "expense",
+  "amountHalalas": 12000,
+  "categoryId": null,
+  "note": "optional"
+}
+```
+
+Behavior:
+
+- Validates actor/store membership and role.
+- Creates entry rows (and summary channels when applicable) transactionally.
+- Writes audit event `entry_created`.
+
+### `POST /stores/:storeId/entries/:entryId/review` (implemented)
+
+Marks active entry as reviewed and appends audit event `entry_reviewed`.
+
+### `POST /stores/:storeId/entries/:entryId/void` (implemented)
+
+Body: `{ "reason": "optional" }`
+
+Sets `status=voided`, `voided_at` and appends audit event `entry_voided`.
+
+### `POST /stores/:storeId/entries/:entryId/restore` (implemented)
+
+Body: `{ "reason": "optional" }`
+
+Sets `status=active`, `restored_at` and appends audit event `entry_restored`.
+
 ### `POST /entries`
 
 Create purchase / expense / withdrawal / summary.
