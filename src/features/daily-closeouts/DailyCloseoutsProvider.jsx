@@ -32,21 +32,23 @@ export function DailyCloseoutsProvider({
   loadCloseoutsFromApi = null,
   apiStrictMode = false,
 }) {
-  const [closeouts, setCloseouts] = useState(() => readDailyCloseouts());
-  const [events, setEvents] = useState(() => readCloseoutEvents());
+  const [closeouts, setCloseouts] = useState(() => (apiStrictMode ? [] : readDailyCloseouts()));
+  const [events, setEvents] = useState(() => (apiStrictMode ? [] : readCloseoutEvents()));
   const [syncError, setSyncError] = useState("");
 
   const persistCloseouts = useCallback((next) => {
     setCloseouts((current) => {
       const resolved = typeof next === "function" ? next(current) : next;
-      writeDailyCloseouts(resolved);
+      if (!apiStrictMode) {
+        writeDailyCloseouts(resolved);
+      }
       return resolved;
     });
-  }, []);
+  }, [apiStrictMode]);
 
   const logEvent = useCallback((payload) => {
-    setEvents((current) => appendCloseoutEvent(current, payload));
-  }, []);
+    setEvents((current) => (apiStrictMode ? current : appendCloseoutEvent(current, payload)));
+  }, [apiStrictMode]);
 
   const deleteCloseout = useCallback((closeoutId) => {
     persistCloseouts((current) => current.filter((item) => item.id !== closeoutId));
@@ -69,15 +71,19 @@ export function DailyCloseoutsProvider({
     const remote = await loadCloseoutsFromApi();
     const remoteList = Array.isArray(remote) ? remote.map((item) => withCloseoutTotals(item)) : [];
     setCloseouts((current) => {
-      const localDrafts = current.filter((item) => item.status === CLOSEOUT_STATUS.DRAFT && !item.submittedAt);
+      const localDrafts = apiStrictMode
+        ? []
+        : current.filter((item) => item.status === CLOSEOUT_STATUS.DRAFT && !item.submittedAt);
       const remoteKeys = new Set(remoteList.map((item) => item.id));
       const merged = [...remoteList, ...localDrafts.filter((item) => !remoteKeys.has(item.id))];
-      writeDailyCloseouts(merged);
+      if (!apiStrictMode) {
+        writeDailyCloseouts(merged);
+      }
       return merged;
     });
     setSyncError("");
     return remoteList;
-  }, [loadCloseoutsFromApi]);
+  }, [apiStrictMode, loadCloseoutsFromApi]);
 
   useEffect(() => {
     if (typeof loadCloseoutsFromApi !== "function") return;

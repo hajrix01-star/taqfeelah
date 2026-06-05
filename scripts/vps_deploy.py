@@ -391,6 +391,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
         "nginx -t",
         f"curl -I --max-time 15 http://{shlex.quote(domain)} || true",
         f"curl -I --max-time 15 https://{shlex.quote(domain)} || true",
+        f"curl -fsS --max-time 20 https://{shlex.quote(domain)}/api/v1/auth/session",
         f"curl -I --max-time 15 https://{shlex.quote(www_domain)} || true",
         "curl -I --max-time 15 https://hajrix.com || true",
         "curl -I --max-time 15 https://arz-lounge.com || true",

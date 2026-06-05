@@ -2,13 +2,15 @@ export type OwnerLoginMethod = "username_password" | "whatsapp_otp" | "email_otp
 
 type OwnerLoginConfig = Record<OwnerLoginMethod, boolean>;
 
+const isProductionBuild = process.env.NEXT_PUBLIC_APP_MODE === "production" || process.env.NODE_ENV === "production";
+
 const ownerLoginConfig: OwnerLoginConfig = {
   username_password: true,
   whatsapp_otp:
-    process.env.NEXT_PUBLIC_APP_MODE !== "production"
+    !isProductionBuild
     && process.env.NEXT_PUBLIC_AUTH_OWNER_WHATSAPP_OTP === "true",
   email_otp:
-    process.env.NEXT_PUBLIC_APP_MODE !== "production"
+    !isProductionBuild
     && process.env.NEXT_PUBLIC_AUTH_OWNER_EMAIL_OTP === "true",
 };
 

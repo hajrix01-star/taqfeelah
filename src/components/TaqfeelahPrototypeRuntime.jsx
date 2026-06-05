@@ -1154,9 +1154,7 @@ const employeeName = (item, lang) => item.enteredBy ? (lang === "ar" ? item.ente
 // طبقة السجل التشغيلي: المصدر الوحيد للأرقام والمرفقات والتقارير داخل البروتايب.
 // البنية مقصودة لتنتقل لاحقًا إلى API/DB دون إعادة تصميم الواجهة.
 const APP_IN_PRODUCTION_MODE = isProductionAppMode();
-const PRODUCTION_API_ENTRIES_MODE = APP_IN_PRODUCTION_MODE
-  && process.env.NEXT_PUBLIC_CLOSEOUTS_API_ENABLED === "true"
-  && process.env.NEXT_PUBLIC_ENTRIES_API_ENABLED !== "false";
+const PRODUCTION_API_ENTRIES_MODE = APP_IN_PRODUCTION_MODE;
 const PROTOTYPE_SUPPORT_WHATSAPP = "966501234567";
 const PROTOTYPE_DEMO_OTP = process.env.NEXT_PUBLIC_DEMO_OTP || (APP_IN_PRODUCTION_MODE ? "" : "1234");
 const PROTOTYPE_OWNER_USERNAME = (
@@ -1419,16 +1417,19 @@ function readDemoLastCloseoutDates() {
   return { shami: "2026-06-02", arz: "2026-06-02" };
 }
 function readAcknowledgedDuplicateSales() {
+  if (APP_IN_PRODUCTION_MODE) return {};
   if (typeof window === "undefined") return {};
   const stored = readLocalStorageJson(ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY, null);
   return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
 }
 function readCloseoutAlerts() {
+  if (APP_IN_PRODUCTION_MODE) return [];
   if (typeof window === "undefined") return [];
   const stored = readLocalStorageJson(CLOSEOUT_ALERTS_STORAGE_KEY, []);
   return Array.isArray(stored) ? stored : [];
 }
 function writeCloseoutAlerts(alerts) {
+  if (APP_IN_PRODUCTION_MODE) return;
   if (typeof window === "undefined") return;
   window.localStorage.setItem(CLOSEOUT_ALERTS_STORAGE_KEY, JSON.stringify(alerts));
 }
@@ -1608,7 +1609,8 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
     if (APP_IN_PRODUCTION_MODE) {
       setSubmitting(true);
       try {
-        await loginOwnerSessionViaApi({ username: username.trim(), password });
+        const session = await loginOwnerSessionViaApi({ username: username.trim(), password });
+        onOwnerLogin(typeof session?.userId === "string" ? session.userId : "");
       } catch (failure) {
         const message = failure instanceof Error && failure.message
           ? failure.message
@@ -1625,7 +1627,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
     setError("");
     if (rememberMe) saveOwnerCredentials({ username: username.trim(), password });
     else clearOwnerCredentials();
-    onOwnerLogin();
+    if (!APP_IN_PRODUCTION_MODE) onOwnerLogin();
   };
   useEffect(() => {
     if (method === "phone" && !isOwnerLoginMethodEnabled("whatsapp_otp")) {
@@ -1751,10 +1753,11 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
     if (APP_IN_PRODUCTION_MODE) {
       setSubmitting(true);
       try {
-        await loginEmployeeSessionViaApi({
+        const session = await loginEmployeeSessionViaApi({
           employeeId: employeeIdentifier,
           pin: pin.trim(),
         });
+        onLogin(person?.id || employeeIdentifier, typeof session?.userId === "string" ? session.userId : "");
       } catch (failure) {
         const message = failure instanceof Error && failure.message
           ? failure.message
@@ -1768,7 +1771,7 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
     setError("");
     if (rememberMe) saveEmployeeCredentials({ employeeId: employeeIdentifier, pin: pin.trim() });
     else clearEmployeeCredentials();
-    onLogin(person?.id || employeeIdentifier);
+    if (!APP_IN_PRODUCTION_MODE) onLogin(person?.id || employeeIdentifier);
   };
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-[800px] flex-col px-6 pb-8 pt-10">
@@ -2238,7 +2241,7 @@ function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedStores, on
 const DISABLE_REVIEW_ALERTS_MIGRATION_KEY = "disableReviewAlertsV1";
 
 function migrateSavedSettings(raw) {
-  if (!raw || typeof window === "undefined" || raw[DISABLE_REVIEW_ALERTS_MIGRATION_KEY]) return raw;
+  if (!raw || typeof window === "undefined" || APP_IN_PRODUCTION_MODE || raw[DISABLE_REVIEW_ALERTS_MIGRATION_KEY]) return raw;
   const migrated = { ...raw, [DISABLE_REVIEW_ALERTS_MIGRATION_KEY]: true };
   if (migrated.storeOperationalSettings) {
     migrated.storeOperationalSettings = Object.fromEntries(
@@ -2266,6 +2269,7 @@ function migrateSavedSettings(raw) {
 }
 
 function readSavedSettings() {
+  if (APP_IN_PRODUCTION_MODE) return null;
   if (typeof window === "undefined") return null;
   try {
     const raw = JSON.parse(window.localStorage.getItem("taqfeelah_owner_settings") || "null");
@@ -2281,6 +2285,14 @@ const PROTOTYPE_DEFAULT_STAFF = [
 ];
 
 function readPrototypeAuthBoot() {
+  if (APP_IN_PRODUCTION_MODE) {
+    return {
+      loggedIn: false,
+      employee: false,
+      loggedInEmployeeId: null,
+      employeeBusinessId: "",
+    };
+  }
   const settings = readSavedSettings();
   return resolveAuthStateFromSession(settings?.staff || (APP_IN_PRODUCTION_MODE ? [] : PROTOTYPE_DEFAULT_STAFF));
 }
@@ -2332,6 +2344,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   const activeChannelCount = channelConfig.activeIds.length;
 
   useEffect(() => {
+    if (APP_IN_PRODUCTION_MODE) return;
     if (typeof window === "undefined") return;
     window.localStorage.setItem("taqfeelah_owner_settings", JSON.stringify({
       configuredBusinesses,
@@ -4657,6 +4670,7 @@ function BottomNav({ lang, employee, active, onChange, onAdd = () => {} }) {
 
 export default function TaqfeelahPrototypeRuntime() {
   const [lang, setLang] = useState("ar");
+  const [sessionUserId, setSessionUserId] = useState("");
   const [loggedIn, setLoggedIn] = useState(() => readPrototypeAuthBoot().loggedIn);
   const [authScreen, setAuthScreen] = useState("owner");
   const [employee, setEmployee] = useState(() => readPrototypeAuthBoot().employee);
@@ -4717,6 +4731,7 @@ export default function TaqfeelahPrototypeRuntime() {
     getSessionStatusViaApi()
       .then((session) => {
         if (cancelled || !session?.authenticated) return;
+        setSessionUserId(typeof session.userId === "string" ? session.userId : "");
         setLoggedIn(true);
         setAuthScreen("owner");
         if (session.role === "employee") {
@@ -4733,6 +4748,7 @@ export default function TaqfeelahPrototypeRuntime() {
       .catch((error) => {
         if (cancelled) return;
         console.warn("session bootstrap failed", error);
+        setSessionUserId("");
       });
     return () => {
       cancelled = true;
@@ -4836,9 +4852,18 @@ export default function TaqfeelahPrototypeRuntime() {
   const ownerNotificationsVisible = duplicateSalesAlerts.length > 0 || ownerHasPendingReview || unseenCloseoutAlerts.length > 0;
   const ownerNotificationBadge = ownerHasPendingReview || duplicateSalesAlerts.length > 0 || unseenCloseoutAlerts.length > 0;
   useEffect(() => { if (typeof window !== "undefined") window.localStorage.setItem("taqfeelah_notebook_theme", notebookTheme); }, [notebookTheme]);
-  useEffect(() => { if (typeof window !== "undefined") window.localStorage.setItem(OPERATIONAL_ENTRIES_STORAGE_KEY, JSON.stringify(stripEmbeddedAttachmentImages(operationalEntries))); }, [operationalEntries]);
-  useEffect(() => { if (typeof window !== "undefined") window.localStorage.setItem(ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY, JSON.stringify(acknowledgedDuplicateSales)); }, [acknowledgedDuplicateSales]);
-  useEffect(() => { if (typeof window !== "undefined") window.localStorage.setItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(lastCloseoutDates)); }, [lastCloseoutDates]);
+  useEffect(() => {
+    if (APP_IN_PRODUCTION_MODE || typeof window === "undefined") return;
+    window.localStorage.setItem(OPERATIONAL_ENTRIES_STORAGE_KEY, JSON.stringify(stripEmbeddedAttachmentImages(operationalEntries)));
+  }, [operationalEntries]);
+  useEffect(() => {
+    if (APP_IN_PRODUCTION_MODE || typeof window === "undefined") return;
+    window.localStorage.setItem(ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY, JSON.stringify(acknowledgedDuplicateSales));
+  }, [acknowledgedDuplicateSales]);
+  useEffect(() => {
+    if (APP_IN_PRODUCTION_MODE || typeof window === "undefined") return;
+    window.localStorage.setItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(lastCloseoutDates));
+  }, [lastCloseoutDates]);
   useEffect(() => {
     if (!APP_IN_PRODUCTION_MODE || !loggedIn) return;
     let cancelled = false;
@@ -5019,7 +5044,7 @@ export default function TaqfeelahPrototypeRuntime() {
       if (entriesApiStrictMode) {
         const created = await createOperationalEntryInApi({
           payload,
-          actorUserId: closeoutsApiOwnerUserId,
+          actorUserId: ownerApiUserId,
           actorRole: "owner",
         });
         if (!created) {
@@ -5072,7 +5097,7 @@ export default function TaqfeelahPrototypeRuntime() {
       try {
         const reviewed = await reviewStoreEntryViaApi({
           organizationId: closeoutsApiOrganizationId,
-          actorUserId: closeoutsApiOwnerUserId,
+          actorUserId: ownerApiUserId,
           actorRole: "owner",
           entry: target,
         });
@@ -5130,7 +5155,7 @@ export default function TaqfeelahPrototypeRuntime() {
       try {
         const voided = await voidStoreEntryViaApi({
           organizationId: closeoutsApiOrganizationId,
-          actorUserId: closeoutsApiOwnerUserId,
+          actorUserId: ownerApiUserId,
           actorRole: "owner",
           entry: target,
           reason: reason.trim(),
@@ -5180,7 +5205,7 @@ export default function TaqfeelahPrototypeRuntime() {
       try {
         const restored = await restoreStoreEntryViaApi({
           organizationId: closeoutsApiOrganizationId,
-          actorUserId: closeoutsApiOwnerUserId,
+          actorUserId: ownerApiUserId,
           actorRole: "owner",
           entry: target,
           reason: reason.trim(),
@@ -5218,23 +5243,26 @@ export default function TaqfeelahPrototypeRuntime() {
     setRestoreTarget(null);
     setSelected(null);
   };
-  const completeOwnerLogin = () => {
+  const completeOwnerLogin = (apiUserId = "") => {
     saveAuthSession({ role: "owner" });
+    setSessionUserId(typeof apiUserId === "string" ? apiUserId : "");
     setLoggedIn(true);
     setEmployee(false);
     setLoggedInEmployeeId(null);
     setAuthScreen("owner");
     setOwnerPage("home");
   };
-  const completeEmployeeLogin = (personId) => {
+  const completeEmployeeLogin = (personId, apiUserId = "") => {
     const person = staff.find((item) => item.id === personId && item.active && !item.removed);
-    if (!person) return;
-    saveAuthSession({ role: "employee", employeeId: person.id });
+    const resolvedEmployeeId = person?.id || (typeof apiUserId === "string" && apiUserId ? apiUserId : personId);
+    if (!resolvedEmployeeId) return;
+    saveAuthSession({ role: "employee", employeeId: resolvedEmployeeId });
+    setSessionUserId(typeof apiUserId === "string" ? apiUserId : "");
     setLoggedIn(true);
     setEmployee(true);
-    setLoggedInEmployeeId(person.id);
-    setEmployeeBusinessId(person.storeIds?.[0] || activeBusinesses[0]?.id || "");
-    setEmployeeThemeOverride(readEmployeeNotebookTheme(person.id));
+    setLoggedInEmployeeId(resolvedEmployeeId);
+    setEmployeeBusinessId(person?.storeIds?.[0] || activeBusinesses[0]?.id || "");
+    setEmployeeThemeOverride(readEmployeeNotebookTheme(resolvedEmployeeId));
     setEmployeePage("closeouts");
     setAuthScreen("owner");
   };
@@ -5346,6 +5374,7 @@ export default function TaqfeelahPrototypeRuntime() {
       }
     }
     clearAuthSession();
+    setSessionUserId("");
     setLoggedIn(false);
     setEmployee(false);
     setLoggedInEmployeeId(null);
@@ -5371,10 +5400,11 @@ export default function TaqfeelahPrototypeRuntime() {
   const closeoutsApiStrictMode = APP_IN_PRODUCTION_MODE;
   const closeoutsApiOrganizationId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
   const closeoutsApiOwnerUserId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";
+  const ownerApiUserId = sessionUserId || closeoutsApiOwnerUserId;
   const apiActorRole = employee ? "employee" : "owner";
   const apiActorUserId = employee
-    ? (activeEmployee?.apiUserId || activeEmployee?.id || "")
-    : closeoutsApiOwnerUserId;
+    ? (sessionUserId || activeEmployee?.apiUserId || activeEmployee?.id || "")
+    : ownerApiUserId;
   const apiTargetStoreIdsKey = (employee ? assignedEmployeeBusinesses : reportingBusinesses)
     .map((store) => store.id)
     .filter(Boolean)
@@ -5494,13 +5524,13 @@ export default function TaqfeelahPrototypeRuntime() {
       if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
       return null;
     }
-    if (!isUuid(closeoutsApiOrganizationId) || !isUuid(closeoutsApiOwnerUserId) || !isUuid(closeout?.storeId)) {
+    if (!isUuid(closeoutsApiOrganizationId) || !isUuid(ownerApiUserId) || !isUuid(closeout?.storeId)) {
       if (closeoutsApiStrictMode) throw new Error("closeouts API mapping is invalid for review.");
       return null;
     }
     const result = await reviewCloseoutViaApi({
       organizationId: closeoutsApiOrganizationId,
-      actorUserId: closeoutsApiOwnerUserId,
+      actorUserId: ownerApiUserId,
       actorRole: "owner",
       closeout,
       action,
@@ -5513,7 +5543,7 @@ export default function TaqfeelahPrototypeRuntime() {
   }, [
     closeoutsApiEnabled,
     closeoutsApiOrganizationId,
-    closeoutsApiOwnerUserId,
+    ownerApiUserId,
     closeoutsApiStrictMode,
     entriesApiStrictMode,
     loadOperationalEntriesFromApi,

@@ -30,12 +30,6 @@ function mapEmployeeUserId(employeeId: string, userIdMap: Record<string, string>
   return typeof mapped === "string" && isUuid(mapped) ? mapped : "";
 }
 
-const defaultUserIdMap = {
-  owner: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
-  ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
-  sara: "85f696d6-f655-4f2d-9f56-1f13c2f4c66c",
-};
-
 const authConfigSchema = z.object({
   ownerUsername: z.string().trim().min(1).optional(),
   ownerPassword: z.string().trim().min(1).optional(),
@@ -49,9 +43,9 @@ export async function createAuthSession(rawInput: LoginInput) {
   }
   const input = parsed.data;
   const envAuth = getProductionAuthRuntimeConfig();
-  const organizationId = envAuth.organizationId || "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1";
-  const ownerUserId = envAuth.ownerUserId || defaultUserIdMap.owner;
-  const userIdMap = { ...defaultUserIdMap, ...envAuth.userIdMap };
+  const organizationId = envAuth.organizationId;
+  const ownerUserId = envAuth.ownerUserId;
+  const userIdMap = envAuth.userIdMap;
 
   if (!isUuid(organizationId)) {
     throw new ValidationError("Auth organization ID is not configured.");
@@ -61,8 +55,8 @@ export async function createAuthSession(rawInput: LoginInput) {
   const parsedAuthConfig = authConfigSchema.safeParse(runtimeSettingsEnvelope?.settings?.authConfig || {});
   const runtimeAuthConfig = parsedAuthConfig.success ? parsedAuthConfig.data : {};
 
-  const ownerUsername = runtimeAuthConfig.ownerUsername || envAuth.ownerUsername || "owner";
-  const ownerPassword = runtimeAuthConfig.ownerPassword || envAuth.ownerPassword || "owner";
+  const ownerUsername = runtimeAuthConfig.ownerUsername || envAuth.ownerUsername || "";
+  const ownerPassword = runtimeAuthConfig.ownerPassword || envAuth.ownerPassword || "";
   const employeePinMap = { ...envAuth.employeePinMap, ...(runtimeAuthConfig.employeePins || {}) };
 
   if (!ownerUserId) {
@@ -75,6 +69,9 @@ export async function createAuthSession(rawInput: LoginInput) {
   if (input.mode === "owner_password") {
     const username = normalize(input.username).toLowerCase();
     const password = normalize(input.password);
+    if (!ownerUsername || !ownerPassword) {
+      throw new ValidationError("Owner auth configuration is incomplete.");
+    }
     if (username !== ownerUsername.trim().toLowerCase() || password !== ownerPassword) {
       throw new UnauthorizedError("Invalid credentials.");
     }

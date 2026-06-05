@@ -77,8 +77,45 @@ export function getProductionAuthRuntimeConfig(env = readEnv()) {
 
 export function assertProductionRuntimeEnv(env = readEnv()) {
   if (!isServerProductionMode(env)) return;
-  // Temporary bypass requested by product owner during staged rollout.
-  // Keep this function as no-op for now and rely on runtime setting management.
+
+  const missing: string[] = [];
+  if (!env.DATABASE_URL) missing.push("DATABASE_URL");
+  if (!env.AUTH_SESSION_SECRET || env.AUTH_SESSION_SECRET.length < 16) {
+    missing.push("AUTH_SESSION_SECRET(min 16 chars)");
+  }
+  if ((env.APP_MODE || "prototype") !== "production") {
+    missing.push("APP_MODE=production");
+  }
+  if ((env.NEXT_PUBLIC_APP_MODE || "prototype") !== "production") {
+    missing.push("NEXT_PUBLIC_APP_MODE=production");
+  }
+  if (env.NEXT_PUBLIC_CLOSEOUTS_API_ENABLED !== "true") {
+    missing.push("NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true");
+  }
+  if (env.NEXT_PUBLIC_ENTRIES_API_ENABLED !== "true") {
+    missing.push("NEXT_PUBLIC_ENTRIES_API_ENABLED=true");
+  }
+
+  const authCfg = getProductionAuthRuntimeConfig(env);
+  if (!authCfg.organizationId) {
+    missing.push("AUTH_ORGANIZATION_ID or NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID");
+  }
+  if (!authCfg.ownerUserId) {
+    missing.push("AUTH_OWNER_USER_ID or NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID");
+  }
+  if (Object.keys(authCfg.userIdMap).length === 0) {
+    missing.push("NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP");
+  }
+  if (Object.keys(parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP)).length === 0) {
+    missing.push("NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP");
+  }
+  if (Object.keys(parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP)).length === 0) {
+    missing.push("NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP");
+  }
+
+  if (missing.length > 0) {
+    throw new Error(`Production runtime env is incomplete: ${missing.join(", ")}`);
+  }
 }
 
 export function __resetEnvCacheForTests() {
