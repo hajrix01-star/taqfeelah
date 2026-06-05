@@ -190,20 +190,21 @@ export default function CloseoutShareModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[220] flex items-center justify-center bg-[#112A46]/45 p-4"
+        className="fixed inset-0 z-[220] flex flex-col justify-end bg-[#112A46]/45 sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0"
         onClick={onClose}
       >
         <motion.div
           dir={lang === "ar" ? "rtl" : "ltr"}
-          initial={{ scale: 0.97, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.97, opacity: 0 }}
-          className="relative z-10 w-full max-w-md max-h-[92%] overflow-y-auto rounded-[28px] bg-[#FBF7ED] p-5 ring-1 ring-[#E8E1D4]"
+          initial={{ y: 18, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 18, opacity: 0 }}
+          className="relative z-10 max-h-[92%] w-full overflow-y-auto rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[700px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="mb-4 flex items-start justify-between gap-3">
             <div className="min-w-0 text-start">
-              <h3 className="text-base font-black text-[#112A46]">{labels.myCloseout}</h3>
+              <p className="text-taq-meta font-bold text-[#827762]">{lang === "ar" ? "خيارات المشاركة" : "Share options"}</p>
+              <h3 className="text-base font-black text-[#112A46]">{lang === "ar" ? "معاينة صورة التقفيلة" : "Closeout image preview"}</h3>
               {(storeName || employeeName) ? (
                 <p className="mt-1 text-taq-meta font-bold leading-snug text-[#827762]">
                   {storeName ? (
@@ -220,11 +221,6 @@ export default function CloseoutShareModal({
                   ) : null}
                 </p>
               ) : null}
-              {shareCaption ? (
-                <p className="mt-2 rounded-xl bg-[#FFF4D2] px-2.5 py-1.5 text-taq-nav font-bold leading-relaxed text-[#806528]">
-                  {shareCaption}
-                </p>
-              ) : null}
             </div>
             <button type="button" onClick={onClose} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]">
               <X className="h-4 w-4" />
@@ -235,15 +231,13 @@ export default function CloseoutShareModal({
               {lang === "ar" ? "تم إغلاق اليوم وإرساله — يمكنك مشاركة الصورة الآن" : "Day closed and sent — share the image now"}
             </p>
           )}
-          <div className="relative mb-4 overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.05]">
+          <div className="relative mb-2">
             {previewData ? (
-              <div className="p-2">
-                <div ref={previewRef} className="mx-auto flex w-fit justify-center">
-                  <NotebookDaySharePreview {...previewData} />
-                </div>
+              <div ref={previewRef} className="overflow-hidden rounded-[24px] p-0 shadow-lg" style={{ backgroundColor: paperColor }}>
+                <NotebookDaySharePreview {...previewData} fluid />
               </div>
             ) : (
-              <div className="flex h-[320px] w-full items-center justify-center text-xs font-bold text-[#827762]">
+              <div className="flex h-[320px] w-full items-center justify-center rounded-[24px] bg-white text-xs font-bold text-[#827762] ring-1 ring-black/[0.055]">
                 {lang === "ar" ? "لا توجد بيانات للمشاركة" : "Nothing to share"}
               </div>
             )}
@@ -252,24 +246,36 @@ export default function CloseoutShareModal({
                 {lang === "ar" ? "جاري تجهيز الصورة…" : "Preparing image…"}
               </div>
             ) : null}
-            {imageError && !imageBusy ? (
-              <div className="absolute inset-x-0 bottom-0 z-10 bg-[#FFF1EE] px-3 py-2 text-center text-taq-nav font-bold text-[#B44747]">
-                {imageError}
-              </div>
-            ) : null}
           </div>
-          <div className="grid grid-cols-3 gap-2.5">
-            <button type="button" onClick={shareImage} disabled={imageBusy || !previewData} className="rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white disabled:opacity-50">
-              {lang === "ar" ? "مشاركة" : "Share"}
+          <p className="mb-2 text-center text-taq-meta font-bold text-[#827762]">
+            {lang === "ar" ? "الصورة جاهزة للمشاركة" : "Image ready to share"}
+          </p>
+          {shareHint && (
+            <p className="mb-3 rounded-xl bg-[#E6F5E9] px-3 py-2 text-center text-taq-meta font-bold text-[#257844]">
+              {shareHint}
+            </p>
+          )}
+          {imageError && (
+            <p className="mb-3 rounded-xl bg-[#FFF1EE] px-3 py-2 text-center text-taq-meta font-bold text-[#B44747]">
+              {imageError}
+            </p>
+          )}
+          <div className="space-y-2">
+            <button type="button" onClick={shareImage} disabled={imageBusy || !previewData} className="w-full rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white disabled:opacity-50">
+              {imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…") : (lang === "ar" ? "مشاركة الصورة" : "Share image")}
             </button>
-            <button type="button" onClick={copyCaptionOnly} disabled={!shareCaption} className="rounded-2xl bg-[#8C7A58] py-3.5 text-xs font-black text-white disabled:opacity-50">
-              {lang === "ar" ? "نسخ النص" : "Copy caption"}
-            </button>
-            <button type="button" onClick={downloadImage} disabled={imageBusy || !previewData} className="rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white disabled:opacity-50">
-              {lang === "ar" ? "تنزيل PNG" : "Download PNG"}
-            </button>
+            <div className="grid grid-cols-3 gap-2">
+              <button type="button" onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">
+                {lang === "ar" ? "إغلاق" : "Close"}
+              </button>
+              <button type="button" onClick={downloadImage} disabled={imageBusy || !previewData} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-50">
+                {lang === "ar" ? "تنزيل PNG" : "Download PNG"}
+              </button>
+              <button type="button" onClick={copyCaptionOnly} disabled={!shareCaption} className="rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-50">
+                {lang === "ar" ? "نسخ النص" : "Copy caption"}
+              </button>
+            </div>
           </div>
-          {shareHint && <p className="mt-3 text-center text-taq-meta font-bold text-[#806528]">{shareHint}</p>}
         </motion.div>
       </motion.div>
     </AnimatePresence>

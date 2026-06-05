@@ -35,6 +35,7 @@ function SummaryGridRow({ label, children, labelClass = "text-[#112A46]" }) {
 export default function NotebookDaySharePreview({
   lang = "ar",
   theme = "yellow",
+  fluid = false,
   periodLabel,
   title,
   storeName = "",
@@ -52,7 +53,7 @@ export default function NotebookDaySharePreview({
   return (
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="w-[390px] overflow-visible rounded-[24px] p-0"
+      className={`${fluid ? "w-full" : "w-[390px]"} overflow-visible rounded-[24px] p-0`}
       style={{ backgroundColor: activeTheme.paper, fontFamily }}
     >
       <div className="relative px-5 pb-4 pt-3" style={lines}>
