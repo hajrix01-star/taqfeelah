@@ -663,7 +663,7 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             set -a
             . ./.env.production
             set +a
-            pnpm run db:push
+            pnpm exec drizzle-kit push --force
             """
         ).strip()
     )
