@@ -1726,6 +1726,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
 
 function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
   const [selectedId, setSelectedId] = useState("");
+  const [manualEmployeeId, setManualEmployeeId] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -1739,17 +1740,19 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
     if (!saved) return;
     setRememberMe(true);
     if (saved.employeeId && activeStaff.some((person) => person.id === saved.employeeId)) setSelectedId(saved.employeeId);
+    else if (saved.employeeId) setManualEmployeeId(saved.employeeId);
     if (saved.pin) setPin(saved.pin);
   }, [activeStaff]);
   const submit = async () => {
     if (submitting) return;
-    const person = activeStaff.find((item) => item.id === selectedId);
-    if (!person) { setError(text(lang, "noActiveEmployee")); return; }
+    const employeeIdentifier = activeStaff.length > 0 ? selectedId : manualEmployeeId.trim();
+    const person = activeStaff.find((item) => item.id === employeeIdentifier);
+    if (!employeeIdentifier) { setError(text(lang, "noActiveEmployee")); return; }
     if (APP_IN_PRODUCTION_MODE) {
       setSubmitting(true);
       try {
         await loginEmployeeSessionViaApi({
-          employeeId: selectedId,
+          employeeId: employeeIdentifier,
           pin: pin.trim(),
         });
       } catch (failure) {
@@ -1761,11 +1764,11 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
       } finally {
         setSubmitting(false);
       }
-    } else if (!employeePinMatches(person, pin)) { setError(text(lang, "invalidEmployeePin")); return; }
+    } else if (!person || !employeePinMatches(person, pin)) { setError(text(lang, "invalidEmployeePin")); return; }
     setError("");
-    if (rememberMe) saveEmployeeCredentials({ employeeId: selectedId, pin: pin.trim() });
+    if (rememberMe) saveEmployeeCredentials({ employeeId: employeeIdentifier, pin: pin.trim() });
     else clearEmployeeCredentials();
-    onLogin(person.id);
+    onLogin(person?.id || employeeIdentifier);
   };
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-[800px] flex-col px-6 pb-8 pt-10">
@@ -1777,13 +1780,23 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
       </div>
       <div className="mt-8 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-black/[0.045]">
         <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employee")}</p>
-        <div className="mb-4 flex flex-wrap gap-2">
-          {activeStaff.map((person) => (
-            <button key={person.id} type="button" onClick={() => setSelectedId(person.id)} className={`rounded-full px-3 py-2 text-taq-meta font-black ${selectedId === person.id ? "bg-[#112A46] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]"}`}>
-              {lang === "ar" ? person.nameAr : person.nameEn}
-            </button>
-          ))}
-        </div>
+        {activeStaff.length > 0 ? (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {activeStaff.map((person) => (
+              <button key={person.id} type="button" onClick={() => setSelectedId(person.id)} className={`rounded-full px-3 py-2 text-taq-meta font-black ${selectedId === person.id ? "bg-[#112A46] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]"}`}>
+                {lang === "ar" ? person.nameAr : person.nameEn}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <input
+            dir="ltr"
+            value={manualEmployeeId}
+            onChange={(event) => setManualEmployeeId(event.target.value)}
+            placeholder={lang === "ar" ? "Employee ID" : "Employee ID"}
+            className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
+          />
+        )}
         <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employeePin")}</p>
         <input dir="ltr" inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value)} placeholder="• • • •" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]" />
         {!APP_IN_PRODUCTION_MODE ? <p className="mt-2 text-taq-meta font-bold text-[#827762]">{text(lang, "employeePinHint")}</p> : null}
