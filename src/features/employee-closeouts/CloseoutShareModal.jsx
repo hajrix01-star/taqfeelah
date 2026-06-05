@@ -32,9 +32,7 @@ export default function CloseoutShareModal({
 }) {
   const previewRef = useRef(null);
   const cachedImageFileRef = useRef(null);
-  const previewImageUrlRef = useRef("");
   const preCaptureTokenRef = useRef(0);
-  const [previewImageUrl, setPreviewImageUrl] = useState("");
   const [imageBusy, setImageBusy] = useState(false);
   const [imageError, setImageError] = useState("");
   const [shareHint, setShareHint] = useState("");
@@ -72,21 +70,11 @@ export default function CloseoutShareModal({
       setImageError("");
       setShareHint("");
       cachedImageFileRef.current = null;
-      if (previewImageUrlRef.current) {
-        URL.revokeObjectURL(previewImageUrlRef.current);
-        previewImageUrlRef.current = "";
-      }
-      setPreviewImageUrl("");
       return undefined;
     }
     setImageError("");
     setShareHint("");
     cachedImageFileRef.current = null;
-    if (previewImageUrlRef.current) {
-      URL.revokeObjectURL(previewImageUrlRef.current);
-      previewImageUrlRef.current = "";
-    }
-    setPreviewImageUrl("");
     return undefined;
   }, [open, closeout?.id]);
 
@@ -105,11 +93,7 @@ export default function CloseoutShareModal({
         try {
           const blob = await captureNotebookShareBlob(previewRef.current, paperColor);
           if (!cancelled && captureToken === preCaptureTokenRef.current) {
-            const nextFile = new File([blob], filename, { type: "image/png" });
-            cachedImageFileRef.current = nextFile;
-            if (previewImageUrlRef.current) URL.revokeObjectURL(previewImageUrlRef.current);
-            previewImageUrlRef.current = URL.createObjectURL(nextFile);
-            setPreviewImageUrl(previewImageUrlRef.current);
+            cachedImageFileRef.current = new File([blob], filename, { type: "image/png" });
           }
         } catch {
           if (!cancelled && captureToken === preCaptureTokenRef.current) cachedImageFileRef.current = null;
@@ -122,10 +106,6 @@ export default function CloseoutShareModal({
       window.clearTimeout(timeoutId);
     };
   }, [open, closeout?.id, previewData, paperColor]);
-
-  useEffect(() => () => {
-    if (previewImageUrlRef.current) URL.revokeObjectURL(previewImageUrlRef.current);
-  }, []);
 
   const imageFilename = closeout ? `taqfeelah-${closeout.date}.png` : "taqfeelah-closeout.png";
 
@@ -258,21 +238,8 @@ export default function CloseoutShareModal({
           <div className="relative mb-4 overflow-hidden rounded-2xl bg-white ring-1 ring-black/[0.05]">
             {previewData ? (
               <div className="p-2">
-                {previewImageUrl ? (
-                  <img
-                    src={previewImageUrl}
-                    alt=""
-                    className="mx-auto block max-h-[56dvh] w-full rounded-xl object-contain"
-                  />
-                ) : (
-                  <div className="mx-auto flex w-fit justify-center">
-                    <NotebookDaySharePreview {...previewData} />
-                  </div>
-                )}
-                <div aria-hidden className="pointer-events-none fixed left-0 top-0 -z-10 opacity-0">
-                  <div ref={previewRef} className="w-fit">
-                    <NotebookDaySharePreview {...previewData} />
-                  </div>
+                <div ref={previewRef} className="mx-auto flex w-fit justify-center">
+                  <NotebookDaySharePreview {...previewData} />
                 </div>
               </div>
             ) : (
