@@ -44,4 +44,16 @@ describe("withCloseoutTotals status normalization", () => {
 
     expect(closeout.status).toBe(CLOSEOUT_STATUS.RETURNED);
   });
+
+  it("treats synced closeouts as reviewed when legacy status is stale", () => {
+    const closeout = withCloseoutTotals({
+      id: "c-4",
+      status: CLOSEOUT_STATUS.DRAFT,
+      sales: {},
+      outflows: [],
+      syncedToEntries: true,
+    });
+
+    expect(closeout.status).toBe(CLOSEOUT_STATUS.REVIEWED);
+  });
 });

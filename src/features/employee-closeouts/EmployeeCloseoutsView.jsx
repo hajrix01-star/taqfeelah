@@ -90,10 +90,9 @@ export default function EmployeeCloseoutsView({
 
   const displayCloseouts = useMemo(() => {
     if (!storeCloseouts.length) return [];
-    const newestId = storeCloseouts[0]?.id;
     return storeCloseouts.map((item, index) => ({
       ...item,
-      uiExpanded: expandedId ? expandedId === item.id : index === 0 && item.id === newestId,
+      uiExpanded: expandedId === item.id,
       isPrevious: index > 0,
       dailySequence: dailySequenceById.get(item.id) || 1,
     }));
@@ -145,7 +144,7 @@ export default function EmployeeCloseoutsView({
     const next = await fn({ closeout, employee, reviewWorkflowEnabled });
     setEntryCloseout(null);
     setEntryResubmit(false);
-    setExpandedId(next.id);
+    setExpandedId(null);
     setShareTarget(next);
     setShareNewlySubmitted(true);
   };
