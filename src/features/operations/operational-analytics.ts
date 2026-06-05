@@ -1,4 +1,13 @@
-/** Pure helpers for operational entry filtering and totals (prototype + tests). */
+/**
+ * Pure helpers for operational entry filtering, totals, and closeout calculations.
+ *
+ * This is the single client-side source of truth for all financial aggregations.
+ * computeCloseoutTotals and salesArrayFromRecord from closeout-calculations.js
+ * are re-exported from here — that file is kept for backward compatibility only.
+ *
+ * Server-side authoritative source: src/domain/cash-movement/calculations.ts (halalas integers).
+ * Client-side source (riyals floats): this file.
+ */
 
 export type EntryStatus = "active" | "voided";
 export type OperationalEntryType = "summary" | "purchases" | "expense" | "withdrawal";
@@ -145,4 +154,61 @@ export function duplicateSalesSignature(entries: OperationalEntry[]): string {
 
 export function duplicateSalesGroupKey(group: { businessId: string; date: string }): string {
   return `${group.businessId}|${group.date}`;
+}
+
+// ─── Closeout totals (migrated from closeout-calculations.js) ────
+// These are re-exported here so callers can import from a single module.
+
+type SalesChannelRow = { channelId?: string; id?: string; name?: string; amount: number };
+type SalesInput = SalesChannelRow[] | Record<string, number | SalesChannelRow>;
+type OutflowRow = { id?: string; amount: number };
+
+/**
+ * Compute totalSales / totalOutflow / netMovement from closeout draft data.
+ * Input units: riyals (client-side floats). Not interchangeable with server halalas.
+ */
+export function computeCloseoutTotals(
+  sales: SalesInput,
+  outflows: OutflowRow[] = [],
+): { totalSales: number; totalOutflow: number; netMovement: number } {
+  let totalSales = 0;
+  if (Array.isArray(sales)) {
+    totalSales = sales.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+  } else if (sales && typeof sales === "object") {
+    totalSales = Object.values(sales as Record<string, unknown>).reduce<number>((sum, value) => {
+      const amount = typeof value === "number" ? value : Number(((value as SalesChannelRow).amount) || 0);
+      return sum + amount;
+    }, 0);
+  }
+  const totalOutflow = (outflows || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+  return { totalSales, totalOutflow, netMovement: totalSales - totalOutflow };
+}
+
+/** Build a named sales record from channel definitions + user-entered values. */
+export function salesRecordFromChannels(
+  salesChannels: { id: string; displayName?: string; nameAr?: string; nameEn?: string; name?: string }[],
+  valuesById: Record<string, number>,
+): Record<string, SalesChannelRow> {
+  const record: Record<string, SalesChannelRow> = {};
+  salesChannels.forEach((channel) => {
+    const amount = Number(valuesById[channel.id] || 0);
+    if (amount > 0) {
+      record[channel.id] = {
+        channelId: channel.id,
+        name: channel.displayName || channel.nameAr || channel.nameEn || channel.name || channel.id,
+        amount,
+      };
+    }
+  });
+  return record;
+}
+
+/** Normalise sales input to a flat array of { channelId, name, amount }. */
+export function salesArrayFromRecord(salesRecord: SalesInput | null | undefined): SalesChannelRow[] {
+  if (!salesRecord) return [];
+  if (Array.isArray(salesRecord)) return salesRecord as SalesChannelRow[];
+  return Object.values(salesRecord).map((row) => {
+    const r = row as SalesChannelRow;
+    return { channelId: r.channelId || r.id, name: r.name, amount: Number(r.amount || 0) };
+  });
 }

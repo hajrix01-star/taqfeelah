@@ -10,6 +10,12 @@ import { monthSelectionValue } from "@/features/operations/operational-analytics
 import { Badge, MoneyValue, NotebookRow, NumberLine, NotebookInk } from "@/features/daily-closeouts/NotebookAtoms";
 import { CLOSEOUT_STATUS } from "@/features/daily-closeouts/closeout-status";
 import { isProductionAppMode } from "@/core/config/app-mode";
+import {
+  DEFAULT_REGISTER_LOG_FILTERS,
+  applyLedgerFilters,
+  activeLedgerFilterCount,
+  summarizeLedgerPeriod,
+} from "@/features/owner/ledger/owner-ledger-filters";
 
 const APP_IN_PRODUCTION_MODE = isProductionAppMode();
 
@@ -369,11 +375,11 @@ export default function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, 
 
   const typeItems = [{ id: "all", label: "allTypes" }, { id: "summary", label: "summary" }, { id: "purchases", label: "purchases" }, { id: "expense", label: "expense" }, { id: "withdrawal", label: "withdrawal" }];
   const expenseCategoryItems = [{ id: "all", label: "allCategories" }, ...expenseCategories];
-  const activeFilterCount = registerLogFilterCount(logFilters);
+  const activeFilterCount = activeLedgerFilterCount(logFilters);
   const registerCardStyle = useMemo(() => ({ backgroundColor: notebookCardBackground(notebookTheme) }), [notebookTheme]);
   const registerCardInsetStyle = useMemo(() => ({ backgroundColor: notebookCardBackground(notebookTheme, "inset") }), [notebookTheme]);
   const registerPeriodSummary = useMemo(
-    () => summarizeRegisterPeriod(filteredEntries, lang, logFilters.salesChannel, salesChannelOptions),
+    () => summarizeLedgerPeriod(filteredEntries, logFilters.salesChannel, salesChannelOptions, lang),
     [filteredEntries, lang, logFilters.salesChannel, salesChannelOptions],
   );
   const registerPeriodLabel = logPeriodScopeLabel(lang, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo);

@@ -1,48 +1,19 @@
-/** @typedef {{ channelId: string, name: string, amount: number }} SalesChannelRow */
-
 /**
- * @param {Record<string, number> | SalesChannelRow[]} sales
- * @param {{ id: string, amount: number }[]} outflows
+ * @deprecated
+ * This file is kept for backward compatibility only.
+ * All calculation functions have been consolidated into:
+ *   src/features/operations/operational-analytics.ts
+ *
+ * TODO: Migrate all importers to operational-analytics.ts and remove this file.
+ *
+ * Importers to migrate:
+ *   - src/features/daily-closeouts/closeout-share-image.js
+ *   - src/features/daily-closeouts/closeout-share-operations.js
+ *   - src/features/daily-closeouts/daily-closeouts-demo-store.js
+ *   - src/features/demo/prototype-month-demo-seed.js
+ *   - src/features/employee-closeouts/DailyCloseoutCard.jsx
+ *   - src/features/employee-closeouts/DailyCloseoutEntryFlow.jsx
+ *   - src/features/owner-closeout-review/OwnerCloseoutReviewPanel.jsx
  */
-export function computeCloseoutTotals(sales, outflows = []) {
-  let totalSales = 0;
-  if (Array.isArray(sales)) {
-    totalSales = sales.reduce((sum, row) => sum + Number(row.amount || 0), 0);
-  } else if (sales && typeof sales === "object") {
-    totalSales = Object.values(sales).reduce((sum, value) => {
-      const amount = typeof value === "number" ? value : Number(value?.amount || 0);
-      return sum + amount;
-    }, 0);
-  }
-  const totalOutflow = (outflows || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
-  return {
-    totalSales,
-    totalOutflow,
-    netMovement: totalSales - totalOutflow,
-  };
-}
 
-export function salesRecordFromChannels(salesChannels, valuesById) {
-  const record = {};
-  salesChannels.forEach((channel) => {
-    const amount = Number(valuesById[channel.id] || 0);
-    if (amount > 0) {
-      record[channel.id] = {
-        channelId: channel.id,
-        name: channel.displayName || channel.nameAr || channel.nameEn || channel.name || channel.id,
-        amount,
-      };
-    }
-  });
-  return record;
-}
-
-export function salesArrayFromRecord(salesRecord) {
-  if (!salesRecord) return [];
-  if (Array.isArray(salesRecord)) return salesRecord;
-  return Object.values(salesRecord).map((row) => ({
-    channelId: row.channelId || row.id,
-    name: row.name,
-    amount: Number(row.amount || 0),
-  }));
-}
+export { computeCloseoutTotals, salesRecordFromChannels, salesArrayFromRecord } from "@/features/operations/operational-analytics";

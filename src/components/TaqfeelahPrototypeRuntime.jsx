@@ -62,6 +62,8 @@ import {
   X,
 } from "lucide-react";
 import { getEnabledOwnerLoginMethods, isOwnerLoginMethodEnabled } from "@/core/auth/owner-login-methods";
+import { useOperationalEntriesApi } from "@/features/entries/client/useOperationalEntriesApi";
+import { DEFAULT_REGISTER_LOG_FILTERS, summarizeLedgerPeriod, activeLedgerFilterCount } from "@/features/owner/ledger/owner-ledger-filters";
 import {
   fetchStoreCloseoutsViaApi,
   isUuid,
@@ -161,46 +163,11 @@ function formatSelectedMonth(value, lang) {
 
 
 
-const DEFAULT_REGISTER_LOG_FILTERS = {
-  status: "all",
-  type: "all",
-  expenseCategory: "all",
-  attachmentOnly: false,
-  pendingReviewOnly: false,
-  actor: "all",
-  salesChannel: "all",
-};
 
-function summarizeRegisterPeriod(entries, lang, salesChannelFilter, channelOptions = []) {
-  const activeEntries = entries.filter(entryIsActive);
-  if (salesChannelFilter !== "all") {
-    const option = channelOptions.find((item) => item.id === salesChannelFilter);
-    let amount = 0;
-    activeEntries.forEach((entry) => {
-      if (entry.type !== "summary") return;
-      (entry.salesChannels || []).forEach((row) => {
-        if (row.channelId === salesChannelFilter) amount += Number(row.amount) || 0;
-      });
-    });
-    return {
-      mode: "channel",
-      label: option?.label || (lang === "ar" ? "قناة" : "Channel"),
-      amount,
-    };
-  }
-  const totals = summarizeEntries(entries);
-  return { mode: "totals", sales: totals.sales, expense: totals.expense, net: totals.net };
-}
 
-function registerLogFilterCount(filters) {
-  return Number(filters.status !== "all")
-    + Number(filters.type !== "all")
-    + Number(filters.expenseCategory !== "all")
-    + Number(filters.salesChannel !== "all")
-    + Number(filters.attachmentOnly)
-    + Number(filters.pendingReviewOnly)
-    + Number(filters.actor !== "all");
-}
+
+
+
 
 
 function downloadBlobFile(blob, filename) {
@@ -622,17 +589,8 @@ export default function TaqfeelahPrototypeRuntime() {
           window.alert(lang === "ar" ? "تعذر حفظ العملية على الخادم." : "Failed to save entry on server.");
           return;
         }
-        const refreshed = await loadOperationalEntriesFromApi();
+        const refreshed = await reloadAndSyncLastCloseout(payload.type === "summary" ? payload.businessId : null);
         if (payload.type === "summary") {
-          const latestActiveCloseoutDate = refreshed
-            .filter((entry) => entry.businessId === payload.businessId && entry.type === "summary" && entryIsActive(entry))
-            .map((entry) => entry.date)
-            .sort()
-            .pop();
-          setLastCloseoutDates((current) => ({
-            ...current,
-            [payload.businessId]: latestActiveCloseoutDate || payload.date,
-          }));
           const createdEntry = refreshed.find((entry) => entry.id === created.id);
           if (createdEntry) pushCloseoutAlert(payload, createdEntry, actor);
         }
@@ -675,17 +633,8 @@ export default function TaqfeelahPrototypeRuntime() {
           window.alert(lang === "ar" ? "تعذر حفظ العملية على الخادم." : "Failed to save entry on server.");
           return;
         }
-        const refreshed = await loadOperationalEntriesFromApi();
+        const refreshed = await reloadAndSyncLastCloseout(payload.type === "summary" ? payload.businessId : null);
         if (payload.type === "summary") {
-          const latestActiveCloseoutDate = refreshed
-            .filter((entry) => entry.businessId === payload.businessId && entry.type === "summary" && entryIsActive(entry))
-            .map((entry) => entry.date)
-            .sort()
-            .pop();
-          setLastCloseoutDates((current) => ({
-            ...current,
-            [payload.businessId]: latestActiveCloseoutDate || payload.date,
-          }));
         }
         setOwnerPage("home");
         if (payload.type !== "summary") {
@@ -777,10 +726,7 @@ export default function TaqfeelahPrototypeRuntime() {
       const target = voidTarget;
       if (!target || entryIsVoided(target) || archivedBusinessIds.includes(target.businessId)) { setVoidTarget(null); return; }
       try {
-        const voided = await voidStoreEntryViaApi({
-          organizationId: closeoutsApiOrganizationId,
-          actorUserId: ownerApiUserId,
-          actorRole: "owner",
+        const voided = await voidEntryViaHook({
           entry: target,
           reason: reason.trim(),
         });
@@ -788,20 +734,7 @@ export default function TaqfeelahPrototypeRuntime() {
           window.alert(lang === "ar" ? "تعذر إلغاء العملية على الخادم." : "Failed to void entry on server.");
           return;
         }
-        const refreshed = await loadOperationalEntriesFromApi();
-        if (target.type === "summary") {
-          const latestActiveCloseoutDate = refreshed
-            .filter((entry) => entry.businessId === target.businessId && entry.type === "summary" && entryIsActive(entry))
-            .map((entry) => entry.date)
-            .sort()
-            .pop();
-          setLastCloseoutDates((current) => {
-            const next = { ...current };
-            if (latestActiveCloseoutDate) next[target.businessId] = latestActiveCloseoutDate;
-            else delete next[target.businessId];
-            return next;
-          });
-        }
+        await reloadAndSyncLastCloseout(target.type === "summary" ? target.businessId : null);
         setVoidTarget(null);
         setSelected(null);
       } catch (error) {
@@ -827,10 +760,7 @@ export default function TaqfeelahPrototypeRuntime() {
       const target = restoreTarget;
       if (!target || !entryIsVoided(target) || archivedBusinessIds.includes(target.businessId)) { setRestoreTarget(null); return; }
       try {
-        const restored = await restoreStoreEntryViaApi({
-          organizationId: closeoutsApiOrganizationId,
-          actorUserId: ownerApiUserId,
-          actorRole: "owner",
+        const restored = await restoreEntryViaHook({
           entry: target,
           reason: reason.trim(),
         });
@@ -1051,187 +981,29 @@ export default function TaqfeelahPrototypeRuntime() {
     : closeoutsApiEnabled;
   const entriesApiStrictMode = PRODUCTION_API_ENTRIES_MODE;
 
-  const createOperationalEntryInApi = useCallback(async ({ payload, actorUserId, actorRole }) => {
-    if (!entriesApiEnabled) {
-      if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
-      return null;
-    }
-    if (!isUuid(closeoutsApiOrganizationId)) {
-      if (entriesApiStrictMode) throw new Error("organization id is missing/invalid for entries API.");
-      return null;
-    }
-    return createStoreEntryViaApi({
-      organizationId: closeoutsApiOrganizationId,
-      actorUserId,
-      actorRole,
-      payload,
-    });
-  }, [closeoutsApiOrganizationId, entriesApiEnabled, entriesApiStrictMode]);
-
-  const loadOperationalEntriesFromApi = useCallback(async () => {
-    if (!entriesApiEnabled) {
-      if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
-      return [];
-    }
-    if (!isUuid(closeoutsApiOrganizationId)) {
-      if (entriesApiStrictMode) throw new Error("organization id is missing/invalid for entries API.");
-      return [];
-    }
-    if (!isUuid(apiActorUserId)) {
-      if (entriesApiStrictMode) throw new Error("actor user id is missing/invalid for entries API.");
-      return [];
-    }
-
-    const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
-    if (!targetStoreIds.length) {
-      setOperationalEntries([]);
-      setOperationalEntriesSyncError("");
-      return [];
-    }
-
-    const dateTo = todayIsoDate();
-    const dateFrom = isoDaysAgo(365);
-
-    const fetched = await Promise.all(
-      targetStoreIds.map((storeId) => fetchStoreEntriesViaApi({
-        organizationId: closeoutsApiOrganizationId,
-        actorUserId: apiActorUserId,
-        actorRole: apiActorRole,
-        storeId,
-        dateFrom,
-        dateTo,
-        status: "all",
-        limit: 1000,
-      })),
-    );
-
-    const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
-    const seen = new Set();
-    const deduped = merged.filter((item) => {
-      const itemId = typeof item?.id === "string" ? item.id : "";
-      if (!itemId || seen.has(itemId)) return false;
-      seen.add(itemId);
-      return true;
-    });
-
-    setOperationalEntries(deduped);
-    setOperationalEntriesSyncError("");
-    return deduped;
-  }, [
-    apiActorRole,
+  const {
+    loadEntries: loadOperationalEntriesFromApi,
+    createEntry: createOperationalEntryInApi,
+    voidEntry: voidEntryViaHook,
+    restoreEntry: restoreEntryViaHook,
+    syncSubmitCloseout: syncSubmitCloseoutToApi,
+    syncReviewCloseout: syncReviewCloseoutToApi,
+    loadCloseouts: loadCloseoutsFromApi,
+    reloadAndSyncLastCloseout,
+  } = useOperationalEntriesApi({
+    organizationId: closeoutsApiOrganizationId,
+    ownerUserId: ownerApiUserId,
     apiActorUserId,
+    apiActorRole,
     apiTargetStoreIdsKey,
-    closeoutsApiOrganizationId,
     entriesApiEnabled,
     entriesApiStrictMode,
-  ]);
-
-  const syncSubmitCloseoutToApi = useCallback(async ({ action, closeout, employee, reviewWorkflowEnabled }) => {
-    if (!closeoutsApiEnabled) {
-      if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
-      return null;
-    }
-    const actorUserId = employee?.apiUserId || employee?.id;
-    if (!isUuid(closeoutsApiOrganizationId) || !isUuid(actorUserId) || !isUuid(closeout?.storeId)) {
-      if (closeoutsApiStrictMode) throw new Error("closeouts API mapping is invalid for submit.");
-      return null;
-    }
-    const result = await submitCloseoutViaApi({
-      organizationId: closeoutsApiOrganizationId,
-      actorUserId,
-      actorRole: "employee",
-      closeout,
-      mode: action === "resubmit" ? "resubmit" : "submit",
-      autoReview: !reviewWorkflowEnabled,
-    });
-    if (entriesApiStrictMode) {
-      await loadOperationalEntriesFromApi();
-    }
-    return result;
-  }, [
     closeoutsApiEnabled,
-    closeoutsApiOrganizationId,
     closeoutsApiStrictMode,
-    entriesApiStrictMode,
-    loadOperationalEntriesFromApi,
-  ]);
-
-  const syncReviewCloseoutToApi = useCallback(async ({ action, closeout, reason = "" }) => {
-    if (!closeoutsApiEnabled) {
-      if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
-      return null;
-    }
-    if (!isUuid(closeoutsApiOrganizationId) || !isUuid(ownerApiUserId) || !isUuid(closeout?.storeId)) {
-      if (closeoutsApiStrictMode) throw new Error("closeouts API mapping is invalid for review.");
-      return null;
-    }
-    const result = await reviewCloseoutViaApi({
-      organizationId: closeoutsApiOrganizationId,
-      actorUserId: ownerApiUserId,
-      actorRole: "owner",
-      closeout,
-      action,
-      reason,
-    });
-    if (entriesApiStrictMode) {
-      await loadOperationalEntriesFromApi();
-    }
-    return result;
-  }, [
-    closeoutsApiEnabled,
-    closeoutsApiOrganizationId,
-    ownerApiUserId,
-    closeoutsApiStrictMode,
-    entriesApiStrictMode,
-    loadOperationalEntriesFromApi,
-  ]);
-
-  const loadCloseoutsFromApi = useCallback(async () => {
-    if (!closeoutsApiEnabled) {
-      if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
-      return [];
-    }
-    if (!isUuid(closeoutsApiOrganizationId)) {
-      if (closeoutsApiStrictMode) throw new Error("organization id is missing/invalid for closeouts API.");
-      return [];
-    }
-
-    if (!isUuid(apiActorUserId)) {
-      if (closeoutsApiStrictMode) throw new Error("actor user id is missing/invalid for closeouts API.");
-      return [];
-    }
-
-    const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
-    if (!targetStoreIds.length) return [];
-
-    const fetched = await Promise.all(
-      targetStoreIds.map((storeId) => fetchStoreCloseoutsViaApi({
-        organizationId: closeoutsApiOrganizationId,
-        actorUserId: apiActorUserId,
-        actorRole: apiActorRole,
-        storeId,
-      })),
-    );
-
-    const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
-    const seen = new Set();
-    return merged.filter((item) => {
-      const itemId = typeof item?.id === "string" ? item.id : "";
-      const itemDate = typeof item?.date === "string" ? item.date : "";
-      if (!itemId || !itemDate) return false;
-      const key = `${itemId}:${itemDate}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [
-    apiActorRole,
-    apiActorUserId,
-    apiTargetStoreIdsKey,
-    closeoutsApiEnabled,
-    closeoutsApiOrganizationId,
-    closeoutsApiStrictMode,
-  ]);
+    setEntries: setOperationalEntries,
+    setEntriesSyncError: setOperationalEntriesSyncError,
+    setLastCloseoutDates,
+  });
 
   useEffect(() => {
     if (!loggedIn) return;
