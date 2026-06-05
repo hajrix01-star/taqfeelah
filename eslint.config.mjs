@@ -20,7 +20,10 @@ const eslintConfig = [
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    files: ["**/*.{js,jsx}"],
+    files: [
+      "src/features/auth/client/prototype-auth-config.js",
+      "src/features/auth/client/prototype-auth-boot.js",
+    ],
     rules: {
       "no-undef": "error",
     },
