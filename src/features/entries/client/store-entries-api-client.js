@@ -129,6 +129,16 @@ export async function createStoreEntryViaApi({
     categoryId: isUuid(payload?.categoryId) ? payload.categoryId : null,
     note: typeof payload?.note === "string" ? payload.note : "",
     salesChannels: mappedSalesChannels,
+    attachment:
+      payload?.attachment && typeof payload.attachment === "object"
+        ? {
+          kind: payload.attachment.kind || "image",
+          name: payload.attachment.name || "attachment.jpg",
+          mimeType: payload.attachment.mimeType || "image/jpeg",
+          sizeBytes: Number(payload.attachment.sizeBytes || 0),
+          dataUrl: payload.attachment.dataUrl || "",
+        }
+        : undefined,
   };
 
   const response = await fetch(`/api/v1/stores/${mappedStoreId}/entries`, {

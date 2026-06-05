@@ -58,6 +58,42 @@ export function createSignedAuthSessionCookieValue(
   return `v1.${encodedPayload}.${signature}`;
 }
 
+type AuthSessionCookieOptions = {
+  ttlSeconds?: number;
+  secure?: boolean;
+};
+
+export function buildSetAuthSessionCookieHeader(
+  claims: Omit<AuthSessionClaims, "iat" | "exp"> & { ttlSeconds?: number },
+  cookieName: string,
+  secret: string,
+  options: AuthSessionCookieOptions = {},
+): string {
+  const ttlSeconds = claims.ttlSeconds ?? options.ttlSeconds ?? 60 * 60 * 12;
+  const value = createSignedAuthSessionCookieValue({ ...claims, ttlSeconds }, secret);
+  const attributes = [
+    `${cookieName}=${value}`,
+    "Path=/",
+    `Max-Age=${ttlSeconds}`,
+    "HttpOnly",
+    "SameSite=Lax",
+  ];
+  if (options.secure === true) attributes.push("Secure");
+  return attributes.join("; ");
+}
+
+export function buildClearAuthSessionCookieHeader(cookieName: string, secure = false): string {
+  const attributes = [
+    `${cookieName}=`,
+    "Path=/",
+    "Max-Age=0",
+    "HttpOnly",
+    "SameSite=Lax",
+  ];
+  if (secure) attributes.push("Secure");
+  return attributes.join("; ");
+}
+
 export function resolveAuthSessionFromRequest(
   request: Request,
   cookieName: string,

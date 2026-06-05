@@ -3,7 +3,7 @@ import { z } from "zod";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { getDb } from "@/core/db/client";
-import { auditEvents, entries, entrySalesChannels, users } from "@/core/db/schema";
+import { attachments, auditEvents, entries, entrySalesChannels, users } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD");
@@ -213,6 +213,50 @@ export async function listStoreEntries(rawInput: Input) {
     salesByEntryId.set(row.entryId, current);
   });
 
+  const attachmentRows = await db
+    .select({
+      id: attachments.id,
+      entryId: attachments.entryId,
+      storageKey: attachments.storageKey,
+      originalFileName: attachments.originalFileName,
+      mimeType: attachments.mimeType,
+      sizeBytes: attachments.sizeBytes,
+      createdAt: attachments.createdAt,
+    })
+    .from(attachments)
+    .where(
+      and(
+        eq(attachments.organizationId, input.organizationId),
+        eq(attachments.storeId, input.storeId),
+        inArray(attachments.entryId, entryIds),
+      ),
+    );
+
+  const attachmentByEntryId = new Map<
+    string,
+    {
+      id: string;
+      dataUrl: string;
+      name: string;
+      mimeType: string;
+      sizeBytes: number;
+      createdAt: Date;
+    }
+  >();
+  attachmentRows.forEach((row) => {
+    const current = attachmentByEntryId.get(row.entryId);
+    if (!current || row.createdAt > current.createdAt) {
+      attachmentByEntryId.set(row.entryId, {
+        id: row.id,
+        dataUrl: row.storageKey,
+        name: row.originalFileName || "attachment.jpg",
+        mimeType: row.mimeType,
+        sizeBytes: row.sizeBytes,
+        createdAt: row.createdAt,
+      });
+    }
+  });
+
   const entryAuditRows = await db
     .select({
       entryId: auditEvents.entryId,
@@ -293,6 +337,7 @@ export async function listStoreEntries(rawInput: Input) {
       nameEn: actorName,
     };
     const latestAudit = latestAuditByEntryId.get(row.id);
+    const attachment = attachmentByEntryId.get(row.id);
     const reviewedAt = toIso(row.reviewedAt) || toIso(latestAudit?.reviewed?.createdAt || null);
     const voidedAt = toIso(row.voidedAt) || toIso(latestAudit?.voided?.createdAt || null);
     const restoredAt = toIso(row.restoredAt) || toIso(latestAudit?.restored?.createdAt || null);
@@ -341,7 +386,16 @@ export async function listStoreEntries(rawInput: Input) {
       closeoutId: closeoutIdByEntryId.get(row.id) || null,
       outflowId: null,
       enteredBy: createdBy,
-      attachment: null,
+      attachment: attachment
+        ? {
+          id: attachment.id,
+          kind: "image",
+          name: attachment.name,
+          mimeType: attachment.mimeType,
+          sizeBytes: attachment.sizeBytes,
+          dataUrl: attachment.dataUrl,
+        }
+        : null,
       reviewed: Boolean(reviewedAt),
       reviewedAt,
       reviewedBy: latestAudit?.reviewed ? actorById(latestAudit.reviewed.actorUserId) : null,

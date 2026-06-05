@@ -18,6 +18,7 @@ Environment variables:
 from __future__ import annotations
 
 import argparse
+import base64
 import os
 import shlex
 import socket
@@ -30,6 +31,26 @@ from pathlib import Path
 from typing import Iterable
 
 import paramiko
+
+PRODUCTION_ENV_KEYS = [
+    "APP_MODE",
+    "NEXT_PUBLIC_APP_MODE",
+    "DATABASE_URL",
+    "AUTH_SESSION_SECRET",
+    "AUTH_SESSION_COOKIE_NAME",
+    "AUTH_ORGANIZATION_ID",
+    "AUTH_OWNER_USER_ID",
+    "AUTH_OWNER_USERNAME",
+    "AUTH_OWNER_PASSWORD",
+    "AUTH_EMPLOYEE_PIN_MAP",
+    "NEXT_PUBLIC_CLOSEOUTS_API_ENABLED",
+    "NEXT_PUBLIC_ENTRIES_API_ENABLED",
+    "NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID",
+    "NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID",
+    "NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP",
+    "NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP",
+    "NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP",
+]
 
 
 def safe_print(value: str) -> None:
@@ -173,6 +194,20 @@ def get_required_env(name: str) -> str:
 
 def print_section(title: str) -> None:
     safe_print(f"\n{'=' * 18} {title} {'=' * 18}")
+
+
+def build_production_env_payload() -> str:
+    lines: list[str] = []
+    for key in PRODUCTION_ENV_KEYS:
+        value = os.environ.get(key)
+        if value is None or value == "":
+            continue
+        normalized = value.replace("\r\n", "\n").replace("\n", "\\n")
+        lines.append(f"{key}={normalized}")
+    if not lines:
+        return ""
+    payload = ("\n".join(lines) + "\n").encode("utf-8")
+    return base64.b64encode(payload).decode("ascii")
 
 
 def cmd_audit(vps: VPS) -> None:
@@ -399,6 +434,22 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             os.remove(archive_path)
         except OSError:
             pass
+
+    env_payload = build_production_env_payload()
+    if env_payload:
+        print_section("Write production environment file")
+        vps.run(
+            textwrap.dedent(
+                f"""
+                set -euo pipefail
+                mkdir -p {shlex.quote(app_dir)}
+                printf '%s' {shlex.quote(env_payload)} | base64 -d > {shlex.quote(app_dir)}/.env.production
+                """
+            ).strip()
+        )
+    else:
+        print_section("No deployment env payload provided")
+        safe_print("Proceeding without writing .env.production on VPS.")
 
     print_section("Install dependencies and build app")
     vps.run(

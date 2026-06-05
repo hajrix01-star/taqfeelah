@@ -3,7 +3,7 @@ import { getDb } from "@/core/db/client";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
-import { auditEvents, entries, entrySalesChannels } from "@/core/db/schema";
+import { attachments, auditEvents, entries, entrySalesChannels } from "@/core/db/schema";
 
 const salesChannelSchema = z.object({
   salesChannelId: z.string().uuid(),
@@ -22,6 +22,15 @@ const createEntryInputSchema = z.object({
   categoryId: z.string().uuid().nullable().optional(),
   note: z.string().trim().max(500).optional(),
   salesChannels: z.array(salesChannelSchema).default([]),
+  attachment: z
+    .object({
+      kind: z.literal("image"),
+      name: z.string().trim().min(1).max(220).optional(),
+      mimeType: z.string().trim().min(1).max(120).default("image/jpeg"),
+      sizeBytes: z.number().int().positive().max(350 * 1024),
+      dataUrl: z.string().trim().min(32).max(500_000),
+    })
+    .optional(),
 });
 
 type CreateEntryInput = z.infer<typeof createEntryInputSchema>;
@@ -92,6 +101,18 @@ export async function createStoreEntry(rawInput: CreateEntryInput) {
       );
     }
 
+    if (input.attachment) {
+      await tx.insert(attachments).values({
+        organizationId: input.organizationId,
+        storeId: input.storeId,
+        entryId: createdEntry.id,
+        storageKey: input.attachment.dataUrl,
+        originalFileName: input.attachment.name || "attachment.jpg",
+        mimeType: input.attachment.mimeType || "image/jpeg",
+        sizeBytes: input.attachment.sizeBytes,
+      });
+    }
+
     await tx.insert(auditEvents).values({
       organizationId: input.organizationId,
       storeId: input.storeId,
@@ -104,6 +125,7 @@ export async function createStoreEntry(rawInput: CreateEntryInput) {
         type: input.type,
         amountHalalas,
         categoryId: input.categoryId || null,
+        hasAttachment: Boolean(input.attachment),
         salesChannels:
           input.type === "summary"
             ? normalizedSalesChannels.map((row) => ({

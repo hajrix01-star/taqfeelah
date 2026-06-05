@@ -71,6 +71,14 @@ import {
   reviewStoreEntryViaApi,
   voidStoreEntryViaApi,
 } from "@/features/entries/client/store-entries-api-client";
+import {
+  fetchRuntimeSettingsViaApi,
+  getSessionStatusViaApi,
+  loginEmployeeSessionViaApi,
+  loginOwnerSessionViaApi,
+  logoutSessionViaApi,
+  saveRuntimeSettingsViaApi,
+} from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
 import { isProductionAppMode } from "@/core/config/app-mode";
 
 function AppFontStyles() {
@@ -1427,6 +1435,24 @@ function writeCloseoutAlerts(alerts) {
 function openWhatsAppSupport(lang) {
   window.open(`https://wa.me/${PROTOTYPE_SUPPORT_WHATSAPP}?text=${encodeURIComponent(lang === "ar" ? "مرحبًا، أحتاج دعم تقفيلة" : "Hello, I need Taqfeelah support")}`, "_blank");
 }
+function readPublicUserIdMap() {
+  try {
+    const parsed = JSON.parse(process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+function resolveLegacyEmployeeIdByApiUserId(apiUserId) {
+  if (!apiUserId) return "";
+  const map = readPublicUserIdMap();
+  for (const [legacyId, mappedUserId] of Object.entries(map)) {
+    if (typeof mappedUserId === "string" && mappedUserId.toLowerCase() === String(apiUserId).toLowerCase()) {
+      return legacyId;
+    }
+  }
+  return "";
+}
 function employeePinMatches(person, pin) {
   const expectedPin = `${person?.pin || PROTOTYPE_EMPLOYEE_PIN_DEFAULT}`.trim();
   if (!expectedPin) return false;
@@ -1563,6 +1589,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
   const [username, setUsername] = useState(PROTOTYPE_OWNER_USERNAME);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   useEffect(() => {
     const saved = readOwnerCredentials();
@@ -1576,12 +1603,26 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
     setError("");
     onOwnerLogin();
   };
-  const submitPassword = () => {
+  const submitPassword = async () => {
+    if (submitting) return;
     if (APP_IN_PRODUCTION_MODE && (!PROTOTYPE_OWNER_USERNAME || !PROTOTYPE_OWNER_PASSWORD)) {
       setError(lang === "ar" ? "بيانات دخول الإنتاج غير مهيأة في متغيرات البيئة." : "Production login credentials are not configured in environment variables.");
       return;
     }
-    if (username.trim().toLowerCase() !== PROTOTYPE_OWNER_USERNAME || password !== PROTOTYPE_OWNER_PASSWORD) {
+    if (APP_IN_PRODUCTION_MODE) {
+      setSubmitting(true);
+      try {
+        await loginOwnerSessionViaApi({ username: username.trim(), password });
+      } catch (failure) {
+        const message = failure instanceof Error && failure.message
+          ? failure.message
+          : text(lang, "invalidCredentials");
+        setError(message);
+        return;
+      } finally {
+        setSubmitting(false);
+      }
+    } else if (username.trim().toLowerCase() !== PROTOTYPE_OWNER_USERNAME || password !== PROTOTYPE_OWNER_PASSWORD) {
       setError(text(lang, "invalidCredentials"));
       return;
     }
@@ -1664,7 +1705,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
               />
               <span className="text-taq-meta font-black text-[#716753]">{text(lang, "rememberMe")}</span>
             </label>
-            <button type="button" onClick={submitPassword} className="mt-4 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white">{text(lang, "verifyContinue")}</button>
+            <button type="button" onClick={() => { void submitPassword(); }} disabled={submitting} className="mt-4 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white disabled:bg-[#B8C0B7]">{text(lang, "verifyContinue")}</button>
           </>
         )}
         {error && <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{error}</p>}
@@ -1691,6 +1732,7 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
   const [selectedId, setSelectedId] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const activeStaff = staff.filter((person) => person.active && !person.removed);
   useEffect(() => {
@@ -1703,10 +1745,27 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
     if (saved.employeeId && activeStaff.some((person) => person.id === saved.employeeId)) setSelectedId(saved.employeeId);
     if (saved.pin) setPin(saved.pin);
   }, [activeStaff]);
-  const submit = () => {
+  const submit = async () => {
+    if (submitting) return;
     const person = activeStaff.find((item) => item.id === selectedId);
     if (!person) { setError(text(lang, "noActiveEmployee")); return; }
-    if (!employeePinMatches(person, pin)) { setError(text(lang, "invalidEmployeePin")); return; }
+    if (APP_IN_PRODUCTION_MODE) {
+      setSubmitting(true);
+      try {
+        await loginEmployeeSessionViaApi({
+          employeeId: selectedId,
+          pin: pin.trim(),
+        });
+      } catch (failure) {
+        const message = failure instanceof Error && failure.message
+          ? failure.message
+          : text(lang, "invalidEmployeePin");
+        setError(message);
+        return;
+      } finally {
+        setSubmitting(false);
+      }
+    } else if (!employeePinMatches(person, pin)) { setError(text(lang, "invalidEmployeePin")); return; }
     setError("");
     if (rememberMe) saveEmployeeCredentials({ employeeId: selectedId, pin: pin.trim() });
     else clearEmployeeCredentials();
@@ -1741,7 +1800,7 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
           />
           <span className="text-taq-meta font-black text-[#716753]">{text(lang, "rememberMe")}</span>
         </label>
-        <button type="button" onClick={submit} className="mt-4 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white">{text(lang, "verifyContinue")}</button>
+        <button type="button" onClick={() => { void submit(); }} disabled={submitting} className="mt-4 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white disabled:bg-[#B8C0B7]">{text(lang, "verifyContinue")}</button>
         {error && <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{error}</p>}
       </div>
       <button type="button" onClick={onBack} className="mt-4 w-full text-xs font-black text-[#9A823E]">{text(lang, "backToOwnerLogin")}</button>
@@ -4437,11 +4496,42 @@ export default function TaqfeelahPrototypeRuntime() {
   const [storeOperationalSettings, setStoreOperationalSettings] = useState(() => buildInitialStoreOperationalSettings(initialSettings, initialBusinesses));
   const [lastCloseoutDates, setLastCloseoutDates] = useState(() => readDemoLastCloseoutDates());
   const [employeeBusinessId, setEmployeeBusinessId] = useState(() => readPrototypeAuthBoot().employeeBusinessId);
+  const runtimeSettingsHydratedRef = useRef(!APP_IN_PRODUCTION_MODE);
+  const runtimeSettingsSyncTimerRef = useRef(null);
+  const runtimeSettingsLastSavedSignatureRef = useRef("");
+  const [runtimeSettingsSyncError, setRuntimeSettingsSyncError] = useState("");
+  useEffect(() => {
+    if (!APP_IN_PRODUCTION_MODE) return;
+    let cancelled = false;
+    getSessionStatusViaApi()
+      .then((session) => {
+        if (cancelled || !session?.authenticated) return;
+        setLoggedIn(true);
+        setAuthScreen("owner");
+        if (session.role === "employee") {
+          const legacyEmployeeId = resolveLegacyEmployeeIdByApiUserId(session.userId);
+          setEmployee(true);
+          setLoggedInEmployeeId(legacyEmployeeId || session.userId);
+          setEmployeePage("closeouts");
+          return;
+        }
+        setEmployee(false);
+        setLoggedInEmployeeId(null);
+        setOwnerPage("home");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.warn("session bootstrap failed", error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const activeBusinesses = configuredBusinesses.filter((business) => !archivedBusinessIds.includes(business.id));
   const reportingBusinesses = configuredBusinesses;
   const activeViewBusiness = activeBusinesses.length === 1 ? activeBusinesses[0].id : selectedBusiness === "all" || activeBusinesses.some((business) => business.id === selectedBusiness) ? selectedBusiness : "all";
   const activeEmployee = employee && loggedInEmployeeId
-    ? staff.find((person) => person.id === loggedInEmployeeId && person.active && !person.removed) || null
+    ? staff.find((person) => (person.id === loggedInEmployeeId || person.apiUserId === loggedInEmployeeId) && person.active && !person.removed) || null
     : null;
   const assignedEmployeeBusinesses = activeBusinesses.filter((business) => (activeEmployee?.storeIds || []).includes(business.id));
   const currentEmployeeBusiness = assignedEmployeeBusinesses.find((business) => business.id === employeeBusinessId) || assignedEmployeeBusinesses[0] || null;
@@ -4469,6 +4559,37 @@ export default function TaqfeelahPrototypeRuntime() {
   const closeoutAlertEnabledForBusiness = (businessId) => getStoreOperationalConfig(storeOperationalSettings, businessId).closeoutAlert;
   const ownerReviewEnabled = activeViewBusiness === "all" ? activeBusinesses.some((business) => reviewEnabledForBusiness(business.id)) : reviewEnabledForBusiness(activeOwnerStoreId);
   const selectedOperationReviewEnabled = selected ? reviewEnabledForBusiness(selected.businessId) && !archivedBusinessIds.includes(selected.businessId) : ownerReviewEnabled;
+  const runtimeSettingsSnapshot = useMemo(() => ({
+    configuredBusinesses,
+    archivedBusinessIds,
+    storeChannelSettings,
+    storeOperationalSettings,
+    staff,
+    ownerProfile,
+  }), [
+    configuredBusinesses,
+    archivedBusinessIds,
+    storeChannelSettings,
+    storeOperationalSettings,
+    staff,
+    ownerProfile,
+  ]);
+
+  const applyRuntimeSettingsSnapshot = useCallback((rawSettings) => {
+    const migrated = migrateSavedSettings(rawSettings);
+    if (!migrated || typeof migrated !== "object") return;
+    if (Array.isArray(migrated.configuredBusinesses)) setConfiguredBusinesses(migrated.configuredBusinesses);
+    if (Array.isArray(migrated.archivedBusinessIds)) setArchivedBusinessIds(migrated.archivedBusinessIds);
+    if (migrated.storeChannelSettings && typeof migrated.storeChannelSettings === "object") {
+      setStoreChannelSettings(migrated.storeChannelSettings);
+    }
+    if (migrated.storeOperationalSettings && typeof migrated.storeOperationalSettings === "object") {
+      setStoreOperationalSettings(migrated.storeOperationalSettings);
+    }
+    if (Array.isArray(migrated.staff)) setStaff(migrated.staff);
+    if (migrated.ownerProfile && typeof migrated.ownerProfile === "object") setOwnerProfile(migrated.ownerProfile);
+  }, []);
+
   const duplicateSalesAlerts = useMemo(() => {
     const grouped = new Map();
     operationalEntries.filter((entry) => entry.type === "summary" && entryIsActive(entry) && activeBusinesses.some((business) => business.id === entry.businessId)).forEach((entry) => {
@@ -4488,6 +4609,74 @@ export default function TaqfeelahPrototypeRuntime() {
   useEffect(() => { if (typeof window !== "undefined") window.localStorage.setItem(OPERATIONAL_ENTRIES_STORAGE_KEY, JSON.stringify(stripEmbeddedAttachmentImages(operationalEntries))); }, [operationalEntries]);
   useEffect(() => { if (typeof window !== "undefined") window.localStorage.setItem(ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY, JSON.stringify(acknowledgedDuplicateSales)); }, [acknowledgedDuplicateSales]);
   useEffect(() => { if (typeof window !== "undefined") window.localStorage.setItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(lastCloseoutDates)); }, [lastCloseoutDates]);
+  useEffect(() => {
+    if (!APP_IN_PRODUCTION_MODE || !loggedIn) return;
+    let cancelled = false;
+    fetchRuntimeSettingsViaApi()
+      .then((payload) => {
+        if (cancelled) return;
+        if (payload?.settings && typeof payload.settings === "object") {
+          applyRuntimeSettingsSnapshot(payload.settings);
+          try {
+            runtimeSettingsLastSavedSignatureRef.current = JSON.stringify(payload.settings);
+          } catch {
+            runtimeSettingsLastSavedSignatureRef.current = "";
+          }
+        }
+        runtimeSettingsHydratedRef.current = true;
+        setRuntimeSettingsSyncError("");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.warn("runtime settings load failed", error);
+        runtimeSettingsHydratedRef.current = true;
+        setRuntimeSettingsSyncError(
+          lang === "ar"
+            ? "تعذر تحميل إعدادات التشغيل من الخادم."
+            : "Failed to load runtime settings from server.",
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applyRuntimeSettingsSnapshot, lang, loggedIn]);
+
+  useEffect(() => {
+    if (!APP_IN_PRODUCTION_MODE || !loggedIn || employee) return;
+    if (!runtimeSettingsHydratedRef.current) return;
+    const signature = JSON.stringify(runtimeSettingsSnapshot);
+    if (runtimeSettingsLastSavedSignatureRef.current === signature) return;
+
+    if (runtimeSettingsSyncTimerRef.current) {
+      window.clearTimeout(runtimeSettingsSyncTimerRef.current);
+    }
+    runtimeSettingsSyncTimerRef.current = window.setTimeout(() => {
+      saveRuntimeSettingsViaApi({
+        settings: runtimeSettingsSnapshot,
+        reason: "owner_settings_autosave",
+      })
+        .then(() => {
+          runtimeSettingsLastSavedSignatureRef.current = signature;
+          setRuntimeSettingsSyncError("");
+        })
+        .catch((error) => {
+          console.warn("runtime settings save failed", error);
+          setRuntimeSettingsSyncError(
+            lang === "ar"
+              ? "تعذر حفظ إعدادات التشغيل على الخادم."
+              : "Failed to save runtime settings on server.",
+          );
+        });
+    }, 450);
+
+    return () => {
+      if (runtimeSettingsSyncTimerRef.current) {
+        window.clearTimeout(runtimeSettingsSyncTimerRef.current);
+      }
+    };
+  }, [employee, lang, loggedIn, runtimeSettingsSnapshot]);
+
   useEffect(() => { writeCloseoutAlerts(closeoutAlerts); }, [closeoutAlerts]);
   useEffect(() => {
     autoResolveSubmittedCloseoutsWithoutReview((storeId) => Boolean(getStoreOperationalConfig(storeOperationalSettings, storeId).closeoutReviewEnabled));
@@ -4545,10 +4734,6 @@ export default function TaqfeelahPrototypeRuntime() {
     try {
       const actor = { role: "employee", userId: activeEmployee.id, nameAr: activeEmployee.nameAr, nameEn: activeEmployee.nameEn };
       if (entriesApiStrictMode) {
-        if (payload.attachment) {
-          window.alert(lang === "ar" ? "رفع المرفقات إلى الخادم سيُفعّل في المرحلة القادمة." : "Server attachment upload will be enabled in the next phase.");
-          return;
-        }
         const created = await createOperationalEntryInApi({
           payload,
           actorUserId: activeEmployee.id,
@@ -4602,10 +4787,6 @@ export default function TaqfeelahPrototypeRuntime() {
     savingRef.current = true; setSaving(true);
     try {
       if (entriesApiStrictMode) {
-        if (payload.attachment) {
-          window.alert(lang === "ar" ? "رفع المرفقات إلى الخادم سيُفعّل في المرحلة القادمة." : "Server attachment upload will be enabled in the next phase.");
-          return;
-        }
         const created = await createOperationalEntryInApi({
           payload,
           actorUserId: closeoutsApiOwnerUserId,
@@ -4926,7 +5107,14 @@ export default function TaqfeelahPrototypeRuntime() {
     }
     setSelected(entry || null);
   }, []);
-  const logout = () => {
+  const logout = async () => {
+    if (APP_IN_PRODUCTION_MODE) {
+      try {
+        await logoutSessionViaApi();
+      } catch (error) {
+        console.warn("logout api failed", error);
+      }
+    }
     clearAuthSession();
     setLoggedIn(false);
     setEmployee(false);
@@ -5174,6 +5362,10 @@ export default function TaqfeelahPrototypeRuntime() {
     if (!operationalEntriesSyncError) return;
     console.warn(operationalEntriesSyncError);
   }, [operationalEntriesSyncError]);
+  useEffect(() => {
+    if (!runtimeSettingsSyncError) return;
+    console.warn(runtimeSettingsSyncError);
+  }, [runtimeSettingsSyncError]);
 
   if (!loggedIn) {
     return (

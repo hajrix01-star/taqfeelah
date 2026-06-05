@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { ValidationError } from "@/core/errors/app-error";
 import { MEMBER_ROLES, type MemberRole } from "@/core/auth/roles";
-import { allowHeaderAuthContext, readEnv } from "@/core/config/env";
+import {
+  allowHeaderAuthContext,
+  assertProductionRuntimeEnv,
+  isServerProductionMode,
+  readEnv,
+} from "@/core/config/env";
 import { resolveAuthSessionFromRequest } from "@/core/auth/session-cookie";
 
 const roleSchema = z.enum(MEMBER_ROLES);
@@ -40,6 +45,9 @@ export function resolveRequestContext(
 ): RequestContext {
   const requireUser = options.requireUser === true;
   const env = readEnv();
+  if (isServerProductionMode(env)) {
+    assertProductionRuntimeEnv(env);
+  }
   const session = resolveAuthSessionFromRequest(
     request,
     env.AUTH_SESSION_COOKIE_NAME,
