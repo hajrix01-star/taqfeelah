@@ -161,8 +161,15 @@ function formatSelectedMonth(value, lang) {
   return formatCalendarMonth(year, month, lang);
 }
 
-// ─── App mode constant ───────────────────────────────────────────────────────
+// ─── App mode constants ──────────────────────────────────────────────────────
 const APP_IN_PRODUCTION_MODE = isProductionAppMode();
+const PRODUCTION_API_ENTRIES_MODE = APP_IN_PRODUCTION_MODE;
+
+// ─── Prototype credentials (used in owner settings initial state) ─────────────
+const PROTOTYPE_OWNER_USERNAME = (
+  process.env.NEXT_PUBLIC_DEMO_OWNER_USERNAME || (APP_IN_PRODUCTION_MODE ? "hajri" : "owner")
+).trim().toLowerCase();
+const PROTOTYPE_OWNER_PASSWORD = process.env.NEXT_PUBLIC_DEMO_OWNER_PASSWORD || (APP_IN_PRODUCTION_MODE ? "" : "demo123");
 
 // ─── Module-level constants ──────────────────────────────────────────────────
 const PROTOTYPE_SUPPORT_WHATSAPP = "966501234567";
