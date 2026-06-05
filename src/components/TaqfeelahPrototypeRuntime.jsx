@@ -3855,11 +3855,20 @@ export default function TaqfeelahPrototypeRuntime() {
   const activeBusinesses = configuredBusinesses.filter((business) => !archivedBusinessIds.includes(business.id));
   const reportingBusinesses = configuredBusinesses;
   const activeViewBusiness = activeBusinesses.length === 1 ? activeBusinesses[0].id : selectedBusiness === "all" || activeBusinesses.some((business) => business.id === selectedBusiness) ? selectedBusiness : "all";
-  const activeEmployee = employee && loggedInEmployeeId
-    ? staff.find((person) => (person.id === loggedInEmployeeId || person.apiUserId === loggedInEmployeeId) && person.active && !person.removed) || null
-    : null;
-  const assignedEmployeeBusinesses = activeBusinesses.filter((business) => (activeEmployee?.storeIds || []).includes(business.id));
-  const currentEmployeeBusiness = assignedEmployeeBusinesses.find((business) => business.id === employeeBusinessId) || assignedEmployeeBusinesses[0] || null;
+  const activeEmployee = useMemo(
+    () => employee && loggedInEmployeeId
+      ? staff.find((person) => (person.id === loggedInEmployeeId || person.apiUserId === loggedInEmployeeId) && person.active && !person.removed) || null
+      : null,
+    [employee, loggedInEmployeeId, staff],
+  );
+  const assignedEmployeeBusinesses = useMemo(
+    () => activeBusinesses.filter((business) => (activeEmployee?.storeIds || []).includes(business.id)),
+    [activeBusinesses, activeEmployee],
+  );
+  const currentEmployeeBusiness = useMemo(
+    () => assignedEmployeeBusinesses.find((business) => business.id === employeeBusinessId) || assignedEmployeeBusinesses[0] || null,
+    [assignedEmployeeBusinesses, employeeBusinessId],
+  );
   const currentEmployeeChannelConfig = getStoreChannelConfig(storeChannelSettings, currentEmployeeBusiness?.id);
   const currentEmployeeOperationalConfig = getStoreOperationalConfig(storeOperationalSettings, currentEmployeeBusiness?.id);
   const resolveStoreSalesChannels = useCallback((storeId) => {
@@ -4063,7 +4072,7 @@ export default function TaqfeelahPrototypeRuntime() {
         window.clearTimeout(runtimeSettingsSyncTimerRef.current);
       }
     };
-  }, [employee, lang, loggedIn, runtimeSettingsSnapshot]);
+  }, [employee, lang, loggedIn, runtimeSettingsSnapshot, runtimeSettingsSyncError]);
 
   useEffect(() => { writeCloseoutAlerts(closeoutAlerts); }, [closeoutAlerts]);
   useEffect(() => {
