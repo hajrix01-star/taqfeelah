@@ -1135,10 +1135,12 @@ const employeeName = (item, lang) => item.enteredBy ? (lang === "ar" ? item.ente
 // البنية مقصودة لتنتقل لاحقًا إلى API/DB دون إعادة تصميم الواجهة.
 const APP_IN_PRODUCTION_MODE = isProductionAppMode();
 const PROTOTYPE_SUPPORT_WHATSAPP = "966501234567";
-const PROTOTYPE_DEMO_OTP = process.env.NEXT_PUBLIC_DEMO_OTP || "1234";
-const PROTOTYPE_OWNER_USERNAME = (process.env.NEXT_PUBLIC_DEMO_OWNER_USERNAME || "owner").trim().toLowerCase();
-const PROTOTYPE_OWNER_PASSWORD = process.env.NEXT_PUBLIC_DEMO_OWNER_PASSWORD || "demo123";
-const PROTOTYPE_EMPLOYEE_PIN_DEFAULT = process.env.NEXT_PUBLIC_DEMO_EMPLOYEE_PIN_DEFAULT || "1234";
+const PROTOTYPE_DEMO_OTP = process.env.NEXT_PUBLIC_DEMO_OTP || (APP_IN_PRODUCTION_MODE ? "" : "1234");
+const PROTOTYPE_OWNER_USERNAME = (
+  process.env.NEXT_PUBLIC_DEMO_OWNER_USERNAME || (APP_IN_PRODUCTION_MODE ? "" : "owner")
+).trim().toLowerCase();
+const PROTOTYPE_OWNER_PASSWORD = process.env.NEXT_PUBLIC_DEMO_OWNER_PASSWORD || (APP_IN_PRODUCTION_MODE ? "" : "demo123");
+const PROTOTYPE_EMPLOYEE_PIN_DEFAULT = process.env.NEXT_PUBLIC_DEMO_EMPLOYEE_PIN_DEFAULT || (APP_IN_PRODUCTION_MODE ? "" : "1234");
 const CLOSEOUT_ALERTS_STORAGE_KEY = "taqfeelah_closeout_alerts_v1";
 const OPERATIONAL_ENTRIES_STORAGE_KEY = PROTOTYPE_DEMO_OPERATIONAL_ENTRIES_KEY;
 const ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY = "taqfeelah_acknowledged_duplicate_sales_v1";
@@ -1411,7 +1413,9 @@ function openWhatsAppSupport(lang) {
   window.open(`https://wa.me/${PROTOTYPE_SUPPORT_WHATSAPP}?text=${encodeURIComponent(lang === "ar" ? "مرحبًا، أحتاج دعم تقفيلة" : "Hello, I need Taqfeelah support")}`, "_blank");
 }
 function employeePinMatches(person, pin) {
-  return `${pin}`.trim() === `${person?.pin || PROTOTYPE_EMPLOYEE_PIN_DEFAULT}`.trim();
+  const expectedPin = `${person?.pin || PROTOTYPE_EMPLOYEE_PIN_DEFAULT}`.trim();
+  if (!expectedPin) return false;
+  return `${pin}`.trim() === expectedPin;
 }
 function entriesInPeriod(entries, businessId, period, selectedDate, selectedMonth, selectedYear = "2026", customFrom = "2026-01-01", customTo = "2026-12-31") {
   return entries.filter((entry) => (!businessId || entry.businessId === businessId) && entryDateMatches(entry, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo));
@@ -1558,6 +1562,10 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
     onOwnerLogin();
   };
   const submitPassword = () => {
+    if (APP_IN_PRODUCTION_MODE && (!PROTOTYPE_OWNER_USERNAME || !PROTOTYPE_OWNER_PASSWORD)) {
+      setError(lang === "ar" ? "بيانات دخول الإنتاج غير مهيأة في متغيرات البيئة." : "Production login credentials are not configured in environment variables.");
+      return;
+    }
     if (username.trim().toLowerCase() !== PROTOTYPE_OWNER_USERNAME || password !== PROTOTYPE_OWNER_PASSWORD) {
       setError(text(lang, "invalidCredentials"));
       return;
