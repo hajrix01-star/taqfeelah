@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, ChevronDown, ChevronLeft, ChevronRight, FileSpreadsheet, FileText, Plus, X } from "lucide-react";
+import { Bell, ChevronDown, ChevronLeft, ChevronRight, FileSpreadsheet, FileText, Home, Plus, ReceiptText, Settings, X } from "lucide-react";
 import { text } from "@/i18n/text";
 import { money, businessName, operationDisplayLabel, signedEntryAmount, newestEntries, entryCategory, expenseCategories, outflowReportCategories, businesses, formatCalendarDate, opTime, employeeName } from "@/utils/display-helpers";
 import { entryIsVoided, entryIsActive, entryHasAttachment } from "@/features/operations/operational-analytics";
@@ -14,6 +14,7 @@ import OwnerCloseoutReviewPanel from "@/features/owner-closeout-review/OwnerClos
 import ReturnCloseoutModal from "@/features/owner-closeout-review/ReturnCloseoutModal";
 import { StoreComparison, DateSelector, NotebookHeading, NotebookMarginTools } from "@/features/owner/OwnerRegisterScreen";
 import { isProductionAppMode } from "@/core/config/app-mode";
+import OwnerLedgerPage from "@/features/owner/ledger/OwnerLedgerPage";
 
 const APP_IN_PRODUCTION_MODE = isProductionAppMode();
 
@@ -414,6 +415,12 @@ export function OwnerRegisterConnected(props) {
   return <OwnerRegisterScreen {...props} closeoutEvents={events} />;
 }
 
+// ─── OwnerLedgerConnected ─────────────────────────────────────
+export function OwnerLedgerConnected(props) {
+  const { closeouts } = useDailyCloseouts();
+  return <OwnerLedgerPage {...props} closeouts={closeouts || []} />;
+}
+
 
 // ─── OwnerCloseoutModals ───────────────────────────────────
 export function OwnerCloseoutModals({
@@ -521,7 +528,7 @@ export function BottomNav({ lang, employee, active, onChange, onAdd = () => {} }
     return <EmployeeFooterNav lang={lang} onAdd={onAdd} />;
   }
   const leftItems = [{ id: "home", key: "home", icon: Home }, { id: "reports", key: "reports", icon: FileText }];
-  const rightItems = [{ id: "register", key: "register", icon: ReceiptText }, { id: "settings", key: "settings", icon: Settings }];
+  const rightItems = [{ id: "ledger", key: "ledger", icon: ReceiptText }, { id: "settings", key: "settings", icon: Settings }];
   return (
     <nav className="taq-owner-nav relative z-30 flex h-[64px] w-full shrink-0 items-center justify-between border-t border-[#ECE6DA] bg-white/95 px-4 pb-[env(safe-area-inset-bottom,0px)]">
       <div className="flex w-[122px] items-center justify-between">{leftItems.map((item) => <NavButton key={item.id} item={item} />)}</div>
