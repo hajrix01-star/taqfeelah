@@ -1,8 +1,17 @@
 #!/usr/bin/env node
 
-import { randomUUID } from "node:crypto";
+import { randomUUID, scrypt } from "node:crypto";
+import { promisify } from "node:util";
 import process from "node:process";
 import { Client } from "pg";
+
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(plaintext) {
+  const salt = randomUUID().replace(/-/g, "");
+  const buf = await scryptAsync(plaintext, salt, 64);
+  return `scrypt:${salt}:${buf.toString("hex")}`;
+}
 
 function valueFromEnv(name, fallback = "") {
   const value = process.env[name];
@@ -229,10 +238,10 @@ async function seedRuntimeSettings(client, cfg) {
     ],
     authConfig: {
       ownerUsername: process.env.AUTH_OWNER_USERNAME || "hajri",
-      ownerPassword: process.env.AUTH_OWNER_PASSWORD || "123",
+      ownerPassword: await hashPassword(process.env.AUTH_OWNER_PASSWORD || "123"),
       employeePins: {
-        ahmed: "1234",
-        sara: "1234",
+        ahmed: await hashPassword("1234"),
+        sara: await hashPassword("1234"),
       },
     },
   };

@@ -31,6 +31,7 @@
     "db:seed:closeouts": "node scripts/seed-closeouts-foundation.mjs"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.23.12",
     "html-to-image": "^1.11.13",
@@ -44,6 +45,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@tailwindcss/postcss": "^4.1.12",
+    "@types/bcryptjs": "^3.0.0",
     "@types/node": "^22.18.0",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.1.12",

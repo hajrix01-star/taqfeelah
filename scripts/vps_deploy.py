@@ -58,7 +58,6 @@ PRODUCTION_ENV_KEYS = [
 PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
     "APP_MODE": "production",
     "NEXT_PUBLIC_APP_MODE": "production",
-    "AUTH_SESSION_SECRET": "taqfeelah-prod-bootstrap-session-secret-v1",
     "AUTH_SESSION_COOKIE_NAME": "taqfeelah_session",
     "AUTH_ORGANIZATION_ID": "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
     "AUTH_OWNER_USER_ID": "e8f3e35b-6051-4da3-8b10-979700c2f00f",
@@ -324,6 +323,16 @@ def resolve_production_env(existing_remote_env: dict[str, str] | None = None) ->
             "Set the GitHub secret DATABASE_URL or ensure /opt/taqfeelah/.env.production "
             "already exists on the VPS with a valid DATABASE_URL."
         )
+    if not merged.get("AUTH_SESSION_SECRET") or len(merged.get("AUTH_SESSION_SECRET", "")) < 32:
+        import secrets as _secrets
+        generated = _secrets.token_hex(32)
+        safe_print(
+            "WARNING: AUTH_SESSION_SECRET not set or too short. "
+            f"A random secret was generated for this deploy: {generated[:8]}...\n"
+            "Set the GitHub secret AUTH_SESSION_SECRET with a strong value "
+            "to ensure session consistency across deploys and restarts."
+        )
+        merged["AUTH_SESSION_SECRET"] = generated
     return merged
 
 
