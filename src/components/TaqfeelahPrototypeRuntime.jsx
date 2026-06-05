@@ -3118,8 +3118,19 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
   const closeoutSummaries = useMemo(() => {
     const grouped = new Map();
     newestEntries(filteredEntries).forEach((entry) => {
-      const key = `${entry.businessId}|${entry.date}`;
-      if (!grouped.has(key)) grouped.set(key, { key, businessId: entry.businessId, date: entry.date, entries: [] });
+      // Keep each closeout independent by grouping on closeoutId when present.
+      const key = entry.closeoutId
+        ? `closeout|${entry.closeoutId}`
+        : `legacy-day|${entry.businessId}|${entry.date}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          key,
+          businessId: entry.businessId,
+          closeoutId: entry.closeoutId || null,
+          date: entry.date,
+          entries: [],
+        });
+      }
       grouped.get(key).entries.push(entry);
     });
     return [...grouped.values()].map((group) => {
@@ -3351,23 +3362,25 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
                         <p className="text-taq-meta font-black text-[#B44747]">{lang === "ar" ? "الخارج" : "Out"} <span className="tabular-nums"><MoneyValue value={money(-summary.totals.expense, lang)} /></span></p>
                         <p className={`text-taq-meta font-black ${summary.totals.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}>{lang === "ar" ? "الناتج" : "Net"} <span className="tabular-nums"><MoneyValue value={money(summary.totals.net, lang)} /></span></p>
                       </div>
-                      {summary.salesChannels.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {summary.salesChannels.map((channel) => (
-                            <span key={channel.channelId} className="rounded-full bg-[#E6F5E9] px-2 py-0.5 text-taq-nav font-bold text-[#257844]">
-                              {channel.name} · <span className="tabular-nums"><MoneyValue value={money(channel.amount, lang)} /></span>
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="mt-2 text-taq-nav font-bold text-[#8B8274]">{lang === "ar" ? "لا توجد قنوات مبيعات" : "No sales channels"}</p>
+                      {isExpanded && (
+                        summary.salesChannels.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {summary.salesChannels.map((channel) => (
+                              <span key={channel.channelId} className="rounded-full bg-[#E6F5E9] px-2 py-0.5 text-taq-nav font-bold text-[#257844]">
+                                {channel.name} · <span className="tabular-nums"><MoneyValue value={money(channel.amount, lang)} /></span>
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="mt-2 text-taq-nav font-bold text-[#8B8274]">{lang === "ar" ? "لا توجد قنوات مبيعات" : "No sales channels"}</p>
+                        )
                       )}
                       <p className="mt-2 text-taq-meta font-black text-[#806528]">{isExpanded ? (lang === "ar" ? "إخفاء" : "Hide") : (lang === "ar" ? "عرض" : "Show")}</p>
                     </div>
                   </button>
                   {isExpanded && (
                     <div className="border-t border-[#E8E1D4] px-3.5 py-2.5" style={registerCardInsetStyle}>
-                      <div className="max-h-[min(42dvh,320px)] space-y-2 overflow-y-auto overscroll-contain">
+                      <div className="space-y-2">
                         {summary.operations.flatMap((item) => expandRegisterCloseoutOperationRows(item, lang).map((row) => (
                           <button key={row.key} type="button" onClick={() => onOpenOperation(row.item)} className="grid w-full grid-cols-[max-content_minmax(0,1fr)] items-center gap-3 rounded-xl px-2 py-2 text-start hover:bg-[#FFF4D2]/35">
                             <strong dir="ltr" className={`min-w-[70px] whitespace-nowrap text-start tabular-nums text-taq-meta font-black ${entryIsVoided(row.item) ? "text-[#A99D87] line-through" : row.isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
