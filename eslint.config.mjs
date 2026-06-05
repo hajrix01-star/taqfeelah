@@ -19,6 +19,12 @@ const eslintConfig = [
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    files: ["**/*.{js,jsx}"],
+    rules: {
+      "no-undef": "error",
+    },
+  },
 ];
 
 export default eslintConfig;

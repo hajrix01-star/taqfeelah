@@ -1,0 +1,6 @@
+export const PROTOTYPE_SUPPORT_WHATSAPP = "966501234567";
+export const PROTOTYPE_DEMO_OTP = "1234";
+export const PROTOTYPE_OWNER_USERNAME = "owner";
+export const PROTOTYPE_OWNER_PASSWORD = "demo123";
+export const PROTOTYPE_EMPLOYEE_USERNAME = "employee";
+export const PROTOTYPE_EMPLOYEE_PIN_DEFAULT = "1234";
