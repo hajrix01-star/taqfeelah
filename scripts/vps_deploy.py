@@ -245,17 +245,7 @@ def ensure_vps_postgres(vps: VPS) -> str:
         export DEBIAN_FRONTEND=noninteractive
         if ! command -v docker >/dev/null 2>&1; then
           apt-get update -y
-          apt-get install -y ca-certificates curl gnupg
-          install -m 0755 -d /etc/apt/keyrings
-          if [ ! -f /etc/apt/keyrings/docker.gpg ]; then
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-            chmod a+r /etc/apt/keyrings/docker.gpg
-          fi
-          arch="$(dpkg --print-architecture)"
-          codename="$(. /etc/os-release && echo "$VERSION_CODENAME")"
-          echo "deb [arch=$arch signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $codename stable" > /etc/apt/sources.list.d/docker.list
-          apt-get update -y
-          apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+          apt-get install -y docker.io
           systemctl enable docker
           systemctl restart docker
         fi
@@ -657,8 +647,9 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             f"""
             set -euo pipefail
             cd {shlex.quote(app_dir)}
-            npm install
-            npm run build
+            npm install -g pnpm@9.15.9
+            pnpm install --frozen-lockfile
+            pnpm run build
             """
         ).strip()
     )
@@ -672,7 +663,7 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             set -a
             . ./.env.production
             set +a
-            npm run db:push
+            pnpm run db:push
             """
         ).strip()
     )
