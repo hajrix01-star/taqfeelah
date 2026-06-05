@@ -36,6 +36,9 @@ const authConfigSchema = z.object({
   employeePins: z.record(z.string(), z.string()).optional(),
 });
 
+const BOOTSTRAP_OWNER_USERNAME = "hajri";
+const BOOTSTRAP_OWNER_PASSWORD = "123";
+
 export async function createAuthSession(rawInput: LoginInput) {
   const parsed = loginInputSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -55,8 +58,8 @@ export async function createAuthSession(rawInput: LoginInput) {
   const parsedAuthConfig = authConfigSchema.safeParse(runtimeSettingsEnvelope?.settings?.authConfig || {});
   const runtimeAuthConfig = parsedAuthConfig.success ? parsedAuthConfig.data : {};
 
-  const ownerUsername = runtimeAuthConfig.ownerUsername || envAuth.ownerUsername || "";
-  const ownerPassword = runtimeAuthConfig.ownerPassword || envAuth.ownerPassword || "";
+  const ownerUsername = runtimeAuthConfig.ownerUsername || envAuth.ownerUsername || BOOTSTRAP_OWNER_USERNAME;
+  const ownerPassword = runtimeAuthConfig.ownerPassword || envAuth.ownerPassword || BOOTSTRAP_OWNER_PASSWORD;
   const employeePinMap = { ...envAuth.employeePinMap, ...(runtimeAuthConfig.employeePins || {}) };
 
   if (!ownerUserId) {
