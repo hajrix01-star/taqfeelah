@@ -377,6 +377,404 @@ function formatDateTimeLabel(iso, lang) {
   return `${formatCalendarDate(datePart, lang)} · ${time}`;
 }
 
+// ─── i18n helper ─────────────────────────────────────────────────────────────
+const text = (lang, key) => copy[lang]?.[key] || key;
+
+// ─── Draft helpers ────────────────────────────────────────────────────────────
+function draftNeedsConfirmation(...values) {
+  return values.some((value) => value && (typeof value !== "object" || Object.values(value).some(Boolean)));
+}
+
+// ─── Shared UI primitives ─────────────────────────────────────────────────────
+function Choice({ active, children, onClick }) {
+  return <button onClick={onClick} className={`rounded-2xl py-3 text-xs font-extrabold ${active ? "bg-[#112A46] text-white" : "bg-white text-[#716753] ring-1 ring-black/[0.05]"}`}>{children}</button>;
+}
+
+function SmallInfo({ label, value }) {
+  return <div className="rounded-2xl bg-white p-3 ring-1 ring-black/[0.05]"><p className="text-[10px] font-bold text-[#716753]">{label}</p><p className="mt-1 text-xs font-black">{value}</p></div>;
+}
+
+function ActionRow({ label, lang, danger = false, border = false }) {
+  const Arrow = lang === "ar" ? ChevronLeft : ChevronRight;
+  return <button className={`flex w-full items-center justify-between px-4 py-4 text-sm font-black ${border ? "border-b border-[#F0ECE2]" : ""} ${danger ? "text-[#B44747]" : "text-[#112A46]"}`}><span>{label}</span><Arrow className="h-4 w-4" /></button>;
+}
+
+function LocalAttachmentCapture({ lang, attachment, processing, error, onSelect, onClear, tall = false }) {
+  return <div>
+    <label className={`relative flex w-full cursor-pointer items-center justify-center gap-3 overflow-hidden rounded-3xl border-2 border-dashed border-[#D7CBAF] bg-[#FFFDF7] ${tall ? "h-40 flex-col" : "min-h-24 px-4 py-3"}`}>
+      <input type="file" accept="image/*" capture="environment" onChange={onSelect} className="sr-only" />
+      {attachment
+        ? <><AttachmentPreview attachment={attachment} className="absolute inset-0 h-full w-full opacity-25" /><Check className={`${tall ? "h-8 w-8" : "h-6 w-6"} relative text-[#39A160]`} /></>
+        : <Camera className={`${tall ? "h-8 w-8" : "h-6 w-6"} text-[#B99844]`} />
+      }
+      <div className={`relative ${tall ? "text-center" : "text-start"}`}>
+        <p className="text-sm font-extrabold">{processing ? text(lang, "processingPhoto") : attachment ? text(lang, "replacePhoto") : text(lang, "cameraOrGallery")}</p>
+        <p className="text-[11px] text-[#827762]">{attachment ? text(lang, "attachmentStoredLocally") : text(lang, "optional")}</p>
+      </div>
+    </label>
+    {attachment && <button onClick={onClear} className="mt-2 text-[11px] font-bold text-[#B44747]">{text(lang, "removePhoto")}</button>}
+    {error && <p className="mt-2 text-[11px] font-bold text-[#B44747]">{error}</p>}
+  </div>;
+}
+
+function EmployeeStoreContext({ lang, currentStore, assignedStores, onSelect, dark = false }) {
+  const [open, setOpen] = useState(false);
+  const selectorRef = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeOutside = (event) => { if (selectorRef.current && !selectorRef.current.contains(event.target)) setOpen(false); };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, [open]);
+  if (!currentStore) return <div className="mb-4 rounded-2xl bg-[#FFF1EE] p-4 text-xs font-bold text-[#B44747]">{text(lang, "noAssignedStores")}</div>;
+  return (
+    <div ref={selectorRef} className="relative">
+      <p className={`text-[10px] font-bold ${dark ? "text-white/60" : "text-[#827762]"}`}>{text(lang, "currentWorkStore")}</p>
+      <button onClick={() => assignedStores.length > 1 && setOpen(!open)} className={`mt-1 flex w-full items-center justify-between text-start ${dark ? "text-white" : "text-[#112A46]"}`}>
+        <div><p className="text-sm font-black">{businessName(currentStore, lang)}</p><p className={`mt-0.5 text-[10px] font-bold ${dark ? "text-white/65" : "text-[#827762]"}`}>{businessLocation(currentStore, lang)}</p></div>
+        {assignedStores.length > 1 && <div className={`flex items-center gap-1 rounded-full px-2 py-1 text-[9px] font-bold ${dark ? "bg-white/10 text-white" : "bg-[#FFF0CB] text-[#806528]"}`}>{text(lang, "switchWorkStore")}<ChevronDown className="h-3 w-3" /></div>}
+      </button>
+      <AnimatePresence>
+        {open && assignedStores.length > 1 && (
+          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute start-0 end-0 top-[58px] z-30 rounded-2xl bg-white p-2 shadow-xl ring-1 ring-[#E8E1D4]">
+            {assignedStores.map((business) => (
+              <button key={business.id} onClick={() => { onSelect(business.id); setOpen(false); }} className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-start ${currentStore.id === business.id ? "bg-[#FFF4D2]" : ""}`}>
+                <div><p className="text-[11px] font-black text-[#112A46]">{businessName(business, lang)}</p><p className="text-[9px] font-bold text-[#827762]">{businessLocation(business, lang)}</p></div>
+                {currentStore.id === business.id && <Check className="h-4 w-4 text-[#112A46]" />}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function EntryDatePicker({ lang, value, onChange, showSuggestion = false }) {
+  const [open, setOpen] = useState(false);
+  const selected = new Date(`${value}T12:00:00`);
+  const [calendarView, setCalendarView] = useState({ year: selected.getFullYear(), month: selected.getMonth() });
+  const pickerRef = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeOutside = (event) => { if (pickerRef.current && !pickerRef.current.contains(event.target)) setOpen(false); };
+    const closeEscape = (event) => { if (event.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeEscape);
+    return () => { document.removeEventListener("pointerdown", closeOutside); document.removeEventListener("keydown", closeEscape); };
+  }, [open]);
+  const firstWeekday = new Date(calendarView.year, calendarView.month, 1).getDay();
+  const numberOfDays = new Date(calendarView.year, calendarView.month + 1, 0).getDate();
+  const dates = Array.from({ length: firstWeekday }, (_, index) => ({ key: `blank-${index}` })).concat(Array.from({ length: numberOfDays }, (_, index) => ({ key: `${index + 1}`, day: index + 1, iso: isoCalendarDate(calendarView.year, calendarView.month, index + 1) })));
+  const todayLimit = todayIsoDate();
+  const weekDays = lang === "ar" ? ["ح", "ن", "ث", "ر", "خ", "ج", "س"] : ["S", "M", "T", "W", "T", "F", "S"];
+  const previous = () => setCalendarView((current) => current.month === 0 ? { year: current.year - 1, month: 11 } : { year: current.year, month: current.month - 1 });
+  const next = () => setCalendarView((current) => current.month === 11 ? { year: current.year + 1, month: 0 } : { year: current.year, month: current.month + 1 });
+  return (
+    <div ref={pickerRef} className="relative mb-5">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-bold text-[#716753]">{text(lang, "date")}</p>
+        {showSuggestion && <span className="rounded-full bg-[#FFF0CB] px-2 py-1 text-[9px] font-bold text-[#806528]">{text(lang, "suggestedNextCloseout")}</span>}
+      </div>
+      <button onClick={() => { setCalendarView({ year: selected.getFullYear(), month: selected.getMonth() }); setOpen(!open); }} className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3.5 text-sm font-black text-[#112A46] ring-1 ring-black/[0.05]">
+        <span>{formatCalendarDate(value, lang)}</span><CalendarDays className="h-4 w-4 text-[#B99844]" />
+      </button>
+      {showSuggestion && <p className="mt-2 text-[10px] font-bold text-[#827762]">{text(lang, "changeDateAnytime")}</p>}
+      <AnimatePresence>
+        {open && (
+          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute start-0 end-0 top-[78px] z-30 rounded-2xl bg-[#FFFDF7] p-3 shadow-xl ring-1 ring-[#D8CCA8]">
+            <div className="mb-3 flex items-center justify-between">
+              <button onClick={previous} className="flex h-8 w-8 items-center justify-center rounded-xl text-[#806528]"><ChevronRight className={`h-4 w-4 ${lang === "en" ? "rotate-180" : ""}`} /></button>
+              <strong className="text-xs">{formatCalendarMonth(calendarView.year, calendarView.month, lang)}</strong>
+              <button onClick={next} className="flex h-8 w-8 items-center justify-center rounded-xl text-[#806528]"><ChevronLeft className={`h-4 w-4 ${lang === "en" ? "rotate-180" : ""}`} /></button>
+            </div>
+            <div className="mb-2 grid grid-cols-7 text-center text-[10px] font-bold text-[#957D43]">{weekDays.map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}</div>
+            <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold">
+              {dates.map((date) => date.day
+                ? <button key={date.key} disabled={date.iso > todayLimit} onClick={() => { if (date.iso <= todayLimit) { onChange(date.iso); setOpen(false); } }} className={`flex h-8 items-center justify-center rounded-lg ${date.iso > todayLimit ? "cursor-not-allowed text-[#C8C0B1]" : date.iso === value ? "bg-[#B44747] text-white" : "text-[#112A46] hover:bg-[#FFF0CB]"}`}>{date.day}</button>
+                : <span key={date.key} className="h-8" />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function StoreOperationPicker({ lang, businessesList = [], selectedId, onSelect }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const pickerRef = useRef(null);
+  const selectedStore = businessesList.find((business) => business.id === selectedId) || null;
+  const searchable = businessesList.length > 2;
+  const filteredStores = businessesList.filter((business) => `${businessName(business, lang)} ${businessLocation(business, lang)}`.toLowerCase().includes(query.toLowerCase()));
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeOutside = (event) => { if (pickerRef.current && !pickerRef.current.contains(event.target)) setOpen(false); };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, [open]);
+  if (!searchable) {
+    return <div className="grid grid-cols-2 gap-2">{businessesList.map((business) => <button key={business.id} onClick={() => onSelect(business.id)} className={`rounded-2xl px-3 py-3 text-xs font-black ${selectedId === business.id ? "bg-[#112A46] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-black/[0.05]"}`}>{businessName(business, lang, true) || businessName(business, lang)}</button>)}</div>;
+  }
+  return (
+    <div ref={pickerRef} className="relative">
+      <button onClick={() => setOpen(!open)} className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3 text-start text-xs font-black ring-1 ring-black/[0.05]">
+        <span>{selectedStore ? businessName(selectedStore, lang) : text(lang, "selectStore")}</span><ChevronDown className="h-4 w-4 text-[#806528]" />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute start-0 end-0 top-[50px] z-40 rounded-2xl bg-white p-3 shadow-xl ring-1 ring-[#E8E1D4]">
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text(lang, "searchStore")} className="mb-2 w-full rounded-xl bg-[#F7F5EF] px-3 py-2.5 text-[11px] font-bold outline-none" />
+            <div className="max-h-48 overflow-y-auto">
+              {filteredStores.map((business) => (
+                <button key={business.id} onClick={() => { onSelect(business.id); setOpen(false); setQuery(""); }} className={`mb-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-start ${selectedId === business.id ? "bg-[#FFF4D2]" : ""}`}>
+                  <div><p className="text-[11px] font-black">{businessName(business, lang)}</p><p className="text-[9px] font-bold text-[#827762]">{businessLocation(business, lang)}</p></div>
+                  {selectedId === business.id && <Check className="h-4 w-4 text-[#112A46]" />}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── TopBar ───────────────────────────────────────────────────────────────────
+function TopBar({ lang, setLang, employee, employeeName = "", notebookMode = false, onLogout = () => {}, onEmployeeSettings = () => {}, onNotifications = () => {}, showNotifications = true, hasNotificationBadge = false }) {
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef(null);
+  useEffect(() => {
+    if (!accountMenuOpen) return undefined;
+    const closeOutside = (event) => { if (accountMenuRef.current && !accountMenuRef.current.contains(event.target)) setAccountMenuOpen(false); };
+    const closeEscape = (event) => { if (event.key === "Escape") setAccountMenuOpen(false); };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeEscape);
+    return () => { document.removeEventListener("pointerdown", closeOutside); document.removeEventListener("keydown", closeEscape); };
+  }, [accountMenuOpen]);
+  return (
+    <header dir="ltr" className={`taq-topbar relative z-40 h-[70px] px-5 pb-2 pt-4 ${notebookMode ? "bg-transparent" : ""}`}>
+      <div className={`absolute top-[22px] flex h-10 w-10 items-center justify-center ${lang === "ar" ? "left-[14px]" : "right-[14px]"}`}>
+        {!employee ? (
+          showNotifications && (
+            <button onClick={onNotifications} className="relative flex h-9 w-9 items-center justify-center text-[#112A46]">
+              <Bell className="h-5 w-5" />
+              {hasNotificationBadge && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#CE4642]" />}
+            </button>
+          )
+        ) : (
+          <LanguageSwitch lang={lang} setLang={setLang} />
+        )}
+      </div>
+      <div className="absolute left-1/2 top-[15px] -translate-x-1/2"><Logo compact centered /></div>
+      <div className={`absolute top-[22px] flex h-10 w-10 items-center justify-center ${lang === "ar" ? "right-[36px]" : "left-[36px]"}`}>
+        {employee ? (
+          <button onClick={onEmployeeSettings} aria-label={text(lang, "account")} className="flex h-9 w-9 items-center justify-center text-[#112A46]">
+            <UserRound className="h-[21px] w-[21px]" strokeWidth={2} />
+          </button>
+        ) : (
+          <div ref={accountMenuRef} className="relative">
+            <button onClick={() => setAccountMenuOpen((open) => !open)} aria-label={text(lang, "account")} aria-expanded={accountMenuOpen} aria-haspopup="menu" className={`flex h-9 w-9 items-center justify-center rounded-full text-[#112A46] transition ${accountMenuOpen ? "text-[#9A823E]" : ""}`}>
+              <UserRound className="h-[21px] w-[21px]" strokeWidth={2} />
+            </button>
+            <AnimatePresence>
+              {accountMenuOpen && (
+                <motion.div dir={lang === "ar" ? "rtl" : "ltr"} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} role="menu" className={`absolute top-[44px] z-50 w-[126px] overflow-hidden rounded-xl bg-white p-1.5 shadow-lg ring-1 ring-black/[0.06] ${lang === "ar" ? "right-0" : "left-0"}`}>
+                  <div className="flex justify-center px-1 py-1.5"><LanguageSwitch lang={lang} setLang={setLang} /></div>
+                  <div className="my-1 border-t border-[#F0ECE2]" />
+                  <button role="menuitem" onClick={() => { setAccountMenuOpen(false); onLogout(); }} className="flex w-full items-center justify-center rounded-lg px-2 py-2.5 text-[10px] font-black text-[#B44747] transition hover:bg-[#FFF1EE]">
+                    <span>{text(lang, "logout")}</span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
+
+// ─── OwnerSummaryScreen ───────────────────────────────────────────────────────
+function OwnerSummaryScreen({ lang, onBack, onSave, saving = false, selectedBusiness, businessesList = [], storeChannelSettings = {} }) {
+  const [businessId, setBusinessId] = useState(selectedBusiness === "all" ? "" : selectedBusiness);
+  const [summaryDate, setSummaryDate] = useState(() => todayIsoDate());
+  const { attachment, processing, error, selectAttachment, clearAttachment } = useAttachmentCapture(lang);
+  const selectedStore = businessesList.find((business) => business.id === businessId) || null;
+  const channelConfig = getStoreChannelConfig(storeChannelSettings, businessId);
+  const salesChannels = selectedStore ? channelConfig.channels.filter((channel) => channelConfig.activeIds.includes(channel.id) && !channel.retired) : [];
+  const [values, setValues] = useState({});
+  const channelSignature = salesChannels.map((channel) => channel.id).join("|");
+  useEffect(() => { setValues(Object.fromEntries(salesChannels.map((channel) => [channel.id, ""]))); clearAttachment(); }, [businessId, channelSignature]); // eslint-disable-line react-hooks/exhaustive-deps
+  const total = useMemo(() => salesChannels.reduce((sum, channel) => sum + toAmount(values[channel.id]), 0), [salesChannels, values]);
+  const canSave = Boolean(selectedStore && salesChannels.length > 0 && total > 0 && summaryDate <= todayIsoDate());
+  const changeStore = (nextBusinessId) => {
+    if (nextBusinessId !== businessId && draftNeedsConfirmation(values, attachment) && !window.confirm(text(lang, "discardDraftOnStoreChange"))) return;
+    setBusinessId(nextBusinessId);
+  };
+  const submit = () => canSave && !processing && !saving && onSave({ date: summaryDate, businessId, type: "summary", salesChannels: salesChannels.map((channel) => ({ channelId: channel.id, name: channelName(channel, lang), amount: toAmount(values[channel.id]) })).filter((row) => row.amount > 0), attachment, noteKey: "salesSummary" });
+  return (
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px] lg:max-w-none">
+      <BackTitle lang={lang} title={text(lang, "dailySummary")} onBack={onBack} />
+      <div className="space-y-5 px-5">
+        <EntryDatePicker lang={lang} value={summaryDate} onChange={setSummaryDate} />
+        <div>
+          <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
+          <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
+          <p className={`mt-2 text-[10px] font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseStoreForSummary")}</p>
+        </div>
+        <div>
+          <p className="mb-3 text-xs font-bold text-[#716753]">{text(lang, "salesChannels")}</p>
+          {!selectedStore
+            ? <div className="rounded-3xl bg-white p-5 text-xs font-bold text-[#827762] ring-1 ring-black/[0.05]">{text(lang, "chooseStoreForSummary")}</div>
+            : salesChannels.length === 0
+              ? <div className="rounded-3xl bg-white p-5 text-xs font-bold text-[#B44747] ring-1 ring-black/[0.05]">{text(lang, "noSalesChannels")}</div>
+              : <div className="grid grid-cols-3 gap-2">{salesChannels.map((channel) => <label key={channel.id} className="rounded-2xl bg-white px-2 py-3 text-center ring-1 ring-black/[0.05]"><span className="mb-2 block min-h-[30px] text-[11px] font-bold leading-4 text-[#716753]">{channelName(channel, lang)}</span><div dir="ltr" className="flex items-center justify-center gap-1"><input inputMode="decimal" value={values[channel.id] || ""} onChange={(event) => setValues((current) => ({ ...current, [channel.id]: sanitizeAmountInput(event.target.value) }))} className="min-w-0 w-full bg-[#F7F5EF] px-1 py-2 text-center text-sm font-black outline-none" /><span className="text-[9px] font-bold text-[#827762]">{lang === "ar" ? "ر.س" : "SAR"}</span></div></label>)}</div>
+          }
+        </div>
+        <div className="flex justify-between rounded-3xl bg-[#112A46] p-5 text-white">
+          <span className="text-sm font-bold text-white/70">{text(lang, "totalSales")}</span>
+          <strong><MoneyValue value={money(total, lang)} /></strong>
+        </div>
+        <LocalAttachmentCapture lang={lang} attachment={attachment} processing={processing} error={error} onSelect={selectAttachment} onClear={clearAttachment} />
+        <button disabled={!canSave || processing || saving} onClick={submit} className={`w-full rounded-2xl py-4 text-sm font-extrabold text-white ${canSave && !processing && !saving ? "bg-[#39A160]" : "bg-[#B8C0B7]"}`}>{text(lang, saving ? "saving" : "save")}</button>
+      </div>
+    </motion.section>
+  );
+}
+
+// ─── OwnerExpenseScreen ───────────────────────────────────────────────────────
+function OwnerExpenseScreen({ lang, onBack, onSave, saving = false, selectedBusiness, businessesList = [], storeOperationalSettings = {} }) {
+  const [businessId, setBusinessId] = useState(selectedBusiness === "all" ? "" : selectedBusiness);
+  const [kind, setKind] = useState("expense");
+  const [category, setCategory] = useState("other");
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [operationDate, setOperationDate] = useState(() => todayIsoDate());
+  const { attachment, processing, error, selectAttachment, clearAttachment } = useAttachmentCapture(lang);
+  const selectedStore = businessesList.find((business) => business.id === businessId);
+  const activeCategories = expenseCategories.filter((item) => getStoreOperationalConfig(storeOperationalSettings, businessId).activeCategories.includes(item.id));
+  useEffect(() => { if (!activeCategories.some((item) => item.id === category)) setCategory(activeCategories[0]?.id || "other"); }, [businessId, category]); // eslint-disable-line react-hooks/exhaustive-deps
+  const canSave = Boolean(selectedStore && toAmount(amount) > 0 && (kind !== "expense" || activeCategories.length > 0));
+  const changeStore = (nextBusinessId) => {
+    if (nextBusinessId !== businessId && draftNeedsConfirmation(amount, note, attachment) && !window.confirm(text(lang, "discardDraftOnStoreChange"))) return;
+    if (nextBusinessId !== businessId) { setAmount(""); setNote(""); clearAttachment(); }
+    setBusinessId(nextBusinessId);
+  };
+  const categoryLabel = kind === "expense" ? text(lang, activeCategories.find((item) => item.id === category)?.label || "other") : text(lang, kind);
+  const submit = () => canSave && !processing && !saving && onSave({ date: operationDate, businessId, type: kind, categoryId: kind === "expense" ? category : kind, amount: toAmount(amount), note, attachment });
+  return (
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px] lg:max-w-none">
+      <BackTitle lang={lang} title={text(lang, "addOutflow")} onBack={onBack} />
+      <div className="space-y-5 px-5">
+        <div className="rounded-2xl bg-[#FFF4D2] p-3 text-[11px] font-bold leading-5 text-[#806528]">{text(lang, "ownerOutflowNotice")}</div>
+        <EntryDatePicker lang={lang} value={operationDate} onChange={setOperationDate} />
+        <div>
+          <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
+          <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
+          <p className={`mt-2 text-[10px] font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseOperationStore")}</p>
+        </div>
+        <div>
+          <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "transactionType")}</p>
+          <div className="grid grid-cols-3 gap-2">{["expense", "purchases", "withdrawal"].map((item) => <Choice key={item} active={kind === item} onClick={() => setKind(item)}>{text(lang, item)}</Choice>)}</div>
+        </div>
+        {kind === "expense" && (
+          <div>
+            <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "category")}</p>
+            {activeCategories.length
+              ? <div className="grid grid-cols-3 gap-2">{activeCategories.map((item) => <Choice key={item.id} active={category === item.id} onClick={() => setCategory(item.id)}>{text(lang, item.label)}</Choice>)}</div>
+              : <p className="rounded-xl bg-[#FFF1EE] p-3 text-[10px] font-bold text-[#B44747]">{text(lang, "atLeastOneCategory")}</p>
+            }
+          </div>
+        )}
+        <div className="rounded-3xl bg-white p-5 ring-1 ring-black/[0.05]">
+          <p className="text-xs font-bold text-[#716753]">{text(lang, "amount")}</p>
+          <div className="mt-2 flex items-center gap-2" dir="ltr">
+            <input inputMode="decimal" value={amount} onChange={(event) => setAmount(sanitizeAmountInput(event.target.value))} placeholder="0" className="w-full min-w-0 bg-transparent text-4xl font-black outline-none" />
+            <span className="mt-3 text-sm font-bold text-[#786D58]">{lang === "ar" ? "ر.س" : "SAR"}</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <SmallInfo label={text(lang, "date")} value={formatCalendarDate(operationDate, lang)} />
+          <SmallInfo label={text(lang, "category")} value={categoryLabel} />
+        </div>
+        <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.05]">
+          <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "note")} <span className="font-normal">({text(lang, "optional")})</span></p>
+          <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder={text(lang, "notePlaceholder")} className="min-h-[52px] w-full resize-none rounded-2xl bg-[#F7F5EF] px-4 py-3 text-sm outline-none" />
+        </div>
+        <LocalAttachmentCapture lang={lang} attachment={attachment} processing={processing} error={error} onSelect={selectAttachment} onClear={clearAttachment} />
+        <button disabled={!canSave || processing || saving} onClick={submit} className={`w-full rounded-2xl py-4 text-sm font-extrabold text-white transition ${canSave && !processing && !saving ? "bg-[#112A46]" : "cursor-not-allowed bg-[#B8C0B7]"}`}>{text(lang, saving ? "saving" : "saveOutflow")}</button>
+      </div>
+    </motion.section>
+  );
+}
+
+// ─── EmployeeSettingsScreen ───────────────────────────────────────────────────
+function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedStores = [], onSelectStore, employeeNotebookTheme, setEmployeeNotebookTheme, onOpenSupport, onOpenHelp }) {
+  const perms = ["permissionSummary", "permissionOutflow", "permissionAttach"];
+  const BackIcon = lang === "ar" ? ChevronRight : ChevronLeft;
+  return (
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+      {onBack && (
+        <div className="mb-5 flex items-center gap-3">
+          <button onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]"><BackIcon className="h-5 w-5" /></button>
+          <h2 className="text-xl font-black">{text(lang, "settings")}</h2>
+        </div>
+      )}
+      <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
+        <EmployeeStoreContext lang={lang} currentStore={currentStore} assignedStores={assignedStores} onSelect={onSelectStore} />
+      </div>
+      {employeeNotebookTheme && setEmployeeNotebookTheme && (
+        <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
+          <p className="mb-3 text-xs font-bold text-[#716753]">{lang === "ar" ? "سمة الدفتر" : "Notebook Theme"}</p>
+          <ThemePicker lang={lang} theme={employeeNotebookTheme} onChange={setEmployeeNotebookTheme} />
+        </div>
+      )}
+      <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "permissions")}</p>
+      <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
+        <p className="mb-4 text-[11px] font-bold text-[#806528]">{text(lang, "employeeEntryOnly")}</p>
+        {perms.map((key) => <div key={key} className="mb-3 flex items-center gap-2 last:mb-0"><Check className="h-4 w-4 text-[#39A160]" /><span className="text-xs font-bold">{text(lang, key)}</span></div>)}
+        <p className="mt-4 border-t border-[#F0ECE2] pt-3 text-[11px] font-bold text-[#827762]">{text(lang, "ownerOnly")}</p>
+      </div>
+      <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
+        {onOpenSupport && <ActionRow label={text(lang, "support")} lang={lang} border />}
+        {onOpenHelp && <ActionRow label={lang === "ar" ? "مركز المساعدة" : "Help Center"} lang={lang} border />}
+      </div>
+    </motion.section>
+  );
+}
+
+// ─── HelpCenterSheet ──────────────────────────────────────────────────────────
+function HelpCenterSheet({ lang, open, onClose }) {
+  if (!open) return null;
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40" />
+      <motion.div
+        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+        className="relative z-10 w-full max-w-lg rounded-t-3xl bg-white px-6 pb-10 pt-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#D9D3C7]" />
+        <h2 className="mb-1 text-lg font-black">{lang === "ar" ? "مركز المساعدة" : "Help Center"}</h2>
+        <p className="mb-5 text-xs font-bold text-[#827762]">{lang === "ar" ? "للتواصل مع الدعم الفني" : "Contact technical support"}</p>
+        <a
+          href={`https://wa.me/966501234567`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#25D366] py-4 text-sm font-extrabold text-white"
+        >
+          {lang === "ar" ? "تواصل عبر واتساب" : "Chat on WhatsApp"}
+        </a>
+        <button onClick={onClose} className="mt-3 w-full rounded-2xl bg-[#F7F5EF] py-3 text-sm font-bold text-[#716753]">{lang === "ar" ? "إغلاق" : "Close"}</button>
+      </motion.div>
+    </div>,
+    document.body
+  );
+}
+
 export default function TaqfeelahPrototypeRuntime() {
   const [lang, setLang] = useState("ar");
   const [sessionUserId, setSessionUserId] = useState("");
