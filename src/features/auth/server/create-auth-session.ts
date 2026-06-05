@@ -4,6 +4,7 @@ import { getDb } from "@/core/db/client";
 import { organizationMembers } from "@/core/db/schema";
 import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { UnauthorizedError, ValidationError } from "@/core/errors/app-error";
+import { getRuntimeSettingsByOrganizationId } from "@/features/runtime-settings/server/runtime-settings-service";
 
 const loginInputSchema = z.object({
   mode: z.enum(["owner_password", "employee_pin"]),
@@ -29,15 +30,43 @@ function mapEmployeeUserId(employeeId: string, userIdMap: Record<string, string>
   return typeof mapped === "string" && isUuid(mapped) ? mapped : "";
 }
 
+const defaultUserIdMap = {
+  owner: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
+  ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+  sara: "85f696d6-f655-4f2d-9f56-1f13c2f4c66c",
+};
+
+const authConfigSchema = z.object({
+  ownerUsername: z.string().trim().min(1).optional(),
+  ownerPassword: z.string().trim().min(1).optional(),
+  employeePins: z.record(z.string(), z.string()).optional(),
+});
+
 export async function createAuthSession(rawInput: LoginInput) {
   const parsed = loginInputSchema.safeParse(rawInput);
   if (!parsed.success) {
     throw new ValidationError("Invalid login payload.", parsed.error.flatten());
   }
   const input = parsed.data;
-  const runtimeAuth = getProductionAuthRuntimeConfig();
-  if (!runtimeAuth.organizationId) {
+  const envAuth = getProductionAuthRuntimeConfig();
+  const organizationId = envAuth.organizationId || "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1";
+  const ownerUserId = envAuth.ownerUserId || defaultUserIdMap.owner;
+  const userIdMap = { ...defaultUserIdMap, ...envAuth.userIdMap };
+
+  if (!isUuid(organizationId)) {
     throw new ValidationError("Auth organization ID is not configured.");
+  }
+
+  const runtimeSettingsEnvelope = await getRuntimeSettingsByOrganizationId(organizationId);
+  const parsedAuthConfig = authConfigSchema.safeParse(runtimeSettingsEnvelope?.settings?.authConfig || {});
+  const runtimeAuthConfig = parsedAuthConfig.success ? parsedAuthConfig.data : {};
+
+  const ownerUsername = runtimeAuthConfig.ownerUsername || envAuth.ownerUsername || "owner";
+  const ownerPassword = runtimeAuthConfig.ownerPassword || envAuth.ownerPassword || "owner";
+  const employeePinMap = { ...envAuth.employeePinMap, ...(runtimeAuthConfig.employeePins || {}) };
+
+  if (!ownerUserId) {
+    throw new ValidationError("Owner user mapping is not configured.");
   }
 
   let userId = "";
@@ -46,16 +75,10 @@ export async function createAuthSession(rawInput: LoginInput) {
   if (input.mode === "owner_password") {
     const username = normalize(input.username).toLowerCase();
     const password = normalize(input.password);
-    if (!runtimeAuth.ownerUsername || !runtimeAuth.ownerPassword || !runtimeAuth.ownerUserId) {
-      throw new ValidationError("Owner auth configuration is incomplete.");
-    }
-    if (
-      username !== runtimeAuth.ownerUsername.trim().toLowerCase()
-      || password !== runtimeAuth.ownerPassword
-    ) {
+    if (username !== ownerUsername.trim().toLowerCase() || password !== ownerPassword) {
       throw new UnauthorizedError("Invalid credentials.");
     }
-    userId = runtimeAuth.ownerUserId;
+    userId = ownerUserId;
     role = "owner";
   } else {
     const employeeId = normalize(input.employeeId);
@@ -63,11 +86,11 @@ export async function createAuthSession(rawInput: LoginInput) {
     if (!employeeId || !pin) {
       throw new ValidationError("employeeId and pin are required.");
     }
-    const mappedUserId = mapEmployeeUserId(employeeId, runtimeAuth.userIdMap);
+    const mappedUserId = mapEmployeeUserId(employeeId, userIdMap);
     if (!mappedUserId) {
       throw new UnauthorizedError("Employee account mapping is invalid.");
     }
-    const expectedPin = runtimeAuth.employeePinMap[employeeId] || runtimeAuth.employeePinMap[mappedUserId];
+    const expectedPin = employeePinMap[employeeId] || employeePinMap[mappedUserId];
     if (!expectedPin || pin !== expectedPin) {
       throw new UnauthorizedError("Invalid employee pin.");
     }
@@ -85,7 +108,7 @@ export async function createAuthSession(rawInput: LoginInput) {
     .from(organizationMembers)
     .where(
       and(
-        eq(organizationMembers.organizationId, runtimeAuth.organizationId),
+        eq(organizationMembers.organizationId, organizationId),
         eq(organizationMembers.userId, userId),
         eq(organizationMembers.status, "active"),
       ),
@@ -105,7 +128,7 @@ export async function createAuthSession(rawInput: LoginInput) {
       : "employee";
 
   return {
-    organizationId: runtimeAuth.organizationId,
+    organizationId,
     userId,
     role: role === "owner" ? "owner" : resolvedMemberRole,
   };

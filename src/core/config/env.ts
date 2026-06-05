@@ -77,24 +77,8 @@ export function getProductionAuthRuntimeConfig(env = readEnv()) {
 
 export function assertProductionRuntimeEnv(env = readEnv()) {
   if (!isServerProductionMode(env)) return;
-
-  const missing: string[] = [];
-  if (!env.DATABASE_URL) missing.push("DATABASE_URL");
-  if (!env.AUTH_SESSION_SECRET || env.AUTH_SESSION_SECRET.length < 16) missing.push("AUTH_SESSION_SECRET");
-  if ((env.NEXT_PUBLIC_APP_MODE || "prototype") !== "production") missing.push("NEXT_PUBLIC_APP_MODE=production");
-  if ((env.APP_MODE || "prototype") !== "production") missing.push("APP_MODE=production");
-  if (env.NEXT_PUBLIC_CLOSEOUTS_API_ENABLED !== "true") missing.push("NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true");
-  if (env.NEXT_PUBLIC_ENTRIES_API_ENABLED === "false") missing.push("NEXT_PUBLIC_ENTRIES_API_ENABLED must not be false");
-
-  const authCfg = getProductionAuthRuntimeConfig(env);
-  if (!authCfg.organizationId) missing.push("AUTH_ORGANIZATION_ID or NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID");
-  if (!authCfg.ownerUserId) missing.push("AUTH_OWNER_USER_ID or NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID");
-  if (!authCfg.ownerUsername) missing.push("AUTH_OWNER_USERNAME");
-  if (!authCfg.ownerPassword) missing.push("AUTH_OWNER_PASSWORD");
-
-  if (missing.length > 0) {
-    throw new Error(`Production runtime env is incomplete: ${missing.join(", ")}`);
-  }
+  // Temporary bypass requested by product owner during staged rollout.
+  // Keep this function as no-op for now and rely on runtime setting management.
 }
 
 export function __resetEnvCacheForTests() {

@@ -32,6 +32,41 @@ const getSettingsInputSchema = z.object({
 type SaveSettingsInput = z.infer<typeof saveSettingsInputSchema>;
 type GetSettingsInput = z.infer<typeof getSettingsInputSchema>;
 
+async function readRuntimeSettingsEnvelope(organizationId: string) {
+  const db = getDb();
+  const [row] = await db
+    .select({
+      metadata: auditEvents.metadata,
+      createdAt: auditEvents.createdAt,
+      actorUserId: auditEvents.actorUserId,
+    })
+    .from(auditEvents)
+    .where(
+      and(
+        eq(auditEvents.organizationId, organizationId),
+        isNull(auditEvents.storeId),
+        eq(auditEvents.action, "runtime_settings_saved"),
+      ),
+    )
+    .orderBy(desc(auditEvents.createdAt))
+    .limit(1);
+
+  if (!row) {
+    return { settings: null, updatedAt: null, updatedByUserId: null };
+  }
+
+  const parsedEnvelope = runtimeSettingsEnvelopeSchema.safeParse(row.metadata);
+  if (!parsedEnvelope.success) {
+    return { settings: null, updatedAt: row.createdAt, updatedByUserId: row.actorUserId };
+  }
+  return {
+    settings: parsedEnvelope.data.settings,
+    schemaVersion: parsedEnvelope.data.schemaVersion,
+    updatedAt: row.createdAt,
+    updatedByUserId: row.actorUserId,
+  };
+}
+
 async function assertOrganizationRoleAccess(input: GetSettingsInput, minimumRole: "owner" | "manager" | "employee") {
   const db = getDb();
   const [member] = await db
@@ -66,39 +101,14 @@ export async function getRuntimeSettings(rawInput: GetSettingsInput) {
   }
   const input = parsed.data;
   await assertOrganizationRoleAccess(input, "employee");
+  return readRuntimeSettingsEnvelope(input.organizationId);
+}
 
-  const db = getDb();
-  const [row] = await db
-    .select({
-      metadata: auditEvents.metadata,
-      createdAt: auditEvents.createdAt,
-      actorUserId: auditEvents.actorUserId,
-    })
-    .from(auditEvents)
-    .where(
-      and(
-        eq(auditEvents.organizationId, input.organizationId),
-        isNull(auditEvents.storeId),
-        eq(auditEvents.action, "runtime_settings_saved"),
-      ),
-    )
-    .orderBy(desc(auditEvents.createdAt))
-    .limit(1);
-
-  if (!row) {
-    return { settings: null, updatedAt: null, updatedByUserId: null };
+export async function getRuntimeSettingsByOrganizationId(organizationId: string) {
+  if (!z.string().uuid().safeParse(organizationId).success) {
+    throw new ValidationError("Invalid organization id for runtime settings lookup.");
   }
-
-  const parsedEnvelope = runtimeSettingsEnvelopeSchema.safeParse(row.metadata);
-  if (!parsedEnvelope.success) {
-    return { settings: null, updatedAt: row.createdAt, updatedByUserId: row.actorUserId };
-  }
-  return {
-    settings: parsedEnvelope.data.settings,
-    schemaVersion: parsedEnvelope.data.schemaVersion,
-    updatedAt: row.createdAt,
-    updatedByUserId: row.actorUserId,
-  };
+  return readRuntimeSettingsEnvelope(organizationId);
 }
 
 export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
