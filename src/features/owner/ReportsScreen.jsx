@@ -1,11 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { summarizeEntries, summaryMonthFromEntries, aggregateChannels } from "@/features/operations/operational-analytics";
+import { motion } from "framer-motion";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import {
+  summarizeEntries,
+  summaryMonthFromEntries,
+  summaryDayFromEntries,
+  aggregateChannels,
+  entriesInPeriod,
+  entryDateMatches,
+  entryIsActive,
+  entryIsOutflow,
+  monthSelectionValue,
+} from "@/features/operations/operational-analytics";
 import { text } from "@/i18n/text";
-import { money, todayIsoDate, formatCalendarDate, channels, expenseCategories, outflowReportCategories, businessName } from "@/utils/display-helpers";
-import { NotebookRow, NumberLine, MoneyValue } from "@/features/daily-closeouts/NotebookAtoms";
-import { monthSelectionValue } from "@/features/operations/operational-analytics";
+import { money, todayIsoDate, formatCalendarDate, channels, expenseCategories, outflowReportCategories, businessName, channelName, shortDate, businesses, entryCategory } from "@/utils/display-helpers";
+import { Badge, NotebookRow, NumberLine, MoneyValue, InkTab } from "@/features/daily-closeouts/NotebookAtoms";
+import { Notebook } from "@/features/daily-closeouts/NotebookShell";
+import { DateSelector, NotebookHeading, StoreComparison } from "@/features/owner/OwnerRegisterScreen";
+import { OutflowAnalysis, StoreScopeTabs } from "@/features/owner/OwnerHomeScreen";
 
 // These components are used only in the reports context:
 
@@ -85,7 +99,7 @@ export default function ReportsScreen({ lang, operationalEntries = [], archivedR
         <StoreScopeTabs lang={lang} businessesList={visibleReportBusinesses} selectedBusiness={safeSelectedBusiness} setSelectedBusiness={(id) => { if (!archivedReadOnlyBusiness) setSelectedBusiness(id); setShowSummaryDetails(false); }} />
         {isCombined ? (
           <div>
-            <StoreComparison lang={lang} monthly={monthly} reviewEnabled={effectiveReviewEnabled} businessesList={scopedBusinesses} operationalEntries={operationalEntries} selectedDate={selectedDate} selectedMonth={selectedMonth} />
+            <StoreComparison lang={lang} monthly={monthly} reviewEnabled={effectiveReviewEnabled} businessesList={scopedBusinesses} operationalEntries={operationalEntries} selectedDate={selectedReportDate} selectedMonth={selectedReportMonth} />
             <NotebookRow lines={2}><p className="w-full text-taq-meta font-bold text-[#806528]">{text(lang, "chooseStoreForDetails")}</p></NotebookRow>
           </div>
         ) : (

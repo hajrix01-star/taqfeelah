@@ -1,20 +1,31 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, ChevronDown, ChevronLeft, ChevronRight, FileSpreadsheet, FileText, Home, Plus, ReceiptText, Settings, X } from "lucide-react";
+import { Bell, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, FileSpreadsheet, FileText, Home, Plus, ReceiptText, Settings, X } from "lucide-react";
 import { text } from "@/i18n/text";
-import { money, businessName, operationDisplayLabel, signedEntryAmount, newestEntries, entryCategory, expenseCategories, outflowReportCategories, businesses, formatCalendarDate, opTime, employeeName } from "@/utils/display-helpers";
-import { entryIsVoided, entryIsActive, entryHasAttachment } from "@/features/operations/operational-analytics";
+import { money, businessName, businessLocation, operationDisplayLabel, signedEntryAmount, newestEntries, entryCategory, expenseCategories, outflowReportCategories, businesses, formatCalendarDate, opTime, employeeName, todayIsoDate, fullDate, attachmentsFromEntries } from "@/utils/display-helpers";
+import { entryIsVoided, entryIsActive, entryHasAttachment, entryIsOutflow, summarizeEntries, summaryDayFromEntries, summaryMonthFromEntries, entriesInPeriod, entryDateMatches } from "@/features/operations/operational-analytics";
 import { Badge, MoneyValue, NotebookRow, NumberLine, FinancialRows, InkTab } from "@/features/daily-closeouts/NotebookAtoms";
+import { Notebook, DayAttachments } from "@/features/daily-closeouts/NotebookShell";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
 import PendingCloseoutsNotice from "@/features/owner-closeout-review/PendingCloseoutsNotice";
 import OwnerCloseoutReviewPanel from "@/features/owner-closeout-review/OwnerCloseoutReviewPanel";
 import ReturnCloseoutModal from "@/features/owner-closeout-review/ReturnCloseoutModal";
+import EmployeeFooterNav from "@/features/employee-closeouts/EmployeeFooterNav";
+import DailyCloseoutEntryFlow from "@/features/employee-closeouts/DailyCloseoutEntryFlow";
+import OwnerRegisterScreen from "@/features/owner/OwnerRegisterScreen";
 import { StoreComparison, DateSelector, NotebookHeading, NotebookMarginTools } from "@/features/owner/OwnerRegisterScreen";
 import { isProductionAppMode } from "@/core/config/app-mode";
 import OwnerLedgerPage from "@/features/owner/ledger/OwnerLedgerPage";
+
+function formatDateTimeLabel(iso, lang) {
+  if (!iso) return "";
+  const datePart = iso.slice(0, 10);
+  const time = new Date(iso).toLocaleTimeString(lang === "ar" ? "ar-SA" : "en-US", { hour: "2-digit", minute: "2-digit" });
+  return `${formatCalendarDate(datePart, lang)} · ${time}`;
+}
 
 
 

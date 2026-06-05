@@ -1,3 +1,5 @@
+import { formatCalendarDate } from "@/utils/display-helpers";
+
 /**
  * Pure helpers for operational entry filtering, totals, and closeout calculations.
  *
@@ -121,6 +123,28 @@ export function summaryMonthFromEntries(
   reviewEnabledForBusiness: (businessId: string) => boolean = () => false,
 ): OperationalSummary {
   return summarizeEntries(entriesInPeriod(entries, businessId, "month", "", month), reviewEnabledForBusiness);
+}
+
+export function summaryDayFromEntries(
+  entries: OperationalEntry[],
+  businessId: string,
+  date: string,
+  reviewEnabledForBusiness: (businessId: string) => boolean = () => false,
+): OperationalSummary & {
+  id: string;
+  dayAr: string;
+  dayEn: string;
+  fullAr: string;
+  fullEn: string;
+} {
+  return {
+    id: date,
+    dayAr: formatCalendarDate(date, "ar"),
+    dayEn: formatCalendarDate(date, "en"),
+    fullAr: formatCalendarDate(date, "ar"),
+    fullEn: formatCalendarDate(date, "en"),
+    ...summarizeEntries(entriesInPeriod(entries, businessId, "day", date, ""), reviewEnabledForBusiness),
+  };
 }
 
 export function aggregateChannels(

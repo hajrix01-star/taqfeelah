@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Check, ChevronDown, ChevronUp, Download, Share2, X } from "lucide-react";
 import { text } from "@/i18n/text";
 import { money, businessName, formatCalendarDate, channelName, channels, expenseCategories, outflowReportCategories, opTime, employeeName, fullDate, businesses } from "@/utils/display-helpers";
-import { summarizeEntries, summaryMonthFromEntries, entriesInPeriod, aggregateChannels, entryIsActive, entryIsOutflow, entryHasAttachment } from "@/features/operations/operational-analytics";
+import { summarizeEntries, summaryMonthFromEntries, summaryDayFromEntries, entriesInPeriod, aggregateChannels, entryIsActive, entryIsOutflow, entryHasAttachment } from "@/features/operations/operational-analytics";
 import { monthSelectionValue } from "@/features/operations/operational-analytics";
 import { Badge, MoneyValue, NotebookRow, NumberLine } from "@/features/daily-closeouts/NotebookAtoms";
 import { shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
