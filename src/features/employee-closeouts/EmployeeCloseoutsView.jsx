@@ -338,7 +338,7 @@ export default function EmployeeCloseoutsView({
         lang={lang}
         open={Boolean(shareTarget)}
         closeout={shareTarget}
-        storeName={storeLabel}
+        storeName={shareTarget?.storeName || storeLabel}
         employeeName={lang === "ar" ? employee.nameAr : employee.nameEn}
         notebookTheme={notebookTheme}
         formatCalendarDate={formatCalendarDate}
