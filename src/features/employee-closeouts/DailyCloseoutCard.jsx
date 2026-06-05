@@ -52,20 +52,22 @@ export default function DailyCloseoutCard({
         </button>
         <div className="mx-3.5 mb-3.5 grid grid-cols-4 overflow-hidden rounded-[14px] border border-[#E8E1D4] bg-[rgba(255,252,245,0.72)]">
           {[
-            { label: lang === "ar" ? "الداخل" : "In", value: money(totals.totalSales, lang), className: "text-[#112A46]", suffix: true },
-            { label: lang === "ar" ? "الخارج" : "Out", value: money(totals.totalOutflow, lang), className: "text-[#BA4742]", suffix: true },
-            { label: lang === "ar" ? "الناتج" : "Net", value: money(totals.netMovement, lang), className: totals.netMovement < 0 ? "text-[#BA4742]" : "text-[#26784C]", suffix: true },
-            { label: lang === "ar" ? "صور" : "Photos", value: String(attachmentCount), className: "text-[#112A46]", suffix: false },
+            { label: lang === "ar" ? "الداخل" : "In", value: money(totals.totalSales, lang), className: "text-[#112A46]" },
+            { label: lang === "ar" ? "الخارج" : "Out", value: money(totals.totalOutflow, lang), className: "text-[#BA4742]" },
+            { label: lang === "ar" ? "الناتج" : "Net", value: money(totals.netMovement, lang), className: totals.netMovement < 0 ? "text-[#BA4742]" : "text-[#26784C]" },
+            { label: lang === "ar" ? "صور" : "Photos", value: String(attachmentCount), className: "text-[#112A46]" },
           ].map((stat, index) => (
             <div key={stat.label} className={`min-w-0 border-s border-[#E8E1D4] px-1 py-3 text-center ${index === 0 ? "border-s-0" : ""}`}>
               <span className="mb-1.5 block text-taq-meta font-bold text-[#82745A]">{stat.label}</span>
-              <strong className={`flex items-end justify-center gap-0.5 text-[clamp(1.05rem,3.8vw,1.7rem)] leading-none font-extrabold tabular-nums ${stat.className}`}>
+              <strong className={`flex items-end justify-center text-[clamp(1.05rem,3.8vw,1.7rem)] leading-none font-extrabold tabular-nums ${stat.className}`}>
                 <span dir="ltr" className="max-w-full whitespace-nowrap">{stat.value}</span>
-                {stat.suffix ? <small className="text-[0.62rem] font-black leading-none text-taq-nav">ر.س</small> : null}
               </strong>
             </div>
           ))}
         </div>
+        <p className="mx-3.5 -mt-1 mb-3 text-center text-[10px] font-bold text-[#82745A]">
+          {lang === "ar" ? "قيم الداخل والخارج والناتج بالريال السعودي" : "In/Out/Net values are in SAR"}
+        </p>
         {(closeout.outflows || []).length > 0 && !expanded ? (
           <p className="mx-3.5 mb-2 text-taq-nav font-bold text-[#806528]">
             {lang === "ar"
