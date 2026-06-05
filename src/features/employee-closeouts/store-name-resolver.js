@@ -11,6 +11,20 @@ function firstFilled(...values) {
   return "";
 }
 
+const STORE_NAME_KEY_COPY = {
+  restaurant: {
+    ar: "مشويات المعلم الشامي",
+    en: "Al Moallem Al Shami Grill",
+  },
+};
+
+function localizedStoreNameFromKey(source, lang) {
+  const nameKey = normalizedText(source?.nameKey);
+  if (!nameKey) return "";
+  const locale = lang === "ar" ? "ar" : "en";
+  return firstFilled(STORE_NAME_KEY_COPY[nameKey]?.[locale], nameKey);
+}
+
 export function resolveEmployeeStoreName(source, lang = "ar") {
   if (!source) return "";
   if (typeof source === "string") return normalizedText(source);
@@ -24,8 +38,10 @@ export function resolveEmployeeStoreName(source, lang = "ar") {
     source.displayName,
     source.storeName,
     localized,
+    localizedStoreNameFromKey(source, lang),
     source.title,
     source.label,
+    source.id,
   );
 }
 
