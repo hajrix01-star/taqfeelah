@@ -96,6 +96,7 @@ import NotebookShareModal from "@/features/owner/NotebookShareModal";
 import { SavedOutflowShareDialog } from "@/features/owner/NotebookShareModal";
 import ReportsScreen from "@/features/owner/ReportsScreen";
 import { businessName, businessLocation, businessRecord, money, channelName, expenseCategories, outflowReportCategories, emptyStoreRecord, businesses, opDate, opTime, auditDateTime, employeeName, fullDate, shortDate, formatCalendarDate, formatCalendarMonth, todayIsoDate, nextDayIso, isoCalendarDate, signedEntryAmount, entryWasRestored, entryCategory, noteLabel, operationDisplayLabel, newestEntries, attachmentsFromEntries } from "@/utils/display-helpers";
+import { entryIsActive, entryIsVoided, entryHasAttachment, entryIsOutflow, monthSelectionValue, entriesInPeriod, summarizeEntries, summaryMonthFromEntries, aggregateChannels, duplicateSalesSignature, duplicateSalesGroupKey } from "@/features/operations/operational-analytics";
 import { getStoreChannelConfig, getStoreOperationalConfig, buildInitialStoreChannelSettings, buildInitialStoreOperationalSettings } from "@/features/owner/store-config-helpers";
 import copy from "@/i18n/copy";
 
@@ -162,6 +163,117 @@ function formatSelectedMonth(value, lang) {
 
 // ─── App mode constant ───────────────────────────────────────────────────────
 const APP_IN_PRODUCTION_MODE = isProductionAppMode();
+
+// ─── Module-level constants ──────────────────────────────────────────────────
+const PROTOTYPE_SUPPORT_WHATSAPP = "966501234567";
+const CLOSEOUT_ALERTS_STORAGE_KEY = "taqfeelah_closeout_alerts_v1";
+const OPERATIONAL_ENTRIES_STORAGE_KEY = PROTOTYPE_DEMO_OPERATIONAL_ENTRIES_KEY;
+const ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY = "taqfeelah_acknowledged_duplicate_sales_v1";
+const LAST_CLOSEOUT_STORAGE_KEY = PROTOTYPE_DEMO_LAST_CLOSEOUT_KEY;
+const MAX_ENTRY_AMOUNT = 9999999;
+const ownerActor = { role: "owner", userId: "owner", nameAr: "محمد الهاجري", nameEn: "Mohammad Alhajri" };
+
+// ─── Entry amount helpers ─────────────────────────────────────────────────────
+const westernizeDigits = (value = "") => String(value).replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit))).replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
+function sanitizeAmountInput(value) {
+  const cleaned = westernizeDigits(value).replace(/[٬, ]/g, "").replace(/٫/g, ".").replace(/[^0-9.]/g, "");
+  const parts = cleaned.split(".");
+  const integer = (parts[0] || "").replace(/^0+(?=[0-9])/, "");
+  const decimal = parts.slice(1).join("").slice(0, 2);
+  const normalized = parts.length > 1 ? `${integer || "0"}.${decimal}` : integer;
+  if (Number(normalized || 0) > MAX_ENTRY_AMOUNT) return String(MAX_ENTRY_AMOUNT);
+  return normalized;
+}
+const toAmount = (value) => {
+  const parsed = Number(sanitizeAmountInput(value));
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.min(parsed, MAX_ENTRY_AMOUNT) : 0;
+};
+const newId = (prefix = "entry") => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+// ─── Entry builder ────────────────────────────────────────────────────────────
+function buildEntry(payload, actor) {
+  const id = newId(payload.type);
+  const createdAt = new Date().toISOString();
+  const amount = payload.type === "summary"
+    ? (payload.salesChannels || []).reduce((sum, row) => sum + row.amount, 0)
+    : toAmount(payload.amount);
+  return {
+    id,
+    businessId: payload.businessId,
+    date: payload.date,
+    createdAt,
+    type: payload.type,
+    categoryId: payload.categoryId || null,
+    amount,
+    salesChannels: payload.salesChannels || [],
+    note: payload.note?.trim() || "",
+    noteKey: payload.noteKey || null,
+    closeoutId: payload.closeoutId || null,
+    outflowId: payload.outflowId || null,
+    enteredBy: actor,
+    attachment: payload.attachment ? makeAttachment(id, payload.attachment) : null,
+    reviewed: false,
+    status: "active",
+    voidedAt: null,
+    voidedBy: null,
+    voidReason: "",
+    restoredAt: null,
+    restoredBy: null,
+    restoreReason: "",
+    auditTrail: [{ action: "created", at: createdAt, by: actor, reason: "" }],
+  };
+}
+
+// ─── localStorage helpers (all no-ops in production) ─────────────────────────
+function readOperationalEntries() {
+  if (typeof window === "undefined") return APP_IN_PRODUCTION_MODE ? [] : createPrototypeMonthDemoOperationalEntries();
+  const stored = readLocalStorageJson(OPERATIONAL_ENTRIES_STORAGE_KEY, null);
+  if (!Array.isArray(stored) || stored.length === 0) {
+    return APP_IN_PRODUCTION_MODE ? [] : createPrototypeMonthDemoOperationalEntries();
+  }
+  return stored.map((entry) => ({
+    ...entry,
+    auditTrail: Array.isArray(entry.auditTrail) && entry.auditTrail.length
+      ? entry.auditTrail
+      : [{ action: "created", at: entry.createdAt || new Date().toISOString(), by: entry.enteredBy || ownerActor, reason: "" }],
+  }));
+}
+
+function readDemoLastCloseoutDates() {
+  const stored = readLocalStorageJson(LAST_CLOSEOUT_STORAGE_KEY, null);
+  if (stored && typeof stored === "object" && !Array.isArray(stored)) return stored;
+  if (APP_IN_PRODUCTION_MODE) return {};
+  return { shami: "2026-06-02", arz: "2026-06-02" };
+}
+
+function readAcknowledgedDuplicateSales() {
+  if (APP_IN_PRODUCTION_MODE) return {};
+  if (typeof window === "undefined") return {};
+  const stored = readLocalStorageJson(ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY, null);
+  return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+}
+
+function readCloseoutAlerts() {
+  if (APP_IN_PRODUCTION_MODE) return [];
+  if (typeof window === "undefined") return [];
+  const stored = readLocalStorageJson(CLOSEOUT_ALERTS_STORAGE_KEY, []);
+  return Array.isArray(stored) ? stored : [];
+}
+
+function writeCloseoutAlerts(alerts) {
+  if (APP_IN_PRODUCTION_MODE) return;
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CLOSEOUT_ALERTS_STORAGE_KEY, JSON.stringify(alerts));
+}
+
+function openWhatsAppSupport(lang) {
+  window.open(
+    `https://wa.me/${PROTOTYPE_SUPPORT_WHATSAPP}?text=${encodeURIComponent(
+      lang === "ar" ? "مرحبًا، أحتاج دعم تقفيلة" : "Hello, I need Taqfeelah support",
+    )}`,
+    "_blank",
+  );
+}
 
 // ─── Prototype boot helpers (in-memory only, production returns defaults) ──
 
