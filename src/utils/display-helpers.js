@@ -143,3 +143,59 @@ export const employeeName = (item, lang) =>
 
 export const fullDate = (day, lang) => (lang === "ar" ? day.fullAr : day.fullEn);
 export const shortDate = (day, lang) => (lang === "ar" ? day.dayAr : day.dayEn);
+
+// ─── Entry display & label helpers ───────────────────────────────
+export const signedEntryAmount = (entry) =>
+  entry.type === "summary" ? entry.amount : -entry.amount;
+
+export const entryWasRestored = (entry) => Boolean(entry.restoredAt);
+
+export const entryCategory = (entry) =>
+  entry.type === "purchases" ? "purchases"
+    : entry.type === "withdrawal" ? "withdrawal"
+      : entry.id?.slice(0, 4) === "wdwl" ? "withdrawal"
+        : "expense";
+
+export function summarySalesChannelLabel(entry, lang) {
+  const rows = (entry.salesChannels || []).filter((row) => row?.channelId && Number(row.amount) > 0);
+  if (!rows.length) return text(lang, "summary");
+  return rows.map((row) => {
+    const fallback = channels.find((channel) => channel.id === row.channelId);
+    return row.name || (fallback ? channelName(fallback, lang) : row.channelId);
+  }).join(" · ");
+}
+
+export const noteLabel = (entry, lang) => {
+  if (entry.type === "summary") return summarySalesChannelLabel(entry, lang);
+  if (entry.noteKey) return text(lang, entry.noteKey);
+  return entry.note || text(lang, entry.type);
+};
+
+export const operationDisplayLabel = (entry, lang) => {
+  if (entry.type === "expense")
+    return text(lang, expenseCategories.find((item) => item.id === entryCategory(entry))?.label || "other");
+  if (entry.type === "summary") return summarySalesChannelLabel(entry, lang);
+  return text(lang, entry.type);
+};
+
+export function newestEntries(entries) {
+  return [...entries].sort(
+    (a, b) => `${b.date}|${b.createdAt || ""}`.localeCompare(`${a.date}|${a.createdAt || ""}`),
+  );
+}
+
+export function attachmentsFromEntries(entries) {
+  const grouped = new Map();
+  newestEntries(entries.filter((e) => Boolean(e?.attachment))).forEach((entry) => {
+    if (!grouped.has(entry.date)) grouped.set(entry.date, []);
+    grouped.get(entry.date).push({
+      id: entry.attachment.id,
+      entryId: entry.id,
+      title: noteLabel(entry, "ar"),
+      titleEn: noteLabel(entry, "en"),
+      attachment: entry.attachment,
+      entry,
+    });
+  });
+  return [...grouped.entries()].map(([date, items]) => ({ dayId: date, date, items }));
+}
