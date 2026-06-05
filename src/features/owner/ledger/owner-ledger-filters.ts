@@ -1,5 +1,5 @@
 /**
- * owner-ledger-filters.js
+ * owner-ledger-filters.ts
  *
  * Pure filter logic and helpers for the owner ledger / register view.
  * Extracted from OwnerRegisterScreen.jsx and TaqfeelahPrototypeRuntime.jsx.
@@ -25,12 +25,41 @@ import {
   entryIsVoided,
   entryHasAttachment,
   summarizeEntries,
+  type OperationalEntry,
 } from "@/features/operations/operational-analytics";
 
-// ─── Default filter shape ─────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────
+
+export type LedgerFilters = {
+  status: "all" | "active" | "voided";
+  type: "all" | "summary" | "expense" | "purchases" | "withdrawal";
+  expenseCategory: string;
+  attachmentOnly: boolean;
+  pendingReviewOnly: boolean;
+  actor: string;
+  salesChannel: string;
+  viewMode?: "operations" | "closeouts";
+  storeId?: string;
+  period?: string;
+  dateFrom?: string | null;
+  dateTo?: string | null;
+};
+
+type ChannelOption = {
+  id: string;
+  label?: string;
+  displayName?: string;
+  nameAr?: string;
+  nameEn?: string;
+  amount?: number;
+};
+
+type ActorOption = { id: string; label: string };
+
+// ─── Default filter shapes ────────────────────────────────────────
 
 /** The canonical empty filter state for the register log. */
-export const DEFAULT_REGISTER_LOG_FILTERS = {
+export const DEFAULT_REGISTER_LOG_FILTERS: LedgerFilters = {
   status: "all",
   type: "all",
   expenseCategory: "all",
@@ -41,9 +70,9 @@ export const DEFAULT_REGISTER_LOG_FILTERS = {
 };
 
 /** Future-ready filter shape for the full Ledger page (superset of register filters). */
-export const DEFAULT_LEDGER_FILTERS = {
+export const DEFAULT_LEDGER_FILTERS: LedgerFilters = {
   ...DEFAULT_REGISTER_LOG_FILTERS,
-  viewMode: "operations", // "operations" | "closeouts"
+  viewMode: "operations",
   storeId: "all",
   period: "month",
   dateFrom: null,
@@ -52,55 +81,51 @@ export const DEFAULT_LEDGER_FILTERS = {
 
 // ─── Filter predicates ────────────────────────────────────────────
 
-/** Returns true if `entry` matches the `filters.status` criterion. */
-export function matchesStatus(entry, filters) {
+export function matchesStatus(entry: OperationalEntry, filters: LedgerFilters): boolean {
   if (filters.status === "all") return true;
   if (filters.status === "active") return entryIsActive(entry);
   if (filters.status === "voided") return entryIsVoided(entry);
   return true;
 }
 
-/** Returns true if `entry` matches the `filters.type` + expenseCategory criteria. */
-export function matchesType(entry, filters) {
+export function matchesType(entry: OperationalEntry, filters: LedgerFilters): boolean {
   if (filters.type === "all") return true;
   if (entry.type !== filters.type) return false;
   if (filters.type !== "expense" || filters.expenseCategory === "all") return true;
   return entryCategory(entry) === filters.expenseCategory;
 }
 
-/** Returns true if `entry` was created by the actor in `filters.actor`. */
-export function matchesActor(entry, filters) {
-  return filters.actor === "all" || entry.enteredBy?.userId === filters.actor;
+export function matchesActor(entry: OperationalEntry, filters: LedgerFilters): boolean {
+  return (
+    filters.actor === "all"
+    || (entry as Record<string, unknown> & { enteredBy?: { userId?: string } }).enteredBy?.userId === filters.actor
+  );
 }
 
-/** Returns true if `entry` has a sales channel row matching `filters.salesChannel`. */
-export function matchesSalesChannel(entry, filters) {
+export function matchesSalesChannel(entry: OperationalEntry, filters: LedgerFilters): boolean {
   if (filters.salesChannel === "all") return true;
   if (entry.type !== "summary") return false;
-  return (entry.salesChannels || []).some(
+  return ((entry.salesChannels || []) as { channelId: string; amount: number }[]).some(
     (row) => row.channelId === filters.salesChannel && Number(row.amount) > 0,
   );
 }
 
-/** Returns true if `entry` passes the attachment / pending-review gates. */
-export function matchesExtras(entry, filters) {
+export function matchesExtras(entry: OperationalEntry, filters: LedgerFilters): boolean {
   if (filters.attachmentOnly && !entryHasAttachment(entry)) return false;
+  const reviewed = (entry as Record<string, unknown>).reviewed as boolean | undefined;
   if (
     filters.pendingReviewOnly
-    && !(entryIsActive(entry) && entryHasAttachment(entry) && !entry.reviewed)
+    && !(entryIsActive(entry) && entryHasAttachment(entry) && !reviewed)
   ) return false;
   return true;
 }
 
 // ─── Composite filter ─────────────────────────────────────────────
 
-/**
- * Apply all active filters to an entries array.
- * @param {Object[]} entries
- * @param {Object} filters
- * @returns {Object[]}
- */
-export function applyLedgerFilters(entries, filters) {
+export function applyLedgerFilters(
+  entries: OperationalEntry[],
+  filters: LedgerFilters,
+): OperationalEntry[] {
   return entries.filter(
     (entry) =>
       matchesStatus(entry, filters)
@@ -113,12 +138,7 @@ export function applyLedgerFilters(entries, filters) {
 
 // ─── Filter count (badge) ─────────────────────────────────────────
 
-/**
- * Count how many non-default filters are active (used for badge display).
- * @param {Object} filters
- * @returns {number}
- */
-export function activeLedgerFilterCount(filters) {
+export function activeLedgerFilterCount(filters: LedgerFilters): number {
   return (
     Number(filters.status !== "all")
     + Number(filters.type !== "all")
@@ -132,31 +152,29 @@ export function activeLedgerFilterCount(filters) {
 
 // ─── Period summary ───────────────────────────────────────────────
 
-/**
- * Compute a period summary for the header of the register/ledger.
- * If a sales-channel filter is active, returns the channel's sales total.
- * Otherwise returns standard summarizeEntries totals.
- *
- * @param {Object[]} entries - already filtered/scoped entries
- * @param {string} salesChannelFilter - "all" or channelId
- * @param {Object[]} channelOptions - for label lookup
- * @param {string} lang
- * @returns {{ mode: "channel" | "totals", amount?: number, sales?: number, expense?: number, net?: number, label?: string }}
- */
-export function summarizeLedgerPeriod(entries, salesChannelFilter, channelOptions = [], lang = "ar") {
+type PeriodSummary =
+  | { mode: "channel"; label: string; amount: number }
+  | { mode: "totals"; sales: number; expense: number; net: number };
+
+export function summarizeLedgerPeriod(
+  entries: OperationalEntry[],
+  salesChannelFilter: string,
+  channelOptions: ChannelOption[] = [],
+  lang: "ar" | "en" = "ar",
+): PeriodSummary {
   const activeEntries = entries.filter(entryIsActive);
   if (salesChannelFilter !== "all") {
     const option = channelOptions.find((item) => item.id === salesChannelFilter);
     let amount = 0;
     activeEntries.forEach((entry) => {
       if (entry.type !== "summary") return;
-      (entry.salesChannels || []).forEach((row) => {
+      ((entry.salesChannels || []) as { channelId: string; amount: number }[]).forEach((row) => {
         if (row.channelId === salesChannelFilter) amount += Number(row.amount) || 0;
       });
     });
     return {
       mode: "channel",
-      label: option?.label || (lang === "ar" ? "قناة" : "Channel"),
+      label: option?.label || option?.displayName || (lang === "ar" ? "قناة" : "Channel"),
       amount,
     };
   }
@@ -166,32 +184,27 @@ export function summarizeLedgerPeriod(entries, salesChannelFilter, channelOption
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
-/**
- * Determine the expense category of an entry.
- * Pure function — no side effects.
- */
-export function entryCategory(entry) {
+export function entryCategory(entry: OperationalEntry): string {
   if (entry.type === "purchases") return "purchases";
   if (entry.type === "withdrawal") return "withdrawal";
-  return entry.categoryId || "other";
+  const categoryId = (entry as Record<string, unknown>).categoryId as string | undefined;
+  return categoryId || "other";
 }
 
-/**
- * Returns the display actor options for the actor filter dropdown,
- * derived from the visible entries (avoids showing actors with no entries).
- *
- * @param {Object[]} entries
- * @param {string} lang
- * @returns {{ id: string, label: string }[]}
- */
-export function ledgerActorOptions(entries, lang = "ar") {
-  const seen = new Map();
+export function ledgerActorOptions(
+  entries: OperationalEntry[],
+  lang: "ar" | "en" = "ar",
+): ActorOption[] {
+  const seen = new Map<string, ActorOption>();
   entries.forEach((entry) => {
-    const id = entry.enteredBy?.userId;
+    const typed = entry as Record<string, unknown> & {
+      enteredBy?: { userId?: string; nameAr?: string; nameEn?: string };
+    };
+    const id = typed.enteredBy?.userId;
     if (!id || seen.has(id)) return;
     const name = lang === "ar"
-      ? (entry.enteredBy?.nameAr || entry.enteredBy?.nameEn || id)
-      : (entry.enteredBy?.nameEn || entry.enteredBy?.nameAr || id);
+      ? (typed.enteredBy?.nameAr || typed.enteredBy?.nameEn || id)
+      : (typed.enteredBy?.nameEn || typed.enteredBy?.nameAr || id);
     seen.set(id, { id, label: name });
   });
   return [...seen.values()];

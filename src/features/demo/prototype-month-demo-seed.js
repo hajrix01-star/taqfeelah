@@ -1,4 +1,4 @@
-import { computeCloseoutTotals } from "../daily-closeouts/closeout-calculations";
+import { computeCloseoutTotals } from "@/features/operations/operational-analytics";
 import { CLOSEOUT_STATUS } from "../daily-closeouts/closeout-status";
 import { buildOperationalEntriesFromCloseout, withCloseoutTotals } from "../daily-closeouts/daily-closeouts-demo-store";
 

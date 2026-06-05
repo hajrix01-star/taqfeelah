@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
-import { computeCloseoutTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
+import { computeCloseoutTotals, salesArrayFromRecord } from "@/features/operations/operational-analytics";
 import { closeoutStatusLabel } from "../daily-closeouts/closeout-status";
 
 function money(value, lang) {

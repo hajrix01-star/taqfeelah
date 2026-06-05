@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 import NotebookScrollSurface from "../daily-closeouts/NotebookScrollSurface";
 import { notebookLinesBackground } from "../daily-closeouts/notebook-themes";
-import { computeCloseoutTotals, salesRecordFromChannels } from "../daily-closeouts/closeout-calculations";
+import { computeCloseoutTotals, salesRecordFromChannels } from "@/features/operations/operational-analytics";
 import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-demo-store";
 import AttachmentLightbox from "../../components/AttachmentLightbox";
 

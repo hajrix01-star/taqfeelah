@@ -45,12 +45,27 @@ import {
 import { todayIsoDate } from "@/utils/display-helpers";
 import { entryIsActive } from "@/features/operations/operational-analytics";
 
-/** Compute 365 days ago as YYYY-MM-DD */
-function isoDaysAgo(days) {
+/** Compute N days ago as YYYY-MM-DD */
+function isoDaysAgo(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() - days);
   return date.toISOString().slice(0, 10);
 }
+
+type UseOperationalEntriesApiConfig = {
+  organizationId: string;
+  ownerUserId: string;
+  apiActorUserId: string;
+  apiActorRole: string;
+  apiTargetStoreIdsKey: string;
+  entriesApiEnabled: boolean;
+  entriesApiStrictMode: boolean;
+  closeoutsApiEnabled: boolean;
+  closeoutsApiStrictMode: boolean;
+  setEntries: (entries: unknown[]) => void;
+  setEntriesSyncError: (error: string) => void;
+  setLastCloseoutDates: (updater: (prev: Record<string, string>) => Record<string, string>) => void;
+};
 
 export function useOperationalEntriesApi({
   organizationId,
@@ -65,7 +80,7 @@ export function useOperationalEntriesApi({
   setEntries,
   setEntriesSyncError,
   setLastCloseoutDates,
-}) {
+}: UseOperationalEntriesApiConfig) {
   // ─── Entries ─────────────────────────────────────────────────────
 
   const loadEntries = useCallback(async () => {
@@ -134,7 +149,7 @@ export function useOperationalEntriesApi({
   ]);
 
   const createEntry = useCallback(
-    async ({ payload, actorUserId, actorRole }) => {
+    async ({ payload, actorUserId, actorRole }: { payload: unknown; actorUserId: string; actorRole: string }) => {
       if (!entriesApiEnabled) {
         if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
         return null;
@@ -149,7 +164,7 @@ export function useOperationalEntriesApi({
   );
 
   const voidEntry = useCallback(
-    async ({ entry, reason }) => {
+    async ({ entry, reason }: { entry: unknown; reason?: string }) => {
       if (!isUuid(organizationId) || !isUuid(ownerUserId)) {
         throw new Error("organization or owner user id is invalid for void.");
       }
@@ -165,7 +180,7 @@ export function useOperationalEntriesApi({
   );
 
   const restoreEntry = useCallback(
-    async ({ entry, reason }) => {
+    async ({ entry, reason }: { entry: unknown; reason?: string }) => {
       if (!isUuid(organizationId) || !isUuid(ownerUserId)) {
         throw new Error("organization or owner user id is invalid for restore.");
       }
@@ -183,7 +198,7 @@ export function useOperationalEntriesApi({
   // ─── Closeouts ───────────────────────────────────────────────────
 
   const syncSubmitCloseout = useCallback(
-    async ({ action, closeout, employee, reviewWorkflowEnabled }) => {
+    async ({ action, closeout, employee, reviewWorkflowEnabled }: { action: string; closeout: Record<string,unknown>; employee: Record<string,unknown>; reviewWorkflowEnabled: boolean }) => {
       if (!closeoutsApiEnabled) {
         if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
         return null;
@@ -216,7 +231,7 @@ export function useOperationalEntriesApi({
   );
 
   const syncReviewCloseout = useCallback(
-    async ({ action, closeout, reason = "" }) => {
+    async ({ action, closeout, reason = "" }: { action: string; closeout: Record<string,unknown>; reason?: string }) => {
       if (!closeoutsApiEnabled) {
         if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
         return null;
@@ -295,7 +310,7 @@ export function useOperationalEntriesApi({
   // ─── Derived helper: reload entries and update lastCloseoutDates ──
 
   const reloadAndSyncLastCloseout = useCallback(
-    async (businessId) => {
+    async (businessId: string | null) => {
       const refreshed = await loadEntries();
       if (businessId && setLastCloseoutDates) {
         const latestActiveDate = refreshed
