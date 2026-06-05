@@ -4,8 +4,12 @@ type OwnerLoginConfig = Record<OwnerLoginMethod, boolean>;
 
 const ownerLoginConfig: OwnerLoginConfig = {
   username_password: true,
-  whatsapp_otp: process.env.NEXT_PUBLIC_AUTH_OWNER_WHATSAPP_OTP === "true",
-  email_otp: process.env.NEXT_PUBLIC_AUTH_OWNER_EMAIL_OTP === "true",
+  whatsapp_otp:
+    process.env.NEXT_PUBLIC_APP_MODE !== "production"
+    && process.env.NEXT_PUBLIC_AUTH_OWNER_WHATSAPP_OTP === "true",
+  email_otp:
+    process.env.NEXT_PUBLIC_APP_MODE !== "production"
+    && process.env.NEXT_PUBLIC_AUTH_OWNER_EMAIL_OTP === "true",
 };
 
 export function isOwnerLoginMethodEnabled(method: OwnerLoginMethod): boolean {

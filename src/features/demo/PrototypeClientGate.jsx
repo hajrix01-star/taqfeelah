@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { migratePrototypeDemoDatasetIfNeeded } from "./prototype-demo-migrate";
 import { PROTOTYPE_BUILD_STAMP } from "@/prototype-build-stamp.mjs";
+import { isProductionAppMode } from "@/core/config/app-mode";
 
 /**
  * Runs demo migration off the critical path so phones don't freeze on first paint.
@@ -10,8 +11,14 @@ import { PROTOTYPE_BUILD_STAMP } from "@/prototype-build-stamp.mjs";
 export default function PrototypeClientGate({ children }) {
   const [phase, setPhase] = useState("loading");
   const [error, setError] = useState("");
+  const productionMode = isProductionAppMode();
 
   useEffect(() => {
+    if (productionMode) {
+      setPhase("ready");
+      return undefined;
+    }
+
     let cancelled = false;
     const timer = window.setTimeout(() => {
       try {
@@ -29,7 +36,7 @@ export default function PrototypeClientGate({ children }) {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, []);
+  }, [productionMode]);
 
   if (phase === "loading") {
     return (
@@ -38,10 +45,14 @@ export default function PrototypeClientGate({ children }) {
         dir="rtl"
         style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <p className="text-[#112A46]">جاري تحضير البيانات التجريبية…</p>
-        <p className="text-taq-meta font-bold text-[#A99D87]" dir="ltr">
-          {PROTOTYPE_BUILD_STAMP}
+        <p className="text-[#112A46]">
+          {productionMode ? "جاري تهيئة النظام…" : "جاري تحضير البيانات التجريبية…"}
         </p>
+        {!productionMode ? (
+          <p className="text-taq-meta font-bold text-[#A99D87]" dir="ltr">
+            {PROTOTYPE_BUILD_STAMP}
+          </p>
+        ) : null}
       </div>
     );
   }
