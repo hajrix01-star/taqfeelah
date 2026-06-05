@@ -1605,10 +1605,6 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
   };
   const submitPassword = async () => {
     if (submitting) return;
-    if (APP_IN_PRODUCTION_MODE && (!PROTOTYPE_OWNER_USERNAME || !PROTOTYPE_OWNER_PASSWORD)) {
-      setError(lang === "ar" ? "بيانات دخول الإنتاج غير مهيأة في متغيرات البيئة." : "Production login credentials are not configured in environment variables.");
-      return;
-    }
     if (APP_IN_PRODUCTION_MODE) {
       setSubmitting(true);
       try {
