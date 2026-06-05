@@ -14,11 +14,10 @@ function formatDateParts(isoDate, lang) {
 function normalizedStoreLabel(storeName, lang) {
   const normalized = String(storeName || "").trim();
   if (lang === "ar") {
-    if (!normalized) return "المحل";
-    if (normalized === "المحل" || normalized.startsWith("محل ")) return normalized;
-    return `محل ${normalized}`;
+    if (!normalized) return "";
+    return normalized.replace(/^(?:المحل|محل)\s+/u, "").trim();
   }
-  return normalized || "store";
+  return normalized;
 }
 
 export function buildEmployeeShareCaption(lang, storeName, employeeName, periodLabel, closeoutDate) {
@@ -27,15 +26,17 @@ export function buildEmployeeShareCaption(lang, storeName, employeeName, periodL
   const finalDate = dateLabel || fallbackDate;
   const storeLabel = normalizedStoreLabel(storeName, lang);
   if (lang === "ar") {
+    const storePart = storeLabel ? ` لمحل ${storeLabel}` : "";
     const employeePart = employeeName ? ` بواسطة الموظف ${employeeName}` : "";
     const datePart = finalDate ? ` بتاريخ ${finalDate}` : "";
     const weekdayPart = weekdayLabel ? ` ويوم ${weekdayLabel}` : "";
-    return `تقفيلتي ${storeLabel}${employeePart}${datePart}${weekdayPart}`;
+    return `تقفيلتي${storePart}${employeePart}${datePart}${weekdayPart}`;
   }
+  const storePart = storeLabel ? ` for ${storeLabel}` : "";
   const employeePart = employeeName ? ` by employee ${employeeName}` : "";
   const datePart = finalDate ? ` on ${finalDate}` : "";
   const weekdayPart = weekdayLabel ? ` (${weekdayLabel})` : "";
-  return `My closeout for ${storeLabel}${employeePart}${datePart}${weekdayPart}`;
+  return `My closeout${storePart}${employeePart}${datePart}${weekdayPart}`;
 }
 
 /**
