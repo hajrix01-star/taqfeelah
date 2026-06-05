@@ -13,7 +13,7 @@ function todayIsoDate() {
 export function readDailyCloseouts() {
   if (typeof window === "undefined") return [];
   const parsed = readLocalStorageJson(DAILY_CLOSEOUTS_STORAGE_KEY, []);
-  return Array.isArray(parsed) ? parsed : [];
+  return Array.isArray(parsed) ? parsed.map((item) => withCloseoutTotals(item)) : [];
 }
 
 export function writeDailyCloseouts(closeouts) {
@@ -39,8 +39,39 @@ export function appendCloseoutEvent(events, payload) {
 }
 
 export function withCloseoutTotals(closeout) {
-  const totals = computeCloseoutTotals(closeout.sales, closeout.outflows);
-  return { ...closeout, totals };
+  const normalized = normalizeCloseout(closeout);
+  const totals = computeCloseoutTotals(normalized.sales, normalized.outflows);
+  return { ...normalized, totals };
+}
+
+function normalizeCloseoutStatus(closeout) {
+  if (!closeout || typeof closeout !== "object") return CLOSEOUT_STATUS.DRAFT;
+  const raw = closeout.status;
+  const hasReturned = Boolean(closeout.returnedAt || closeout.returnedByName || closeout.returnReason);
+  const hasReviewed = Boolean(closeout.reviewedAt || closeout.reviewedByName);
+  const hasSubmitted = Boolean(closeout.submittedAt || closeout.submittedByUserId || closeout.submittedByName);
+  if (raw === CLOSEOUT_STATUS.RETURNED || hasReturned) return CLOSEOUT_STATUS.RETURNED;
+  if (raw === CLOSEOUT_STATUS.REVIEWED || hasReviewed) return CLOSEOUT_STATUS.REVIEWED;
+  if (raw === CLOSEOUT_STATUS.SUBMITTED || hasSubmitted) return CLOSEOUT_STATUS.SUBMITTED;
+  return CLOSEOUT_STATUS.DRAFT;
+}
+
+function normalizeCloseout(closeout) {
+  if (!closeout || typeof closeout !== "object") {
+    return {
+      sales: {},
+      outflows: [],
+      attachments: [],
+      status: CLOSEOUT_STATUS.DRAFT,
+    };
+  }
+  return {
+    ...closeout,
+    sales: closeout.sales && typeof closeout.sales === "object" ? closeout.sales : {},
+    outflows: Array.isArray(closeout.outflows) ? closeout.outflows : [],
+    attachments: Array.isArray(closeout.attachments) ? closeout.attachments.filter(Boolean) : [],
+    status: normalizeCloseoutStatus(closeout),
+  };
 }
 
 export function createDraftCloseout({ storeId, storeName, date, employee, notebookTheme = "yellow" }) {

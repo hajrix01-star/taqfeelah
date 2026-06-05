@@ -59,8 +59,8 @@ export default function DailyCloseoutCard({
           ].map((stat, index) => (
             <div key={stat.label} className={`min-w-0 border-s border-[#E8E1D4] px-1 py-3 text-center ${index === 0 ? "border-s-0" : ""}`}>
               <span className="mb-1.5 block text-taq-meta font-bold text-[#82745A]">{stat.label}</span>
-              <strong className={`flex items-end justify-center gap-0.5 text-[clamp(1.35rem,4.4vw,2.1rem)] leading-none font-extrabold tabular-nums ${stat.className}`}>
-                <span dir="ltr" className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{stat.value}</span>
+              <strong className={`flex items-end justify-center gap-0.5 text-[clamp(1.05rem,3.8vw,1.7rem)] leading-none font-extrabold tabular-nums ${stat.className}`}>
+                <span dir="ltr" className="max-w-full whitespace-nowrap">{stat.value}</span>
                 {stat.suffix ? <small className="text-[0.62rem] font-black leading-none text-taq-nav">ر.س</small> : null}
               </strong>
             </div>
