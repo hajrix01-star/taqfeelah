@@ -6,6 +6,7 @@ import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { ForbiddenError, ValidationError } from "@/core/errors/app-error";
 import { enrichStaffWithApiUserIds } from "@/features/auth/server/resolve-employee-user-id";
 import { provisionStaffMembers } from "@/features/runtime-settings/server/provision-staff-members";
+import { ensureHashed } from "@/core/auth/credential-hashing";
 
 const rolePriority: Record<"owner" | "manager" | "employee", number> = {
   employee: 1,
@@ -153,9 +154,47 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
     storeIdMap: envAuth.storeIdMap,
     userIdMap: envAuth.userIdMap,
   });
+
+  // Hash credentials before persisting to audit_events
+  const rawAuthConfig = input.settings.authConfig as Record<string, unknown> | undefined;
+  let hashedAuthConfig = rawAuthConfig;
+  if (rawAuthConfig && typeof rawAuthConfig === "object") {
+    const hashedPins: Record<string, string> = {};
+    if (rawAuthConfig.employeePins && typeof rawAuthConfig.employeePins === "object") {
+      for (const [staffId, pin] of Object.entries(rawAuthConfig.employeePins as Record<string, string>)) {
+        if (typeof pin === "string" && pin) {
+          hashedPins[staffId] = await ensureHashed(pin);
+        }
+      }
+    }
+    const rawPassword = typeof rawAuthConfig.ownerPassword === "string" ? rawAuthConfig.ownerPassword : "";
+    hashedAuthConfig = {
+      ...rawAuthConfig,
+      ownerPassword: rawPassword ? await ensureHashed(rawPassword) : rawAuthConfig.ownerPassword,
+      employeePins: Object.keys(hashedPins).length > 0 ? hashedPins : rawAuthConfig.employeePins,
+    };
+  }
+
+  // Increment credential version when auth credentials change.
+  // This invalidates all existing session cookies immediately.
+  const previousEnvelope = await readRuntimeSettingsEnvelope(input.organizationId);
+  const previousSettings = previousEnvelope.settings as Record<string, unknown> | null;
+  const previousAuthConfig = previousSettings?.authConfig as Record<string, unknown> | undefined;
+  const currentVersion = typeof previousSettings?.credentialVersion === "number"
+    ? previousSettings.credentialVersion
+    : 0;
+
+  const hashedConfigObj = hashedAuthConfig as Record<string, unknown> | undefined;
+  const authChanged =
+    hashedAuthConfig !== rawAuthConfig
+    || (previousAuthConfig?.ownerPassword !== hashedConfigObj?.ownerPassword)
+    || JSON.stringify(previousAuthConfig?.employeePins) !== JSON.stringify(hashedConfigObj?.employeePins);
+
   const normalizedSettings = {
     ...input.settings,
+    authConfig: hashedAuthConfig,
     staff: provisionedStaff,
+    credentialVersion: authChanged ? currentVersion + 1 : currentVersion,
   };
 
   const db = getDb();

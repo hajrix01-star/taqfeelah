@@ -8,6 +8,9 @@ const sessionSchema = z.object({
   role: z.enum(MEMBER_ROLES),
   iat: z.number().int().nonnegative(),
   exp: z.number().int().positive(),
+  // Credential version: increments when owner changes password or PINs.
+  // Old cookies with lower versions are rejected.
+  cv: z.number().int().nonnegative().default(0),
 });
 
 export type AuthSessionClaims = z.infer<typeof sessionSchema>;
@@ -52,6 +55,7 @@ export function createSignedAuthSessionCookieValue(
     role: claims.role as MemberRole,
     iat: now,
     exp: now + (claims.ttlSeconds ?? 60 * 60 * 12),
+    cv: claims.cv ?? 0,
   };
   const encodedPayload = toBase64Url(JSON.stringify(payload));
   const signature = signPayload(encodedPayload, secret);
@@ -98,6 +102,7 @@ export function resolveAuthSessionFromRequest(
   request: Request,
   cookieName: string,
   secret?: string,
+  minimumCredentialVersion = 0,
 ): AuthSessionClaims | null {
   if (!secret || secret.length < 16) return null;
   const cookies = parseCookies(request.headers.get("cookie"));
@@ -119,6 +124,8 @@ export function resolveAuthSessionFromRequest(
     if (!parsed.success) return null;
     const now = Math.floor(Date.now() / 1000);
     if (parsed.data.exp <= now) return null;
+    // Reject sessions issued before the current credential version
+    if ((parsed.data.cv ?? 0) < minimumCredentialVersion) return null;
     return parsed.data;
   } catch {
     return null;

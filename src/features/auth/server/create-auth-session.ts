@@ -6,6 +6,7 @@ import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { UnauthorizedError, ValidationError } from "@/core/errors/app-error";
 import { getRuntimeSettingsByOrganizationId } from "@/features/runtime-settings/server/runtime-settings-service";
 import { resolveEmployeeUserId } from "@/features/auth/server/resolve-employee-user-id";
+import { verifyCredential } from "@/core/auth/credential-hashing";
 
 const loginInputSchema = z.object({
   mode: z.enum(["owner_password", "employee_pin"]),
@@ -64,9 +65,7 @@ async function resolveEmployeeUserIdWithFallback(
 
   const db = getDb();
   const [member] = await db
-    .select({
-      userId: organizationMembers.userId,
-    })
+    .select({ userId: organizationMembers.userId })
     .from(organizationMembers)
     .innerJoin(users, eq(users.id, organizationMembers.userId))
     .where(
@@ -123,7 +122,11 @@ export async function createAuthSession(rawInput: LoginInput) {
     if (!ownerUsername || !ownerPassword) {
       throw new ValidationError("Owner auth configuration is incomplete.");
     }
-    if (username !== ownerUsername.trim().toLowerCase() || password !== ownerPassword) {
+    if (username !== ownerUsername.trim().toLowerCase()) {
+      throw new UnauthorizedError("Invalid credentials.");
+    }
+    const passwordMatch = await verifyCredential(password, ownerPassword);
+    if (!passwordMatch) {
       throw new UnauthorizedError("Invalid credentials.");
     }
     userId = ownerUserId;
@@ -143,11 +146,15 @@ export async function createAuthSession(rawInput: LoginInput) {
     if (!mappedUserId) {
       throw new UnauthorizedError("Employee account mapping is invalid.");
     }
-    const expectedPin =
+    const storedPin =
       employeePinMap[employeeId]
       || employeePinMap[employeeId.toLowerCase()]
       || employeePinMap[mappedUserId];
-    if (!expectedPin || pin !== expectedPin) {
+    if (!storedPin) {
+      throw new UnauthorizedError("Invalid employee pin.");
+    }
+    const pinMatch = await verifyCredential(pin, storedPin);
+    if (!pinMatch) {
       throw new UnauthorizedError("Invalid employee pin.");
     }
     userId = mappedUserId;
@@ -183,9 +190,14 @@ export async function createAuthSession(rawInput: LoginInput) {
       ? "manager"
       : "employee";
 
+  const credentialVersion = typeof runtimeSettings?.credentialVersion === "number"
+    ? runtimeSettings.credentialVersion
+    : 0;
+
   return {
     organizationId,
     userId,
     role: role === "owner" ? "owner" : resolvedMemberRole,
+    credentialVersion,
   };
 }

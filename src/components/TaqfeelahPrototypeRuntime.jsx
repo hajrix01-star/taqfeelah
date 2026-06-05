@@ -84,6 +84,18 @@ import {
 import { isProductionAppMode } from "@/core/config/app-mode";
 import copy from "@/i18n/copy";
 
+function useSavedNotice(durationMs = 2200) {
+  const [visible, setVisible] = React.useState(false);
+  const timerRef = React.useRef(null);
+  const show = React.useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setVisible(true);
+    timerRef.current = window.setTimeout(() => { setVisible(false); timerRef.current = null; }, durationMs);
+  }, [durationMs]);
+  React.useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+  return [visible, show];
+}
+
 function AppFontStyles() {
   return (
     <style>{`@import url('https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&family=Caveat:wght@700&family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap');
@@ -1241,12 +1253,11 @@ function SettingToggle({ enabled, onToggle, disabled = false }) { return <button
 function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedStores, onSelectStore, employeeNotebookTheme, setEmployeeNotebookTheme, onOpenSupport, onOpenHelp }) {
   const perms = ["permissionSummary", "permissionOutflow", "permissionAttach"];
   const [draftTheme, setDraftTheme] = useState(employeeNotebookTheme);
-  const [savedNotice, setSavedNotice] = useState(false);
+  const [savedNotice, showSavedNotice] = useSavedNotice();
   useEffect(() => { setDraftTheme(employeeNotebookTheme); }, [employeeNotebookTheme]);
   const saveTheme = () => {
     setEmployeeNotebookTheme(draftTheme);
-    setSavedNotice(true);
-    window.setTimeout(() => setSavedNotice(false), 2200);
+    showSavedNotice();
   };
   const themeDirty = draftTheme !== employeeNotebookTheme;
   return (
@@ -1363,7 +1374,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   const [newChannelName, setNewChannelName] = useState("");
   const [draftNotebookTheme, setDraftNotebookTheme] = useState(notebookTheme);
   const [themeDirty, setThemeDirty] = useState(false);
-  const [settingsSuccess, setSettingsSuccess] = useState(false);
+
   const [managingTeam, setManagingTeam] = useState(false);
   const [draftStaff, setDraftStaff] = useState(null);
   const [newEmployeeName, setNewEmployeeName] = useState("");
@@ -1420,7 +1431,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   useEffect(() => { setDraftAuthOwnerPassword(authOwnerPassword || ""); }, [authOwnerPassword]);
   useEffect(() => { setDraftAuthEmployeePins({ ...(authEmployeePins || {}) }); }, [authEmployeePins]);
 
-  const showSettingsSaved = () => { setSettingsSuccess(true); window.setTimeout(() => setSettingsSuccess(false), 2200); };
+  const [settingsSuccess, showSettingsSaved] = useSavedNotice();
   const saveOwnerProfile = () => {
     const name = draftOwnerName.trim();
     if (!name) return;
@@ -3776,7 +3787,7 @@ export default function TaqfeelahPrototypeRuntime() {
   const [pendingDuplicateSummary, setPendingDuplicateSummary] = useState(null);
   const [duplicateReviewFocus, setDuplicateReviewFocus] = useState(null);
   const [attachmentReviewRequest, setAttachmentReviewRequest] = useState(null);
-  const [saved, setSaved] = useState(false);
+  const [saved, showSaved] = useSavedNotice();
   const [operationalEntries, setOperationalEntries] = useState(() => readOperationalEntries());
   const [operationalEntriesSyncError, setOperationalEntriesSyncError] = useState("");
   const [acknowledgedDuplicateSales, setAcknowledgedDuplicateSales] = useState(() => readAcknowledgedDuplicateSales());
@@ -4132,7 +4143,7 @@ export default function TaqfeelahPrototypeRuntime() {
           const createdEntry = refreshed.find((entry) => entry.id === created.id);
           if (createdEntry) pushCloseoutAlert(payload, createdEntry, actor);
         }
-        setEmployeePage("home"); setSaved(true); window.setTimeout(() => setSaved(false), 2200);
+        setEmployeePage("home"); showSaved();
         return;
       }
       const entry = buildEntry(payload, actor);
@@ -4145,7 +4156,7 @@ export default function TaqfeelahPrototypeRuntime() {
         setLastCloseoutDates((current) => ({ ...current, [payload.businessId]: !current[payload.businessId] || payload.date > current[payload.businessId] ? payload.date : current[payload.businessId] }));
         pushCloseoutAlert(payload, entry, actor);
       }
-      setEmployeePage("home"); setSaved(true); window.setTimeout(() => setSaved(false), 2200);
+      setEmployeePage("home"); showSaved();
     } finally { savingRef.current = false; setSaving(false); }
   };
   const saveEmployee = async (payload) => {
@@ -4188,7 +4199,7 @@ export default function TaqfeelahPrototypeRuntime() {
           const createdEntry = refreshed.find((entry) => entry.id === created.id);
           setSavedOutflowShareTarget(createdEntry || null);
         } else {
-          setSaved(true); window.setTimeout(() => setSaved(false), 2200);
+          showSaved();
         }
         return;
       }
@@ -4201,7 +4212,7 @@ export default function TaqfeelahPrototypeRuntime() {
       if (payload.type === "summary") setLastCloseoutDates((current) => ({ ...current, [payload.businessId]: !current[payload.businessId] || payload.date > current[payload.businessId] ? payload.date : current[payload.businessId] }));
       setOwnerPage("home");
       if (payload.type !== "summary") setSavedOutflowShareTarget(entry);
-      else { setSaved(true); window.setTimeout(() => setSaved(false), 2200); }
+      else { showSaved(); }
     } finally { savingRef.current = false; setSaving(false); }
   };
   const saveOwnerSummary = async (payload) => {
