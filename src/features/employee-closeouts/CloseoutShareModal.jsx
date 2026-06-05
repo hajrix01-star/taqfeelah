@@ -36,6 +36,7 @@ export default function CloseoutShareModal({
   const [imageBusy, setImageBusy] = useState(false);
   const [imageError, setImageError] = useState("");
   const [shareHint, setShareHint] = useState("");
+  const [shareActionsOpen, setShareActionsOpen] = useState(false);
 
   const periodLabel = closeout && formatCalendarDate ? formatCalendarDate(closeout.date, lang) : "";
   const labels = useMemo(() => shareLabels(lang), [lang]);
@@ -69,11 +70,13 @@ export default function CloseoutShareModal({
       setImageBusy(false);
       setImageError("");
       setShareHint("");
+      setShareActionsOpen(false);
       cachedImageFileRef.current = null;
       return undefined;
     }
     setImageError("");
     setShareHint("");
+    setShareActionsOpen(false);
     cachedImageFileRef.current = null;
     return undefined;
   }, [open, closeout?.id]);
@@ -182,6 +185,21 @@ export default function CloseoutShareModal({
     });
   };
 
+  const toggleShareActions = () => {
+    if (imageBusy || !previewData) return;
+    setShareActionsOpen((current) => !current);
+  };
+
+  const shareViaWhatsApp = async () => {
+    setShareActionsOpen(false);
+    await shareImage();
+  };
+
+  const downloadViaShareActions = () => {
+    setShareActionsOpen(false);
+    downloadImage();
+  };
+
   if (!open) return null;
 
   return (
@@ -261,18 +279,27 @@ export default function CloseoutShareModal({
             </p>
           )}
           <div className="space-y-2">
-            <button type="button" onClick={shareImage} disabled={imageBusy || !previewData} className="w-full rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white disabled:opacity-50">
-              {imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…") : (lang === "ar" ? "مشاركة الصورة" : "Share image")}
+            <button type="button" onClick={toggleShareActions} disabled={imageBusy || !previewData} className="w-full rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white disabled:opacity-50">
+              {shareActionsOpen
+                ? (lang === "ar" ? "إخفاء خيارات المشاركة" : "Hide share options")
+                : (lang === "ar" ? "مشاركة" : "Share")}
             </button>
-            <div className="grid grid-cols-3 gap-2">
+            {shareActionsOpen ? (
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={shareViaWhatsApp} disabled={imageBusy || !previewData} className="rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-50">
+                  {lang === "ar" ? "إرسال واتساب" : "WhatsApp"}
+                </button>
+                <button type="button" onClick={downloadViaShareActions} disabled={imageBusy || !previewData} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-50">
+                  {lang === "ar" ? "تنزيل PNG" : "Download PNG"}
+                </button>
+              </div>
+            ) : null}
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={copyCaptionOnly} disabled={!shareCaption} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-50">
+                {lang === "ar" ? "نسخ النص" : "Copy caption"}
+              </button>
               <button type="button" onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">
                 {lang === "ar" ? "إغلاق" : "Close"}
-              </button>
-              <button type="button" onClick={downloadImage} disabled={imageBusy || !previewData} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-50">
-                {lang === "ar" ? "تنزيل PNG" : "Download PNG"}
-              </button>
-              <button type="button" onClick={copyCaptionOnly} disabled={!shareCaption} className="rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-50">
-                {lang === "ar" ? "نسخ النص" : "Copy caption"}
               </button>
             </div>
           </div>
