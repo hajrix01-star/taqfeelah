@@ -37,6 +37,9 @@ export async function voidStoreEntry(rawInput: VoidEntryInput) {
     .select({
       id: entries.id,
       status: entries.status,
+      type: entries.type,
+      amountHalalas: entries.amountHalalas,
+      date: entries.date,
     })
     .from(entries)
     .where(
@@ -59,11 +62,7 @@ export async function voidStoreEntry(rawInput: VoidEntryInput) {
   const [updated] = await db.transaction(async (tx) => {
     const [updatedEntry] = await tx
       .update(entries)
-      .set({
-        status: "voided",
-        voidedAt: now,
-        updatedAt: now,
-      })
+      .set({ status: "voided", voidedAt: now, updatedAt: now })
       .where(
         and(
           eq(entries.organizationId, input.organizationId),
@@ -71,11 +70,7 @@ export async function voidStoreEntry(rawInput: VoidEntryInput) {
           eq(entries.id, input.entryId),
         ),
       )
-      .returning({
-        id: entries.id,
-        status: entries.status,
-        voidedAt: entries.voidedAt,
-      });
+      .returning({ id: entries.id, status: entries.status, voidedAt: entries.voidedAt });
 
     await tx.insert(auditEvents).values({
       organizationId: input.organizationId,
@@ -86,6 +81,10 @@ export async function voidStoreEntry(rawInput: VoidEntryInput) {
       reason: input.reason || null,
       metadata: {
         entryId: input.entryId,
+        entryType: target.type,
+        amountHalalas: target.amountHalalas,
+        date: target.date,
+        previousStatus: target.status,
       },
     });
 

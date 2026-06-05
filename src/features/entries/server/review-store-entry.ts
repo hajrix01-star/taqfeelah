@@ -36,6 +36,9 @@ export async function reviewStoreEntry(rawInput: ReviewEntryInput) {
     .select({
       id: entries.id,
       status: entries.status,
+      type: entries.type,
+      amountHalalas: entries.amountHalalas,
+      date: entries.date,
     })
     .from(entries)
     .where(
@@ -58,10 +61,7 @@ export async function reviewStoreEntry(rawInput: ReviewEntryInput) {
   const [updated] = await db.transaction(async (tx) => {
     const [updatedEntry] = await tx
       .update(entries)
-      .set({
-        reviewedAt: now,
-        updatedAt: now,
-      })
+      .set({ reviewedAt: now, updatedAt: now })
       .where(
         and(
           eq(entries.organizationId, input.organizationId),
@@ -69,10 +69,7 @@ export async function reviewStoreEntry(rawInput: ReviewEntryInput) {
           eq(entries.id, input.entryId),
         ),
       )
-      .returning({
-        id: entries.id,
-        reviewedAt: entries.reviewedAt,
-      });
+      .returning({ id: entries.id, reviewedAt: entries.reviewedAt });
 
     await tx.insert(auditEvents).values({
       organizationId: input.organizationId,
@@ -83,6 +80,9 @@ export async function reviewStoreEntry(rawInput: ReviewEntryInput) {
       reason: null,
       metadata: {
         entryId: input.entryId,
+        entryType: target.type,
+        amountHalalas: target.amountHalalas,
+        date: target.date,
       },
     });
 
