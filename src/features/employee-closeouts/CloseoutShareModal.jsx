@@ -8,6 +8,7 @@ import NotebookDaySharePreview from "../daily-closeouts/NotebookDaySharePreview"
 import { captureNotebookShareBlob } from "../daily-closeouts/notebook-share-capture";
 import { notebookThemes } from "../daily-closeouts/notebook-themes";
 import { buildEmployeeShareCaption, shareEmployeeCloseoutImage } from "./employee-closeout-share";
+import { resolveCloseoutStoreName } from "./store-name-resolver";
 
 const shareLabels = (lang) => ({
   sales: lang === "ar" ? "المبيعات" : "Sales",
@@ -38,7 +39,7 @@ export default function CloseoutShareModal({
   const [shareHint, setShareHint] = useState("");
 
   const periodLabel = closeout && formatCalendarDate ? formatCalendarDate(closeout.date, lang) : "";
-  const resolvedStoreName = String(storeName || closeout?.storeName || "").trim();
+  const resolvedStoreName = resolveCloseoutStoreName({ preferredStoreName: storeName, closeout, lang });
   const resolvedEmployeeName = String(employeeName || closeout?.employeeName || "").trim();
   const resolvedPeriodLabel = periodLabel || closeout?.date || "";
   const labels = useMemo(() => shareLabels(lang), [lang]);

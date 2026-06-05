@@ -14,6 +14,7 @@ import {
   employeeHistoryVisibilityLabel,
   isCloseoutWithinEmployeeHistory,
 } from "./employee-closeout-history";
+import { resolveCloseoutStoreName, resolveEmployeeStoreName } from "./store-name-resolver";
 
 function resolveScrollContainer(node) {
   if (typeof window === "undefined" || !node) return null;
@@ -148,7 +149,7 @@ export default function EmployeeCloseoutsView({
   }, [storeCloseouts, expandedId, dailySequenceById]);
 
   const currentStoreId = currentStore?.id || null;
-  const storeLabel = lang === "ar" ? currentStore?.nameAr : currentStore?.nameEn;
+  const storeLabel = useMemo(() => resolveEmployeeStoreName(currentStore, lang), [currentStore, lang]);
 
   const openSettings = useCallback(() => setShowSettings(true), []);
 
@@ -286,7 +287,7 @@ export default function EmployeeCloseoutsView({
                     onClick={() => onSelectStore(store.id)}
                     className={`rounded-full px-3 py-1.5 text-taq-meta font-black ${currentStore.id === store.id ? "bg-[#112A46] text-white" : "bg-white/90 text-[#716753] ring-1 ring-[#E8E1D4]"}`}
                   >
-                    {lang === "ar" ? store.nameAr : store.nameEn}
+                    {resolveEmployeeStoreName(store, lang)}
                   </button>
                 ))}
               </div>
@@ -338,7 +339,7 @@ export default function EmployeeCloseoutsView({
         lang={lang}
         open={Boolean(shareTarget)}
         closeout={shareTarget}
-        storeName={shareTarget?.storeName || storeLabel}
+        storeName={resolveCloseoutStoreName({ preferredStoreName: shareTarget?.storeName, closeout: shareTarget, currentStore, lang }) || storeLabel}
         employeeName={lang === "ar" ? employee.nameAr : employee.nameEn}
         notebookTheme={notebookTheme}
         formatCalendarDate={formatCalendarDate}
