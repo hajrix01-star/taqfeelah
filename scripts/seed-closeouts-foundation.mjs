@@ -228,8 +228,8 @@ async function seedRuntimeSettings(client, cfg) {
       },
     ],
     authConfig: {
-      ownerUsername: "hajri",
-      ownerPassword: "123",
+      ownerUsername: process.env.AUTH_OWNER_USERNAME || "hajri",
+      ownerPassword: process.env.AUTH_OWNER_PASSWORD || "123",
       employeePins: {
         ahmed: "1234",
         sara: "1234",

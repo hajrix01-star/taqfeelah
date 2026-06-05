@@ -44,6 +44,18 @@ function normalizeRuntimeSettings(settings: Record<string, unknown> | null | und
   };
 }
 
+/** Strip sensitive authConfig fields for non-owner roles */
+function redactSettingsForRole(
+  settings: Record<string, unknown> | null | undefined,
+  actorRole: "owner" | "manager" | "employee",
+): Record<string, unknown> | null {
+  if (!settings) return null;
+  if (actorRole === "owner") return settings;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { authConfig, ...rest } = settings as { authConfig?: unknown; [key: string]: unknown };
+  return rest;
+}
+
 async function readRuntimeSettingsEnvelope(organizationId: string) {
   const db = getDb();
   const [row] = await db
@@ -113,7 +125,12 @@ export async function getRuntimeSettings(rawInput: GetSettingsInput) {
   }
   const input = parsed.data;
   await assertOrganizationRoleAccess(input, "employee");
-  return readRuntimeSettingsEnvelope(input.organizationId);
+
+  const envelope = await readRuntimeSettingsEnvelope(input.organizationId);
+  return {
+    ...envelope,
+    settings: redactSettingsForRole(envelope.settings, input.actorRole as "owner" | "manager" | "employee"),
+  };
 }
 
 export async function getRuntimeSettingsByOrganizationId(organizationId: string) {

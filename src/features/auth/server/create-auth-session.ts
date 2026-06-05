@@ -31,12 +31,9 @@ const authConfigSchema = z.object({
   employeePins: z.record(z.string(), z.string()).optional(),
 });
 
-const BOOTSTRAP_OWNER_USERNAME = "hajri";
-const BOOTSTRAP_OWNER_PASSWORD = "123";
-const BOOTSTRAP_EMPLOYEE_PINS: Record<string, string> = {
-  ahmed: "1234",
-  sara: "1234",
-};
+const BOOTSTRAP_OWNER_USERNAME = process.env.AUTH_OWNER_USERNAME || "hajri";
+const BOOTSTRAP_OWNER_PASSWORD = process.env.AUTH_OWNER_PASSWORD || "";
+const BOOTSTRAP_EMPLOYEE_PINS: Record<string, string> = {};
 
 type StaffPerson = {
   id?: string;
@@ -106,7 +103,7 @@ export async function createAuthSession(rawInput: LoginInput) {
   const runtimeAuthConfig = parsedAuthConfig.success ? parsedAuthConfig.data : {};
 
   const ownerUsername = runtimeAuthConfig.ownerUsername || envAuth.ownerUsername || BOOTSTRAP_OWNER_USERNAME;
-  const ownerPassword = runtimeAuthConfig.ownerPassword || envAuth.ownerPassword || BOOTSTRAP_OWNER_PASSWORD;
+  const ownerPassword = runtimeAuthConfig.ownerPassword || envAuth.ownerPassword || BOOTSTRAP_OWNER_PASSWORD || "";
   const employeePinMap = {
     ...BOOTSTRAP_EMPLOYEE_PINS,
     ...envAuth.employeePinMap,

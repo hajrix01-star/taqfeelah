@@ -25,12 +25,14 @@ export async function GET(request: Request, context: RouteContext) {
       throw new ValidationError("Query param 'date' is required.");
     }
 
-    const requestContext = resolveRequestContext(request);
+    const requestContext = resolveRequestContext(request, { requireUser: true });
 
     const summary = await getStoreDaySummary({
       storeId: params.storeId,
       date,
       organizationId: requestContext.organizationId,
+      actorUserId: requestContext.userId ?? undefined,
+      actorRole: requestContext.role ?? undefined,
     });
 
     return ok(summary);

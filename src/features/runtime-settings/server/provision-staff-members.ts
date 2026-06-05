@@ -48,7 +48,7 @@ async function ensureOrganizationMember(
 ): Promise<string> {
   const db = getDb();
   const existing = await db
-    .select({ id: organizationMembers.id })
+    .select({ id: organizationMembers.id, role: organizationMembers.role })
     .from(organizationMembers)
     .where(
       and(
@@ -59,10 +59,18 @@ async function ensureOrganizationMember(
     .limit(1);
 
   if (existing[0]?.id) {
-    await db
-      .update(organizationMembers)
-      .set({ role: "employee", status: "active", updatedAt: new Date() })
-      .where(eq(organizationMembers.id, existing[0].id));
+    const existingRole = existing[0].role;
+    if (existingRole === "owner" || existingRole === "manager") {
+      await db
+        .update(organizationMembers)
+        .set({ status: "active", updatedAt: new Date() })
+        .where(eq(organizationMembers.id, existing[0].id));
+    } else {
+      await db
+        .update(organizationMembers)
+        .set({ role: "employee", status: "active", updatedAt: new Date() })
+        .where(eq(organizationMembers.id, existing[0].id));
+    }
     return existing[0].id;
   }
 

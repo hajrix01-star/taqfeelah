@@ -57,8 +57,9 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
   }
 
   const totalOutflowHalalas = input.outflows.reduce((sum, row) => sum + row.amountHalalas, 0);
-  const initialEntryStatus = input.autoReview ? "active" : "voided";
-  const initialReviewedAt = input.autoReview ? new Date() : null;
+  const canAutoReview = input.autoReview && (input.actorRole === "owner" || input.actorRole === "manager");
+  const initialEntryStatus = canAutoReview ? "active" : "voided";
+  const initialReviewedAt = canAutoReview ? new Date() : null;
   const db = getDb();
 
   const txResult = await db.transaction(async (tx) => {
@@ -139,7 +140,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
       },
     });
 
-    if (input.autoReview) {
+    if (canAutoReview) {
       await tx.insert(auditEvents).values({
         organizationId: input.organizationId,
         storeId: input.storeId,
