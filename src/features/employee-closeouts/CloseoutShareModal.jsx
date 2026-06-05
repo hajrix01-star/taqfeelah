@@ -7,7 +7,7 @@ import { buildCloseoutShareOperationRows, closeoutShareTotals } from "../daily-c
 import NotebookDaySharePreview from "../daily-closeouts/NotebookDaySharePreview";
 import { captureNotebookShareBlob } from "../daily-closeouts/notebook-share-capture";
 import { notebookThemes } from "../daily-closeouts/notebook-themes";
-import { buildEmployeeShareCaption, copyEmployeeShareCaption, shareEmployeeCloseoutImage } from "./employee-closeout-share";
+import { buildEmployeeShareCaption, shareEmployeeCloseoutImage } from "./employee-closeout-share";
 
 const shareLabels = (lang) => ({
   sales: lang === "ar" ? "المبيعات" : "Sales",
@@ -151,20 +151,14 @@ export default function CloseoutShareModal({
     });
   };
 
-  const copyCaptionOnly = async () => {
-    if (!shareCaption) return;
-    const copied = await copyEmployeeShareCaption(shareCaption);
-    setShareHint(copied ? (lang === "ar" ? "تم نسخ النص." : "Caption copied.") : (lang === "ar" ? "تعذّر نسخ النص." : "Could not copy caption."));
-  };
-
   const shareImage = async () => {
     await runImageAction(async (file) => {
       const result = await shareEmployeeCloseoutImage({ file, caption: shareCaption, lang });
       if (result.method === "clipboard") {
         setShareHint(
           lang === "ar"
-            ? "تم نسخ الصورة. الصقها في واتساب، وإذا غاب النص استخدم زر «نسخ النص»."
-            : "Image copied. Paste into WhatsApp; if text is missing, use Copy caption.",
+            ? "تم نسخ الصورة. الصقها في واتساب، وإذا غاب النص أضفه يدويًا."
+            : "Image copied. Paste into WhatsApp; add text manually if needed.",
         );
       } else if (result.method === "text-only") {
         setShareHint(
@@ -260,21 +254,16 @@ export default function CloseoutShareModal({
               {imageError}
             </p>
           )}
-          <div className="space-y-2">
-            <button type="button" onClick={shareImage} disabled={imageBusy || !previewData} className="w-full rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white disabled:opacity-50">
-              {imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…") : (lang === "ar" ? "مشاركة الصورة" : "Share image")}
+          <div className="grid grid-cols-3 gap-2">
+            <button type="button" onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">
+              {lang === "ar" ? "إغلاق" : "Close"}
             </button>
-            <div className="grid grid-cols-3 gap-2">
-              <button type="button" onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">
-                {lang === "ar" ? "إغلاق" : "Close"}
-              </button>
-              <button type="button" onClick={downloadImage} disabled={imageBusy || !previewData} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-50">
-                {lang === "ar" ? "تنزيل PNG" : "Download PNG"}
-              </button>
-              <button type="button" onClick={copyCaptionOnly} disabled={!shareCaption} className="rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-50">
-                {lang === "ar" ? "نسخ النص" : "Copy caption"}
-              </button>
-            </div>
+            <button type="button" onClick={downloadImage} disabled={imageBusy || !previewData} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-50">
+              {lang === "ar" ? "تنزيل PNG" : "Download PNG"}
+            </button>
+            <button type="button" onClick={shareImage} disabled={imageBusy || !previewData} className="rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-50">
+              {imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…") : (lang === "ar" ? "واتساب" : "WhatsApp")}
+            </button>
           </div>
         </motion.div>
       </motion.div>
