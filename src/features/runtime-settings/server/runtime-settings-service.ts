@@ -2,7 +2,9 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import { auditEvents, organizationMembers } from "@/core/db/schema";
+import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { ForbiddenError, ValidationError } from "@/core/errors/app-error";
+import { enrichStaffWithApiUserIds } from "@/features/auth/server/resolve-employee-user-id";
 
 const rolePriority: Record<"owner" | "manager" | "employee", number> = {
   employee: 1,
@@ -119,6 +121,12 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
   const input = parsed.data;
   await assertOrganizationRoleAccess(input, "owner");
 
+  const envAuth = getProductionAuthRuntimeConfig();
+  const normalizedSettings = {
+    ...input.settings,
+    staff: enrichStaffWithApiUserIds(input.settings.staff, envAuth.userIdMap),
+  };
+
   const db = getDb();
   const [saved] = await db
     .insert(auditEvents)
@@ -130,7 +138,7 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
       action: "runtime_settings_saved",
       reason: input.reason || null,
       metadata: {
-        settings: input.settings,
+        settings: normalizedSettings,
         schemaVersion: 1,
       },
     })

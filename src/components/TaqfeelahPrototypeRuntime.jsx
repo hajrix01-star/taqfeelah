@@ -1733,7 +1733,10 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const activeStaff = staff.filter((person) => person.active && !person.removed);
+  const loginStaff = APP_IN_PRODUCTION_MODE && staff.filter((person) => person.active && !person.removed).length === 0
+    ? PRODUCTION_EMPLOYEE_LOGIN_STAFF
+    : staff;
+  const activeStaff = loginStaff.filter((person) => person.active && !person.removed);
   useEffect(() => {
     if (!selectedId && activeStaff[0]) setSelectedId(activeStaff[0].id);
   }, [activeStaff, selectedId]);
@@ -2282,6 +2285,11 @@ function readSavedSettings() {
 const PROTOTYPE_DEFAULT_STAFF = [
   { id: "ahmed", nameAr: "أحمد", nameEn: "Ahmed", mobile: "050 123 4567", active: true, storeIds: ["shami"], pin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT },
   { id: "sara", nameAr: "سارة", nameEn: "Sara", mobile: "055 987 6543", active: true, storeIds: ["arz"], pin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT },
+];
+
+const PRODUCTION_EMPLOYEE_LOGIN_STAFF = [
+  { id: "ahmed", nameAr: "أحمد", nameEn: "Ahmed", mobile: "", active: true, removed: false, storeIds: ["shami"], apiUserId: "4cf1450d-08d8-4ca1-b180-1c2642174a79" },
+  { id: "sara", nameAr: "سارة", nameEn: "Sara", mobile: "", active: true, removed: false, storeIds: ["shami"], apiUserId: "85f696d6-f655-4f2d-9f56-1f13c2f4c66c" },
 ];
 
 function readPrototypeAuthBoot() {
