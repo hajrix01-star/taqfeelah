@@ -18,6 +18,14 @@ describe("store name resolver", () => {
     expect(result).toBe("لاونج أرز");
   });
 
+  it("resolves Arabic default store title from nameKey", () => {
+    const result = resolveEmployeeStoreName(
+      { id: "shami", nameKey: "restaurant" },
+      "ar",
+    );
+    expect(result).toBe("مشويات المعلم الشامي");
+  });
+
   it("resolves closeout store name from current store when closeout value is empty", () => {
     const result = resolveCloseoutStoreName({
       preferredStoreName: "",
