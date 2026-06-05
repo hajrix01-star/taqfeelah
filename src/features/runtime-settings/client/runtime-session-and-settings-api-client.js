@@ -70,6 +70,16 @@ export async function fetchRuntimeSettingsViaApi() {
   return response.json();
 }
 
+export async function fetchEmployeeLoginRosterViaApi() {
+  const response = await fetch("/api/v1/auth/employee-roster", {
+    method: "GET",
+  });
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, "Failed to load employee roster."));
+  }
+  return response.json();
+}
+
 export async function saveRuntimeSettingsViaApi({ settings, reason = "" }) {
   const response = await fetch("/api/v1/runtime/settings", {
     method: "PUT",

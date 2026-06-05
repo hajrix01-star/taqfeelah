@@ -73,6 +73,7 @@ export function getProductionAuthRuntimeConfig(env = readEnv()) {
     ownerPassword: env.AUTH_OWNER_PASSWORD || "",
     employeePinMap: parseJsonMap(env.AUTH_EMPLOYEE_PIN_MAP),
     userIdMap: parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP),
+    storeIdMap: parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP),
   };
 }
 

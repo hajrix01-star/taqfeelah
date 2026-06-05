@@ -198,6 +198,7 @@ async function seedRuntimeSettings(client, cfg) {
   }
 
   const settings = {
+    notebookTheme: "yellow",
     configuredBusinesses: [
       {
         id: "shami",

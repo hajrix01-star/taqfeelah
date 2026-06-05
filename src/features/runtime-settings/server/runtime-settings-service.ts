@@ -5,6 +5,7 @@ import { auditEvents, organizationMembers } from "@/core/db/schema";
 import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { ForbiddenError, ValidationError } from "@/core/errors/app-error";
 import { enrichStaffWithApiUserIds } from "@/features/auth/server/resolve-employee-user-id";
+import { provisionStaffMembers } from "@/features/runtime-settings/server/provision-staff-members";
 
 const rolePriority: Record<"owner" | "manager" | "employee", number> = {
   employee: 1,
@@ -34,6 +35,15 @@ const getSettingsInputSchema = z.object({
 type SaveSettingsInput = z.infer<typeof saveSettingsInputSchema>;
 type GetSettingsInput = z.infer<typeof getSettingsInputSchema>;
 
+function normalizeRuntimeSettings(settings: Record<string, unknown> | null | undefined) {
+  if (!settings || typeof settings !== "object") return null;
+  const envAuth = getProductionAuthRuntimeConfig();
+  return {
+    ...settings,
+    staff: enrichStaffWithApiUserIds(settings.staff, envAuth.userIdMap),
+  };
+}
+
 async function readRuntimeSettingsEnvelope(organizationId: string) {
   const db = getDb();
   const [row] = await db
@@ -62,7 +72,7 @@ async function readRuntimeSettingsEnvelope(organizationId: string) {
     return { settings: null, updatedAt: row.createdAt, updatedByUserId: row.actorUserId };
   }
   return {
-    settings: parsedEnvelope.data.settings,
+    settings: normalizeRuntimeSettings(parsedEnvelope.data.settings),
     schemaVersion: parsedEnvelope.data.schemaVersion,
     updatedAt: row.createdAt,
     updatedByUserId: row.actorUserId,
@@ -122,9 +132,13 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
   await assertOrganizationRoleAccess(input, "owner");
 
   const envAuth = getProductionAuthRuntimeConfig();
+  const provisionedStaff = await provisionStaffMembers(input.organizationId, input.settings.staff, {
+    storeIdMap: envAuth.storeIdMap,
+    userIdMap: envAuth.userIdMap,
+  });
   const normalizedSettings = {
     ...input.settings,
-    staff: enrichStaffWithApiUserIds(input.settings.staff, envAuth.userIdMap),
+    staff: provisionedStaff,
   };
 
   const db = getDb();
@@ -150,5 +164,21 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
   return {
     id: saved.id,
     createdAt: saved.createdAt,
+    settings: normalizedSettings,
   };
+}
+
+export async function getEmployeeLoginRoster(organizationId: string) {
+  const envelope = await readRuntimeSettingsEnvelope(organizationId);
+  const staff = Array.isArray(envelope.settings?.staff) ? envelope.settings.staff : [];
+  return staff
+    .filter((entry) => entry && typeof entry === "object")
+    .map((entry) => entry as Record<string, unknown>)
+    .filter((person) => person.active !== false && person.removed !== true)
+    .map((person) => ({
+      id: typeof person.id === "string" ? person.id : "",
+      nameAr: typeof person.nameAr === "string" ? person.nameAr : "",
+      nameEn: typeof person.nameEn === "string" ? person.nameEn : "",
+    }))
+    .filter((person) => person.id);
 }
