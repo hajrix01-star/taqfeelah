@@ -1,5 +1,5 @@
 /** Share employee closeout PNG; WhatsApp often drops `text` when `files` are attached. */
-import { copyShareCaptionText, shareImageThroughWhatsApp } from "../daily-closeouts/notebook-image-sharing";
+import { shareImageThroughWhatsApp } from "../daily-closeouts/notebook-image-sharing";
 
 function formatDateParts(isoDate, lang) {
   if (!isoDate) return { dateLabel: "", weekdayLabel: "" };
@@ -25,10 +25,6 @@ export function buildEmployeeShareCaption(lang, storeName, employeeName, periodL
   return `Closeout for ${storeName}${employeePart} on ${finalDate}${weekdayPart}`;
 }
 
-export async function copyEmployeeShareCaption(caption) {
-  return copyShareCaptionText(caption);
-}
-
 /**
  * @returns {{ ok: boolean, method: string }}
  */
@@ -36,10 +32,6 @@ export async function shareEmployeeCloseoutImage({ file, caption, lang }) {
   return shareImageThroughWhatsApp({
     file,
     caption,
-    lang,
     title: lang === "ar" ? "تقفيلتي" : "My closeout",
-    pasteHint: lang === "ar"
-      ? "تم نسخ الصورة — الصقها في محادثة واتساب."
-      : "Image copied — paste it in WhatsApp chat.",
   });
 }

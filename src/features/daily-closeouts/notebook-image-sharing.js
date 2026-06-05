@@ -1,9 +1,3 @@
-function defaultPasteHint(lang) {
-  return lang === "ar"
-    ? "تم نسخ الصورة — الصقها في محادثة واتساب (اضغط مطولاً في حقل الكتابة)."
-    : "Image copied — paste it in WhatsApp chat (long-press the message field).";
-}
-
 function openWhatsAppWithText(message) {
   if (typeof window === "undefined") return;
   window.open(`https://wa.me/?text=${encodeURIComponent(message || "")}`, "_blank", "noopener,noreferrer");
@@ -19,13 +13,18 @@ export async function copyShareCaptionText(caption) {
   }
 }
 
-export async function shareImageThroughSystem({ file, caption = "", title = "" }) {
+export async function shareImageThroughSystem({ file, caption = "", title = "", allowFileOnlyFallback = true }) {
   if (!file || typeof navigator === "undefined" || !navigator.share) {
     return { ok: false, method: "unsupported" };
   }
+  const captionPayload = {
+    files: [file],
+    ...(caption ? { text: caption } : {}),
+    ...(title ? { title } : {}),
+  };
   const payloads = [
-    { files: [file] },
-    { files: [file], text: caption, ...(title ? { title } : {}) },
+    captionPayload,
+    ...(allowFileOnlyFallback ? [{ files: [file] }] : []),
   ];
   for (const payload of payloads) {
     try {
@@ -42,13 +41,11 @@ export async function shareImageThroughSystem({ file, caption = "", title = "" }
 export async function shareImageThroughWhatsApp({
   file,
   caption = "",
-  lang = "ar",
   title = "",
-  pasteHint = "",
 }) {
   if (!file) return { ok: false, method: "none" };
 
-  const systemShare = await shareImageThroughSystem({ file, caption, title });
+  const systemShare = await shareImageThroughSystem({ file, caption, title, allowFileOnlyFallback: false });
   if (systemShare.method === "share" || systemShare.method === "abort") {
     return systemShare;
   }
@@ -57,17 +54,13 @@ export async function shareImageThroughWhatsApp({
     try {
       const type = file.type || "image/png";
       await navigator.clipboard.write([new ClipboardItem({ [type]: file })]);
-      const copiedCaption = await copyShareCaptionText(caption);
-      const hint = pasteHint || defaultPasteHint(lang);
-      const message = copiedCaption ? `${caption}\n\n${hint}` : caption || hint;
-      openWhatsAppWithText(message);
-      return { ok: true, method: "clipboard", copied: copiedCaption };
+      openWhatsAppWithText(caption);
+      return { ok: true, method: "clipboard", copied: false };
     } catch {
       // fall through to text-only fallback
     }
   }
 
-  const copied = await copyShareCaptionText(caption);
   openWhatsAppWithText(caption);
-  return { ok: false, method: "text-only", copied };
+  return { ok: false, method: "text-only", copied: false };
 }
