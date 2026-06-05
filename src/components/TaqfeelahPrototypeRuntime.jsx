@@ -8,7 +8,7 @@ import { buildOperationalEntriesFromCloseout } from "@/features/daily-closeouts/
 import { autoResolveSubmittedCloseoutsWithoutReview, readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import { readCloseoutEvents } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import { notebookCardBackground, notebookLinesBackground, notebookThemes, resolveNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
-import { shareImageThroughSystem, shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
+import { shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
 import EmployeeCloseoutsView from "@/features/employee-closeouts/EmployeeCloseoutsView";
 import DailyCloseoutEntryFlow from "@/features/employee-closeouts/DailyCloseoutEntryFlow";
 import EmployeeHistoryVisibilityPicker from "@/features/employee-closeouts/EmployeeHistoryVisibilityPicker";
@@ -3766,17 +3766,6 @@ function NotebookShareModal({ lang, snapshot, onClose, businessesList = business
     }
   };
   const downloadNotebookImage = () => runImageAction(async (file) => downloadBlobFile(file, imageFilename));
-  const shareNotebookImage = () => runImageAction(async (file) => {
-    const result = await shareImageThroughSystem({
-      file,
-      title: exportTitle,
-      caption: shareCaption,
-    });
-    if (result.method === "share" || result.method === "abort") {
-      return;
-    }
-    downloadBlobFile(file, imageFilename);
-  });
   const shareImageViaWhatsApp = () => {
     setImageError("");
     setShareHint("");
@@ -3979,19 +3968,14 @@ function NotebookShareModal({ lang, snapshot, onClose, businessesList = business
           </div>
         )}
         {format === "image" ? (
-          <div className="space-y-2">
-            <button type="button" disabled={imageBusy} onClick={shareNotebookImage} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white disabled:opacity-60">
-              <Share2 className="h-4 w-4" />{imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…") : text(lang, "shareNotebookImage")}
+          <div className="grid grid-cols-3 gap-2">
+            <button type="button" onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">{lang === "ar" ? "إغلاق" : "Close"}</button>
+            <button type="button" disabled={imageBusy} onClick={downloadNotebookImage} className="flex items-center justify-center gap-1.5 rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-60">
+              <Download className="h-3.5 w-3.5" />{text(lang, "downloadNotebookImage")}
             </button>
-            <div className="grid grid-cols-3 gap-2">
-              <button type="button" onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">{lang === "ar" ? "إغلاق" : "Close"}</button>
-              <button type="button" disabled={imageBusy} onClick={downloadNotebookImage} className="flex items-center justify-center gap-1.5 rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-60">
-                <Download className="h-3.5 w-3.5" />{text(lang, "downloadNotebookImage")}
-              </button>
-              <button type="button" disabled={imageBusy} onClick={shareImageViaWhatsApp} className="flex items-center justify-center gap-1.5 rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-60">
-                <Send className="h-3.5 w-3.5" />{text(lang, "shareViaWhatsApp")}
-              </button>
-            </div>
+            <button type="button" disabled={imageBusy} onClick={shareImageViaWhatsApp} className="flex items-center justify-center gap-1.5 rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-60">
+              <Send className="h-3.5 w-3.5" />{imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…") : text(lang, "shareViaWhatsApp")}
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-[0.7fr_1.3fr] gap-3">
