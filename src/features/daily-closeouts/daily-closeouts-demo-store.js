@@ -1,5 +1,5 @@
 import { readLocalStorageJson } from "../demo/prototype-storage";
-import { computeCloseoutTotals } from "./closeout-calculations";
+import { computeCloseoutTotals } from "@/features/operations/operational-analytics";
 import { CLOSEOUT_STATUS } from "./closeout-status";
 
 export const DAILY_CLOSEOUTS_STORAGE_KEY = "taqfeelah_daily_closeouts_v1";

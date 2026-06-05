@@ -1,4 +1,4 @@
-import { computeCloseoutTotals, salesArrayFromRecord } from "./closeout-calculations";
+import { computeCloseoutTotals, salesArrayFromRecord } from "@/features/operations/operational-analytics";
 
 function outflowRowLabel(item, lang) {
   const typeMap = {

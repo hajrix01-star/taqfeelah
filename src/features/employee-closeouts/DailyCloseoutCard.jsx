@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { computeCloseoutTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
+import { computeCloseoutTotals, salesArrayFromRecord } from "@/features/operations/operational-analytics";
 import { closeoutStatusLabel, closeoutStatusTone } from "../daily-closeouts/closeout-status";
 import AttachmentLightbox from "../../components/AttachmentLightbox";
 

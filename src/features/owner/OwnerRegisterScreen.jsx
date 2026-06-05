@@ -292,18 +292,8 @@ export default function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, 
     });
     return options;
   }, [periodEntries, lang]);
-  const matchesExpenseCategory = (entry) => {
-    if (logFilters.type !== "expense" || logFilters.expenseCategory === "all") return true;
-    if (entry.type !== "expense") return false;
-    return entryCategory(entry) === logFilters.expenseCategory;
-  };
-  const matchesActor = (entry) => logFilters.actor === "all" || entry.enteredBy?.userId === logFilters.actor;
-  const matchesSalesChannel = (entry) => {
-    if (logFilters.salesChannel === "all") return true;
-    if (entry.type !== "summary") return false;
-    return (entry.salesChannels || []).some((row) => row.channelId === logFilters.salesChannel && Number(row.amount) > 0);
-  };
-  const filteredEntries = periodEntries.filter((entry) => (logFilters.status === "all" || (logFilters.status === "active" ? entryIsActive(entry) : entryIsVoided(entry))) && (logFilters.type === "all" || entry.type === logFilters.type) && matchesExpenseCategory(entry) && matchesActor(entry) && matchesSalesChannel(entry) && (!logFilters.attachmentOnly || entryHasAttachment(entry)) && (!logFilters.pendingReviewOnly || (entryIsActive(entry) && entryHasAttachment(entry) && !entry.reviewed)));
+  // All filter logic delegated to owner-ledger-filters module — no inline predicates
+  const filteredEntries = applyLedgerFilters(periodEntries, logFilters);
   const visibleEntries = newestEntries(filteredEntries);
   const closeoutSummaries = useMemo(() => {
     const grouped = new Map();
