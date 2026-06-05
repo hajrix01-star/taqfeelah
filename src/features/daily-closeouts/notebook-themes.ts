@@ -1,4 +1,14 @@
-export const notebookThemes = {
+export type NotebookThemeKey = "yellow" | "softYellow" | "ivory" | "white" | "greenTint";
+
+export type NotebookTheme = {
+  paper: string;
+  line: string;
+  margin: string;
+  shadow: string;
+  ring: boolean;
+};
+
+export const notebookThemes: Record<NotebookThemeKey, NotebookTheme> = {
   yellow: {
     paper: "#F7DE85",
     line: "rgba(66,90,111,0.14)",
@@ -36,8 +46,8 @@ export const notebookThemes = {
   },
 };
 
-function blendHex(hex, targetHex, ratio) {
-  const parse = (value) => {
+function blendHex(hex: string, targetHex: string, ratio: number): string {
+  const parse = (value: string): [number, number, number] => {
     const normalized = value.replace("#", "");
     return [
       Number.parseInt(normalized.slice(0, 2), 16),
@@ -47,13 +57,13 @@ function blendHex(hex, targetHex, ratio) {
   };
   const [r1, g1, b1] = parse(hex);
   const [r2, g2, b2] = parse(targetHex);
-  const mix = (from, to) => Math.round(from + (to - from) * ratio);
-  const channel = (value) => value.toString(16).padStart(2, "0");
+  const mix = (from: number, to: number) => Math.round(from + (to - from) * ratio);
+  const channel = (value: number) => value.toString(16).padStart(2, "0");
   return `#${channel(mix(r1, r2))}${channel(mix(g1, g2))}${channel(mix(b1, b2))}`;
 }
 
-export function notebookLinesBackground(theme) {
-  const activeTheme = notebookThemes[theme] || notebookThemes.yellow;
+export function notebookLinesBackground(theme: string): { backgroundColor: string; backgroundImage: string } {
+  const activeTheme = notebookThemes[theme as NotebookThemeKey] || notebookThemes.yellow;
   return {
     backgroundColor: activeTheme.paper,
     backgroundImage: `repeating-linear-gradient(180deg, transparent 0px, transparent 43px, ${activeTheme.line} 43px, ${activeTheme.line} 44px)`,
@@ -61,26 +71,39 @@ export function notebookLinesBackground(theme) {
 }
 
 /** Slightly lighter than notebook paper so cards read as surfaces on the page. */
-export function notebookCardBackground(theme, variant = "card") {
-  const paper = (notebookThemes[theme] || notebookThemes.yellow).paper;
+export function notebookCardBackground(theme: string, variant: "card" | "inset" = "card"): string {
+  const paper = (notebookThemes[theme as NotebookThemeKey] || notebookThemes.yellow).paper;
   const ratio = variant === "inset" ? 0.34 : 0.2;
   return blendHex(paper, "#FFFFFF", ratio);
 }
 
-export function applyNotebookThemeCssVariables(themeKey) {
+export function applyNotebookThemeCssVariables(themeKey: string): void {
   if (typeof document === "undefined") return;
-  const activeTheme = notebookThemes[themeKey] || notebookThemes.yellow;
+  const activeTheme = notebookThemes[themeKey as NotebookThemeKey] || notebookThemes.yellow;
   document.documentElement.style.setProperty("--taq-notebook-paper", activeTheme.paper);
   document.documentElement.style.setProperty("--taq-shell-bg", activeTheme.paper);
 }
 
-export function isValidNotebookTheme(themeKey) {
-  return typeof themeKey === "string" && Object.prototype.hasOwnProperty.call(notebookThemes, themeKey);
+export function isValidNotebookTheme(themeKey: string): themeKey is NotebookThemeKey {
+  return Object.prototype.hasOwnProperty.call(notebookThemes, themeKey);
 }
 
-export function resolveNotebookTheme({ storeOperationalSettings, storeId, globalTheme, employeeThemeOverride }) {
+type ResolveNotebookThemeInput = {
+  storeOperationalSettings: Record<string, { notebookTheme?: string } | undefined> | undefined;
+  storeId: string | undefined | null;
+  globalTheme: string | undefined;
+  employeeThemeOverride: string | null | undefined;
+};
+
+export function resolveNotebookTheme({
+  storeOperationalSettings,
+  storeId,
+  globalTheme,
+  employeeThemeOverride,
+}: ResolveNotebookThemeInput): string {
   if (employeeThemeOverride) return employeeThemeOverride;
-  const storeTheme = storeOperationalSettings?.[storeId]?.notebookTheme;
+  const storeTheme = storeId ? storeOperationalSettings?.[storeId]?.notebookTheme : undefined;
   if (storeTheme) return storeTheme;
   return globalTheme || "yellow";
 }
+

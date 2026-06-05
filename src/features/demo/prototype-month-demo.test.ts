@@ -19,10 +19,10 @@ import {
   DEMO_MONTH,
 } from "./prototype-month-demo-seed";
 
-function manualNetForBusinessMonth(entries: { businessId: string; date: string; type: string; amount: number; status?: string }[], businessId: string, month: string) {
+function manualNetForBusinessMonth(entries: { id?: string; businessId: string; date: string; type: string; amount: number; status?: string }[], businessId: string, month: string) {
   const scoped = entries.filter((e) => e.businessId === businessId && e.date.startsWith(month) && e.status !== "voided");
   const sales = scoped.filter((e) => e.type === "summary").reduce((s, e) => s + e.amount, 0);
-  const expense = scoped.filter((e) => entryIsOutflow(e)).reduce((s, e) => s + e.amount, 0);
+  const expense = scoped.filter((e) => entryIsOutflow(e as import("@/features/operations/operational-analytics").OperationalEntry)).reduce((s, e) => s + e.amount, 0);
   return { sales, expense, net: sales - expense };
 }
 
@@ -117,7 +117,7 @@ describe("operational analytics (add / subtract / filters)", () => {
     const shamiMay = entriesInPeriod(entries, "shami", "month", "", "2026-05");
     const arzMay = entriesInPeriod(entries, "arz", "month", "", "2026-05");
     expect(shamiMay.length).toBeGreaterThan(arzMay.length / 2);
-    expect(shamiMay.every((e: DemoEntry) => e.date.startsWith("2026-05"))).toBe(true);
+    expect(shamiMay.every((e) => e.date.startsWith("2026-05"))).toBe(true);
   });
 
   it("aggregates sales channels for a month", () => {
