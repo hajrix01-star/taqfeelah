@@ -11,18 +11,31 @@ function formatDateParts(isoDate, lang) {
   return { dateLabel, weekdayLabel };
 }
 
+function normalizedStoreLabel(storeName, lang) {
+  const normalized = String(storeName || "").trim();
+  if (lang === "ar") {
+    if (!normalized) return "المحل";
+    if (normalized === "المحل" || normalized.startsWith("محل ")) return normalized;
+    return `محل ${normalized}`;
+  }
+  return normalized || "store";
+}
+
 export function buildEmployeeShareCaption(lang, storeName, employeeName, periodLabel, closeoutDate) {
   const { dateLabel, weekdayLabel } = formatDateParts(closeoutDate, lang);
   const fallbackDate = periodLabel || closeoutDate || "";
   const finalDate = dateLabel || fallbackDate;
+  const storeLabel = normalizedStoreLabel(storeName, lang);
   if (lang === "ar") {
     const employeePart = employeeName ? ` بواسطة الموظف ${employeeName}` : "";
+    const datePart = finalDate ? ` بتاريخ ${finalDate}` : "";
     const weekdayPart = weekdayLabel ? ` ويوم ${weekdayLabel}` : "";
-    return `تقفيلة محل ${storeName}${employeePart} بتاريخ ${finalDate}${weekdayPart}`;
+    return `تقفيلتي ${storeLabel}${employeePart}${datePart}${weekdayPart}`;
   }
   const employeePart = employeeName ? ` by employee ${employeeName}` : "";
+  const datePart = finalDate ? ` on ${finalDate}` : "";
   const weekdayPart = weekdayLabel ? ` (${weekdayLabel})` : "";
-  return `Closeout for ${storeName}${employeePart} on ${finalDate}${weekdayPart}`;
+  return `My closeout for ${storeLabel}${employeePart}${datePart}${weekdayPart}`;
 }
 
 /**

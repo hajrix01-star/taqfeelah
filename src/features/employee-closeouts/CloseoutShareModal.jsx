@@ -38,8 +38,8 @@ export default function CloseoutShareModal({
   const [shareHint, setShareHint] = useState("");
 
   const periodLabel = closeout && formatCalendarDate ? formatCalendarDate(closeout.date, lang) : "";
-  const resolvedStoreName = storeName || closeout?.storeName || (lang === "ar" ? "المحل" : "Store");
-  const resolvedEmployeeName = employeeName || closeout?.employeeName || "";
+  const resolvedStoreName = String(storeName || closeout?.storeName || "").trim();
+  const resolvedEmployeeName = String(employeeName || closeout?.employeeName || "").trim();
   const resolvedPeriodLabel = periodLabel || closeout?.date || "";
   const labels = useMemo(() => shareLabels(lang), [lang]);
   const totals = useMemo(() => (closeout ? closeoutShareTotals(closeout) : null), [closeout]);
