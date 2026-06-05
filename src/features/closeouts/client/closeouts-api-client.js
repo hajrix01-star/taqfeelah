@@ -32,6 +32,14 @@ function mapToUuid(value, map) {
   return isUuid(mapped) ? mapped : "";
 }
 
+function reverseLookupKeyByUuid(uuidValue, map) {
+  if (!isUuid(uuidValue) || !map || typeof map !== "object") return "";
+  for (const [key, value] of Object.entries(map)) {
+    if (isUuid(value) && value.toLowerCase() === uuidValue.toLowerCase()) return key;
+  }
+  return "";
+}
+
 function toHalalas(value) {
   return Math.round(Number(value || 0) * 100);
 }
@@ -112,7 +120,7 @@ export async function fetchStoreCloseoutsViaApi({
   dateFrom = "",
   dateTo = "",
 }) {
-  const { userIdMap, storeIdMap } = getMaps();
+  const { userIdMap, storeIdMap, salesChannelIdMap } = getMaps();
   const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
   const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
   const mappedStoreId = mapToUuid(storeId, storeIdMap);
@@ -139,7 +147,22 @@ export async function fetchStoreCloseoutsViaApi({
     throw new Error(`closeout fetch api failed: ${response.status}`);
   }
   const payload = await response.json();
-  return Array.isArray(payload) ? payload : [];
+  if (!Array.isArray(payload)) return [];
+  return payload.map((item) => {
+    if (!item || typeof item !== "object") return item;
+    const mappedStoreId = reverseLookupKeyByUuid(item.storeId, storeIdMap) || storeId;
+    const salesRows = Array.isArray(item.sales)
+      ? item.sales.map((row) => ({
+        ...row,
+        channelId: reverseLookupKeyByUuid(row?.channelId, salesChannelIdMap) || row?.channelId,
+      }))
+      : item.sales;
+    return {
+      ...item,
+      storeId: mappedStoreId,
+      sales: salesRows,
+    };
+  });
 }
 
 export async function reviewCloseoutViaApi({

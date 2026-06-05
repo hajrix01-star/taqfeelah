@@ -1,7 +1,7 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
-import { auditEvents } from "@/core/db/schema";
+import { auditEvents, entries } from "@/core/db/schema";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
@@ -18,6 +18,13 @@ const reviewInputSchema = z.object({
 });
 
 type ReviewInput = z.infer<typeof reviewInputSchema>;
+
+const submitMetadataSchema = z.object({
+  closeoutId: z.string().trim().min(1).max(120),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  summaryEntryId: z.string().uuid().optional(),
+  outflowEntryIds: z.array(z.string().uuid()).optional(),
+});
 
 export async function reviewStoreCloseout(rawInput: ReviewInput) {
   const parsed = reviewInputSchema.safeParse(rawInput);
@@ -39,6 +46,7 @@ export async function reviewStoreCloseout(rawInput: ReviewInput) {
     .select({
       id: auditEvents.id,
       createdAt: auditEvents.createdAt,
+      metadata: auditEvents.metadata,
     })
     .from(auditEvents)
     .where(
@@ -53,21 +61,47 @@ export async function reviewStoreCloseout(rawInput: ReviewInput) {
     .orderBy(desc(auditEvents.createdAt))
     .limit(1);
 
-  const [created] = await db
-    .insert(auditEvents)
-    .values({
-      organizationId: input.organizationId,
-      storeId: input.storeId,
-      actorUserId: input.actorUserId,
-      action: input.action === "approve" ? "closeout_approved" : "closeout_returned",
-      reason: input.reason || null,
-      metadata: {
-        closeoutId: input.closeoutId,
-        date: input.date,
-        sourceSubmissionAuditId: latestSubmit?.id || null,
-      },
-    })
-    .returning({ id: auditEvents.id, createdAt: auditEvents.createdAt });
+  const parsedSubmitMetadata = submitMetadataSchema.safeParse(latestSubmit?.metadata);
+  const targetEntryIds = parsedSubmitMetadata.success
+    ? [
+      ...(parsedSubmitMetadata.data.summaryEntryId ? [parsedSubmitMetadata.data.summaryEntryId] : []),
+      ...(parsedSubmitMetadata.data.outflowEntryIds || []),
+    ]
+    : [];
+
+  const [created] = await db.transaction(async (tx) => {
+    if (input.action === "approve" && targetEntryIds.length > 0) {
+      await tx
+        .update(entries)
+        .set({
+          status: "active",
+          reviewedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(entries.organizationId, input.organizationId),
+            eq(entries.storeId, input.storeId),
+            inArray(entries.id, targetEntryIds),
+          ),
+        );
+    }
+
+    return tx
+      .insert(auditEvents)
+      .values({
+        organizationId: input.organizationId,
+        storeId: input.storeId,
+        actorUserId: input.actorUserId,
+        action: input.action === "approve" ? "closeout_approved" : "closeout_returned",
+        reason: input.reason || null,
+        metadata: {
+          closeoutId: input.closeoutId,
+          date: input.date,
+          sourceSubmissionAuditId: latestSubmit?.id || null,
+        },
+      })
+      .returning({ id: auditEvents.id, createdAt: auditEvents.createdAt });
+  });
 
   return {
     id: created.id,

@@ -1,6 +1,6 @@
 # تقفيلة — API Contract (planned + partial implementation)
 
-> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day`, snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, and `POST /stores/:storeId/closeouts/:closeoutId/review` are implemented; remaining endpoints are planned.  
+> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day`, snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, `POST /stores/:storeId/closeouts/:closeoutId/review`, and `GET /stores/:storeId/entries` are implemented; remaining endpoints are planned.  
 > **Auth:** Session rollout in progress. Preferred source is signed session cookie (`AUTH_SESSION_COOKIE_NAME`), with optional temporary header fallback controlled by `ALLOW_HEADER_AUTH_CONTEXT`.  
 > **UI:** Must not require design changes — responses feed existing approved screens.
 
@@ -186,6 +186,27 @@ Behavior:
 ---
 
 ## Entries
+
+### `GET /stores/:storeId/entries` (implemented)
+
+Headers:
+
+- `x-organization-id: <uuid>`
+- `x-user-id: <uuid>`
+- `x-member-role: owner|manager|employee`
+
+Query (optional):
+
+- `dateFrom=YYYY-MM-DD`
+- `dateTo=YYYY-MM-DD`
+- `status=active|voided|all` (default: `all`)
+- `limit` (default 500, max 1000)
+
+Behavior:
+
+- Returns scoped operational entries for one store ordered by date/time desc.
+- Hydrates summary channels from `entry_sales_channels`.
+- Includes closeout linkage when entries were created from closeout submission audit metadata.
 
 ### `POST /entries`
 

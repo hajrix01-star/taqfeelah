@@ -57,6 +57,8 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
   }
 
   const totalOutflowHalalas = input.outflows.reduce((sum, row) => sum + row.amountHalalas, 0);
+  const initialEntryStatus = input.autoReview ? "active" : "voided";
+  const initialReviewedAt = input.autoReview ? new Date() : null;
   const db = getDb();
 
   const txResult = await db.transaction(async (tx) => {
@@ -71,7 +73,8 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
         currency: "SAR",
         note: input.note || null,
         enteredByUserId: input.actorUserId,
-        status: "active",
+        status: initialEntryStatus,
+        reviewedAt: initialReviewedAt,
       })
       .returning({ id: entries.id });
 
@@ -100,7 +103,8 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
             categoryId: row.categoryId || null,
             note: row.note || null,
             enteredByUserId: input.actorUserId,
-            status: "active",
+            status: initialEntryStatus,
+            reviewedAt: initialReviewedAt,
           })),
         )
         .returning({ id: entries.id, type: entries.type, amountHalalas: entries.amountHalalas })

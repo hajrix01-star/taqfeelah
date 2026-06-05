@@ -86,7 +86,17 @@ describe("closeouts api client", () => {
   it("fetches mapped closeouts list for store", async () => {
     setMapsEnv();
     const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
-      async () => new Response(JSON.stringify([{ id: "c-1" }]), { status: 200 }),
+      async () => new Response(JSON.stringify([{
+        id: "c-1",
+        storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        sales: [
+          {
+            channelId: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+            name: "Cash",
+            amount: 120,
+          },
+        ],
+      }]), { status: 200 }),
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -100,7 +110,17 @@ describe("closeouts api client", () => {
       dateTo: "2026-06-30",
     });
 
-    expect(result).toEqual([{ id: "c-1" }]);
+    expect(result).toEqual([{
+      id: "c-1",
+      storeId: "shami",
+      sales: [
+        {
+          channelId: "cash",
+          name: "Cash",
+          amount: 120,
+        },
+      ],
+    }]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.lastCall!;
     expect(String(url)).toContain("/api/v1/stores/302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c/closeouts");

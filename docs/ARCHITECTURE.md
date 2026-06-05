@@ -223,6 +223,7 @@ Closeout API mode for unified source in production:
 - `NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true`
 - `NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID=<organization-uuid>`
 - `NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID=<owner-user-uuid>`
+- `NEXT_PUBLIC_ENTRIES_API_ENABLED=true` (optional, defaults to closeouts API flag)
 - `NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP=<json map>`
 - `NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP=<json map>`
 - `NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP=<json map>`
