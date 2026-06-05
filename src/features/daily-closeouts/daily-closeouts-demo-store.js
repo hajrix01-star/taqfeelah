@@ -13,7 +13,10 @@ function todayIsoDate() {
 export function readDailyCloseouts() {
   if (typeof window === "undefined") return [];
   const parsed = readLocalStorageJson(DAILY_CLOSEOUTS_STORAGE_KEY, []);
-  return Array.isArray(parsed) ? parsed.map((item) => withCloseoutTotals(item)) : [];
+  if (!Array.isArray(parsed)) return [];
+  const parsedEvents = readLocalStorageJson(CLOSEOUT_EVENTS_STORAGE_KEY, []);
+  const workflowHints = buildCloseoutWorkflowHints(Array.isArray(parsedEvents) ? parsedEvents : []);
+  return parsed.map((item) => withCloseoutTotals(applyWorkflowHints(item, workflowHints.get(item?.id))));
 }
 
 export function writeDailyCloseouts(closeouts) {
@@ -50,10 +53,45 @@ function normalizeCloseoutStatus(closeout) {
   const hasReturned = Boolean(closeout.returnedAt || closeout.returnedByName || closeout.returnReason);
   const hasReviewed = Boolean(closeout.reviewedAt || closeout.reviewedByName);
   const hasSubmitted = Boolean(closeout.submittedAt || closeout.submittedByUserId || closeout.submittedByName);
+  const hasSyncedToOperationalEntries = closeout.syncedToEntries === true;
   if (raw === CLOSEOUT_STATUS.RETURNED || hasReturned) return CLOSEOUT_STATUS.RETURNED;
-  if (raw === CLOSEOUT_STATUS.REVIEWED || hasReviewed) return CLOSEOUT_STATUS.REVIEWED;
+  if (raw === CLOSEOUT_STATUS.REVIEWED || hasReviewed || hasSyncedToOperationalEntries) return CLOSEOUT_STATUS.REVIEWED;
   if (raw === CLOSEOUT_STATUS.SUBMITTED || hasSubmitted) return CLOSEOUT_STATUS.SUBMITTED;
   return CLOSEOUT_STATUS.DRAFT;
+}
+
+function buildCloseoutWorkflowHints(events) {
+  const hintsByCloseoutId = new Map();
+  events.forEach((event) => {
+    if (!event || typeof event.closeoutId !== "string" || !event.closeoutId) return;
+    const hint = hintsByCloseoutId.get(event.closeoutId) || {};
+    const at = typeof event.at === "string" && event.at ? event.at : null;
+    if (event.type === "submitted" || event.type === "resubmitted") {
+      if (!hint.submittedAt || (at && at > hint.submittedAt)) hint.submittedAt = at;
+    }
+    if (event.type === "approved") {
+      if (!hint.reviewedAt || (at && at > hint.reviewedAt)) hint.reviewedAt = at;
+    }
+    if (event.type === "returned") {
+      if (!hint.returnedAt || (at && at > hint.returnedAt)) hint.returnedAt = at;
+      if (typeof event.reason === "string" && event.reason.trim() && !hint.returnReason) {
+        hint.returnReason = event.reason.trim();
+      }
+    }
+    hintsByCloseoutId.set(event.closeoutId, hint);
+  });
+  return hintsByCloseoutId;
+}
+
+function applyWorkflowHints(closeout, hints) {
+  if (!closeout || typeof closeout !== "object" || !hints) return closeout;
+  return {
+    ...closeout,
+    submittedAt: closeout.submittedAt || hints.submittedAt || null,
+    reviewedAt: closeout.reviewedAt || hints.reviewedAt || null,
+    returnedAt: closeout.returnedAt || hints.returnedAt || null,
+    returnReason: closeout.returnReason || hints.returnReason || null,
+  };
 }
 
 function normalizeCloseout(closeout) {
