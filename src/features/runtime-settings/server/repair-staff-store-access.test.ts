@@ -33,6 +33,13 @@ vi.mock("@/core/config/env", () => ({
   }),
 }));
 
+vi.mock("@/features/runtime-settings/server/enrich-runtime-store-id-map", () => ({
+  enrichRuntimeStoreIdMap: vi.fn(async (_orgId, storeIdMap) => ({
+    ...storeIdMap,
+    "custom-1780679701214": "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+  })),
+}));
+
 describe("repairStaffStoreAccess", () => {
   beforeEach(() => {
     provisionCalls.length = 0;

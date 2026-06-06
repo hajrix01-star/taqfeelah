@@ -1,5 +1,6 @@
 import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
 import { getProductionAuthRuntimeConfig } from "@/core/config/env";
+import { enrichRuntimeStoreIdMap } from "@/features/runtime-settings/server/enrich-runtime-store-id-map";
 import { getRuntimeSettingsByOrganizationId } from "@/features/runtime-settings/server/runtime-settings-service";
 import { provisionStaffMembers } from "@/features/runtime-settings/server/provision-staff-members";
 
@@ -25,10 +26,15 @@ export async function repairStaffStoreAccess(organizationId: string) {
   }
 
   const envAuth = getProductionAuthRuntimeConfig();
+  const enrichedStoreIdMap = await enrichRuntimeStoreIdMap(
+    organizationId,
+    envAuth.storeIdMap,
+    configuredBusinesses as RuntimeBusiness[],
+  );
   const runtimeApiMaps = buildRuntimeApiIdMaps({
     configuredBusinesses: configuredBusinesses as RuntimeBusiness[],
     staff: staff as RuntimeStaff[],
-    envStoreIdMap: envAuth.storeIdMap,
+    envStoreIdMap: enrichedStoreIdMap,
     envUserIdMap: envAuth.userIdMap,
   });
 
