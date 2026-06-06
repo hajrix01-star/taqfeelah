@@ -5,7 +5,9 @@ import { calculateDaySummary } from "@/domain/cash-movement/calculations";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
+import { resolveCloseoutAutoReview } from "@/features/closeouts/server/closeout-review-policy";
 import { resolveCloseoutDaySequence } from "@/features/closeouts/server/resolve-closeout-day-sequence";
+import { readStoreOperationalSettingsRecord } from "@/features/org-config/server/read-store-operational-settings";
 
 const salesChannelSchema = z.object({
   salesChannelId: z.string().uuid(),
@@ -62,13 +64,19 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
   }
 
   const totalOutflowHalalas = input.outflows.reduce((sum, row) => sum + row.amountHalalas, 0);
-  // Product rule: review OFF by default — employee closeouts auto-approve unless requireReview=true.
-  const canAutoReview = input.actorRole === "employee"
-    ? input.requireReview !== true
-    : input.autoReview === true;
+  const db = getDb();
+  const operationalSettings = await readStoreOperationalSettingsRecord(
+    db,
+    input.organizationId,
+    input.storeId,
+  );
+  const canAutoReview = resolveCloseoutAutoReview({
+    actorRole: input.actorRole as MemberRole,
+    closeoutReviewEnabled: operationalSettings.closeoutReviewEnabled,
+    autoReview: input.autoReview,
+  });
   const initialEntryStatus = canAutoReview ? "active" : "voided";
   const initialReviewedAt = canAutoReview ? new Date() : null;
-  const db = getDb();
 
   const txResult = await db.transaction(async (tx) => {
     const [summaryEntry] = await tx

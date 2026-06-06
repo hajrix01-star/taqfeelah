@@ -152,6 +152,34 @@ export async function createOrganizationStoreViaApi({
   };
 }
 
+export async function updateStoreOperationalSettingsViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  storeId,
+  patch,
+  reason,
+}) {
+  const { storeIdMap } = getMaps();
+  const mappedStoreId = mapToUuid(storeId, storeIdMap);
+  if (!mappedStoreId) throw new Error("store operational settings api failed: missing store mapping");
+
+  const response = await fetch(`/api/v1/stores/${mappedStoreId}/operational-settings`, {
+    method: "PATCH",
+    headers: {
+      ...authHeaders({ organizationId, actorUserId, actorRole }),
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      ...(patch || {}),
+      ...(typeof reason === "string" && reason.trim() ? { reason: reason.trim() } : {}),
+    }),
+  });
+  if (!response.ok) throw new Error(`store operational settings api failed: ${response.status}`);
+  const payload = await response.json();
+  return payload?.operationalSettings || payload;
+}
+
 export async function updateOrganizationStoreViaApi({
   organizationId,
   actorUserId,

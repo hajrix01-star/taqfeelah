@@ -128,10 +128,21 @@ export function mapOrgConfigBundleToRuntime({
     .filter((member) => member.role === "employee")
     .map((member) => mapApiMemberToStaff(member, { employeePins }));
 
+  const storeOperationalSettings = {};
+  const storesByUuid = new Map(stores.map((store) => [store.id, store]));
+  const storesByLegacy = new Map(stores.map((store) => [store.legacyId || store.id, store]));
+  configuredBusinesses.forEach((business) => {
+    const storeRow = storesByUuid.get(business.dbStoreId) || storesByLegacy.get(business.id);
+    if (storeRow?.operationalSettings) {
+      storeOperationalSettings[business.id] = storeRow.operationalSettings;
+    }
+  });
+
   return {
     configuredBusinesses,
     archivedBusinessIds,
     storeChannelSettings,
+    storeOperationalSettings,
     staff,
   };
 }
@@ -146,6 +157,7 @@ export function buildOrgConfigPersistBaseline(snapshot) {
     })),
     archivedBusinessIds: [...(snapshot.archivedBusinessIds || [])].sort(),
     storeChannelSettings: snapshot.storeChannelSettings || {},
+    storeOperationalSettings: snapshot.storeOperationalSettings || {},
     staff: (snapshot.staff || []).map((person) => ({
       id: person.id,
       memberId: person.memberId || "",

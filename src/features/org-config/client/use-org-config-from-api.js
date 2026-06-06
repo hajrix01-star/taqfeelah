@@ -82,6 +82,7 @@ export function useOrgConfigFromApi({
           })),
           archivedBusinessIds: baseline.archivedBusinessIds,
           storeChannelSettings: baseline.storeChannelSettings,
+          storeOperationalSettings: baseline.storeOperationalSettings,
           staff: baseline.staff,
         },
         next: snapshot,

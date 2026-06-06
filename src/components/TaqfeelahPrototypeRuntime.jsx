@@ -5143,8 +5143,9 @@ export default function TaqfeelahPrototypeRuntime() {
     configuredBusinesses,
     archivedBusinessIds,
     storeChannelSettings,
+    storeOperationalSettings,
     staff,
-  }), [configuredBusinesses, archivedBusinessIds, storeChannelSettings, staff]);
+  }), [configuredBusinesses, archivedBusinessIds, storeChannelSettings, storeOperationalSettings, staff]);
 
   const applyOrgConfigHydration = useCallback((mapped) => {
     if (!mapped || typeof mapped !== "object") return;
@@ -5154,6 +5155,9 @@ export default function TaqfeelahPrototypeRuntime() {
       setStoreChannelSettings(mapped.storeChannelSettings);
     }
     if (Array.isArray(mapped.staff)) setStaff(mapped.staff);
+    if (mapped.storeOperationalSettings && typeof mapped.storeOperationalSettings === "object") {
+      setStoreOperationalSettings(mapped.storeOperationalSettings);
+    }
   }, []);
 
   const applyOrgConfigPersist = useCallback((applied) => {
@@ -5164,6 +5168,9 @@ export default function TaqfeelahPrototypeRuntime() {
       setStoreChannelSettings(applied.storeChannelSettings);
     }
     if (Array.isArray(applied.staff)) setStaff(applied.staff);
+    if (applied.storeOperationalSettings && typeof applied.storeOperationalSettings === "object") {
+      setStoreOperationalSettings(applied.storeOperationalSettings);
+    }
   }, []);
 
   const { error: orgConfigSyncError } = useOrgConfigFromApi({

@@ -4,6 +4,7 @@ import {
   createOrganizationStoreViaApi,
   updateOrganizationMemberViaApi,
   updateOrganizationStoreViaApi,
+  updateStoreOperationalSettingsViaApi,
   updateStoreSalesChannelViaApi,
 } from "./org-config-api-client.js";
 import { mapApiStoreToBusiness, mapApiMemberToStaff } from "./org-config-runtime-mapper.js";
@@ -192,10 +193,31 @@ export async function persistOrgConfigSnapshot({
     }
   }
 
+  const baselineOperational = baseline.storeOperationalSettings || {};
+  const nextOperational = next.storeOperationalSettings || {};
+  const operationalStoreIds = new Set([
+    ...Object.keys(baselineOperational),
+    ...Object.keys(nextOperational),
+  ]);
+
+  for (const storeId of operationalStoreIds) {
+    const beforeSettings = baselineOperational[storeId];
+    const afterSettings = nextOperational[storeId];
+    if (!afterSettings) continue;
+    if (JSON.stringify(beforeSettings || null) === JSON.stringify(afterSettings)) continue;
+
+    await updateStoreOperationalSettingsViaApi({
+      ...authArgs,
+      storeId,
+      patch: afterSettings,
+    });
+  }
+
   return {
     configuredBusinesses: remappedBusinesses,
     archivedBusinessIds: next.archivedBusinessIds || [],
     storeChannelSettings: next.storeChannelSettings || {},
+    storeOperationalSettings: next.storeOperationalSettings || {},
     staff: remappedStaff,
   };
 }

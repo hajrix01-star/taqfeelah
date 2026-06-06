@@ -4,6 +4,7 @@ import { assertOrganizationAccess } from "@/core/auth/assert-organization-access
 import { getDb } from "@/core/db/client";
 import { memberStoreAccess, stores } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
+import { normalizeStoreOperationalSettings } from "@/domain/store-operational-settings/normalize";
 
 const inputSchema = z.object({
   organizationId: z.string().uuid(),
@@ -45,6 +46,7 @@ export async function listOrganizationStores(rawInput: z.infer<typeof inputSchem
       name: stores.name,
       location: stores.location,
       status: stores.status,
+      operationalSettings: stores.operationalSettings,
       createdAt: stores.createdAt,
       updatedAt: stores.updatedAt,
     })
@@ -64,6 +66,7 @@ export async function listOrganizationStores(rawInput: z.infer<typeof inputSchem
       name: row.name,
       location: row.location || "",
       status: row.status,
+      operationalSettings: normalizeStoreOperationalSettings(row.operationalSettings),
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     })),

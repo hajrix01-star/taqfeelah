@@ -14,6 +14,15 @@ describe("org config runtime mapper", () => {
         name: "Shami",
         location: "Riyadh",
         status: "active",
+        operationalSettings: {
+          closeoutReviewEnabled: true,
+          reviewEnabled: false,
+          activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
+          employeeHistoryVisibility: "all",
+          closeoutAlert: false,
+          attachmentAlert: false,
+          notebookTheme: null,
+        },
       }],
       channelsByStoreId: {
         "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c": [{
@@ -40,6 +49,8 @@ describe("org config runtime mapper", () => {
     expect(channelSettings.shami?.activeIds).toContain("cash");
     expect(mapped.staff[0].id).toBe("ahmed");
     expect(mapped.staff[0].storeIds).toEqual(["shami"]);
+    const operationalSettings = mapped.storeOperationalSettings as Record<string, { closeoutReviewEnabled?: boolean }>;
+    expect(operationalSettings.shami?.closeoutReviewEnabled).toBe(true);
   });
 
   it("maps unknown channels as custom entries", () => {

@@ -12,6 +12,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { StoreOperationalSettings } from "@/domain/store-operational-settings/types";
 
 const createdAt = timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 const updatedAt = timestamp("updated_at", { withTimezone: true }).notNull().defaultNow();
@@ -79,6 +80,10 @@ export const stores = pgTable("stores", {
   name: text("name").notNull(),
   location: text("location"),
   status: text("status").notNull().default("active"),
+  operationalSettings: jsonb("operational_settings")
+    .$type<StoreOperationalSettings>()
+    .notNull()
+    .default({} as StoreOperationalSettings),
   createdAt,
   updatedAt,
 });

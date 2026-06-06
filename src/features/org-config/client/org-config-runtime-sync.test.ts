@@ -79,4 +79,66 @@ describe("org config runtime sync", () => {
       location: "Jeddah",
     });
   });
+
+  it("persists store operational settings through dedicated patch api", async () => {
+    const fetchMock = vi.fn(async (url, init) => {
+      if (String(url).includes("/operational-settings") && init?.method === "PATCH") {
+        return new Response(JSON.stringify({
+          storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+          operationalSettings: {
+            closeoutReviewEnabled: true,
+            reviewEnabled: false,
+            activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
+            employeeHistoryVisibility: "all",
+            closeoutAlert: false,
+            attachmentAlert: false,
+            notebookTheme: null,
+          },
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync.js");
+    await persistOrgConfigSnapshot({
+      auth: {
+        organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+        actorUserId: "owner",
+        actorRole: "owner",
+      },
+      baseline: {
+        configuredBusinesses: [{
+          id: "shami",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {},
+        storeOperationalSettings: {
+          shami: { closeoutReviewEnabled: false },
+        },
+        staff: [],
+      },
+      next: {
+        configuredBusinesses: [{
+          id: "shami",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {},
+        storeOperationalSettings: {
+          shami: { closeoutReviewEnabled: true },
+        },
+        staff: [],
+      },
+    });
+
+    const patchCall = fetchMock.mock.calls.find(([url, init]) => (
+      String(url).includes("/operational-settings") && init?.method === "PATCH"
+    ));
+    expect(patchCall).toBeTruthy();
+    expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({
+      closeoutReviewEnabled: true,
+    });
+  });
 });

@@ -13,6 +13,20 @@ vi.mock("@/features/closeouts/server/resolve-closeout-day-sequence", () => ({
   resolveCloseoutDaySequence: vi.fn(async () => 1),
 }));
 
+const readStoreOperationalSettingsRecord = vi.fn(async () => ({
+  activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
+  reviewEnabled: false,
+  closeoutReviewEnabled: false,
+  employeeHistoryVisibility: "all" as const,
+  closeoutAlert: false,
+  attachmentAlert: false,
+  notebookTheme: null,
+}));
+
+vi.mock("@/features/org-config/server/read-store-operational-settings", () => ({
+  readStoreOperationalSettingsRecord,
+}));
+
 vi.mock("@/core/db/client", () => ({
   getDb: () => ({
     transaction: async (callback: (tx: ReturnType<typeof createTx>) => Promise<unknown>) =>
@@ -88,14 +102,23 @@ describe("submitStoreCloseout", () => {
     expect((audits[1]?.values as { action: string }).action).toBe("closeout_approved");
   });
 
-  it("leaves employee closeout pending when review is explicitly required", async () => {
+  it("leaves employee closeout pending when persisted store settings require review", async () => {
     insertCalls.length = 0;
+    readStoreOperationalSettingsRecord.mockResolvedValueOnce({
+      activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
+      reviewEnabled: false,
+      closeoutReviewEnabled: true,
+      employeeHistoryVisibility: "all",
+      closeoutAlert: false,
+      attachmentAlert: false,
+      notebookTheme: null,
+    });
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 
     await submitStoreCloseout({
       ...baseInput,
-      autoReview: false,
-      requireReview: true,
+      autoReview: true,
+      requireReview: false,
     });
 
     const summaryInsert = entryInserts()[0];
@@ -143,6 +166,30 @@ describe("submitStoreCloseout", () => {
     });
     expect(metadata?.outflowEntryIds?.length).toBe(1);
     expect(metadata?.daySequence).toBe(1);
+  });
+
+  it("enforces employee review from persisted store settings even when client omits requireReview", async () => {
+    insertCalls.length = 0;
+    readStoreOperationalSettingsRecord.mockResolvedValueOnce({
+      activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
+      reviewEnabled: false,
+      closeoutReviewEnabled: true,
+      employeeHistoryVisibility: "all",
+      closeoutAlert: false,
+      attachmentAlert: false,
+      notebookTheme: null,
+    });
+    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
+
+    await submitStoreCloseout({
+      ...baseInput,
+      autoReview: true,
+      requireReview: false,
+    });
+
+    const summaryInsert = entryInserts()[0];
+    expect((summaryInsert?.values as { status: string }).status).toBe("voided");
+    expect(auditInserts()).toHaveLength(1);
   });
 
   it("auto-approves employee closeout by default when requireReview is omitted", async () => {
