@@ -9,7 +9,11 @@ export function mapDaysReportToUiRows(days = []) {
   return (Array.isArray(days) ? days : []).map((row) => {
     const salesHalalas = Number(row?.totalSales?.amountHalalas || 0);
     const outflowHalalas = Number(row?.totalOutflow?.amountHalalas || 0);
-    const { ratio } = formatOutflowRatio(salesHalalas, outflowHalalas);
+    const ratio = row?.outflowRatioStatus === "notCalculable"
+      ? "—"
+      : (typeof row?.outflowRatio === "string"
+        ? row.outflowRatio
+        : formatOutflowRatio(salesHalalas, outflowHalalas).ratio);
 
     return {
       id: row.date,

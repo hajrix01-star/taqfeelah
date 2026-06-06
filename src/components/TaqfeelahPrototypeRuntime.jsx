@@ -107,6 +107,11 @@ import { useRegisterEntriesFromApi } from "@/features/entries/client/use-registe
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { useOrgConfigFromApi } from "@/features/org-config/client/use-org-config-from-api";
+import {
+  entriesInPeriod,
+  summarizeEntries,
+  summaryMonthFromEntries,
+} from "@/features/operations/operational-analytics";
 import { isPrototypeAccessMode } from "@/core/config/prototype-access-mode";
 import PrototypeAccessScreen from "@/features/demo/PrototypeAccessScreen";
 
@@ -1514,18 +1519,6 @@ function employeePinMatches(person, pin) {
   if (!expectedPin) return false;
   return `${pin}`.trim() === expectedPin;
 }
-function entriesInPeriod(entries, businessId, period, selectedDate, selectedMonth, selectedYear = "2026", customFrom = "2026-01-01", customTo = "2026-12-31") {
-  return entries.filter((entry) => (!businessId || entry.businessId === businessId) && entryDateMatches(entry, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo));
-}
-function summarizeEntries(entries, reviewEnabledForBusiness = () => false) {
-  const activeEntries = entries.filter(entryIsActive);
-  const sales = activeEntries.filter((entry) => entry.type === "summary").reduce((sum, entry) => sum + entry.amount, 0);
-  const expense = activeEntries.filter(entryIsOutflow).reduce((sum, entry) => sum + entry.amount, 0);
-  const proofs = activeEntries.filter(entryHasAttachment).length;
-  const pending = activeEntries.filter((entry) => entryHasAttachment(entry) && !entry.reviewed && reviewEnabledForBusiness(entry.businessId)).length;
-  const ratio = sales > 0 ? `${((expense / sales) * 100).toFixed(1)}%` : expense > 0 ? "—" : "0.0%";
-  return { sales, expense, net: sales - expense, ratio, proofs, pending };
-}
 function aggregateSalesChannelsFromGroupEntries(entries, lang, channelFilter = "all") {
   const map = new Map();
   entries.filter(entryIsActive).forEach((entry) => {
@@ -1546,9 +1539,6 @@ function aggregateSalesChannelsFromGroupEntries(entries, lang, channelFilter = "
 }
 function summaryDayFromEntries(entries, businessId, date, reviewEnabledForBusiness = () => false) {
   return { id: date, dayAr: formatCalendarDate(date, "ar"), dayEn: formatCalendarDate(date, "en"), fullAr: formatCalendarDate(date, "ar"), fullEn: formatCalendarDate(date, "en"), ...summarizeEntries(entriesInPeriod(entries, businessId, "day", date, "2026-05"), reviewEnabledForBusiness) };
-}
-function summaryMonthFromEntries(entries, businessId, month, reviewEnabledForBusiness = () => false) {
-  return summarizeEntries(entriesInPeriod(entries, businessId, "month", "", month), reviewEnabledForBusiness);
 }
 function aggregateChannels(entries, businessId, period, selectedDate, selectedMonth, baseChannels = []) {
   const relevant = entriesInPeriod(entries, businessId, period, selectedDate, selectedMonth).filter((entry) => entry.type === "summary" && entryIsActive(entry));

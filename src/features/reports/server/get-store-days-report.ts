@@ -5,6 +5,7 @@ import { entries } from "@/core/db/schema";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
+import { formatOutflowRatio } from "@/core/money/halalas";
 import { assertBoundedReportRange } from "@/features/reports/server/report-date-range";
 
 const inputSchema = z.object({
@@ -59,14 +60,19 @@ export async function getStoreDaysReport(rawInput: z.infer<typeof inputSchema>) 
     to: range.to,
     days: rows
       .filter((row) => row.salesHalalas > 0 || row.outflowHalalas > 0)
-      .map((row) => ({
-        date: row.date,
-        totalSales: { amountHalalas: row.salesHalalas, currency: "SAR" as const },
-        totalOutflow: { amountHalalas: row.outflowHalalas, currency: "SAR" as const },
-        netMovement: {
-          amountHalalas: row.salesHalalas - row.outflowHalalas,
-          currency: "SAR" as const,
-        },
-      })),
+      .map((row) => {
+        const { ratio, status } = formatOutflowRatio(row.salesHalalas, row.outflowHalalas);
+        return {
+          date: row.date,
+          totalSales: { amountHalalas: row.salesHalalas, currency: "SAR" as const },
+          totalOutflow: { amountHalalas: row.outflowHalalas, currency: "SAR" as const },
+          netMovement: {
+            amountHalalas: row.salesHalalas - row.outflowHalalas,
+            currency: "SAR" as const,
+          },
+          outflowRatio: ratio,
+          outflowRatioStatus: status,
+        };
+      }),
   };
 }

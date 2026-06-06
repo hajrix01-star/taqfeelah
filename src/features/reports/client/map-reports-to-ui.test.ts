@@ -37,6 +37,8 @@ describe("mapDaysReportToUiRows", () => {
         totalSales: { amountHalalas: 50000 },
         totalOutflow: { amountHalalas: 10000 },
         netMovement: { amountHalalas: 40000 },
+        outflowRatio: "20.0%",
+        outflowRatioStatus: "calculable",
       },
     ]);
 
