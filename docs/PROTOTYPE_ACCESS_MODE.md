@@ -110,6 +110,16 @@ Server-only (backward compatible):
 - `GET /api/v1/stores/:storeId/entries?paginated=1&limit=50&cursor=...` returns `{ items, nextCursor }`
 - Without `paginated` / `cursor`, the route keeps returning a plain array for existing clients
 
+### Phase 7 — register cursor pagination in UI
+
+When `NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true` (or inherited from entries API flag):
+
+- Owner register loads entries for the selected period via paginated store entries API
+- Operations tab loads additional pages automatically near scroll end (no visual change)
+- Closeouts tab loads remaining pages in the background for complete grouping
+- Global operational entries preload shrinks to a 30-day working window for home/employee flows
+- When the pagination flag is off, register keeps using the in-memory `operationalEntries` filter path
+
 **Review default:** employee closeout review is **off** per store; submits are **auto-approved** on the server when `autoReview=true` (no owner pending queue). See `.cursor/rules/closeout-review-defaults.mdc`.
 
 ## Important

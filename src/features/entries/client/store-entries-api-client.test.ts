@@ -93,4 +93,42 @@ describe("store entries api client", () => {
     expect(body.salesChannels[0].salesChannelId).toBe("9bc40d4f-c773-4ba3-87db-b8bb1467dafb");
     expect(body.salesChannels[0].amountHalalas).toBe(10000);
   });
+
+  it("fetches paginated entries and remaps ids to runtime keys", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => new Response(JSON.stringify({
+        items: [{
+          id: "entry-3",
+          businessId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+          salesChannels: [],
+        }],
+        nextCursor: "cursor-2",
+      }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreEntriesPageViaApi } = await import("./store-entries-api-client.js");
+    const result = await fetchStoreEntriesPageViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      storeId: "shami",
+      dateFrom: "2026-06-01",
+      dateTo: "2026-06-30",
+      cursor: "cursor-1",
+      limit: 50,
+    });
+
+    expect(result.items).toEqual([{
+      id: "entry-3",
+      businessId: "shami",
+      salesChannels: [],
+    }]);
+    expect(result.nextCursor).toBe("cursor-2");
+    const [url] = fetchMock.mock.lastCall!;
+    expect(String(url)).toContain("paginated=1");
+    expect(String(url)).toContain("cursor=cursor-1");
+    expect(String(url)).toContain("dateFrom=2026-06-01");
+  });
 });
