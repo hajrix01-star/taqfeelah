@@ -1,3 +1,4 @@
+import { diffStoreOperationalSettingsPatch } from "@/domain/store-operational-settings/normalize";
 import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
 import {
   createOrganizationMemberViaApi,
@@ -204,12 +205,14 @@ export async function persistOrgConfigSnapshot({
     const beforeSettings = baselineOperational[storeId];
     const afterSettings = nextOperational[storeId];
     if (!afterSettings) continue;
-    if (JSON.stringify(beforeSettings || null) === JSON.stringify(afterSettings)) continue;
+
+    const patch = diffStoreOperationalSettingsPatch(beforeSettings, afterSettings);
+    if (!Object.keys(patch).length) continue;
 
     await updateStoreOperationalSettingsViaApi({
       ...authArgs,
       storeId,
-      patch: afterSettings,
+      patch,
     });
   }
 

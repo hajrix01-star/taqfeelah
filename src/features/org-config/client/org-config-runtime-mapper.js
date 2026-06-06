@@ -1,4 +1,5 @@
 import { CreditCard, ShoppingBag, Smartphone, Wallet } from "lucide-react";
+import { normalizeStoreOperationalSettings } from "@/domain/store-operational-settings/normalize";
 import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
 
 const emptyStoreRecord = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0, pending: 0 };
@@ -134,7 +135,7 @@ export function mapOrgConfigBundleToRuntime({
   configuredBusinesses.forEach((business) => {
     const storeRow = storesByUuid.get(business.dbStoreId) || storesByLegacy.get(business.id);
     if (storeRow?.operationalSettings) {
-      storeOperationalSettings[business.id] = storeRow.operationalSettings;
+      storeOperationalSettings[business.id] = normalizeStoreOperationalSettings(storeRow.operationalSettings);
     }
   });
 

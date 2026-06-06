@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   defaultStoreOperationalSettings,
+  diffStoreOperationalSettingsPatch,
   mergeStoreOperationalSettings,
   normalizeStoreOperationalSettings,
 } from "./normalize";
@@ -21,6 +22,13 @@ describe("normalizeStoreOperationalSettings", () => {
     );
     expect(merged.reviewEnabled).toBe(true);
     expect(merged.closeoutReviewEnabled).toBe(true);
+  });
+
+  it("builds a minimal patch with only changed operational settings fields", () => {
+    expect(diffStoreOperationalSettingsPatch(
+      { reviewEnabled: false, closeoutReviewEnabled: false },
+      { reviewEnabled: false, closeoutReviewEnabled: true },
+    )).toEqual({ closeoutReviewEnabled: true });
   });
 
   it("falls back to defaults for invalid stored payloads", () => {
