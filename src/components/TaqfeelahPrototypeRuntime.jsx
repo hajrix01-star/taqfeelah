@@ -81,6 +81,8 @@ import {
   saveRuntimeSettingsViaApi,
 } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
 import { isProductionAppMode } from "@/core/config/app-mode";
+import { isPrototypeAccessMode } from "@/core/config/prototype-access-mode";
+import PrototypeAccessScreen from "@/features/demo/PrototypeAccessScreen";
 
 function AppFontStyles() {
   return (
@@ -1155,6 +1157,7 @@ const employeeName = (item, lang) => item.enteredBy ? (lang === "ar" ? item.ente
 // طبقة السجل التشغيلي: المصدر الوحيد للأرقام والمرفقات والتقارير داخل البروتايب.
 // البنية مقصودة لتنتقل لاحقًا إلى API/DB دون إعادة تصميم الواجهة.
 const APP_IN_PRODUCTION_MODE = isProductionAppMode();
+const PROTOTYPE_ACCESS_MODE = isPrototypeAccessMode();
 const PRODUCTION_API_ENTRIES_MODE = APP_IN_PRODUCTION_MODE;
 const PROTOTYPE_SUPPORT_WHATSAPP = "966501234567";
 const PROTOTYPE_DEMO_OTP = process.env.NEXT_PUBLIC_DEMO_OTP || (APP_IN_PRODUCTION_MODE ? "" : "1234");
@@ -2320,7 +2323,8 @@ const PROTOTYPE_DEFAULT_STAFF = [
 ];
 
 function readPrototypeAuthBoot() {
-  if (APP_IN_PRODUCTION_MODE) {
+  // Prototype Access Mode always starts logged out (no session restore).
+  if (APP_IN_PRODUCTION_MODE || PROTOTYPE_ACCESS_MODE) {
     return {
       loggedIn: false,
       employee: false,
@@ -5351,7 +5355,9 @@ export default function TaqfeelahPrototypeRuntime() {
     setSelected(null);
   };
   const completeOwnerLogin = (apiUserId = "") => {
-    saveAuthSession({ role: "owner" });
+    if (!PROTOTYPE_ACCESS_MODE) {
+      saveAuthSession({ role: "owner" });
+    }
     setSessionUserId(typeof apiUserId === "string" ? apiUserId : "");
     setLoggedIn(true);
     setEmployee(false);
@@ -5363,7 +5369,9 @@ export default function TaqfeelahPrototypeRuntime() {
     const person = staff.find((item) => item.id === personId && item.active && !item.removed);
     const resolvedEmployeeId = person?.id || (typeof apiUserId === "string" && apiUserId ? apiUserId : personId);
     if (!resolvedEmployeeId) return;
-    saveAuthSession({ role: "employee", employeeId: resolvedEmployeeId });
+    if (!PROTOTYPE_ACCESS_MODE) {
+      saveAuthSession({ role: "employee", employeeId: resolvedEmployeeId });
+    }
     setSessionUserId(typeof apiUserId === "string" ? apiUserId : "");
     setLoggedIn(true);
     setEmployee(true);
@@ -5746,11 +5754,24 @@ export default function TaqfeelahPrototypeRuntime() {
     console.warn(runtimeSettingsSyncError);
   }, [runtimeSettingsSyncError]);
 
+  const enterPrototypeAsEmployee = () => {
+    const person = staff.find((item) => item.active && !item.removed) || PROTOTYPE_DEFAULT_STAFF[0];
+    if (!person?.id) return;
+    completeEmployeeLogin(person.id);
+  };
+
   if (!loggedIn) {
     return (
       <div dir={lang === "ar" ? "rtl" : "ltr"} className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
         <AppFontStyles />
-        {authScreen === "owner" ? (
+        {PROTOTYPE_ACCESS_MODE ? (
+          <PrototypeAccessScreen
+            lang={lang}
+            setLang={setLang}
+            onOwner={() => completeOwnerLogin()}
+            onEmployee={enterPrototypeAsEmployee}
+          />
+        ) : authScreen === "owner" ? (
           <LoginScreen lang={lang} setLang={setLang} onOwnerLogin={completeOwnerLogin} onEmployeePortal={() => setAuthScreen("employee")} />
         ) : (
           <EmployeeLoginScreen lang={lang} setLang={setLang} staff={staff} onBack={() => setAuthScreen("owner")} onLogin={completeEmployeeLogin} />
