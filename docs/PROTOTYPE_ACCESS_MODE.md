@@ -131,6 +131,18 @@ When `NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true` (or inherited from entries API fl
 - Runtime settings save path remains the source of truth for the prototype UI until a later wiring phase
 - Client helpers live in `org-config-api-client.js` for future non-UI integration
 
+### Phase 9 — duplicate summary, notebook export, inline attachments
+
+When `NEXT_PUBLIC_PHASE9_API_ENABLED=true` (or inherited from entries API flag):
+
+- Duplicate summary approval goes through `POST /api/v1/stores/:storeId/entries/duplicate-summary/approve` (creates entry + `duplicate_approved` audit)
+- Owner duplicate alerts acknowledgement goes through `POST /api/v1/stores/:storeId/entries/duplicate-summary/acknowledge`
+- Notebook JSON export is available at `GET /api/v1/exports/notebook` (SQL-backed totals/channels/operations)
+- Inline image registration is available at `POST /api/v1/stores/:storeId/attachments/inline`
+- Runtime wires duplicate approve/acknowledge behind the Phase 9 flag when entries API is on; no visual/layout changes
+- Notebook share/export UI still uses loaded entries until a later wiring phase
+- Client helpers live in `phase9-api-client.js`
+
 **Review default:** employee closeout review is **off** per store; submits are **auto-approved** on the server when `autoReview=true` (no owner pending queue). See `.cursor/rules/closeout-review-defaults.mdc`.
 
 ## Important

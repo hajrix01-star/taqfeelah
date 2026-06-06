@@ -28,7 +28,11 @@ const createEntryInputSchema = z.object({
       name: z.string().trim().min(1).max(220).optional(),
       mimeType: z.string().trim().min(1).max(120).default("image/jpeg"),
       sizeBytes: z.number().int().positive().max(350 * 1024),
-      dataUrl: z.string().trim().min(32).max(500_000),
+      dataUrl: z.string().trim().min(32).max(500_000).optional(),
+      storageKey: z.string().trim().min(8).max(500_000).optional(),
+    })
+    .refine((value) => Boolean(value.dataUrl || value.storageKey), {
+      message: "Attachment requires dataUrl or storageKey.",
     })
     .optional(),
 });
@@ -102,11 +106,15 @@ export async function createStoreEntry(rawInput: CreateEntryInput) {
     }
 
     if (input.attachment) {
+      const storageKey = input.attachment.storageKey || input.attachment.dataUrl;
+      if (!storageKey) {
+        throw new ValidationError("Attachment requires dataUrl or storageKey.");
+      }
       await tx.insert(attachments).values({
         organizationId: input.organizationId,
         storeId: input.storeId,
         entryId: createdEntry.id,
-        storageKey: input.attachment.dataUrl,
+        storageKey,
         originalFileName: input.attachment.name || "attachment.jpg",
         mimeType: input.attachment.mimeType || "image/jpeg",
         sizeBytes: input.attachment.sizeBytes,

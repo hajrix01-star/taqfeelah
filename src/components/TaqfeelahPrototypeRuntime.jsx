@@ -84,6 +84,10 @@ import {
   voidStoreEntryViaApi,
 } from "@/features/entries/client/store-entries-api-client";
 import {
+  acknowledgeDuplicateSummariesViaApi,
+  approveDuplicateSummaryViaApi,
+} from "@/features/phase9/client/phase9-api-client";
+import {
   fetchEmployeeLoginRosterViaApi,
   fetchRuntimeSettingsViaApi,
   getSessionStatusViaApi,
@@ -5460,6 +5464,59 @@ export default function TaqfeelahPrototypeRuntime() {
     const pending = pendingDuplicateSummary;
     if (!pending?.payload) return;
     setPendingDuplicateSummary(null);
+    if (phase9ApiEnabled && entriesApiEnabled) {
+      const payload = pending.payload;
+      const actorUserId = pending.actor === "owner" ? ownerApiUserId : activeEmployee?.id;
+      const actorRole = pending.actor === "owner" ? "owner" : "employee";
+      if (!actorUserId || !payload?.businessId) return;
+      savingRef.current = true;
+      setSaving(true);
+      try {
+        const created = await approveDuplicateSummaryViaApi({
+          organizationId: closeoutsApiOrganizationId,
+          actorUserId,
+          actorRole,
+          storeId: payload.businessId,
+          date: payload.date,
+          payload,
+        });
+        if (!created) {
+          window.alert(lang === "ar" ? "تعذر حفظ الملخص المكرر على الخادم." : "Failed to save duplicate summary on server.");
+          return;
+        }
+        const refreshed = await loadOperationalEntriesFromApi();
+        if (payload.type === "summary") {
+          const latestActiveCloseoutDate = refreshed
+            .filter((entry) => entry.businessId === payload.businessId && entry.type === "summary" && entryIsActive(entry))
+            .map((entry) => entry.date)
+            .sort()
+            .pop();
+          setLastCloseoutDates((current) => ({
+            ...current,
+            [payload.businessId]: latestActiveCloseoutDate || payload.date,
+          }));
+        }
+        if (pending.actor === "owner") {
+          setOwnerPage("home");
+          setSaved(true);
+          window.setTimeout(() => setSaved(false), 2200);
+        } else {
+          const actor = { role: "employee", userId: activeEmployee.id, nameAr: activeEmployee.nameAr, nameEn: activeEmployee.nameEn };
+          const createdEntry = refreshed.find((entry) => entry.id === created.id);
+          if (createdEntry) pushCloseoutAlert(payload, createdEntry, actor);
+          setEmployeePage("home");
+          setSaved(true);
+          window.setTimeout(() => setSaved(false), 2200);
+        }
+      } catch (error) {
+        console.warn("duplicate summary approve api failed", error);
+        window.alert(lang === "ar" ? "تعذر حفظ الملخص المكرر على الخادم." : "Failed to save duplicate summary on server.");
+      } finally {
+        savingRef.current = false;
+        setSaving(false);
+      }
+      return;
+    }
     if (pending.actor === "owner") await saveOwner(pending.payload);
     else await persistEmployeeEntry(pending.payload);
   };
@@ -5470,8 +5527,29 @@ export default function TaqfeelahPrototypeRuntime() {
     setDuplicateReviewFocus({ businessId: alert.businessId, date: alert.date, openedAt: Date.now() });
     setOwnerPage("register");
   };
-  const acknowledgeDuplicateSales = (alert) => {
+  const acknowledgeDuplicateSales = async (alert) => {
     if (!alert?.businessId || !alert?.date || !alert.entries?.length) return;
+    if (phase9ApiEnabled && entriesApiEnabled) {
+      try {
+        const acknowledged = await acknowledgeDuplicateSummariesViaApi({
+          organizationId: closeoutsApiOrganizationId,
+          actorUserId: ownerApiUserId,
+          actorRole: "owner",
+          storeId: alert.businessId,
+          date: alert.date,
+          entryIds: alert.entries.map((entry) => entry.id),
+        });
+        if (!acknowledged) {
+          window.alert(lang === "ar" ? "تعذر تأكيد الملخصات المكررة على الخادم." : "Failed to acknowledge duplicate summaries on server.");
+          return;
+        }
+        setAcknowledgedDuplicateSales((current) => ({ ...current, [duplicateSalesGroupKey(alert)]: duplicateSalesSignature(alert.entries) }));
+      } catch (error) {
+        console.warn("duplicate summary acknowledge api failed", error);
+        window.alert(lang === "ar" ? "تعذر تأكيد الملخصات المكررة على الخادم." : "Failed to acknowledge duplicate summaries on server.");
+      }
+      return;
+    }
     const actionAt = new Date().toISOString();
     const approvedIds = new Set(alert.entries.map((entry) => entry.id));
     setOperationalEntries((current) => current.map((entry) => approvedIds.has(entry.id) ? { ...entry, auditTrail: [...(entry.auditTrail || []), { action: "duplicate_approved", at: actionAt, by: currentOwnerActor, reason: "" }] } : entry));
@@ -5774,6 +5852,9 @@ export default function TaqfeelahPrototypeRuntime() {
   const entriesApiEnabled = process.env.NEXT_PUBLIC_ENTRIES_API_ENABLED
     ? process.env.NEXT_PUBLIC_ENTRIES_API_ENABLED === "true"
     : closeoutsApiEnabled;
+  const phase9ApiEnabled = process.env.NEXT_PUBLIC_PHASE9_API_ENABLED
+    ? process.env.NEXT_PUBLIC_PHASE9_API_ENABLED === "true"
+    : entriesApiEnabled;
   const entriesApiStrictMode = isEntriesApiStrictMode();
 
   const createOperationalEntryInApi = useCallback(async ({ payload, actorUserId, actorRole }) => {

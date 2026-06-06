@@ -1,6 +1,6 @@
 # تقفيلة — API Contract (planned + partial implementation)
 
-> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day|month|period`, `GET /reports/days|channels|outflow|attachments` (wired to owner reports when entries API is enabled), snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, `POST /stores/:storeId/closeouts/:closeoutId/review`, and `GET /stores/:storeId/entries` are implemented; remaining endpoints are planned.  
+> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day|month|period`, `GET /reports/days|channels|outflow|attachments` (wired to owner reports when entries API is enabled), snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, `POST /stores/:storeId/closeouts/:closeoutId/review`, `GET /stores/:storeId/entries`, Phase 8 org config routes, and Phase 9 duplicate-summary / notebook export / inline attachments are implemented; remaining endpoints are planned.  
 > **Auth:** Session rollout in progress. Preferred source is signed session cookie (`AUTH_SESSION_COOKIE_NAME`), with optional temporary header fallback controlled by `ALLOW_HEADER_AUTH_CONTEXT`.  
 > **Prototype period:** While Prototype Access Mode is ON, server APIs may accept `x-organization-id` / `x-user-id` / `x-member-role` when `ALLOW_HEADER_AUTH_CONTEXT=true` (including production `NODE_ENV`). Missing org/user headers may fall back to `AUTH_ORGANIZATION_ID` / `AUTH_OWNER_USER_ID` (or their `NEXT_PUBLIC_CLOSEOUTS_API_*` aliases). Disable before public launch.  
 > **UI:** Must not require design changes — responses feed existing approved screens.
@@ -314,12 +314,42 @@ Sets `status=active`, `restored_at`, audit `restored`.
 
 Marks attachment reviewed; audit `reviewed`.
 
-### `POST /entries/duplicate-summary/approve`
+### `POST /stores/:storeId/entries/duplicate-summary/approve` (implemented)
 
 When adding second active summary same store+day:
 
-Body: `{ "storeId", "date", "payload": { ...summary body } }`  
-Creates entry + audit `duplicate_approved`.
+Body:
+
+```json
+{
+  "date": "2026-06-05",
+  "payload": {
+    "type": "summary",
+    "note": "optional",
+    "salesChannels": [
+      { "salesChannelId": "uuid", "channelName": "Cash", "amountHalalas": 100000 }
+    ],
+    "attachment": { "kind": "image", "mimeType": "image/jpeg", "sizeBytes": 12000, "dataUrl": "..." }
+  }
+}
+```
+
+Creates entry + audit `duplicate_approved`. Requires an existing active summary for the same store+date.
+
+### `POST /stores/:storeId/entries/duplicate-summary/acknowledge` (implemented)
+
+Owner acknowledges duplicate summary alerts without creating a new entry.
+
+Body:
+
+```json
+{
+  "date": "2026-06-05",
+  "entryIds": ["uuid", "uuid"]
+}
+```
+
+Writes audit `duplicate_approved` with `metadata.mode = acknowledge_existing` for each entry.
 
 ---
 
@@ -453,15 +483,54 @@ Employee: only assigned stores for store-scoped reads.
 
 ---
 
-## Attachments (later)
+## Exports
 
-### `POST /attachments/upload-url`
+### `GET /exports/notebook` (implemented)
 
-Returns presigned URL + `attachmentId` draft.
+Query: `storeId`, `period=day|month|year|custom`, plus `from`+`to` or `date` or `month=YYYY-MM`
 
-### `POST /attachments/:id/complete`
+Response:
 
-Links to `entry_id` after entry created.
+```json
+{
+  "storeId": "uuid",
+  "period": "day",
+  "from": "2026-06-05",
+  "to": "2026-06-05",
+  "totals": { "sales": 1500, "expense": 250, "net": 1250, "ratio": "16.7%", "proofs": 1, "pending": 0 },
+  "channels": [{ "channelId": "uuid", "name": "Cash", "amount": 1500 }],
+  "operations": [{ "id": "uuid", "date": "2026-06-05", "type": "summary", "amount": 1500, "note": "", "hasAttachment": true, "createdAt": "..." }]
+}
+```
+
+Amounts are returned in riyals (display units). Notebook share UI may still use loaded entries until wired behind `NEXT_PUBLIC_PHASE9_API_ENABLED`.
+
+---
+
+## Attachments
+
+### `POST /stores/:storeId/attachments/inline` (implemented)
+
+Registers a prototype inline image attachment and returns a stable `storageKey` (`inline:v1:{checksum}:...`) for entry creation.
+
+Body:
+
+```json
+{
+  "attachment": {
+    "kind": "image",
+    "name": "receipt.jpg",
+    "mimeType": "image/jpeg",
+    "sizeBytes": 12000,
+    "dataUrl": "data:image/jpeg;base64,..."
+  }
+}
+```
+
+### Planned
+
+- `POST /attachments/upload-url` — presigned URL + `attachmentId` draft
+- `POST /attachments/:id/complete` — link to `entry_id` after entry created
 
 ---
 
