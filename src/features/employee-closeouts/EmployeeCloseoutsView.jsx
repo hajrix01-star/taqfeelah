@@ -7,7 +7,11 @@ import DailyCloseoutCard from "./DailyCloseoutCard";
 import DailyCloseoutEntryFlow from "./DailyCloseoutEntryFlow";
 import CloseoutShareModal from "./CloseoutShareModal";
 import { useDailyCloseouts } from "../daily-closeouts/DailyCloseoutsProvider";
-import { createDraftCloseout, sortCloseoutsNewestFirst } from "../daily-closeouts/daily-closeouts-demo-store";
+import {
+  createDraftCloseout,
+  isCloseoutWorkflowFailure,
+  sortCloseoutsNewestFirst,
+} from "../daily-closeouts/daily-closeouts-demo-store";
 import { CLOSEOUT_STATUS } from "../daily-closeouts/closeout-status";
 import {
   closeoutBelongsToEmployee,
@@ -192,8 +196,15 @@ export default function EmployeeCloseoutsView({
   const handleSubmit = async (closeout, { isResubmit }) => {
     const fn = isResubmit ? resubmitCloseout : submitCloseout;
     const next = await fn({ closeout, employee, reviewWorkflowEnabled });
+    if (isCloseoutWorkflowFailure(next)) {
+      const message = next.phase === "save"
+        ? (lang === "ar" ? "تعذر الحفظ." : "Failed to save.")
+        : (lang === "ar" ? "تعذر الإرسال." : "Failed to send.");
+      window.alert(message);
+      return;
+    }
     if (!next) {
-      window.alert(lang === "ar" ? "تعذر إرسال التقفيلة إلى الخادم." : "Failed to submit closeout to server.");
+      window.alert(lang === "ar" ? "تعذر الإرسال." : "Failed to send.");
       return;
     }
     setEntryCloseout(null);

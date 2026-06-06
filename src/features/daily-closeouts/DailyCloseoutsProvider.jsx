@@ -12,6 +12,11 @@ import {
   withCloseoutTotals,
   writeDailyCloseouts,
 } from "./daily-closeouts-demo-store";
+
+const CLOSEOUT_SAVE_ERROR_AR = "تعذر الحفظ.";
+const CLOSEOUT_SAVE_ERROR_EN = "Failed to save.";
+const CLOSEOUT_SEND_ERROR_AR = "تعذر الإرسال.";
+const CLOSEOUT_SEND_ERROR_EN = "Failed to send.";
 import { CLOSEOUT_STATUS } from "./closeout-status";
 
 const DailyCloseoutsContext = createContext(null);
@@ -42,13 +47,15 @@ export function DailyCloseoutsProvider({
   const [syncError, setSyncError] = useState("");
 
   const persistCloseouts = useCallback((next) => {
+    let storageResult = { ok: true };
     setCloseouts((current) => {
       const resolved = typeof next === "function" ? next(current) : next;
       if (!skipLocalPersistence) {
-        writeDailyCloseouts(resolved);
+        storageResult = writeDailyCloseouts(resolved);
       }
       return resolved;
     });
+    return storageResult;
   }, [skipLocalPersistence]);
 
   const logEvent = useCallback((payload) => {
@@ -69,6 +76,29 @@ export function DailyCloseoutsProvider({
       return copy;
     });
     return normalized;
+  }, [persistCloseouts]);
+
+  const saveCloseoutRecord = useCallback((closeout) => {
+    if (!closeout?.id || !closeout?.storeId || !closeout?.date) {
+      return { ok: false, phase: "save" };
+    }
+    try {
+      const normalized = withCloseoutTotals(closeout);
+      const storageResult = persistCloseouts((current) => {
+        const index = current.findIndex((item) => item.id === normalized.id);
+        if (index === -1) return [normalized, ...current];
+        const copy = [...current];
+        copy[index] = normalized;
+        return copy;
+      });
+      if (!storageResult.ok) {
+        return { ok: false, phase: "save" };
+      }
+      return { ok: true, closeout: normalized };
+    } catch (error) {
+      console.warn("closeout save failed", error);
+      return { ok: false, phase: "save" };
+    }
   }, [persistCloseouts]);
 
   const autoApprovePendingCloseoutsWithoutReview = useCallback(async (remoteList) => {
@@ -156,6 +186,12 @@ export function DailyCloseoutsProvider({
   }, [lang, logEvent, upsertCloseout]);
 
   const submitCloseout = useCallback(async ({ closeout, employee, reviewWorkflowEnabled }) => {
+    const saved = saveCloseoutRecord(closeout);
+    if (!saved.ok) {
+      setSyncError(lang === "ar" ? CLOSEOUT_SAVE_ERROR_AR : CLOSEOUT_SAVE_ERROR_EN);
+      return { ok: false, phase: "save" };
+    }
+
     const now = new Date().toISOString();
     const employeeName = lang === "ar" ? employee.nameAr : employee.nameEn;
     const autoReview = !reviewWorkflowEnabled;
@@ -172,9 +208,10 @@ export function DailyCloseoutsProvider({
       returnReason: null,
     });
     const apiSubmitAction = "submit";
-    if (typeof onSubmitCloseoutToApi === "function") {
-      if (useApiWrites) {
-        try {
+
+    try {
+      if (typeof onSubmitCloseoutToApi === "function") {
+        if (useApiWrites) {
           const result = await onSubmitCloseoutToApi({
             action: apiSubmitAction,
             closeout: next,
@@ -182,12 +219,8 @@ export function DailyCloseoutsProvider({
             reviewWorkflowEnabled,
           });
           if (!result) {
-            setSyncError(
-              lang === "ar"
-                ? "تعذر إرسال التقفيلة إلى الخادم. تحقق من الإعدادات وأعد المحاولة."
-                : "Failed to submit closeout to server. Verify configuration and retry.",
-            );
-            return null;
+            setSyncError(lang === "ar" ? CLOSEOUT_SEND_ERROR_AR : CLOSEOUT_SEND_ERROR_EN);
+            return { ok: false, phase: "send" };
           }
           setSyncError("");
           if (dbSourceMode) {
@@ -195,50 +228,62 @@ export function DailyCloseoutsProvider({
             if (autoReview) await onSyncToOperationalEntries(next);
             return result;
           }
-        } catch (error) {
-          console.warn("closeout submit API sync failed", error);
-          setSyncError(
-            lang === "ar"
-              ? "تعذر إرسال التقفيلة إلى الخادم. تحقق من الإعدادات وأعد المحاولة."
-              : "Failed to submit closeout to server. Verify configuration and retry.",
-          );
-          return null;
-        }
-      } else {
-        try {
+        } else {
           await onSubmitCloseoutToApi({ action: apiSubmitAction, closeout: next, employee, reviewWorkflowEnabled });
-        } catch (error) {
-          console.warn("closeout submit API sync failed", error);
+        }
+      } else if (useApiWrites) {
+        setSyncError(lang === "ar" ? CLOSEOUT_SEND_ERROR_AR : CLOSEOUT_SEND_ERROR_EN);
+        return { ok: false, phase: "send" };
+      }
+
+      const persisted = saveCloseoutRecord(next);
+      if (!persisted.ok) {
+        setSyncError(lang === "ar" ? CLOSEOUT_SAVE_ERROR_AR : CLOSEOUT_SAVE_ERROR_EN);
+        return { ok: false, phase: "save" };
+      }
+
+      logEvent({
+        type: "submitted",
+        closeoutId: next.id,
+        storeId: next.storeId,
+        storeName: next.storeName,
+        date: next.date,
+        dateLabel: next.date,
+        actorName: employeeName,
+        employeeName,
+      });
+      if (autoReview) {
+        await onSyncToOperationalEntries(next);
+        const synced = saveCloseoutRecord({ ...next, syncedToEntries: true });
+        if (!synced.ok) {
+          setSyncError(lang === "ar" ? CLOSEOUT_SAVE_ERROR_AR : CLOSEOUT_SAVE_ERROR_EN);
+          return { ok: false, phase: "save" };
         }
       }
-    } else if (useApiWrites) {
-      setSyncError(
-        lang === "ar"
-          ? "مسار API للتقفيلات غير مهيأ في وضع الإنتاج."
-          : "Closeout API path is not configured in production mode.",
-      );
-      return null;
+      return next;
+    } catch (error) {
+      console.warn("closeout submit send failed", error);
+      setSyncError(lang === "ar" ? CLOSEOUT_SEND_ERROR_AR : CLOSEOUT_SEND_ERROR_EN);
+      return { ok: false, phase: "send" };
     }
-
-    upsertCloseout(next);
-    logEvent({
-      type: autoReview ? "submitted" : "submitted",
-      closeoutId: next.id,
-      storeId: next.storeId,
-      storeName: next.storeName,
-      date: next.date,
-      dateLabel: next.date,
-      actorName: employeeName,
-      employeeName,
-    });
-    if (autoReview) {
-      await onSyncToOperationalEntries(next);
-      upsertCloseout({ ...next, syncedToEntries: true });
-    }
-    return next;
-  }, [dbSourceMode, lang, logEvent, onSubmitCloseoutToApi, onSyncToOperationalEntries, reloadCloseoutsFromApi, upsertCloseout, useApiWrites]);
+  }, [
+    dbSourceMode,
+    lang,
+    logEvent,
+    onSubmitCloseoutToApi,
+    onSyncToOperationalEntries,
+    reloadCloseoutsFromApi,
+    saveCloseoutRecord,
+    useApiWrites,
+  ]);
 
   const resubmitCloseout = useCallback(async ({ closeout, employee, reviewWorkflowEnabled }) => {
+    const saved = saveCloseoutRecord(closeout);
+    if (!saved.ok) {
+      setSyncError(lang === "ar" ? CLOSEOUT_SAVE_ERROR_AR : CLOSEOUT_SAVE_ERROR_EN);
+      return { ok: false, phase: "save" };
+    }
+
     const now = new Date().toISOString();
     const employeeName = lang === "ar" ? employee.nameAr : employee.nameEn;
     const autoReview = !reviewWorkflowEnabled;
@@ -255,9 +300,10 @@ export function DailyCloseoutsProvider({
       reviewedByName: null,
     });
     const apiSubmitAction = "resubmit";
-    if (typeof onSubmitCloseoutToApi === "function") {
-      if (useApiWrites) {
-        try {
+
+    try {
+      if (typeof onSubmitCloseoutToApi === "function") {
+        if (useApiWrites) {
           const result = await onSubmitCloseoutToApi({
             action: apiSubmitAction,
             closeout: next,
@@ -265,12 +311,8 @@ export function DailyCloseoutsProvider({
             reviewWorkflowEnabled,
           });
           if (!result) {
-            setSyncError(
-              lang === "ar"
-                ? "تعذر إعادة إرسال التقفيلة إلى الخادم."
-                : "Failed to resubmit closeout to server.",
-            );
-            return null;
+            setSyncError(lang === "ar" ? CLOSEOUT_SEND_ERROR_AR : CLOSEOUT_SEND_ERROR_EN);
+            return { ok: false, phase: "send" };
           }
           setSyncError("");
           if (dbSourceMode) {
@@ -278,48 +320,54 @@ export function DailyCloseoutsProvider({
             if (autoReview) await onSyncToOperationalEntries(next);
             return result;
           }
-        } catch (error) {
-          console.warn("closeout resubmit API sync failed", error);
-          setSyncError(
-            lang === "ar"
-              ? "تعذر إعادة إرسال التقفيلة إلى الخادم."
-              : "Failed to resubmit closeout to server.",
-          );
-          return null;
-        }
-      } else {
-        try {
+        } else {
           await onSubmitCloseoutToApi({ action: apiSubmitAction, closeout: next, employee, reviewWorkflowEnabled });
-        } catch (error) {
-          console.warn("closeout resubmit API sync failed", error);
+        }
+      } else if (useApiWrites) {
+        setSyncError(lang === "ar" ? CLOSEOUT_SEND_ERROR_AR : CLOSEOUT_SEND_ERROR_EN);
+        return { ok: false, phase: "send" };
+      }
+
+      const persisted = saveCloseoutRecord(next);
+      if (!persisted.ok) {
+        setSyncError(lang === "ar" ? CLOSEOUT_SAVE_ERROR_AR : CLOSEOUT_SAVE_ERROR_EN);
+        return { ok: false, phase: "save" };
+      }
+
+      logEvent({
+        type: "resubmitted",
+        closeoutId: next.id,
+        storeId: next.storeId,
+        storeName: next.storeName,
+        date: next.date,
+        dateLabel: next.date,
+        actorName: employeeName,
+        employeeName,
+      });
+      if (autoReview) {
+        await onSyncToOperationalEntries(next);
+        const synced = saveCloseoutRecord({ ...next, syncedToEntries: true });
+        if (!synced.ok) {
+          setSyncError(lang === "ar" ? CLOSEOUT_SAVE_ERROR_AR : CLOSEOUT_SAVE_ERROR_EN);
+          return { ok: false, phase: "save" };
         }
       }
-    } else if (useApiWrites) {
-      setSyncError(
-        lang === "ar"
-          ? "مسار API للتقفيلات غير مهيأ في وضع الإنتاج."
-          : "Closeout API path is not configured in production mode.",
-      );
-      return null;
+      return next;
+    } catch (error) {
+      console.warn("closeout resubmit send failed", error);
+      setSyncError(lang === "ar" ? CLOSEOUT_SEND_ERROR_AR : CLOSEOUT_SEND_ERROR_EN);
+      return { ok: false, phase: "send" };
     }
-
-    upsertCloseout(next);
-    logEvent({
-      type: "resubmitted",
-      closeoutId: next.id,
-      storeId: next.storeId,
-      storeName: next.storeName,
-      date: next.date,
-      dateLabel: next.date,
-      actorName: employeeName,
-      employeeName,
-    });
-    if (autoReview) {
-      await onSyncToOperationalEntries(next);
-      upsertCloseout({ ...next, syncedToEntries: true });
-    }
-    return next;
-  }, [dbSourceMode, lang, logEvent, onSubmitCloseoutToApi, onSyncToOperationalEntries, reloadCloseoutsFromApi, upsertCloseout, useApiWrites]);
+  }, [
+    dbSourceMode,
+    lang,
+    logEvent,
+    onSubmitCloseoutToApi,
+    onSyncToOperationalEntries,
+    reloadCloseoutsFromApi,
+    saveCloseoutRecord,
+    useApiWrites,
+  ]);
 
   const approveCloseout = useCallback(async (closeoutId, reviewerName) => {
     const target = closeouts.find((item) => item.id === closeoutId);

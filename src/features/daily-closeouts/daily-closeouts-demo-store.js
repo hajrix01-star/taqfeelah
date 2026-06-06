@@ -1,4 +1,4 @@
-import { readLocalStorageJson } from "../demo/prototype-storage";
+import { readLocalStorageJson, safeSetLocalStorageItem } from "../demo/prototype-storage";
 import { computeCloseoutTotals } from "./closeout-calculations";
 import { CLOSEOUT_STATUS } from "./closeout-status";
 
@@ -20,8 +20,18 @@ export function readDailyCloseouts() {
 }
 
 export function writeDailyCloseouts(closeouts) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(DAILY_CLOSEOUTS_STORAGE_KEY, JSON.stringify(closeouts));
+  if (typeof window === "undefined") return { ok: true };
+  return safeSetLocalStorageItem(DAILY_CLOSEOUTS_STORAGE_KEY, JSON.stringify(closeouts));
+}
+
+/** Failed submit/resubmit result from DailyCloseoutsProvider ({ ok: false, phase }). */
+export function isCloseoutWorkflowFailure(result) {
+  return Boolean(
+    result
+    && typeof result === "object"
+    && result.ok === false
+    && (result.phase === "save" || result.phase === "send"),
+  );
 }
 
 export function readCloseoutEvents() {

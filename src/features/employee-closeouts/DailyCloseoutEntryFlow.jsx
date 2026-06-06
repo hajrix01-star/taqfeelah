@@ -177,8 +177,9 @@ export default function DailyCloseoutEntryFlow({
   };
 
   const saveDraft = () => {
-    onSaveDraft(buildCloseout());
-    window.alert(lang === "ar" ? "تم حفظ المسودة" : "Draft saved");
+    const draft = buildCloseout();
+    onSaveDraft(draft);
+    window.alert(lang === "ar" ? "تم الحفظ" : "Saved");
   };
 
   const handleSubmit = async () => {

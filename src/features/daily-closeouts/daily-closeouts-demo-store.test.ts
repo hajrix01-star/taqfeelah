@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CLOSEOUT_STATUS } from "./closeout-status";
-import { withCloseoutTotals } from "./daily-closeouts-demo-store";
+import { isCloseoutWorkflowFailure, withCloseoutTotals } from "./daily-closeouts-demo-store";
 
 describe("withCloseoutTotals status normalization", () => {
   it("promotes inconsistent draft records with submitted metadata to submitted", () => {
@@ -55,5 +55,14 @@ describe("withCloseoutTotals status normalization", () => {
     });
 
     expect(closeout.status).toBe(CLOSEOUT_STATUS.REVIEWED);
+  });
+});
+
+describe("isCloseoutWorkflowFailure", () => {
+  it("detects save and send workflow failures", () => {
+    expect(isCloseoutWorkflowFailure({ ok: false, phase: "save" })).toBe(true);
+    expect(isCloseoutWorkflowFailure({ ok: false, phase: "send" })).toBe(true);
+    expect(isCloseoutWorkflowFailure({ id: "c-1", status: CLOSEOUT_STATUS.DRAFT })).toBe(false);
+    expect(isCloseoutWorkflowFailure(null)).toBe(false);
   });
 });
