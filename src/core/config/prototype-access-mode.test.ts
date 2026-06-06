@@ -8,29 +8,22 @@ describe("isPrototypeAccessMode", () => {
     __resetEnvCacheForTests();
   });
 
-  it("is disabled in production app mode", () => {
+  it("is enabled by default in production app mode", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
-    expect(isPrototypeAccessMode()).toBe(false);
+    expect(isPrototypeAccessMode()).toBe(true);
   });
 
-  it("is enabled in development prototype by default", () => {
+  it("is enabled in development by default", () => {
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
     expect(isPrototypeAccessMode()).toBe(true);
   });
 
-  it("can be opted out explicitly in non-production builds", () => {
-    vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+  it("can be opted out explicitly before launch", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
     vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "false");
     expect(isPrototypeAccessMode()).toBe(false);
-  });
-
-  it("can be opted in explicitly for LAN mobile preview builds", () => {
-    vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
-    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "true");
-    expect(isPrototypeAccessMode()).toBe(true);
   });
 });
