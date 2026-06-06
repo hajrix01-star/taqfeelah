@@ -84,13 +84,14 @@ describe("submitStoreCloseout", () => {
     expect((audits[1]?.values as { action: string }).action).toBe("closeout_approved");
   });
 
-  it("leaves employee closeout pending when autoReview is false", async () => {
+  it("leaves employee closeout pending when review is explicitly required", async () => {
     insertCalls.length = 0;
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 
     await submitStoreCloseout({
       ...baseInput,
       autoReview: false,
+      requireReview: true,
     });
 
     const summaryInsert = entryInserts()[0];
@@ -100,5 +101,22 @@ describe("submitStoreCloseout", () => {
     const audits = auditInserts();
     expect(audits).toHaveLength(1);
     expect((audits[0]?.values as { action: string }).action).toBe("closeout_submitted");
+  });
+
+  it("auto-approves employee closeout by default when requireReview is omitted", async () => {
+    insertCalls.length = 0;
+    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
+
+    await submitStoreCloseout({
+      ...baseInput,
+      autoReview: false,
+    });
+
+    const summaryInsert = entryInserts()[0];
+    expect((summaryInsert?.values as { status: string }).status).toBe("active");
+
+    const audits = auditInserts();
+    expect(audits).toHaveLength(2);
+    expect((audits[1]?.values as { action: string }).action).toBe("closeout_approved");
   });
 });

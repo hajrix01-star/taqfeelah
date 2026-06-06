@@ -5680,6 +5680,7 @@ export default function TaqfeelahPrototypeRuntime() {
       closeout,
       mode: action === "resubmit" ? "resubmit" : "submit",
       autoReview: !reviewWorkflowEnabled,
+      requireReview: reviewWorkflowEnabled === true,
     });
     if (entriesApiEnabled) {
       await loadOperationalEntriesFromApi();
@@ -5863,6 +5864,7 @@ export default function TaqfeelahPrototypeRuntime() {
       onSubmitCloseoutToApi={syncSubmitCloseoutToApi}
       onReviewCloseoutInApi={syncReviewCloseoutToApi}
       loadCloseoutsFromApi={closeoutsApiEnabled ? loadCloseoutsFromApi : null}
+      closeoutReviewRequiredForStore={closeoutReviewEnabledForBusiness}
       apiStrictMode={closeoutsApiStrictMode}
       dbSourceMode={CLOSEOUTS_API_DB_SOURCE}
     >

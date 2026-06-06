@@ -111,6 +111,7 @@ export async function submitCloseoutViaApi({
   closeout,
   mode = "submit",
   autoReview = false,
+  requireReview = false,
 }) {
   const { userIdMap, storeIdMap } = getMaps();
   const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
@@ -135,6 +136,7 @@ export async function submitCloseoutViaApi({
     body: JSON.stringify({
       mode,
       autoReview: autoReview === true,
+      requireReview: requireReview === true,
       closeoutId: closeout.id,
       date: closeout.date,
       salesChannels,
