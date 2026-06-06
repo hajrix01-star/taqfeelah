@@ -102,8 +102,17 @@ export async function createAuthSession(rawInput: LoginInput) {
   const parsedAuthConfig = authConfigSchema.safeParse(runtimeSettings?.authConfig || {});
   const runtimeAuthConfig = parsedAuthConfig.success ? parsedAuthConfig.data : {};
 
-  const ownerUsername = runtimeAuthConfig.ownerUsername || envAuth.ownerUsername || BOOTSTRAP_OWNER_USERNAME;
-  const ownerPassword = runtimeAuthConfig.ownerPassword || envAuth.ownerPassword || BOOTSTRAP_OWNER_PASSWORD || "";
+  // Server env wins over DB authConfig so ops can recover owner login via .env / secrets
+  // without rewriting historical runtime settings rows.
+  const ownerUsername =
+    envAuth.ownerUsername
+    || runtimeAuthConfig.ownerUsername
+    || BOOTSTRAP_OWNER_USERNAME;
+  const ownerPassword =
+    envAuth.ownerPassword
+    || runtimeAuthConfig.ownerPassword
+    || BOOTSTRAP_OWNER_PASSWORD
+    || "";
   const employeePinMap = {
     ...BOOTSTRAP_EMPLOYEE_PINS,
     ...envAuth.employeePinMap,
