@@ -2,8 +2,13 @@ import { and, eq, ilike, or } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import { organizationMembers, users } from "@/core/db/schema";
+import { isAuthDbCredentialsEnabled } from "@/core/config/auth-api-mode";
 import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { UnauthorizedError, ValidationError } from "@/core/errors/app-error";
+import {
+  verifyEmployeePinIdentity,
+  verifyOwnerPasswordIdentity,
+} from "@/features/auth/server/auth-identities";
 import { getRuntimeSettingsByOrganizationId } from "@/features/runtime-settings/server/runtime-settings-service";
 import { resolveEmployeeUserId } from "@/features/auth/server/resolve-employee-user-id";
 
@@ -129,14 +134,27 @@ export async function createAuthSession(rawInput: LoginInput) {
   if (input.mode === "owner_password") {
     const username = normalize(input.username).toLowerCase();
     const password = normalize(input.password);
-    if (!ownerUsername || !ownerPassword) {
-      throw new ValidationError("Owner auth configuration is incomplete.");
+    if (!username || !password) {
+      throw new ValidationError("username and password are required.");
     }
-    if (username !== ownerUsername.trim().toLowerCase() || password !== ownerPassword) {
-      throw new UnauthorizedError("Invalid credentials.");
+
+    if (isAuthDbCredentialsEnabled()) {
+      const verified = await verifyOwnerPasswordIdentity(username, password);
+      if (!verified) {
+        throw new UnauthorizedError("Invalid credentials.");
+      }
+      userId = verified.userId;
+      role = "owner";
+    } else {
+      if (!ownerUsername || !ownerPassword) {
+        throw new ValidationError("Owner auth configuration is incomplete.");
+      }
+      if (username !== ownerUsername.trim().toLowerCase() || password !== ownerPassword) {
+        throw new UnauthorizedError("Invalid credentials.");
+      }
+      userId = ownerUserId;
+      role = "owner";
     }
-    userId = ownerUserId;
-    role = "owner";
   } else {
     const employeeId = normalize(input.employeeId);
     const pin = normalize(input.pin);
@@ -152,15 +170,25 @@ export async function createAuthSession(rawInput: LoginInput) {
     if (!mappedUserId) {
       throw new UnauthorizedError("Employee account mapping is invalid.");
     }
-    const expectedPin =
-      employeePinMap[employeeId]
-      || employeePinMap[employeeId.toLowerCase()]
-      || employeePinMap[mappedUserId];
-    if (!expectedPin || pin !== expectedPin) {
-      throw new UnauthorizedError("Invalid employee pin.");
+
+    if (isAuthDbCredentialsEnabled()) {
+      const verified = await verifyEmployeePinIdentity(mappedUserId, pin);
+      if (!verified) {
+        throw new UnauthorizedError("Invalid employee pin.");
+      }
+      userId = verified.userId;
+      role = "employee";
+    } else {
+      const expectedPin =
+        employeePinMap[employeeId]
+        || employeePinMap[employeeId.toLowerCase()]
+        || employeePinMap[mappedUserId];
+      if (!expectedPin || pin !== expectedPin) {
+        throw new UnauthorizedError("Invalid employee pin.");
+      }
+      userId = mappedUserId;
+      role = "employee";
     }
-    userId = mappedUserId;
-    role = "employee";
   }
 
   const db = getDb();

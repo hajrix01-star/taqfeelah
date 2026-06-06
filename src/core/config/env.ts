@@ -22,6 +22,10 @@ const envSchema = z.object({
   NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP: z.string().optional(),
   NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP: z.string().optional(),
   ALLOW_HEADER_AUTH_CONTEXT: z.enum(["true", "false"]).optional(),
+  AUTH_DB_CREDENTIALS_ENABLED: z.enum(["true", "false"]).optional(),
+  SAAS_PLATFORM_ADMIN_USER_IDS: z.string().optional(),
+  SAAS_ADMIN_API_ENABLED: z.enum(["true", "false"]).optional(),
+  USAGE_TRACKING_ENABLED: z.enum(["true", "false"]).optional(),
 });
 
 type AppEnv = z.infer<typeof envSchema>;

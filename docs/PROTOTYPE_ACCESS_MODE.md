@@ -131,6 +131,27 @@ When `NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true` (or inherited from entries API fl
 - Runtime settings save path remains the source of truth for the prototype UI until a later wiring phase
 - Client helpers live in `org-config-api-client.js` for future non-UI integration
 
+### Phase 10-prep — auth foundations (inactive)
+
+When flags remain at default values:
+
+- `auth_identities` stores hashed owner passwords and employee PINs (optional via members API)
+- `POST/PATCH /api/v1/members` manage members + store access + optional credentials
+- OTP request/verify endpoints exist as stubs (no SMS/email provider)
+- `AUTH_DB_CREDENTIALS_ENABLED=false` keeps login on env/runtime settings path
+- `NEXT_PUBLIC_AUTH_API_ENABLED=false` keeps prototype role picker as entry path
+- See `docs/PHASE_10_AUTH.md`
+
+### Phase 11-prep — SaaS admin foundations (inactive)
+
+When flags remain at default values:
+
+- `/saas-admin` route exists but shows disabled shell unless `NEXT_PUBLIC_SAAS_ADMIN_ENABLED=true`
+- `GET /api/v1/saas-admin/kpis/overview` and `/organizations` return 503 unless `SAAS_ADMIN_API_ENABLED=true`
+- `recordUsageEvent()` is a no-op unless `USAGE_TRACKING_ENABLED=true`
+- Platform admin access uses `SAAS_PLATFORM_ADMIN_USER_IDS` allowlist
+- See `docs/PHASE_11_SAAS_ADMIN.md`
+
 ### Phase 9 — duplicate summary, notebook export, inline attachments
 
 When `NEXT_PUBLIC_PHASE9_API_ENABLED=true` (or inherited from entries API flag):

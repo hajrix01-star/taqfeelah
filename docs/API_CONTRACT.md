@@ -475,9 +475,28 @@ Query: optional `status=active|retired|all`
 Query: optional `status=active|inactive|all` — manager+ only.  
 Includes `storeAccess[]` per member.
 
+### `POST /api/v1/members` (implemented — foundation)
+
+Body:
+
+```json
+{
+  "name": "Employee Name",
+  "role": "employee",
+  "storeIds": ["uuid"],
+  "credentials": { "type": "employee_pin", "pin": "1234" }
+}
+```
+
+Owner-only. Writes `member_created` audit. Credentials are stored in `auth_identities` when provided.
+
+### `PATCH /api/v1/members/:memberId` (implemented — foundation)
+
+Body supports `name`, `role`, `status`, `storeIds`, optional `credentials`, optional `reason`.
+
 ### Planned
 
-- `POST /members` · `PATCH` member access / `member_store_access`
+- Member invite/reset flows and email delivery
 
 Employee: only assigned stores for store-scoped reads.
 
@@ -543,7 +562,31 @@ Body:
 
 ---
 
-## SaaS Admin API (final phase — planned)
+## Auth OTP (foundation stubs)
+
+### `POST /api/v1/auth/otp/request` (implemented — stub)
+
+Returns `deliveryStatus: stub_not_configured`. No SMS/email is sent until a provider is configured.
+
+### `POST /api/v1/auth/otp/verify` (implemented — stub)
+
+Returns unauthorized until OTP provider is configured.
+
+---
+
+## SaaS Admin API (foundation — disabled by default)
+
+> Requires `SAAS_ADMIN_API_ENABLED=true` and `SAAS_PLATFORM_ADMIN_USER_IDS` allowlist.
+
+### `GET /api/v1/saas-admin/kpis/overview` (implemented — gated)
+
+Query: `from=YYYY-MM-DD`, `to=YYYY-MM-DD`
+
+### `GET /api/v1/saas-admin/organizations` (implemented — gated)
+
+Query: optional `status=active|suspended|all`, `limit` (max 100)
+
+### Planned (final phase)
 
 > Separate API surface for `/saas-admin` (desktop-first console).
 
