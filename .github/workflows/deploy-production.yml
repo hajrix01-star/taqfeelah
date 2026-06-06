@@ -52,13 +52,22 @@ jobs:
       - name: Build
         run: pnpm build
 
-  vps-preflight:
-    name: VPS connectivity preflight
+  deploy:
+    name: Deploy to VPS
+    needs: [validate]
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deploy dependencies
+        run: pip install -r scripts/requirements-deploy.txt
 
       - name: Verify VPS secrets are configured
         run: |
@@ -84,22 +93,15 @@ jobs:
             exit 1
           fi
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install deploy dependencies
-        run: pip install -r scripts/requirements-deploy.txt
-
-      - name: Preflight VPS connectivity (fast fail)
+      - name: Preflight VPS connectivity (same runner as deploy)
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
-          VPS_CONNECT_TIMEOUT: "15"
-          VPS_CONNECT_RETRIES: "2"
-          VPS_RETRY_DELAY_SECONDS: "6"
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_CONNECT_TIMEOUT: "20"
+          VPS_CONNECT_RETRIES: "4"
+          VPS_RETRY_DELAY_SECONDS: "8"
           VPS_PROBE_RETRIES: "4"
           VPS_PROBE_RETRY_DELAY_SECONDS: "10"
         run: |
@@ -107,31 +109,12 @@ jobs:
             --domain taqfeelah.com \
             --www-domain www.taqfeelah.com
 
-  deploy:
-    name: Deploy to VPS
-    needs: [validate, vps-preflight]
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install deploy dependencies
-        run: pip install -r scripts/requirements-deploy.txt
-
-      - name: Cool down before VPS SSH (avoid fail2ban bursts)
-        run: sleep 90
-
       - name: Deploy Taqfeelah (PM2 + Nginx + SSL)
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_CONNECT_TIMEOUT: "25"
           VPS_CONNECT_RETRIES: "8"
           VPS_RETRY_DELAY_SECONDS: "12"
@@ -177,6 +160,7 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_CONNECT_TIMEOUT: "25"
           VPS_CONNECT_RETRIES: "8"
           VPS_RETRY_DELAY_SECONDS: "12"
