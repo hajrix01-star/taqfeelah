@@ -48,6 +48,27 @@ export function buildRuntimeSettingsSnapshot({
   };
 }
 
+export function serializeRuntimeSettingsSignature(value) {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "";
+  }
+}
+
+export function buildRuntimeSettingsPersistPayload(runtimeSettingsSnapshot, partialSettings = {}) {
+  return {
+    ...runtimeSettingsSnapshot,
+    ...partialSettings,
+    authConfig: {
+      ...runtimeSettingsSnapshot.authConfig,
+      ...(partialSettings.authConfig && typeof partialSettings.authConfig === "object"
+        ? partialSettings.authConfig
+        : {}),
+    },
+  };
+}
+
 export function applyRuntimeSettingsSnapshotPatch({ migrated, orgConfigApiEnabled, apply }) {
   if (!migrated || typeof migrated !== "object") return;
 

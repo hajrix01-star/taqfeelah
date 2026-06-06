@@ -91,12 +91,10 @@ import { useNotebookExportShareData } from "@/features/phase9/client/use-noteboo
 import { resolvePayloadAttachmentForPhase9Api } from "@/features/phase9/client/inline-attachment-api-flow";
 import {
   fetchEmployeeLoginRosterViaApi,
-  fetchRuntimeSettingsViaApi,
   getSessionStatusViaApi,
   loginEmployeeSessionViaApi,
   loginOwnerSessionViaApi,
   logoutSessionViaApi,
-  saveRuntimeSettingsViaApi,
 } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
 import {
   applyRuntimeSettingsSnapshotPatch,
@@ -104,6 +102,7 @@ import {
   readOwnerSettingsApiAuth,
   usesRuntimeSettingsApi,
 } from "@/features/runtime-settings/client/runtime-settings-bridge";
+import { useRuntimeSettingsFromApi } from "@/features/runtime-settings/client/use-runtime-settings-from-api";
 import { isProductionAppMode } from "@/core/config/app-mode";
 import { isCloseoutsApiDbSourceMode, isCloseoutsApiStrictMode } from "@/core/config/closeouts-api-mode";
 import { isEntriesApiDbSourceMode, isEntriesApiStrictMode } from "@/core/config/entries-api-mode";
@@ -4999,11 +4998,7 @@ export default function TaqfeelahPrototypeRuntime() {
   const [authEmployeePins, setAuthEmployeePins] = useState(() => (initialAuthConfig.employeePins && typeof initialAuthConfig.employeePins === "object" ? initialAuthConfig.employeePins : {}));
   const [lastCloseoutDates, setLastCloseoutDates] = useState(() => readDemoLastCloseoutDates());
   const [employeeBusinessId, setEmployeeBusinessId] = useState(() => readPrototypeAuthBoot().employeeBusinessId);
-  const runtimeSettingsHydratedRef = useRef(!usesRuntimeSettingsApi());
-  const runtimeSettingsSyncTimerRef = useRef(null);
-  const runtimeSettingsLastSavedSignatureRef = useRef("");
   const loadOperationalEntriesFromApiRef = useRef(async () => []);
-  const [runtimeSettingsSyncError, setRuntimeSettingsSyncError] = useState("");
   useEffect(() => {
     if (!BINDS_TO_SERVER_AUTH) return;
     let cancelled = false;
@@ -5145,31 +5140,18 @@ export default function TaqfeelahPrototypeRuntime() {
     });
   }, []);
 
-  const persistRuntimeSettingsNow = useCallback(async (partialSettings = {}) => {
-    if (!usesRuntimeSettingsApi()) return null;
-    const settings = {
-      ...runtimeSettingsSnapshot,
-      ...partialSettings,
-      authConfig: {
-        ...runtimeSettingsSnapshot.authConfig,
-        ...(partialSettings.authConfig && typeof partialSettings.authConfig === "object" ? partialSettings.authConfig : {}),
-      },
-    };
-    const saved = await saveRuntimeSettingsViaApi({
-      settings,
-      reason: "owner_settings_explicit_save",
-      ...readOwnerSettingsApiAuth(),
-    });
-    if (saved?.settings && typeof saved.settings === "object") {
-      applyRuntimeSettingsSnapshot(saved.settings);
-      try {
-        runtimeSettingsLastSavedSignatureRef.current = JSON.stringify(saved.settings);
-      } catch {
-        runtimeSettingsLastSavedSignatureRef.current = "";
-      }
-    }
-    return saved;
-  }, [applyRuntimeSettingsSnapshot, runtimeSettingsSnapshot]);
+  const {
+    syncError: runtimeSettingsSyncError,
+    persistNow: persistRuntimeSettingsNow,
+  } = useRuntimeSettingsFromApi({
+    enabled: usesRuntimeSettingsApi(),
+    auth: readOwnerSettingsApiAuth(),
+    loggedIn,
+    isEmployee: employee,
+    lang,
+    snapshot: runtimeSettingsSnapshot,
+    onHydrate: applyRuntimeSettingsSnapshot,
+  });
 
   const duplicateSalesAlerts = useMemo(() => {
     const grouped = new Map();
@@ -5202,74 +5184,6 @@ export default function TaqfeelahPrototypeRuntime() {
     if (BINDS_TO_SERVER_AUTH || typeof window === "undefined") return;
     window.localStorage.setItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(lastCloseoutDates));
   }, [lastCloseoutDates]);
-  useEffect(() => {
-    if (!usesRuntimeSettingsApi() || !loggedIn || employee) return;
-    let cancelled = false;
-    fetchRuntimeSettingsViaApi(readOwnerSettingsApiAuth())
-      .then((payload) => {
-        if (cancelled) return;
-        if (payload?.settings && typeof payload.settings === "object") {
-          applyRuntimeSettingsSnapshot(payload.settings);
-          try {
-            runtimeSettingsLastSavedSignatureRef.current = JSON.stringify(payload.settings);
-          } catch {
-            runtimeSettingsLastSavedSignatureRef.current = "";
-          }
-        }
-        runtimeSettingsHydratedRef.current = true;
-        setRuntimeSettingsSyncError("");
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        console.warn("runtime settings load failed", error);
-        setRuntimeSettingsSyncError(
-          lang === "ar"
-            ? "تعذر تحميل إعدادات التشغيل من الخادم."
-            : "Failed to load runtime settings from server.",
-        );
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [applyRuntimeSettingsSnapshot, employee, lang, loggedIn]);
-
-  useEffect(() => {
-    if (!usesRuntimeSettingsApi() || !loggedIn || employee) return;
-    if (!runtimeSettingsHydratedRef.current || runtimeSettingsSyncError) return;
-    const signature = JSON.stringify(runtimeSettingsSnapshot);
-    if (runtimeSettingsLastSavedSignatureRef.current === signature) return;
-
-    if (runtimeSettingsSyncTimerRef.current) {
-      window.clearTimeout(runtimeSettingsSyncTimerRef.current);
-    }
-    runtimeSettingsSyncTimerRef.current = window.setTimeout(() => {
-      saveRuntimeSettingsViaApi({
-        settings: runtimeSettingsSnapshot,
-        reason: "owner_settings_autosave",
-        ...readOwnerSettingsApiAuth(),
-      })
-        .then(() => {
-          runtimeSettingsLastSavedSignatureRef.current = signature;
-          setRuntimeSettingsSyncError("");
-        })
-        .catch((error) => {
-          console.warn("runtime settings save failed", error);
-          setRuntimeSettingsSyncError(
-            lang === "ar"
-              ? "تعذر حفظ إعدادات التشغيل على الخادم."
-              : "Failed to save runtime settings on server.",
-          );
-        });
-    }, 450);
-
-    return () => {
-      if (runtimeSettingsSyncTimerRef.current) {
-        window.clearTimeout(runtimeSettingsSyncTimerRef.current);
-      }
-    };
-  }, [employee, lang, loggedIn, runtimeSettingsSnapshot]);
-
   useEffect(() => { writeCloseoutAlerts(closeoutAlerts); }, [closeoutAlerts]);
   useEffect(() => {
     if (BINDS_TO_SERVER_AUTH || CLOSEOUTS_API_DB_SOURCE) return;
@@ -5845,8 +5759,6 @@ export default function TaqfeelahPrototypeRuntime() {
       setAuthOwnerPassword("");
       setAuthEmployeePins({});
       setOwnerProfile({ name: "" });
-      runtimeSettingsHydratedRef.current = false;
-      runtimeSettingsLastSavedSignatureRef.current = "";
     }
   };
   const ownerDisplayName = ownerProfile?.name || (lang === "ar" ? "المالك" : "Owner");

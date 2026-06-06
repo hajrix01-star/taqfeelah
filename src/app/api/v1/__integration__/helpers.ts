@@ -33,6 +33,7 @@ export function routeStoreContext(storeId = TEST_STORE_ID) {
   return { params: Promise.resolve({ storeId }) };
 }
 
+export const TEST_CLOSEOUT_ID = "c1o2s3e4-o5u6-4789-a012-closeout01";
 export const TEST_ENTRY_ID = "a1b2c3d4-e5f6-4789-a012-3456789abcde";
 
 export function routeEntryContext(
@@ -40,6 +41,13 @@ export function routeEntryContext(
   entryId = TEST_ENTRY_ID,
 ) {
   return { params: Promise.resolve({ storeId, entryId }) };
+}
+
+export function routeCloseoutContext(
+  storeId = TEST_STORE_ID,
+  closeoutId = TEST_CLOSEOUT_ID,
+) {
+  return { params: Promise.resolve({ storeId, closeoutId }) };
 }
 
 export async function readJsonBody<T = unknown>(response: Response): Promise<T> {

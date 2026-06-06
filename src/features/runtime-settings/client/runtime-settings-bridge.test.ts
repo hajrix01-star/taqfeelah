@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   applyRuntimeSettingsSnapshotPatch,
+  buildRuntimeSettingsPersistPayload,
   buildRuntimeSettingsSnapshot,
   readOwnerSettingsApiAuth,
+  serializeRuntimeSettingsSignature,
   usesRuntimeSettingsApi,
 } from "./runtime-settings-bridge";
 
@@ -97,6 +99,37 @@ describe("runtime settings bridge", () => {
     expect(apply.setStoreOperationalSettings).toHaveBeenCalledWith({ shami: { reviewEnabled: true } });
     expect(apply.setNotebookTheme).toHaveBeenCalledWith("yellow");
     expect(apply.setAuthOwnerUsername).toHaveBeenCalledWith("hajri");
+  });
+
+  it("buildRuntimeSettingsPersistPayload merges partial auth config", () => {
+    const snapshot = {
+      notebookTheme: "yellow",
+      authConfig: {
+        ownerUsername: "owner",
+        ownerPassword: "old",
+        employeePins: { ahmed: "1111" },
+      },
+    };
+
+    const payload = buildRuntimeSettingsPersistPayload(snapshot, {
+      authConfig: {
+        ownerPassword: "new",
+        employeePins: { sara: "2222" },
+      },
+    });
+
+    expect(payload.authConfig).toEqual({
+      ownerUsername: "owner",
+      ownerPassword: "new",
+      employeePins: { sara: "2222" },
+    });
+    expect(payload.notebookTheme).toBe("yellow");
+  });
+
+  it("serializeRuntimeSettingsSignature returns empty string for circular values", () => {
+    const circular: { self?: unknown } = {};
+    circular.self = circular;
+    expect(serializeRuntimeSettingsSignature(circular)).toBe("");
   });
 
   it("applyRuntimeSettingsSnapshotPatch ignores invalid notebook themes", () => {
