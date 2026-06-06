@@ -9,6 +9,10 @@ vi.mock("@/core/auth/assert-store-access", () => ({
   assertStoreAccess: vi.fn(async () => undefined),
 }));
 
+vi.mock("@/features/closeouts/server/resolve-closeout-day-sequence", () => ({
+  resolveCloseoutDaySequence: vi.fn(async () => 1),
+}));
+
 vi.mock("@/core/db/client", () => ({
   getDb: () => ({
     transaction: async (callback: (tx: ReturnType<typeof createTx>) => Promise<unknown>) =>
@@ -127,7 +131,9 @@ describe("submitStoreCloseout", () => {
     const submitAudit = auditInserts().find(
       (call) => (call.values as { action?: string }).action === "closeout_submitted",
     );
-    const metadata = (submitAudit?.values as { metadata?: { outflows?: unknown[]; outflowEntryIds?: string[] } }).metadata;
+    const metadata = (submitAudit?.values as {
+      metadata?: { outflows?: unknown[]; outflowEntryIds?: string[]; daySequence?: number };
+    }).metadata;
     expect(metadata?.outflows).toHaveLength(1);
     expect(metadata?.outflows?.[0]).toMatchObject({
       type: "purchases",
@@ -136,6 +142,7 @@ describe("submitStoreCloseout", () => {
       note: "خضار",
     });
     expect(metadata?.outflowEntryIds?.length).toBe(1);
+    expect(metadata?.daySequence).toBe(1);
   });
 
   it("auto-approves employee closeout by default when requireReview is omitted", async () => {

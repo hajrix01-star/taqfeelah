@@ -19,6 +19,7 @@ import {
   isCloseoutWithinEmployeeHistory,
 } from "./employee-closeout-history";
 import { resolveCloseoutStoreName, resolveEmployeeStoreName } from "./store-name-resolver";
+import { countSubmittedCloseoutsByDate } from "../closeouts/client/closeout-day-label";
 
 function resolveScrollContainer(node) {
   if (typeof window === "undefined" || !node) return null;
@@ -122,6 +123,11 @@ export default function EmployeeCloseoutsView({
 
   const hasOlderHiddenCloseouts = hiddenCloseoutCount > 0;
   const historyScopeLabel = employeeHistoryVisibilityLabel(employeeHistoryVisibility, lang);
+
+  const sameDayCloseoutCountByDate = useMemo(
+    () => countSubmittedCloseoutsByDate(myStoreCloseouts),
+    [myStoreCloseouts],
+  );
 
   const dailySequenceById = useMemo(() => {
     const byDate = new Map();
@@ -326,7 +332,8 @@ export default function EmployeeCloseoutsView({
                     closeout={day}
                     expanded={day.uiExpanded}
                     reviewWorkflowEnabled={reviewWorkflowEnabled}
-                    closeoutNumber={day.dailySequence}
+                    daySequence={day.daySequence ?? dailySequenceById.get(day.id) ?? null}
+                    sameDayCloseoutCount={sameDayCloseoutCountByDate.get(day.date) || 1}
                     formatDate={(date) => formatCalendarDate(date, lang)}
                     onToggle={() => toggleExpandedCard(day.id)}
                     onShare={() => {

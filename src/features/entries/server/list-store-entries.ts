@@ -24,6 +24,7 @@ const closeoutSubmitMetadataSchema = z.object({
   date: dateSchema,
   summaryEntryId: z.string().uuid().optional(),
   outflowEntryIds: z.array(z.string().uuid()).optional(),
+  daySequence: z.coerce.number().int().positive().optional(),
 });
 
 const closeoutReviewMetadataSchema = z.object({
@@ -118,6 +119,7 @@ export async function listStoreEntries(rawInput: Input) {
     );
 
   const closeoutIdByEntryId = new Map<string, string>();
+  const closeoutDaySequenceByKey = new Map<string, number>();
   const closeoutStateByKey = new Map<string, { submittedAt: number; approvedAt: number; returnedAt: number }>();
   closeoutAuditRows.forEach((row) => {
     if (row.action === "closeout_submitted" || row.action === "closeout_resubmitted") {
@@ -131,6 +133,9 @@ export async function listStoreEntries(rawInput: Input) {
         closeoutIdByEntryId.set(entryId, metadata.closeoutId);
       });
       const key = `${metadata.closeoutId}:${metadata.date}`;
+      if (metadata.daySequence) {
+        closeoutDaySequenceByKey.set(key, metadata.daySequence);
+      }
       const currentState = closeoutStateByKey.get(key) || {
         submittedAt: 0,
         approvedAt: 0,
@@ -384,6 +389,11 @@ export async function listStoreEntries(rawInput: Input) {
       note: row.note || "",
       noteKey: null,
       closeoutId: closeoutIdByEntryId.get(row.id) || null,
+      daySequence: (() => {
+        const closeoutId = closeoutIdByEntryId.get(row.id);
+        if (!closeoutId) return null;
+        return closeoutDaySequenceByKey.get(`${closeoutId}:${row.date}`) ?? null;
+      })(),
       outflowId: null,
       enteredBy: createdBy,
       attachment: attachment
