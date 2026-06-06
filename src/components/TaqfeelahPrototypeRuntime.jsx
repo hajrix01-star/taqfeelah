@@ -103,6 +103,11 @@ import {
   usesRuntimeSettingsApi,
 } from "@/features/runtime-settings/client/runtime-settings-bridge";
 import { useRuntimeSettingsFromApi } from "@/features/runtime-settings/client/use-runtime-settings-from-api";
+import {
+  migrateSavedSettings as applyLocalSavedSettingsMigration,
+  OWNER_SETTINGS_STORAGE_KEY,
+} from "@/features/runtime-settings/client/migrate-local-saved-settings";
+import { resolveOperationalEntriesBulkLoadWindow } from "@/features/entries/client/register-entries-load-window";
 import { isProductionAppMode } from "@/core/config/app-mode";
 import { isCloseoutsApiDbSourceMode, isCloseoutsApiStrictMode } from "@/core/config/closeouts-api-mode";
 import { isEntriesApiDbSourceMode, isEntriesApiStrictMode } from "@/core/config/entries-api-mode";
@@ -1202,8 +1207,6 @@ const PROTOTYPE_ACCESS_MODE = isPrototypeAccessMode();
 const BINDS_TO_SERVER_AUTH = APP_IN_PRODUCTION_MODE && !PROTOTYPE_ACCESS_MODE;
 const ENTRIES_API_DB_SOURCE = isEntriesApiDbSourceMode();
 const REGISTER_ENTRIES_PAGINATION_ENABLED = isRegisterEntriesPaginationEnabled();
-const OPERATIONAL_ENTRIES_WORKING_DAYS = 30;
-const OPERATIONAL_ENTRIES_WORKING_LIMIT = 300;
 const CLOSEOUTS_API_DB_SOURCE = isCloseoutsApiDbSourceMode();
 const RUNTIME_SETTINGS_DB_SOURCE = ENTRIES_API_DB_SOURCE;
 const ORG_CONFIG_API_ENABLED = isOrgConfigApiEnabled();
@@ -2315,41 +2318,26 @@ function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedStores, on
     </motion.section>
   );
 }
-const DISABLE_REVIEW_ALERTS_MIGRATION_KEY = "disableReviewAlertsV1";
-
 function migrateSavedSettings(raw) {
-  if (!raw || typeof window === "undefined" || BINDS_TO_SERVER_AUTH || raw[DISABLE_REVIEW_ALERTS_MIGRATION_KEY]) return raw;
-  const migrated = { ...raw, [DISABLE_REVIEW_ALERTS_MIGRATION_KEY]: true };
-  if (migrated.storeOperationalSettings) {
-    migrated.storeOperationalSettings = Object.fromEntries(
-      Object.entries(migrated.storeOperationalSettings).map(([id, cfg]) => [
-        id,
-        {
-          ...cfg,
-          reviewEnabled: false,
-          attachmentAlert: false,
-          closeoutAlert: false,
-          closeoutReviewEnabled: false,
-        },
-      ]),
-    );
-  } else {
-    migrated.reviewEnabled = false;
-    migrated.closeoutAlert = false;
-    migrated.attachmentAlert = false;
-    migrated.closeoutReviewEnabled = false;
-  }
-  window.localStorage.setItem("taqfeelah_owner_settings", JSON.stringify(migrated));
-  window.localStorage.removeItem(CLOSEOUT_ALERTS_STORAGE_KEY);
-  autoResolveSubmittedCloseoutsWithoutReview(() => false);
-  return migrated;
+  return applyLocalSavedSettingsMigration(raw, {
+    skip: !raw || typeof window === "undefined" || BINDS_TO_SERVER_AUTH,
+    persistMigrated: (migrated) => {
+      window.localStorage.setItem(OWNER_SETTINGS_STORAGE_KEY, JSON.stringify(migrated));
+    },
+    clearCloseoutAlerts: () => {
+      window.localStorage.removeItem(CLOSEOUT_ALERTS_STORAGE_KEY);
+    },
+    resolveCloseouts: () => {
+      autoResolveSubmittedCloseoutsWithoutReview(() => false);
+    },
+  });
 }
 
 function readSavedSettings() {
   if (BINDS_TO_SERVER_AUTH || RUNTIME_SETTINGS_DB_SOURCE) return null;
   if (typeof window === "undefined") return null;
   try {
-    const raw = JSON.parse(window.localStorage.getItem("taqfeelah_owner_settings") || "null");
+    const raw = JSON.parse(window.localStorage.getItem(OWNER_SETTINGS_STORAGE_KEY) || "null");
     return migrateSavedSettings(raw);
   } catch {
     return null;
@@ -2425,7 +2413,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   useEffect(() => {
     if (APP_IN_PRODUCTION_MODE || RUNTIME_SETTINGS_DB_SOURCE) return;
     if (typeof window === "undefined") return;
-    window.localStorage.setItem("taqfeelah_owner_settings", JSON.stringify({
+    window.localStorage.setItem(OWNER_SETTINGS_STORAGE_KEY, JSON.stringify({
       configuredBusinesses,
       archivedBusinessIds,
       storeChannelSettings,
@@ -5830,9 +5818,10 @@ export default function TaqfeelahPrototypeRuntime() {
     }
 
     const dateTo = todayIsoDate();
-    const useRegisterPagination = REGISTER_ENTRIES_PAGINATION_ENABLED;
-    const dateFrom = isoDaysAgo(useRegisterPagination ? OPERATIONAL_ENTRIES_WORKING_DAYS : 365);
-    const bulkLimit = useRegisterPagination ? OPERATIONAL_ENTRIES_WORKING_LIMIT : 1000;
+    const { lookbackDays, limit: bulkLimit } = resolveOperationalEntriesBulkLoadWindow({
+      paginationEnabled: REGISTER_ENTRIES_PAGINATION_ENABLED,
+    });
+    const dateFrom = isoDaysAgo(lookbackDays);
 
     const fetched = await Promise.all(
       targetStoreIds.map((storeId) => fetchStoreEntriesViaApi({
