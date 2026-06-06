@@ -79,7 +79,17 @@ export function DailyCloseoutsProvider({
         ? []
         : current.filter((item) => item.status === CLOSEOUT_STATUS.DRAFT && !item.submittedAt);
       const remoteKeys = new Set(remoteList.map((item) => item.id));
-      const merged = [...remoteList, ...localDrafts.filter((item) => !remoteKeys.has(item.id))];
+      const remoteStoreDates = new Set(
+        remoteList.map((item) => `${item.storeId}:${item.date}`),
+      );
+      const merged = [
+        ...remoteList,
+        ...localDrafts.filter((item) => {
+          if (remoteKeys.has(item.id)) return false;
+          if (remoteStoreDates.has(`${item.storeId}:${item.date}`)) return false;
+          return true;
+        }),
+      ];
       if (!skipLocalPersistence) {
         writeDailyCloseouts(merged);
       }

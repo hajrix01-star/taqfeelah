@@ -60,6 +60,8 @@ import {
 import { getEnabledOwnerLoginMethods, isOwnerLoginMethodEnabled } from "@/core/auth/owner-login-methods";
 import {
   fetchStoreCloseoutsViaApi,
+  hasCloseoutApiActorMapping,
+  hasCloseoutApiStoreMapping,
   isUuid,
   reviewCloseoutViaApi,
   submitCloseoutViaApi,
@@ -5606,7 +5608,7 @@ export default function TaqfeelahPrototypeRuntime() {
       if (entriesApiStrictMode) throw new Error("organization id is missing/invalid for entries API.");
       return [];
     }
-    if (!isUuid(apiActorUserId)) {
+    if (!hasCloseoutApiActorMapping(apiActorUserId)) {
       if (entriesApiStrictMode) throw new Error("actor user id is missing/invalid for entries API.");
       return [];
     }
@@ -5661,7 +5663,11 @@ export default function TaqfeelahPrototypeRuntime() {
       return null;
     }
     const actorUserId = employee?.apiUserId || employee?.id;
-    if (!isUuid(closeoutsApiOrganizationId) || !isUuid(actorUserId) || !isUuid(closeout?.storeId)) {
+    if (
+      !isUuid(closeoutsApiOrganizationId)
+      || !hasCloseoutApiActorMapping(actorUserId)
+      || !hasCloseoutApiStoreMapping(closeout?.storeId)
+    ) {
       if (closeoutsApiStrictMode) throw new Error("closeouts API mapping is invalid for submit.");
       return null;
     }
@@ -5690,7 +5696,11 @@ export default function TaqfeelahPrototypeRuntime() {
       if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
       return null;
     }
-    if (!isUuid(closeoutsApiOrganizationId) || !isUuid(ownerApiUserId) || !isUuid(closeout?.storeId)) {
+    if (
+      !isUuid(closeoutsApiOrganizationId)
+      || !hasCloseoutApiActorMapping(ownerApiUserId)
+      || !hasCloseoutApiStoreMapping(closeout?.storeId)
+    ) {
       if (closeoutsApiStrictMode) throw new Error("closeouts API mapping is invalid for review.");
       return null;
     }
@@ -5727,7 +5737,7 @@ export default function TaqfeelahPrototypeRuntime() {
       return [];
     }
 
-    if (!isUuid(apiActorUserId)) {
+    if (!hasCloseoutApiActorMapping(apiActorUserId)) {
       if (closeoutsApiStrictMode) throw new Error("actor user id is missing/invalid for closeouts API.");
       return [];
     }

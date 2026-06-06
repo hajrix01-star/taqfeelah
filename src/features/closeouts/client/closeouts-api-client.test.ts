@@ -59,6 +59,18 @@ describe("closeouts api client", () => {
     expect(payload.outflows[0].amountHalalas).toBe(1000);
   });
 
+  it("accepts legacy actor and store ids for mapping checks", async () => {
+    setMapsEnv();
+    const {
+      hasCloseoutApiActorMapping,
+      hasCloseoutApiStoreMapping,
+    } = await import("./closeouts-api-client.js");
+    expect(hasCloseoutApiActorMapping("ahmed")).toBe(true);
+    expect(hasCloseoutApiStoreMapping("shami")).toBe(true);
+    expect(hasCloseoutApiActorMapping("unknown")).toBe(false);
+    expect(hasCloseoutApiStoreMapping("unknown")).toBe(false);
+  });
+
   it("returns null when required UUID mapping is missing", async () => {
     process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP = "{}";
     process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP = "{}";
