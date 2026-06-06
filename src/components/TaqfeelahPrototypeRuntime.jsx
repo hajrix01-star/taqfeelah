@@ -20,7 +20,7 @@ import OwnerCloseoutReviewPanel from "@/features/owner-closeout-review/OwnerClos
 import ReturnCloseoutModal from "@/features/owner-closeout-review/ReturnCloseoutModal";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
 import LanHintBanner from "@/features/demo/LanHintBanner";
-import { clearAuthSession, clearEmployeeCredentials, clearOwnerCredentials, readEmployeeCredentials, readOwnerCredentials, resolveAuthStateFromSession, saveAuthSession, saveEmployeeCredentials, saveOwnerCredentials } from "@/features/demo/login-credentials-storage";
+import { clearAuthSession, clearEmployeeCredentials, clearOwnerCredentials, readEmployeeCredentials, readOwnerCredentials, saveAuthSession, saveEmployeeCredentials, saveOwnerCredentials } from "@/features/demo/login-credentials-storage";
 import { readLocalStorageJson } from "@/features/demo/prototype-storage";
 import AttachmentLightbox from "./AttachmentLightbox";
 import { TAQFEELAH_LOGO_SRC } from "@/lib/brand/taqfeelah-logo";
@@ -108,6 +108,8 @@ import {
   migrateSavedSettings as applyLocalSavedSettingsMigration,
   OWNER_SETTINGS_STORAGE_KEY,
 } from "@/features/runtime-settings/client/migrate-local-saved-settings";
+import { readLocalSavedSettings } from "@/features/runtime-settings/client/read-local-saved-settings";
+import { buildPrototypeDefaultStaff, readPrototypeAuthBoot as resolvePrototypeAuthBoot } from "@/features/demo/prototype-auth-boot";
 import { resolveOperationalEntriesBulkLoadWindow } from "@/features/entries/client/register-entries-load-window";
 import { isProductionAppMode } from "@/core/config/app-mode";
 import { isCloseoutsApiDbSourceMode, isCloseoutsApiStrictMode } from "@/core/config/closeouts-api-mode";
@@ -2334,33 +2336,21 @@ function migrateSavedSettings(raw) {
 }
 
 function readSavedSettings() {
-  if (BINDS_TO_SERVER_AUTH || RUNTIME_SETTINGS_DB_SOURCE) return null;
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = JSON.parse(window.localStorage.getItem(OWNER_SETTINGS_STORAGE_KEY) || "null");
-    return migrateSavedSettings(raw);
-  } catch {
-    return null;
-  }
+  return readLocalSavedSettings({
+    enabled: !BINDS_TO_SERVER_AUTH && !RUNTIME_SETTINGS_DB_SOURCE,
+    migrate: migrateSavedSettings,
+  });
 }
 
-const PROTOTYPE_DEFAULT_STAFF = [
-  { id: "ahmed", nameAr: "أحمد", nameEn: "Ahmed", mobile: "050 123 4567", active: true, storeIds: ["shami"], pin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT },
-  { id: "sara", nameAr: "سارة", nameEn: "Sara", mobile: "055 987 6543", active: true, storeIds: ["arz"], pin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT },
-];
+const PROTOTYPE_DEFAULT_STAFF = buildPrototypeDefaultStaff(PROTOTYPE_EMPLOYEE_PIN_DEFAULT);
 
 function readPrototypeAuthBoot() {
-  // Prototype Access Mode always starts logged out (no session restore).
-  if (!BINDS_TO_SERVER_AUTH || PROTOTYPE_ACCESS_MODE) {
-    return {
-      loggedIn: false,
-      employee: false,
-      loggedInEmployeeId: null,
-      employeeBusinessId: "",
-    };
-  }
-  const settings = readSavedSettings();
-  return resolveAuthStateFromSession(settings?.staff || (BINDS_TO_SERVER_AUTH ? [] : PROTOTYPE_DEFAULT_STAFF));
+  return resolvePrototypeAuthBoot({
+    bindsToServerAuth: BINDS_TO_SERVER_AUTH,
+    prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
+    readSavedSettings,
+    defaultStaff: PROTOTYPE_DEFAULT_STAFF,
+  });
 }
 function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChannelSettings, setStoreChannelSettings, storeOperationalSettings, setStoreOperationalSettings, configuredBusinesses, setConfiguredBusinesses, archivedBusinessIds, setArchivedBusinessIds, staff, setStaff, ownerProfile, setOwnerProfile, authOwnerUsername, setAuthOwnerUsername, authOwnerPassword, setAuthOwnerPassword, authEmployeePins, setAuthEmployeePins, operationalEntries = [], selectedBusiness, setSelectedBusiness, setOwnerPage, setArchivedReadOnlyBusinessId, setLastCloseoutDates, onPersistSettingsNow = null, onLogout = () => {}, onOpenSupport = () => {}, onOpenHelp = () => {} }) {
   const [section, setSection] = useState("home");
