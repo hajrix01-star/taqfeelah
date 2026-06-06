@@ -4,6 +4,18 @@ vi.mock("@/core/auth/assert-store-access", () => ({
   assertStoreAccess: vi.fn(async () => undefined),
 }));
 
+vi.mock("@/features/org-config/server/read-store-operational-settings", () => ({
+  readStoreOperationalSettingsRecord: vi.fn(async () => ({
+    activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
+    reviewEnabled: true,
+    closeoutReviewEnabled: false,
+    employeeHistoryVisibility: "all" as const,
+    closeoutAlert: false,
+    attachmentAlert: false,
+    notebookTheme: null,
+  })),
+}));
+
 const movementRows = [
   { type: "summary", amountHalalas: 200000 },
   { type: "purchases", amountHalalas: 15000 },

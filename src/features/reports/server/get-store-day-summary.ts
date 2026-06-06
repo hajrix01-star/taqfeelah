@@ -1,10 +1,11 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
-import { attachments, entries, stores } from "@/core/db/schema";
+import { entries, stores } from "@/core/db/schema";
 import { ForbiddenError, ValidationError } from "@/core/errors/app-error";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { calculateDaySummary } from "@/domain/cash-movement/calculations";
+import { queryAttachmentStatsForStoreScope } from "@/features/reports/server/attachment-stats-query";
 import { type MemberRole } from "@/core/auth/roles";
 
 const summaryInputSchema = z.object({
@@ -85,14 +86,12 @@ export async function getStoreDaySummary(rawInput: SummaryInput) {
     inArray(entries.type, ALLOWED_TYPES),
   );
 
-  const [attachmentStats] = await db
-    .select({
-      attachmentCount: sql<number>`count(distinct ${attachments.id})::int`,
-      pendingReviewCount: sql<number>`count(distinct case when ${attachments.id} is not null and ${entries.reviewedAt} is null then ${entries.id} end)::int`,
-    })
-    .from(entries)
-    .leftJoin(attachments, eq(attachments.entryId, entries.id))
-    .where(entryScope);
+  const attachmentStats = await queryAttachmentStatsForStoreScope(
+    db,
+    input.organizationId,
+    input.storeId,
+    entryScope,
+  );
 
   return {
     storeId: input.storeId,
@@ -102,7 +101,7 @@ export async function getStoreDaySummary(rawInput: SummaryInput) {
     netMovement: { amountHalalas: result.netMovementHalalas, currency: "SAR" as const },
     outflowRatio: result.outflowRatio,
     outflowRatioStatus: result.outflowRatioStatus,
-    attachmentCount: attachmentStats?.attachmentCount ?? 0,
-    pendingReviewCount: attachmentStats?.pendingReviewCount ?? 0,
+    attachmentCount: attachmentStats.attachmentCount,
+    pendingReviewCount: attachmentStats.pendingReviewCount,
   };
 }

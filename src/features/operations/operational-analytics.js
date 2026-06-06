@@ -1,5 +1,10 @@
 /** Pure helpers for operational entry filtering and totals (prototype + tests). */
 
+import {
+  countPendingReviewsFromUiEntries,
+  countProofsFromUiEntries,
+} from "@/domain/attachment-review/stats";
+
 export const OUTFLOW_ENTRY_TYPES = new Set(["purchases", "expense", "withdrawal"]);
 
 export function entryHasAttachment(entry) {
@@ -51,10 +56,8 @@ export function summarizeEntries(entries, reviewEnabledForBusiness = () => false
   const activeEntries = entries.filter(entryIsActive);
   const sales = activeEntries.filter((entry) => entry.type === "summary").reduce((sum, entry) => sum + entry.amount, 0);
   const expense = activeEntries.filter(entryIsOutflow).reduce((sum, entry) => sum + entry.amount, 0);
-  const proofs = activeEntries.filter(entryHasAttachment).length;
-  const pending = activeEntries.filter(
-    (entry) => entryHasAttachment(entry) && !entry.reviewed && reviewEnabledForBusiness(entry.businessId),
-  ).length;
+  const proofs = countProofsFromUiEntries(activeEntries);
+  const pending = countPendingReviewsFromUiEntries(activeEntries, reviewEnabledForBusiness);
   const ratio = sales > 0 ? `${((expense / sales) * 100).toFixed(1)}%` : expense > 0 ? "—" : "0.0%";
   return { sales, expense, net: sales - expense, ratio, proofs, pending };
 }

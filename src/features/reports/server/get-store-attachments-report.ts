@@ -1,10 +1,11 @@
-import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import { attachments, entries } from "@/core/db/schema";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
+import { queryAttachmentStatsForStoreScope } from "@/features/reports/server/attachment-stats-query";
 import { assertBoundedReportRange } from "@/features/reports/server/report-date-range";
 
 const inputSchema = z.object({
@@ -42,15 +43,12 @@ export async function getStoreAttachmentsReport(rawInput: z.infer<typeof inputSc
     inArray(entries.type, ["summary", "purchases", "expense", "withdrawal"]),
   );
 
-  const [stats] = await db
-    .select({
-      attachmentCount: sql<number>`count(distinct ${attachments.id})::int`,
-      pendingReviewCount: sql<number>`count(distinct case when ${attachments.id} is not null and ${entries.reviewedAt} is null then ${entries.id} end)::int`,
-      entriesWithAttachments: sql<number>`count(distinct case when ${attachments.id} is not null then ${entries.id} end)::int`,
-    })
-    .from(entries)
-    .leftJoin(attachments, eq(attachments.entryId, entries.id))
-    .where(entryScope);
+  const stats = await queryAttachmentStatsForStoreScope(
+    db,
+    input.organizationId,
+    input.storeId,
+    entryScope,
+  );
 
   const items = await db
     .select({
@@ -72,9 +70,9 @@ export async function getStoreAttachmentsReport(rawInput: z.infer<typeof inputSc
     storeId: input.storeId,
     from: range.from,
     to: range.to,
-    attachmentCount: stats?.attachmentCount ?? 0,
-    pendingReviewCount: stats?.pendingReviewCount ?? 0,
-    entriesWithAttachments: stats?.entriesWithAttachments ?? 0,
+    attachmentCount: stats.attachmentCount,
+    pendingReviewCount: stats.pendingReviewCount,
+    entriesWithAttachments: stats.attachmentCount,
     items: items.map((row) => ({
       entryId: row.entryId,
       date: row.date,
