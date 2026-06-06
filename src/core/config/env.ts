@@ -20,10 +20,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP: z.string().optional(),
   NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP: z.string().optional(),
   NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP: z.string().optional(),
-  ALLOW_HEADER_AUTH_CONTEXT: z
-    .enum(["true", "false"])
-    .optional()
-    .transform((value) => value === "true"),
+  ALLOW_HEADER_AUTH_CONTEXT: z.enum(["true", "false"]).optional(),
 });
 
 type AppEnv = z.infer<typeof envSchema>;
@@ -37,12 +34,9 @@ export function readEnv(): AppEnv {
 }
 
 export function allowHeaderAuthContext(env = readEnv()): boolean {
-  if (env.APP_MODE === "production" || env.NODE_ENV === "production") {
-    return false;
-  }
-  if (typeof env.ALLOW_HEADER_AUTH_CONTEXT === "boolean") {
-    return env.ALLOW_HEADER_AUTH_CONTEXT;
-  }
+  if (env.ALLOW_HEADER_AUTH_CONTEXT === "false") return false;
+  if (env.ALLOW_HEADER_AUTH_CONTEXT === "true") return true;
+  if (env.APP_MODE === "production" || env.NODE_ENV === "production") return false;
   return true;
 }
 
