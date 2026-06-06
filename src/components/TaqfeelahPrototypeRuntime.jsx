@@ -106,7 +106,7 @@ import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { useRegisterEntriesFromApi } from "@/features/entries/client/use-register-entries-from-api";
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
-import { useOrgConfigFromApi } from "@/features/org-config/client/use-org-config-from-api";
+import { useOrgConfigRuntimeBridge } from "@/features/org-config/client/org-config-runtime-bridge";
 import {
   buildInitialStoreOperationalSettings,
   buildStoreOperationalPolicy,
@@ -5117,49 +5117,22 @@ export default function TaqfeelahPrototypeRuntime() {
     authEmployeePins,
   ]);
 
-  const orgConfigSnapshot = useMemo(() => ({
+  const { error: orgConfigSyncError } = useOrgConfigRuntimeBridge({
+    enabled: ORG_CONFIG_API_ENABLED && usesRuntimeSettingsApi(),
+    auth: readOwnerSettingsApiAuth(),
+    loggedIn,
+    isEmployee: employee,
+    employeePins: authEmployeePins,
     configuredBusinesses,
     archivedBusinessIds,
     storeChannelSettings,
     storeOperationalSettings,
     staff,
-  }), [configuredBusinesses, archivedBusinessIds, storeChannelSettings, storeOperationalSettings, staff]);
-
-  const applyOrgConfigHydration = useCallback((mapped) => {
-    if (!mapped || typeof mapped !== "object") return;
-    if (Array.isArray(mapped.configuredBusinesses)) setConfiguredBusinesses(mapped.configuredBusinesses);
-    if (Array.isArray(mapped.archivedBusinessIds)) setArchivedBusinessIds(mapped.archivedBusinessIds);
-    if (mapped.storeChannelSettings && typeof mapped.storeChannelSettings === "object") {
-      setStoreChannelSettings(mapped.storeChannelSettings);
-    }
-    if (Array.isArray(mapped.staff)) setStaff(mapped.staff);
-    if (mapped.storeOperationalSettings && typeof mapped.storeOperationalSettings === "object") {
-      setStoreOperationalSettings(mapped.storeOperationalSettings);
-    }
-  }, []);
-
-  const applyOrgConfigPersist = useCallback((applied) => {
-    if (!applied || typeof applied !== "object") return;
-    if (Array.isArray(applied.configuredBusinesses)) setConfiguredBusinesses(applied.configuredBusinesses);
-    if (Array.isArray(applied.archivedBusinessIds)) setArchivedBusinessIds(applied.archivedBusinessIds);
-    if (applied.storeChannelSettings && typeof applied.storeChannelSettings === "object") {
-      setStoreChannelSettings(applied.storeChannelSettings);
-    }
-    if (Array.isArray(applied.staff)) setStaff(applied.staff);
-    if (applied.storeOperationalSettings && typeof applied.storeOperationalSettings === "object") {
-      setStoreOperationalSettings(applied.storeOperationalSettings);
-    }
-  }, []);
-
-  const { error: orgConfigSyncError } = useOrgConfigFromApi({
-    enabled: ORG_CONFIG_API_ENABLED && usesRuntimeSettingsApi(),
-    auth: readOwnerSettingsApiAuth(),
-    loggedIn,
-    isEmployee: employee,
-    snapshot: orgConfigSnapshot,
-    employeePins: authEmployeePins,
-    onHydrate: applyOrgConfigHydration,
-    onPersistApplied: applyOrgConfigPersist,
+    setConfiguredBusinesses,
+    setArchivedBusinessIds,
+    setStoreChannelSettings,
+    setStoreOperationalSettings,
+    setStaff,
   });
 
   const applyRuntimeSettingsSnapshot = useCallback((rawSettings) => {

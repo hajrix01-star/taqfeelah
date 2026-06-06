@@ -33,6 +33,15 @@ export function routeStoreContext(storeId = TEST_STORE_ID) {
   return { params: Promise.resolve({ storeId }) };
 }
 
+export const TEST_ENTRY_ID = "a1b2c3d4-e5f6-4789-a012-3456789abcde";
+
+export function routeEntryContext(
+  storeId = TEST_STORE_ID,
+  entryId = TEST_ENTRY_ID,
+) {
+  return { params: Promise.resolve({ storeId, entryId }) };
+}
+
 export async function readJsonBody<T = unknown>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
