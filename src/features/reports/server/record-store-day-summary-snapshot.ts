@@ -4,6 +4,7 @@ import { auditEvents } from "@/core/db/schema";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
+import { getStoreDaySummary } from "@/features/reports/server/get-store-day-summary";
 
 const snapshotInputSchema = z.object({
   storeId: z.string().uuid(),
@@ -35,6 +36,33 @@ export async function recordStoreDaySummarySnapshot(rawInput: SnapshotInput) {
     minimumRole: "employee",
   });
 
+  const computed = await getStoreDaySummary({
+    organizationId: input.organizationId,
+    storeId: input.storeId,
+    date: input.date,
+    actorUserId: input.actorUserId,
+    actorRole: input.actorRole,
+  });
+  const expectedSalesHalalas = computed.totalSales.amountHalalas;
+  const expectedOutflowHalalas = computed.totalOutflow.amountHalalas;
+
+  if (
+    input.totalSalesHalalas !== expectedSalesHalalas
+    || input.totalOutflowHalalas !== expectedOutflowHalalas
+  ) {
+    throw new ValidationError("Posted summary totals do not match server-computed totals.", {
+      date: input.date,
+      posted: {
+        totalSalesHalalas: input.totalSalesHalalas,
+        totalOutflowHalalas: input.totalOutflowHalalas,
+      },
+      computed: {
+        totalSalesHalalas: expectedSalesHalalas,
+        totalOutflowHalalas: expectedOutflowHalalas,
+      },
+    });
+  }
+
   const [created] = await db
     .insert(auditEvents)
     .values({
@@ -48,6 +76,7 @@ export async function recordStoreDaySummarySnapshot(rawInput: SnapshotInput) {
         totalSalesHalalas: input.totalSalesHalalas,
         totalOutflowHalalas: input.totalOutflowHalalas,
         netMovementHalalas: input.totalSalesHalalas - input.totalOutflowHalalas,
+        verifiedAgainstServer: true,
         source: "api/v1/stores/:storeId/summary/day",
       },
     })
