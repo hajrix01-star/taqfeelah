@@ -81,6 +81,10 @@ PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
     ),
     "NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP": (
         '{"cash":"9bc40d4f-c773-4ba3-87db-b8bb1467dafb",'
+        '"mada":"7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c",'
+        '"apple":"8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d",'
+        '"jahez":"9e5c3a4b-0d6f-4a1c-c3e4-5f6a7b8c9d0e",'
+        '"hunger":"af6d4b5c-1e7a-4b2d-d4f5-6a7b8c9d0e1f",'
         '"card":"bb16ea8f-8abf-4ca9-ab0d-e3a8f69f8db1",'
         '"online":"f0f8dd28-4fbe-4bf2-9074-2be703f10ccd"}'
     ),
@@ -790,6 +794,26 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
     if staff_repair_err.strip():
         safe_print("STDERR:")
         safe_print(staff_repair_err.strip())
+
+    print_section("Repair sales channels for prototype/UI channel ids")
+    _, channel_repair_out, channel_repair_err = vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
+            cd {shlex.quote(app_dir)}
+            set -a
+            . ./.env.production
+            set +a
+            node scripts/repair-sales-channels.mjs
+            """
+        ).strip(),
+        check=False,
+    )
+    if channel_repair_out.strip():
+        safe_print(channel_repair_out.strip())
+    if channel_repair_err.strip():
+        safe_print("STDERR:")
+        safe_print(channel_repair_err.strip())
 
     print_section("Repair stuck employee closeouts (auto-approve pending)")
     _, repair_out, repair_err = vps.run(

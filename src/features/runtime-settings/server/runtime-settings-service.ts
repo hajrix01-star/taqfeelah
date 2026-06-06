@@ -7,6 +7,7 @@ import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { ForbiddenError, ValidationError } from "@/core/errors/app-error";
 import { enrichStaffWithApiUserIds } from "@/features/auth/server/resolve-employee-user-id";
 import { enrichRuntimeStoreIdMap } from "@/features/runtime-settings/server/enrich-runtime-store-id-map";
+import { provisionSalesChannels } from "@/features/runtime-settings/server/provision-sales-channels";
 import { provisionStaffMembers } from "@/features/runtime-settings/server/provision-staff-members";
 
 const rolePriority: Record<"owner" | "manager" | "employee", number> = {
@@ -159,19 +160,38 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
     envAuth.storeIdMap,
     configuredBusinesses,
   );
+  const storeChannelSettings = input.settings.storeChannelSettings
+    && typeof input.settings.storeChannelSettings === "object"
+    && !Array.isArray(input.settings.storeChannelSettings)
+    ? input.settings.storeChannelSettings as Record<string, {
+      channels?: { id?: string; apiChannelId?: string }[];
+      activeIds?: string[];
+    }>
+    : {};
   const runtimeApiMaps = buildRuntimeApiIdMaps({
     configuredBusinesses,
     staff: Array.isArray(input.settings.staff) ? input.settings.staff : [],
+    storeChannelSettings,
     envStoreIdMap: enrichedStoreIdMap,
     envUserIdMap: envAuth.userIdMap,
+    envSalesChannelIdMap: envAuth.salesChannelIdMap,
   });
   const provisionedStaff = await provisionStaffMembers(input.organizationId, input.settings.staff, {
     storeIdMap: runtimeApiMaps.storeIdMap,
     userIdMap: runtimeApiMaps.userIdMap,
   });
+  const provisionedStoreChannelSettings = await provisionSalesChannels(
+    input.organizationId,
+    storeChannelSettings,
+    {
+      storeIdMap: runtimeApiMaps.storeIdMap,
+      salesChannelIdMap: runtimeApiMaps.salesChannelIdMap,
+    },
+  );
   const normalizedSettings = {
     ...input.settings,
     staff: provisionedStaff,
+    storeChannelSettings: provisionedStoreChannelSettings,
   };
 
   const db = getDb();

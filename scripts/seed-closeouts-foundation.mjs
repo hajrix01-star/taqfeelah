@@ -22,6 +22,10 @@ const DEFAULTS = {
   employeeTwoName: "Sara",
   salesChannels: [
     { legacyId: "cash", id: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb", name: "Cash" },
+    { legacyId: "mada", id: "7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c", name: "Mada" },
+    { legacyId: "apple", id: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d", name: "Apple Pay" },
+    { legacyId: "jahez", id: "9e5c3a4b-0d6f-4a1c-c3e4-5f6a7b8c9d0e", name: "Jahez" },
+    { legacyId: "hunger", id: "af6d4b5c-1e7a-4b2d-d4f5-6a7b8c9d0e1f", name: "HungerStation" },
     { legacyId: "card", id: "bb16ea8f-8abf-4ca9-ab0d-e3a8f69f8db1", name: "Card" },
     { legacyId: "online", id: "f0f8dd28-4fbe-4bf2-9074-2be703f10ccd", name: "Online" },
   ],
@@ -168,11 +172,9 @@ async function upsertFoundation(client, cfg) {
       })}`,
     );
     console.log(
-      `NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP=${JSON.stringify({
-        cash: DEFAULTS.salesChannels[0].id,
-        card: DEFAULTS.salesChannels[1].id,
-        online: DEFAULTS.salesChannels[2].id,
-      })}`,
+      `NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP=${JSON.stringify(
+        Object.fromEntries(DEFAULTS.salesChannels.map((channel) => [channel.legacyId, channel.id])),
+      )}`,
     );
   } catch (error) {
     await client.query("rollback");

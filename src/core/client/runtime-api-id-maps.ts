@@ -1,3 +1,4 @@
+import { buildSalesChannelIdMap } from "@/core/client/sales-channel-catalog";
 import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
 
 type RuntimeBusiness = {
@@ -10,11 +11,23 @@ type RuntimeStaff = {
   apiUserId?: string;
 };
 
+type RuntimeChannel = {
+  id?: string;
+  apiChannelId?: string;
+};
+
+type StoreChannelSettings = Record<string, {
+  channels?: RuntimeChannel[];
+  activeIds?: string[];
+} | undefined>;
+
 type BuildRuntimeApiIdMapsInput = {
   configuredBusinesses?: RuntimeBusiness[];
   staff?: RuntimeStaff[];
+  storeChannelSettings?: StoreChannelSettings;
   envStoreIdMap?: Record<string, string>;
   envUserIdMap?: Record<string, string>;
+  envSalesChannelIdMap?: Record<string, string>;
 };
 
 /**
@@ -23,8 +36,10 @@ type BuildRuntimeApiIdMapsInput = {
 export function buildRuntimeApiIdMaps({
   configuredBusinesses = [],
   staff = [],
+  storeChannelSettings = {},
   envStoreIdMap = {},
   envUserIdMap = {},
+  envSalesChannelIdMap = {},
 }: BuildRuntimeApiIdMapsInput = {}) {
   const storeIdMap: Record<string, string> = { ...envStoreIdMap };
   const userIdMap: Record<string, string> = { ...envUserIdMap };
@@ -57,5 +72,10 @@ export function buildRuntimeApiIdMaps({
     }
   }
 
-  return { storeIdMap, userIdMap };
+  const salesChannelIdMap = buildSalesChannelIdMap({
+    envSalesChannelIdMap,
+    storeChannelSettings,
+  });
+
+  return { storeIdMap, userIdMap, salesChannelIdMap };
 }

@@ -1,8 +1,10 @@
+import { buildSalesChannelIdMap } from "@/core/client/sales-channel-catalog";
+
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 let cachedMaps = null;
 let runtimeMapOverrides = null;
 
-/** Merge runtime settings store/user maps on top of build-time env maps. */
+/** Merge runtime settings store/user/channel maps on top of build-time env maps. */
 export function setRuntimeApiIdMaps(overrides) {
   if (!overrides || typeof overrides !== "object") {
     runtimeMapOverrides = null;
@@ -12,6 +14,9 @@ export function setRuntimeApiIdMaps(overrides) {
   runtimeMapOverrides = {
     storeIdMap: overrides.storeIdMap && typeof overrides.storeIdMap === "object" ? overrides.storeIdMap : {},
     userIdMap: overrides.userIdMap && typeof overrides.userIdMap === "object" ? overrides.userIdMap : {},
+    salesChannelIdMap: overrides.salesChannelIdMap && typeof overrides.salesChannelIdMap === "object"
+      ? overrides.salesChannelIdMap
+      : {},
   };
   cachedMaps = null;
 }
@@ -32,6 +37,7 @@ function parseJsonMap(rawValue) {
 
 export function getCloseoutApiMaps() {
   if (cachedMaps) return cachedMaps;
+  const envSalesChannelIdMap = parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP);
   cachedMaps = {
     storeIdMap: {
       ...parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP),
@@ -41,7 +47,10 @@ export function getCloseoutApiMaps() {
       ...parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP),
       ...(runtimeMapOverrides?.userIdMap || {}),
     },
-    salesChannelIdMap: parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP),
+    salesChannelIdMap: {
+      ...buildSalesChannelIdMap({ envSalesChannelIdMap }),
+      ...(runtimeMapOverrides?.salesChannelIdMap || {}),
+    },
   };
   return cachedMaps;
 }
@@ -81,16 +90,56 @@ function toHalalas(value) {
   return Math.round(Number(value || 0) * 100);
 }
 
+function listCloseoutSalesRows(closeout) {
+  return Array.isArray(closeout?.sales) ? closeout.sales : Object.values(closeout?.sales || {});
+}
+
 function extractSalesChannels(closeout) {
   const { salesChannelIdMap } = getMaps();
-  const rows = Array.isArray(closeout?.sales) ? closeout.sales : Object.values(closeout?.sales || {});
-  return rows
+  return listCloseoutSalesRows(closeout)
     .map((row) => ({
       salesChannelId: mapToUuid(row?.channelId || row?.id, salesChannelIdMap),
       channelName: row?.name || row?.channelName || row?.channelLabel || row?.channelId || row?.id,
       amountHalalas: toHalalas(row?.amount),
+      legacyChannelId: row?.channelId || row?.id || "",
     }))
     .filter((row) => isUuid(row.salesChannelId) && row.amountHalalas > 0);
+}
+
+/** Explain why submitCloseoutViaApi would return null (mapping / channel gaps). */
+export function diagnoseCloseoutSubmitFailure({
+  organizationId,
+  actorUserId,
+  closeout,
+}) {
+  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
+  if (!mappedOrganizationId) return { code: "invalid_organization", unmappedChannels: [] };
+
+  const { userIdMap, storeIdMap, salesChannelIdMap } = getMaps();
+  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
+  if (!mappedActorUserId) return { code: "unmapped_actor", unmappedChannels: [] };
+
+  const mappedStoreId = mapToUuid(closeout?.storeId, storeIdMap);
+  if (!mappedStoreId) return { code: "unmapped_store", unmappedChannels: [] };
+
+  const unmappedChannels = listCloseoutSalesRows(closeout)
+    .filter((row) => toHalalas(row?.amount) > 0)
+    .map((row) => ({
+      channelId: row?.channelId || row?.id || "",
+      name: row?.name || row?.channelName || "",
+      amount: Number(row?.amount || 0),
+      mapped: isUuid(mapToUuid(row?.channelId || row?.id, salesChannelIdMap)),
+    }))
+    .filter((row) => !row.mapped);
+
+  if (unmappedChannels.length > 0) {
+    return { code: "unmapped_sales_channels", unmappedChannels };
+  }
+
+  const salesChannels = extractSalesChannels(closeout);
+  if (!salesChannels.length) return { code: "empty_sales", unmappedChannels: [] };
+
+  return null;
 }
 
 function extractOutflows(closeout) {

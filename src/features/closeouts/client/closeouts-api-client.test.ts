@@ -71,6 +71,63 @@ describe("closeouts api client", () => {
     expect(hasCloseoutApiStoreMapping("unknown")).toBe(false);
   });
 
+  it("submits mada channel using catalog default uuid", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => new Response(JSON.stringify({ ok: true }), { status: 201 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
+
+    await submitCloseoutViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "ahmed",
+      actorRole: "employee",
+      closeout: {
+        id: "closeout-mada",
+        storeId: "shami",
+        date: "2026-06-06",
+        sales: [{ channelId: "mada", name: "Mada", amount: 250 }],
+      },
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.lastCall!;
+    const payload = JSON.parse(String(init?.body ?? "{}"));
+    expect(payload.salesChannels[0].salesChannelId).toBe("7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c");
+    expect(payload.salesChannels[0].amountHalalas).toBe(25000);
+  });
+
+  it("diagnoses unmapped custom sales channels", async () => {
+    process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP = JSON.stringify({
+      shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+    });
+    process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP = JSON.stringify({
+      ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+    });
+    process.env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP = "{}";
+
+    const { diagnoseCloseoutSubmitFailure, setRuntimeApiIdMaps } = await import("./closeouts-api-client.js");
+    setRuntimeApiIdMaps({
+      storeIdMap: { shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c" },
+      userIdMap: { ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79" },
+      salesChannelIdMap: { cash: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb" },
+    });
+
+    const failure = diagnoseCloseoutSubmitFailure({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "ahmed",
+      closeout: {
+        storeId: "shami",
+        sales: { custom: { channelId: "custom-pos-99", name: "POS", amount: 100 } },
+      },
+    });
+
+    expect(failure?.code).toBe("unmapped_sales_channels");
+    expect(failure?.unmappedChannels?.[0]?.channelId).toBe("custom-pos-99");
+  });
+
   it("returns null when required UUID mapping is missing", async () => {
     process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP = "{}";
     process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP = "{}";

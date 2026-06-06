@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { buildSalesChannelIdMap } from "@/core/client/sales-channel-catalog";
 import { ServiceUnavailableError } from "@/core/errors/app-error";
 
 const envSchema = z.object({
@@ -68,6 +69,9 @@ export function getProductionAuthRuntimeConfig(env = readEnv()) {
     employeePinMap: parseJsonMap(env.AUTH_EMPLOYEE_PIN_MAP),
     userIdMap: parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP),
     storeIdMap: parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP),
+    salesChannelIdMap: buildSalesChannelIdMap({
+      envSalesChannelIdMap: parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP),
+    }),
   };
 }
 

@@ -60,6 +60,7 @@ import {
 import { getEnabledOwnerLoginMethods, isOwnerLoginMethodEnabled } from "@/core/auth/owner-login-methods";
 import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
 import {
+  diagnoseCloseoutSubmitFailure,
   fetchStoreCloseoutsViaApi,
   hasCloseoutApiActorMapping,
   hasCloseoutApiStoreMapping,
@@ -5665,6 +5666,27 @@ export default function TaqfeelahPrototypeRuntime() {
       return null;
     }
     const actorUserId = employee?.apiUserId || employee?.id;
+    const submitFailure = diagnoseCloseoutSubmitFailure({
+      organizationId: closeoutsApiOrganizationId,
+      actorUserId,
+      closeout,
+    });
+    if (submitFailure) {
+      const channelNames = (submitFailure.unmappedChannels || [])
+        .map((row) => row.name || row.channelId)
+        .filter(Boolean)
+        .join(", ");
+      const message = submitFailure.code === "unmapped_sales_channels"
+        ? (lang === "ar"
+          ? `تعذر إرسال التقفيلة: قنوات البيع غير مربوطة بالخادم (${channelNames || "غير معروف"}). اطلب من المالك حفظ الإعدادات ثم أعد المحاولة.`
+          : `Closeout submit blocked: sales channels are not mapped to the server (${channelNames || "unknown"}). Ask the owner to save settings, then retry.`)
+        : (lang === "ar"
+          ? "تعذر إرسال التقفيلة: معرفات المستخدم أو المحل غير مربوطة بالخادم."
+          : "Closeout submit blocked: user or store id is not mapped to the server.");
+      if (closeoutsApiStrictMode) throw new Error(message);
+      console.warn("closeout submit mapping blocked", submitFailure);
+      return null;
+    }
     if (
       !isUuid(closeoutsApiOrganizationId)
       || !hasCloseoutApiActorMapping(actorUserId)
@@ -5691,6 +5713,7 @@ export default function TaqfeelahPrototypeRuntime() {
     closeoutsApiOrganizationId,
     closeoutsApiStrictMode,
     entriesApiEnabled,
+    lang,
     loadOperationalEntriesFromApi,
   ]);
 
@@ -5821,21 +5844,26 @@ export default function TaqfeelahPrototypeRuntime() {
     }
     let envStoreIdMap = {};
     let envUserIdMap = {};
+    let envSalesChannelIdMap = {};
     try {
       envStoreIdMap = JSON.parse(process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP || "{}");
       envUserIdMap = JSON.parse(process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP || "{}");
+      envSalesChannelIdMap = JSON.parse(process.env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP || "{}");
     } catch {
       envStoreIdMap = {};
       envUserIdMap = {};
+      envSalesChannelIdMap = {};
     }
     const maps = buildRuntimeApiIdMaps({
       configuredBusinesses,
       staff,
+      storeChannelSettings,
       envStoreIdMap,
       envUserIdMap,
+      envSalesChannelIdMap,
     });
     setRuntimeApiIdMaps(maps);
-  }, [closeoutsApiEnabled, configuredBusinesses, entriesApiEnabled, staff]);
+  }, [closeoutsApiEnabled, configuredBusinesses, entriesApiEnabled, staff, storeChannelSettings]);
 
   if (!loggedIn) {
     return (
