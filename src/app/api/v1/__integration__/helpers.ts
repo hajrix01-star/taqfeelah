@@ -4,6 +4,7 @@ import { __resetEnvCacheForTests } from "@/core/config/env";
 export const TEST_ORGANIZATION_ID = "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1";
 export const TEST_STORE_ID = "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c";
 export const TEST_OWNER_USER_ID = "e8f3e35b-6051-4da3-8b10-979700c2f00f";
+export const TEST_MEMBER_ID = "d4e5f6a7-b8c9-4012-d345-6789abcdef01";
 
 export function setupRouteIntegrationEnv() {
   process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
@@ -48,6 +49,10 @@ export function routeCloseoutContext(
   closeoutId = TEST_CLOSEOUT_ID,
 ) {
   return { params: Promise.resolve({ storeId, closeoutId }) };
+}
+
+export function routeMemberContext(memberId = TEST_MEMBER_ID) {
+  return { params: Promise.resolve({ memberId }) };
 }
 
 export async function readJsonBody<T = unknown>(response: Response): Promise<T> {

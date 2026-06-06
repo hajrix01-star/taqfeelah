@@ -130,6 +130,12 @@ import {
   persistOwnerSettingsToLocalStorage,
 } from "@/features/org-config/client/owner-settings-local-persistence";
 import {
+  applyOwnerSettingsDeleteTarget,
+  listStaffWithoutActiveStoreAfterArchive,
+  removeEmployeePinForPerson,
+  storeHasOperationalRecords,
+} from "@/features/org-config/client/owner-settings-delete-actions";
+import {
   entriesInPeriod,
   summarizeEntries,
   summaryMonthFromEntries,
@@ -2504,8 +2510,12 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
     updateOperationalDraft({ activeCategories: operationalConfig.activeCategories.includes(id) ? operationalConfig.activeCategories.filter((item) => item !== id) : [...operationalConfig.activeCategories, id] });
   };
   const toggleArchive = (id) => setArchivedBusinessIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
-  const storeHasRecords = (business) => operationalEntries.some((entry) => entry.businessId === business.id);
-  const staffWithoutActiveStoreAfterArchive = (businessId) => visibleStaff.filter((person) => person.active && employeeStoreIds(person).includes(businessId) && !employeeStoreIds(person).some((id) => id !== businessId && activeStoredBusinesses.some((business) => business.id === id)));
+  const storeHasRecords = (business) => storeHasOperationalRecords(operationalEntries, business.id);
+  const staffWithoutActiveStoreAfterArchive = (businessId) => listStaffWithoutActiveStoreAfterArchive({
+    staff: visibleStaff,
+    businessId,
+    activeBusinessIds: activeStoredBusinesses.map((business) => business.id),
+  });
   const requestArchiveStore = (business) => setDeleteTarget({ type: "archive", item: business, affectedStaff: staffWithoutActiveStoreAfterArchive(business.id) });
   const openStoreDelete = (business) => { const hasRecords = storeHasRecords(business); setDeleteTarget({ type: "store", item: business, hasRecords, affectedStaff: hasRecords ? staffWithoutActiveStoreAfterArchive(business.id) : [] }); };
   const addStore = () => {
@@ -2570,37 +2580,68 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   const toggleEmployeeStore = (personId, storeId) => { if (!managingTeam) return; setDraftStaff((current) => (current || staff).map((person) => { if (person.id !== personId) return person; const assigned = employeeStoreIds(person); const next = assigned.includes(storeId) ? assigned.filter((item) => item !== storeId) : [...assigned, storeId]; return { ...person, storeIds: next.length ? next : assigned }; })); };
   const toggleNewEmployeeStore = (storeId) => setNewEmployeeStoreIds((current) => current.includes(storeId) ? current.filter((item) => item !== storeId) : [...current, storeId]);
   const confirmDelete = () => {
-    if (!deleteTarget) return;
-    if (deleteTarget.type === "archive") { setArchivedBusinessIds((current) => current.includes(deleteTarget.item.id) ? current : [...current, deleteTarget.item.id]); closeStore(); }
-    if (deleteTarget.type === "store") {
-      if (deleteTarget.hasRecords) setArchivedBusinessIds((current) => current.includes(deleteTarget.item.id) ? current : [...current, deleteTarget.item.id]);
-      else {
-        setConfiguredBusinesses((current) => current.filter((business) => business.id !== deleteTarget.item.id));
-        setArchivedBusinessIds((current) => current.filter((id) => id !== deleteTarget.item.id));
-        setStaff((current) => current.map((person) => ({ ...person, storeIds: (person.storeIds || []).filter((id) => id !== deleteTarget.item.id) })));
-        setLastCloseoutDates((current) => { const next = { ...current }; delete next[deleteTarget.item.id]; return next; });
-        if (selectedBusiness === deleteTarget.item.id) setSelectedBusiness("all");
-        setArchivedReadOnlyBusinessId(null);
-        setStoreChannelSettings((current) => { const next = { ...current }; delete next[deleteTarget.item.id]; return next; });
-        setStoreOperationalSettings((current) => { const next = { ...current }; delete next[deleteTarget.item.id]; return next; });
-      }
-      closeStore();
-    }
-    if (deleteTarget.type === "channel") updateChannelDraft((config) => ({ activeIds: config.activeIds.filter((id) => id !== deleteTarget.item.id), channels: config.channels.map((channel) => channel.id === deleteTarget.item.id ? { ...channel, retired: true } : channel) }));
-    if (deleteTarget.type === "staff") {
-      const removePerson = (current) => current.map((person) => person.id === deleteTarget.item.id ? { ...person, active: false, removed: true } : person);
-      if (managingTeam) setDraftStaff((current) => removePerson(current || staff)); else setStaff(removePerson);
-      setDraftAuthEmployeePins((current) => {
-        const next = { ...(current || {}) };
-        delete next[deleteTarget.item.id];
-        return next;
-      });
-      setAuthEmployeePins((current) => {
-        const next = { ...(current || {}) };
-        delete next[deleteTarget.item.id];
-        return next;
-      });
-    }
+    applyOwnerSettingsDeleteTarget({
+      deleteTarget,
+      selectedBusiness,
+      apply: {
+        appendArchivedBusinessId: (businessId) => {
+          setArchivedBusinessIds((current) => (current.includes(businessId) ? current : [...current, businessId]));
+        },
+        removeConfiguredBusiness: (businessId) => {
+          setConfiguredBusinesses((current) => current.filter((business) => business.id !== businessId));
+        },
+        removeArchivedBusinessId: (businessId) => {
+          setArchivedBusinessIds((current) => current.filter((id) => id !== businessId));
+        },
+        removeStaffStoreId: (businessId) => {
+          setStaff((current) => current.map((person) => ({
+            ...person,
+            storeIds: (person.storeIds || []).filter((id) => id !== businessId),
+          })));
+        },
+        removeLastCloseoutDate: (businessId) => {
+          setLastCloseoutDates((current) => {
+            const next = { ...current };
+            delete next[businessId];
+            return next;
+          });
+        },
+        setSelectedBusiness,
+        clearArchivedReadOnlyBusinessId: () => setArchivedReadOnlyBusinessId(null),
+        removeStoreChannelSettings: (businessId) => {
+          setStoreChannelSettings((current) => {
+            const next = { ...current };
+            delete next[businessId];
+            return next;
+          });
+        },
+        removeStoreOperationalSettings: (businessId) => {
+          setStoreOperationalSettings((current) => {
+            const next = { ...current };
+            delete next[businessId];
+            return next;
+          });
+        },
+        closeStore,
+        retireChannel: (channel) => {
+          updateChannelDraft((config) => ({
+            activeIds: config.activeIds.filter((id) => id !== channel.id),
+            channels: config.channels.map((item) => (item.id === channel.id ? { ...item, retired: true } : item)),
+          }));
+        },
+        removeStaffMember: (personId) => {
+          const removePerson = (current) => current.map((person) => (
+            person.id === personId ? { ...person, active: false, removed: true } : person
+          ));
+          if (managingTeam) setDraftStaff((current) => removePerson(current || staff));
+          else setStaff(removePerson);
+        },
+        removeEmployeePin: (personId) => {
+          setDraftAuthEmployeePins((current) => removeEmployeePinForPerson(current, personId));
+          setAuthEmployeePins((current) => removeEmployeePinForPerson(current, personId));
+        },
+      },
+    });
     setDeleteTarget(null);
   };
   const deleteDialog = deleteTarget ? {
