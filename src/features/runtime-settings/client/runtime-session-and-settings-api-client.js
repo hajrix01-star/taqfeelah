@@ -1,3 +1,10 @@
+import { buildPrototypeApiAuthHeaders } from "@/core/client/prototype-api-auth-headers";
+
+function resolvePrototypeAuthHeaders({ organizationId, actorUserId, actorRole } = {}) {
+  if (!organizationId || !actorUserId || !actorRole) return {};
+  return buildPrototypeApiAuthHeaders({ organizationId, actorUserId, actorRole });
+}
+
 async function parseErrorMessage(response, fallback) {
   try {
     const payload = await response.json();
@@ -60,9 +67,14 @@ export async function logoutSessionViaApi() {
   return response.json();
 }
 
-export async function fetchRuntimeSettingsViaApi() {
+export async function fetchRuntimeSettingsViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+} = {}) {
   const response = await fetch("/api/v1/runtime/settings", {
     method: "GET",
+    headers: resolvePrototypeAuthHeaders({ organizationId, actorUserId, actorRole }),
   });
   if (!response.ok) {
     throw new Error(await parseErrorMessage(response, "Failed to load runtime settings."));
@@ -80,10 +92,19 @@ export async function fetchEmployeeLoginRosterViaApi() {
   return response.json();
 }
 
-export async function saveRuntimeSettingsViaApi({ settings, reason = "" }) {
+export async function saveRuntimeSettingsViaApi({
+  settings,
+  reason = "",
+  organizationId,
+  actorUserId,
+  actorRole,
+} = {}) {
   const response = await fetch("/api/v1/runtime/settings", {
     method: "PUT",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      ...resolvePrototypeAuthHeaders({ organizationId, actorUserId, actorRole }),
+    },
     body: JSON.stringify({
       settings,
       reason,

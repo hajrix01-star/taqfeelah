@@ -56,6 +56,12 @@ When `NEXT_PUBLIC_ENTRIES_API_ENABLED=true` (or inherited from closeouts API fla
 
 Local demo seed data is still used when the entries API flag is off.
 
+### Phase 2 — runtime settings from DB
+
+When the same store API flags are on, owner runtime settings load/save through `/api/v1/runtime/settings` using prototype header context (`x-organization-id`, `x-user-id`, `x-member-role`). `taqfeelah_owner_settings` in `localStorage` is skipped as the settings source.
+
+Seed/bootstrap still provides the first `runtime_settings_saved` row via `scripts/seed-closeouts-foundation.mjs`.
+
 ## Important
 
 This is **not** a launch auth solution. Backend auth files and APIs remain intact.
