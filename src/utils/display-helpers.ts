@@ -200,3 +200,6 @@ export function attachmentsFromEntries(entries: Record<string, unknown>[]): Reco
   });
   return [...grouped.entries()].map(([date, items]) => ({ dayId: date, date, items }));
 }
+
+// Re-exports from operational-analytics for backward compatibility
+export { entryHasAttachment } from "@/features/operations/operational-analytics";
