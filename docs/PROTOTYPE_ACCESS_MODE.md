@@ -73,6 +73,15 @@ When `NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true`:
 
 Local demo closeouts are still used when the closeouts API flag is off.
 
+### Phase 4 — home day summaries from DB
+
+When `NEXT_PUBLIC_ENTRIES_API_ENABLED=true` (or inherited from closeouts API flag):
+
+- Owner home **daily** totals load from `GET /api/v1/stores/:storeId/summary/day?date=YYYY-MM-DD`
+- Combined and per-store home cards aggregate SQL summaries instead of scanning all loaded entries
+- Monthly home view still uses client aggregation until month summary API is added
+- Home operation details and attachments still read from loaded entries for the selected day
+
 **Review default:** employee closeout review is **off** per store; submits are **auto-approved** on the server when `autoReview=true` (no owner pending queue). See `.cursor/rules/closeout-review-defaults.mdc`.
 
 ## Important

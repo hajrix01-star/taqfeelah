@@ -1,0 +1,104 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { combineUiTotals, mapDaySummaryToUiTotals } from "./map-day-summary-to-ui";
+import { fetchStoreDaySummaryViaApi } from "./store-summary-api-client";
+
+const emptyStoreRecord = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0, pending: 0 };
+
+export function useStoreDaySummaries({
+  enabled = false,
+  organizationId = "",
+  actorUserId = "",
+  actorRole = "owner",
+  businesses = [],
+  date = "",
+  refreshKey = 0,
+}) {
+  const storeIdsKey = useMemo(
+    () => businesses.map((business) => business?.id).filter(Boolean).join("|"),
+    [businesses],
+  );
+
+  const [summariesByStoreId, setSummariesByStoreId] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!enabled || !date || !organizationId || !actorUserId || !storeIdsKey) {
+      setSummariesByStoreId({});
+      setLoading(false);
+      setError("");
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const storeIds = storeIdsKey.split("|").filter(Boolean);
+        const fetched = await Promise.all(
+          storeIds.map(async (storeId) => {
+            const summary = await fetchStoreDaySummaryViaApi({
+              organizationId,
+              actorUserId,
+              actorRole,
+              storeId,
+              date,
+            });
+            return { storeId, summary };
+          }),
+        );
+
+        if (cancelled) return;
+
+        const next = {};
+        fetched.forEach(({ storeId, summary }) => {
+          if (!storeId || !summary) return;
+          next[storeId] = mapDaySummaryToUiTotals(summary);
+        });
+        setSummariesByStoreId(next);
+      } catch (loadError) {
+        if (cancelled) return;
+        console.warn("day summary API load failed", loadError);
+        setSummariesByStoreId({});
+        setError("failed");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [actorRole, actorUserId, date, enabled, organizationId, refreshKey, storeIdsKey]);
+
+  const businessesWithDaySummaries = useMemo(
+    () => businesses.map((business) => ({
+      ...business,
+      day: summariesByStoreId[business.id] || business.day || { ...emptyStoreRecord },
+    })),
+    [businesses, summariesByStoreId],
+  );
+
+  const combinedResult = useMemo(
+    () => combineUiTotals(Object.values(summariesByStoreId)),
+    [summariesByStoreId],
+  );
+
+  const getStoreResult = (storeId) => summariesByStoreId[storeId] || null;
+
+  return {
+    summariesByStoreId,
+    businessesWithDaySummaries,
+    combinedResult,
+    getStoreResult,
+    loading,
+    error,
+    enabled,
+  };
+}
