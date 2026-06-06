@@ -1,6 +1,6 @@
 # تقفيلة — API Contract (planned + partial implementation)
 
-> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day` (wired to owner home daily totals when entries API is enabled), snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, `POST /stores/:storeId/closeouts/:closeoutId/review`, and `GET /stores/:storeId/entries` are implemented; remaining endpoints are planned.  
+> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day|month|period`, `GET /reports/days|channels|outflow|attachments` (wired to owner reports when entries API is enabled), snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, `POST /stores/:storeId/closeouts/:closeoutId/review`, and `GET /stores/:storeId/entries` are implemented; remaining endpoints are planned.  
 > **Auth:** Session rollout in progress. Preferred source is signed session cookie (`AUTH_SESSION_COOKIE_NAME`), with optional temporary header fallback controlled by `ALLOW_HEADER_AUTH_CONTEXT`.  
 > **Prototype period:** While Prototype Access Mode is ON, server APIs may accept `x-organization-id` / `x-user-id` / `x-member-role` when `ALLOW_HEADER_AUTH_CONTEXT=true` (including production `NODE_ENV`). Missing org/user headers may fall back to `AUTH_ORGANIZATION_ID` / `AUTH_OWNER_USER_ID` (or their `NEXT_PUBLIC_CLOSEOUTS_API_*` aliases). Disable before public launch.  
 > **UI:** Must not require design changes — responses feed existing approved screens.
@@ -85,11 +85,17 @@ Behavior:
 - Records an immutable day snapshot in `audit_events` (`action = summary_snapshot_recorded`) after organization/store/membership validation.
 - Returns computed current summary from `entries` plus snapshot metadata.
 
-### `GET /stores/:storeId/summary/month`
+### `GET /stores/:storeId/summary/month` (implemented)
 
 Query: `month=YYYY-MM`
 
-Same shape with month-level totals.
+Same shape with month-level totals (aggregates active `entries` across the month).
+
+### `GET /stores/:storeId/summary/period` (implemented)
+
+Query: `from=YYYY-MM-DD`, `to=YYYY-MM-DD`
+
+Same shape with range-level totals. Server rejects ranges wider than 366 days.
 
 ### `GET /organizations/:organizationId/summary/combined` (optional)
 
@@ -348,25 +354,40 @@ Response:
 
 All report endpoints require `from` + `to` (or `month`) — server rejects wide unbounded queries.
 
-### `GET /reports/channels`
+### `GET /reports/channels` (implemented)
 
 Query: `storeId`, `from`, `to`  
 Reads `entry_sales_channels` joined to active `entries` in range.
 
-### `GET /reports/outflow`
+Response:
 
-Query: `storeId`, `from`, `to`, `categoryId?`  
-Aggregates outflow types.
+```json
+{
+  "storeId": "uuid",
+  "from": "2026-06-01",
+  "to": "2026-06-30",
+  "channels": [
+    { "salesChannelId": "uuid", "channelName": "Walk-in", "amount": { "amountHalalas": 0, "currency": "SAR" } }
+  ]
+}
+```
 
-### `GET /reports/days`
+### `GET /reports/outflow` (implemented)
+
+Query: `storeId`, `from`, `to`, optional `categoryKey`, optional `includeTransactions=true`  
+Aggregates outflow types (`purchases`, `expense`, `withdrawal`) with optional category filter and transaction list.
+
+Response includes `totalOutflow`, `transactionCount`, `categories[]`, and `transactions[]` when requested.
+
+### `GET /reports/days` (implemented)
 
 Query: `storeId`, `from`, `to`  
 Per-day sales / outflow / net (SQL `GROUP BY date`).
 
-### `GET /reports/attachments`
+### `GET /reports/attachments` (implemented)
 
 Query: `storeId`, `from`, `to`  
-Counts and pending review stats.
+Counts, pending review stats, and item list for entries with attachments in range.
 
 ---
 

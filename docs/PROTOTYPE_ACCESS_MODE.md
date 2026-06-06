@@ -82,6 +82,19 @@ When `NEXT_PUBLIC_ENTRIES_API_ENABLED=true` (or inherited from closeouts API fla
 - Monthly home view still uses client aggregation until month summary API is added
 - Home operation details and attachments still read from loaded entries for the selected day
 
+### Phase 5 — owner reports from DB
+
+When `NEXT_PUBLIC_ENTRIES_API_ENABLED=true`:
+
+- Reports screen totals (combined + per-store) load from `GET /api/v1/stores/:storeId/summary/day|month|period`
+- Per-store report tabs load from SQL:
+  - Days: `GET /api/v1/reports/days`
+  - Channels: `GET /api/v1/reports/channels`
+  - Outflow/expenses: `GET /api/v1/reports/outflow` (category filter + optional transactions)
+  - Attachments: `GET /api/v1/reports/attachments`
+- Notebook share/export for reports still uses loaded entries until a server export path is added
+- When the entries API flag is off, reports continue to use in-memory operational entries
+
 **Review default:** employee closeout review is **off** per store; submits are **auto-approved** on the server when `autoReview=true` (no owner pending queue). See `.cursor/rules/closeout-review-defaults.mdc`.
 
 ## Important
