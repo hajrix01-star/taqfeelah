@@ -37,6 +37,7 @@ PRODUCTION_ENV_KEYS = [
     "APP_MODE",
     "NEXT_PUBLIC_APP_MODE",
     "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE",
+    "ALLOW_HEADER_AUTH_CONTEXT",
     "DATABASE_URL",
     "AUTH_SESSION_SECRET",
     "AUTH_SESSION_COOKIE_NAME",
@@ -1098,9 +1099,18 @@ def main() -> int:
 
     if args.action == "preflight":
         print_section("Runner → VPS connectivity probe")
-        probe_lines = probe_vps_connectivity(host, port, connect_timeout)
-        for line in probe_lines:
-            safe_print(line)
+        probe_retries = max(1, int(os.environ.get("VPS_PROBE_RETRIES", "4")))
+        probe_delay = max(0.0, float(os.environ.get("VPS_PROBE_RETRY_DELAY_SECONDS", "10")))
+        probe_lines: list[str] = []
+        for attempt in range(1, probe_retries + 1):
+            if attempt > 1:
+                safe_print(f"Probe retry {attempt}/{probe_retries} after {probe_delay:.0f}s…")
+                time.sleep(probe_delay)
+            probe_lines = probe_vps_connectivity(host, port, connect_timeout)
+            for line in probe_lines:
+                safe_print(line)
+            if any("reachable" in line for line in probe_lines):
+                break
         if not any("reachable" in line for line in probe_lines):
             raise RuntimeError(
                 "VPS port is not reachable from GitHub Actions.\n"
