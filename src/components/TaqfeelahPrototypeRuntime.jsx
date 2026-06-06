@@ -81,6 +81,7 @@ import {
   saveRuntimeSettingsViaApi,
 } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
 import { isProductionAppMode } from "@/core/config/app-mode";
+import { isEntriesApiDbSourceMode, isEntriesApiStrictMode } from "@/core/config/entries-api-mode";
 import { isPrototypeAccessMode } from "@/core/config/prototype-access-mode";
 import PrototypeAccessScreen from "@/features/demo/PrototypeAccessScreen";
 
@@ -1159,7 +1160,7 @@ const employeeName = (item, lang) => item.enteredBy ? (lang === "ar" ? item.ente
 const APP_IN_PRODUCTION_MODE = isProductionAppMode();
 const PROTOTYPE_ACCESS_MODE = isPrototypeAccessMode();
 const BINDS_TO_SERVER_AUTH = APP_IN_PRODUCTION_MODE && !PROTOTYPE_ACCESS_MODE;
-const PRODUCTION_API_ENTRIES_MODE = BINDS_TO_SERVER_AUTH;
+const ENTRIES_API_DB_SOURCE = isEntriesApiDbSourceMode();
 const PROTOTYPE_SUPPORT_WHATSAPP = "966501234567";
 const PROTOTYPE_DEMO_OTP = process.env.NEXT_PUBLIC_DEMO_OTP || (APP_IN_PRODUCTION_MODE ? "" : "1234");
 const PROTOTYPE_OWNER_USERNAME = (
@@ -1405,9 +1406,9 @@ function createDemoOperationalEntries() {
   return createPrototypeMonthDemoOperationalEntries();
 }
 function readOperationalEntries() {
-  if (typeof window === "undefined") return BINDS_TO_SERVER_AUTH ? [] : createDemoOperationalEntries();
+  if (typeof window === "undefined") return BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE ? [] : createDemoOperationalEntries();
   const stored = readLocalStorageJson(OPERATIONAL_ENTRIES_STORAGE_KEY, null);
-  if (!Array.isArray(stored) || stored.length === 0) return BINDS_TO_SERVER_AUTH ? [] : createDemoOperationalEntries();
+  if (!Array.isArray(stored) || stored.length === 0) return BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE ? [] : createDemoOperationalEntries();
   return stored.map((entry) => ({
     ...entry,
     auditTrail: Array.isArray(entry.auditTrail) && entry.auditTrail.length
@@ -4795,6 +4796,7 @@ export default function TaqfeelahPrototypeRuntime() {
   const runtimeSettingsHydratedRef = useRef(!BINDS_TO_SERVER_AUTH);
   const runtimeSettingsSyncTimerRef = useRef(null);
   const runtimeSettingsLastSavedSignatureRef = useRef("");
+  const loadOperationalEntriesFromApiRef = useRef(async () => []);
   const [runtimeSettingsSyncError, setRuntimeSettingsSyncError] = useState("");
   useEffect(() => {
     if (!BINDS_TO_SERVER_AUTH) return;
@@ -4965,7 +4967,7 @@ export default function TaqfeelahPrototypeRuntime() {
     applyNotebookThemeCssVariables(employee ? employeeNotebookTheme : notebookTheme);
   }, [employee, employeeNotebookTheme, notebookTheme]);
   useEffect(() => {
-    if (BINDS_TO_SERVER_AUTH || typeof window === "undefined") return;
+    if (BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE || typeof window === "undefined") return;
     window.localStorage.setItem(OPERATIONAL_ENTRIES_STORAGE_KEY, JSON.stringify(stripEmbeddedAttachmentImages(operationalEntries)));
   }, [operationalEntries]);
   useEffect(() => {
@@ -5100,7 +5102,7 @@ export default function TaqfeelahPrototypeRuntime() {
     savingRef.current = true; setSaving(true);
     try {
       const actor = { role: "employee", userId: activeEmployee.id, nameAr: activeEmployee.nameAr, nameEn: activeEmployee.nameEn };
-      if (entriesApiStrictMode) {
+      if (entriesApiEnabled) {
         const created = await createOperationalEntryInApi({
           payload,
           actorUserId: activeEmployee.id,
@@ -5153,7 +5155,7 @@ export default function TaqfeelahPrototypeRuntime() {
     if (payload.date > todayIsoDate()) { window.alert(text(lang, "futureDateNotAllowed")); return; }
     savingRef.current = true; setSaving(true);
     try {
-      if (entriesApiStrictMode) {
+      if (entriesApiEnabled) {
         const created = await createOperationalEntryInApi({
           payload,
           actorUserId: ownerApiUserId,
@@ -5203,7 +5205,7 @@ export default function TaqfeelahPrototypeRuntime() {
     await saveOwner(payload);
   };
   const confirmReview = async (entryId) => {
-    if (entriesApiStrictMode) {
+    if (entriesApiEnabled) {
       const target = operationalEntries.find((entry) => entry.id === entryId);
       if (!target) return;
       try {
@@ -5261,7 +5263,7 @@ export default function TaqfeelahPrototypeRuntime() {
     setAcknowledgedDuplicateSales((current) => ({ ...current, [duplicateSalesGroupKey(alert)]: duplicateSalesSignature(alert.entries) }));
   };
   const confirmVoidOperation = async (reason = "") => {
-    if (entriesApiStrictMode) {
+    if (entriesApiEnabled) {
       const target = voidTarget;
       if (!target || entryIsVoided(target) || archivedBusinessIds.includes(target.businessId)) { setVoidTarget(null); return; }
       try {
@@ -5311,7 +5313,7 @@ export default function TaqfeelahPrototypeRuntime() {
     setSelected(null);
   };
   const confirmRestoreOperation = async (reason = "") => {
-    if (entriesApiStrictMode) {
+    if (entriesApiEnabled) {
       const target = restoreTarget;
       if (!target || !entryIsVoided(target) || archivedBusinessIds.includes(target.businessId)) { setRestoreTarget(null); return; }
       try {
@@ -5404,7 +5406,12 @@ export default function TaqfeelahPrototypeRuntime() {
   }, []);
 
   const syncCloseoutToOperationalEntries = useCallback(async (closeout, { force = false } = {}) => {
-    if (PRODUCTION_API_ENTRIES_MODE) return;
+    if (ENTRIES_API_DB_SOURCE) {
+      if (typeof loadOperationalEntriesFromApiRef.current === "function") {
+        await loadOperationalEntriesFromApiRef.current();
+      }
+      return;
+    }
     if (!closeout) return;
     if (!force && closeout.syncedToEntries) return;
     if (force) {
@@ -5449,12 +5456,24 @@ export default function TaqfeelahPrototypeRuntime() {
       await syncCloseoutToOperationalEntries({ ...closeout, syncedToEntries: false }, { force: true });
       return;
     }
+    if (ENTRIES_API_DB_SOURCE) {
+      if (typeof loadOperationalEntriesFromApiRef.current === "function") {
+        await loadOperationalEntriesFromApiRef.current();
+      }
+      return;
+    }
     removeOperationalEntriesForCloseout(closeout.id, closeout.storeId);
   }, [removeOperationalEntriesForCloseout, syncCloseoutToOperationalEntries]);
 
   const handleOwnerCloseoutDeleted = useCallback(async (closeout) => {
     if (!closeout) return;
-    removeOperationalEntriesForCloseout(closeout.id, closeout.storeId);
+    if (ENTRIES_API_DB_SOURCE) {
+      if (typeof loadOperationalEntriesFromApiRef.current === "function") {
+        await loadOperationalEntriesFromApiRef.current();
+      }
+    } else {
+      removeOperationalEntriesForCloseout(closeout.id, closeout.storeId);
+    }
     setCloseoutAlerts((current) => current.filter((item) => !(item.businessId === closeout.storeId && item.date === closeout.date)));
     setOwnerReviewCloseout((current) => (current?.id === closeout.id ? null : current));
     setReturnCloseoutTarget((current) => (current?.id === closeout.id ? null : current));
@@ -5540,7 +5559,7 @@ export default function TaqfeelahPrototypeRuntime() {
   const entriesApiEnabled = process.env.NEXT_PUBLIC_ENTRIES_API_ENABLED
     ? process.env.NEXT_PUBLIC_ENTRIES_API_ENABLED === "true"
     : closeoutsApiEnabled;
-  const entriesApiStrictMode = PRODUCTION_API_ENTRIES_MODE;
+  const entriesApiStrictMode = isEntriesApiStrictMode();
 
   const createOperationalEntryInApi = useCallback(async ({ payload, actorUserId, actorRole }) => {
     if (!entriesApiEnabled) {
@@ -5635,7 +5654,7 @@ export default function TaqfeelahPrototypeRuntime() {
       mode: action === "resubmit" ? "resubmit" : "submit",
       autoReview: !reviewWorkflowEnabled,
     });
-    if (entriesApiStrictMode) {
+    if (entriesApiEnabled) {
       await loadOperationalEntriesFromApi();
     }
     return result;
@@ -5643,7 +5662,7 @@ export default function TaqfeelahPrototypeRuntime() {
     closeoutsApiEnabled,
     closeoutsApiOrganizationId,
     closeoutsApiStrictMode,
-    entriesApiStrictMode,
+    entriesApiEnabled,
     loadOperationalEntriesFromApi,
   ]);
 
@@ -5664,7 +5683,7 @@ export default function TaqfeelahPrototypeRuntime() {
       action,
       reason,
     });
-    if (entriesApiStrictMode) {
+    if (entriesApiEnabled) {
       await loadOperationalEntriesFromApi();
     }
     return result;
@@ -5673,9 +5692,11 @@ export default function TaqfeelahPrototypeRuntime() {
     closeoutsApiOrganizationId,
     ownerApiUserId,
     closeoutsApiStrictMode,
-    entriesApiStrictMode,
+    entriesApiEnabled,
     loadOperationalEntriesFromApi,
   ]);
+
+  loadOperationalEntriesFromApiRef.current = loadOperationalEntriesFromApi;
 
   const loadCloseoutsFromApi = useCallback(async () => {
     if (!closeoutsApiEnabled) {
