@@ -75,7 +75,7 @@ export function DailyCloseoutsProvider({
     const remote = await loadCloseoutsFromApi();
     const remoteList = Array.isArray(remote) ? remote.map((item) => withCloseoutTotals(item)) : [];
     setCloseouts((current) => {
-      const localDrafts = apiStrictMode && !dbSourceMode
+      const localDrafts = dbSourceMode || (apiStrictMode && !dbSourceMode)
         ? []
         : current.filter((item) => item.status === CLOSEOUT_STATUS.DRAFT && !item.submittedAt);
       const remoteKeys = new Set(remoteList.map((item) => item.id));

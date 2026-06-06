@@ -1,27 +1,23 @@
+import {
+  getCloseoutApiMaps,
+  setRuntimeApiIdMaps as setCloseoutsRuntimeApiIdMaps,
+} from "@/features/closeouts/client/closeouts-api-client.js";
+
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 let cachedMaps = null;
+
+export function setRuntimeApiIdMaps(overrides) {
+  setCloseoutsRuntimeApiIdMaps(overrides);
+  cachedMaps = null;
+}
 
 function isUuid(value) {
   return typeof value === "string" && uuidPattern.test(value);
 }
 
-function parseJsonMap(rawValue) {
-  if (!rawValue || typeof rawValue !== "string") return {};
-  try {
-    const parsed = JSON.parse(rawValue);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
 function getMaps() {
   if (cachedMaps) return cachedMaps;
-  cachedMaps = {
-    storeIdMap: parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP),
-    userIdMap: parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP),
-    salesChannelIdMap: parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP),
-  };
+  cachedMaps = getCloseoutApiMaps();
   return cachedMaps;
 }
 
