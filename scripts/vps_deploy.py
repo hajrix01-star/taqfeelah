@@ -6,6 +6,7 @@ Usage examples:
   python scripts/vps_deploy.py audit
   python scripts/vps_deploy.py deploy --domain taqfeelah.com --www-domain www.taqfeelah.com
   python scripts/vps_deploy.py verify --domain taqfeelah.com --www-domain www.taqfeelah.com
+  python scripts/vps_deploy.py preflight --domain taqfeelah.com --www-domain www.taqfeelah.com
 
 Environment variables:
   VPS_HOST, VPS_USER, VPS_PASS
@@ -546,6 +547,69 @@ def cmd_deploy(vps: VPS, domain: str, www_domain: str, local_path: str) -> None:
     vps.run(certbot_cmd)
 
 
+def probe_vps_connectivity(host: str, port: int, timeout: float) -> list[str]:
+    """Probe DNS + TCP reachability from the runner before SSH auth."""
+    lines: list[str] = []
+    try:
+        endpoints = []
+        seen: set[tuple[socket.AddressFamily, str, int]] = set()
+        for family, _, _, _, sockaddr in socket.getaddrinfo(host, port, type=socket.SOCK_STREAM):
+            ip = sockaddr[0]
+            key = (family, ip, port)
+            if key in seen:
+                continue
+            seen.add(key)
+            endpoints.append((family, sockaddr, ip))
+        if not endpoints:
+            raise RuntimeError(f"No endpoints resolved for {host}:{port}")
+        lines.append(f"Resolved {len(endpoints)} endpoint(s) for {host}:{port}")
+        for family, sockaddr, ip in endpoints:
+            sock: socket.socket | None = None
+            try:
+                sock = socket.socket(family, socket.SOCK_STREAM)
+                sock.settimeout(timeout)
+                sock.connect(sockaddr)
+                lines.append(f"TCP {ip}:{port} — reachable")
+            except Exception as exc:
+                lines.append(f"TCP {ip}:{port} — blocked or timed out ({exc!r})")
+            finally:
+                if sock is not None:
+                    sock.close()
+    except Exception as exc:
+        lines.append(f"DNS/TCP probe failed: {exc!r}")
+    return lines
+
+
+def cmd_preflight(vps: VPS, domain: str, www_domain: str) -> None:
+    print_section("SSH session")
+    _, out, _ = vps.run("hostname && whoami && uptime", check=True)
+    safe_print(out.strip())
+
+    print_section("Core services")
+    for label, command in (
+        ("nginx", "systemctl is-active nginx"),
+        ("pm2", "pm2 ls || true"),
+        ("app dir", "ls -ld /opt/taqfeelah || true"),
+    ):
+        safe_print(f"[{label}]")
+        _, out, err = vps.run(command, check=False)
+        if out.strip():
+            safe_print(out.strip())
+        if err.strip():
+            safe_print(err.strip())
+
+    print_section("HTTPS smoke check from VPS")
+    for url in (f"https://{domain}", f"https://{www_domain}"):
+        safe_print(url)
+        _, out, err = vps.run(f"curl -I --max-time 12 {shlex.quote(url)} || true", check=False)
+        if out.strip():
+            safe_print(out.strip())
+        if err.strip():
+            safe_print(err.strip())
+
+    safe_print("\nPreflight passed — safe to deploy.")
+
+
 def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     verify_cmds = [
         "docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'",
@@ -998,6 +1062,10 @@ def main() -> int:
     p_verify.add_argument("--domain", required=True)
     p_verify.add_argument("--www-domain", required=True)
 
+    p_preflight = sub.add_parser("preflight")
+    p_preflight.add_argument("--domain", required=True)
+    p_preflight.add_argument("--www-domain", required=True)
+
     p_deploy_pm2 = sub.add_parser("deploy-pm2")
     p_deploy_pm2.add_argument("--domain", required=True)
     p_deploy_pm2.add_argument("--www-domain", required=True)
@@ -1025,6 +1093,18 @@ def main() -> int:
     connect_retries = int(os.environ.get("VPS_CONNECT_RETRIES", "3"))
     retry_delay_seconds = float(os.environ.get("VPS_RETRY_DELAY_SECONDS", "5"))
 
+    if args.action == "preflight":
+        print_section("Runner → VPS connectivity probe")
+        probe_lines = probe_vps_connectivity(host, port, connect_timeout)
+        for line in probe_lines:
+            safe_print(line)
+        if not any("reachable" in line for line in probe_lines):
+            raise RuntimeError(
+                "VPS port is not reachable from GitHub Actions.\n"
+                "Check VPS firewall, fail2ban, SSH service, and VPS_HOST.\n"
+                + "\n".join(probe_lines)
+            )
+
     with VPS(
         host,
         user,
@@ -1040,6 +1120,8 @@ def main() -> int:
             cmd_deploy(vps, args.domain, args.www_domain, args.local_path)
         elif args.action == "verify":
             cmd_verify(vps, args.domain, args.www_domain)
+        elif args.action == "preflight":
+            cmd_preflight(vps, args.domain, args.www_domain)
         elif args.action == "deploy-pm2":
             cmd_deploy_pm2(vps, args.domain, args.www_domain, args.local_path)
         elif args.action == "repair-docker":
