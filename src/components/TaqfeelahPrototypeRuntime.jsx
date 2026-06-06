@@ -58,12 +58,14 @@ import {
   X,
 } from "lucide-react";
 import { getEnabledOwnerLoginMethods, isOwnerLoginMethodEnabled } from "@/core/auth/owner-login-methods";
+import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
 import {
   fetchStoreCloseoutsViaApi,
   hasCloseoutApiActorMapping,
   hasCloseoutApiStoreMapping,
   isUuid,
   reviewCloseoutViaApi,
+  setRuntimeApiIdMaps,
   submitCloseoutViaApi,
 } from "@/features/closeouts/client/closeouts-api-client";
 import {
@@ -5808,8 +5810,31 @@ export default function TaqfeelahPrototypeRuntime() {
   const enterPrototypeAsEmployee = () => {
     const person = staff.find((item) => item.active && !item.removed) || PROTOTYPE_DEFAULT_STAFF[0];
     if (!person?.id) return;
-    completeEmployeeLogin(person.id);
+    completeEmployeeLogin(person.id, person.apiUserId || "");
   };
+
+  useEffect(() => {
+    if (!closeoutsApiEnabled && !entriesApiEnabled) {
+      setRuntimeApiIdMaps(null);
+      return;
+    }
+    let envStoreIdMap = {};
+    let envUserIdMap = {};
+    try {
+      envStoreIdMap = JSON.parse(process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP || "{}");
+      envUserIdMap = JSON.parse(process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP || "{}");
+    } catch {
+      envStoreIdMap = {};
+      envUserIdMap = {};
+    }
+    const maps = buildRuntimeApiIdMaps({
+      configuredBusinesses,
+      staff,
+      envStoreIdMap,
+      envUserIdMap,
+    });
+    setRuntimeApiIdMaps(maps);
+  }, [closeoutsApiEnabled, configuredBusinesses, entriesApiEnabled, staff]);
 
   if (!loggedIn) {
     return (

@@ -41,7 +41,8 @@ export async function POST(request: Request, context: RouteContext) {
       salesChannels: Array.isArray(body?.salesChannels) ? body.salesChannels : [],
       outflows: Array.isArray(body?.outflows) ? body.outflows : [],
       note: typeof body?.note === "string" ? body.note : undefined,
-      autoReview: body?.autoReview === true && (requestContext.role === "owner" || requestContext.role === "manager"),
+      // Product rule: honor client autoReview for employees when store review is off.
+      autoReview: body?.autoReview === true,
     });
 
     return ok(result, { status: 201 });

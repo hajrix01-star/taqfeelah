@@ -1,5 +1,20 @@
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 let cachedMaps = null;
+let runtimeMapOverrides = null;
+
+/** Merge runtime settings store/user maps on top of build-time env maps. */
+export function setRuntimeApiIdMaps(overrides) {
+  if (!overrides || typeof overrides !== "object") {
+    runtimeMapOverrides = null;
+    cachedMaps = null;
+    return;
+  }
+  runtimeMapOverrides = {
+    storeIdMap: overrides.storeIdMap && typeof overrides.storeIdMap === "object" ? overrides.storeIdMap : {},
+    userIdMap: overrides.userIdMap && typeof overrides.userIdMap === "object" ? overrides.userIdMap : {},
+  };
+  cachedMaps = null;
+}
 
 export function isUuid(value) {
   return typeof value === "string" && uuidPattern.test(value);
@@ -15,14 +30,24 @@ function parseJsonMap(rawValue) {
   }
 }
 
-function getMaps() {
+export function getCloseoutApiMaps() {
   if (cachedMaps) return cachedMaps;
   cachedMaps = {
-    storeIdMap: parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP),
-    userIdMap: parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP),
+    storeIdMap: {
+      ...parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP),
+      ...(runtimeMapOverrides?.storeIdMap || {}),
+    },
+    userIdMap: {
+      ...parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP),
+      ...(runtimeMapOverrides?.userIdMap || {}),
+    },
     salesChannelIdMap: parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP),
   };
   return cachedMaps;
+}
+
+function getMaps() {
+  return getCloseoutApiMaps();
 }
 
 function mapToUuid(value, map) {
