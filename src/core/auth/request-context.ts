@@ -4,6 +4,7 @@ import { MEMBER_ROLES, type MemberRole } from "@/core/auth/roles";
 import {
   allowHeaderAuthContext,
   assertProductionRuntimeEnv,
+  getProductionAuthRuntimeConfig,
   isServerProductionMode,
   readEnv,
 } from "@/core/config/env";
@@ -28,6 +29,12 @@ function parseUuid(value: string | null, fieldName: string): string | null {
     throw new ValidationError(`Header '${fieldName}' must be a valid UUID.`);
   }
   return parsed.data;
+}
+
+function parseUuidOptional(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const parsed = z.string().uuid().safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 function parseRole(value: string | null): MemberRole | null {
@@ -66,13 +73,25 @@ export function resolveRequestContext(
     throw new ValidationError("Session cookie is required for this environment.");
   }
 
-  const organizationId = parseUuid(request.headers.get("x-organization-id"), "x-organization-id");
+  const envAuth = getProductionAuthRuntimeConfig(env);
+
+  let organizationId = parseUuid(request.headers.get("x-organization-id"), "x-organization-id");
+  if (!organizationId) {
+    organizationId = parseUuidOptional(envAuth.organizationId);
+  }
   if (!organizationId) {
     throw new ValidationError("Header 'x-organization-id' is required.");
   }
 
-  const userId = parseUuid(request.headers.get("x-user-id"), "x-user-id");
-  const role = parseRole(request.headers.get("x-member-role"));
+  let userId = parseUuid(request.headers.get("x-user-id"), "x-user-id");
+  let role = parseRole(request.headers.get("x-member-role"));
+
+  if (requireUser && !userId) {
+    userId = parseUuidOptional(envAuth.ownerUserId);
+  }
+  if (requireUser && !role) {
+    role = "owner";
+  }
 
   if (requireUser && !userId) {
     throw new ValidationError("Header 'x-user-id' is required.");

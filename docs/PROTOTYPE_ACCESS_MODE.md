@@ -33,7 +33,17 @@ Set in VPS `.env.production` and GitHub Actions secrets, then redeploy.
 | `pnpm dev` / `pnpm mobile:sync` | `http://<LAN-IP>:3000` |
 | `pnpm preview:lan` | `http://<LAN-IP>:3000` |
 
+## Database-first (temporary)
+
+While prototype access is active, the UI may call store APIs with mapped prototype IDs. The server accepts header-based request context when:
+
+```bash
+ALLOW_HEADER_AUTH_CONTEXT=true
+```
+
+Set this alongside the seeded org/store/user ID maps (`NEXT_PUBLIC_CLOSEOUTS_*`) and run `node scripts/seed-closeouts-foundation.mjs` once. VPS deploy bootstrap includes `ALLOW_HEADER_AUTH_CONTEXT=true` during the prototype period.
+
 ## Important
 
 This is **not** a launch auth solution. Backend auth files and APIs remain intact.
-Restore real auth by setting `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false` before public launch.
+Restore real auth by setting `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false` and `ALLOW_HEADER_AUTH_CONTEXT=false` before public launch.
