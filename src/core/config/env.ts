@@ -22,7 +22,9 @@ const envSchema = z.object({
   NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP: z.string().optional(),
   NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP: z.string().optional(),
   ALLOW_HEADER_AUTH_CONTEXT: z.enum(["true", "false"]).optional(),
+  NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: z.enum(["true", "false"]).optional(),
   AUTH_DB_CREDENTIALS_ENABLED: z.enum(["true", "false"]).optional(),
+  NEXT_PUBLIC_AUTH_API_ENABLED: z.enum(["true", "false"]).optional(),
   SAAS_PLATFORM_ADMIN_USER_IDS: z.string().optional(),
   SAAS_ADMIN_API_ENABLED: z.enum(["true", "false"]).optional(),
   USAGE_TRACKING_ENABLED: z.enum(["true", "false"]).optional(),
@@ -115,6 +117,13 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
   }
   if (Object.keys(parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP)).length === 0) {
     missing.push("NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP");
+  }
+  const launchReady = env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE === "false";
+  if (env.AUTH_DB_CREDENTIALS_ENABLED === "true" && !launchReady) {
+    missing.push("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false (required when AUTH_DB_CREDENTIALS_ENABLED=true)");
+  }
+  if (launchReady && env.ALLOW_HEADER_AUTH_CONTEXT === "true") {
+    missing.push("ALLOW_HEADER_AUTH_CONTEXT must not be true when prototype access is disabled");
   }
 
   if (missing.length > 0) {

@@ -47,7 +47,7 @@ describe("mapDaysReportToUiRows", () => {
       sales: 500,
       expense: 100,
       net: 400,
-      ratio: "0.0%",
+      ratio: "20.0%",
       proofs: 0,
       pending: 0,
     }]);

@@ -1,3 +1,4 @@
+import { formatOutflowRatio } from "@/core/money/halalas";
 import { mapDaySummaryToUiTotals } from "./map-day-summary-to-ui";
 
 export function mapPeriodSummaryToTotals(apiSummary) {
@@ -5,17 +6,23 @@ export function mapPeriodSummaryToTotals(apiSummary) {
 }
 
 export function mapDaysReportToUiRows(days = []) {
-  return (Array.isArray(days) ? days : []).map((row) => ({
-    id: row.date,
-    dayAr: row.date,
-    dayEn: row.date,
-    sales: Number(row?.totalSales?.amountHalalas || 0) / 100,
-    expense: Number(row?.totalOutflow?.amountHalalas || 0) / 100,
-    net: Number(row?.netMovement?.amountHalalas || 0) / 100,
-    ratio: "0.0%",
-    proofs: 0,
-    pending: 0,
-  }));
+  return (Array.isArray(days) ? days : []).map((row) => {
+    const salesHalalas = Number(row?.totalSales?.amountHalalas || 0);
+    const outflowHalalas = Number(row?.totalOutflow?.amountHalalas || 0);
+    const { ratio } = formatOutflowRatio(salesHalalas, outflowHalalas);
+
+    return {
+      id: row.date,
+      dayAr: row.date,
+      dayEn: row.date,
+      sales: salesHalalas / 100,
+      expense: outflowHalalas / 100,
+      net: Number(row?.netMovement?.amountHalalas || 0) / 100,
+      ratio,
+      proofs: 0,
+      pending: 0,
+    };
+  });
 }
 
 export function mapChannelsReportToUiRows(channels = [], configuredChannels = [], salesChannelIdMap = {}) {

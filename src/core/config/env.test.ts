@@ -1,5 +1,32 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { __resetEnvCacheForTests, allowHeaderAuthContext } from "./env";
+import { ServiceUnavailableError } from "@/core/errors/app-error";
+import { __resetEnvCacheForTests, allowHeaderAuthContext, assertProductionRuntimeEnv } from "./env";
+
+const productionEnv = {
+  NODE_ENV: "production",
+  APP_MODE: "production",
+  NEXT_PUBLIC_APP_MODE: "production",
+  DATABASE_URL: "postgres://example",
+  AUTH_SESSION_SECRET: "test-session-secret-32chars",
+  NEXT_PUBLIC_CLOSEOUTS_API_ENABLED: "true",
+  NEXT_PUBLIC_ENTRIES_API_ENABLED: "true",
+  AUTH_ORGANIZATION_ID: "00000000-0000-4000-8000-000000000001",
+  AUTH_OWNER_USER_ID: "00000000-0000-4000-8000-000000000002",
+  NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP: JSON.stringify({ owner: "00000000-0000-4000-8000-000000000002" }),
+  NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP: JSON.stringify({ store1: "00000000-0000-4000-8000-000000000003" }),
+  NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP: JSON.stringify({ cash: "00000000-0000-4000-8000-000000000004" }),
+  NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "false",
+  ALLOW_HEADER_AUTH_CONTEXT: "false",
+} as const;
+
+function stubProductionEnv(overrides: Record<string, string | undefined> = {}) {
+  Object.entries({ ...productionEnv, ...overrides }).forEach(([key, value]) => {
+    if (value !== undefined) {
+      vi.stubEnv(key, value);
+    }
+  });
+  __resetEnvCacheForTests();
+}
 
 describe("allowHeaderAuthContext", () => {
   afterEach(() => {
@@ -38,5 +65,45 @@ describe("allowHeaderAuthContext", () => {
     __resetEnvCacheForTests();
 
     expect(allowHeaderAuthContext()).toBe(false);
+  });
+});
+
+describe("assertProductionRuntimeEnv", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    __resetEnvCacheForTests();
+  });
+
+  it("no-ops outside production mode", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("APP_MODE", "prototype");
+    __resetEnvCacheForTests();
+
+    expect(() => assertProductionRuntimeEnv()).not.toThrow();
+  });
+
+  it("accepts a complete production env", () => {
+    stubProductionEnv();
+    expect(() => assertProductionRuntimeEnv()).not.toThrow();
+  });
+
+  it("allows prototype access on production VPS during database-first rollout", () => {
+    stubProductionEnv({ NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true", ALLOW_HEADER_AUTH_CONTEXT: "true" });
+    expect(() => assertProductionRuntimeEnv()).not.toThrow();
+  });
+
+  it("rejects prototype access when DB credentials auth is enabled", () => {
+    stubProductionEnv({
+      NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true",
+      AUTH_DB_CREDENTIALS_ENABLED: "true",
+    });
+    expect(() => assertProductionRuntimeEnv()).toThrow(ServiceUnavailableError);
+    expect(() => assertProductionRuntimeEnv()).toThrow(/NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false/);
+  });
+
+  it("rejects header auth bypass when launch-ready production is configured", () => {
+    stubProductionEnv({ ALLOW_HEADER_AUTH_CONTEXT: "true" });
+    expect(() => assertProductionRuntimeEnv()).toThrow(ServiceUnavailableError);
+    expect(() => assertProductionRuntimeEnv()).toThrow(/ALLOW_HEADER_AUTH_CONTEXT/);
   });
 });

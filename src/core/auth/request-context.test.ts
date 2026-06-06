@@ -119,10 +119,11 @@ describe("resolveRequestContext", () => {
     expect(ctx.role).toBe("owner");
   });
 
-  it("allows header auth in production when explicitly enabled", () => {
+  it("rejects launch-ready production when header auth bypass is enabled", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("APP_MODE", "production");
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
+    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "false");
     vi.stubEnv("ALLOW_HEADER_AUTH_CONTEXT", "true");
     vi.stubEnv("DATABASE_URL", "postgresql://example");
     vi.stubEnv("AUTH_SESSION_SECRET", "test-secret-min-16-chars");
@@ -135,17 +136,13 @@ describe("resolveRequestContext", () => {
     vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP", '{"cash":"44444444-4444-4444-8444-444444444444"}');
     __resetEnvCacheForTests();
 
-    const ctx = resolveRequestContext(
+    expect(() => resolveRequestContext(
       makeRequest({
         "x-organization-id": "11111111-1111-4111-8111-111111111111",
         "x-user-id": "22222222-2222-4222-8222-222222222222",
         "x-member-role": "owner",
       }),
       { requireUser: true },
-    );
-
-    expect(ctx.organizationId).toBe("11111111-1111-4111-8111-111111111111");
-    expect(ctx.userId).toBe("22222222-2222-4222-8222-222222222222");
-    expect(ctx.role).toBe("owner");
+    )).toThrow(/ALLOW_HEADER_AUTH_CONTEXT/);
   });
 });
