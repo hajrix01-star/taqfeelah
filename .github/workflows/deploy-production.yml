@@ -97,9 +97,11 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
-          VPS_CONNECT_TIMEOUT: "10"
+          VPS_CONNECT_TIMEOUT: "15"
           VPS_CONNECT_RETRIES: "2"
-          VPS_RETRY_DELAY_SECONDS: "4"
+          VPS_RETRY_DELAY_SECONDS: "6"
+          VPS_PROBE_RETRIES: "4"
+          VPS_PROBE_RETRY_DELAY_SECONDS: "10"
         run: |
           python scripts/vps_deploy.py preflight \
             --domain taqfeelah.com \
@@ -127,9 +129,9 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
-          VPS_CONNECT_TIMEOUT: "15"
-          VPS_CONNECT_RETRIES: "3"
-          VPS_RETRY_DELAY_SECONDS: "5"
+          VPS_CONNECT_TIMEOUT: "20"
+          VPS_CONNECT_RETRIES: "6"
+          VPS_RETRY_DELAY_SECONDS: "8"
           APP_MODE: ${{ secrets.APP_MODE }}
           NEXT_PUBLIC_APP_MODE: ${{ secrets.NEXT_PUBLIC_APP_MODE }}
           NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: ${{ secrets.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE }}
@@ -148,20 +150,48 @@ jobs:
           NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP: ${{ secrets.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP }}
           NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP: ${{ secrets.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP }}
         run: |
-          python scripts/vps_deploy.py deploy-pm2 \
-            --domain taqfeelah.com \
-            --www-domain www.taqfeelah.com \
-            --local-path .
+          set -euo pipefail
+          attempt=1
+          max_attempts=4
+          while [ "$attempt" -le "$max_attempts" ]; do
+            echo "Deploy attempt ${attempt}/${max_attempts}"
+            if python scripts/vps_deploy.py deploy-pm2 \
+              --domain taqfeelah.com \
+              --www-domain www.taqfeelah.com \
+              --local-path .; then
+              exit 0
+            fi
+            if [ "$attempt" -eq "$max_attempts" ]; then
+              echo "::error::Deploy failed after ${max_attempts} SSH attempts"
+              exit 1
+            fi
+            sleep $((attempt * 15))
+            attempt=$((attempt + 1))
+          done
 
       - name: Verify production and sibling sites
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
-          VPS_CONNECT_TIMEOUT: "15"
-          VPS_CONNECT_RETRIES: "3"
-          VPS_RETRY_DELAY_SECONDS: "5"
+          VPS_CONNECT_TIMEOUT: "20"
+          VPS_CONNECT_RETRIES: "6"
+          VPS_RETRY_DELAY_SECONDS: "8"
         run: |
-          python scripts/vps_deploy.py verify \
-            --domain taqfeelah.com \
-            --www-domain www.taqfeelah.com
+          set -euo pipefail
+          attempt=1
+          max_attempts=3
+          while [ "$attempt" -le "$max_attempts" ]; do
+            echo "Verify attempt ${attempt}/${max_attempts}"
+            if python scripts/vps_deploy.py verify \
+              --domain taqfeelah.com \
+              --www-domain www.taqfeelah.com; then
+              exit 0
+            fi
+            if [ "$attempt" -eq "$max_attempts" ]; then
+              echo "::error::Post-deploy verify failed after ${max_attempts} SSH attempts"
+              exit 1
+            fi
+            sleep $((attempt * 10))
+            attempt=$((attempt + 1))
+          done
