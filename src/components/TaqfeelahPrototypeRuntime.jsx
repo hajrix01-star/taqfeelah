@@ -71,6 +71,12 @@ import {
 } from "@/features/closeouts/client/closeouts-api-client";
 import { formatCloseoutDayLabel } from "@/features/closeouts/client/closeout-day-label";
 import {
+  buildRegisterCloseoutDayContext,
+  filterSummaryChannelRows,
+  summaryEntryDisplayAmount,
+  summarySalesChannelLabel as buildSummarySalesChannelLabel,
+} from "@/features/entries/client/register-operation-display";
+import {
   createStoreEntryViaApi,
   fetchStoreEntriesViaApi,
   restoreStoreEntryViaApi,
@@ -1347,26 +1353,30 @@ const noteLabel = (entry, lang) => {
   return entry.note || text(lang, entry.type);
 };
 const entryCategory = (entry) => entry.type === "purchases" ? "purchases" : entry.type === "withdrawal" ? "withdrawal" : (entry.categoryId || "other");
-function summarySalesChannelLabel(entry, lang) {
-  const rows = (entry.salesChannels || []).filter((row) => row?.channelId && Number(row.amount) > 0);
-  if (!rows.length) return text(lang, "summary");
-  return rows.map((row) => {
-    const fallback = channels.find((channel) => channel.id === row.channelId);
-    return row.name || (fallback ? channelName(fallback, lang) : row.channelId);
-  }).join(lang === "ar" ? " · " : " · ");
+function resolveSummaryChannelName(row, lang) {
+  const fallback = channels.find((channel) => channel.id === row.channelId);
+  return row.name || (fallback ? channelName(fallback, lang) : row.channelId);
 }
-const operationDisplayLabel = (entry, lang) => {
+function summarySalesChannelLabel(entry, lang, salesChannelFilter = "all") {
+  return buildSummarySalesChannelLabel(
+    entry,
+    (row) => resolveSummaryChannelName(row, lang),
+    salesChannelFilter,
+    text(lang, "summary"),
+  );
+}
+const operationDisplayLabel = (entry, lang, salesChannelFilter = "all") => {
   if (entry.type === "expense") return text(lang, expenseCategories.find((item) => item.id === entryCategory(entry))?.label || "other");
-  if (entry.type === "summary") return summarySalesChannelLabel(entry, lang);
+  if (entry.type === "summary") return summarySalesChannelLabel(entry, lang, salesChannelFilter);
   return text(lang, entry.type);
 };
-function expandRegisterCloseoutOperationRows(item, lang) {
+function expandRegisterCloseoutOperationRows(item, lang, salesChannelFilter = "all") {
   if (item.type !== "summary") {
-    return [{ key: item.id, item, label: operationDisplayLabel(item, lang), amount: signedEntryAmount(item), isSale: false }];
+    return [{ key: item.id, item, label: operationDisplayLabel(item, lang, salesChannelFilter), amount: signedEntryAmount(item), isSale: false }];
   }
-  const rows = (item.salesChannels || []).filter((row) => row?.channelId && Number(row.amount) > 0);
+  const rows = filterSummaryChannelRows(item, salesChannelFilter);
   if (!rows.length) {
-    return [{ key: item.id, item, label: summarySalesChannelLabel(item, lang), amount: signedEntryAmount(item), isSale: true }];
+    return [{ key: item.id, item, label: summarySalesChannelLabel(item, lang, salesChannelFilter), amount: summaryEntryDisplayAmount(item, salesChannelFilter), isSale: true }];
   }
   return rows.map((row, index) => {
     const fallback = channels.find((channel) => channel.id === row.channelId);
@@ -3545,6 +3555,10 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
   };
   const filteredEntries = periodEntries.filter((entry) => (logFilters.status === "all" || (logFilters.status === "active" ? entryIsActive(entry) : entryIsVoided(entry))) && (logFilters.type === "all" || entry.type === logFilters.type) && matchesExpenseCategory(entry) && matchesActor(entry) && matchesSalesChannel(entry) && (!logFilters.attachmentOnly || entryHasAttachment(entry)) && (!logFilters.pendingReviewOnly || (entryIsActive(entry) && entryHasAttachment(entry) && !entry.reviewed)));
   const visibleEntries = newestEntries(filteredEntries);
+  const {
+    sameDayCloseoutCountByStoreDate,
+    daySequenceByCloseoutId,
+  } = useMemo(() => buildRegisterCloseoutDayContext(periodEntries), [periodEntries]);
   const closeoutSummaries = useMemo(() => {
     const grouped = new Map();
     newestEntries(filteredEntries).forEach((entry) => {
@@ -3745,20 +3759,33 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
             {visibleEntries.map((entry) => {
               const store = businessesList.find((business) => business.id === entry.businessId);
               const isSale = entry.type === "summary";
-              const signedAmount = isSale ? entry.amount : -entry.amount;
+              const signedAmount = isSale
+                ? summaryEntryDisplayAmount(entry, logFilters.salesChannel)
+                : -entry.amount;
               const isExpanded = expandedEntryId === entry.id;
               const actorLabel = employeeName(entry, lang) || (lang === "ar" ? "مستخدم" : "User");
+              const registerDaySequence = entry.closeoutId
+                ? (Number.isInteger(entry.daySequence) ? entry.daySequence : daySequenceByCloseoutId.get(entry.closeoutId) ?? null)
+                : null;
+              const registerSameDayCloseoutCount = entry.closeoutId
+                ? sameDayCloseoutCountByStoreDate.get(`${entry.businessId}|${entry.date}`) || 1
+                : 1;
+              const registerDateLabel = formatCloseoutDayLabel({
+                formattedDate: formatCalendarDate(entry.date, lang),
+                daySequence: registerDaySequence,
+                sameDayCloseoutCount: registerSameDayCloseoutCount,
+              });
               return (
                 <article id={`register-entry-${entry.id}`} key={entry.id} className="overflow-hidden rounded-[19px] border border-[#E8E1D4] shadow-[0_8px_18px_rgba(17,42,70,0.06)]" style={registerCardStyle}>
                   <button type="button" onClick={() => setExpandedEntryId((current) => (current === entry.id ? null : entry.id))} className="flex w-full items-start gap-2.5 px-3.5 py-3 text-start">
                     <span className={`mt-0.5 h-8 w-1 shrink-0 rounded-full ${isSale ? "bg-[#39A160]" : "bg-[#E4B84A]"}`} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <p className="truncate text-taq-meta font-black text-[#112A46]">{operationDisplayLabel(entry, lang)}</p>
+                        <p className="truncate text-taq-meta font-black text-[#112A46]">{operationDisplayLabel(entry, lang, logFilters.salesChannel)}</p>
                         {entryIsVoided(entry) && <Badge tone="warning">{text(lang, "voided")}</Badge>}
                         {entryHasAttachment(entry) && <Badge tone="navy">{text(lang, "attachmentExists")}</Badge>}
                       </div>
-                      <p className="mt-1 truncate text-taq-nav font-bold text-[#827762]">{formatCalendarDate(entry.date, lang)} · {opTime(entry, lang)} · {businessName(store, lang, true) || businessName(store, lang)} · {actorLabel}</p>
+                      <p className="mt-1 truncate text-taq-nav font-bold text-[#827762]">{registerDateLabel} · {opTime(entry, lang)} · {businessName(store, lang, true) || businessName(store, lang)} · {actorLabel}</p>
                     </div>
                     <div className="shrink-0 text-end">
                       <strong className={`block tabular-nums text-taq-meta font-black ${entryIsVoided(entry) ? "text-[#A99D87] line-through" : isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
@@ -3825,7 +3852,7 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
                   {isExpanded && (
                     <div className="border-t border-[#E8E1D4] px-3.5 py-2.5" style={registerCardInsetStyle}>
                       <div className="space-y-2">
-                        {summary.operations.flatMap((item) => expandRegisterCloseoutOperationRows(item, lang).map((row) => (
+                        {summary.operations.flatMap((item) => expandRegisterCloseoutOperationRows(item, lang, logFilters.salesChannel).map((row) => (
                           <button key={row.key} type="button" onClick={() => onOpenOperation(row.item)} className="grid w-full grid-cols-[max-content_minmax(0,1fr)] items-center gap-3 rounded-xl px-2 py-2 text-start hover:bg-[#FFF4D2]/35">
                             <strong dir="ltr" className={`min-w-[70px] whitespace-nowrap text-start tabular-nums text-taq-meta font-black ${entryIsVoided(row.item) ? "text-[#A99D87] line-through" : row.isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
                               <MoneyValue value={money(row.amount, lang)} />
