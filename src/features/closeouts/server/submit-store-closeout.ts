@@ -14,8 +14,10 @@ const salesChannelSchema = z.object({
 
 const outflowSchema = z.object({
   type: z.enum(["purchases", "expense", "withdrawal"]),
-  amountHalalas: z.number().int().positive(),
+  amountHalalas: z.coerce.number().int().positive(),
   categoryId: z.string().uuid().optional().nullable(),
+  categoryName: z.string().trim().max(120).optional(),
+  typeLabel: z.string().trim().max(120).optional(),
   note: z.string().trim().max(500).optional(),
 });
 
@@ -139,6 +141,8 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
           type: row.type,
           amountHalalas: row.amountHalalas,
           categoryId: row.categoryId || null,
+          categoryName: row.categoryName || "",
+          typeLabel: row.typeLabel || "",
           note: row.note || "",
         })),
         note: input.note || "",

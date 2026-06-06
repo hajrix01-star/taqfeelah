@@ -4,7 +4,7 @@ import { getDb } from "@/core/db/client";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
-import { auditEvents, stores, users } from "@/core/db/schema";
+import { auditEvents, entries, stores, users } from "@/core/db/schema";
 
 const closeoutDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD");
 
@@ -20,14 +20,14 @@ const listCloseoutsInputSchema = z.object({
 const submitMetadataSchema = z.object({
   closeoutId: z.string().trim().min(1).max(120),
   date: closeoutDateSchema,
-  totalSalesHalalas: z.number().int().nonnegative().optional(),
-  totalOutflowHalalas: z.number().int().nonnegative().optional(),
+  totalSalesHalalas: z.coerce.number().int().nonnegative().optional(),
+  totalOutflowHalalas: z.coerce.number().int().nonnegative().optional(),
   salesChannels: z
     .array(
       z.object({
         salesChannelId: z.string().uuid(),
         channelName: z.string().trim().min(1).max(120),
-        amountHalalas: z.number().int().nonnegative(),
+        amountHalalas: z.coerce.number().int().nonnegative(),
       }),
     )
     .optional(),
@@ -35,12 +35,16 @@ const submitMetadataSchema = z.object({
     .array(
       z.object({
         type: z.enum(["purchases", "expense", "withdrawal"]),
-        amountHalalas: z.number().int().positive(),
-        categoryId: z.string().uuid().nullable().optional(),
-        note: z.string().optional(),
+        amountHalalas: z.coerce.number().int().positive(),
+        categoryId: z.string().nullable().optional(),
+        categoryName: z.string().optional(),
+        typeLabel: z.string().optional(),
+        note: z.string().optional().nullable(),
       }),
     )
     .optional(),
+  outflowEntryIds: z.array(z.string().uuid()).optional(),
+  summaryEntryId: z.string().uuid().optional(),
   note: z.string().optional(),
 });
 
@@ -51,6 +55,16 @@ const reviewMetadataSchema = z.object({
 
 type ListCloseoutsInput = z.infer<typeof listCloseoutsInputSchema>;
 type SubmitMetadata = z.infer<typeof submitMetadataSchema>;
+
+type CloseoutOutflowRow = {
+  id: string;
+  type: "purchases" | "expense" | "withdrawal";
+  typeLabel: string;
+  categoryId: string | null;
+  category: string;
+  note: string;
+  amount: number;
+};
 
 type EventAggregate = {
   closeoutId: string;
@@ -155,12 +169,16 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
       returned: null,
     };
 
-    if ((row.action === "closeout_submitted" || row.action === "closeout_resubmitted") && !current.submit) {
-      current.submit = {
-        createdAt: row.createdAt,
-        actorUserId: row.actorUserId,
-        metadata: metadata.data,
-      };
+    if (row.action === "closeout_submitted" || row.action === "closeout_resubmitted") {
+      const eventAt = toTimestamp(row.createdAt);
+      const currentSubmitAt = current.submit ? toTimestamp(current.submit.createdAt) : -1;
+      if (!current.submit || eventAt >= currentSubmitAt) {
+        current.submit = {
+          createdAt: row.createdAt,
+          actorUserId: row.actorUserId,
+          metadata: metadata.data,
+        };
+      }
     }
     if (row.action === "closeout_approved" && !current.approved) {
       current.approved = {
@@ -199,6 +217,36 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
     actorRows.forEach((actorRow) => actorNameById.set(actorRow.id, actorRow.name));
   }
 
+  const outflowEntryIds = [...new Set(
+    [...aggregates.values()].flatMap((item) => item.submit?.metadata.outflowEntryIds || []),
+  )];
+  const outflowEntryById = new Map<string, {
+    id: string;
+    type: string;
+    categoryId: string | null;
+    note: string | null;
+    amountHalalas: number;
+  }>();
+  if (outflowEntryIds.length > 0) {
+    const outflowRows = await db
+      .select({
+        id: entries.id,
+        type: entries.type,
+        categoryId: entries.categoryId,
+        note: entries.note,
+        amountHalalas: entries.amountHalalas,
+      })
+      .from(entries)
+      .where(
+        and(
+          eq(entries.organizationId, input.organizationId),
+          eq(entries.storeId, input.storeId),
+          inArray(entries.id, outflowEntryIds),
+        ),
+      );
+    outflowRows.forEach((row) => outflowEntryById.set(row.id, row));
+  }
+
   const closeouts = [...aggregates.values()]
     .filter((item) => Boolean(item.submit))
     .map((item) => {
@@ -220,13 +268,37 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
         name: row.channelName,
         amount: toRiyals(row.amountHalalas),
       }));
-      const outflowRows = (submit.metadata.outflows || []).map((row, index) => ({
+      let outflowRows: CloseoutOutflowRow[] = (submit.metadata.outflows || []).map((row, index) => ({
         id: `${item.closeoutId}-out-${index + 1}`,
         type: row.type,
+        typeLabel: row.typeLabel || "",
         categoryId: row.categoryId || null,
+        category: row.categoryName || "",
         note: row.note || "",
         amount: toRiyals(row.amountHalalas),
       }));
+      if (!outflowRows.length) {
+        const linkedEntryIds = submit.metadata.outflowEntryIds || [];
+        outflowRows = linkedEntryIds
+          .map((entryId, index) => {
+            const row = outflowEntryById.get(entryId);
+            if (!row) return null;
+            const entryType: CloseoutOutflowRow["type"] =
+              row.type === "purchases" || row.type === "expense" || row.type === "withdrawal"
+                ? row.type
+                : "expense";
+            return {
+              id: `${item.closeoutId}-out-${index + 1}`,
+              type: entryType,
+              typeLabel: "",
+              categoryId: row.categoryId || null,
+              category: "",
+              note: row.note || "",
+              amount: toRiyals(row.amountHalalas),
+            };
+          })
+          .filter((row): row is NonNullable<typeof row> => Boolean(row));
+      }
 
       const totalSalesHalalas =
         submit.metadata.totalSalesHalalas

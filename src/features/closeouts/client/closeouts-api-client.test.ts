@@ -71,6 +71,46 @@ describe("closeouts api client", () => {
     expect(hasCloseoutApiStoreMapping("unknown")).toBe(false);
   });
 
+  it("submits outflows with legacy category labels", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => new Response(JSON.stringify({ ok: true }), { status: 201 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
+
+    await submitCloseoutViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "ahmed",
+      actorRole: "employee",
+      closeout: {
+        id: "closeout-outflows",
+        storeId: "shami",
+        date: "2026-06-06",
+        sales: [{ channelId: "cash", name: "Cash", amount: 100 }],
+        outflows: [{
+          id: "out-1",
+          type: "expense",
+          typeLabel: "مصروف",
+          category: "صيانة",
+          categoryId: "maintenance",
+          amount: 25,
+          note: "تصليح",
+        }],
+      },
+    });
+
+    const [, init] = fetchMock.mock.lastCall!;
+    const payload = JSON.parse(String(init?.body ?? "{}"));
+    expect(payload.outflows).toHaveLength(1);
+    expect(payload.outflows[0].type).toBe("expense");
+    expect(payload.outflows[0].amountHalalas).toBe(2500);
+    expect(payload.outflows[0].categoryName).toBe("صيانة");
+    expect(payload.outflows[0].typeLabel).toBe("مصروف");
+    expect(payload.outflows[0].categoryId).toBeNull();
+  });
+
   it("submits mada channel using catalog default uuid", async () => {
     setMapsEnv();
     const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(

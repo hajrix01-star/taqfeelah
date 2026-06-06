@@ -148,6 +148,10 @@ function extractOutflows(closeout) {
       type: row?.type,
       amountHalalas: toHalalas(row?.amount),
       categoryId: isUuid(row?.categoryId) ? row.categoryId : null,
+      categoryName: typeof row?.category === "string"
+        ? row.category
+        : (typeof row?.categoryName === "string" ? row.categoryName : ""),
+      typeLabel: typeof row?.typeLabel === "string" ? row.typeLabel : "",
       note: typeof row?.note === "string" ? row.note : "",
     }))
     .filter((row) => (row.type === "purchases" || row.type === "expense" || row.type === "withdrawal") && row.amountHalalas > 0);

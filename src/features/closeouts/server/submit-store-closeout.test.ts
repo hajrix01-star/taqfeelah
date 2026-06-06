@@ -103,6 +103,41 @@ describe("submitStoreCloseout", () => {
     expect((audits[0]?.values as { action: string }).action).toBe("closeout_submitted");
   });
 
+  it("persists outflows in audit metadata and inserts outflow entries", async () => {
+    insertCalls.length = 0;
+    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
+
+    await submitStoreCloseout({
+      ...baseInput,
+      autoReview: false,
+      outflows: [
+        {
+          type: "purchases",
+          amountHalalas: 4500,
+          categoryName: "",
+          typeLabel: "مشتريات",
+          note: "خضار",
+        },
+      ],
+    });
+
+    const entryWrites = entryInserts();
+    expect(entryWrites.length).toBeGreaterThanOrEqual(2);
+
+    const submitAudit = auditInserts().find(
+      (call) => (call.values as { action?: string }).action === "closeout_submitted",
+    );
+    const metadata = (submitAudit?.values as { metadata?: { outflows?: unknown[]; outflowEntryIds?: string[] } }).metadata;
+    expect(metadata?.outflows).toHaveLength(1);
+    expect(metadata?.outflows?.[0]).toMatchObject({
+      type: "purchases",
+      amountHalalas: 4500,
+      typeLabel: "مشتريات",
+      note: "خضار",
+    });
+    expect(metadata?.outflowEntryIds?.length).toBe(1);
+  });
+
   it("auto-approves employee closeout by default when requireReview is omitted", async () => {
     insertCalls.length = 0;
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
