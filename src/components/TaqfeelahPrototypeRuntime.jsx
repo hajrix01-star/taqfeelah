@@ -1158,7 +1158,8 @@ const employeeName = (item, lang) => item.enteredBy ? (lang === "ar" ? item.ente
 // البنية مقصودة لتنتقل لاحقًا إلى API/DB دون إعادة تصميم الواجهة.
 const APP_IN_PRODUCTION_MODE = isProductionAppMode();
 const PROTOTYPE_ACCESS_MODE = isPrototypeAccessMode();
-const PRODUCTION_API_ENTRIES_MODE = APP_IN_PRODUCTION_MODE;
+const BINDS_TO_SERVER_AUTH = APP_IN_PRODUCTION_MODE && !PROTOTYPE_ACCESS_MODE;
+const PRODUCTION_API_ENTRIES_MODE = BINDS_TO_SERVER_AUTH;
 const PROTOTYPE_SUPPORT_WHATSAPP = "966501234567";
 const PROTOTYPE_DEMO_OTP = process.env.NEXT_PUBLIC_DEMO_OTP || (APP_IN_PRODUCTION_MODE ? "" : "1234");
 const PROTOTYPE_OWNER_USERNAME = (
@@ -1404,9 +1405,9 @@ function createDemoOperationalEntries() {
   return createPrototypeMonthDemoOperationalEntries();
 }
 function readOperationalEntries() {
-  if (typeof window === "undefined") return APP_IN_PRODUCTION_MODE ? [] : createDemoOperationalEntries();
+  if (typeof window === "undefined") return BINDS_TO_SERVER_AUTH ? [] : createDemoOperationalEntries();
   const stored = readLocalStorageJson(OPERATIONAL_ENTRIES_STORAGE_KEY, null);
-  if (!Array.isArray(stored) || stored.length === 0) return APP_IN_PRODUCTION_MODE ? [] : createDemoOperationalEntries();
+  if (!Array.isArray(stored) || stored.length === 0) return BINDS_TO_SERVER_AUTH ? [] : createDemoOperationalEntries();
   return stored.map((entry) => ({
     ...entry,
     auditTrail: Array.isArray(entry.auditTrail) && entry.auditTrail.length
@@ -1417,23 +1418,23 @@ function readOperationalEntries() {
 function readDemoLastCloseoutDates() {
   const stored = readLocalStorageJson(LAST_CLOSEOUT_STORAGE_KEY, null);
   if (stored && typeof stored === "object" && !Array.isArray(stored)) return stored;
-  if (APP_IN_PRODUCTION_MODE) return {};
+  if (BINDS_TO_SERVER_AUTH) return {};
   return { shami: "2026-06-02", arz: "2026-06-02" };
 }
 function readAcknowledgedDuplicateSales() {
-  if (APP_IN_PRODUCTION_MODE) return {};
+  if (BINDS_TO_SERVER_AUTH) return {};
   if (typeof window === "undefined") return {};
   const stored = readLocalStorageJson(ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY, null);
   return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
 }
 function readCloseoutAlerts() {
-  if (APP_IN_PRODUCTION_MODE) return [];
+  if (BINDS_TO_SERVER_AUTH) return [];
   if (typeof window === "undefined") return [];
   const stored = readLocalStorageJson(CLOSEOUT_ALERTS_STORAGE_KEY, []);
   return Array.isArray(stored) ? stored : [];
 }
 function writeCloseoutAlerts(alerts) {
-  if (APP_IN_PRODUCTION_MODE) return;
+  if (BINDS_TO_SERVER_AUTH) return;
   if (typeof window === "undefined") return;
   window.localStorage.setItem(CLOSEOUT_ALERTS_STORAGE_KEY, JSON.stringify(alerts));
 }
@@ -2279,7 +2280,7 @@ function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedStores, on
 const DISABLE_REVIEW_ALERTS_MIGRATION_KEY = "disableReviewAlertsV1";
 
 function migrateSavedSettings(raw) {
-  if (!raw || typeof window === "undefined" || APP_IN_PRODUCTION_MODE || raw[DISABLE_REVIEW_ALERTS_MIGRATION_KEY]) return raw;
+  if (!raw || typeof window === "undefined" || BINDS_TO_SERVER_AUTH || raw[DISABLE_REVIEW_ALERTS_MIGRATION_KEY]) return raw;
   const migrated = { ...raw, [DISABLE_REVIEW_ALERTS_MIGRATION_KEY]: true };
   if (migrated.storeOperationalSettings) {
     migrated.storeOperationalSettings = Object.fromEntries(
@@ -2307,7 +2308,7 @@ function migrateSavedSettings(raw) {
 }
 
 function readSavedSettings() {
-  if (APP_IN_PRODUCTION_MODE) return null;
+  if (BINDS_TO_SERVER_AUTH) return null;
   if (typeof window === "undefined") return null;
   try {
     const raw = JSON.parse(window.localStorage.getItem("taqfeelah_owner_settings") || "null");
@@ -2324,7 +2325,7 @@ const PROTOTYPE_DEFAULT_STAFF = [
 
 function readPrototypeAuthBoot() {
   // Prototype Access Mode always starts logged out (no session restore).
-  if (APP_IN_PRODUCTION_MODE || PROTOTYPE_ACCESS_MODE) {
+  if (!BINDS_TO_SERVER_AUTH || PROTOTYPE_ACCESS_MODE) {
     return {
       loggedIn: false,
       employee: false,
@@ -2333,7 +2334,7 @@ function readPrototypeAuthBoot() {
     };
   }
   const settings = readSavedSettings();
-  return resolveAuthStateFromSession(settings?.staff || (APP_IN_PRODUCTION_MODE ? [] : PROTOTYPE_DEFAULT_STAFF));
+  return resolveAuthStateFromSession(settings?.staff || (BINDS_TO_SERVER_AUTH ? [] : PROTOTYPE_DEFAULT_STAFF));
 }
 function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChannelSettings, setStoreChannelSettings, storeOperationalSettings, setStoreOperationalSettings, configuredBusinesses, setConfiguredBusinesses, archivedBusinessIds, setArchivedBusinessIds, staff, setStaff, ownerProfile, setOwnerProfile, authOwnerUsername, setAuthOwnerUsername, authOwnerPassword, setAuthOwnerPassword, authEmployeePins, setAuthEmployeePins, operationalEntries = [], selectedBusiness, setSelectedBusiness, setOwnerPage, setArchivedReadOnlyBusinessId, setLastCloseoutDates, onPersistSettingsNow = null, onLogout = () => {}, onOpenSupport = () => {}, onOpenHelp = () => {} }) {
   const [section, setSection] = useState("home");
@@ -4778,10 +4779,10 @@ export default function TaqfeelahPrototypeRuntime() {
   const [archivedReadOnlyBusinessId, setArchivedReadOnlyBusinessId] = useState(null);
   const initialSettings = readSavedSettings();
   const initialAuthConfig = initialSettings?.authConfig || {};
-  const initialBusinesses = initialSettings?.configuredBusinesses || (APP_IN_PRODUCTION_MODE ? [] : businesses);
+  const initialBusinesses = initialSettings?.configuredBusinesses || (BINDS_TO_SERVER_AUTH ? [] : businesses);
   const [configuredBusinesses, setConfiguredBusinesses] = useState(initialBusinesses);
   const [archivedBusinessIds, setArchivedBusinessIds] = useState(initialSettings?.archivedBusinessIds || initialSettings?.archivedStores || []);
-  const [staff, setStaff] = useState(initialSettings?.staff || (APP_IN_PRODUCTION_MODE ? [] : PROTOTYPE_DEFAULT_STAFF));
+  const [staff, setStaff] = useState(initialSettings?.staff || (BINDS_TO_SERVER_AUTH ? [] : PROTOTYPE_DEFAULT_STAFF));
   const [ownerProfile, setOwnerProfile] = useState(initialSettings?.ownerProfile || { name: "محمد الهاجري" });
   const currentOwnerActor = { ...ownerActor, nameAr: ownerProfile.name, nameEn: ownerProfile.name };
   const [storeChannelSettings, setStoreChannelSettings] = useState(() => buildInitialStoreChannelSettings(initialSettings, initialBusinesses));
@@ -4791,12 +4792,12 @@ export default function TaqfeelahPrototypeRuntime() {
   const [authEmployeePins, setAuthEmployeePins] = useState(() => (initialAuthConfig.employeePins && typeof initialAuthConfig.employeePins === "object" ? initialAuthConfig.employeePins : {}));
   const [lastCloseoutDates, setLastCloseoutDates] = useState(() => readDemoLastCloseoutDates());
   const [employeeBusinessId, setEmployeeBusinessId] = useState(() => readPrototypeAuthBoot().employeeBusinessId);
-  const runtimeSettingsHydratedRef = useRef(!APP_IN_PRODUCTION_MODE);
+  const runtimeSettingsHydratedRef = useRef(!BINDS_TO_SERVER_AUTH);
   const runtimeSettingsSyncTimerRef = useRef(null);
   const runtimeSettingsLastSavedSignatureRef = useRef("");
   const [runtimeSettingsSyncError, setRuntimeSettingsSyncError] = useState("");
   useEffect(() => {
-    if (!APP_IN_PRODUCTION_MODE) return;
+    if (!BINDS_TO_SERVER_AUTH) return;
     let cancelled = false;
     getSessionStatusViaApi()
       .then((session) => {
@@ -4824,7 +4825,7 @@ export default function TaqfeelahPrototypeRuntime() {
     };
   }, []);
   useEffect(() => {
-    if (!APP_IN_PRODUCTION_MODE || !employee || !sessionUserId) return;
+    if (!BINDS_TO_SERVER_AUTH || !employee || !sessionUserId) return;
     const matchedStaff = staff.find(
       (person) => person.apiUserId === sessionUserId || person.id === loggedInEmployeeId,
     );
@@ -4920,7 +4921,7 @@ export default function TaqfeelahPrototypeRuntime() {
   }, []);
 
   const persistRuntimeSettingsNow = useCallback(async (partialSettings = {}) => {
-    if (!APP_IN_PRODUCTION_MODE) return null;
+    if (!BINDS_TO_SERVER_AUTH) return null;
     const settings = {
       ...runtimeSettingsSnapshot,
       ...partialSettings,
@@ -4964,19 +4965,19 @@ export default function TaqfeelahPrototypeRuntime() {
     applyNotebookThemeCssVariables(employee ? employeeNotebookTheme : notebookTheme);
   }, [employee, employeeNotebookTheme, notebookTheme]);
   useEffect(() => {
-    if (APP_IN_PRODUCTION_MODE || typeof window === "undefined") return;
+    if (BINDS_TO_SERVER_AUTH || typeof window === "undefined") return;
     window.localStorage.setItem(OPERATIONAL_ENTRIES_STORAGE_KEY, JSON.stringify(stripEmbeddedAttachmentImages(operationalEntries)));
   }, [operationalEntries]);
   useEffect(() => {
-    if (APP_IN_PRODUCTION_MODE || typeof window === "undefined") return;
+    if (BINDS_TO_SERVER_AUTH || typeof window === "undefined") return;
     window.localStorage.setItem(ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY, JSON.stringify(acknowledgedDuplicateSales));
   }, [acknowledgedDuplicateSales]);
   useEffect(() => {
-    if (APP_IN_PRODUCTION_MODE || typeof window === "undefined") return;
+    if (BINDS_TO_SERVER_AUTH || typeof window === "undefined") return;
     window.localStorage.setItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(lastCloseoutDates));
   }, [lastCloseoutDates]);
   useEffect(() => {
-    if (!APP_IN_PRODUCTION_MODE || !loggedIn || employee) return;
+    if (!BINDS_TO_SERVER_AUTH || !loggedIn || employee) return;
     let cancelled = false;
     fetchRuntimeSettingsViaApi()
       .then((payload) => {
@@ -5008,7 +5009,7 @@ export default function TaqfeelahPrototypeRuntime() {
   }, [applyRuntimeSettingsSnapshot, employee, lang, loggedIn]);
 
   useEffect(() => {
-    if (!APP_IN_PRODUCTION_MODE || !loggedIn || employee) return;
+    if (!BINDS_TO_SERVER_AUTH || !loggedIn || employee) return;
     if (!runtimeSettingsHydratedRef.current || runtimeSettingsSyncError) return;
     const signature = JSON.stringify(runtimeSettingsSnapshot);
     if (runtimeSettingsLastSavedSignatureRef.current === signature) return;
@@ -5044,7 +5045,7 @@ export default function TaqfeelahPrototypeRuntime() {
 
   useEffect(() => { writeCloseoutAlerts(closeoutAlerts); }, [closeoutAlerts]);
   useEffect(() => {
-    if (APP_IN_PRODUCTION_MODE) return;
+    if (BINDS_TO_SERVER_AUTH) return;
     autoResolveSubmittedCloseoutsWithoutReview((storeId) => Boolean(getStoreOperationalConfig(storeOperationalSettings, storeId).closeoutReviewEnabled));
   }, [storeOperationalSettings]);
   useEffect(() => {
@@ -5470,7 +5471,7 @@ export default function TaqfeelahPrototypeRuntime() {
     setCloseoutAlerts((current) => current.map((item) => item.id === alertId ? { ...item, seen: true } : item));
   };
   const handleOpenOwnerOperation = useCallback((entry) => {
-    if (!APP_IN_PRODUCTION_MODE && entry?.type === "summary" && entry.closeoutId) {
+    if (!BINDS_TO_SERVER_AUTH && entry?.type === "summary" && entry.closeoutId) {
       const closeout = readDailyCloseouts().find((item) => item.id === entry.closeoutId);
       if (closeout) {
         setReturnCloseoutTarget(null);
@@ -5481,7 +5482,7 @@ export default function TaqfeelahPrototypeRuntime() {
     setSelected(entry || null);
   }, []);
   const logout = async () => {
-    if (APP_IN_PRODUCTION_MODE) {
+    if (BINDS_TO_SERVER_AUTH) {
       try {
         await logoutSessionViaApi();
       } catch (error) {
@@ -5509,7 +5510,7 @@ export default function TaqfeelahPrototypeRuntime() {
     setQuickAddOpen(false);
     setArchivedReadOnlyBusinessId(null);
     setSelectedBusiness("all");
-    if (APP_IN_PRODUCTION_MODE) {
+    if (BINDS_TO_SERVER_AUTH) {
       setOperationalEntries([]);
       setStaff([]);
       setConfiguredBusinesses([]);
@@ -5524,7 +5525,7 @@ export default function TaqfeelahPrototypeRuntime() {
   };
   const ownerDisplayName = ownerProfile?.name || (lang === "ar" ? "المالك" : "Owner");
   const closeoutsApiEnabled = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ENABLED === "true";
-  const closeoutsApiStrictMode = APP_IN_PRODUCTION_MODE;
+  const closeoutsApiStrictMode = BINDS_TO_SERVER_AUTH;
   const closeoutsApiOrganizationId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
   const closeoutsApiOwnerUserId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";
   const ownerApiUserId = sessionUserId || closeoutsApiOwnerUserId;

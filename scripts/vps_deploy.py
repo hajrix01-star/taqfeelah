@@ -36,6 +36,7 @@ import paramiko
 PRODUCTION_ENV_KEYS = [
     "APP_MODE",
     "NEXT_PUBLIC_APP_MODE",
+    "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE",
     "DATABASE_URL",
     "AUTH_SESSION_SECRET",
     "AUTH_SESSION_COOKIE_NAME",
@@ -59,6 +60,7 @@ PRODUCTION_ENV_KEYS = [
 PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
     "APP_MODE": "production",
     "NEXT_PUBLIC_APP_MODE": "production",
+    "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE": "true",
     "AUTH_SESSION_SECRET": "taqfeelah-prod-bootstrap-session-secret-v1",
     "AUTH_SESSION_COOKIE_NAME": "taqfeelah_session",
     "AUTH_ORGANIZATION_ID": "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
