@@ -197,7 +197,9 @@ export async function createStoreEntryViaApi({
           name: payload.attachment.name || "attachment.jpg",
           mimeType: payload.attachment.mimeType || "image/jpeg",
           sizeBytes: Number(payload.attachment.sizeBytes || 0),
-          dataUrl: payload.attachment.dataUrl || "",
+          ...(payload.attachment.storageKey
+            ? { storageKey: payload.attachment.storageKey }
+            : { dataUrl: payload.attachment.dataUrl || "" }),
         }
         : undefined,
   };

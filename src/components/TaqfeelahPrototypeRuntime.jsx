@@ -88,6 +88,7 @@ import {
   approveDuplicateSummaryViaApi,
 } from "@/features/phase9/client/phase9-api-client";
 import { useNotebookExportShareData } from "@/features/phase9/client/use-notebook-export-share-data";
+import { resolvePayloadAttachmentForPhase9Api } from "@/features/phase9/client/inline-attachment-api-flow";
 import {
   fetchEmployeeLoginRosterViaApi,
   fetchRuntimeSettingsViaApi,
@@ -5550,13 +5551,21 @@ export default function TaqfeelahPrototypeRuntime() {
       savingRef.current = true;
       setSaving(true);
       try {
+        const apiPayload = await resolvePayloadAttachmentForPhase9Api({
+          enabled: phase9ApiEnabled,
+          organizationId: closeoutsApiOrganizationId,
+          actorUserId,
+          actorRole,
+          storeId: payload.businessId,
+          payload,
+        });
         const created = await approveDuplicateSummaryViaApi({
           organizationId: closeoutsApiOrganizationId,
           actorUserId,
           actorRole,
           storeId: payload.businessId,
           date: payload.date,
-          payload,
+          payload: apiPayload,
         });
         if (!created) {
           window.alert(lang === "ar" ? "تعذر حفظ الملخص المكرر على الخادم." : "Failed to save duplicate summary on server.");
@@ -5944,13 +5953,21 @@ export default function TaqfeelahPrototypeRuntime() {
       if (entriesApiStrictMode) throw new Error("organization id is missing/invalid for entries API.");
       return null;
     }
+    const apiPayload = await resolvePayloadAttachmentForPhase9Api({
+      enabled: phase9ApiEnabled,
+      organizationId: closeoutsApiOrganizationId,
+      actorUserId,
+      actorRole,
+      storeId: payload?.businessId,
+      payload,
+    });
     return createStoreEntryViaApi({
       organizationId: closeoutsApiOrganizationId,
       actorUserId,
       actorRole,
-      payload,
+      payload: apiPayload,
     });
-  }, [closeoutsApiOrganizationId, entriesApiEnabled, entriesApiStrictMode]);
+  }, [closeoutsApiOrganizationId, entriesApiEnabled, entriesApiStrictMode, phase9ApiEnabled]);
 
   const loadOperationalEntriesFromApi = useCallback(async () => {
     if (!entriesApiEnabled) {

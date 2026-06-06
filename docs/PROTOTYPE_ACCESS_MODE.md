@@ -163,6 +163,7 @@ When `NEXT_PUBLIC_PHASE9_API_ENABLED=true` (or inherited from entries API flag):
 - Notebook JSON export is available at `GET /api/v1/exports/notebook` (SQL-backed totals/channels/operations)
 - Inline image registration is available at `POST /api/v1/stores/:storeId/attachments/inline`
 - Runtime wires duplicate approve/acknowledge behind the Phase 9 flag when entries API is on; no visual/layout changes
+- Owner/employee entry creation registers inline attachments through the Phase 9 inline route before `POST /entries`, then stores the returned `storageKey` in DB
 - Notebook share/export modal loads single-store totals/channels/operations from `GET /api/v1/exports/notebook` when Phase 9 flag is on (combined/all-stores share keeps in-memory aggregation)
 - Client helpers live in `phase9-api-client.js`, `notebook-export-share-data.js`, and `use-notebook-export-share-data.js`
 
