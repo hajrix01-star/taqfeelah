@@ -73,6 +73,8 @@ When `NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true`:
 
 Local demo closeouts are still used when the closeouts API flag is off.
 
+**Review default:** employee closeout review is **off** per store; submits are **auto-approved** on the server when `autoReview=true` (no owner pending queue). See `.cursor/rules/closeout-review-defaults.mdc`.
+
 ## Important
 
 This is **not** a launch auth solution. Backend auth files and APIs remain intact.

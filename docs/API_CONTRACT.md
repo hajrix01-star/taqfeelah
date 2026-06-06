@@ -114,7 +114,7 @@ Body:
 ```json
 {
   "mode": "submit",
-  "autoReview": false,
+  "autoReview": true,
   "closeoutId": "client-closeout-id",
   "date": "2026-06-05",
   "salesChannels": [
@@ -141,7 +141,8 @@ Behavior:
 - Validates organization/store/user authorization.
 - Creates operational `entries` + channel rows in one transaction.
 - Writes closeout audit trail (`closeout_submitted` / `closeout_resubmitted`).
-- When `autoReview=true`, writes `closeout_approved` audit event in the same transaction.
+- When `autoReview=true`, writes `closeout_approved` audit event in the same transaction and sets created `entries` to `active` (including when `x-member-role` is `employee`).
+- **Product default:** stores ship with closeout review **off**; clients send `autoReview=true` in that case so the owner is not blocked on pending review. See `.cursor/rules/closeout-review-defaults.mdc`.
 
 ### `GET /stores/:storeId/closeouts` (implemented)
 

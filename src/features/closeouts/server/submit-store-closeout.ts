@@ -57,7 +57,8 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
   }
 
   const totalOutflowHalalas = input.outflows.reduce((sum, row) => sum + row.amountHalalas, 0);
-  const canAutoReview = input.autoReview && (input.actorRole === "owner" || input.actorRole === "manager");
+  // Product rule: when store closeout review is off, client sends autoReview=true for employees too.
+  const canAutoReview = input.autoReview === true;
   const initialEntryStatus = canAutoReview ? "active" : "voided";
   const initialReviewedAt = canAutoReview ? new Date() : null;
   const db = getDb();
