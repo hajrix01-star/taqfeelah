@@ -26,4 +26,11 @@ describe("isPrototypeAccessMode", () => {
     vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "false");
     expect(isPrototypeAccessMode()).toBe(false);
   });
+
+  it("can be opted in explicitly for LAN mobile preview builds", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "true");
+    expect(isPrototypeAccessMode()).toBe(true);
+  });
 });
