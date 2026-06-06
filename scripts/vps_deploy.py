@@ -226,6 +226,13 @@ class VPS:
             sftp.close()
 
 
+def parse_env_int(name: str, default: int) -> int:
+    raw = os.environ.get(name, "")
+    if raw is None or not str(raw).strip():
+        return default
+    return int(str(raw).strip())
+
+
 def get_required_env(name: str) -> str:
     value = os.environ.get(name)
     if not value:
@@ -1132,9 +1139,9 @@ def main() -> int:
     host = get_required_env("VPS_HOST")
     user = get_required_env("VPS_USER")
     password = get_required_env("VPS_PASS")
-    port = int(os.environ.get("VPS_PORT", "22"))
+    port = parse_env_int("VPS_PORT", 22)
     connect_timeout = float(os.environ.get("VPS_CONNECT_TIMEOUT", "25"))
-    connect_retries = int(os.environ.get("VPS_CONNECT_RETRIES", "3"))
+    connect_retries = parse_env_int("VPS_CONNECT_RETRIES", 3)
     retry_delay_seconds = float(os.environ.get("VPS_RETRY_DELAY_SECONDS", "5"))
 
     if args.action == "preflight":

@@ -132,7 +132,6 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_CONNECT_TIMEOUT: "25"
           VPS_CONNECT_RETRIES: "8"
           VPS_RETRY_DELAY_SECONDS: "12"
@@ -178,7 +177,6 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_CONNECT_TIMEOUT: "25"
           VPS_CONNECT_RETRIES: "8"
           VPS_RETRY_DELAY_SECONDS: "12"
