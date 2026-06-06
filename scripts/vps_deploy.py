@@ -803,6 +803,148 @@ def cmd_pm2_app_logs(vps: VPS, app_name: str) -> None:
         safe_print(err.strip())
 
 
+def cmd_reset_owner_auth(vps: VPS, owner_username: str, owner_password: str) -> None:
+    app_dir = "/opt/taqfeelah"
+    organization_id = os.environ.get(
+        "AUTH_ORGANIZATION_ID",
+        os.environ.get("NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID", "8f63cf87-f2e2-4e2a-a20e-8f637f0a9e1"),
+    )
+    owner_user_id = os.environ.get(
+        "AUTH_OWNER_USER_ID",
+        os.environ.get("NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID", "e8f3e35b-6051-4da3-8b10-979700c2f00f"),
+    )
+    username_sql = owner_username.strip().lower().replace("'", "''")
+    password_sql = owner_password.replace("'", "''")
+
+    print_section("Diagnose current owner auth")
+    vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
+            cd {shlex.quote(app_dir)}
+            set -a
+            . ./.env.production
+            set +a
+            node -e "const u=new URL(process.env.DATABASE_URL); console.log('DATABASE host:', u.host)"
+            psql "$DATABASE_URL" -c "
+            SELECT created_at, reason,
+                   metadata->'settings'->'authConfig'->>'ownerUsername' AS username,
+                   metadata->'settings'->'authConfig'->>'ownerPassword' AS password
+            FROM audit_events
+            WHERE organization_id = '{organization_id}'
+              AND action = 'runtime_settings_saved'
+            ORDER BY created_at DESC
+            LIMIT 1;
+            "
+            """
+        ).strip(),
+        check=False,
+    )
+
+    print_section("Write AUTH_OWNER credentials to .env.production")
+    vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
+            cd {shlex.quote(app_dir)}
+            touch .env.production
+            if grep -q '^AUTH_OWNER_USERNAME=' .env.production; then
+              sed -i 's/^AUTH_OWNER_USERNAME=.*/AUTH_OWNER_USERNAME={owner_username.strip().lower()}/' .env.production
+            else
+              echo 'AUTH_OWNER_USERNAME={owner_username.strip().lower()}' >> .env.production
+            fi
+            if grep -q '^AUTH_OWNER_PASSWORD=' .env.production; then
+              sed -i 's/^AUTH_OWNER_PASSWORD=.*/AUTH_OWNER_PASSWORD={owner_password}/' .env.production
+            else
+              echo 'AUTH_OWNER_PASSWORD={owner_password}' >> .env.production
+            fi
+            grep '^AUTH_OWNER_USERNAME=' .env.production
+            grep '^AUTH_OWNER_PASSWORD=' .env.production | sed 's/=.*/=<set>/'
+            """
+        ).strip()
+    )
+
+    print_section("Insert fresh runtime settings row with owner auth reset")
+    vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
+            cd {shlex.quote(app_dir)}
+            set -a
+            . ./.env.production
+            set +a
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "
+            WITH latest AS (
+              SELECT metadata
+              FROM audit_events
+              WHERE organization_id = '{organization_id}'
+                AND action = 'runtime_settings_saved'
+              ORDER BY created_at DESC
+              LIMIT 1
+            )
+            INSERT INTO audit_events (
+              organization_id, store_id, entry_id, actor_user_id,
+              action, reason, metadata
+            )
+            SELECT
+              '{organization_id}',
+              null,
+              null,
+              '{owner_user_id}',
+              'runtime_settings_saved',
+              'vps_reset_owner_auth',
+              jsonb_build_object(
+                'schemaVersion', 1,
+                'settings',
+                jsonb_set(
+                  COALESCE(latest.metadata->'settings', '{{}}'::jsonb),
+                  '{{authConfig}}',
+                  COALESCE(latest.metadata->'settings'->'authConfig', '{{}}'::jsonb)
+                    || jsonb_build_object(
+                      'ownerUsername', '{username_sql}',
+                      'ownerPassword', '{password_sql}'
+                    ),
+                  true
+                )
+              )
+            FROM latest;
+            "
+            """
+        ).strip()
+    )
+
+    print_section("Restart PM2 app")
+    vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
+            cd {shlex.quote(app_dir)}
+            pm2 restart taqfeelah-app
+            pm2 ls
+            """
+        ).strip()
+    )
+
+    print_section("Verify owner login API")
+    _, out, err = vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
+            sleep 3
+            curl -sS --max-time 20 -X POST https://www.taqfeelah.com/api/v1/auth/session \\
+              -H 'content-type: application/json' \\
+              -d '{{"mode":"owner_password","username":"{owner_username.strip().lower()}","password":"{owner_password}"}}'
+            """
+        ).strip(),
+        check=False,
+    )
+    if out.strip():
+        safe_print(out.strip())
+    if err.strip():
+        safe_print("STDERR:")
+        safe_print(err.strip())
+
+
 def cmd_enable_ssl(vps: VPS, domain: str, www_domain: str) -> None:
     print_section("Enable SSL certificate via Certbot")
     certbot_cmd = (
@@ -861,6 +1003,10 @@ def main() -> int:
     p_ssl.add_argument("--domain", required=True)
     p_ssl.add_argument("--www-domain", required=True)
 
+    p_reset_owner = sub.add_parser("reset-owner-auth")
+    p_reset_owner.add_argument("--username", default=os.environ.get("AUTH_OWNER_USERNAME", "hajri"))
+    p_reset_owner.add_argument("--password", default=os.environ.get("AUTH_OWNER_PASSWORD", "123"))
+
     args = parser.parse_args()
 
     host = get_required_env("VPS_HOST")
@@ -896,6 +1042,8 @@ def main() -> int:
             cmd_pm2_app_logs(vps, args.app_name)
         elif args.action == "enable-ssl":
             cmd_enable_ssl(vps, args.domain, args.www_domain)
+        elif args.action == "reset-owner-auth":
+            cmd_reset_owner_auth(vps, args.username, args.password)
         else:
             raise RuntimeError(f"Unknown action: {args.action}")
 
