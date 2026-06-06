@@ -1161,6 +1161,21 @@ const APP_IN_PRODUCTION_MODE = isProductionAppMode();
 const PROTOTYPE_ACCESS_MODE = isPrototypeAccessMode();
 const BINDS_TO_SERVER_AUTH = APP_IN_PRODUCTION_MODE && !PROTOTYPE_ACCESS_MODE;
 const ENTRIES_API_DB_SOURCE = isEntriesApiDbSourceMode();
+const RUNTIME_SETTINGS_DB_SOURCE = ENTRIES_API_DB_SOURCE;
+
+function usesRuntimeSettingsApi() {
+  return BINDS_TO_SERVER_AUTH || RUNTIME_SETTINGS_DB_SOURCE;
+}
+
+function readOwnerSettingsApiAuth() {
+  if (BINDS_TO_SERVER_AUTH) return {};
+  if (!RUNTIME_SETTINGS_DB_SOURCE) return {};
+  return {
+    organizationId: process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "",
+    actorUserId: process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "owner",
+    actorRole: "owner",
+  };
+}
 const PROTOTYPE_SUPPORT_WHATSAPP = "966501234567";
 const PROTOTYPE_DEMO_OTP = process.env.NEXT_PUBLIC_DEMO_OTP || (APP_IN_PRODUCTION_MODE ? "" : "1234");
 const PROTOTYPE_OWNER_USERNAME = (
@@ -2309,7 +2324,7 @@ function migrateSavedSettings(raw) {
 }
 
 function readSavedSettings() {
-  if (BINDS_TO_SERVER_AUTH) return null;
+  if (BINDS_TO_SERVER_AUTH || RUNTIME_SETTINGS_DB_SOURCE) return null;
   if (typeof window === "undefined") return null;
   try {
     const raw = JSON.parse(window.localStorage.getItem("taqfeelah_owner_settings") || "null");
@@ -2386,7 +2401,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   const activeChannelCount = channelConfig.activeIds.length;
 
   useEffect(() => {
-    if (APP_IN_PRODUCTION_MODE) return;
+    if (APP_IN_PRODUCTION_MODE || RUNTIME_SETTINGS_DB_SOURCE) return;
     if (typeof window === "undefined") return;
     window.localStorage.setItem("taqfeelah_owner_settings", JSON.stringify({
       configuredBusinesses,
@@ -4793,7 +4808,7 @@ export default function TaqfeelahPrototypeRuntime() {
   const [authEmployeePins, setAuthEmployeePins] = useState(() => (initialAuthConfig.employeePins && typeof initialAuthConfig.employeePins === "object" ? initialAuthConfig.employeePins : {}));
   const [lastCloseoutDates, setLastCloseoutDates] = useState(() => readDemoLastCloseoutDates());
   const [employeeBusinessId, setEmployeeBusinessId] = useState(() => readPrototypeAuthBoot().employeeBusinessId);
-  const runtimeSettingsHydratedRef = useRef(!BINDS_TO_SERVER_AUTH);
+  const runtimeSettingsHydratedRef = useRef(!usesRuntimeSettingsApi());
   const runtimeSettingsSyncTimerRef = useRef(null);
   const runtimeSettingsLastSavedSignatureRef = useRef("");
   const loadOperationalEntriesFromApiRef = useRef(async () => []);
@@ -4923,7 +4938,7 @@ export default function TaqfeelahPrototypeRuntime() {
   }, []);
 
   const persistRuntimeSettingsNow = useCallback(async (partialSettings = {}) => {
-    if (!BINDS_TO_SERVER_AUTH) return null;
+    if (!usesRuntimeSettingsApi()) return null;
     const settings = {
       ...runtimeSettingsSnapshot,
       ...partialSettings,
@@ -4935,6 +4950,7 @@ export default function TaqfeelahPrototypeRuntime() {
     const saved = await saveRuntimeSettingsViaApi({
       settings,
       reason: "owner_settings_explicit_save",
+      ...readOwnerSettingsApiAuth(),
     });
     if (saved?.settings && typeof saved.settings === "object") {
       applyRuntimeSettingsSnapshot(saved.settings);
@@ -4979,9 +4995,9 @@ export default function TaqfeelahPrototypeRuntime() {
     window.localStorage.setItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(lastCloseoutDates));
   }, [lastCloseoutDates]);
   useEffect(() => {
-    if (!BINDS_TO_SERVER_AUTH || !loggedIn || employee) return;
+    if (!usesRuntimeSettingsApi() || !loggedIn || employee) return;
     let cancelled = false;
-    fetchRuntimeSettingsViaApi()
+    fetchRuntimeSettingsViaApi(readOwnerSettingsApiAuth())
       .then((payload) => {
         if (cancelled) return;
         if (payload?.settings && typeof payload.settings === "object") {
@@ -5011,7 +5027,7 @@ export default function TaqfeelahPrototypeRuntime() {
   }, [applyRuntimeSettingsSnapshot, employee, lang, loggedIn]);
 
   useEffect(() => {
-    if (!BINDS_TO_SERVER_AUTH || !loggedIn || employee) return;
+    if (!usesRuntimeSettingsApi() || !loggedIn || employee) return;
     if (!runtimeSettingsHydratedRef.current || runtimeSettingsSyncError) return;
     const signature = JSON.stringify(runtimeSettingsSnapshot);
     if (runtimeSettingsLastSavedSignatureRef.current === signature) return;
@@ -5023,6 +5039,7 @@ export default function TaqfeelahPrototypeRuntime() {
       saveRuntimeSettingsViaApi({
         settings: runtimeSettingsSnapshot,
         reason: "owner_settings_autosave",
+        ...readOwnerSettingsApiAuth(),
       })
         .then(() => {
           runtimeSettingsLastSavedSignatureRef.current = signature;
