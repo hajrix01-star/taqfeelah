@@ -1,0 +1,113 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  applyRuntimeSettingsSnapshotPatch,
+  buildRuntimeSettingsSnapshot,
+  readOwnerSettingsApiAuth,
+  usesRuntimeSettingsApi,
+} from "./runtime-settings-bridge";
+
+describe("runtime settings bridge", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("buildRuntimeSettingsSnapshot omits org entities when org config API is enabled", () => {
+    const snapshot = buildRuntimeSettingsSnapshot({
+      orgConfigApiEnabled: true,
+      storeOperationalSettings: { shami: { reviewEnabled: true } },
+      notebookTheme: "yellow",
+      ownerProfile: { nameAr: "مالك" },
+      authConfig: { ownerUsername: "owner", ownerPassword: "demo", employeePins: {} },
+      configuredBusinesses: [{ id: "shami" }],
+      archivedBusinessIds: ["old"],
+      storeChannelSettings: { shami: [] },
+      staff: [{ id: "ahmed" }],
+    });
+
+    expect(snapshot).toEqual({
+      storeOperationalSettings: { shami: { reviewEnabled: true } },
+      notebookTheme: "yellow",
+      ownerProfile: { nameAr: "مالك" },
+      authConfig: { ownerUsername: "owner", ownerPassword: "demo", employeePins: {} },
+    });
+    expect(snapshot).not.toHaveProperty("staff");
+    expect(snapshot).not.toHaveProperty("configuredBusinesses");
+  });
+
+  it("buildRuntimeSettingsSnapshot includes org entities when org config API is disabled", () => {
+    const businesses = [{ id: "shami" }];
+    const staff = [{ id: "ahmed" }];
+    const snapshot = buildRuntimeSettingsSnapshot({
+      orgConfigApiEnabled: false,
+      storeOperationalSettings: {},
+      notebookTheme: "ivory",
+      ownerProfile: {},
+      authConfig: { ownerUsername: "owner", ownerPassword: "demo", employeePins: {} },
+      configuredBusinesses: businesses,
+      archivedBusinessIds: [],
+      storeChannelSettings: {},
+      staff,
+    });
+
+    if (!("configuredBusinesses" in snapshot) || !("staff" in snapshot)) {
+      expect.fail("expected full runtime settings snapshot");
+    }
+    expect(snapshot.configuredBusinesses).toBe(businesses);
+    expect(snapshot.staff).toBe(staff);
+  });
+
+  it("usesRuntimeSettingsApi is true when entries API DB source is enabled", () => {
+    vi.stubEnv("NEXT_PUBLIC_ENTRIES_API_ENABLED", "true");
+    expect(usesRuntimeSettingsApi()).toBe(true);
+  });
+
+  it("readOwnerSettingsApiAuth returns prototype header auth when entries API is enabled outside production auth", () => {
+    vi.stubEnv("NEXT_PUBLIC_ENTRIES_API_ENABLED", "true");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID", "org-1");
+    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID", "owner-1");
+
+    expect(readOwnerSettingsApiAuth()).toEqual({
+      organizationId: "org-1",
+      actorUserId: "owner-1",
+      actorRole: "owner",
+    });
+  });
+
+  it("applyRuntimeSettingsSnapshotPatch applies only shared fields when org config API is enabled", () => {
+    const apply = {
+      setConfiguredBusinesses: vi.fn(),
+      setStoreOperationalSettings: vi.fn(),
+      setNotebookTheme: vi.fn(),
+      setAuthOwnerUsername: vi.fn(),
+    };
+
+    applyRuntimeSettingsSnapshotPatch({
+      orgConfigApiEnabled: true,
+      migrated: {
+        configuredBusinesses: [{ id: "shami" }],
+        storeOperationalSettings: { shami: { reviewEnabled: true } },
+        notebookTheme: "yellow",
+        authConfig: { ownerUsername: "  hajri  " },
+      },
+      apply,
+    });
+
+    expect(apply.setConfiguredBusinesses).not.toHaveBeenCalled();
+    expect(apply.setStoreOperationalSettings).toHaveBeenCalledWith({ shami: { reviewEnabled: true } });
+    expect(apply.setNotebookTheme).toHaveBeenCalledWith("yellow");
+    expect(apply.setAuthOwnerUsername).toHaveBeenCalledWith("hajri");
+  });
+
+  it("applyRuntimeSettingsSnapshotPatch ignores invalid notebook themes", () => {
+    const apply = { setNotebookTheme: vi.fn() };
+
+    applyRuntimeSettingsSnapshotPatch({
+      orgConfigApiEnabled: true,
+      migrated: { notebookTheme: "not-a-theme" },
+      apply,
+    });
+
+    expect(apply.setNotebookTheme).not.toHaveBeenCalled();
+  });
+});

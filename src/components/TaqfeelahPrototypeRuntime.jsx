@@ -7,7 +7,7 @@ import { DailyCloseoutsProvider, useDailyCloseouts } from "@/features/daily-clos
 import { buildOperationalEntriesFromCloseout } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import { autoResolveSubmittedCloseoutsWithoutReview, readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import { readCloseoutEvents } from "@/features/daily-closeouts/daily-closeouts-demo-store";
-import { applyNotebookThemeCssVariables, isValidNotebookTheme, notebookCardBackground, notebookLinesBackground, notebookThemes, resolveNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
+import { applyNotebookThemeCssVariables, notebookCardBackground, notebookLinesBackground, notebookThemes, resolveNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
 import { shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
 import EmployeeCloseoutsView from "@/features/employee-closeouts/EmployeeCloseoutsView";
 import DailyCloseoutEntryFlow from "@/features/employee-closeouts/DailyCloseoutEntryFlow";
@@ -98,6 +98,12 @@ import {
   logoutSessionViaApi,
   saveRuntimeSettingsViaApi,
 } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
+import {
+  applyRuntimeSettingsSnapshotPatch,
+  buildRuntimeSettingsSnapshot,
+  readOwnerSettingsApiAuth,
+  usesRuntimeSettingsApi,
+} from "@/features/runtime-settings/client/runtime-settings-bridge";
 import { isProductionAppMode } from "@/core/config/app-mode";
 import { isCloseoutsApiDbSourceMode, isCloseoutsApiStrictMode } from "@/core/config/closeouts-api-mode";
 import { isEntriesApiDbSourceMode, isEntriesApiStrictMode } from "@/core/config/entries-api-mode";
@@ -1203,19 +1209,6 @@ const CLOSEOUTS_API_DB_SOURCE = isCloseoutsApiDbSourceMode();
 const RUNTIME_SETTINGS_DB_SOURCE = ENTRIES_API_DB_SOURCE;
 const ORG_CONFIG_API_ENABLED = isOrgConfigApiEnabled();
 
-function usesRuntimeSettingsApi() {
-  return BINDS_TO_SERVER_AUTH || RUNTIME_SETTINGS_DB_SOURCE;
-}
-
-function readOwnerSettingsApiAuth() {
-  if (BINDS_TO_SERVER_AUTH) return {};
-  if (!RUNTIME_SETTINGS_DB_SOURCE) return {};
-  return {
-    organizationId: process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "",
-    actorUserId: process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "owner",
-    actorRole: "owner",
-  };
-}
 const PROTOTYPE_SUPPORT_WHATSAPP = "966501234567";
 const PROTOTYPE_DEMO_OTP = process.env.NEXT_PUBLIC_DEMO_OTP || (APP_IN_PRODUCTION_MODE ? "" : "1234");
 const PROTOTYPE_OWNER_USERNAME = (
@@ -5085,8 +5078,9 @@ export default function TaqfeelahPrototypeRuntime() {
   });
   const ownerReviewEnabled = activeViewBusiness === "all" ? activeBusinesses.some((business) => reviewEnabledForBusiness(business.id)) : reviewEnabledForBusiness(activeOwnerStoreId);
   const selectedOperationReviewEnabled = selected ? reviewEnabledForBusiness(selected.businessId) && !archivedBusinessIds.includes(selected.businessId) : ownerReviewEnabled;
-  const runtimeSettingsSnapshot = useMemo(() => {
-    const shared = {
+  const runtimeSettingsSnapshot = useMemo(
+    () => buildRuntimeSettingsSnapshot({
+      orgConfigApiEnabled: ORG_CONFIG_API_ENABLED,
       storeOperationalSettings,
       notebookTheme,
       ownerProfile,
@@ -5095,27 +5089,24 @@ export default function TaqfeelahPrototypeRuntime() {
         ownerPassword: authOwnerPassword,
         employeePins: authEmployeePins,
       },
-    };
-    if (ORG_CONFIG_API_ENABLED) return shared;
-    return {
       configuredBusinesses,
       archivedBusinessIds,
       storeChannelSettings,
-      ...shared,
       staff,
-    };
-  }, [
-    configuredBusinesses,
-    archivedBusinessIds,
-    storeChannelSettings,
-    storeOperationalSettings,
-    notebookTheme,
-    staff,
-    ownerProfile,
-    authOwnerUsername,
-    authOwnerPassword,
-    authEmployeePins,
-  ]);
+    }),
+    [
+      configuredBusinesses,
+      archivedBusinessIds,
+      storeChannelSettings,
+      storeOperationalSettings,
+      notebookTheme,
+      staff,
+      ownerProfile,
+      authOwnerUsername,
+      authOwnerPassword,
+      authEmployeePins,
+    ],
+  );
 
   const { error: orgConfigSyncError } = useOrgConfigRuntimeBridge({
     enabled: ORG_CONFIG_API_ENABLED && usesRuntimeSettingsApi(),
@@ -5136,34 +5127,22 @@ export default function TaqfeelahPrototypeRuntime() {
   });
 
   const applyRuntimeSettingsSnapshot = useCallback((rawSettings) => {
-    const migrated = migrateSavedSettings(rawSettings);
-    if (!migrated || typeof migrated !== "object") return;
-    if (!ORG_CONFIG_API_ENABLED) {
-      if (Array.isArray(migrated.configuredBusinesses)) setConfiguredBusinesses(migrated.configuredBusinesses);
-      if (Array.isArray(migrated.archivedBusinessIds)) setArchivedBusinessIds(migrated.archivedBusinessIds);
-      if (migrated.storeChannelSettings && typeof migrated.storeChannelSettings === "object") {
-        setStoreChannelSettings(migrated.storeChannelSettings);
-      }
-      if (Array.isArray(migrated.staff)) setStaff(migrated.staff);
-    }
-    if (migrated.storeOperationalSettings && typeof migrated.storeOperationalSettings === "object") {
-      setStoreOperationalSettings(migrated.storeOperationalSettings);
-    }
-    if (typeof migrated.notebookTheme === "string" && isValidNotebookTheme(migrated.notebookTheme)) {
-      setNotebookTheme(migrated.notebookTheme);
-    }
-    if (migrated.ownerProfile && typeof migrated.ownerProfile === "object") setOwnerProfile(migrated.ownerProfile);
-    if (migrated.authConfig && typeof migrated.authConfig === "object") {
-      if (typeof migrated.authConfig.ownerUsername === "string" && migrated.authConfig.ownerUsername.trim()) {
-        setAuthOwnerUsername(migrated.authConfig.ownerUsername.trim());
-      }
-      if (typeof migrated.authConfig.ownerPassword === "string" && migrated.authConfig.ownerPassword.trim()) {
-        setAuthOwnerPassword(migrated.authConfig.ownerPassword);
-      }
-      if (migrated.authConfig.employeePins && typeof migrated.authConfig.employeePins === "object") {
-        setAuthEmployeePins(migrated.authConfig.employeePins);
-      }
-    }
+    applyRuntimeSettingsSnapshotPatch({
+      migrated: migrateSavedSettings(rawSettings),
+      orgConfigApiEnabled: ORG_CONFIG_API_ENABLED,
+      apply: {
+        setConfiguredBusinesses,
+        setArchivedBusinessIds,
+        setStoreChannelSettings,
+        setStaff,
+        setStoreOperationalSettings,
+        setNotebookTheme,
+        setOwnerProfile,
+        setAuthOwnerUsername,
+        setAuthOwnerPassword,
+        setAuthEmployeePins,
+      },
+    });
   }, []);
 
   const persistRuntimeSettingsNow = useCallback(async (partialSettings = {}) => {
