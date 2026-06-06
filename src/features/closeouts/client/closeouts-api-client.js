@@ -32,6 +32,18 @@ function mapToUuid(value, map) {
   return isUuid(mapped) ? mapped : "";
 }
 
+/** True when legacy or UUID actor id can be sent to closeouts API. */
+export function hasCloseoutApiActorMapping(actorUserId) {
+  const { userIdMap } = getMaps();
+  return Boolean(mapToUuid(actorUserId, userIdMap));
+}
+
+/** True when legacy or UUID store id can be sent to closeouts API. */
+export function hasCloseoutApiStoreMapping(storeId) {
+  const { storeIdMap } = getMaps();
+  return Boolean(mapToUuid(storeId, storeIdMap));
+}
+
 function reverseLookupKeyByUuid(uuidValue, map) {
   if (!isUuid(uuidValue) || !map || typeof map !== "object") return "";
   for (const [key, value] of Object.entries(map)) {
