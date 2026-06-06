@@ -120,6 +120,17 @@ When `NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true` (or inherited from e
 - Global operational entries preload shrinks to a 30-day working window for home/employee flows
 - When the pagination flag is off, register keeps using the in-memory `operationalEntries` filter path
 
+### Phase 8 — org config APIs (stores / members / channels)
+
+When `NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true` (or inherited from entries API flag):
+
+- Stores list/create/update are available at `/api/v1/stores` and `/api/v1/stores/:storeId`
+- Sales channels list/update are available at `/api/v1/stores/:storeId/sales-channels`
+- Outflow categories list is available at `/api/v1/stores/:storeId/outflow-categories`
+- Members list (manager+) is available at `/api/v1/members`
+- Runtime settings save path remains the source of truth for the prototype UI until a later wiring phase
+- Client helpers live in `org-config-api-client.js` for future non-UI integration
+
 **Review default:** employee closeout review is **off** per store; submits are **auto-approved** on the server when `autoReview=true` (no owner pending queue). See `.cursor/rules/closeout-review-defaults.mdc`.
 
 ## Important

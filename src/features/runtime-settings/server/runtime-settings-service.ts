@@ -1,20 +1,15 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
+import { assertOrganizationAccess } from "@/core/auth/assert-organization-access";
 import { getDb } from "@/core/db/client";
-import { auditEvents, organizationMembers } from "@/core/db/schema";
+import { auditEvents } from "@/core/db/schema";
 import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
 import { getProductionAuthRuntimeConfig } from "@/core/config/env";
-import { ForbiddenError, ValidationError } from "@/core/errors/app-error";
+import { ValidationError } from "@/core/errors/app-error";
 import { enrichStaffWithApiUserIds } from "@/features/auth/server/resolve-employee-user-id";
 import { enrichRuntimeStoreIdMap } from "@/features/runtime-settings/server/enrich-runtime-store-id-map";
 import { provisionSalesChannels } from "@/features/runtime-settings/server/provision-sales-channels";
 import { provisionStaffMembers } from "@/features/runtime-settings/server/provision-staff-members";
-
-const rolePriority: Record<"owner" | "manager" | "employee", number> = {
-  employee: 1,
-  manager: 2,
-  owner: 3,
-};
 
 const runtimeSettingsEnvelopeSchema = z.object({
   settings: z.record(z.string(), z.unknown()),
@@ -95,30 +90,12 @@ async function readRuntimeSettingsEnvelope(organizationId: string) {
 }
 
 async function assertOrganizationRoleAccess(input: GetSettingsInput, minimumRole: "owner" | "manager" | "employee") {
-  const db = getDb();
-  const [member] = await db
-    .select({
-      role: organizationMembers.role,
-      status: organizationMembers.status,
-    })
-    .from(organizationMembers)
-    .where(
-      and(
-        eq(organizationMembers.organizationId, input.organizationId),
-        eq(organizationMembers.userId, input.actorUserId),
-        eq(organizationMembers.status, "active"),
-      ),
-    )
-    .limit(1);
-
-  if (!member) {
-    throw new ForbiddenError("User is not an active organization member.");
-  }
-
-  const normalizedRole = member.role === "owner" || member.role === "manager" ? member.role : "employee";
-  if (rolePriority[normalizedRole] < rolePriority[minimumRole]) {
-    throw new ForbiddenError("Insufficient role for runtime settings action.");
-  }
+  await assertOrganizationAccess({
+    organizationId: input.organizationId,
+    actorUserId: input.actorUserId,
+    actorRole: input.actorRole,
+    minimumRole,
+  });
 }
 
 export async function getRuntimeSettings(rawInput: GetSettingsInput) {

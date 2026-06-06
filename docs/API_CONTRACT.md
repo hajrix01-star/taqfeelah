@@ -414,17 +414,42 @@ Counts, pending review stats, and item list for entries with attachments in rang
 
 ## Stores & config (settings parity)
 
-### `GET /stores` · `POST /stores` · `PATCH /stores/:id`
+### `GET /api/v1/stores` (implemented)
 
+Query: optional `status=active|archived|all`  
+Owner/manager: all org stores. Employee: assigned stores only.
+
+### `POST /api/v1/stores` (implemented)
+
+Body: `{ name, location? }` — owner only. Audit: `store_created`.
+
+### `PATCH /api/v1/stores/:storeId` (implemented)
+
+Body: `{ name?, location?, status?: active|archived, reason? }` — owner only.  
 Archive via `status=archived` + audit `store_archived`.
 
-### `GET /stores/:storeId/sales-channels` · PATCH retire/activate
+### `GET /api/v1/stores/:storeId/sales-channels` (implemented)
 
-### `GET /stores/:storeId/outflow-categories`
+Query: optional `status=active|retired|all`
 
-### `GET /members` · `POST /members` · PATCH access / `member_store_access`
+### `PATCH /api/v1/stores/:storeId/sales-channels` (implemented)
 
-Employee: only assigned stores.
+Body: `{ salesChannelId, status: active|retired, reason? }` — owner only.
+
+### `GET /api/v1/stores/:storeId/outflow-categories` (implemented)
+
+Query: optional `status=active|retired|all`
+
+### `GET /api/v1/members` (implemented)
+
+Query: optional `status=active|inactive|all` — manager+ only.  
+Includes `storeAccess[]` per member.
+
+### Planned
+
+- `POST /members` · `PATCH` member access / `member_store_access`
+
+Employee: only assigned stores for store-scoped reads.
 
 ---
 
