@@ -108,6 +108,11 @@ import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-su
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { useOrgConfigFromApi } from "@/features/org-config/client/use-org-config-from-api";
 import {
+  buildInitialStoreOperationalSettings,
+  buildStoreOperationalPolicy,
+  getStoreOperationalConfig,
+} from "@/features/org-config/client/store-operational-config";
+import {
   entriesInPeriod,
   summarizeEntries,
   summaryMonthFromEntries,
@@ -4760,38 +4765,6 @@ function RestoreOperationDialog({ lang, item, onCancel, onConfirm }) {
   const isSale = item.type === "summary";
   return <AnimatePresence><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[60] flex items-end bg-[#112A46]/50 sm:items-center sm:justify-center sm:p-6 lg:items-end lg:justify-start lg:p-0"><motion.div initial={{ y: 18 }} animate={{ y: 0 }} exit={{ y: 18 }} className="relative z-10 w-full rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[560px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"><div className="mb-4 flex items-start justify-between"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E6F5E9] text-[#257844]"><Check className="h-5 w-5" /></div><button onClick={onCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]"><X className="h-4 w-4" /></button></div><h3 className="text-base font-black">{text(lang, "restoreDialogTitle")}</h3><p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">{text(lang, "restoreConfirm")}</p><div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-black/[0.045]"><div className="flex items-center justify-between gap-2"><div className="flex items-center gap-2"><Badge tone={isSale ? "success" : "warning"}>{operationDisplayLabel(item, lang)}</Badge><span className="text-taq-meta font-bold text-[#827762]">{opDate(item, lang)}</span></div><strong className={`tabular-nums text-sm font-black ${isSale ? "text-[#257844]" : "text-[#B44747]"}`}>{money(signedEntryAmount(item), lang)}</strong></div></div><div className="mt-4"><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "restoreReasonPrompt")}</p><textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={160} placeholder={text(lang, "restoreReasonPrompt")} className="min-h-[72px] w-full resize-none rounded-2xl bg-white px-4 py-3 text-sm font-bold outline-none ring-1 ring-black/[0.05]" /></div><div className="mt-5 grid grid-cols-[0.9fr_1.35fr] gap-3"><button onClick={onCancel} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.06]">{text(lang, "cancel")}</button><button onClick={() => onConfirm(reason.trim())} className="rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white">{text(lang, "confirmRestore")}</button></div></motion.div></motion.div></AnimatePresence>;
 }
-function buildInitialStoreOperationalSettings(savedSettings, storeList) {
-  if (savedSettings?.storeOperationalSettings) return savedSettings.storeOperationalSettings;
-  const legacy = {
-    activeCategories: savedSettings?.activeCategories || expenseCategories.map((item) => item.id),
-    reviewEnabled: savedSettings?.reviewEnabled ?? false,
-    closeoutReviewEnabled: savedSettings?.closeoutReviewEnabled ?? false,
-    employeeHistoryVisibility: savedSettings?.employeeHistoryVisibility ?? "all",
-    closeoutAlert: savedSettings?.closeoutAlert ?? false,
-    attachmentAlert: savedSettings?.attachmentAlert ?? false,
-    notebookTheme: savedSettings?.notebookTheme ?? null,
-  };
-  return Object.fromEntries(storeList.map((business) => [business.id, { ...legacy, activeCategories: [...legacy.activeCategories] }]));
-}
-function getStoreOperationalConfig(settings, storeId) {
-  const defaults = {
-    activeCategories: expenseCategories.map((item) => item.id),
-    reviewEnabled: false,
-    closeoutReviewEnabled: false,
-    employeeHistoryVisibility: "all",
-    closeoutAlert: false,
-    attachmentAlert: false,
-    notebookTheme: null,
-  };
-  const stored = settings[storeId];
-  if (!stored) return defaults;
-  return {
-    ...defaults,
-    ...stored,
-    activeCategories: stored.activeCategories?.length ? stored.activeCategories : defaults.activeCategories,
-    employeeHistoryVisibility: stored.employeeHistoryVisibility || defaults.employeeHistoryVisibility,
-  };
-}
 function buildInitialStoreChannelSettings(savedSettings, storeList) {
   if (savedSettings?.storeChannelSettings) return savedSettings.storeChannelSettings;
   const legacyChannels = savedSettings?.configuredChannels || channels;
@@ -5095,16 +5068,21 @@ export default function TaqfeelahPrototypeRuntime() {
   const activeOwnerStoreId = activeViewBusiness === "all" ? activeBusinesses[0]?.id : activeViewBusiness;
   const reportSettingsStoreId = archivedReadOnlyBusinessId || activeOwnerStoreId;
   const reportChannelConfig = getStoreChannelConfig(storeChannelSettings, reportSettingsStoreId);
-  const reviewEnabledForBusiness = (businessId) => getStoreOperationalConfig(storeOperationalSettings, businessId).reviewEnabled;
-  const closeoutReviewEnabledForBusiness = (businessId) => Boolean(getStoreOperationalConfig(storeOperationalSettings, businessId).closeoutReviewEnabled);
+  const {
+    reviewEnabledForBusiness,
+    closeoutReviewEnabledForBusiness,
+    attachmentAlertEnabledForBusiness,
+    closeoutAlertEnabledForBusiness,
+  } = useMemo(
+    () => buildStoreOperationalPolicy(storeOperationalSettings),
+    [storeOperationalSettings],
+  );
   const employeeNotebookTheme = resolveNotebookTheme({
     storeOperationalSettings,
     storeId: currentEmployeeBusiness?.id,
     globalTheme: notebookTheme,
     employeeThemeOverride: employeeThemeOverride || (activeEmployee ? readEmployeeNotebookTheme(activeEmployee.id) : null),
   });
-  const attachmentAlertEnabledForBusiness = (businessId) => { const config = getStoreOperationalConfig(storeOperationalSettings, businessId); return config.reviewEnabled && config.attachmentAlert; };
-  const closeoutAlertEnabledForBusiness = (businessId) => getStoreOperationalConfig(storeOperationalSettings, businessId).closeoutAlert;
   const ownerReviewEnabled = activeViewBusiness === "all" ? activeBusinesses.some((business) => reviewEnabledForBusiness(business.id)) : reviewEnabledForBusiness(activeOwnerStoreId);
   const selectedOperationReviewEnabled = selected ? reviewEnabledForBusiness(selected.businessId) && !archivedBusinessIds.includes(selected.businessId) : ownerReviewEnabled;
   const runtimeSettingsSnapshot = useMemo(() => {
