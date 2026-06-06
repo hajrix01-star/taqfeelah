@@ -6,6 +6,7 @@ import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
 import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { ForbiddenError, ValidationError } from "@/core/errors/app-error";
 import { enrichStaffWithApiUserIds } from "@/features/auth/server/resolve-employee-user-id";
+import { enrichRuntimeStoreIdMap } from "@/features/runtime-settings/server/enrich-runtime-store-id-map";
 import { provisionStaffMembers } from "@/features/runtime-settings/server/provision-staff-members";
 
 const rolePriority: Record<"owner" | "manager" | "employee", number> = {
@@ -150,12 +151,18 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
   await assertOrganizationRoleAccess(input, "owner");
 
   const envAuth = getProductionAuthRuntimeConfig();
+  const configuredBusinesses = Array.isArray(input.settings.configuredBusinesses)
+    ? input.settings.configuredBusinesses
+    : [];
+  const enrichedStoreIdMap = await enrichRuntimeStoreIdMap(
+    input.organizationId,
+    envAuth.storeIdMap,
+    configuredBusinesses,
+  );
   const runtimeApiMaps = buildRuntimeApiIdMaps({
-    configuredBusinesses: Array.isArray(input.settings.configuredBusinesses)
-      ? input.settings.configuredBusinesses
-      : [],
+    configuredBusinesses,
     staff: Array.isArray(input.settings.staff) ? input.settings.staff : [],
-    envStoreIdMap: envAuth.storeIdMap,
+    envStoreIdMap: enrichedStoreIdMap,
     envUserIdMap: envAuth.userIdMap,
   });
   const provisionedStaff = await provisionStaffMembers(input.organizationId, input.settings.staff, {

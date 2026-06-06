@@ -10,6 +10,9 @@ import { Client } from "pg";
 
 const DEFAULT_ORG = "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const BOOTSTRAP_STORE_ID_MAP = {
+  shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+};
 
 function parseOrgId() {
   const index = process.argv.indexOf("--org");
@@ -62,6 +65,31 @@ function resolveStoreUuid(storeId, storeIdMap) {
   if (UUID_PATTERN.test(normalized)) return normalized;
   const mapped = storeIdMap[normalized];
   return UUID_PATTERN.test(mapped || "") ? mapped : "";
+}
+
+async function enrichStoreIdMapFromDatabase(client, organizationId, storeIdMap, configuredBusinesses) {
+  const enriched = { ...storeIdMap };
+  const businesses = configuredBusinesses.filter((b) => typeof b?.id === "string" && b.id.trim());
+  const needsFallback = businesses.some((business) => {
+    const legacyId = business.id.trim();
+    return !UUID_PATTERN.test(legacyId) && !UUID_PATTERN.test(enriched[legacyId] || "");
+  });
+  if (!needsFallback) return enriched;
+
+  const { rows } = await client.query(
+    `SELECT id FROM stores
+     WHERE organization_id = $1 AND status = 'active'
+     ORDER BY created_at ASC`,
+    [organizationId],
+  );
+  if (rows.length === 1 && businesses.length === 1) {
+    const legacyId = businesses[0].id.trim();
+    if (!UUID_PATTERN.test(legacyId) && !UUID_PATTERN.test(enriched[legacyId] || "")) {
+      enriched[legacyId] = rows[0].id;
+      console.log(`Mapped custom store ${legacyId} -> ${rows[0].id} from database`);
+    }
+  }
+  return enriched;
 }
 
 async function ensureUser(client, userId, name) {
@@ -129,7 +157,10 @@ async function main() {
   }
 
   const organizationId = parseOrgId();
-  const envStoreIdMap = parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP);
+  const envStoreIdMap = {
+    ...BOOTSTRAP_STORE_ID_MAP,
+    ...parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP),
+  };
   const client = new Client({ connectionString: databaseUrl });
   await client.connect();
 
@@ -149,7 +180,8 @@ async function main() {
     const configuredBusinesses = Array.isArray(settings?.configuredBusinesses)
       ? settings.configuredBusinesses
       : [];
-    const storeIdMap = buildStoreIdMap(configuredBusinesses, envStoreIdMap);
+    let storeIdMap = buildStoreIdMap(configuredBusinesses, envStoreIdMap);
+    storeIdMap = await enrichStoreIdMapFromDatabase(client, organizationId, storeIdMap, configuredBusinesses);
 
     let provisionedStaff = 0;
     let grants = 0;
