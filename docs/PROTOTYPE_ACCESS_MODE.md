@@ -17,10 +17,20 @@ Speed up UI and domain work without username/password, OTP, session cookies, or 
 
 Enabled when:
 
-- `NEXT_PUBLIC_APP_MODE` is not `production` (default in `pnpm dev`)
+- `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=true` (explicit opt-in), or
+- `NEXT_PUBLIC_APP_MODE` is not `production` (default in `pnpm dev` via `.env.development`)
 - and `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` is not `false`
 
-Disabled in production (`APP_MODE=production` / `NEXT_PUBLIC_APP_MODE=production`).
+Disabled on `taqfeelah.com` unless explicitly opted in.
+
+## Mobile (LAN) development
+
+| Command | Phone URL | Prototype Access |
+|---------|-----------|------------------|
+| `pnpm dev` or `pnpm mobile:sync` | `http://<LAN-IP>:3000` | Yes |
+| `pnpm preview:lan` | `http://<LAN-IP>:3000` | Yes (prototype env baked into build) |
+
+After `pnpm dev`, copy the LAN URL printed in the terminal (not `taqfeelah.com`).
 
 ## Important
 

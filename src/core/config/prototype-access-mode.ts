@@ -10,7 +10,8 @@ import { isProductionAppMode } from "@/core/config/app-mode";
  * before launch.
  */
 export function isPrototypeAccessMode(): boolean {
-  if (isProductionAppMode()) return false;
+  if (process.env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE === "true") return true;
   if (process.env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE === "false") return false;
+  if (isProductionAppMode()) return false;
   return true;
 }
