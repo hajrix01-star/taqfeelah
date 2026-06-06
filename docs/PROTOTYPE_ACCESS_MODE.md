@@ -128,8 +128,10 @@ When `NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true` (or inherited from entries API fl
 - Sales channels list/update are available at `/api/v1/stores/:storeId/sales-channels`
 - Outflow categories list is available at `/api/v1/stores/:storeId/outflow-categories`
 - Members list (manager+) is available at `/api/v1/members`
-- Runtime settings save path remains the source of truth for the prototype UI until a later wiring phase
-- Client helpers live in `org-config-api-client.js` for future non-UI integration
+- Owner runtime loads stores/channels/staff from org-config APIs on login (no visual change)
+- Owner settings changes for stores/channels/team persist through org-config APIs with debounced sync
+- Runtime settings keep `storeOperationalSettings`, notebook theme, owner profile, and auth config only
+- Client helpers live in `org-config-api-client.js` and `use-org-config-from-api.js`
 
 ### Phase 10-prep — auth foundations (inactive)
 

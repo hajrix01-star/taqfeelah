@@ -100,9 +100,11 @@ import { isProductionAppMode } from "@/core/config/app-mode";
 import { isCloseoutsApiDbSourceMode, isCloseoutsApiStrictMode } from "@/core/config/closeouts-api-mode";
 import { isEntriesApiDbSourceMode, isEntriesApiStrictMode } from "@/core/config/entries-api-mode";
 import { isRegisterEntriesPaginationEnabled } from "@/core/config/register-entries-pagination-mode";
+import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { useRegisterEntriesFromApi } from "@/features/entries/client/use-register-entries-from-api";
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
+import { useOrgConfigFromApi } from "@/features/org-config/client/use-org-config-from-api";
 import { isPrototypeAccessMode } from "@/core/config/prototype-access-mode";
 import PrototypeAccessScreen from "@/features/demo/PrototypeAccessScreen";
 
@@ -1187,6 +1189,7 @@ const OPERATIONAL_ENTRIES_WORKING_DAYS = 30;
 const OPERATIONAL_ENTRIES_WORKING_LIMIT = 300;
 const CLOSEOUTS_API_DB_SOURCE = isCloseoutsApiDbSourceMode();
 const RUNTIME_SETTINGS_DB_SOURCE = ENTRIES_API_DB_SOURCE;
+const ORG_CONFIG_API_ENABLED = isOrgConfigApiEnabled();
 
 function usesRuntimeSettingsApi() {
   return BINDS_TO_SERVER_AUTH || RUNTIME_SETTINGS_DB_SOURCE;
@@ -5084,20 +5087,26 @@ export default function TaqfeelahPrototypeRuntime() {
   const closeoutAlertEnabledForBusiness = (businessId) => getStoreOperationalConfig(storeOperationalSettings, businessId).closeoutAlert;
   const ownerReviewEnabled = activeViewBusiness === "all" ? activeBusinesses.some((business) => reviewEnabledForBusiness(business.id)) : reviewEnabledForBusiness(activeOwnerStoreId);
   const selectedOperationReviewEnabled = selected ? reviewEnabledForBusiness(selected.businessId) && !archivedBusinessIds.includes(selected.businessId) : ownerReviewEnabled;
-  const runtimeSettingsSnapshot = useMemo(() => ({
-    configuredBusinesses,
-    archivedBusinessIds,
-    storeChannelSettings,
-    storeOperationalSettings,
-    notebookTheme,
-    staff,
-    ownerProfile,
-    authConfig: {
-      ownerUsername: authOwnerUsername,
-      ownerPassword: authOwnerPassword,
-      employeePins: authEmployeePins,
-    },
-  }), [
+  const runtimeSettingsSnapshot = useMemo(() => {
+    const shared = {
+      storeOperationalSettings,
+      notebookTheme,
+      ownerProfile,
+      authConfig: {
+        ownerUsername: authOwnerUsername,
+        ownerPassword: authOwnerPassword,
+        employeePins: authEmployeePins,
+      },
+    };
+    if (ORG_CONFIG_API_ENABLED) return shared;
+    return {
+      configuredBusinesses,
+      archivedBusinessIds,
+      storeChannelSettings,
+      ...shared,
+      staff,
+    };
+  }, [
     configuredBusinesses,
     archivedBusinessIds,
     storeChannelSettings,
@@ -5110,13 +5119,54 @@ export default function TaqfeelahPrototypeRuntime() {
     authEmployeePins,
   ]);
 
+  const orgConfigSnapshot = useMemo(() => ({
+    configuredBusinesses,
+    archivedBusinessIds,
+    storeChannelSettings,
+    staff,
+  }), [configuredBusinesses, archivedBusinessIds, storeChannelSettings, staff]);
+
+  const applyOrgConfigHydration = useCallback((mapped) => {
+    if (!mapped || typeof mapped !== "object") return;
+    if (Array.isArray(mapped.configuredBusinesses)) setConfiguredBusinesses(mapped.configuredBusinesses);
+    if (Array.isArray(mapped.archivedBusinessIds)) setArchivedBusinessIds(mapped.archivedBusinessIds);
+    if (mapped.storeChannelSettings && typeof mapped.storeChannelSettings === "object") {
+      setStoreChannelSettings(mapped.storeChannelSettings);
+    }
+    if (Array.isArray(mapped.staff)) setStaff(mapped.staff);
+  }, []);
+
+  const applyOrgConfigPersist = useCallback((applied) => {
+    if (!applied || typeof applied !== "object") return;
+    if (Array.isArray(applied.configuredBusinesses)) setConfiguredBusinesses(applied.configuredBusinesses);
+    if (Array.isArray(applied.archivedBusinessIds)) setArchivedBusinessIds(applied.archivedBusinessIds);
+    if (applied.storeChannelSettings && typeof applied.storeChannelSettings === "object") {
+      setStoreChannelSettings(applied.storeChannelSettings);
+    }
+    if (Array.isArray(applied.staff)) setStaff(applied.staff);
+  }, []);
+
+  const { error: orgConfigSyncError } = useOrgConfigFromApi({
+    enabled: ORG_CONFIG_API_ENABLED && usesRuntimeSettingsApi(),
+    auth: readOwnerSettingsApiAuth(),
+    loggedIn,
+    isEmployee: employee,
+    snapshot: orgConfigSnapshot,
+    employeePins: authEmployeePins,
+    onHydrate: applyOrgConfigHydration,
+    onPersistApplied: applyOrgConfigPersist,
+  });
+
   const applyRuntimeSettingsSnapshot = useCallback((rawSettings) => {
     const migrated = migrateSavedSettings(rawSettings);
     if (!migrated || typeof migrated !== "object") return;
-    if (Array.isArray(migrated.configuredBusinesses)) setConfiguredBusinesses(migrated.configuredBusinesses);
-    if (Array.isArray(migrated.archivedBusinessIds)) setArchivedBusinessIds(migrated.archivedBusinessIds);
-    if (migrated.storeChannelSettings && typeof migrated.storeChannelSettings === "object") {
-      setStoreChannelSettings(migrated.storeChannelSettings);
+    if (!ORG_CONFIG_API_ENABLED) {
+      if (Array.isArray(migrated.configuredBusinesses)) setConfiguredBusinesses(migrated.configuredBusinesses);
+      if (Array.isArray(migrated.archivedBusinessIds)) setArchivedBusinessIds(migrated.archivedBusinessIds);
+      if (migrated.storeChannelSettings && typeof migrated.storeChannelSettings === "object") {
+        setStoreChannelSettings(migrated.storeChannelSettings);
+      }
+      if (Array.isArray(migrated.staff)) setStaff(migrated.staff);
     }
     if (migrated.storeOperationalSettings && typeof migrated.storeOperationalSettings === "object") {
       setStoreOperationalSettings(migrated.storeOperationalSettings);
@@ -5124,7 +5174,6 @@ export default function TaqfeelahPrototypeRuntime() {
     if (typeof migrated.notebookTheme === "string" && isValidNotebookTheme(migrated.notebookTheme)) {
       setNotebookTheme(migrated.notebookTheme);
     }
-    if (Array.isArray(migrated.staff)) setStaff(migrated.staff);
     if (migrated.ownerProfile && typeof migrated.ownerProfile === "object") setOwnerProfile(migrated.ownerProfile);
     if (migrated.authConfig && typeof migrated.authConfig === "object") {
       if (typeof migrated.authConfig.ownerUsername === "string" && migrated.authConfig.ownerUsername.trim()) {
@@ -6105,6 +6154,10 @@ export default function TaqfeelahPrototypeRuntime() {
     if (!runtimeSettingsSyncError) return;
     console.warn(runtimeSettingsSyncError);
   }, [runtimeSettingsSyncError]);
+  useEffect(() => {
+    if (!orgConfigSyncError) return;
+    console.warn(orgConfigSyncError);
+  }, [orgConfigSyncError]);
 
   const enterPrototypeAsEmployee = () => {
     const person = staff.find((item) => item.active && !item.removed) || PROTOTYPE_DEFAULT_STAFF[0];
