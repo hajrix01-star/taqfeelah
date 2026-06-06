@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { computeCloseoutTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
 import { closeoutStatusLabel, closeoutStatusTone } from "../daily-closeouts/closeout-status";
 import AttachmentLightbox from "../../components/AttachmentLightbox";
+import { formatCloseoutDayLabel } from "../closeouts/client/closeout-day-label";
 
 function money(value, lang) {
   return Number(value || 0).toLocaleString(lang === "ar" ? "en-US" : "en-US");
@@ -20,7 +21,8 @@ const toneClass = {
 export default function DailyCloseoutCard({
   lang,
   closeout,
-  closeoutNumber = 1,
+  daySequence = null,
+  sameDayCloseoutCount = 1,
   expanded,
   onToggle,
   onShare,
@@ -37,6 +39,11 @@ export default function DailyCloseoutCard({
   const tone = closeoutStatusTone(closeout.status);
   const attachmentCount = (closeout.attachments || []).length;
   const [selectedAttachment, setSelectedAttachment] = useState("");
+  const closeoutDateLabel = formatCloseoutDayLabel({
+    formattedDate: formatDate(closeout.date),
+    daySequence,
+    sameDayCloseoutCount,
+  });
 
   return (
     <article className={`overflow-hidden rounded-[19px] border border-[#E8E1D4] bg-[rgba(255,252,244,0.94)] shadow-[0_8px_22px_rgba(17,42,70,0.08)] ${expanded ? "" : ""}`}>
@@ -45,10 +52,7 @@ export default function DailyCloseoutCard({
           <span className="flex items-center gap-2">
             <ChevronDown className={`h-4 w-4 shrink-0 transition ${expanded ? "rotate-180" : ""}`} />
             <span className="flex flex-col text-start leading-tight">
-              <span>{formatDate(closeout.date)}</span>
-              <small className="mt-1 text-[10px] font-black text-[#82745A]">
-                {lang === "ar" ? `تقفيلة رقم ${closeoutNumber}` : `Closeout #${closeoutNumber}`}
-              </small>
+              <span>{closeoutDateLabel}</span>
             </span>
           </span>
           <span className={`rounded-full px-2.5 py-1 text-taq-meta font-black ${toneClass[tone]}`}>{statusText}</span>

@@ -69,6 +69,7 @@ import {
   setRuntimeApiIdMaps,
   submitCloseoutViaApi,
 } from "@/features/closeouts/client/closeouts-api-client";
+import { formatCloseoutDayLabel } from "@/features/closeouts/client/closeout-day-label";
 import {
   createStoreEntryViaApi,
   fetchStoreEntriesViaApi,
@@ -1554,6 +1555,7 @@ function buildEntry(payload, actor) {
     note: payload.note?.trim() || "",
     noteKey: payload.noteKey || null,
     closeoutId: payload.closeoutId || null,
+    daySequence: Number.isInteger(payload.daySequence) ? payload.daySequence : null,
     outflowId: payload.outflowId || null,
     enteredBy: actor,
     attachment: payload.attachment ? makeAttachment(id, payload.attachment) : null,
@@ -3561,12 +3563,13 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
       }
       grouped.get(key).entries.push(entry);
     });
-    return [...grouped.values()].map((group) => {
+    const summaries = [...grouped.values()].map((group) => {
       const store = businessesList.find((business) => business.id === group.businessId) || null;
       const totals = summarizeEntries(group.entries);
       const salesChannels = aggregateSalesChannelsFromGroupEntries(group.entries, lang, logFilters.salesChannel);
       const channelSalesTotal = salesChannels.reduce((sum, row) => sum + row.amount, 0);
       const ownerEntered = group.entries.find((entry) => entry.enteredBy?.userId === ownerActor.userId) || group.entries[0];
+      const daySequence = group.entries.find((entry) => Number.isInteger(entry.daySequence))?.daySequence ?? null;
       return {
         ...group,
         store,
@@ -3575,8 +3578,21 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
         displaySales: logFilters.salesChannel === "all" ? totals.sales : channelSalesTotal,
         operations: newestEntries(group.entries),
         actorLabel: employeeName(ownerEntered, lang) || text(lang, "enteredByOwner"),
+        daySequence,
       };
-    }).filter((group) => logFilters.salesChannel === "all" || group.salesChannels.length > 0).sort((a, b) => {
+    });
+    const sameDayCloseoutCountByStoreDate = new Map();
+    summaries.forEach((summary) => {
+      if (!summary.closeoutId) return;
+      const key = `${summary.businessId}|${summary.date}`;
+      sameDayCloseoutCountByStoreDate.set(key, (sameDayCloseoutCountByStoreDate.get(key) || 0) + 1);
+    });
+    return summaries.map((summary) => ({
+      ...summary,
+      sameDayCloseoutCount: summary.closeoutId
+        ? sameDayCloseoutCountByStoreDate.get(`${summary.businessId}|${summary.date}`) || 1
+        : 1,
+    })).filter((group) => logFilters.salesChannel === "all" || group.salesChannels.length > 0).sort((a, b) => {
       if (a.date !== b.date) return b.date.localeCompare(a.date);
       const aStamp = `${a.date}|${a.operations[0]?.createdAt || ""}`;
       const bStamp = `${b.date}|${b.operations[0]?.createdAt || ""}`;
@@ -3781,7 +3797,7 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
                     <ChevronDown className={`mt-0.5 h-5 w-5 shrink-0 text-[#112A46] transition ${isExpanded ? "rotate-180" : ""}`} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                        <p className="text-taq-meta font-black text-[#112A46]">{formatCalendarDate(summary.date, lang)}</p>
+                        <p className="text-taq-meta font-black text-[#112A46]">{formatCloseoutDayLabel({ formattedDate: formatCalendarDate(summary.date, lang), daySequence: summary.daySequence, sameDayCloseoutCount: summary.sameDayCloseoutCount })}</p>
                         <p className="rounded-full border border-[#8EA1C4] px-2.5 py-1 text-taq-meta font-black text-[#214B7B]">{lang === "ar" ? `أدخلها ${summary.actorLabel}` : `Entered by ${summary.actorLabel}`}</p>
                       </div>
                       <p className="mt-1 text-taq-meta font-bold text-[#716753]">{lang === "ar" ? "تقفيلة يوم" : "Daily closeout"} · {storeLabel}</p>

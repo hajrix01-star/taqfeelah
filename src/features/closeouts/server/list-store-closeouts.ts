@@ -46,6 +46,7 @@ const submitMetadataSchema = z.object({
   outflowEntryIds: z.array(z.string().uuid()).optional(),
   summaryEntryId: z.string().uuid().optional(),
   note: z.string().optional(),
+  daySequence: z.coerce.number().int().positive().optional(),
 });
 
 const reviewMetadataSchema = z.object({
@@ -316,6 +317,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
         storeId: input.storeId,
         storeName: storeRow?.name || "",
         date: item.date,
+        daySequence: submit.metadata.daySequence ?? null,
         status,
         notebookTheme: "yellow",
         openedByUserId: submit.actorUserId,

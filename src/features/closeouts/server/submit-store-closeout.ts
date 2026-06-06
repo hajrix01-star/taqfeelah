@@ -5,6 +5,7 @@ import { calculateDaySummary } from "@/domain/cash-movement/calculations";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
+import { resolveCloseoutDaySequence } from "@/features/closeouts/server/resolve-closeout-day-sequence";
 
 const salesChannelSchema = z.object({
   salesChannelId: z.string().uuid(),
@@ -118,6 +119,14 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
         .returning({ id: entries.id, type: entries.type, amountHalalas: entries.amountHalalas })
       : [];
 
+    const daySequence = await resolveCloseoutDaySequence(tx as Parameters<typeof resolveCloseoutDaySequence>[0], {
+      organizationId: input.organizationId,
+      storeId: input.storeId,
+      date: input.date,
+      closeoutId: input.closeoutId,
+      mode: input.mode,
+    });
+
     await tx.insert(auditEvents).values({
       organizationId: input.organizationId,
       storeId: input.storeId,
@@ -128,6 +137,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
       metadata: {
         closeoutId: input.closeoutId,
         date: input.date,
+        daySequence,
         summaryEntryId: summaryEntry.id,
         outflowEntryIds: outflowEntries.map((row) => row.id),
         totalSalesHalalas,
@@ -168,6 +178,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
     return {
       summaryEntryId: summaryEntry.id,
       outflowEntryIds: outflowEntries.map((row) => row.id),
+      daySequence,
     };
   });
 
@@ -179,6 +190,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
   return {
     closeoutId: input.closeoutId,
     date: input.date,
+    daySequence: txResult.daySequence,
     summaryEntryId: txResult.summaryEntryId,
     outflowEntryIds: txResult.outflowEntryIds,
     totals: {

@@ -124,6 +124,7 @@ Body:
   "requireReview": false,
   "closeoutId": "client-closeout-id",
   "date": "2026-06-05",
+  "daySequence": 1,
   "salesChannels": [
     {
       "salesChannelId": "uuid",
@@ -148,6 +149,7 @@ Behavior:
 - Validates organization/store/user authorization.
 - Creates operational `entries` + channel rows in one transaction.
 - Writes closeout audit trail (`closeout_submitted` / `closeout_resubmitted`).
+- Assigns `daySequence` server-side per `storeId + date` (1, 2, 3…). UI maps this to English letters (`A`, `B`, `C`) beside the date when multiple closeouts exist on the same day. Resubmits keep the same `daySequence`.
 - **Employee auto-approve (product default):** when `x-member-role` is `employee` and `requireReview` is not `true`, the server auto-approves in the same transaction (`closeout_approved` + `entries.status=active`). This matches review **off** by default even if a legacy API layer dropped `autoReview`.
 - When `requireReview=true`, employee closeout stays `submitted` and entries are `voided` until owner review.
 - Owner/manager may still pass `autoReview=true` explicitly for immediate approval.
@@ -169,7 +171,7 @@ Query (optional):
 Behavior:
 
 - Reads closeout timeline from `audit_events`.
-- Returns normalized closeouts list (status, totals, sales/outflows) for runtime hydration.
+- Returns normalized closeouts list (status, totals, sales/outflows, `daySequence`) for runtime hydration.
 
 ### `POST /stores/:storeId/closeouts/:closeoutId/review` (implemented)
 
