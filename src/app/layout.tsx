@@ -3,7 +3,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "تقفيلة",
-  description: "تقفيلة — متابعة تشغيل يومية (داخل − خارج = الناتج). بروتوتايب مرئي.",
+  description: "تقفيلة — متابعة تشغيل يومية (داخل − خارج = الناتج).",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
 };
 
 export const viewport: Viewport = {
