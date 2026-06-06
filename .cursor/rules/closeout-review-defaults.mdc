@@ -1,0 +1,48 @@
+---
+description: Default closeout and sales-review behavior — auto-approval when review is off
+alwaysApply: true
+---
+
+# Closeout Review Defaults (Product Rule)
+
+## Intended default behavior
+
+This is **explicit product intent**, not a temporary shortcut.
+
+| Setting | Default | Meaning |
+|---------|---------|---------|
+| `closeoutReviewEnabled` (per store) | **OFF** | Owner does not manually approve/return employee daily closeouts |
+| `reviewEnabled` (sales / attachment review for owner) | **OFF** | Owner photo-review workflow for operational entries is disabled |
+
+## When employee closeout review is OFF (`closeoutReviewEnabled=false`)
+
+- Employee closeout submit is **auto-approved** end-to-end.
+- Closeout status becomes **`reviewed`** (not left pending for the owner).
+- Related operational `entries` are **`active`** immediately (not `voided` waiting for owner).
+- Owner must **not** see «تقفيلات بانتظار المراجعة» for that store.
+- `pendingSubmittedCloseouts` filtering that hides pending items when review is off is **correct**.
+
+## When employee closeout review is ON (`closeoutReviewEnabled=true`)
+
+- Submit stays **`submitted`** until owner approves or returns.
+- Entries stay non-final until owner `approve` / `return` via closeout review API.
+- Owner UI shows pending closeout notice and review flow.
+
+## Client → server contract (prototype / DB-first period)
+
+- UI sends `autoReview: true` on closeout submit when `closeoutReviewEnabled` is false for that store.
+- Server must honor `autoReview=true` for **employees** the same as owner/manager (auto-approve in one transaction).
+- Before public launch with real auth: validate `autoReview` against persisted store settings server-side (do not rely on client flag alone).
+
+## Do not change without explicit product owner approval
+
+- Do not make closeout review **on** by default.
+- Do not require owner approval when store review is **off**.
+- Do not leave employee closeouts `submitted` + entries `voided` when review is **off** (DB/API must match local demo behavior).
+
+## القاعدة بالعربية
+
+- **الافتراضي:** مراجعة تقفيلات الموظفين **مغلقة**، ومراجعة المبيعات/الإثبات للمالك **مغلقة**.
+- **إذا المراجعة مغلقة:** كل شيء يُعتمد **تلقائيًا** — لا انتظار المالك، لا تنبيه «بانتظار المراجعة»، والسجل يصبح نشطًا مباشرة.
+- **إذا المراجعة مفعّلة:** التقفيلة تبقى `submitted` حتى يعتمدها المالك أو يُرجعها.
+- هذا التصرف **مقصود**؛ أي تغيير يحتاج موافقة صريحة من مالك المنتج.
