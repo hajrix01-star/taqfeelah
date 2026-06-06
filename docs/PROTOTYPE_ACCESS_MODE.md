@@ -79,7 +79,7 @@ When `NEXT_PUBLIC_ENTRIES_API_ENABLED=true` (or inherited from closeouts API fla
 
 - Owner home **daily** totals load from `GET /api/v1/stores/:storeId/summary/day?date=YYYY-MM-DD`
 - Combined and per-store home cards aggregate SQL summaries instead of scanning all loaded entries
-- Monthly home view still uses client aggregation until month summary API is added
+- Monthly home view still uses client aggregation until Phase 6 is enabled
 - Home operation details and attachments still read from loaded entries for the selected day
 
 ### Phase 5 — owner reports from DB
@@ -94,6 +94,21 @@ When `NEXT_PUBLIC_ENTRIES_API_ENABLED=true`:
   - Attachments: `GET /api/v1/reports/attachments`
 - Notebook share/export for reports still uses loaded entries until a server export path is added
 - When the entries API flag is off, reports continue to use in-memory operational entries
+
+### Phase 6 — home monthly summaries + register pagination foundation
+
+When `NEXT_PUBLIC_ENTRIES_API_ENABLED=true` (or inherited from closeouts API flag):
+
+- Owner home **monthly** totals load from `GET /api/v1/stores/:storeId/summary/month?month=YYYY-MM`
+- Combined and per-store monthly cards aggregate SQL summaries instead of scanning all loaded entries
+- Daily home behavior from Phase 4 is unchanged
+- Home operation details and attachments still read from loaded entries for the selected day
+- Register still loads entries in the legacy bulk window until Phase 7 wires cursor pagination in the UI
+
+Server-only (backward compatible):
+
+- `GET /api/v1/stores/:storeId/entries?paginated=1&limit=50&cursor=...` returns `{ items, nextCursor }`
+- Without `paginated` / `cursor`, the route keeps returning a plain array for existing clients
 
 **Review default:** employee closeout review is **off** per store; submits are **auto-approved** on the server when `autoReview=true` (no owner pending queue). See `.cursor/rules/closeout-review-defaults.mdc`.
 

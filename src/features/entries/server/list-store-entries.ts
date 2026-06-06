@@ -1,10 +1,11 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { getDb } from "@/core/db/client";
 import { attachments, auditEvents, entries, entrySalesChannels, users } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
+import { decodeEntryListCursor, encodeEntryListCursor } from "./entry-list-cursor";
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD");
 
@@ -17,6 +18,8 @@ const inputSchema = z.object({
   dateTo: dateSchema.optional(),
   status: z.enum(["active", "voided", "all"]).default("all"),
   limit: z.number().int().min(1).max(1000).default(500),
+  cursor: z.string().trim().min(1).optional(),
+  paginated: z.boolean().default(false),
 });
 
 const closeoutSubmitMetadataSchema = z.object({
@@ -45,6 +48,21 @@ function toIso(value: string | Date | null): string | null {
   return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null;
 }
 
+function cursorBeforeClause(cursor: ReturnType<typeof decodeEntryListCursor>) {
+  return or(
+    sql`${entries.date} < ${cursor.date}`,
+    and(
+      eq(entries.date, cursor.date),
+      sql`${entries.createdAt} < ${cursor.createdAt}`,
+    ),
+    and(
+      eq(entries.date, cursor.date),
+      sql`${entries.createdAt} = ${cursor.createdAt}`,
+      sql`${entries.id} < ${cursor.id}`,
+    ),
+  );
+}
+
 export async function listStoreEntries(rawInput: Input) {
   const parsed = inputSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -56,6 +74,10 @@ export async function listStoreEntries(rawInput: Input) {
     throw new ValidationError("dateFrom must be earlier than or equal to dateTo.");
   }
 
+  const effectiveLimit = input.paginated
+    ? Math.min(input.limit, 100)
+    : input.limit;
+
   await assertStoreAccess({
     organizationId: input.organizationId,
     storeId: input.storeId,
@@ -63,6 +85,8 @@ export async function listStoreEntries(rawInput: Input) {
     actorRole: input.actorRole as MemberRole,
     minimumRole: "employee",
   });
+
+  const decodedCursor = input.cursor ? decodeEntryListCursor(input.cursor) : null;
 
   const db = getDb();
   const rows = await db
@@ -89,10 +113,11 @@ export async function listStoreEntries(rawInput: Input) {
         input.dateFrom ? sql`${entries.date} >= ${input.dateFrom}` : undefined,
         input.dateTo ? sql`${entries.date} <= ${input.dateTo}` : undefined,
         input.status === "all" ? undefined : eq(entries.status, input.status),
+        decodedCursor ? cursorBeforeClause(decodedCursor) : undefined,
       ),
     )
     .orderBy(desc(entries.date), desc(entries.createdAt), desc(entries.id))
-    .limit(input.limit);
+    .limit(effectiveLimit + 1);
 
   const closeoutAuditRows = await db
     .select({
@@ -188,8 +213,13 @@ export async function listStoreEntries(rawInput: Input) {
     return status === "reviewed";
   });
 
-  const entryIds = filteredRows.map((row) => row.id);
-  if (entryIds.length === 0) return [];
+  const hasMore = filteredRows.length > effectiveLimit;
+  const pageRows = hasMore ? filteredRows.slice(0, effectiveLimit) : filteredRows;
+
+  const entryIds = pageRows.map((row) => row.id);
+  if (entryIds.length === 0) {
+    return { items: [], nextCursor: null };
+  }
 
   const salesRows = await db
     .select({
@@ -308,7 +338,7 @@ export async function listStoreEntries(rawInput: Input) {
   });
 
   const actorIds = new Set<string>();
-  filteredRows.forEach((row) => actorIds.add(row.enteredByUserId));
+  pageRows.forEach((row) => actorIds.add(row.enteredByUserId));
   entryAuditRows.forEach((row) => actorIds.add(row.actorUserId));
 
   const actorRows = await db
@@ -332,7 +362,7 @@ export async function listStoreEntries(rawInput: Input) {
     };
   };
 
-  return filteredRows.map((row) => {
+  const items = pageRows.map((row) => {
     const actorName = actorNameById.get(row.enteredByUserId) || "";
     const createdAt = toIso(row.createdAt);
     const createdBy = {
@@ -419,4 +449,15 @@ export async function listStoreEntries(rawInput: Input) {
       auditTrail,
     };
   });
+
+  const lastRow = pageRows[pageRows.length - 1];
+  const nextCursor = hasMore && lastRow
+    ? encodeEntryListCursor({
+      date: lastRow.date,
+      createdAt: lastRow.createdAt,
+      id: lastRow.id,
+    })
+    : null;
+
+  return { items, nextCursor };
 }

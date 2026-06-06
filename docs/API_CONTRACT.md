@@ -325,7 +325,37 @@ Creates entry + audit `duplicate_approved`.
 
 ## Register (log)
 
-### `GET /entries`
+### `GET /stores/:storeId/entries` (implemented)
+
+Query:
+
+| Param | Type |
+|-------|------|
+| `dateFrom` | date |
+| `dateTo` | date |
+| `status` | `active` \| `voided` \| `all` |
+| `limit` | default 500 (bulk) or 50 when paginated |
+| `cursor` | opaque (Phase 6) |
+| `paginated` | `1` to return `{ items, nextCursor }` |
+
+Response (bulk — default):
+
+```json
+[ { "id", "type", "date", "amount", "status", "note", ... } ]
+```
+
+Response (paginated — `paginated=1` or `cursor` present):
+
+```json
+{
+  "items": [ { "id", "type", "date", "amount", "status", "note", ... } ],
+  "nextCursor": "..."
+}
+```
+
+**Never** return unbounded arrays in paginated mode.
+
+### `GET /entries` (planned — org-wide register)
 
 Query:
 
@@ -338,17 +368,6 @@ Query:
 | `status` | `active` \| `voided` \| `all` |
 | `cursor` | opaque |
 | `limit` | default 50, max 100 |
-
-Response:
-
-```json
-{
-  "items": [ { "id", "type", "date", "amountHalalas", "status", "note", "hasAttachment", ... } ],
-  "nextCursor": "..."
-}
-```
-
-**Never** return unbounded arrays.
 
 ---
 

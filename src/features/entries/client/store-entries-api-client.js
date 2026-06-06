@@ -79,9 +79,10 @@ export async function fetchStoreEntriesViaApi({
   }
 
   const payload = await response.json();
-  if (!Array.isArray(payload)) return [];
+  const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.items) ? payload.items : []);
+  if (!items.length && !Array.isArray(payload) && !Array.isArray(payload?.items)) return [];
 
-  return payload.map((item) => {
+  return items.map((item) => {
     if (!item || typeof item !== "object") return item;
     const mappedBusinessId = reverseLookupKeyByUuid(item.businessId, storeIdMap) || storeId;
     const mappedSalesChannels = Array.isArray(item.salesChannels)
@@ -96,6 +97,70 @@ export async function fetchStoreEntriesViaApi({
       salesChannels: mappedSalesChannels,
     };
   });
+}
+
+export async function fetchStoreEntriesPageViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  storeId,
+  dateFrom = "",
+  dateTo = "",
+  status = "all",
+  limit = 50,
+  cursor = "",
+}) {
+  const { userIdMap, storeIdMap, salesChannelIdMap } = getMaps();
+  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
+  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
+  const mappedStoreId = mapToUuid(storeId, storeIdMap);
+
+  if (!mappedOrganizationId || !mappedActorUserId || !mappedStoreId) {
+    return { items: [], nextCursor: null };
+  }
+
+  const search = new URLSearchParams({ paginated: "1" });
+  if (typeof dateFrom === "string" && dateFrom) search.set("dateFrom", dateFrom);
+  if (typeof dateTo === "string" && dateTo) search.set("dateTo", dateTo);
+  if (status === "active" || status === "voided" || status === "all") search.set("status", status);
+  if (Number.isInteger(limit) && limit > 0) search.set("limit", String(limit));
+  if (typeof cursor === "string" && cursor) search.set("cursor", cursor);
+
+  const response = await fetch(`/api/v1/stores/${mappedStoreId}/entries?${search.toString()}`, {
+    method: "GET",
+    headers: {
+      "x-organization-id": mappedOrganizationId,
+      "x-user-id": mappedActorUserId,
+      "x-member-role": actorRole,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`entries page fetch api failed: ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const rawItems = Array.isArray(payload?.items) ? payload.items : [];
+  const items = rawItems.map((item) => {
+    if (!item || typeof item !== "object") return item;
+    const mappedBusinessId = reverseLookupKeyByUuid(item.businessId, storeIdMap) || storeId;
+    const mappedSalesChannels = Array.isArray(item.salesChannels)
+      ? item.salesChannels.map((row) => ({
+        ...row,
+        channelId: reverseLookupKeyByUuid(row?.channelId, salesChannelIdMap) || row?.channelId,
+      }))
+      : [];
+    return {
+      ...item,
+      businessId: mappedBusinessId,
+      salesChannels: mappedSalesChannels,
+    };
+  });
+
+  return {
+    items,
+    nextCursor: typeof payload?.nextCursor === "string" ? payload.nextCursor : null,
+  };
 }
 
 export async function createStoreEntryViaApi({

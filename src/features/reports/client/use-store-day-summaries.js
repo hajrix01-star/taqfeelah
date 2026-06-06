@@ -2,30 +2,60 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { combineUiTotals, mapDaySummaryToUiTotals } from "./map-day-summary-to-ui";
-import { fetchStoreDaySummaryViaApi } from "./store-summary-api-client";
+import { fetchStoreDaySummaryViaApi, fetchStoreMonthSummaryViaApi } from "./store-summary-api-client";
 
 const emptyStoreRecord = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0, pending: 0 };
 
+async function fetchStoreSummaryForPeriod({
+  period,
+  organizationId,
+  actorUserId,
+  actorRole,
+  storeId,
+  date,
+  month,
+}) {
+  if (period === "month") {
+    return fetchStoreMonthSummaryViaApi({
+      organizationId,
+      actorUserId,
+      actorRole,
+      storeId,
+      month,
+    });
+  }
+  return fetchStoreDaySummaryViaApi({
+    organizationId,
+    actorUserId,
+    actorRole,
+    storeId,
+    date,
+  });
+}
+
 export function useStoreDaySummaries({
   enabled = false,
+  period = "day",
   organizationId = "",
   actorUserId = "",
   actorRole = "owner",
   businesses = [],
   date = "",
+  month = "",
   refreshKey = 0,
 }) {
   const storeIdsKey = useMemo(
     () => businesses.map((business) => business?.id).filter(Boolean).join("|"),
     [businesses],
   );
+  const periodKey = period === "month" ? month : date;
 
   const [summariesByStoreId, setSummariesByStoreId] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!enabled || !date || !organizationId || !actorUserId || !storeIdsKey) {
+    if (!enabled || !periodKey || !organizationId || !actorUserId || !storeIdsKey) {
       setSummariesByStoreId({});
       setLoading(false);
       setError("");
@@ -41,12 +71,14 @@ export function useStoreDaySummaries({
         const storeIds = storeIdsKey.split("|").filter(Boolean);
         const fetched = await Promise.all(
           storeIds.map(async (storeId) => {
-            const summary = await fetchStoreDaySummaryViaApi({
+            const summary = await fetchStoreSummaryForPeriod({
+              period,
               organizationId,
               actorUserId,
               actorRole,
               storeId,
               date,
+              month,
             });
             return { storeId, summary };
           }),
@@ -62,7 +94,7 @@ export function useStoreDaySummaries({
         setSummariesByStoreId(next);
       } catch (loadError) {
         if (cancelled) return;
-        console.warn("day summary API load failed", loadError);
+        console.warn(`${period} summary API load failed`, loadError);
         setSummariesByStoreId({});
         setError("failed");
       } finally {
@@ -75,14 +107,19 @@ export function useStoreDaySummaries({
     return () => {
       cancelled = true;
     };
-  }, [actorRole, actorUserId, date, enabled, organizationId, refreshKey, storeIdsKey]);
+  }, [actorRole, actorUserId, date, enabled, month, organizationId, period, periodKey, refreshKey, storeIdsKey]);
 
   const businessesWithDaySummaries = useMemo(
     () => businesses.map((business) => ({
       ...business,
-      day: summariesByStoreId[business.id] || business.day || { ...emptyStoreRecord },
+      day: period === "day"
+        ? (summariesByStoreId[business.id] || business.day || { ...emptyStoreRecord })
+        : business.day,
+      month: period === "month"
+        ? (summariesByStoreId[business.id] || business.month || { ...emptyStoreRecord })
+        : business.month,
     })),
-    [businesses, summariesByStoreId],
+    [businesses, period, summariesByStoreId],
   );
 
   const combinedResult = useMemo(
@@ -100,5 +137,6 @@ export function useStoreDaySummaries({
     loading,
     error,
     enabled,
+    period,
   };
 }

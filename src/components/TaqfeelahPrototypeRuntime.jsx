@@ -3145,7 +3145,7 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
   const isCombined = selectedBusiness === "all";
   const currentBusiness = businessesList.find((business) => business.id === selectedBusiness) || businessesList[0] || null;
   const scopedBusinesses = isCombined ? businessesList : currentBusiness ? [currentBusiness] : [];
-  const summaryApiActive = summaryApiEnabled && period === "day" && !monthly;
+  const summaryApiActive = summaryApiEnabled;
   const {
     businessesWithDaySummaries,
     combinedResult: apiCombinedResult,
@@ -3154,11 +3154,13 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
     loading: summaryLoading,
   } = useStoreDaySummaries({
     enabled: summaryApiActive,
+    period: monthly ? "month" : "day",
     organizationId: summaryApiOrganizationId,
     actorUserId: summaryApiActorUserId,
     actorRole: summaryApiActorRole,
     businesses: businessesList,
     date: selectedDate,
+    month: selectedMonth,
     refreshKey: summaryRefreshKey,
   });
   const summaryApiHasData = summaryApiActive && !summaryLoading && Object.keys(summariesByStoreId).length > 0;
@@ -3169,7 +3171,7 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
   const result = isCombined
     ? (summaryApiHasData ? apiCombinedResult : localCombinedResult)
     : monthly
-      ? summaryMonthFromEntries(operationalEntries, currentBusiness?.id, selectedMonth, reviewEnabledForBusiness)
+      ? (summaryApiHasData && apiStoreResult ? apiStoreResult : summaryMonthFromEntries(operationalEntries, currentBusiness?.id, selectedMonth, reviewEnabledForBusiness))
       : (apiStoreResult || daySummary);
   const selectedBusinessEntries = currentBusiness ? entriesInPeriod(operationalEntries, currentBusiness.id, "day", selectedDate, selectedMonth) : [];
   const visibleDayOperations = newestEntries(selectedBusinessEntries);

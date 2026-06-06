@@ -60,3 +60,36 @@ export async function fetchStoreDaySummaryViaApi({
 
   return response.json();
 }
+
+export async function fetchStoreMonthSummaryViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  storeId,
+  month,
+}) {
+  const { userIdMap, storeIdMap } = getMaps();
+  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
+  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
+  const mappedStoreId = mapToUuid(storeId, storeIdMap);
+
+  if (!mappedOrganizationId || !mappedActorUserId || !mappedStoreId || !month) {
+    return null;
+  }
+
+  const search = new URLSearchParams({ month });
+  const response = await fetch(`/api/v1/stores/${mappedStoreId}/summary/month?${search.toString()}`, {
+    method: "GET",
+    headers: {
+      "x-organization-id": mappedOrganizationId,
+      "x-user-id": mappedActorUserId,
+      "x-member-role": actorRole,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`month summary api failed: ${response.status}`);
+  }
+
+  return response.json();
+}

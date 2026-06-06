@@ -59,4 +59,37 @@ describe("store summary api client", () => {
     expect(result?.totalSales?.amountHalalas).toBe(120000);
     expect(result?.attachmentCount).toBe(2);
   });
+
+  it("fetches mapped month summary for legacy store id", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => new Response(JSON.stringify({
+        storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        month: "2026-06",
+        totalSales: { amountHalalas: 420000, currency: "SAR" },
+        totalOutflow: { amountHalalas: 90000, currency: "SAR" },
+        netMovement: { amountHalalas: 330000, currency: "SAR" },
+        outflowRatio: "21.4%",
+        outflowRatioStatus: "calculable",
+        attachmentCount: 5,
+        pendingReviewCount: 2,
+      }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreMonthSummaryViaApi } = await import("./store-summary-api-client.js");
+    const result = await fetchStoreMonthSummaryViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      storeId: "shami",
+      month: "2026-06",
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.lastCall!;
+    expect(url).toContain("/api/v1/stores/302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c/summary/month?month=2026-06");
+    expect(result?.totalSales?.amountHalalas).toBe(420000);
+    expect(result?.month).toBe("2026-06");
+  });
 });
