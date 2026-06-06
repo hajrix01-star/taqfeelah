@@ -35,6 +35,8 @@ Set in VPS `.env.production` and GitHub Actions secrets, then redeploy.
 
 ## Database-first (temporary)
 
+### Phase 0 — server API context
+
 While prototype access is active, the UI may call store APIs with mapped prototype IDs. The server accepts header-based request context when:
 
 ```bash
@@ -42,6 +44,17 @@ ALLOW_HEADER_AUTH_CONTEXT=true
 ```
 
 Set this alongside the seeded org/store/user ID maps (`NEXT_PUBLIC_CLOSEOUTS_*`) and run `node scripts/seed-closeouts-foundation.mjs` once. VPS deploy bootstrap includes `ALLOW_HEADER_AUTH_CONTEXT=true` during the prototype period.
+
+### Phase 1 — operational entries from DB
+
+When `NEXT_PUBLIC_ENTRIES_API_ENABLED=true` (or inherited from closeouts API flag):
+
+- Operational register loads from `/api/v1/stores/:storeId/entries` on login
+- Owner/employee saves, review, void, and restore go through the entries API
+- `localStorage` is not used as the entries source (DB wins)
+- Closeout submit/review refreshes entries from the server instead of building local rows
+
+Local demo seed data is still used when the entries API flag is off.
 
 ## Important
 
