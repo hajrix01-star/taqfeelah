@@ -24,6 +24,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "smoke:browser": "playwright test",
     "smoke:closeouts": "node scripts/closeouts-api-smoke.mjs",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
@@ -43,6 +44,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.51.1",
     "@tailwindcss/postcss": "^4.1.12",
     "@types/node": "^22.18.0",
     "@types/pg": "^8.20.0",
