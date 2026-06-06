@@ -31,24 +31,28 @@ export function DailyCloseoutsProvider({
   onReviewCloseoutInApi = null,
   loadCloseoutsFromApi = null,
   apiStrictMode = false,
+  dbSourceMode = false,
 }) {
-  const [closeouts, setCloseouts] = useState(() => (apiStrictMode ? [] : readDailyCloseouts()));
-  const [events, setEvents] = useState(() => (apiStrictMode ? [] : readCloseoutEvents()));
+  const skipLocalPersistence = apiStrictMode || dbSourceMode;
+  const useApiWrites = apiStrictMode || dbSourceMode;
+
+  const [closeouts, setCloseouts] = useState(() => (skipLocalPersistence ? [] : readDailyCloseouts()));
+  const [events, setEvents] = useState(() => (skipLocalPersistence ? [] : readCloseoutEvents()));
   const [syncError, setSyncError] = useState("");
 
   const persistCloseouts = useCallback((next) => {
     setCloseouts((current) => {
       const resolved = typeof next === "function" ? next(current) : next;
-      if (!apiStrictMode) {
+      if (!skipLocalPersistence) {
         writeDailyCloseouts(resolved);
       }
       return resolved;
     });
-  }, [apiStrictMode]);
+  }, [skipLocalPersistence]);
 
   const logEvent = useCallback((payload) => {
-    setEvents((current) => (apiStrictMode ? current : appendCloseoutEvent(current, payload)));
-  }, [apiStrictMode]);
+    setEvents((current) => (skipLocalPersistence ? current : appendCloseoutEvent(current, payload)));
+  }, [skipLocalPersistence]);
 
   const deleteCloseout = useCallback((closeoutId) => {
     persistCloseouts((current) => current.filter((item) => item.id !== closeoutId));
@@ -71,19 +75,19 @@ export function DailyCloseoutsProvider({
     const remote = await loadCloseoutsFromApi();
     const remoteList = Array.isArray(remote) ? remote.map((item) => withCloseoutTotals(item)) : [];
     setCloseouts((current) => {
-      const localDrafts = apiStrictMode
+      const localDrafts = apiStrictMode && !dbSourceMode
         ? []
         : current.filter((item) => item.status === CLOSEOUT_STATUS.DRAFT && !item.submittedAt);
       const remoteKeys = new Set(remoteList.map((item) => item.id));
       const merged = [...remoteList, ...localDrafts.filter((item) => !remoteKeys.has(item.id))];
-      if (!apiStrictMode) {
+      if (!skipLocalPersistence) {
         writeDailyCloseouts(merged);
       }
       return merged;
     });
     setSyncError("");
     return remoteList;
-  }, [apiStrictMode, loadCloseoutsFromApi]);
+  }, [apiStrictMode, dbSourceMode, loadCloseoutsFromApi, skipLocalPersistence]);
 
   useEffect(() => {
     if (typeof loadCloseoutsFromApi !== "function") return;
@@ -131,7 +135,7 @@ export function DailyCloseoutsProvider({
     });
     const apiSubmitAction = "submit";
     if (typeof onSubmitCloseoutToApi === "function") {
-      if (apiStrictMode) {
+      if (useApiWrites) {
         try {
           const result = await onSubmitCloseoutToApi({
             action: apiSubmitAction,
@@ -148,6 +152,11 @@ export function DailyCloseoutsProvider({
             return null;
           }
           setSyncError("");
+          if (dbSourceMode) {
+            await reloadCloseoutsFromApi();
+            if (autoReview) await onSyncToOperationalEntries(next);
+            return result;
+          }
         } catch (error) {
           console.warn("closeout submit API sync failed", error);
           setSyncError(
@@ -164,7 +173,7 @@ export function DailyCloseoutsProvider({
           console.warn("closeout submit API sync failed", error);
         }
       }
-    } else if (apiStrictMode) {
+    } else if (useApiWrites) {
       setSyncError(
         lang === "ar"
           ? "مسار API للتقفيلات غير مهيأ في وضع الإنتاج."
@@ -189,7 +198,7 @@ export function DailyCloseoutsProvider({
       upsertCloseout({ ...next, syncedToEntries: true });
     }
     return next;
-  }, [apiStrictMode, lang, logEvent, onSubmitCloseoutToApi, onSyncToOperationalEntries, upsertCloseout]);
+  }, [dbSourceMode, lang, logEvent, onSubmitCloseoutToApi, onSyncToOperationalEntries, reloadCloseoutsFromApi, upsertCloseout, useApiWrites]);
 
   const resubmitCloseout = useCallback(async ({ closeout, employee, reviewWorkflowEnabled }) => {
     const now = new Date().toISOString();
@@ -209,7 +218,7 @@ export function DailyCloseoutsProvider({
     });
     const apiSubmitAction = "resubmit";
     if (typeof onSubmitCloseoutToApi === "function") {
-      if (apiStrictMode) {
+      if (useApiWrites) {
         try {
           const result = await onSubmitCloseoutToApi({
             action: apiSubmitAction,
@@ -226,6 +235,11 @@ export function DailyCloseoutsProvider({
             return null;
           }
           setSyncError("");
+          if (dbSourceMode) {
+            await reloadCloseoutsFromApi();
+            if (autoReview) await onSyncToOperationalEntries(next);
+            return result;
+          }
         } catch (error) {
           console.warn("closeout resubmit API sync failed", error);
           setSyncError(
@@ -242,7 +256,7 @@ export function DailyCloseoutsProvider({
           console.warn("closeout resubmit API sync failed", error);
         }
       }
-    } else if (apiStrictMode) {
+    } else if (useApiWrites) {
       setSyncError(
         lang === "ar"
           ? "مسار API للتقفيلات غير مهيأ في وضع الإنتاج."
@@ -267,7 +281,7 @@ export function DailyCloseoutsProvider({
       upsertCloseout({ ...next, syncedToEntries: true });
     }
     return next;
-  }, [apiStrictMode, lang, logEvent, onSubmitCloseoutToApi, onSyncToOperationalEntries, upsertCloseout]);
+  }, [dbSourceMode, lang, logEvent, onSubmitCloseoutToApi, onSyncToOperationalEntries, reloadCloseoutsFromApi, upsertCloseout, useApiWrites]);
 
   const approveCloseout = useCallback(async (closeoutId, reviewerName) => {
     const target = closeouts.find((item) => item.id === closeoutId);
@@ -280,7 +294,7 @@ export function DailyCloseoutsProvider({
       reviewedByName: reviewerName,
     });
     if (typeof onReviewCloseoutInApi === "function") {
-      if (apiStrictMode) {
+      if (useApiWrites) {
         try {
           const result = await onReviewCloseoutInApi({ action: "approve", closeout: next, reviewerName });
           if (!result) {
@@ -288,6 +302,11 @@ export function DailyCloseoutsProvider({
             return null;
           }
           setSyncError("");
+          if (dbSourceMode) {
+            await reloadCloseoutsFromApi();
+            await onSyncToOperationalEntries(next);
+            return result;
+          }
         } catch (error) {
           console.warn("closeout approve API sync failed", error);
           setSyncError(lang === "ar" ? "تعذر اعتماد التقفيلة على الخادم." : "Failed to approve closeout on server.");
@@ -300,7 +319,7 @@ export function DailyCloseoutsProvider({
           console.warn("closeout approve API sync failed", error);
         }
       }
-    } else if (apiStrictMode) {
+    } else if (useApiWrites) {
       setSyncError(
         lang === "ar"
           ? "مسار API للمراجعة غير مهيأ في وضع الإنتاج."
@@ -322,7 +341,7 @@ export function DailyCloseoutsProvider({
     await onSyncToOperationalEntries(next);
     upsertCloseout({ ...next, syncedToEntries: true });
     return next;
-  }, [apiStrictMode, closeouts, lang, logEvent, onReviewCloseoutInApi, onSyncToOperationalEntries, upsertCloseout]);
+  }, [closeouts, dbSourceMode, lang, logEvent, onReviewCloseoutInApi, onSyncToOperationalEntries, reloadCloseoutsFromApi, upsertCloseout, useApiWrites]);
 
   const returnCloseout = useCallback(async (closeoutId, reviewerName, reason) => {
     const target = closeouts.find((item) => item.id === closeoutId);
@@ -336,7 +355,7 @@ export function DailyCloseoutsProvider({
       returnReason: reason,
     });
     if (typeof onReviewCloseoutInApi === "function") {
-      if (apiStrictMode) {
+      if (useApiWrites) {
         try {
           const result = await onReviewCloseoutInApi({ action: "return", closeout: next, reviewerName, reason });
           if (!result) {
@@ -344,6 +363,10 @@ export function DailyCloseoutsProvider({
             return null;
           }
           setSyncError("");
+          if (dbSourceMode) {
+            await reloadCloseoutsFromApi();
+            return result;
+          }
         } catch (error) {
           console.warn("closeout return API sync failed", error);
           setSyncError(lang === "ar" ? "تعذر إرجاع التقفيلة على الخادم." : "Failed to return closeout on server.");
@@ -356,7 +379,7 @@ export function DailyCloseoutsProvider({
           console.warn("closeout return API sync failed", error);
         }
       }
-    } else if (apiStrictMode) {
+    } else if (useApiWrites) {
       setSyncError(
         lang === "ar"
           ? "مسار API للمراجعة غير مهيأ في وضع الإنتاج."
@@ -377,7 +400,7 @@ export function DailyCloseoutsProvider({
       reason,
     });
     return next;
-  }, [apiStrictMode, closeouts, lang, logEvent, onReviewCloseoutInApi, upsertCloseout]);
+  }, [closeouts, dbSourceMode, lang, logEvent, onReviewCloseoutInApi, reloadCloseoutsFromApi, upsertCloseout, useApiWrites]);
 
   const value = useMemo(() => ({
     closeouts: sortCloseoutsNewestFirst(closeouts),

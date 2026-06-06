@@ -81,6 +81,7 @@ import {
   saveRuntimeSettingsViaApi,
 } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
 import { isProductionAppMode } from "@/core/config/app-mode";
+import { isCloseoutsApiDbSourceMode, isCloseoutsApiStrictMode } from "@/core/config/closeouts-api-mode";
 import { isEntriesApiDbSourceMode, isEntriesApiStrictMode } from "@/core/config/entries-api-mode";
 import { isPrototypeAccessMode } from "@/core/config/prototype-access-mode";
 import PrototypeAccessScreen from "@/features/demo/PrototypeAccessScreen";
@@ -1161,6 +1162,7 @@ const APP_IN_PRODUCTION_MODE = isProductionAppMode();
 const PROTOTYPE_ACCESS_MODE = isPrototypeAccessMode();
 const BINDS_TO_SERVER_AUTH = APP_IN_PRODUCTION_MODE && !PROTOTYPE_ACCESS_MODE;
 const ENTRIES_API_DB_SOURCE = isEntriesApiDbSourceMode();
+const CLOSEOUTS_API_DB_SOURCE = isCloseoutsApiDbSourceMode();
 const RUNTIME_SETTINGS_DB_SOURCE = ENTRIES_API_DB_SOURCE;
 
 function usesRuntimeSettingsApi() {
@@ -5064,7 +5066,7 @@ export default function TaqfeelahPrototypeRuntime() {
 
   useEffect(() => { writeCloseoutAlerts(closeoutAlerts); }, [closeoutAlerts]);
   useEffect(() => {
-    if (BINDS_TO_SERVER_AUTH) return;
+    if (BINDS_TO_SERVER_AUTH || CLOSEOUTS_API_DB_SOURCE) return;
     autoResolveSubmittedCloseoutsWithoutReview((storeId) => Boolean(getStoreOperationalConfig(storeOperationalSettings, storeId).closeoutReviewEnabled));
   }, [storeOperationalSettings]);
   useEffect(() => {
@@ -5507,7 +5509,7 @@ export default function TaqfeelahPrototypeRuntime() {
     setCloseoutAlerts((current) => current.map((item) => item.id === alertId ? { ...item, seen: true } : item));
   };
   const handleOpenOwnerOperation = useCallback((entry) => {
-    if (!BINDS_TO_SERVER_AUTH && entry?.type === "summary" && entry.closeoutId) {
+    if (!BINDS_TO_SERVER_AUTH && !CLOSEOUTS_API_DB_SOURCE && entry?.type === "summary" && entry.closeoutId) {
       const closeout = readDailyCloseouts().find((item) => item.id === entry.closeoutId);
       if (closeout) {
         setReturnCloseoutTarget(null);
@@ -5561,7 +5563,7 @@ export default function TaqfeelahPrototypeRuntime() {
   };
   const ownerDisplayName = ownerProfile?.name || (lang === "ar" ? "المالك" : "Owner");
   const closeoutsApiEnabled = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ENABLED === "true";
-  const closeoutsApiStrictMode = BINDS_TO_SERVER_AUTH;
+  const closeoutsApiStrictMode = isCloseoutsApiStrictMode();
   const closeoutsApiOrganizationId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
   const closeoutsApiOwnerUserId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";
   const ownerApiUserId = sessionUserId || closeoutsApiOwnerUserId;
@@ -5825,8 +5827,9 @@ export default function TaqfeelahPrototypeRuntime() {
       onSyncToOperationalEntries={syncCloseoutToOperationalEntries}
       onSubmitCloseoutToApi={syncSubmitCloseoutToApi}
       onReviewCloseoutInApi={syncReviewCloseoutToApi}
-      loadCloseoutsFromApi={loadCloseoutsFromApi}
+      loadCloseoutsFromApi={closeoutsApiEnabled ? loadCloseoutsFromApi : null}
       apiStrictMode={closeoutsApiStrictMode}
+      dbSourceMode={CLOSEOUTS_API_DB_SOURCE}
     >
     <div dir={lang === "ar" ? "rtl" : "ltr"} className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
       <AppFontStyles />

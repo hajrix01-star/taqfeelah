@@ -62,6 +62,17 @@ When the same store API flags are on, owner runtime settings load/save through `
 
 Seed/bootstrap still provides the first `runtime_settings_saved` row via `scripts/seed-closeouts-foundation.mjs`.
 
+### Phase 3 — closeouts from DB
+
+When `NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true`:
+
+- Daily closeouts load from `/api/v1/stores/:storeId/closeouts` on mount
+- Submit/resubmit/approve/return go through the closeouts API, then refresh from server
+- In-progress drafts stay in memory only until submitted
+- `taqfeelah_daily_closeouts_v1` in `localStorage` is skipped as the closeouts source
+
+Local demo closeouts are still used when the closeouts API flag is off.
+
 ## Important
 
 This is **not** a launch auth solution. Backend auth files and APIs remain intact.
