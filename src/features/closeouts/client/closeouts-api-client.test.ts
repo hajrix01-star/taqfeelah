@@ -101,6 +101,8 @@ describe("closeouts api client", () => {
       async () => new Response(JSON.stringify([{
         id: "c-1",
         storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        openedByUserId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+        submittedByUserId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
         sales: [
           {
             channelId: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
@@ -125,6 +127,8 @@ describe("closeouts api client", () => {
     expect(result).toEqual([{
       id: "c-1",
       storeId: "shami",
+      openedByUserId: "ahmed",
+      submittedByUserId: "ahmed",
       sales: [
         {
           channelId: "cash",

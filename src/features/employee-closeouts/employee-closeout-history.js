@@ -42,7 +42,9 @@ export function isEntryDateWithinEmployeeHistory(entryDate, visibility, todayIso
 export function closeoutBelongsToEmployee(closeout, employee) {
   if (!closeout || !employee) return false;
   const employeeId = typeof employee === "string" ? employee : employee.id;
-  if (employeeId && (closeout.openedByUserId === employeeId || closeout.submittedByUserId === employeeId)) return true;
+  const apiUserId = typeof employee === "object" ? employee.apiUserId : "";
+  const actorIds = [employeeId, apiUserId].filter((value) => typeof value === "string" && value.trim());
+  if (actorIds.some((id) => closeout.openedByUserId === id || closeout.submittedByUserId === id)) return true;
 
   // Legacy prototype rows may miss user IDs; fall back to employee name matching.
   const candidateNames = typeof employee === "object"
