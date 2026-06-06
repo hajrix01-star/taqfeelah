@@ -10,5 +10,6 @@ describe("closeouts POST route autoReview contract", () => {
     );
     expect(source).not.toContain("requestContext.role === \"owner\" || requestContext.role === \"manager\"");
     expect(source).toContain("autoReview: body?.autoReview === true");
+    expect(source).toContain("requireReview: body?.requireReview === true");
   });
 });

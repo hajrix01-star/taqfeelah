@@ -115,6 +115,7 @@ Body:
 {
   "mode": "submit",
   "autoReview": true,
+  "requireReview": false,
   "closeoutId": "client-closeout-id",
   "date": "2026-06-05",
   "salesChannels": [
@@ -141,8 +142,10 @@ Behavior:
 - Validates organization/store/user authorization.
 - Creates operational `entries` + channel rows in one transaction.
 - Writes closeout audit trail (`closeout_submitted` / `closeout_resubmitted`).
-- When `autoReview=true`, writes `closeout_approved` audit event in the same transaction and sets created `entries` to `active` (including when `x-member-role` is `employee`). The API route must forward `autoReview` for employees — not only owner/manager.
-- **Product default:** stores ship with closeout review **off**; clients send `autoReview=true` in that case so the owner is not blocked on pending review. See `.cursor/rules/closeout-review-defaults.mdc`.
+- **Employee auto-approve (product default):** when `x-member-role` is `employee` and `requireReview` is not `true`, the server auto-approves in the same transaction (`closeout_approved` + `entries.status=active`). This matches review **off** by default even if a legacy API layer dropped `autoReview`.
+- When `requireReview=true`, employee closeout stays `submitted` and entries are `voided` until owner review.
+- Owner/manager may still pass `autoReview=true` explicitly for immediate approval.
+- See `.cursor/rules/closeout-review-defaults.mdc`.
 
 ### `GET /stores/:storeId/closeouts` (implemented)
 

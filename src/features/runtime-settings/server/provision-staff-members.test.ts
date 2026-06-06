@@ -31,4 +31,19 @@ describe("provisionStaffMembers", () => {
     expect(result).toHaveLength(1);
     expect(result[0]?.id).toBe("staff-1");
   });
+
+  it("resolves custom store ids from merged store map", async () => {
+    const { parseJsonMap } = await import("@/features/runtime-settings/server/provision-staff-members");
+    const storeIdMap = {
+      shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+      "custom-1780679701214": "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+    };
+    const { buildRuntimeApiIdMaps } = await import("@/core/client/runtime-api-id-maps");
+    const maps = buildRuntimeApiIdMaps({
+      configuredBusinesses: [{ id: "custom-1780679701214" }],
+      envStoreIdMap: { shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c" },
+    });
+    expect(maps.storeIdMap["custom-1780679701214"]).toBe("302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c");
+    expect(parseJsonMap(JSON.stringify(storeIdMap))).toEqual(storeIdMap);
+  });
 });

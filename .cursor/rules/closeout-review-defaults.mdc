@@ -30,8 +30,8 @@ This is **explicit product intent**, not a temporary shortcut.
 
 ## Client → server contract (prototype / DB-first period)
 
-- UI sends `autoReview: true` on closeout submit when `closeoutReviewEnabled` is false for that store.
-- Server must honor `autoReview=true` for **employees** the same as owner/manager (auto-approve in one transaction).
+- UI sends `autoReview: true` and `requireReview: false` on closeout submit when `closeoutReviewEnabled` is false for that store.
+- Server auto-approves **employee** closeouts unless `requireReview=true` (product default = review off).
 - Before public launch with real auth: validate `autoReview` against persisted store settings server-side (do not rely on client flag alone).
 
 ## Do not change without explicit product owner approval

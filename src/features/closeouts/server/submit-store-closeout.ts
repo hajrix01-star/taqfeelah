@@ -31,6 +31,8 @@ const closeoutSubmitSchema = z.object({
   note: z.string().trim().max(500).optional(),
   mode: z.enum(["submit", "resubmit"]).default("submit"),
   autoReview: z.boolean().default(false),
+  /** When true, employee closeout stays pending until owner review. Omitted/false = auto-approve (product default). */
+  requireReview: z.boolean().optional(),
 });
 
 type CloseoutSubmitInput = z.infer<typeof closeoutSubmitSchema>;
@@ -57,8 +59,10 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
   }
 
   const totalOutflowHalalas = input.outflows.reduce((sum, row) => sum + row.amountHalalas, 0);
-  // Product rule: when store closeout review is off, client sends autoReview=true for employees too.
-  const canAutoReview = input.autoReview === true;
+  // Product rule: review OFF by default — employee closeouts auto-approve unless requireReview=true.
+  const canAutoReview = input.actorRole === "employee"
+    ? input.requireReview !== true
+    : input.autoReview === true;
   const initialEntryStatus = canAutoReview ? "active" : "voided";
   const initialReviewedAt = canAutoReview ? new Date() : null;
   const db = getDb();

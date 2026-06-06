@@ -30,6 +30,7 @@ export function DailyCloseoutsProvider({
   onSubmitCloseoutToApi = null,
   onReviewCloseoutInApi = null,
   loadCloseoutsFromApi = null,
+  closeoutReviewRequiredForStore = null,
   apiStrictMode = false,
   dbSourceMode = false,
 }) {
@@ -70,10 +71,37 @@ export function DailyCloseoutsProvider({
     return normalized;
   }, [persistCloseouts]);
 
+  const autoApprovePendingCloseoutsWithoutReview = useCallback(async (remoteList) => {
+    if (
+      !dbSourceMode
+      || typeof onReviewCloseoutInApi !== "function"
+      || typeof closeoutReviewRequiredForStore !== "function"
+    ) {
+      return false;
+    }
+
+    let repaired = false;
+    for (const closeout of remoteList) {
+      if (closeout?.status !== CLOSEOUT_STATUS.SUBMITTED) continue;
+      if (closeoutReviewRequiredForStore(closeout.storeId)) continue;
+      try {
+        await onReviewCloseoutInApi({ action: "approve", closeout });
+        repaired = true;
+      } catch (error) {
+        console.warn("closeout auto-approve failed", error);
+      }
+    }
+    return repaired;
+  }, [closeoutReviewRequiredForStore, dbSourceMode, onReviewCloseoutInApi]);
+
   const reloadCloseoutsFromApi = useCallback(async () => {
     if (typeof loadCloseoutsFromApi !== "function") return [];
-    const remote = await loadCloseoutsFromApi();
-    const remoteList = Array.isArray(remote) ? remote.map((item) => withCloseoutTotals(item)) : [];
+    let remote = await loadCloseoutsFromApi();
+    let remoteList = Array.isArray(remote) ? remote.map((item) => withCloseoutTotals(item)) : [];
+    if (await autoApprovePendingCloseoutsWithoutReview(remoteList)) {
+      remote = await loadCloseoutsFromApi();
+      remoteList = Array.isArray(remote) ? remote.map((item) => withCloseoutTotals(item)) : [];
+    }
     setCloseouts((current) => {
       const localDrafts = dbSourceMode || (apiStrictMode && !dbSourceMode)
         ? []
@@ -97,7 +125,7 @@ export function DailyCloseoutsProvider({
     });
     setSyncError("");
     return remoteList;
-  }, [apiStrictMode, dbSourceMode, loadCloseoutsFromApi, skipLocalPersistence]);
+  }, [apiStrictMode, autoApprovePendingCloseoutsWithoutReview, dbSourceMode, loadCloseoutsFromApi, skipLocalPersistence]);
 
   useEffect(() => {
     if (typeof loadCloseoutsFromApi !== "function") return;

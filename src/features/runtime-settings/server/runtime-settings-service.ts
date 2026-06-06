@@ -2,6 +2,7 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import { auditEvents, organizationMembers } from "@/core/db/schema";
+import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
 import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { ForbiddenError, ValidationError } from "@/core/errors/app-error";
 import { enrichStaffWithApiUserIds } from "@/features/auth/server/resolve-employee-user-id";
@@ -149,9 +150,17 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
   await assertOrganizationRoleAccess(input, "owner");
 
   const envAuth = getProductionAuthRuntimeConfig();
+  const runtimeApiMaps = buildRuntimeApiIdMaps({
+    configuredBusinesses: Array.isArray(input.settings.configuredBusinesses)
+      ? input.settings.configuredBusinesses
+      : [],
+    staff: Array.isArray(input.settings.staff) ? input.settings.staff : [],
+    envStoreIdMap: envAuth.storeIdMap,
+    envUserIdMap: envAuth.userIdMap,
+  });
   const provisionedStaff = await provisionStaffMembers(input.organizationId, input.settings.staff, {
-    storeIdMap: envAuth.storeIdMap,
-    userIdMap: envAuth.userIdMap,
+    storeIdMap: runtimeApiMaps.storeIdMap,
+    userIdMap: runtimeApiMaps.userIdMap,
   });
   const normalizedSettings = {
     ...input.settings,

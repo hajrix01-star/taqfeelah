@@ -764,6 +764,46 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
         safe_print("STDERR:")
         safe_print(seed_err.strip())
 
+    print_section("Repair staff store access for custom store IDs")
+    _, staff_repair_out, staff_repair_err = vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
+            cd {shlex.quote(app_dir)}
+            set -a
+            . ./.env.production
+            set +a
+            node scripts/repair-staff-store-access.mjs
+            """
+        ).strip(),
+        check=False,
+    )
+    if staff_repair_out.strip():
+        safe_print(staff_repair_out.strip())
+    if staff_repair_err.strip():
+        safe_print("STDERR:")
+        safe_print(staff_repair_err.strip())
+
+    print_section("Repair stuck employee closeouts (auto-approve pending)")
+    _, repair_out, repair_err = vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
+            cd {shlex.quote(app_dir)}
+            set -a
+            . ./.env.production
+            set +a
+            node scripts/repair-stuck-closeouts.mjs
+            """
+        ).strip(),
+        check=False,
+    )
+    if repair_out.strip():
+        safe_print(repair_out.strip())
+    if repair_err.strip():
+        safe_print("STDERR:")
+        safe_print(repair_err.strip())
+
     print_section("Start isolated PM2 process")
     vps.run(
         textwrap.dedent(
