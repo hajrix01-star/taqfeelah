@@ -10,3 +10,7 @@ next-env.d.ts
 !.env.development
 .pnpm-store
 tmp-response.txt
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
