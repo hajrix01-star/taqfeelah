@@ -244,7 +244,6 @@ export default function EmployeeCloseoutsView({
         saving={saving}
         channelLabel={channelLabel}
         onCancel={() => handleCancelEntry(entryCloseout)}
-        onSaveDraft={upsertCloseout}
         onSubmit={handleSubmit}
         findForStoreDate={resolveStoreDate}
       />

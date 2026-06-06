@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 import NotebookScrollSurface from "../daily-closeouts/NotebookScrollSurface";
 import { notebookLinesBackground } from "../daily-closeouts/notebook-themes";
@@ -57,7 +57,6 @@ export default function DailyCloseoutEntryFlow({
   storeName,
   isResubmit = false,
   onCancel,
-  onSaveDraft,
   onSubmit,
   findForStoreDate,
   channelLabel,
@@ -116,11 +115,6 @@ export default function DailyCloseoutEntryFlow({
     return withCloseoutTotals(base);
   }, [attachments, date, initialCloseout, notebookTheme, outflows, salesChannels, salesValues, storeName]);
 
-  useEffect(() => {
-    if (phase !== "form") return;
-    onSaveDraft(buildCloseout());
-  }, [phase, onSaveDraft, buildCloseout]);
-
   const pushOutflow = () => {
     const amount = Number(outAmount || 0);
     if (!amount) return;
@@ -172,14 +166,7 @@ export default function DailyCloseoutEntryFlow({
 
   const continueToForm = () => {
     if (!validateDate()) return;
-    onSaveDraft(buildCloseout());
     setPhase("form");
-  };
-
-  const saveDraft = () => {
-    const draft = buildCloseout();
-    onSaveDraft(draft);
-    window.alert(lang === "ar" ? "تم الحفظ" : "Saved");
   };
 
   const handleSubmit = async () => {
@@ -360,14 +347,14 @@ export default function DailyCloseoutEntryFlow({
             {lang === "ar" ? "التالي" : "Next"}
           </button>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <button type="button" onClick={saveDraft} disabled={saving} className="rounded-2xl bg-[#F7F5EF] py-3.5 text-xs font-black disabled:opacity-50">
-              {lang === "ar" ? "حفظ" : "Save"}
-            </button>
-            <button type="button" disabled={saving || totals.totalSales <= 0} onClick={handleSubmit} className="rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white disabled:opacity-50">
-              {lang === "ar" ? "إرسال" : "Submit"}
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={saving || totals.totalSales <= 0}
+            onClick={handleSubmit}
+            className="w-full rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white disabled:opacity-50"
+          >
+            {lang === "ar" ? "حفظ وإرسال" : "Save & send"}
+          </button>
         )}
       </div>
       <AttachmentLightbox
