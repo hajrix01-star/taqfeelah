@@ -196,9 +196,13 @@ export async function fetchStoreCloseoutsViaApi({
         channelId: reverseLookupKeyByUuid(row?.channelId, salesChannelIdMap) || row?.channelId,
       }))
       : item.sales;
+    const mappedOpenedByUserId = reverseLookupKeyByUuid(item.openedByUserId, userIdMap) || item.openedByUserId;
+    const mappedSubmittedByUserId = reverseLookupKeyByUuid(item.submittedByUserId, userIdMap) || item.submittedByUserId;
     return {
       ...item,
       storeId: mappedStoreId,
+      openedByUserId: mappedOpenedByUserId,
+      submittedByUserId: mappedSubmittedByUserId,
       sales: salesRows,
     };
   });

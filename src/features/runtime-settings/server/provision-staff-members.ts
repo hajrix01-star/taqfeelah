@@ -130,6 +130,13 @@ async function ensureStaffUser(
         .where(eq(users.id, existingUser.id));
       return existingUser.id;
     }
+    await db.insert(users).values({
+      id: existingMapped,
+      name: staffDisplayName(person),
+      status: "active",
+    });
+    await ensureOrganizationMember(organizationId, existingMapped);
+    return existingMapped;
   }
 
   const userId = randomUUID();

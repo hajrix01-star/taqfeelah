@@ -159,16 +159,15 @@ export default function EmployeeCloseoutsView({
     const today = new Date();
     const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     setEntryResubmit(false);
-    setEntryCloseout(
-      createDraftCloseout({
-        storeId: currentStoreId,
-        storeName: storeLabel,
-        date: todayIso,
-        employee: { id: employee.id, nameAr: employee.nameAr, nameEn: employee.nameEn },
-        notebookTheme,
-      }),
-    );
-  }, [currentStoreId, employee, storeLabel, notebookTheme]);
+    const draft = createDraftCloseout({
+      storeId: currentStoreId,
+      storeName: storeLabel,
+      date: todayIso,
+      employee: { id: employee.id, nameAr: employee.nameAr, nameEn: employee.nameEn },
+      notebookTheme,
+    });
+    setEntryCloseout(upsertCloseout(draft));
+  }, [currentStoreId, employee, storeLabel, notebookTheme, upsertCloseout]);
 
   useEffect(() => {
     onRegisterAdd?.(startNewCloseout);

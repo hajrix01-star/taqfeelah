@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /**
- * Re-sync member_store_access for staff using latest runtime settings snapshot.
+ * Full staff provisioning from latest runtime settings:
+ * users + organization_members + member_store_access (custom store IDs mapped).
  */
 
+import { randomUUID } from "node:crypto";
 import process from "node:process";
 import { Client } from "pg";
 
@@ -29,6 +31,12 @@ function parseJsonMap(rawValue) {
   }
 }
 
+function staffDisplayName(person) {
+  const nameEn = typeof person?.nameEn === "string" ? person.nameEn.trim() : "";
+  const nameAr = typeof person?.nameAr === "string" ? person.nameAr.trim() : "";
+  return nameEn || nameAr || "Employee";
+}
+
 function buildStoreIdMap(configuredBusinesses, envStoreIdMap) {
   const storeIdMap = { ...envStoreIdMap };
   const seededStoreUuids = [...new Set(Object.values(envStoreIdMap).filter((v) => UUID_PATTERN.test(v)))];
@@ -36,6 +44,11 @@ function buildStoreIdMap(configuredBusinesses, envStoreIdMap) {
     const legacyStoreId = typeof business?.id === "string" ? business.id.trim() : "";
     if (!legacyStoreId || UUID_PATTERN.test(legacyStoreId)) continue;
     if (UUID_PATTERN.test(storeIdMap[legacyStoreId] || "")) continue;
+    const configuredDbStoreId = typeof business?.dbStoreId === "string" ? business.dbStoreId.trim() : "";
+    if (UUID_PATTERN.test(configuredDbStoreId)) {
+      storeIdMap[legacyStoreId] = configuredDbStoreId;
+      continue;
+    }
     if (configuredBusinesses.length === 1 && seededStoreUuids.length === 1) {
       storeIdMap[legacyStoreId] = seededStoreUuids[0];
     }
@@ -49,6 +62,63 @@ function resolveStoreUuid(storeId, storeIdMap) {
   if (UUID_PATTERN.test(normalized)) return normalized;
   const mapped = storeIdMap[normalized];
   return UUID_PATTERN.test(mapped || "") ? mapped : "";
+}
+
+async function ensureUser(client, userId, name) {
+  const { rows } = await client.query("SELECT id FROM users WHERE id = $1 LIMIT 1", [userId]);
+  if (rows.length > 0) {
+    await client.query(
+      "UPDATE users SET name = $2, status = 'active', updated_at = NOW() WHERE id = $1",
+      [userId, name],
+    );
+    return userId;
+  }
+  await client.query(
+    "INSERT INTO users (id, name, status) VALUES ($1, $2, 'active')",
+    [userId, name],
+  );
+  console.log(`Created user ${userId} (${name})`);
+  return userId;
+}
+
+async function ensureOrganizationMember(client, organizationId, userId) {
+  const { rows } = await client.query(
+    `SELECT id, role FROM organization_members
+     WHERE organization_id = $1 AND user_id = $2
+     LIMIT 1`,
+    [organizationId, userId],
+  );
+  if (rows[0]?.id) {
+    const role = rows[0].role === "owner" || rows[0].role === "manager" ? rows[0].role : "employee";
+    await client.query(
+      `UPDATE organization_members
+       SET status = 'active', role = $2, updated_at = NOW()
+       WHERE id = $1`,
+      [rows[0].id, role],
+    );
+    return rows[0].id;
+  }
+  const memberId = randomUUID();
+  await client.query(
+    `INSERT INTO organization_members (id, organization_id, user_id, role, status)
+     VALUES ($1, $2, $3, 'employee', 'active')`,
+    [memberId, organizationId, userId],
+  );
+  console.log(`Created organization member ${memberId} for user ${userId}`);
+  return memberId;
+}
+
+async function grantStoreAccess(client, memberId, storeId) {
+  const { rowCount } = await client.query(
+    `INSERT INTO member_store_access (organization_member_id, store_id)
+     SELECT $1, $2
+     WHERE NOT EXISTS (
+       SELECT 1 FROM member_store_access
+       WHERE organization_member_id = $1 AND store_id = $2
+     )`,
+    [memberId, storeId],
+  );
+  return rowCount > 0;
 }
 
 async function main() {
@@ -81,44 +151,43 @@ async function main() {
       : [];
     const storeIdMap = buildStoreIdMap(configuredBusinesses, envStoreIdMap);
 
+    let provisionedStaff = 0;
     let grants = 0;
+
     for (const person of staff) {
       if (!person || person.active === false || person.removed === true) continue;
-      const apiUserId = typeof person.apiUserId === "string" ? person.apiUserId.trim() : "";
-      if (!UUID_PATTERN.test(apiUserId)) continue;
+
+      let apiUserId = typeof person.apiUserId === "string" ? person.apiUserId.trim() : "";
+      if (!UUID_PATTERN.test(apiUserId)) {
+        apiUserId = randomUUID();
+        console.log(`Assigned new apiUserId ${apiUserId} for staff ${person.id || person.nameEn || "unknown"}`);
+      }
 
       const storeUuids = (Array.isArray(person.storeIds) ? person.storeIds : [])
         .map((storeId) => resolveStoreUuid(storeId, storeIdMap))
         .filter(Boolean);
-      if (!storeUuids.length) continue;
+      if (!storeUuids.length) {
+        console.warn(`Skipped staff ${person.id}: no resolvable store UUIDs (storeIds=${JSON.stringify(person.storeIds)})`);
+        continue;
+      }
 
-      const { rows: members } = await client.query(
-        `SELECT id FROM organization_members
-         WHERE organization_id = $1 AND user_id = $2 AND status = 'active'
-         LIMIT 1`,
-        [organizationId, apiUserId],
-      );
-      const memberId = members[0]?.id;
-      if (!memberId) continue;
+      const displayName = staffDisplayName(person);
+      await ensureUser(client, apiUserId, displayName);
+      const memberId = await ensureOrganizationMember(client, organizationId, apiUserId);
+      provisionedStaff += 1;
 
       for (const storeId of [...new Set(storeUuids)]) {
-        const { rowCount } = await client.query(
-          `INSERT INTO member_store_access (organization_member_id, store_id)
-           SELECT $1, $2
-           WHERE NOT EXISTS (
-             SELECT 1 FROM member_store_access
-             WHERE organization_member_id = $1 AND store_id = $2
-           )`,
-          [memberId, storeId],
-        );
-        if (rowCount > 0) {
+        const granted = await grantStoreAccess(client, memberId, storeId);
+        if (granted) {
           grants += 1;
-          console.log(`Granted store ${storeId} to user ${apiUserId} (${person.nameAr || person.nameEn || person.id})`);
+          console.log(`Granted store ${storeId} to ${displayName} (${apiUserId})`);
         }
       }
     }
 
-    console.log(`Done. ${grants} new store access grant(s) for org ${organizationId}.`);
+    console.log(
+      `Done. Provisioned ${provisionedStaff} staff, ${grants} new store access grant(s) for org ${organizationId}.`,
+    );
   } finally {
     await client.end();
   }
