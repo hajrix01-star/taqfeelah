@@ -228,6 +228,13 @@ def get_required_env(name: str) -> str:
     return value
 
 
+def env_value_or_default(name: str, fallback: str) -> str:
+    value = os.environ.get(name, "")
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return fallback
+
+
 def print_section(title: str) -> None:
     safe_print(f"\n{'=' * 18} {title} {'=' * 18}")
 
@@ -805,16 +812,14 @@ def cmd_pm2_app_logs(vps: VPS, app_name: str) -> None:
 
 def cmd_reset_owner_auth(vps: VPS, owner_username: str, owner_password: str) -> None:
     app_dir = "/opt/taqfeelah"
-    organization_id = os.environ.get(
-        "AUTH_ORGANIZATION_ID",
-        os.environ.get("NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID", "8f63cf87-f2e2-4e2a-a20e-8f637f0a9e1"),
-    )
-    owner_user_id = os.environ.get(
-        "AUTH_OWNER_USER_ID",
-        os.environ.get("NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID", "e8f3e35b-6051-4da3-8b10-979700c2f00f"),
-    )
     username_sql = owner_username.strip().lower().replace("'", "''")
     password_sql = owner_password.replace("'", "''")
+    remote_env_bootstrap = textwrap.dedent(
+        """
+        ORG_ID="${AUTH_ORGANIZATION_ID:-${NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID:-8f63cf87-f2e2-4e2a-a20e-8f637f0a9e1}}"
+        OWNER_ID="${AUTH_OWNER_USER_ID:-${NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID:-e8f3e35b-6051-4da3-8b10-979700c2f00f}}"
+        """
+    ).strip()
 
     print_section("Diagnose current owner auth")
     vps.run(
@@ -825,13 +830,15 @@ def cmd_reset_owner_auth(vps: VPS, owner_username: str, owner_password: str) -> 
             set -a
             . ./.env.production
             set +a
+            {remote_env_bootstrap}
             node -e "const u=new URL(process.env.DATABASE_URL); console.log('DATABASE host:', u.host)"
+            echo "Organization: $ORG_ID"
             psql "$DATABASE_URL" -c "
             SELECT created_at, reason,
                    metadata->'settings'->'authConfig'->>'ownerUsername' AS username,
                    metadata->'settings'->'authConfig'->>'ownerPassword' AS password
             FROM audit_events
-            WHERE organization_id = '{organization_id}'
+            WHERE organization_id = '$ORG_ID'
               AND action = 'runtime_settings_saved'
             ORDER BY created_at DESC
             LIMIT 1;
@@ -873,11 +880,12 @@ def cmd_reset_owner_auth(vps: VPS, owner_username: str, owner_password: str) -> 
             set -a
             . ./.env.production
             set +a
+            {remote_env_bootstrap}
             psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "
             WITH latest AS (
               SELECT metadata
               FROM audit_events
-              WHERE organization_id = '{organization_id}'
+              WHERE organization_id = '$ORG_ID'
                 AND action = 'runtime_settings_saved'
               ORDER BY created_at DESC
               LIMIT 1
@@ -887,10 +895,10 @@ def cmd_reset_owner_auth(vps: VPS, owner_username: str, owner_password: str) -> 
               action, reason, metadata
             )
             SELECT
-              '{organization_id}',
+              '$ORG_ID',
               null,
               null,
-              '{owner_user_id}',
+              '$OWNER_ID',
               'runtime_settings_saved',
               'vps_reset_owner_auth',
               jsonb_build_object(
