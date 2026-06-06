@@ -4,7 +4,12 @@ import { getDb } from "@/core/db/client";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
+import { toRiyals } from "@/core/money/halalas";
 import { auditEvents, entries, stores, users } from "@/core/db/schema";
+import {
+  closeoutTotalsFromHalalas,
+  closeoutTotalsFromRiyalRows,
+} from "@/features/closeouts/server/closeout-summary-totals";
 
 const closeoutDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD");
 
@@ -85,10 +90,6 @@ type EventAggregate = {
     reason: string | null;
   } | null;
 };
-
-function toRiyals(halalas: number): number {
-  return Number((halalas / 100).toFixed(2));
-}
 
 function toTimestamp(date: Date): number {
   const value = date.getTime();
@@ -301,12 +302,9 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
           .filter((row): row is NonNullable<typeof row> => Boolean(row));
       }
 
-      const totalSalesHalalas =
-        submit.metadata.totalSalesHalalas
-        ?? salesRows.reduce((sum, row) => sum + Math.round(row.amount * 100), 0);
-      const totalOutflowHalalas =
-        submit.metadata.totalOutflowHalalas
-        ?? outflowRows.reduce((sum, row) => sum + Math.round(row.amount * 100), 0);
+      const totals = submit.metadata.totalSalesHalalas != null && submit.metadata.totalOutflowHalalas != null
+        ? closeoutTotalsFromHalalas(submit.metadata.totalSalesHalalas, submit.metadata.totalOutflowHalalas)
+        : closeoutTotalsFromRiyalRows(salesRows, outflowRows);
 
       const submittedByName = actorNameById.get(submit.actorUserId) || "";
       const reviewedByName = item.approved ? actorNameById.get(item.approved.actorUserId) || "" : null;
@@ -335,11 +333,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
         outflows: outflowRows,
         attachments: [],
         syncedToEntries: status === "reviewed",
-        totals: {
-          totalSales: toRiyals(totalSalesHalalas),
-          totalOutflow: toRiyals(totalOutflowHalalas),
-          netMovement: toRiyals(totalSalesHalalas - totalOutflowHalalas),
-        },
+        totals,
       };
     })
     .sort((a, b) => {

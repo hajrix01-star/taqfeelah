@@ -1,24 +1,43 @@
+import { toHalalas, toRiyals } from "@/core/money/halalas";
+import { calculateDaySummary } from "@/domain/cash-movement/calculations";
+
 /** @typedef {{ channelId: string, name: string, amount: number }} SalesChannelRow */
+
+const OUTFLOW_TYPES = new Set(["purchases", "expense", "withdrawal"]);
+
+function collectSalesRows(sales) {
+  if (Array.isArray(sales)) {
+    return sales.map((row) => Number(row.amount || 0));
+  }
+  if (sales && typeof sales === "object") {
+    return Object.values(sales).map((value) => (
+      typeof value === "number" ? value : Number(value?.amount || 0)
+    ));
+  }
+  return [];
+}
 
 /**
  * @param {Record<string, number> | SalesChannelRow[]} sales
- * @param {{ id: string, amount: number }[]} outflows
+ * @param {{ id: string, amount: number, type?: string }[]} outflows
  */
 export function computeCloseoutTotals(sales, outflows = []) {
-  let totalSales = 0;
-  if (Array.isArray(sales)) {
-    totalSales = sales.reduce((sum, row) => sum + Number(row.amount || 0), 0);
-  } else if (sales && typeof sales === "object") {
-    totalSales = Object.values(sales).reduce((sum, value) => {
-      const amount = typeof value === "number" ? value : Number(value?.amount || 0);
-      return sum + amount;
-    }, 0);
-  }
-  const totalOutflow = (outflows || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+  const rows = [
+    ...collectSalesRows(sales)
+      .filter((amount) => amount > 0)
+      .map((amount) => ({ type: "summary", amountHalalas: toHalalas(amount) })),
+    ...(outflows || [])
+      .filter((row) => Number(row.amount || 0) > 0)
+      .map((row) => ({
+        type: OUTFLOW_TYPES.has(row?.type) ? row.type : "expense",
+        amountHalalas: toHalalas(Number(row.amount || 0)),
+      })),
+  ];
+  const summary = calculateDaySummary(rows);
   return {
-    totalSales,
-    totalOutflow,
-    netMovement: totalSales - totalOutflow,
+    totalSales: toRiyals(summary.totalSalesHalalas),
+    totalOutflow: toRiyals(summary.totalOutflowHalalas),
+    netMovement: toRiyals(summary.netMovementHalalas),
   };
 }
 
