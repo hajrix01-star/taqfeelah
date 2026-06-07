@@ -122,6 +122,61 @@ export function aggregateChannels(entries, businessId, period, selectedDate, sel
   return [...mapped.values()].filter((channel) => channel.amount > 0);
 }
 
+export function entryTotalsHaveActivity(totals) {
+  if (!totals || typeof totals !== "object") return false;
+  return (Number(totals.sales) || 0) > 0
+    || (Number(totals.expense) || 0) > 0
+    || (Number(totals.proofs) || 0) > 0
+    || (Number(totals.pending) || 0) > 0;
+}
+
+export function preferLocalTotalsOverEmptyApi(localTotals, apiTotals) {
+  if (!apiTotals) return localTotals;
+  if (entryTotalsHaveActivity(localTotals) && !entryTotalsHaveActivity(apiTotals)) {
+    return localTotals;
+  }
+  return apiTotals;
+}
+
+/**
+ * @param {Object} input
+ * @param {Array<{ id?: string, day?: object, month?: object }>} [input.businesses]
+ * @param {Array<{ id?: string, businessId?: string, date?: string, type?: string, status?: string, amount?: number }>} [input.operationalEntries]
+ * @param {boolean} [input.monthly]
+ * @param {string} [input.selectedDate]
+ * @param {string} [input.selectedMonth]
+ * @param {(businessId: string) => boolean} [input.reviewEnabledForBusiness]
+ */
+export function buildBusinessesWithEntrySummaries({
+  businesses = [],
+  operationalEntries = [],
+  monthly = false,
+  selectedDate = "",
+  selectedMonth = "",
+  reviewEnabledForBusiness = () => false,
+}) {
+  const periodKey = monthly ? "month" : "day";
+  return businesses.map((business) => {
+    const record = monthly
+      ? summaryMonthFromEntries(operationalEntries, business.id, selectedMonth, reviewEnabledForBusiness)
+      : summarizeEntries(
+        entriesInPeriod(operationalEntries, business.id, "day", selectedDate, selectedMonth),
+        reviewEnabledForBusiness,
+      );
+    return {
+      ...business,
+      [periodKey]: {
+        sales: record.sales,
+        expense: record.expense,
+        net: record.net,
+        ratio: record.ratio,
+        proofs: record.proofs,
+        pending: record.pending,
+      },
+    };
+  });
+}
+
 export function duplicateSalesSignature(entries = []) {
   return entries.map((entry) => entry.id).sort().join("|");
 }

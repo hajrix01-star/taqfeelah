@@ -235,8 +235,11 @@ import {
 } from "@/features/org-config/client/store-channel-config";
 import {
   aggregateChannels,
+  buildBusinessesWithEntrySummaries,
   entriesInPeriod,
+  entryTotalsHaveActivity,
   newestEntries,
+  preferLocalTotalsOverEmptyApi,
   summarizeEntries,
   summaryDayFromEntries,
   summaryMonthFromEntries,
@@ -3202,15 +3205,26 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
     refreshKey: summaryRefreshKey,
   });
   const summaryApiHasData = summaryApiActive && !summaryLoading && Object.keys(summariesByStoreId).length > 0;
-  const comparisonBusinesses = summaryApiHasData ? businessesWithDaySummaries : scopedBusinesses;
+  const localComparisonBusinesses = buildBusinessesWithEntrySummaries({
+    businesses: scopedBusinesses,
+    operationalEntries,
+    monthly,
+    selectedDate,
+    selectedMonth,
+    reviewEnabledForBusiness,
+  });
   const daySummary = summaryDayFromEntriesWithLabels(operationalEntries, currentBusiness?.id, selectedDate, reviewEnabledForBusiness);
   const localCombinedResult = summarizeEntries(operationalEntries.filter((entry) => businessesList.some((business) => business.id === entry.businessId) && entryDateMatches(entry, period, selectedDate, selectedMonth, "2026", "2026-01-01", "2026-12-31")), reviewEnabledForBusiness);
   const apiStoreResult = summaryApiHasData && currentBusiness?.id ? getStoreResult(currentBusiness.id) : null;
+  const localMonthResult = summaryMonthFromEntries(operationalEntries, currentBusiness?.id, selectedMonth, reviewEnabledForBusiness);
+  const preferEntrySummaries = !summaryApiHasData
+    || (entryTotalsHaveActivity(localCombinedResult) && !entryTotalsHaveActivity(apiCombinedResult));
+  const comparisonBusinesses = preferEntrySummaries ? localComparisonBusinesses : businessesWithDaySummaries;
   const result = isCombined
-    ? (summaryApiHasData ? apiCombinedResult : localCombinedResult)
+    ? preferEntrySummaries ? localCombinedResult : apiCombinedResult
     : monthly
-      ? (summaryApiHasData && apiStoreResult ? apiStoreResult : summaryMonthFromEntries(operationalEntries, currentBusiness?.id, selectedMonth, reviewEnabledForBusiness))
-      : (apiStoreResult || daySummary);
+      ? preferLocalTotalsOverEmptyApi(localMonthResult, apiStoreResult)
+      : preferLocalTotalsOverEmptyApi(daySummary, apiStoreResult);
   const selectedBusinessEntries = currentBusiness ? entriesInPeriod(operationalEntries, currentBusiness.id, "day", selectedDate, selectedMonth) : [];
   const visibleDayOperations = newestEntries(selectedBusinessEntries);
   const attachmentGroup = attachmentsFromEntries(selectedBusinessEntries)[0] || null;
@@ -3985,14 +3999,24 @@ function ReportsScreen({ lang, operationalEntries = [], archivedReadOnlyBusiness
     refreshKey: summaryRefreshKey,
   });
   const reportsApiHasData = reportsApiEnabled && !reportsApiLoading && reportsApiLoaded;
-  const comparisonBusinesses = reportsApiHasData ? businessesWithSummaries : scopedBusinesses;
-  const useApiDetailTabs = reportsApiHasData && !isCombined;
   const scopedEntries = operationalEntries.filter((entry) => isCombined ? visibleReportBusinesses.some((business) => business.id === entry.businessId) : entry.businessId === safeSelectedBusiness);
   const periodEntries = scopedEntries.filter((entry) => entryDateMatches(entry, period, selectedReportDate, selectedReportMonth, selectedReportYear, customFrom, customTo));
   const localTotals = summarizeEntries(periodEntries, reviewEnabledForBusiness);
+  const localComparisonBusinesses = buildBusinessesWithEntrySummaries({
+    businesses: scopedBusinesses,
+    operationalEntries,
+    monthly,
+    selectedDate: selectedReportDate,
+    selectedMonth: selectedReportMonth,
+    reviewEnabledForBusiness,
+  });
+  const preferEntrySummaries = !reportsApiHasData
+    || (entryTotalsHaveActivity(localTotals) && !entryTotalsHaveActivity(apiCombinedTotals));
+  const comparisonBusinesses = preferEntrySummaries ? localComparisonBusinesses : businessesWithSummaries;
+  const useApiDetailTabs = reportsApiHasData && !isCombined && !preferEntrySummaries;
   const totals = isCombined
-    ? (reportsApiHasData ? apiCombinedTotals : localTotals)
-    : (reportsApiHasData && apiSingleStoreTotals ? apiSingleStoreTotals : localTotals);
+    ? preferEntrySummaries ? localTotals : apiCombinedTotals
+    : preferLocalTotalsOverEmptyApi(localTotals, reportsApiHasData ? apiSingleStoreTotals : null);
   const reportDay = selectedStore
     ? summaryDayFromEntriesWithLabels(operationalEntries, selectedStore.id, selectedReportDate, reviewEnabledForBusiness)
     : { id: selectedReportDate };
