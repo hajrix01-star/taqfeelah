@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -166,8 +166,13 @@ import {
 import { buildPrototypeDefaultStaff } from "@/features/demo/prototype-auth-boot";
 import { resolveOperationalEntriesBulkLoadWindow } from "@/features/entries/client/register-entries-load-window";
 import { resolveRuntimeApiActorContext, resolveRuntimeCapabilities } from "@/core/config/runtime-capabilities";
+import { useEmployeeEntryActions } from "@/features/employee-shell/client/use-employee-entry-actions";
+import { useEmployeePortalState } from "@/features/employee-shell/client/use-employee-portal-state";
 import { useOwnerSettingsState } from "@/features/org-config/client/use-owner-settings-state";
 import { useOwnerShellState } from "@/features/owner-shell/client/use-owner-shell-state";
+import { resolveSelectedOperationReviewEnabled } from "@/features/operations/client/register-operations-selection";
+import { useRegisterOperationsState } from "@/features/operations/client/use-register-operations-state";
+import { useRegisterSelectionState } from "@/features/operations/client/use-register-selection-state";
 import { CLOSEOUT_ALERTS_STORAGE_KEY } from "@/features/owner-shell/client/owner-shell-storage";
 import { useRegisterEntriesFromApi } from "@/features/entries/client/use-register-entries-from-api";
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
@@ -875,10 +880,10 @@ const copy = {
     shareNotebookImage: "Share image",
     downloadNotebookImage: "Save image",
     shareImageFailed: "Could not create the notebook image. Try saving it and sending manually.",
-    shareImageSavedHint: "Image saved — attach it from your gallery in WhatsApp.",
-    shareImagePasteHint: "WhatsApp opened with text, and the image was copied — paste it in the same chat.",
+    shareImageSavedHint: "Image saved â€” attach it from your gallery in WhatsApp.",
+    shareImagePasteHint: "WhatsApp opened with text, and the image was copied â€” paste it in the same chat.",
     shareImageWhatsAppPick: "Choose WhatsApp from the share menu to send the image.",
-    shareImageWhatsAppUnavailable: "WhatsApp opened with text, but image copy is unavailable — attach it manually from gallery.",
+    shareImageWhatsAppUnavailable: "WhatsApp opened with text, but image copy is unavailable â€” attach it manually from gallery.",
     imageReadyToShare: "Tap share or save to send the notebook image shown in the preview.",
     shareOptions: "Share options",
     imageFormat: "Notebook image",
@@ -1032,7 +1037,7 @@ const copy = {
     invalidCredentials: "Incorrect username or password",
     invalidEmployeePin: "Incorrect PIN",
     closeoutInAppAlert: "New daily closeout received",
-    closeoutInAppHint: "Submitted by staff — review in the log",
+    closeoutInAppHint: "Submitted by staff â€” review in the log",
     reviewCloseout: "View in log",
     dismissAlert: "Dismiss",
     dailyCloseoutAlertPrototype: "In-app owner alert when staff submit the daily summary",
@@ -1076,7 +1081,7 @@ const copy = {
     activeCategories: "Active categories",
     reviewWorkflow: "Review proof photos",
     reviewWorkflowDesc: "Show review status and the confirmation action for the owner.",
-    reviewDisabled: "Review is off — attachments remain available for viewing only.",
+    reviewDisabled: "Review is off â€” attachments remain available for viewing only.",
     changesSaved: "Changes saved",
     saveSettings: "Save changes",
     cancelChanges: "Cancel changes",
@@ -1186,7 +1191,7 @@ const copy = {
     nextMonth: "Next month",
     suggestedNextCloseout: "Suggested day based on the last saved closeout",
     changeDateAnytime: "You can change the date for a late entry or previous correction.",
-    archivedReadOnly: "Archived — view only",
+    archivedReadOnly: "Archived â€” view only",
     viewPastReports: "View past reports",
     viewPastAttachments: "View previous log",
     atLeastOneCategory: "Keep at least one category available for new entries.",
@@ -1249,7 +1254,7 @@ const copy = {
     desktopHeroDesc: "Record sales, outflow, and attachments, then follow daily shop movement clearly without accounting-system complexity.",
     ownerLogin: "Owner sign in",
     openOnMobile: "Open the app on your phone",
-    qrPrototypeNote: "Prototype code — connected when the live version is deployed",
+    qrPrototypeNote: "Prototype code â€” connected when the live version is deployed",
     fastEntryTitle: "Fast entry",
     fastEntryDesc: "Staff record daily sales and outflow in minutes.",
     clearFollowupTitle: "Clear follow-up",
@@ -1337,7 +1342,7 @@ const opTime = (item, lang) => item.createdAt ? new Intl.DateTimeFormat(lang ===
 const auditDateTime = (timestamp, lang) => {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return "-";
-  return `${formatCalendarDate(timestamp.slice(0, 10), lang)} · ${opTime({ createdAt: timestamp }, lang)}`;
+  return `${formatCalendarDate(timestamp.slice(0, 10), lang)} آ· ${opTime({ createdAt: timestamp }, lang)}`;
 };
 // طبقة السجل التشغيلي: المصدر الوحيد للأرقام والمرفقات والتقارير داخل البروتايب.
 // البنية مقصودة لتنتقل لاحقًا إلى API/DB دون إعادة تصميم الواجهة.
@@ -1773,7 +1778,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
                 maxLength={4}
                 value={code}
                 onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="• • • •"
+                placeholder="â€¢ â€¢ â€¢ â€¢"
                 className="mt-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]"
               />
               <button type="button" onClick={submitOtp} className="mt-5 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white">{text(lang, "verifyContinue")}</button>
@@ -1922,7 +1927,7 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
           />
         )}
         <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employeePin")}</p>
-        <input dir="ltr" inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value)} placeholder="• • • •" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]" />
+        <input dir="ltr" inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value)} placeholder="â€¢ â€¢ â€¢ â€¢" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]" />
         {!APP_IN_PRODUCTION_MODE ? <p className="mt-2 text-taq-meta font-bold text-[#827762]">{text(lang, "employeePinHint")}</p> : null}
         <label className="mt-3 flex cursor-pointer items-center gap-2.5">
           <input
@@ -2127,7 +2132,7 @@ function EmployeeHome({ lang, onSummary, onExpense, onViewAll, currentStore, ass
                   {entryIsVoided(entry) && <Badge tone="warning">{text(lang, "voided")}</Badge>}
                   {entryIsActive(entry) && entryWasRestored(entry) && <Badge tone="success">{text(lang, "restored")}</Badge>}
                 </div>
-                <p className="text-taq-meta text-[#8B8274]">{opTime(entry, lang)} · {text(lang, entry.type)}</p>
+                <p className="text-taq-meta text-[#8B8274]">{opTime(entry, lang)} آ· {text(lang, entry.type)}</p>
               </div>
             </div>
             <strong className={`shrink-0 tabular-nums text-sm font-bold ${entryIsVoided(entry) ? "line-through text-[#A99D87]" : entry.type === "summary" ? "text-[#257844]" : "text-[#B44747]"}`}><MoneyValue value={money(signedEntryAmount(entry), lang)} /></strong>
@@ -2145,7 +2150,7 @@ function EmployeeEntriesScreen({ lang, reviewEnabled = false, currentStore, assi
   return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
     <div className="mb-5"><p className="text-xs font-bold text-[#8B8274]">{text(lang, "tracking")}</p><h1 className="text-xl font-black">{text(lang, "myEntries")}</h1></div>
     <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><EmployeeStoreContext lang={lang} currentStore={currentStore} assignedStores={assignedStores} onSelect={onSelectStore} /></div>
-    {entries.length === 0 ? <div className="rounded-3xl bg-white p-8 text-center text-xs font-bold text-[#827762] ring-1 ring-black/[0.045]">{text(lang, "noEntriesDay")}</div> : <div className="space-y-3">{entries.map((item) => { const isSale = item.type === "summary"; const signedAmount = isSale ? item.amount : -item.amount; return <div key={item.id} className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-black">{operationDisplayLabel(item, lang)}</p>{entryIsVoided(item) && <Badge tone="warning">{text(lang, "voided")}</Badge>}{entryHasAttachment(item) && <Badge tone="navy">{text(lang, "attachmentExists")}</Badge>}</div><p className="mt-1 text-taq-meta font-bold text-[#827762]">{formatCalendarDate(item.date, lang)} · {opTime(item, lang)}</p></div><strong className={`shrink-0 tabular-nums text-sm font-black ${entryIsVoided(item) ? "text-[#A99D87] line-through" : isSale ? "text-[#257844]" : "text-[#B44747]"}`}><MoneyValue value={money(signedAmount, lang)} /></strong></div>{reviewEnabled && entryIsActive(item) && entryHasAttachment(item) && <p className={`mt-3 text-taq-meta font-black ${item.reviewed ? "text-[#257844]" : "text-[#B96725]"}`}>{item.reviewed ? text(lang, "reviewed") : text(lang, "waitingReview")}</p>}</div>; })}</div>}
+    {entries.length === 0 ? <div className="rounded-3xl bg-white p-8 text-center text-xs font-bold text-[#827762] ring-1 ring-black/[0.045]">{text(lang, "noEntriesDay")}</div> : <div className="space-y-3">{entries.map((item) => { const isSale = item.type === "summary"; const signedAmount = isSale ? item.amount : -item.amount; return <div key={item.id} className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-black">{operationDisplayLabel(item, lang)}</p>{entryIsVoided(item) && <Badge tone="warning">{text(lang, "voided")}</Badge>}{entryHasAttachment(item) && <Badge tone="navy">{text(lang, "attachmentExists")}</Badge>}</div><p className="mt-1 text-taq-meta font-bold text-[#827762]">{formatCalendarDate(item.date, lang)} آ· {opTime(item, lang)}</p></div><strong className={`shrink-0 tabular-nums text-sm font-black ${entryIsVoided(item) ? "text-[#A99D87] line-through" : isSale ? "text-[#257844]" : "text-[#B44747]"}`}><MoneyValue value={money(signedAmount, lang)} /></strong></div>{reviewEnabled && entryIsActive(item) && entryHasAttachment(item) && <p className={`mt-3 text-taq-meta font-black ${item.reviewed ? "text-[#257844]" : "text-[#B96725]"}`}>{item.reviewed ? text(lang, "reviewed") : text(lang, "waitingReview")}</p>}</div>; })}</div>}
   </motion.section>;
 }
 
@@ -2751,7 +2756,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
       </motion.section>
     );
   }
-  if (section === "stores") return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={lang === "ar" ? "المحلات" : "Shops"} onBack={() => setSection("home")} /><div className="mb-3 flex items-center justify-between"><p className="text-xs font-bold text-[#716753]">{text(lang, "activeStores")}</p><button onClick={() => setShowAddStore(!showAddStore)} className="flex items-center gap-1 text-taq-meta font-black text-[#9A823E]"><Plus className="h-3.5 w-3.5" />{text(lang, "addStore")}</button></div>{showAddStore && <div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><input value={newStoreName} onChange={(event) => setNewStoreName(event.target.value)} placeholder={text(lang, "newStoreName")} className="mb-2 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" /><input value={newStoreLocation} onChange={(event) => setNewStoreLocation(event.target.value)} placeholder={text(lang, "newStoreLocation")} className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" /><button onClick={addStore} className="w-full rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">{text(lang, "confirmAddStore")}</button></div>}<div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">{activeStoredBusinesses.length ? activeStoredBusinesses.map((business, index) => <button key={business.id} onClick={() => openStore(business.id)} className={`flex w-full items-center justify-between px-4 py-4 text-start ${index < activeStoredBusinesses.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}><div><p className="text-xs font-black">{displayBusinessName(business)}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{displayLocation(business)} · <span className="text-[#257844]">{text(lang, "storeActive")}</span></p></div><Arrow className="h-4 w-4 text-[#B99844]" /></button>) : <p className="p-5 text-center text-xs font-bold text-[#827762]">{text(lang, "noActiveStores")}</p>}</div>{archivedStoredBusinesses.length > 0 && <><button onClick={() => setShowArchivedStores(!showArchivedStores)} className="mb-3 flex items-center gap-1 text-taq-meta font-black text-[#9A823E]">{text(lang, showArchivedStores ? "hideArchived" : "showArchived")} ({archivedStoredBusinesses.length})<ChevronDown className={`h-3.5 w-3.5 ${showArchivedStores ? "rotate-180" : ""}`} /></button>{showArchivedStores && <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">{archivedStoredBusinesses.map((business) => <button key={business.id} onClick={() => openStore(business.id)} className="flex w-full items-center justify-between px-4 py-4 text-start opacity-70"><div><p className="text-xs font-black">{displayBusinessName(business)}</p><p className="mt-1 text-taq-meta font-bold text-[#B96725]">{text(lang, "archivedStore")}</p></div><Arrow className="h-4 w-4" /></button>)}</div>}</>}<DeleteDialog /></motion.section>;
+  if (section === "stores") return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={lang === "ar" ? "المحلات" : "Shops"} onBack={() => setSection("home")} /><div className="mb-3 flex items-center justify-between"><p className="text-xs font-bold text-[#716753]">{text(lang, "activeStores")}</p><button onClick={() => setShowAddStore(!showAddStore)} className="flex items-center gap-1 text-taq-meta font-black text-[#9A823E]"><Plus className="h-3.5 w-3.5" />{text(lang, "addStore")}</button></div>{showAddStore && <div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><input value={newStoreName} onChange={(event) => setNewStoreName(event.target.value)} placeholder={text(lang, "newStoreName")} className="mb-2 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" /><input value={newStoreLocation} onChange={(event) => setNewStoreLocation(event.target.value)} placeholder={text(lang, "newStoreLocation")} className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" /><button onClick={addStore} className="w-full rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">{text(lang, "confirmAddStore")}</button></div>}<div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">{activeStoredBusinesses.length ? activeStoredBusinesses.map((business, index) => <button key={business.id} onClick={() => openStore(business.id)} className={`flex w-full items-center justify-between px-4 py-4 text-start ${index < activeStoredBusinesses.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}><div><p className="text-xs font-black">{displayBusinessName(business)}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{displayLocation(business)} آ· <span className="text-[#257844]">{text(lang, "storeActive")}</span></p></div><Arrow className="h-4 w-4 text-[#B99844]" /></button>) : <p className="p-5 text-center text-xs font-bold text-[#827762]">{text(lang, "noActiveStores")}</p>}</div>{archivedStoredBusinesses.length > 0 && <><button onClick={() => setShowArchivedStores(!showArchivedStores)} className="mb-3 flex items-center gap-1 text-taq-meta font-black text-[#9A823E]">{text(lang, showArchivedStores ? "hideArchived" : "showArchived")} ({archivedStoredBusinesses.length})<ChevronDown className={`h-3.5 w-3.5 ${showArchivedStores ? "rotate-180" : ""}`} /></button>{showArchivedStores && <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">{archivedStoredBusinesses.map((business) => <button key={business.id} onClick={() => openStore(business.id)} className="flex w-full items-center justify-between px-4 py-4 text-start opacity-70"><div><p className="text-xs font-black">{displayBusinessName(business)}</p><p className="mt-1 text-taq-meta font-bold text-[#B96725]">{text(lang, "archivedStore")}</p></div><Arrow className="h-4 w-4" /></button>)}</div>}</>}<DeleteDialog /></motion.section>;
   if (section === "team") {
     return (
       <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
@@ -2769,7 +2774,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
                 <div>
                   <p className="text-sm font-black">{lang === "ar" ? person.nameAr : person.nameEn}</p>
                   <p className="mt-1 text-taq-meta font-bold text-[#827762]">
-                    {person.active ? text(lang, "active") : text(lang, "stopChannel")} · {employeeStoreIds(person).length} {lang === "ar" ? "محل" : "shop(s)"}
+                    {person.active ? text(lang, "active") : text(lang, "stopChannel")} آ· {employeeStoreIds(person).length} {lang === "ar" ? "محل" : "shop(s)"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -2986,7 +2991,7 @@ function DateSelector({ lang, period, setPeriod, allowedPeriods = ["day", "month
   }, [open]);
   const modes = allowedPeriods.map((id) => ({ id, label: id === "day" ? "day" : id === "month" ? "month" : id === "year" ? "year" : "custom" }));
   const activeDate = selectedDate || todayIsoDate();
-  const selectedLabel = period === "day" ? formatCalendarDate(activeDate, lang) : period === "month" ? formatSelectedMonth(selectedMonth, lang) : period === "year" ? selectedYear : `${customFrom} — ${customTo}`;
+  const selectedLabel = period === "day" ? formatCalendarDate(activeDate, lang) : period === "month" ? formatSelectedMonth(selectedMonth, lang) : period === "year" ? selectedYear : `${customFrom} â€” ${customTo}`;
   const promptKey = period === "day" ? "selectDay" : period === "month" ? "selectMonth" : period === "year" ? "selectYear" : "selectRange";
   const invalidCustomRange = period === "custom" && draftCustomFrom > draftCustomTo;
   const weekDays = lang === "ar" ? ["ح", "ن", "ث", "ر", "خ", "ج", "س"] : ["S", "M", "T", "W", "T", "F", "S"];
@@ -3236,8 +3241,8 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-6 pt-1">
       {pendingEmployeeCloseouts.length > 0 && <PendingCloseoutsNotice lang={lang} pending={pendingEmployeeCloseouts} onView={onViewPendingCloseouts} />}
-      {closeoutAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#E6F5E9] p-3 ring-1 ring-[#39A160]/15"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#257844]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#257844]">{text(lang, "closeoutInAppAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === closeoutAlerts[0].businessId), lang)} · {formatCalendarDate(closeoutAlerts[0].date, lang)} · {lang === "ar" ? closeoutAlerts[0].employeeNameAr : closeoutAlerts[0].employeeNameEn}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "closeoutInAppHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onReviewCloseout(closeoutAlerts[0])} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#257844] ring-1 ring-[#39A160]/15">{text(lang, "reviewCloseout")}</button><button type="button" onClick={() => onDismissCloseout(closeoutAlerts[0].id)} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "dismissAlert")}</button></div></div>}
-      {duplicateSalesAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#FFF1EE] p-3 ring-1 ring-[#B44747]/10"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#B44747]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#B44747]">{text(lang, "duplicateSalesOwnerAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === duplicateSalesAlerts[0].businessId), lang)} · {formatCalendarDate(duplicateSalesAlerts[0].date, lang)} · {duplicateSalesAlerts[0].entries.length} {text(lang, "summary")}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "duplicateSalesOwnerHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onReviewDuplicate(duplicateSalesAlerts[0])} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#B44747] ring-1 ring-[#B44747]/10">{text(lang, "reviewInLog")}</button><button type="button" onClick={() => onAcknowledgeDuplicate(duplicateSalesAlerts[0])} title={text(lang, "approveMultipleSalesHint")} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "approveMultipleSales")}</button></div></div>}
+      {closeoutAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#E6F5E9] p-3 ring-1 ring-[#39A160]/15"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#257844]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#257844]">{text(lang, "closeoutInAppAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === closeoutAlerts[0].businessId), lang)} آ· {formatCalendarDate(closeoutAlerts[0].date, lang)} آ· {lang === "ar" ? closeoutAlerts[0].employeeNameAr : closeoutAlerts[0].employeeNameEn}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "closeoutInAppHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onReviewCloseout(closeoutAlerts[0])} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#257844] ring-1 ring-[#39A160]/15">{text(lang, "reviewCloseout")}</button><button type="button" onClick={() => onDismissCloseout(closeoutAlerts[0].id)} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "dismissAlert")}</button></div></div>}
+      {duplicateSalesAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#FFF1EE] p-3 ring-1 ring-[#B44747]/10"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#B44747]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#B44747]">{text(lang, "duplicateSalesOwnerAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === duplicateSalesAlerts[0].businessId), lang)} آ· {formatCalendarDate(duplicateSalesAlerts[0].date, lang)} آ· {duplicateSalesAlerts[0].entries.length} {text(lang, "summary")}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "duplicateSalesOwnerHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onReviewDuplicate(duplicateSalesAlerts[0])} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#B44747] ring-1 ring-[#B44747]/10">{text(lang, "reviewInLog")}</button><button type="button" onClick={() => onAcknowledgeDuplicate(duplicateSalesAlerts[0])} title={text(lang, "approveMultipleSalesHint")} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "approveMultipleSales")}</button></div></div>}
       <Notebook fullPage theme={notebookTheme} lang={lang}>
         <NotebookHeading lang={lang} label={monthly ? text(lang, "monthlySummary") : text(lang, "dailySummary")} onShare={() => onShareNotebook({ theme: notebookTheme, period, selectedBusiness, includedBusinessIds: businessesList.map((business) => business.id), selectedDay: daySummary.id, selectedDate, selectedMonth, screen: "home", showDetails: expanded && !monthly && !isCombined })} dateSelector={<DateSelector compact lang={lang} period={period} setPeriod={changePeriod} selectedDay={selectedDay} setSelectedDay={(id) => { setSelectedDay(id); setShowAttachments(false); }} selectedDate={selectedDate} setSelectedDate={(date) => { setSelectedDate(date); setShowAttachments(false); }} fullCalendar selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />} />
         <StoreScopeTabs lang={lang} businessesList={businessesList} selectedBusiness={selectedBusiness} setSelectedBusiness={(id) => { setSelectedBusiness(id); setExpanded(false); setShowAttachments(false); }} />
@@ -3252,7 +3257,7 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
             <NotebookRow><NumberLine lang={lang} handwritten label={text(lang, "purchasesExpenses")} value={money(result.expense, lang)} valueClassName="text-[#B44747]" /></NotebookRow>
             <NotebookRow><div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "outflowRatio")}</span><strong className="text-[#B44747]">{result.ratio}</strong></div></NotebookRow>
             <NotebookRow strong lines={2}><div className="flex w-full items-end justify-between"><span className="text-sm font-extrabold">{monthly ? text(lang, "recordedMonthResult") : text(lang, "netMovement")}</span><strong className={`tabular-nums text-2xl font-extrabold ${result.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(result.net, lang)} /></strong></div></NotebookRow>
-            <NotebookRow>{monthly ? <div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "attachments")}</span><span>{result.proofs}{reviewEnabled && <> · <span className="text-[#B96725]">{result.pending} {text(lang, "notReviewed")}</span></>}</span></div> : <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span className="relative pb-1">{text(lang, "attachments")}{showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span><span>{result.proofs}{reviewEnabled && <> · <span className="text-[#B96725]">{result.pending} {text(lang, "notReviewed")}</span></>}</span></button>}</NotebookRow>
+            <NotebookRow>{monthly ? <div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "attachments")}</span><span>{result.proofs}{reviewEnabled && <> آ· <span className="text-[#B96725]">{result.pending} {text(lang, "notReviewed")}</span></>}</span></div> : <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span className="relative pb-1">{text(lang, "attachments")}{showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span><span>{result.proofs}{reviewEnabled && <> آ· <span className="text-[#B96725]">{result.pending} {text(lang, "notReviewed")}</span></>}</span></button>}</NotebookRow>
             {!monthly && showAttachments && <DayAttachments lang={lang} group={attachmentGroup} reviewEnabled={reviewEnabledForBusiness(currentBusiness.id)} onOpenOperation={onOpenOperation} />}
             <NotebookRow className="justify-center"><InkTab active={expanded} showActiveUnderline={false} onClick={() => setExpanded(!expanded)} className="inline-flex items-center gap-1">{expanded ? text(lang, "hideDetails") : text(lang, "showMore")}{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</InkTab></NotebookRow>
           </div>
@@ -3285,7 +3290,7 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
                         {entryIsVoided(item) && <Badge tone="warning">{text(lang, "voided")}</Badge>}
                       </span>
                       <small className="mt-1 block truncate text-taq-meta font-bold text-[#8A816F]">
-                        {opTime(item, lang)} · {entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}
+                        {opTime(item, lang)} آ· {entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}
                       </small>
                     </span>
                   </button>
@@ -3792,7 +3797,7 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
                         {entryIsVoided(entry) && <Badge tone="warning">{text(lang, "voided")}</Badge>}
                         {entryHasAttachment(entry) && <Badge tone="navy">{text(lang, "attachmentExists")}</Badge>}
                       </div>
-                      <p className="mt-1 truncate text-taq-nav font-bold text-[#827762]">{registerDateLabel} · {opTime(entry, lang)} · {businessName(store, lang, true) || businessName(store, lang)} · {actorLabel}</p>
+                      <p className="mt-1 truncate text-taq-nav font-bold text-[#827762]">{registerDateLabel} آ· {opTime(entry, lang)} آ· {businessName(store, lang, true) || businessName(store, lang)} آ· {actorLabel}</p>
                     </div>
                     <div className="shrink-0 text-end">
                       <strong className={`block tabular-nums text-taq-meta font-black ${entryIsVoided(entry) ? "text-[#A99D87] line-through" : isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
@@ -3837,7 +3842,7 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
                         <p className="text-taq-meta font-black text-[#112A46]">{formatCloseoutDayLabel({ formattedDate: formatCalendarDate(summary.date, lang), daySequence: summary.daySequence, sameDayCloseoutCount: summary.sameDayCloseoutCount })}</p>
                         <p className="rounded-full border border-[#8EA1C4] px-2.5 py-1 text-taq-meta font-black text-[#214B7B]">{lang === "ar" ? `أدخلها ${summary.actorLabel}` : `Entered by ${summary.actorLabel}`}</p>
                       </div>
-                      <p className="mt-1 text-taq-meta font-bold text-[#716753]">{lang === "ar" ? "تقفيلة يوم" : "Daily closeout"} · {storeLabel}</p>
+                      <p className="mt-1 text-taq-meta font-bold text-[#716753]">{lang === "ar" ? "تقفيلة يوم" : "Daily closeout"} آ· {storeLabel}</p>
                       <div className="mt-2 grid grid-cols-3 gap-2 border-t border-dashed border-[#DDD3C0] pt-2">
                         <p className="text-taq-meta font-black text-[#112A46]">{lang === "ar" ? "الدخل" : "In"} <span className="tabular-nums"><MoneyValue value={money(summary.displaySales, lang)} /></span></p>
                         <p className="text-taq-meta font-black text-[#B44747]">{lang === "ar" ? "الخارج" : "Out"} <span className="tabular-nums"><MoneyValue value={money(-summary.totals.expense, lang)} /></span></p>
@@ -3848,7 +3853,7 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {summary.salesChannels.map((channel) => (
                               <span key={channel.channelId} className="rounded-full bg-[#E6F5E9] px-2 py-0.5 text-taq-nav font-bold text-[#257844]">
-                                {channel.name} · <span className="tabular-nums"><MoneyValue value={money(channel.amount, lang)} /></span>
+                                {channel.name} آ· <span className="tabular-nums"><MoneyValue value={money(channel.amount, lang)} /></span>
                               </span>
                             ))}
                           </div>
@@ -3869,7 +3874,7 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
                             </strong>
                             <span className="min-w-0 text-end">
                               <span className="truncate text-taq-meta font-bold text-[#112A46]">{row.label}</span>
-                              <small className="mt-0.5 block truncate text-taq-nav font-bold text-[#8A816F]">{opTime(row.item, lang)} · {entryHasAttachment(row.item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}</small>
+                              <small className="mt-0.5 block truncate text-taq-nav font-bold text-[#8A816F]">{opTime(row.item, lang)} آ· {entryHasAttachment(row.item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}</small>
                             </span>
                           </button>
                         )))}
@@ -3906,12 +3911,12 @@ function OutflowAnalysis({ lang, period, selectedBusiness, selectedDay, selected
     apiCount,
   );
   const selectedCategoryLabel = category === "all" ? text(lang, "allCategories") : text(lang, outflowReportCategories.find((item) => item.id === category)?.label || "other");
-  const totalLabel = category === "all" ? text(lang, "totalOutflow") : `${text(lang, "totalOutflow")} · ${selectedCategoryLabel}`;
+  const totalLabel = category === "all" ? text(lang, "totalOutflow") : `${text(lang, "totalOutflow")} آ· ${selectedCategoryLabel}`;
   return <div><div className="flex min-h-[88px] flex-wrap content-center items-end gap-x-4 gap-y-3 pb-3 pt-2">{outflowReportCategories.map((item) => { const active = category === item.id; return <button key={item.id} onClick={() => setCategory(item.id)} className={`relative pb-1.5 text-taq-meta font-bold transition ${active ? "text-[#B44747]" : "text-[#806528]"}`}><span className="relative inline-flex whitespace-nowrap">{text(lang, item.label)}{active && <span className="absolute -bottom-[7px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span></button>; })}</div><FinancialRows lang={lang} rows={[
     { id: "total", label: totalLabel, value: money(total, lang), valueClassName: "text-[#B44747]" },
     { id: "count", label: text(lang, "numberTransactions"), value: `${count}` },
     { id: "average", label: text(lang, "averageTransaction"), value: money(average, lang), valueClassName: "text-[#806528]" },
-  ]} /><NotebookRow className="justify-center"><InkTab active={showTransactions} onClick={() => setShowTransactions(!showTransactions)}>{text(lang, showTransactions ? "hideTransactions" : "viewTransactions")}</InkTab></NotebookRow>{showTransactions && (visibleRecords.length ? <div>{newestEntries(visibleRecords).map((record) => { const store = businessesList.find((business) => business.id === record.businessId); return <NotebookRow key={record.id} lines={2}><div className="w-full"><div className="mb-1 flex items-end justify-between text-xs"><strong className="font-medium text-[#112A46]">{text(lang, outflowReportCategories.find((item) => item.id === entryCategory(record))?.label || "other")}</strong><strong className="tabular-nums font-bold text-[#B44747]"><MoneyValue value={money(-record.amount, lang)} /></strong></div><div className="flex justify-between text-taq-meta font-bold text-[#806528]"><span>{formatCalendarDate(record.date, lang)} · {businessName(store, lang, true)}</span><span>{entryHasAttachment(record) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}</span></div></div></NotebookRow>; })}</div> : <NotebookRow><p className="text-xs font-bold text-[#806528]">{text(lang, "noOutflowPeriod")}</p></NotebookRow>)}</div>;
+  ]} /><NotebookRow className="justify-center"><InkTab active={showTransactions} onClick={() => setShowTransactions(!showTransactions)}>{text(lang, showTransactions ? "hideTransactions" : "viewTransactions")}</InkTab></NotebookRow>{showTransactions && (visibleRecords.length ? <div>{newestEntries(visibleRecords).map((record) => { const store = businessesList.find((business) => business.id === record.businessId); return <NotebookRow key={record.id} lines={2}><div className="w-full"><div className="mb-1 flex items-end justify-between text-xs"><strong className="font-medium text-[#112A46]">{text(lang, outflowReportCategories.find((item) => item.id === entryCategory(record))?.label || "other")}</strong><strong className="tabular-nums font-bold text-[#B44747]"><MoneyValue value={money(-record.amount, lang)} /></strong></div><div className="flex justify-between text-taq-meta font-bold text-[#806528]"><span>{formatCalendarDate(record.date, lang)} آ· {businessName(store, lang, true)}</span><span>{entryHasAttachment(record) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}</span></div></div></NotebookRow>; })}</div> : <NotebookRow><p className="text-xs font-bold text-[#806528]">{text(lang, "noOutflowPeriod")}</p></NotebookRow>)}</div>;
 }
 
 function RatioBadge({ value }) {
@@ -4104,7 +4109,7 @@ async function captureNotebookPreviewBlob(element, backgroundColor = "#FFFDF7") 
   return captureNotebookShareBlob(element, backgroundColor);
 }
 
-/** Share image via OS sheet (WhatsApp on mobile). Never downloads — wa.me cannot attach files. */
+/** Share image via OS sheet (WhatsApp on mobile). Never downloads â€” wa.me cannot attach files. */
 async function shareNotebookImageToWhatsApp(file, caption, lang) {
   return shareImageThroughWhatsApp({
     file,
@@ -4211,10 +4216,10 @@ function NotebookShareModal({ lang, snapshot, onClose, businessesList = business
       : monthly
         ? summaryMonthFromEntries(operationalEntries, business.id, snapshot.selectedMonth)
         : selectedDayItem;
-  const record = isOutflowReport ? { sales: 0, expense: outflowTotal, net: -outflowTotal, ratio: "—" } : normalRecord;
-  const ratio = record.ratio || (record.sales > 0 ? `${((record.expense / record.sales) * 100).toFixed(1)}%` : record.expense > 0 ? "—" : "0.0%");
+  const record = isOutflowReport ? { sales: 0, expense: outflowTotal, net: -outflowTotal, ratio: "â€”" } : normalRecord;
+  const ratio = record.ratio || (record.sales > 0 ? `${((record.expense / record.sales) * 100).toFixed(1)}%` : record.expense > 0 ? "â€”" : "0.0%");
   const title = combined ? text(lang, snapshot.screen === "reports" ? "combinedReport" : "combinedCloseout") : businessName(business, lang);
-  const periodLabel = sharePeriod === "year" ? shareYear : sharePeriod === "custom" ? `${formatCalendarDate(shareFrom, lang)} — ${formatCalendarDate(shareTo, lang)}` : monthly ? selectedMonthItem : fullDate(selectedDayItem, lang);
+  const periodLabel = sharePeriod === "year" ? shareYear : sharePeriod === "custom" ? `${formatCalendarDate(shareFrom, lang)} â€” ${formatCalendarDate(shareTo, lang)}` : monthly ? selectedMonthItem : fullDate(selectedDayItem, lang);
   const outflowCategoryLabel = outflowCategory === "all" ? text(lang, "allCategories") : text(lang, outflowReportCategories.find((item) => item.id === outflowCategory)?.label || "other");
   const activeTheme = notebookThemes[snapshot.theme] || notebookThemes.yellow;
   const lines = {
@@ -4284,7 +4289,7 @@ function NotebookShareModal({ lang, snapshot, onClose, businessesList = business
   const shareOutflowOperations = showOutflowOperations ? newestEntries(filteredOutflowEntries) : [];
   const shareChannels = snapshot.reportChannels || channels;
   const salesBase = record.sales || 0;
-  const percentageOfSales = (amount) => salesBase > 0 ? `${((amount / salesBase) * 100).toFixed(1)}%` : amount > 0 ? "—" : "0.0%";
+  const percentageOfSales = (amount) => salesBase > 0 ? `${((amount / salesBase) * 100).toFixed(1)}%` : amount > 0 ? "â€”" : "0.0%";
   const shareEntries = scopedShareEntries;
   const detailOutflow = outflowReportCategories.filter((item) => item.id !== "all").map((item) => ({ ...item, amount: shareEntries.filter((entry) => entryIsActive(entry) && entryIsOutflow(entry) && entryCategory(entry) === item.id).reduce((sum, entry) => sum + entry.amount, 0) })).filter((item) => item.amount > 0);
   const salesDetailRows = aggregateChannels(operationalEntries, snapshot.selectedBusiness, monthly ? "month" : "day", shareDate, snapshot.selectedMonth, shareChannels).map((channel) => {
@@ -4341,11 +4346,11 @@ function NotebookShareModal({ lang, snapshot, onClose, businessesList = business
               : { headers: [text(lang, "reportType"), valueHeader, detailsHeader], rows: tableRows.map((row) => [row.label, row.value, ""]) };
   if (showHomeOperations) {
     exportTable.rows.push([text(lang, "operations"), "", formatCalendarDate(shareDate, lang)]);
-    shareOperations.forEach((item) => exportTable.rows.push([operationDisplayLabel(item, lang), money(signedEntryAmount(item), lang), `${opTime(item, lang)} · ${entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}`]));
+    shareOperations.forEach((item) => exportTable.rows.push([operationDisplayLabel(item, lang), money(signedEntryAmount(item), lang), `${opTime(item, lang)} آ· ${entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}`]));
   }
   if (showOutflowOperations) {
     exportTable.rows.push([text(lang, "operations"), "", periodLabel]);
-    shareOutflowOperations.forEach((item) => exportTable.rows.push([operationDisplayLabel(item, lang), money(signedEntryAmount(item), lang), `${formatCalendarDate(item.date, lang)} · ${opTime(item, lang)} · ${entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}`]));
+    shareOutflowOperations.forEach((item) => exportTable.rows.push([operationDisplayLabel(item, lang), money(signedEntryAmount(item), lang), `${formatCalendarDate(item.date, lang)} آ· ${opTime(item, lang)} آ· ${entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}`]));
   }
   const safeExportName = `${lang === "ar" ? "تقفيلة" : "Taqfeelah"}-${snapshot.screen}-${shareDate}`;
   const imageFilename = `${safeExportName}.png`;
@@ -4396,7 +4401,7 @@ function NotebookShareModal({ lang, snapshot, onClose, businessesList = business
   const exportExcel = () => {
     const rows = [exportTable.headers, ...exportTable.rows];
     const csvRows = rows.map((row) => row.map(csvCell).join(","));
-    const csv = "﻿" + csvRows.join("\n");
+    const csv = "ï»؟" + csvRows.join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -4465,7 +4470,7 @@ function NotebookShareModal({ lang, snapshot, onClose, businessesList = business
                     {shareBusinessRows.map((row) => <div key={row.business.id} className="grid h-[44px] grid-cols-[1.05fr_0.9fr_0.9fr_0.9fr] items-end gap-1 pb-2 text-taq-meta"><span className="truncate font-bold">{businessName(row.business, lang, true) || businessName(row.business, lang)}</span><strong className="text-center tabular-nums">{money(row.sales, lang)}</strong><strong className="text-center tabular-nums text-[#B44747]">{money(row.expense, lang)}</strong><strong className={`text-center tabular-nums ${row.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}>{money(row.net, lang)}</strong></div>)}
                     <div className="mt-1 grid h-[55px] grid-cols-[1.05fr_0.9fr_0.9fr_0.9fr] items-end gap-1 border-t-2 border-[#112A46]/55 pb-2 text-taq-meta"><span className="font-bold">{text(lang, "combinedTotal")}</span><strong className="text-center tabular-nums">{money(record.sales, lang)}</strong><strong className="text-center tabular-nums text-[#B44747]">{money(record.expense, lang)}</strong><strong className={`text-center tabular-nums ${record.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}>{money(record.net, lang)}</strong></div>
                   </> : isOutflowReport ? <>
-                    <div className="flex min-h-[44px] items-end pb-2 text-taq-meta font-bold text-[#806528]">{text(lang, "detailedOutflowReport")} · {outflowCategoryLabel}</div>
+                    <div className="flex min-h-[44px] items-end pb-2 text-taq-meta font-bold text-[#806528]">{text(lang, "detailedOutflowReport")} آ· {outflowCategoryLabel}</div>
                     <FinancialRows lang={lang} rows={[
                       { id: "share-total", label: text(lang, "totalOutflow"), value: money(outflowTotal, lang), valueClassName: "text-[#B44747]" },
                       { id: "share-count", label: text(lang, "numberTransactions"), value: `${filteredOutflowEntries.length}` },
@@ -4486,7 +4491,7 @@ function NotebookShareModal({ lang, snapshot, onClose, businessesList = business
                             </strong>
                             <span className="min-w-0 text-end">
                               <span className="block truncate text-taq-meta font-bold text-[#112A46]">{operationDisplayLabel(item, lang)}</span>
-                              <small className="mt-0.5 block truncate text-taq-nav font-bold text-[#8A816F]">{formatCalendarDate(item.date, lang)} · {opTime(item, lang)} · {entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}</small>
+                              <small className="mt-0.5 block truncate text-taq-nav font-bold text-[#8A816F]">{formatCalendarDate(item.date, lang)} آ· {opTime(item, lang)} آ· {entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}</small>
                             </span>
                           </div>
                         )) : (
@@ -4539,7 +4544,7 @@ function NotebookShareModal({ lang, snapshot, onClose, businessesList = business
                               </strong>
                               <span className="min-w-0 text-end">
                                 <span className="block truncate text-taq-meta font-bold text-[#112A46]">{operationDisplayLabel(item, lang)}</span>
-                                <small className="mt-0.5 block truncate text-taq-nav font-bold text-[#8A816F]">{opTime(item, lang)} · {entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}</small>
+                                <small className="mt-0.5 block truncate text-taq-nav font-bold text-[#8A816F]">{opTime(item, lang)} آ· {entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}</small>
                               </span>
                             </div>
                           );
@@ -4582,7 +4587,7 @@ function NotebookShareModal({ lang, snapshot, onClose, businessesList = business
               <Download className="h-3.5 w-3.5" />{text(lang, "downloadNotebookImage")}
             </button>
             <button type="button" disabled={imageBusy} onClick={shareImageViaWhatsApp} className="flex items-center justify-center gap-1.5 rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-60">
-              <Send className="h-3.5 w-3.5" />{imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…") : text(lang, "shareViaWhatsApp")}
+              <Send className="h-3.5 w-3.5" />{imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparingâ€¦") : text(lang, "shareViaWhatsApp")}
             </button>
           </div>
         ) : (
@@ -4608,7 +4613,7 @@ ${text(lang, "amount")}: ${money(signedEntryAmount(item), lang)}
 ${text(lang, "date")}: ${formatCalendarDate(item.date, lang)}
 ${text(lang, "note")}: ${item.note || "-"}`;
   const sendWhatsApp = () => { window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank"); onClose(); };
-  return <AnimatePresence><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[60] flex items-end bg-[#112A46]/50 sm:items-center sm:justify-center sm:p-6 lg:items-end lg:justify-start lg:p-0"><motion.div initial={{ y: 18 }} animate={{ y: 0 }} exit={{ y: 18 }} className="relative z-10 w-full rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[560px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"><div className="mb-4 flex items-start justify-between"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E6F5E9] text-[#257844]"><Check className="h-5 w-5" /></div><button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]"><X className="h-4 w-4" /></button></div><h3 className="text-base font-black">{text(lang, "outflowSavedTitle")}</h3><p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">{text(lang, "outflowSavedDesc")}</p><div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-black/[0.045]"><div className="flex items-center justify-between gap-2"><div><p className="text-xs font-black text-[#112A46]">{categoryLabel}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{businessName(store, lang)} · {formatCalendarDate(item.date, lang)}</p></div><strong className="tabular-nums text-sm font-black text-[#B44747]">{money(signedEntryAmount(item), lang)}</strong></div></div><p className="mt-4 text-xs font-bold text-[#716753]">{text(lang, "sendOutflowQuestion")}</p><div className="mt-5 grid grid-cols-[1fr_1.15fr] gap-3"><button onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">{text(lang, "keepWithoutSending")}</button><button onClick={sendWhatsApp} className="flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white"><Send className="h-4 w-4" />{text(lang, "saveShareWhatsApp")}</button></div></motion.div></motion.div></AnimatePresence>;
+  return <AnimatePresence><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[60] flex items-end bg-[#112A46]/50 sm:items-center sm:justify-center sm:p-6 lg:items-end lg:justify-start lg:p-0"><motion.div initial={{ y: 18 }} animate={{ y: 0 }} exit={{ y: 18 }} className="relative z-10 w-full rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[560px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"><div className="mb-4 flex items-start justify-between"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E6F5E9] text-[#257844]"><Check className="h-5 w-5" /></div><button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]"><X className="h-4 w-4" /></button></div><h3 className="text-base font-black">{text(lang, "outflowSavedTitle")}</h3><p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">{text(lang, "outflowSavedDesc")}</p><div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-black/[0.045]"><div className="flex items-center justify-between gap-2"><div><p className="text-xs font-black text-[#112A46]">{categoryLabel}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{businessName(store, lang)} آ· {formatCalendarDate(item.date, lang)}</p></div><strong className="tabular-nums text-sm font-black text-[#B44747]">{money(signedEntryAmount(item), lang)}</strong></div></div><p className="mt-4 text-xs font-bold text-[#716753]">{text(lang, "sendOutflowQuestion")}</p><div className="mt-5 grid grid-cols-[1fr_1.15fr] gap-3"><button onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">{text(lang, "keepWithoutSending")}</button><button onClick={sendWhatsApp} className="flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white"><Send className="h-4 w-4" />{text(lang, "saveShareWhatsApp")}</button></div></motion.div></motion.div></AnimatePresence>;
 }
 
 function OperationModal({ lang, item, onClose, onReview, onVoid, onRestore, reviewEnabled = false, canVoid = true, canRestore = true }) {
@@ -4640,7 +4645,7 @@ function OperationModal({ lang, item, onClose, onReview, onVoid, onRestore, revi
 
             <div className="mb-4 rounded-2xl bg-white p-4 text-sm">
               <div className="mb-2 flex justify-between"><span>{text(lang, "amount")}</span><strong className={`${voided ? "line-through opacity-60" : ""} ${isSale ? "text-[#257844]" : "text-[#B44747]"}`}>{money(signedEntryAmount(item), lang)}</strong></div>
-              <div className="mb-2 flex justify-between"><span>{text(lang, "time")}</span><strong>{opDate(item, lang)} · {opTime(item, lang)}</strong></div>
+              <div className="mb-2 flex justify-between"><span>{text(lang, "time")}</span><strong>{opDate(item, lang)} آ· {opTime(item, lang)}</strong></div>
               <div className="flex justify-between"><span>{text(lang, "enteredBy")}</span><strong>{employeeDisplayName(item, lang)}</strong></div>
               {voided && (
                 <div className="mt-3 border-t border-[#F0ECE2] pt-3">
@@ -4715,7 +4720,7 @@ function DuplicateSalesDialog({ lang, draft, previousEntries = [], businessesLis
   const store = businessesList.find((business) => business.id === draft.businessId);
   const newAmount = (draft.salesChannels || []).reduce((sum, row) => sum + row.amount, 0);
   const previousTotal = previousEntries.reduce((sum, entry) => sum + entry.amount, 0);
-  return <AnimatePresence><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[60] flex items-end bg-[#112A46]/50 sm:items-center sm:justify-center sm:p-6 lg:items-end lg:justify-start lg:p-0"><motion.div initial={{ y: 18 }} animate={{ y: 0 }} exit={{ y: 18 }} className="relative z-10 w-full rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[560px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"><div className="mb-4 flex items-start justify-between"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF1EE] text-[#B44747]"><Bell className="h-5 w-5" /></div><button onClick={onCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]"><X className="h-4 w-4" /></button></div><h3 className="text-base font-black">{text(lang, "duplicateSalesTitle")}</h3><p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">{text(lang, "duplicateSalesWarning")}</p><div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-black/[0.045]"><p className="text-taq-meta font-black text-[#112A46]">{businessName(store, lang)} · {formatCalendarDate(draft.date, lang)}</p><div className="mt-3 flex justify-between text-xs font-bold text-[#827762]"><span>{text(lang, "previousSalesEntries")} ({previousEntries.length})</span><strong>{money(previousTotal, lang)}</strong></div><div className="mt-2 flex justify-between border-t border-[#F0ECE2] pt-2 text-xs font-black"><span>{text(lang, "summary")}</span><strong className="text-[#257844]">+{money(newAmount, lang)}</strong></div></div><div className="mt-5 grid grid-cols-[0.9fr_1.35fr] gap-3"><button onClick={onCancel} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.06]">{text(lang, "cancel")}</button><button onClick={onConfirm} className="rounded-2xl bg-[#B44747] py-3.5 text-xs font-black text-white">{text(lang, "saveAdditionalEntry")}</button></div></motion.div></motion.div></AnimatePresence>;
+  return <AnimatePresence><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[60] flex items-end bg-[#112A46]/50 sm:items-center sm:justify-center sm:p-6 lg:items-end lg:justify-start lg:p-0"><motion.div initial={{ y: 18 }} animate={{ y: 0 }} exit={{ y: 18 }} className="relative z-10 w-full rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[560px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"><div className="mb-4 flex items-start justify-between"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF1EE] text-[#B44747]"><Bell className="h-5 w-5" /></div><button onClick={onCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]"><X className="h-4 w-4" /></button></div><h3 className="text-base font-black">{text(lang, "duplicateSalesTitle")}</h3><p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">{text(lang, "duplicateSalesWarning")}</p><div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-black/[0.045]"><p className="text-taq-meta font-black text-[#112A46]">{businessName(store, lang)} آ· {formatCalendarDate(draft.date, lang)}</p><div className="mt-3 flex justify-between text-xs font-bold text-[#827762]"><span>{text(lang, "previousSalesEntries")} ({previousEntries.length})</span><strong>{money(previousTotal, lang)}</strong></div><div className="mt-2 flex justify-between border-t border-[#F0ECE2] pt-2 text-xs font-black"><span>{text(lang, "summary")}</span><strong className="text-[#257844]">+{money(newAmount, lang)}</strong></div></div><div className="mt-5 grid grid-cols-[0.9fr_1.35fr] gap-3"><button onClick={onCancel} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.06]">{text(lang, "cancel")}</button><button onClick={onConfirm} className="rounded-2xl bg-[#B44747] py-3.5 text-xs font-black text-white">{text(lang, "saveAdditionalEntry")}</button></div></motion.div></motion.div></AnimatePresence>;
 }
 
 function VoidOperationDialog({ lang, item, onCancel, onConfirm }) {
@@ -4793,7 +4798,7 @@ function formatDateTimeLabel(iso, lang) {
   if (!iso) return "";
   const datePart = iso.slice(0, 10);
   const time = new Date(iso).toLocaleTimeString(lang === "ar" ? "ar-SA" : "en-US", { hour: "2-digit", minute: "2-digit" });
-  return `${formatCalendarDate(datePart, lang)} · ${time}`;
+  return `${formatCalendarDate(datePart, lang)} آ· ${time}`;
 }
 
 function OwnerCloseoutModals({
@@ -4917,27 +4922,14 @@ export default function TaqfeelahPrototypeRuntime() {
   const [authScreen, setAuthScreen] = useState("owner");
   const [employee, setEmployee] = useState(() => readPrototypeAuthBoot().employee);
   const [loggedInEmployeeId, setLoggedInEmployeeId] = useState(() => readPrototypeAuthBoot().loggedInEmployeeId);
-  const [employeePage, setEmployeePage] = useState("closeouts");
-  const [employeeThemeOverride, setEmployeeThemeOverride] = useState(() => {
-    const boot = readPrototypeAuthBoot();
-    return boot.employee && boot.loggedInEmployeeId ? readEmployeeNotebookTheme(boot.loggedInEmployeeId) : null;
-  });
-  const employeeAddHandlerRef = useRef(() => {});
-  const employeeSettingsOpenerRef = useRef(() => {});
-  const [employeeEntryActive, setEmployeeEntryActive] = useState(false);
-  const [selected, setSelected] = useState(null);
-  const [voidTarget, setVoidTarget] = useState(null);
-  const [restoreTarget, setRestoreTarget] = useState(null);
-  const [savedOutflowShareTarget, setSavedOutflowShareTarget] = useState(null);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
-  const [pendingDuplicateSummary, setPendingDuplicateSummary] = useState(null);
   const [saved, setSaved] = useState(false);
   const [operationalEntries, setOperationalEntries] = useState(() => readOperationalEntries());
   const [operationalEntriesSyncError, setOperationalEntriesSyncError] = useState("");
   const [summaryRefreshKey, setSummaryRefreshKey] = useState(0);
-  const [employeeBusinessId, setEmployeeBusinessId] = useState(() => readPrototypeAuthBoot().employeeBusinessId);
   const loadOperationalEntriesFromApiRef = useRef(async () => []);
+  const prototypeAuthBoot = readPrototypeAuthBoot();
 
   const {
     configuredBusinesses,
@@ -4993,6 +4985,160 @@ export default function TaqfeelahPrototypeRuntime() {
   });
 
   const {
+    employeePage,
+    setEmployeePage,
+    changeEmployeePage,
+    employeeBusinessId,
+    setEmployeeBusinessId,
+    employeeThemeOverride,
+    setEmployeeThemeOverride,
+    employeeEntryActive,
+    setEmployeeEntryActive,
+    employeeAddHandlerRef,
+    employeeSettingsOpenerRef,
+    activeEmployee,
+    assignedEmployeeBusinesses,
+    currentEmployeeBusiness,
+    currentEmployeeChannelConfig,
+    currentEmployeeOperationalConfig,
+    currentEmployeeCategories,
+    employeeNotebookTheme,
+    suggestedEntryDate,
+    assignedEmployeeBusinessIds,
+  } = useEmployeePortalState({
+    employee,
+    loggedInEmployeeId,
+    staff,
+    sessionUserId,
+    activeBusinesses,
+    storeChannelSettings,
+    storeOperationalSettings,
+    notebookTheme,
+    expenseCategories,
+    lastCloseoutDates,
+    todayDate: todayIsoDate(),
+    nextDay: nextDayIso,
+    initialEmployeeBusinessId: prototypeAuthBoot.employeeBusinessId,
+    initialEmployeeThemeOverride: prototypeAuthBoot.employee && prototypeAuthBoot.loggedInEmployeeId
+      ? readEmployeeNotebookTheme(prototypeAuthBoot.loggedInEmployeeId)
+      : null,
+  });
+
+  const {
+    closeoutsApiEnabled,
+    closeoutsApiStrictMode,
+    entriesApiEnabled,
+    entriesApiStrictMode,
+    phase9ApiEnabled,
+    organizationId: closeoutsApiOrganizationId,
+    ownerUserId: closeoutsApiOwnerUserId,
+    ownerApiUserId,
+    apiActorRole,
+    apiActorUserId,
+    apiTargetStoreIdsKey,
+  } = resolveRuntimeApiActorContext({
+    employee,
+    sessionUserId,
+    activeEmployee,
+    assignedEmployeeBusinesses,
+    reportingBusinesses,
+  });
+
+  const createOperationalEntryInApi = useCallback(async ({ payload, actorUserId, actorRole }) => {
+    if (!entriesApiEnabled) {
+      if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
+      return null;
+    }
+    if (!isUuid(closeoutsApiOrganizationId)) {
+      if (entriesApiStrictMode) throw new Error("organization id is missing/invalid for entries API.");
+      return null;
+    }
+    const apiPayload = await resolvePayloadAttachmentForPhase9Api({
+      enabled: phase9ApiEnabled,
+      organizationId: closeoutsApiOrganizationId,
+      actorUserId,
+      actorRole,
+      storeId: payload?.businessId,
+      payload,
+    });
+    return createStoreEntryViaApi({
+      organizationId: closeoutsApiOrganizationId,
+      actorUserId,
+      actorRole,
+      payload: apiPayload,
+    });
+  }, [closeoutsApiOrganizationId, entriesApiEnabled, entriesApiStrictMode, phase9ApiEnabled]);
+
+  const loadOperationalEntriesFromApi = useCallback(async () => {
+    if (!entriesApiEnabled) {
+      if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
+      return [];
+    }
+    if (!isUuid(closeoutsApiOrganizationId)) {
+      if (entriesApiStrictMode) throw new Error("organization id is missing/invalid for entries API.");
+      return [];
+    }
+    if (!hasCloseoutApiActorMapping(apiActorUserId)) {
+      if (entriesApiStrictMode) throw new Error("actor user id is missing/invalid for entries API.");
+      return [];
+    }
+
+    const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
+    if (!targetStoreIds.length) {
+      setOperationalEntries([]);
+      setOperationalEntriesSyncError("");
+      return [];
+    }
+
+    const dateTo = todayIsoDate();
+    const { lookbackDays, limit: bulkLimit } = resolveOperationalEntriesBulkLoadWindow({
+      paginationEnabled: REGISTER_ENTRIES_PAGINATION_ENABLED,
+    });
+    const dateFrom = isoDaysAgo(lookbackDays);
+
+    const fetched = await Promise.all(
+      targetStoreIds.map((storeId) => fetchStoreEntriesViaApi({
+        organizationId: closeoutsApiOrganizationId,
+        actorUserId: apiActorUserId,
+        actorRole: apiActorRole,
+        storeId,
+        dateFrom,
+        dateTo,
+        status: "all",
+        limit: bulkLimit,
+      })),
+    );
+
+    const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
+    const seen = new Set();
+    const deduped = merged.filter((item) => {
+      const itemId = typeof item?.id === "string" ? item.id : "";
+      if (!itemId || seen.has(itemId)) return false;
+      seen.add(itemId);
+      return true;
+    });
+
+    setOperationalEntries(deduped);
+    setOperationalEntriesSyncError("");
+    setSummaryRefreshKey((current) => current + 1);
+    return deduped;
+  }, [
+    apiActorRole,
+    apiActorUserId,
+    apiTargetStoreIdsKey,
+    closeoutsApiOrganizationId,
+    entriesApiEnabled,
+    entriesApiStrictMode,
+  ]);
+
+  loadOperationalEntriesFromApiRef.current = loadOperationalEntriesFromApi;
+
+  const registerSelection = useRegisterSelectionState({
+    reviewEnabledForBusiness,
+    archivedBusinessIds,
+  });
+
+  const {
     ownerPage,
     setOwnerPage,
     selectedBusiness,
@@ -5042,8 +5188,30 @@ export default function TaqfeelahPrototypeRuntime() {
     reviewEnabledForBusiness,
     attachmentAlertEnabledForBusiness,
     closeoutAlertEnabledForBusiness,
-    setSelected,
+    setSelected: registerSelection.setSelected,
   });
+
+  const {
+    selected,
+    setSelected,
+    voidTarget,
+    setVoidTarget,
+    restoreTarget,
+    setRestoreTarget,
+    savedOutflowShareTarget,
+    setSavedOutflowShareTarget,
+    pendingDuplicateSummary,
+    setPendingDuplicateSummary,
+  } = registerSelection;
+  const selectedOperationReviewEnabled = useMemo(
+    () => resolveSelectedOperationReviewEnabled(
+      selected,
+      reviewEnabledForBusiness,
+      archivedBusinessIds,
+      ownerReviewEnabled,
+    ),
+    [archivedBusinessIds, ownerReviewEnabled, reviewEnabledForBusiness, selected],
+  );
 
   useEffect(() => {
     if (!BINDS_TO_SERVER_AUTH) return;
@@ -5078,25 +5246,8 @@ export default function TaqfeelahPrototypeRuntime() {
     }
   }, [employee, loggedInEmployeeId, sessionUserId, staff]);
   const reportChannelConfig = resolveStoreChannelConfig(storeChannelSettings, reportSettingsStoreId);
-  const activeEmployee = resolveActiveEmployee({
-    employee,
-    loggedInEmployeeId,
-    staff,
-    sessionUserId,
-    uuidChecker: isUuid,
-  });
-  const assignedEmployeeBusinesses = resolveAssignedEmployeeBusinesses(activeBusinesses, activeEmployee);
-  const currentEmployeeBusiness = resolveCurrentEmployeeBusiness(assignedEmployeeBusinesses, employeeBusinessId);
-  const currentEmployeeChannelConfig = resolveStoreChannelConfig(storeChannelSettings, currentEmployeeBusiness?.id);
-  const currentEmployeeOperationalConfig = getStoreOperationalConfig(storeOperationalSettings, currentEmployeeBusiness?.id);
-  const currentEmployeeCategories = expenseCategories.filter((item) => currentEmployeeOperationalConfig.activeCategories.includes(item.id));
-  const employeeNotebookTheme = resolveNotebookTheme({
-    storeOperationalSettings,
-    storeId: currentEmployeeBusiness?.id,
-    globalTheme: notebookTheme,
-    employeeThemeOverride: employeeThemeOverride || (activeEmployee ? readEmployeeNotebookTheme(activeEmployee.id) : null),
-  });
-  const selectedOperationReviewEnabled = selected ? reviewEnabledForBusiness(selected.businessId) && !archivedBusinessIds.includes(selected.businessId) : ownerReviewEnabled;
+  const activeBusinessIds = activeBusinesses.map((business) => business.id);
+  const todayDate = todayIsoDate();
   useEffect(() => {
     applyNotebookThemeCssVariables(employee ? employeeNotebookTheme : notebookTheme);
   }, [employee, employeeNotebookTheme, notebookTheme]);
@@ -5104,90 +5255,6 @@ export default function TaqfeelahPrototypeRuntime() {
     if (BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE || typeof window === "undefined") return;
     window.localStorage.setItem(OPERATIONAL_ENTRIES_STORAGE_KEY, JSON.stringify(stripEmbeddedAttachmentImages(operationalEntries)));
   }, [operationalEntries]);
-  useEffect(() => {
-    const nextBusinessId = resolveEmployeeBusinessId(assignedEmployeeBusinesses, employeeBusinessId);
-    if (nextBusinessId !== employeeBusinessId) setEmployeeBusinessId(nextBusinessId);
-  }, [employeeBusinessId, assignedEmployeeBusinesses]);
-  const todayDate = todayIsoDate();
-  const suggestedEntryDate = resolveSuggestedEntryDate({
-    lastCloseoutDate: currentEmployeeBusiness ? lastCloseoutDates[currentEmployeeBusiness.id] : undefined,
-    todayDate,
-    nextDay: nextDayIso,
-  });
-  const assignedEmployeeBusinessIds = assignedEmployeeBusinesses.map((business) => business.id);
-  const activeBusinessIds = activeBusinesses.map((business) => business.id);
-  const persistEmployeeEntry = async (payload) => {
-    if (!canPersistOperationalEntry({
-      saving: savingRef.current,
-      payload,
-      allowedBusinessIds: assignedEmployeeBusinessIds,
-    }) || !activeEmployee) return;
-    if (isFutureOperationalEntryDate(payload.date, todayDate)) { window.alert(text(lang, "futureDateNotAllowed")); return; }
-    savingRef.current = true; setSaving(true);
-    try {
-      const actor = buildEmployeeEntryActor(activeEmployee);
-      if (entriesApiEnabled) {
-        const result = await persistOperationalEntryThroughApi({
-          createOperationalEntryInApi,
-          loadOperationalEntriesFromApi,
-          payload,
-          actorUserId: activeEmployee.id,
-          actorRole: "employee",
-          lang,
-        });
-        if (!result.ok) {
-          window.alert(result.failureMessage);
-          return;
-        }
-        if (payload.type === "summary") {
-          const summaryUpdate = resolveSummaryLastCloseoutUpdate(
-            payload,
-            result.refreshed,
-            result.created.id,
-            entryIsActive,
-          );
-          setLastCloseoutDates((current) => ({
-            ...current,
-            [summaryUpdate.businessId]: summaryUpdate.date,
-          }));
-          if (summaryUpdate.createdEntry) pushCloseoutAlert(payload, summaryUpdate.createdEntry, actor);
-        }
-        setEmployeePage("home"); setSaved(true); window.setTimeout(() => setSaved(false), 2200);
-        return;
-      }
-      const local = await persistOperationalEntryLocally({
-        payload,
-        actor,
-        buildEntry,
-        storeAttachmentPayload,
-      });
-      if (!local.ok) {
-        if (local.attachmentFailed) window.alert(text(lang, "attachmentSaveFailed"));
-        return;
-      }
-      setOperationalEntries((current) => [local.entry, ...current]);
-      if (payload.type === "summary") {
-        setLastCloseoutDates((current) => mergeLastCloseoutDateForStore(current, payload.businessId, payload.date));
-        pushCloseoutAlert(payload, local.entry, actor);
-      }
-      setEmployeePage("home"); setSaved(true); window.setTimeout(() => setSaved(false), 2200);
-    } finally { savingRef.current = false; setSaving(false); }
-  };
-  const saveEmployee = async (payload) => {
-    if (!canPersistOperationalEntry({
-      saving: savingRef.current,
-      payload,
-      allowedBusinessIds: assignedEmployeeBusinessIds,
-    }) || !activeEmployee) return;
-    if (shouldGateSummarySaveOnDuplicates(payload)) {
-      const previousEntries = findDuplicateSummaryEntries(operationalEntries, payload, entryIsActive);
-      if (previousEntries.length > 0) {
-        setPendingDuplicateSummary(buildPendingDuplicateSummaryState(payload, previousEntries));
-        return;
-      }
-    }
-    await persistEmployeeEntry(payload);
-  };
   const saveOwner = async (payload) => {
     if (!canPersistOperationalEntry({
       saving: savingRef.current,
@@ -5260,252 +5327,78 @@ export default function TaqfeelahPrototypeRuntime() {
     }
     await saveOwner(payload);
   };
-  const confirmReview = async (entryId) => {
-    if (entriesApiEnabled) {
-      const target = operationalEntries.find((entry) => entry.id === entryId);
-      if (!target) return;
-      try {
-        const reviewed = await reviewStoreEntryViaApi({
-          organizationId: closeoutsApiOrganizationId,
-          actorUserId: ownerApiUserId,
-          actorRole: "owner",
-          entry: target,
-        });
-        if (!reviewed) {
-          window.alert(resolveOperationalEntryReviewFailureMessage(lang));
-          return;
-        }
-        await loadOperationalEntriesFromApi();
-        setSelected(null);
-      } catch (error) {
-        console.warn("entry review api failed", error);
-        window.alert(resolveOperationalEntryReviewFailureMessage(lang));
-      }
-      return;
-    }
-    const actionAt = new Date().toISOString();
-    setOperationalEntries((current) => mapOperationalEntryMutation(
-      current,
-      entryId,
-      (entry) => (entryIsActive(entry) ? applyReviewToEntry(entry, currentOwnerActor, actionAt) : entry),
-    ));
-    setSelected(null);
-  };
-  const requestVoidOperation = (entryId) => {
-    const target = operationalEntries.find((entry) => entry.id === entryId);
-    if (!canVoidOperationalEntry(target, archivedBusinessIds, entryIsVoided)) return;
-    setVoidTarget(target);
-  };
-  const requestRestoreOperation = (entryId) => {
-    const target = operationalEntries.find((entry) => entry.id === entryId);
-    if (!canRestoreOperationalEntry(target, archivedBusinessIds, entryIsVoided)) return;
-    setRestoreTarget(target);
-  };
-  const confirmDuplicateSummary = async () => {
-    const pending = pendingDuplicateSummary;
-    if (!pending?.payload) return;
-    setPendingDuplicateSummary(null);
-    if (phase9ApiEnabled && entriesApiEnabled) {
-      const payload = pending.payload;
-      const actorUserId = pending.actor === "owner" ? ownerApiUserId : activeEmployee?.id;
-      const actorRole = pending.actor === "owner" ? "owner" : "employee";
-      if (!actorUserId || !payload?.businessId) return;
-      savingRef.current = true;
-      setSaving(true);
-      try {
-        const apiPayload = await resolvePayloadAttachmentForPhase9Api({
-          enabled: phase9ApiEnabled,
-          organizationId: closeoutsApiOrganizationId,
-          actorUserId,
-          actorRole,
-          storeId: payload.businessId,
-          payload,
-        });
-        const created = await approveDuplicateSummaryViaApi({
-          organizationId: closeoutsApiOrganizationId,
-          actorUserId,
-          actorRole,
-          storeId: payload.businessId,
-          date: payload.date,
-          payload: apiPayload,
-        });
-        if (!created) {
-          window.alert(resolveDuplicateSummaryApproveFailureMessage(lang));
-          return;
-        }
-        const refreshed = await loadOperationalEntriesFromApi();
-        if (payload.type === "summary") {
-          const latestActiveCloseoutDate = resolveLatestActiveCloseoutDateFromEntries(
-            refreshed,
-            payload.businessId,
-            payload.date,
-            entryIsActive,
-          );
-          setLastCloseoutDates((current) => ({
-            ...current,
-            [payload.businessId]: latestActiveCloseoutDate,
-          }));
-        }
-        if (pending.actor === "owner") {
-          setOwnerPage("home");
-          setSaved(true);
-          window.setTimeout(() => setSaved(false), 2200);
-        } else {
-          const actor = { role: "employee", userId: activeEmployee.id, nameAr: activeEmployee.nameAr, nameEn: activeEmployee.nameEn };
-          const createdEntry = refreshed.find((entry) => entry.id === created.id);
-          if (createdEntry) pushCloseoutAlert(payload, createdEntry, actor);
-          setEmployeePage("home");
-          setSaved(true);
-          window.setTimeout(() => setSaved(false), 2200);
-        }
-      } catch (error) {
-        console.warn("duplicate summary approve api failed", error);
-        window.alert(lang === "ar" ? "تعذر حفظ الملخص المكرر على الخادم." : "Failed to save duplicate summary on server.");
-      } finally {
-        savingRef.current = false;
-        setSaving(false);
-      }
-      return;
-    }
-    if (pending.actor === "owner") await saveOwner(pending.payload);
-    else await persistEmployeeEntry(pending.payload);
-  };
-  const acknowledgeDuplicateSales = async (alert) => {
-    if (!alert?.businessId || !alert?.date || !alert.entries?.length) return;
-    if (phase9ApiEnabled && entriesApiEnabled) {
-      try {
-        const acknowledged = await acknowledgeDuplicateSummariesViaApi({
-          organizationId: closeoutsApiOrganizationId,
-          actorUserId: ownerApiUserId,
-          actorRole: "owner",
-          storeId: alert.businessId,
-          date: alert.date,
-          entryIds: alert.entries.map((entry) => entry.id),
-        });
-        if (!acknowledged) {
-          window.alert(resolveDuplicateSummaryAcknowledgeFailureMessage(lang));
-          return;
-        }
-        setAcknowledgedDuplicateSales((current) => ({ ...current, [duplicateSalesGroupKey(alert)]: duplicateSalesSignature(alert.entries) }));
-      } catch (error) {
-        console.warn("duplicate summary acknowledge api failed", error);
-        window.alert(resolveDuplicateSummaryAcknowledgeFailureMessage(lang));
-      }
-      return;
-    }
-    const actionAt = new Date().toISOString();
-    const approvedIds = new Set(alert.entries.map((entry) => entry.id));
-    setOperationalEntries((current) => applyDuplicateApprovedAudit(current, approvedIds, currentOwnerActor, actionAt));
-    setAcknowledgedDuplicateSales((current) => ({ ...current, [duplicateSalesGroupKey(alert)]: duplicateSalesSignature(alert.entries) }));
-  };
-  const confirmVoidOperation = async (reason = "") => {
-    if (entriesApiEnabled) {
-      const target = voidTarget;
-      if (!canVoidOperationalEntry(target, archivedBusinessIds, entryIsVoided)) { setVoidTarget(null); return; }
-      try {
-        const voided = await voidStoreEntryViaApi({
-          organizationId: closeoutsApiOrganizationId,
-          actorUserId: ownerApiUserId,
-          actorRole: "owner",
-          entry: target,
-          reason: reason.trim(),
-        });
-        if (!voided) {
-          window.alert(resolveOperationalEntryVoidFailureMessage(lang));
-          return;
-        }
-        const refreshed = await loadOperationalEntriesFromApi();
-        if (target.type === "summary") {
-          setLastCloseoutDates((current) => mergeLastCloseoutDateAfterSummaryVoid(
-            current,
-            target.businessId,
-            refreshed,
-            entryIsActive,
-          ));
-        }
-        setVoidTarget(null);
-        setSelected(null);
-      } catch (error) {
-        console.warn("entry void api failed", error);
-        window.alert(resolveOperationalEntryVoidFailureMessage(lang));
-      }
-      return;
-    }
-    const target = voidTarget;
-    if (!canVoidOperationalEntry(target, archivedBusinessIds, entryIsVoided)) { setVoidTarget(null); return; }
-    const actionAt = new Date().toISOString();
-    const nextEntries = mapOperationalEntryMutation(
-      operationalEntries,
-      target.id,
-      (entry) => applyVoidToEntry(entry, currentOwnerActor, reason, actionAt),
-    );
-    setOperationalEntries(nextEntries);
-    if (target.type === "summary") {
-      setLastCloseoutDates((current) => mergeLastCloseoutDateAfterSummaryVoid(
-        current,
-        target.businessId,
-        nextEntries,
-        entryIsActive,
-      ));
-    }
-    setVoidTarget(null);
-    setSelected(null);
-  };
-  const confirmRestoreOperation = async (reason = "") => {
-    if (entriesApiEnabled) {
-      const target = restoreTarget;
-      if (!canRestoreOperationalEntry(target, archivedBusinessIds, entryIsVoided)) { setRestoreTarget(null); return; }
-      try {
-        const restored = await restoreStoreEntryViaApi({
-          organizationId: closeoutsApiOrganizationId,
-          actorUserId: ownerApiUserId,
-          actorRole: "owner",
-          entry: target,
-          reason: reason.trim(),
-        });
-        if (!restored) {
-          window.alert(resolveOperationalEntryRestoreFailureMessage(lang));
-          return;
-        }
-        const refreshed = await loadOperationalEntriesFromApi();
-        if (target.type === "summary") {
-          setLastCloseoutDates((current) => mergeLastCloseoutDateAfterSummaryRestore(
-            current,
-            target.businessId,
-            refreshed,
-            target.date,
-            entryIsActive,
-          ));
-        }
-        setRestoreTarget(null);
-        setSelected(null);
-      } catch (error) {
-        console.warn("entry restore api failed", error);
-        window.alert(resolveOperationalEntryRestoreFailureMessage(lang));
-      }
-      return;
-    }
-    const target = restoreTarget;
-    if (!canRestoreOperationalEntry(target, archivedBusinessIds, entryIsVoided)) { setRestoreTarget(null); return; }
-    const actionAt = new Date().toISOString();
-    const nextEntries = mapOperationalEntryMutation(
-      operationalEntries,
-      target.id,
-      (entry) => applyRestoreToEntry(entry, currentOwnerActor, reason, actionAt),
-    );
-    setOperationalEntries(nextEntries);
-    if (target.type === "summary") {
-      setLastCloseoutDates((current) => mergeLastCloseoutDateAfterSummaryRestore(
-        current,
-        target.businessId,
-        nextEntries,
-        target.date,
-        entryIsActive,
-      ));
-    }
-    setRestoreTarget(null);
-    setSelected(null);
-  };
+
+  const { persistEmployeeEntry, saveEmployee } = useEmployeeEntryActions({
+    lang,
+    text,
+    savingRef,
+    setSaving,
+    activeEmployee,
+    assignedEmployeeBusinessIds,
+    entriesApiEnabled,
+    createOperationalEntryInApi,
+    loadOperationalEntriesFromApi,
+    buildEntry,
+    storeAttachmentPayload,
+    setOperationalEntries,
+    setLastCloseoutDates,
+    setCloseoutAlerts,
+    closeoutAlertEnabledForBusiness,
+    setEmployeePage,
+    setSaved,
+    setPendingDuplicateSummary,
+    operationalEntries,
+    entryIsActive,
+    todayDate,
+  });
+
+  const {
+    handleOpenOwnerOperation,
+    requestVoidOperation,
+    requestRestoreOperation,
+    confirmReview,
+    confirmVoidOperation,
+    confirmRestoreOperation,
+    confirmDuplicateSummary,
+    acknowledgeDuplicateSales,
+  } = useRegisterOperationsState({
+    lang,
+    setSelected,
+    voidTarget,
+    setVoidTarget,
+    restoreTarget,
+    setRestoreTarget,
+    pendingDuplicateSummary,
+    setPendingDuplicateSummary,
+    operationalEntries,
+    archivedBusinessIds,
+    entriesApiEnabled,
+    phase9ApiEnabled,
+    closeoutsApiOrganizationId,
+    ownerApiUserId,
+    currentOwnerActor,
+    activeEmployee,
+    entryIsActive,
+    entryIsVoided,
+    bindsToServerAuth: BINDS_TO_SERVER_AUTH,
+    closeoutsApiDbSource: CLOSEOUTS_API_DB_SOURCE,
+    readDailyCloseouts,
+    loadOperationalEntriesFromApi,
+    setOperationalEntries,
+    setLastCloseoutDates,
+    setAcknowledgedDuplicateSales,
+    setOwnerPage,
+    setEmployeePage,
+    setSaved,
+    setReturnCloseoutTarget,
+    setOwnerReviewCloseout,
+    pushCloseoutAlert,
+    saveOwner,
+    persistEmployeeEntry,
+    savingRef,
+    setSaving,
+  });
+
   const completeOwnerLogin = (apiUserId = "") => {
     applyOwnerLoginSuccess({
       apiUserId,
@@ -5630,17 +5523,6 @@ export default function TaqfeelahPrototypeRuntime() {
     setOwnerReviewCloseout((current) => (current?.id === closeout.id ? null : current));
     setReturnCloseoutTarget((current) => (current?.id === closeout.id ? null : current));
   }, [removeOperationalEntriesForCloseout]);
-  const handleOpenOwnerOperation = useCallback((entry) => {
-    if (!BINDS_TO_SERVER_AUTH && !CLOSEOUTS_API_DB_SOURCE && entry?.type === "summary" && entry.closeoutId) {
-      const closeout = readDailyCloseouts().find((item) => item.id === entry.closeoutId);
-      if (closeout) {
-        setReturnCloseoutTarget(null);
-        setOwnerReviewCloseout(closeout);
-        return;
-      }
-    }
-    setSelected(entry || null);
-  }, []);
   const logout = async () => {
     try {
       await logoutViaSessionBridge({ useServerAuth: BINDS_TO_SERVER_AUTH });
@@ -5681,112 +5563,6 @@ export default function TaqfeelahPrototypeRuntime() {
       },
     });
   };
-  const {
-    closeoutsApiEnabled,
-    closeoutsApiStrictMode,
-    entriesApiEnabled,
-    entriesApiStrictMode,
-    phase9ApiEnabled,
-    organizationId: closeoutsApiOrganizationId,
-    ownerUserId: closeoutsApiOwnerUserId,
-    ownerApiUserId,
-    apiActorRole,
-    apiActorUserId,
-    apiTargetStoreIdsKey,
-  } = resolveRuntimeApiActorContext({
-    employee,
-    sessionUserId,
-    activeEmployee,
-    assignedEmployeeBusinesses,
-    reportingBusinesses,
-  });
-
-  const createOperationalEntryInApi = useCallback(async ({ payload, actorUserId, actorRole }) => {
-    if (!entriesApiEnabled) {
-      if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
-      return null;
-    }
-    if (!isUuid(closeoutsApiOrganizationId)) {
-      if (entriesApiStrictMode) throw new Error("organization id is missing/invalid for entries API.");
-      return null;
-    }
-    const apiPayload = await resolvePayloadAttachmentForPhase9Api({
-      enabled: phase9ApiEnabled,
-      organizationId: closeoutsApiOrganizationId,
-      actorUserId,
-      actorRole,
-      storeId: payload?.businessId,
-      payload,
-    });
-    return createStoreEntryViaApi({
-      organizationId: closeoutsApiOrganizationId,
-      actorUserId,
-      actorRole,
-      payload: apiPayload,
-    });
-  }, [closeoutsApiOrganizationId, entriesApiEnabled, entriesApiStrictMode, phase9ApiEnabled]);
-
-  const loadOperationalEntriesFromApi = useCallback(async () => {
-    if (!entriesApiEnabled) {
-      if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
-      return [];
-    }
-    if (!isUuid(closeoutsApiOrganizationId)) {
-      if (entriesApiStrictMode) throw new Error("organization id is missing/invalid for entries API.");
-      return [];
-    }
-    if (!hasCloseoutApiActorMapping(apiActorUserId)) {
-      if (entriesApiStrictMode) throw new Error("actor user id is missing/invalid for entries API.");
-      return [];
-    }
-
-    const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
-    if (!targetStoreIds.length) {
-      setOperationalEntries([]);
-      setOperationalEntriesSyncError("");
-      return [];
-    }
-
-    const dateTo = todayIsoDate();
-    const { lookbackDays, limit: bulkLimit } = resolveOperationalEntriesBulkLoadWindow({
-      paginationEnabled: REGISTER_ENTRIES_PAGINATION_ENABLED,
-    });
-    const dateFrom = isoDaysAgo(lookbackDays);
-
-    const fetched = await Promise.all(
-      targetStoreIds.map((storeId) => fetchStoreEntriesViaApi({
-        organizationId: closeoutsApiOrganizationId,
-        actorUserId: apiActorUserId,
-        actorRole: apiActorRole,
-        storeId,
-        dateFrom,
-        dateTo,
-        status: "all",
-        limit: bulkLimit,
-      })),
-    );
-
-    const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
-    const seen = new Set();
-    const deduped = merged.filter((item) => {
-      const itemId = typeof item?.id === "string" ? item.id : "";
-      if (!itemId || seen.has(itemId)) return false;
-      seen.add(itemId);
-      return true;
-    });
-
-    setOperationalEntries(deduped);
-    setOperationalEntriesSyncError("");
-    setSummaryRefreshKey((current) => current + 1);
-    return deduped;
-  }, [
-    apiActorRole,
-    apiActorUserId,
-    apiTargetStoreIdsKey,
-    closeoutsApiOrganizationId,
-    entriesApiEnabled,
-    entriesApiStrictMode,
-  ]);
 
   const syncSubmitCloseoutToApi = useCallback(async ({ action, closeout, employee, reviewWorkflowEnabled }) => {
     if (!closeoutsApiEnabled) {
@@ -6052,7 +5828,7 @@ export default function TaqfeelahPrototypeRuntime() {
           />
           <div className="taq-scroll relative min-h-0 overflow-y-auto overscroll-y-contain">{employee && !activeEmployee && <section className="px-5 pb-24"><div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">{text(lang, "noActiveEmployee")}</div></section>}{employee && activeEmployee && employeePage === "closeouts" && <EmployeeCloseoutsView lang={lang} employee={activeEmployee} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} salesChannels={currentEmployeeChannelConfig.channels.filter((channel) => currentEmployeeChannelConfig.activeIds.includes(channel.id) && !channel.retired).map((channel) => ({ ...channel, displayName: channelName(channel, lang) }))} notebookTheme={employeeNotebookTheme} reviewWorkflowEnabled={closeoutReviewEnabledForBusiness(currentEmployeeBusiness?.id)} employeeHistoryVisibility={currentEmployeeOperationalConfig.employeeHistoryVisibility || "all"} formatCalendarDate={formatCalendarDate} channelLabel={(channel) => channel.displayName || channelName(channel, lang)} settingsPanel={({ onBack }) => <EmployeeSettingsScreen lang={lang} onBack={onBack} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} employeeNotebookTheme={employeeThemeOverride || readEmployeeNotebookTheme(activeEmployee.id) || employeeNotebookTheme} setEmployeeNotebookTheme={(theme) => { writeEmployeeNotebookTheme(activeEmployee.id, theme); setEmployeeThemeOverride(theme); }} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />} onEntryActiveChange={setEmployeeEntryActive} onRegisterAdd={(handler) => { employeeAddHandlerRef.current = handler || (() => {}); }} onRegisterSettingsOpener={(handler) => { employeeSettingsOpenerRef.current = handler || (() => {}); }} saving={saving} />}{!employee && ownerPage === "home" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><OwnerHomeConnected lang={lang} operationalEntries={operationalEntries} duplicateSalesAlerts={duplicateSalesAlerts} closeoutAlerts={unseenCloseoutAlerts} closeoutReviewEnabledForBusiness={closeoutReviewEnabledForBusiness} onViewPendingCloseouts={(closeout) => { setOwnerReviewCloseout(closeout); setSelectedBusiness(closeout.storeId); }} onReviewCloseout={reviewCloseoutAlert} onDismissCloseout={dismissCloseoutAlert} onReviewDuplicate={reviewDuplicateSales} onAcknowledgeDuplicate={acknowledgeDuplicateSales} reviewEnabledForBusiness={reviewEnabledForBusiness} onOpenOperation={handleOpenOwnerOperation} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} selectedBusiness={activeViewBusiness} setSelectedBusiness={setSelectedBusiness} reviewEnabled={ownerReviewEnabled} businessesList={activeBusinesses} summaryApiEnabled={entriesApiEnabled} summaryApiOrganizationId={closeoutsApiOrganizationId} summaryApiActorUserId={ownerApiUserId} summaryApiActorRole="owner" summaryRefreshKey={summaryRefreshKey} /></NotebookScrollSurface>}{!employee && ownerPage === "add-summary" && <OwnerSummaryScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeChannelSettings={storeChannelSettings} onBack={() => setOwnerPage("home")} onSave={saveOwnerSummary} />}{!employee && ownerPage === "add-expense" && <OwnerExpenseScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeOperationalSettings={storeOperationalSettings} onBack={() => setOwnerPage("home")} onSave={saveOwner} />}{!employee && ownerPage === "reports" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><ReportsScreen lang={lang} operationalEntries={operationalEntries} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} reviewEnabledForBusiness={reviewEnabledForBusiness} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} configuredChannels={reportChannelConfig.channels} reviewEnabled={ownerReviewEnabled} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} reportsApiEnabled={entriesApiEnabled} reportsApiOrganizationId={closeoutsApiOrganizationId} reportsApiActorUserId={ownerApiUserId} reportsApiActorRole="owner" summaryRefreshKey={summaryRefreshKey} /></NotebookScrollSurface>}{!employee && ownerPage === "register" && <OwnerRegisterConnected lang={lang} onOpenOperation={handleOpenOwnerOperation} reviewFocus={duplicateReviewFocus} attachmentReviewRequest={attachmentReviewRequest} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} notebookTheme={notebookTheme} registerEntriesApiEnabled={entriesApiEnabled && REGISTER_ENTRIES_PAGINATION_ENABLED} registerEntriesApiOrganizationId={closeoutsApiOrganizationId} registerEntriesApiActorUserId={ownerApiUserId} registerEntriesApiActorRole="owner" registerEntriesRefreshKey={summaryRefreshKey} />}{!employee && ownerPage === "settings" && <OwnerSettingsScreen lang={lang} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} setOwnerPage={setOwnerPage} setArchivedReadOnlyBusinessId={setArchivedReadOnlyBusinessId} setLastCloseoutDates={setLastCloseoutDates} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} storeChannelSettings={storeChannelSettings} setStoreChannelSettings={setStoreChannelSettings} storeOperationalSettings={storeOperationalSettings} setStoreOperationalSettings={setStoreOperationalSettings} configuredBusinesses={configuredBusinesses} setConfiguredBusinesses={setConfiguredBusinesses} archivedBusinessIds={archivedBusinessIds} setArchivedBusinessIds={setArchivedBusinessIds} staff={staff} setStaff={setStaff} ownerProfile={ownerProfile} setOwnerProfile={setOwnerProfile} authOwnerUsername={authOwnerUsername} setAuthOwnerUsername={setAuthOwnerUsername} authOwnerPassword={authOwnerPassword} setAuthOwnerPassword={setAuthOwnerPassword} authEmployeePins={authEmployeePins} setAuthEmployeePins={setAuthEmployeePins} onPersistSettingsNow={persistRuntimeSettingsNow} onLogout={logout} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />}{saved && <div className="sticky bottom-4 left-4 right-4 z-30 mx-auto max-w-md rounded-2xl bg-[#112A46] p-4 text-xs font-bold text-white">{text(lang, "savedNotice")}</div>}
           </div>
-          {!(employee && employeeEntryActive) && <BottomNav lang={lang} employee={employee} active={employee ? employeePage : ownerPage} onAdd={() => { if (employee) employeeAddHandlerRef.current?.(); else setQuickAddOpen(true); }} onChange={(page) => { setQuickAddOpen(false); if (employee) { if (page === "home") setEmployeePage("closeouts"); else setEmployeePage(page); } else { changeOwnerPage(page); } }} />}{!employee && <QuickAddSheet lang={lang} employee={false} open={quickAddOpen} onClose={() => setQuickAddOpen(false)} onSummary={openQuickAddSummary} onExpense={openQuickAddExpense} />}<OperationModal lang={lang} item={selected} onClose={() => setSelected(null)} onReview={confirmReview} onVoid={requestVoidOperation} onRestore={requestRestoreOperation} reviewEnabled={selectedOperationReviewEnabled} canVoid={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} canRestore={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} /><DuplicateSalesDialog lang={lang} draft={pendingDuplicateSummary?.payload || null} previousEntries={pendingDuplicateSummary?.previousEntries || []} businessesList={activeBusinesses} onCancel={() => setPendingDuplicateSummary(null)} onConfirm={confirmDuplicateSummary} /><VoidOperationDialog lang={lang} item={voidTarget} onCancel={() => setVoidTarget(null)} onConfirm={confirmVoidOperation} /><RestoreOperationDialog lang={lang} item={restoreTarget} onCancel={() => setRestoreTarget(null)} onConfirm={confirmRestoreOperation} /><SavedOutflowShareDialog lang={lang} item={savedOutflowShareTarget} businessesList={activeBusinesses} onClose={() => setSavedOutflowShareTarget(null)} /><NotebookShareModal lang={lang} snapshot={shareSnapshot} onClose={() => setShareSnapshot(null)} businessesList={reportingBusinesses} operationalEntries={operationalEntries} archivedBusinessIds={archivedBusinessIds} notebookExportApiEnabled={phase9ApiEnabled && entriesApiEnabled} notebookExportAuth={readOwnerSettingsApiAuth()} />
+          {!(employee && employeeEntryActive) && <BottomNav lang={lang} employee={employee} active={employee ? employeePage : ownerPage} onAdd={() => { if (employee) employeeAddHandlerRef.current?.(); else setQuickAddOpen(true); }} onChange={(page) => { setQuickAddOpen(false); if (employee) changeEmployeePage(page); else changeOwnerPage(page); }} />}{!employee && <QuickAddSheet lang={lang} employee={false} open={quickAddOpen} onClose={() => setQuickAddOpen(false)} onSummary={openQuickAddSummary} onExpense={openQuickAddExpense} />}<OperationModal lang={lang} item={selected} onClose={() => setSelected(null)} onReview={confirmReview} onVoid={requestVoidOperation} onRestore={requestRestoreOperation} reviewEnabled={selectedOperationReviewEnabled} canVoid={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} canRestore={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} /><DuplicateSalesDialog lang={lang} draft={pendingDuplicateSummary?.payload || null} previousEntries={pendingDuplicateSummary?.previousEntries || []} businessesList={activeBusinesses} onCancel={() => setPendingDuplicateSummary(null)} onConfirm={confirmDuplicateSummary} /><VoidOperationDialog lang={lang} item={voidTarget} onCancel={() => setVoidTarget(null)} onConfirm={confirmVoidOperation} /><RestoreOperationDialog lang={lang} item={restoreTarget} onCancel={() => setRestoreTarget(null)} onConfirm={confirmRestoreOperation} /><SavedOutflowShareDialog lang={lang} item={savedOutflowShareTarget} businessesList={activeBusinesses} onClose={() => setSavedOutflowShareTarget(null)} /><NotebookShareModal lang={lang} snapshot={shareSnapshot} onClose={() => setShareSnapshot(null)} businessesList={reportingBusinesses} operationalEntries={operationalEntries} archivedBusinessIds={archivedBusinessIds} notebookExportApiEnabled={phase9ApiEnabled && entriesApiEnabled} notebookExportAuth={readOwnerSettingsApiAuth()} />
           <OwnerCloseoutModals
             lang={lang}
             ownerReviewCloseout={ownerReviewCloseout}
