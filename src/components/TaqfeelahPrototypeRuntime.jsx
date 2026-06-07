@@ -13,6 +13,23 @@ import EmployeeCloseoutsView from "@/features/employee-closeouts/EmployeeCloseou
 import DailyCloseoutEntryFlow from "@/features/employee-closeouts/DailyCloseoutEntryFlow";
 import EmployeeHistoryVisibilityPicker from "@/features/employee-closeouts/EmployeeHistoryVisibilityPicker";
 import { employeeHistoryVisibilityLabel } from "@/features/employee-closeouts/employee-closeout-history";
+import {
+  employeeDisplayName,
+  filterEmployeeHomePreviewEntries,
+  filterEmployeeStoreEntries,
+} from "@/features/employee-closeouts/employee-entries-display";
+import {
+  employeePinMatches,
+  filterActiveLoginStaff,
+  normalizeEmployeeLoginRosterStaff,
+  patchRuntimeApiMapsForEmployeeSession,
+  resolveActiveEmployee,
+  resolveAssignedEmployeeBusinesses,
+  resolveCurrentEmployeeBusiness,
+  resolveEmployeeBusinessId,
+  resolveEmployeeLoginStaff,
+  syncLoggedInEmployeeIdFromSession,
+} from "@/features/employee-closeouts/employee-portal-session";
 import EmployeeFooterNav from "@/features/employee-closeouts/EmployeeFooterNav";
 import { readEmployeeNotebookTheme, writeEmployeeNotebookTheme } from "@/features/employee-closeouts/employee-theme-storage";
 import PendingCloseoutsNotice from "@/features/owner-closeout-review/PendingCloseoutsNotice";
@@ -1328,8 +1345,6 @@ const auditDateTime = (timestamp, lang) => {
   if (Number.isNaN(date.getTime())) return "-";
   return `${formatCalendarDate(timestamp.slice(0, 10), lang)} · ${opTime({ createdAt: timestamp }, lang)}`;
 };
-const employeeName = (item, lang) => item.enteredBy ? (lang === "ar" ? item.enteredBy.nameAr : item.enteredBy.nameEn) : (lang === "ar" ? item.employeeAr : item.employeeEn);
-
 // طبقة السجل التشغيلي: المصدر الوحيد للأرقام والمرفقات والتقارير داخل البروتايب.
 // البنية مقصودة لتنتقل لاحقًا إلى API/DB دون إعادة تصميم الواجهة.
 const APP_IN_PRODUCTION_MODE = isProductionAppMode();
@@ -1635,29 +1650,6 @@ function writeCloseoutAlerts(alerts) {
 function openWhatsAppSupport(lang) {
   window.open(`https://wa.me/${PROTOTYPE_SUPPORT_WHATSAPP}?text=${encodeURIComponent(lang === "ar" ? "مرحبًا، أحتاج دعم تقفيلة" : "Hello, I need Taqfeelah support")}`, "_blank");
 }
-function readPublicUserIdMap() {
-  try {
-    const parsed = JSON.parse(process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP || "{}");
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-function resolveLegacyEmployeeIdByApiUserId(apiUserId) {
-  if (!apiUserId) return "";
-  const map = readPublicUserIdMap();
-  for (const [legacyId, mappedUserId] of Object.entries(map)) {
-    if (typeof mappedUserId === "string" && mappedUserId.toLowerCase() === String(apiUserId).toLowerCase()) {
-      return legacyId;
-    }
-  }
-  return "";
-}
-function employeePinMatches(person, pin) {
-  const expectedPin = `${person?.pin || PROTOTYPE_EMPLOYEE_PIN_DEFAULT}`.trim();
-  if (!expectedPin) return false;
-  return `${pin}`.trim() === expectedPin;
-}
 function summaryDayFromEntriesWithLabels(entries, businessId, date, reviewEnabledForBusiness = () => false) {
   return summaryDayFromEntries(entries, businessId, date, reviewEnabledForBusiness, formatCalendarDate);
 }
@@ -1861,10 +1853,8 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
   const [rememberMe, setRememberMe] = useState(false);
   const [rosterStaff, setRosterStaff] = useState([]);
   const [rosterLoading, setRosterLoading] = useState(APP_IN_PRODUCTION_MODE);
-  const loginStaff = APP_IN_PRODUCTION_MODE
-    ? (staff.filter((person) => person.active && !person.removed).length > 0 ? staff : rosterStaff)
-    : staff;
-  const activeStaff = loginStaff.filter((person) => person.active && !person.removed);
+  const loginStaff = resolveEmployeeLoginStaff(staff, rosterStaff, APP_IN_PRODUCTION_MODE);
+  const activeStaff = filterActiveLoginStaff(loginStaff);
   useEffect(() => {
     if (!APP_IN_PRODUCTION_MODE) return;
     let cancelled = false;
@@ -1872,11 +1862,7 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
       .then((payload) => {
         if (cancelled) return;
         if (Array.isArray(payload?.staff)) {
-          setRosterStaff(payload.staff.map((person) => ({
-            ...person,
-            active: true,
-            removed: false,
-          })));
+          setRosterStaff(normalizeEmployeeLoginRosterStaff(payload));
         }
       })
       .catch((failure) => {
@@ -1923,7 +1909,7 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
       } finally {
         setSubmitting(false);
       }
-    } else if (!person || !employeePinMatches(person, pin)) { setError(text(lang, "invalidEmployeePin")); return; }
+    } else if (!person || !employeePinMatches(person, pin, PROTOTYPE_EMPLOYEE_PIN_DEFAULT)) { setError(text(lang, "invalidEmployeePin")); return; }
     setError("");
     if (rememberMe) saveEmployeeCredentials({ employeeId: employeeIdentifier, pin: pin.trim() });
     else clearEmployeeCredentials();
@@ -2128,9 +2114,7 @@ function EmployeeStoreContext({ lang, currentStore, assignedStores, onSelect, da
 }
 
 function EmployeeHome({ lang, onSummary, onExpense, onViewAll, currentStore, assignedStores, onSelectStore, activeEmployeeId, operationalEntries = [] }) {
-  const entries = newestEntries(
-    operationalEntries.filter((entry) => entry.businessId === currentStore?.id && entry.enteredBy?.userId === activeEmployeeId)
-  ).slice(0, 4);
+  const entries = filterEmployeeHomePreviewEntries(operationalEntries, currentStore?.id, activeEmployeeId);
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
       <div className="mb-5 rounded-3xl bg-[#112A46] p-5 text-white">
@@ -2182,7 +2166,7 @@ function EmployeeHome({ lang, onSummary, onExpense, onViewAll, currentStore, ass
 }
 
 function EmployeeEntriesScreen({ lang, reviewEnabled = false, currentStore, assignedStores, onSelectStore, activeEmployeeId, operationalEntries = [] }) {
-  const entries = newestEntries(operationalEntries.filter((entry) => entry.businessId === currentStore?.id && entry.enteredBy?.userId === activeEmployeeId));
+  const entries = newestEntries(filterEmployeeStoreEntries(operationalEntries, currentStore?.id, activeEmployeeId));
   return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
     <div className="mb-5"><p className="text-xs font-bold text-[#8B8274]">{text(lang, "tracking")}</p><h1 className="text-xl font-black">{text(lang, "myEntries")}</h1></div>
     <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><EmployeeStoreContext lang={lang} currentStore={currentStore} assignedStores={assignedStores} onSelect={onSelectStore} /></div>
@@ -3604,7 +3588,7 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
       seen.add(actorId);
       options.push({
         id: actorId,
-        label: employeeName(entry, lang) || (lang === "ar" ? "مستخدم" : "User"),
+        label: employeeDisplayName(entry, lang) || (lang === "ar" ? "مستخدم" : "User"),
       });
     });
     return options;
@@ -3640,7 +3624,7 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
       resolveStore: (businessId) => businessesList.find((business) => business.id === businessId) || null,
       resolveActorLabel: (group) => {
         const ownerEntered = group.entries.find((entry) => entry.enteredBy?.userId === ownerActor.userId) || group.entries[0];
-        return employeeName(ownerEntered, lang) || text(lang, "enteredByOwner");
+        return employeeDisplayName(ownerEntered, lang) || text(lang, "enteredByOwner");
       },
     }),
     [filteredEntries, businessesList, lang, logFilters.salesChannel],
@@ -3800,7 +3784,7 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
                 ? summaryEntryDisplayAmount(entry, logFilters.salesChannel)
                 : -entry.amount;
               const isExpanded = expandedEntryId === entry.id;
-              const actorLabel = employeeName(entry, lang) || (lang === "ar" ? "مستخدم" : "User");
+              const actorLabel = employeeDisplayName(entry, lang) || (lang === "ar" ? "مستخدم" : "User");
               const registerDaySequence = entry.closeoutId
                 ? (Number.isInteger(entry.daySequence) ? entry.daySequence : daySequenceByCloseoutId.get(entry.closeoutId) ?? null)
                 : null;
@@ -4661,7 +4645,7 @@ function OperationModal({ lang, item, onClose, onReview, onVoid, onRestore, revi
             <div className="mb-4 rounded-2xl bg-white p-4 text-sm">
               <div className="mb-2 flex justify-between"><span>{text(lang, "amount")}</span><strong className={`${voided ? "line-through opacity-60" : ""} ${isSale ? "text-[#257844]" : "text-[#B44747]"}`}>{money(signedEntryAmount(item), lang)}</strong></div>
               <div className="mb-2 flex justify-between"><span>{text(lang, "time")}</span><strong>{opDate(item, lang)} · {opTime(item, lang)}</strong></div>
-              <div className="flex justify-between"><span>{text(lang, "enteredBy")}</span><strong>{employeeName(item, lang)}</strong></div>
+              <div className="flex justify-between"><span>{text(lang, "enteredBy")}</span><strong>{employeeDisplayName(item, lang)}</strong></div>
               {voided && (
                 <div className="mt-3 border-t border-[#F0ECE2] pt-3">
                   <div className="flex justify-between text-[#B44747]"><span>{text(lang, "status")}</span><strong>{text(lang, "voidedByOwner")}</strong></div>
@@ -5015,24 +4999,23 @@ export default function TaqfeelahPrototypeRuntime() {
   }, []);
   useEffect(() => {
     if (!BINDS_TO_SERVER_AUTH || !employee || !sessionUserId) return;
-    const matchedStaff = staff.find(
-      (person) => person.apiUserId === sessionUserId || person.id === loggedInEmployeeId,
-    );
-    if (matchedStaff?.id && matchedStaff.id !== loggedInEmployeeId) {
-      setLoggedInEmployeeId(matchedStaff.id);
+    const syncedEmployeeId = syncLoggedInEmployeeIdFromSession(staff, sessionUserId, loggedInEmployeeId);
+    if (syncedEmployeeId) {
+      setLoggedInEmployeeId(syncedEmployeeId);
     }
   }, [employee, loggedInEmployeeId, sessionUserId, staff]);
   const activeBusinesses = configuredBusinesses.filter((business) => !archivedBusinessIds.includes(business.id));
   const reportingBusinesses = configuredBusinesses;
   const activeViewBusiness = activeBusinesses.length === 1 ? activeBusinesses[0].id : selectedBusiness === "all" || activeBusinesses.some((business) => business.id === selectedBusiness) ? selectedBusiness : "all";
-  const activeEmployeeRaw = employee && loggedInEmployeeId
-    ? staff.find((person) => (person.id === loggedInEmployeeId || person.apiUserId === loggedInEmployeeId) && person.active && !person.removed) || null
-    : null;
-  const activeEmployee = activeEmployeeRaw && !activeEmployeeRaw.apiUserId && isUuid(sessionUserId)
-    ? { ...activeEmployeeRaw, apiUserId: sessionUserId }
-    : activeEmployeeRaw;
-  const assignedEmployeeBusinesses = activeBusinesses.filter((business) => (activeEmployee?.storeIds || []).includes(business.id));
-  const currentEmployeeBusiness = assignedEmployeeBusinesses.find((business) => business.id === employeeBusinessId) || assignedEmployeeBusinesses[0] || null;
+  const activeEmployee = resolveActiveEmployee({
+    employee,
+    loggedInEmployeeId,
+    staff,
+    sessionUserId,
+    uuidChecker: isUuid,
+  });
+  const assignedEmployeeBusinesses = resolveAssignedEmployeeBusinesses(activeBusinesses, activeEmployee);
+  const currentEmployeeBusiness = resolveCurrentEmployeeBusiness(assignedEmployeeBusinesses, employeeBusinessId);
   const currentEmployeeChannelConfig = resolveStoreChannelConfig(storeChannelSettings, currentEmployeeBusiness?.id);
   const currentEmployeeOperationalConfig = getStoreOperationalConfig(storeOperationalSettings, currentEmployeeBusiness?.id);
   const resolveStoreSalesChannels = useCallback((storeId) => {
@@ -5187,7 +5170,10 @@ export default function TaqfeelahPrototypeRuntime() {
     setStoreOperationalSettings((current) => ensureStoreOperationalSettingsForBusinesses(current, businessIds));
   }, [configuredBusinesses]);
   useEffect(() => { if (selectedBusiness !== "all" && !configuredBusinesses.some((business) => business.id === selectedBusiness)) setSelectedBusiness("all"); }, [selectedBusiness, configuredBusinesses]);
-  useEffect(() => { if (assignedEmployeeBusinesses.length > 0 && !assignedEmployeeBusinesses.some((business) => business.id === employeeBusinessId)) setEmployeeBusinessId(assignedEmployeeBusinesses[0].id); }, [employeeBusinessId, assignedEmployeeBusinesses]);
+  useEffect(() => {
+    const nextBusinessId = resolveEmployeeBusinessId(assignedEmployeeBusinesses, employeeBusinessId);
+    if (nextBusinessId !== employeeBusinessId) setEmployeeBusinessId(nextBusinessId);
+  }, [employeeBusinessId, assignedEmployeeBusinesses]);
   const todayDate = todayIsoDate();
   const suggestedEntryDate = resolveSuggestedEntryDate({
     lastCloseoutDate: currentEmployeeBusiness ? lastCloseoutDates[currentEmployeeBusiness.id] : undefined,
@@ -6094,10 +6080,12 @@ export default function TaqfeelahPrototypeRuntime() {
       envUserIdMap,
       envSalesChannelIdMap,
     });
-    if (employee && loggedInEmployeeId && isUuid(sessionUserId)) {
-      maps.userIdMap[loggedInEmployeeId] = sessionUserId;
-    }
-    setRuntimeApiIdMaps(maps);
+    setRuntimeApiIdMaps(patchRuntimeApiMapsForEmployeeSession(maps, {
+      employee,
+      loggedInEmployeeId,
+      sessionUserId,
+      uuidChecker: isUuid,
+    }));
   }, [closeoutsApiEnabled, configuredBusinesses, employee, entriesApiEnabled, loggedInEmployeeId, sessionUserId, staff, storeChannelSettings]);
 
   if (!loggedIn) {
