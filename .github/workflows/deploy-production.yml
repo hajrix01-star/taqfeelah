@@ -118,7 +118,7 @@ jobs:
           VPS_CONNECT_TIMEOUT: "25"
           VPS_CONNECT_RETRIES: "8"
           VPS_RETRY_DELAY_SECONDS: "12"
-          DEPLOYMENT_WAVE: "1"
+          DEPLOYMENT_WAVE: "2"
           APP_MODE: ${{ secrets.APP_MODE }}
           NEXT_PUBLIC_APP_MODE: ${{ secrets.NEXT_PUBLIC_APP_MODE }}
           NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: ${{ secrets.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE }}
@@ -165,6 +165,7 @@ jobs:
           VPS_CONNECT_TIMEOUT: "25"
           VPS_CONNECT_RETRIES: "8"
           VPS_RETRY_DELAY_SECONDS: "12"
+          DEPLOYMENT_WAVE: "2"
         run: |
           set -euo pipefail
           sleep 30

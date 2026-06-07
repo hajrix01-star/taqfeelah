@@ -67,6 +67,18 @@ WAVE_1_ENV_OVERRIDES: dict[str, str] = {
     "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE": "true",
 }
 
+# Wave 2 enables SQL-backed home + reports (phases 4–6). Same API flags as wave 1;
+# DEPLOYMENT_WAVE bumps verify coverage for summary/reports endpoints.
+WAVE_2_ENV_OVERRIDES: dict[str, str] = {
+    **WAVE_1_ENV_OVERRIDES,
+    "DEPLOYMENT_WAVE": "2",
+}
+
+WAVE_ENV_OVERRIDES: dict[str, dict[str, str]] = {
+    "1": WAVE_1_ENV_OVERRIDES,
+    "2": WAVE_2_ENV_OVERRIDES,
+}
+
 PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
     "DEPLOYMENT_WAVE": "1",
     "APP_MODE": "production",
@@ -342,11 +354,19 @@ def read_remote_production_env(vps: VPS, app_dir: str) -> dict[str, str]:
 
 def apply_deployment_wave_overrides(merged_env: dict[str, str]) -> dict[str, str]:
     wave = os.environ.get("DEPLOYMENT_WAVE", merged_env.get("DEPLOYMENT_WAVE", "1")).strip()
-    if wave != "1":
+    overrides = WAVE_ENV_OVERRIDES.get(wave)
+    if not overrides:
         return merged_env
     result = dict(merged_env)
-    result.update(WAVE_1_ENV_OVERRIDES)
+    result.update(overrides)
     return result
+
+
+def deployment_wave_requires_analytics_verify() -> bool:
+    wave = os.environ.get("DEPLOYMENT_WAVE", "1").strip()
+    if not wave.isdigit():
+        return False
+    return int(wave) >= 2
 
 
 def resolve_production_env(existing_remote_env: dict[str, str] | None = None) -> dict[str, str]:
@@ -650,6 +670,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     wave_org_id = PRODUCTION_ENV_BOOTSTRAP_DEFAULTS["NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID"]
     wave_owner_id = PRODUCTION_ENV_BOOTSTRAP_DEFAULTS["NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID"]
     wave_store_id = "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"
+    analytics_verify = deployment_wave_requires_analytics_verify()
     verify_cmds = [
         "docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'",
         "nginx -t",
@@ -666,12 +687,32 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             f"-H 'x-user-id: {wave_owner_id}' "
             f"-H 'x-member-role: owner'"
         ),
+        *([
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave2-summary-day.json "
+                f"-w '%{{http_code}}' https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/summary/day "
+                f"-H 'x-organization-id: {wave_org_id}' "
+                f"-H 'x-user-id: {wave_owner_id}' "
+                f"-H 'x-member-role: owner'"
+            ),
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave2-reports-days.json "
+                f"-w '%{{http_code}}' "
+                f"'https://{shlex.quote(domain)}/api/v1/reports/days?"
+                f"storeId={wave_store_id}&from=2026-01-01&to=2026-12-31' "
+                f"-H 'x-organization-id: {wave_org_id}' "
+                f"-H 'x-user-id: {wave_owner_id}' "
+                f"-H 'x-member-role: owner'"
+            ),
+        ] if analytics_verify else []),
         f"curl -I --max-time 15 https://{shlex.quote(www_domain)} || true",
         "curl -I --max-time 15 https://hajrix.com || true",
         "curl -I --max-time 15 https://arz-lounge.com || true",
     ]
     auth_status_code: str | None = None
     entries_status_code: str | None = None
+    summary_day_status_code: str | None = None
+    reports_days_status_code: str | None = None
     for c in verify_cmds:
         print_section(c)
         code, out, err = vps.run(c, check=False)
@@ -701,6 +742,30 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 raise RuntimeError(
                     "Deployment wave 1 verification failed: entries API returned "
                     f"HTTP {entries_status_code or 'unknown'}"
+                )
+            continue
+        if "/summary/day" in c and "wave2" in c:
+            summary_day_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run("cat /tmp/taqfeelah-wave2-summary-day.json 2>/dev/null || true", check=False)
+            if body.strip():
+                safe_print("Wave 2 summary/day API response preview:")
+                safe_print(body.strip()[:240])
+            if summary_day_status_code != "200":
+                raise RuntimeError(
+                    "Deployment wave 2 verification failed: summary/day API returned "
+                    f"HTTP {summary_day_status_code or 'unknown'}"
+                )
+            continue
+        if "/reports/days" in c and "wave2" in c:
+            reports_days_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run("cat /tmp/taqfeelah-wave2-reports-days.json 2>/dev/null || true", check=False)
+            if body.strip():
+                safe_print("Wave 2 reports/days API response preview:")
+                safe_print(body.strip()[:240])
+            if reports_days_status_code != "200":
+                raise RuntimeError(
+                    "Deployment wave 2 verification failed: reports/days API returned "
+                    f"HTTP {reports_days_status_code or 'unknown'}"
                 )
             continue
         if code != 0:
