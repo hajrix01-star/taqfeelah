@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   buildNewStaffMember,
+  buildStaffDeleteTarget,
   canAddStaffMember,
   cloneStaffDraft,
   prepareSavedTeamDraft,
+  resolveTeamSaveFailureMessage,
   toggleEmployeeActiveInDraft,
   toggleEmployeeStoreInDraft,
   toggleStoreSelection,
@@ -61,5 +63,11 @@ describe("owner settings team actions", () => {
     );
     expect(reassigned[0].storeIds).toEqual(["shami", "arz"]);
     expect(toggleStoreSelection(["shami"], "arz")).toEqual(["shami", "arz"]);
+  });
+
+  it("builds staff delete target and failure messages", () => {
+    expect(buildStaffDeleteTarget({ id: "ahmed" })).toEqual({ type: "staff", item: { id: "ahmed" } });
+    expect(resolveTeamSaveFailureMessage(new Error("network"), "ar")).toBe("network");
+    expect(resolveTeamSaveFailureMessage("x", "en")).toBe("Failed to save team on server.");
   });
 });

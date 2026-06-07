@@ -16,6 +16,26 @@ export function getStoreChannelConfig(settings, storeId, defaultConfig) {
 }
 
 /**
+ * @param {Array<{ id: string }>} defaultChannels
+ * @returns {StoreChannelConfig}
+ */
+export function createDefaultStoreChannelConfig(defaultChannels) {
+  return {
+    channels: defaultChannels.map((channel) => ({ ...channel })),
+    activeIds: defaultChannels.map((channel) => channel.id),
+  };
+}
+
+/**
+ * @param {Record<string, StoreChannelConfig | undefined>} settings
+ * @param {string | null | undefined} storeId
+ * @param {StoreChannelConfig} defaultConfig
+ */
+export function resolveStoreChannelConfig(settings, storeId, defaultConfig) {
+  return getStoreChannelConfig(settings, storeId, defaultConfig);
+}
+
+/**
  * @param {Record<string, unknown> | null | undefined} savedSettings
  * @param {Array<{ id: string }>} storeList
  * @param {StoreChannelConfig} defaultConfig

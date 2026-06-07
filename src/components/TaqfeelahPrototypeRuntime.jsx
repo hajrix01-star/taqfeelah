@@ -135,15 +135,25 @@ import {
   buildOwnerSettingsTeamPersistPayload,
   persistOwnerSettingsToLocalStorage,
 } from "@/features/org-config/client/owner-settings-local-persistence";
+import { isNotebookThemeDirty } from "@/features/org-config/client/owner-settings-appearance-actions";
 import {
+  applyPersistedStoreChannelSettings,
+  applyPersistedStoreOperationalSettings,
   applyStoreProfileUpdate,
+  buildArchiveStoreDeleteTarget,
   buildNewConfiguredBusiness,
+  buildRemoveStoreDeleteTarget,
+  partitionConfiguredBusinesses,
+  toggleArchivedBusinessId,
 } from "@/features/org-config/client/owner-settings-store-actions";
+import { resolveStorePanelOpenDrafts } from "@/features/org-config/client/owner-settings-store-panel-actions";
 import {
   buildNewStaffMember,
+  buildStaffDeleteTarget,
   canAddStaffMember,
   cloneStaffDraft,
   prepareSavedTeamDraft,
+  resolveTeamSaveFailureMessage,
   toggleEmployeeActiveInDraft,
   toggleEmployeeStoreInDraft,
   toggleStoreSelection,
@@ -158,19 +168,18 @@ import { buildOwnerSettingsDeleteDialog } from "@/features/org-config/client/own
 import {
   addCustomSalesChannel,
   canRequestRetireSalesChannel,
-  cloneStoreChannelDraft,
   restoreRetiredSalesChannel,
   retireSalesChannelInDraft,
   toggleSalesChannelActive,
 } from "@/features/org-config/client/owner-settings-channel-actions";
 import {
-  cloneStoreOperationalDraft,
   mergeOperationalDraft,
   toggleOperationalCategory,
 } from "@/features/org-config/client/owner-settings-operational-actions";
 import {
   buildInitialStoreChannelSettings,
-  getStoreChannelConfig,
+  createDefaultStoreChannelConfig,
+  resolveStoreChannelConfig as readStoreChannelConfig,
 } from "@/features/org-config/client/store-channel-config";
 import {
   entriesInPeriod,
@@ -1186,12 +1195,9 @@ const channels = [
   { id: "jahez", text: "jahez", icon: ShoppingBag },
   { id: "hunger", text: "hunger", icon: ShoppingBag },
 ];
-const DEFAULT_STORE_CHANNEL_CONFIG = {
-  channels: channels.map((channel) => ({ ...channel })),
-  activeIds: channels.map((channel) => channel.id),
-};
+const DEFAULT_STORE_CHANNEL_CONFIG = createDefaultStoreChannelConfig(channels);
 const resolveStoreChannelConfig = (settings, storeId) => (
-  getStoreChannelConfig(settings, storeId, DEFAULT_STORE_CHANNEL_CONFIG)
+  readStoreChannelConfig(settings, storeId, DEFAULT_STORE_CHANNEL_CONFIG)
 );
 
 const channelName = (channel, lang) => channel.custom ? (lang === "ar" ? channel.nameAr : channel.nameEn) : text(lang, channel.text);
@@ -2334,7 +2340,7 @@ function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedStores, on
     setSavedNotice(true);
     window.setTimeout(() => setSavedNotice(false), 2200);
   };
-  const themeDirty = draftTheme !== employeeNotebookTheme;
+  const themeDirty = isNotebookThemeDirty(draftTheme, employeeNotebookTheme);
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-28 pt-1">
       <BackTitle lang={lang} title={text(lang, "settings")} onBack={onBack} inNotebook />
@@ -2437,8 +2443,10 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   const [draftAuthEmployeePins, setDraftAuthEmployeePins] = useState(() => ({ ...(authEmployeePins || {}) }));
   const [teamSaving, setTeamSaving] = useState(false);
 
-  const activeStoredBusinesses = configuredBusinesses.filter((business) => !archivedBusinessIds.includes(business.id));
-  const archivedStoredBusinesses = configuredBusinesses.filter((business) => archivedBusinessIds.includes(business.id));
+  const { active: activeStoredBusinesses, archived: archivedStoredBusinesses } = partitionConfiguredBusinesses(
+    configuredBusinesses,
+    archivedBusinessIds,
+  );
   const selectedStore = configuredBusinesses.find((business) => business.id === settingsStoreId) || null;
   const archived = selectedStore ? archivedBusinessIds.includes(selectedStore.id) : false;
   const staffWorkingSet = managingTeam && draftStaff ? draftStaff : staff;
@@ -2504,12 +2512,19 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   const openStorePanel = (panel) => {
     setSettingsNotice("");
     setStorePanel(panel);
-    if (panel === "profile") {
-      setDraftStoreName(selectedStore?.displayName || displayBusinessName(selectedStore));
-      setDraftStoreLocation(displayLocation(selectedStore));
+    const drafts = resolveStorePanelOpenDrafts(panel, {
+      selectedStore,
+      displayBusinessName,
+      displayLocation,
+      savedChannelConfig,
+      savedOperationalConfig,
+    });
+    if (drafts.profile) {
+      setDraftStoreName(drafts.profile.name);
+      setDraftStoreLocation(drafts.profile.location);
     }
-    if (panel === "channels") setDraftStoreChannelConfig(cloneStoreChannelDraft(savedChannelConfig));
-    if (panel === "expenses" || panel === "review") setDraftStoreOperationalConfig(cloneStoreOperationalDraft(savedOperationalConfig));
+    if (drafts.channelConfig) setDraftStoreChannelConfig(drafts.channelConfig);
+    if (drafts.operationalConfig) setDraftStoreOperationalConfig(drafts.operationalConfig);
   };
   const backFromStorePanel = () => { resetStoreDrafts(); setStorePanel("overview"); };
   const saveStoreProfile = () => {
@@ -2522,12 +2537,12 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   };
   const saveChannelSettings = () => {
     if (!settingsStoreId || !draftStoreChannelConfig) return;
-    setStoreChannelSettings((current) => ({ ...current, [settingsStoreId]: draftStoreChannelConfig }));
+    setStoreChannelSettings((current) => applyPersistedStoreChannelSettings(current, settingsStoreId, draftStoreChannelConfig));
     showSettingsSaved(); backFromStorePanel();
   };
   const saveOperationalSettings = () => {
     if (!settingsStoreId || !draftStoreOperationalConfig) return;
-    setStoreOperationalSettings((current) => ({ ...current, [settingsStoreId]: draftStoreOperationalConfig }));
+    setStoreOperationalSettings((current) => applyPersistedStoreOperationalSettings(current, settingsStoreId, draftStoreOperationalConfig));
     showSettingsSaved(); backFromStorePanel();
   };
   const updateOperationalDraft = (updates) => setDraftStoreOperationalConfig((current) => mergeOperationalDraft(current || savedOperationalConfig, updates));
@@ -2555,15 +2570,23 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
     setSettingsNotice("");
     setDraftStoreOperationalConfig(result.config);
   };
-  const toggleArchive = (id) => setArchivedBusinessIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  const toggleArchive = (id) => setArchivedBusinessIds((current) => toggleArchivedBusinessId(current, id));
   const storeHasRecords = (business) => storeHasOperationalRecords(operationalEntries, business.id);
   const staffWithoutActiveStoreAfterArchive = (businessId) => listStaffWithoutActiveStoreAfterArchive({
     staff: visibleStaff,
     businessId,
     activeBusinessIds: activeStoredBusinesses.map((business) => business.id),
   });
-  const requestArchiveStore = (business) => setDeleteTarget({ type: "archive", item: business, affectedStaff: staffWithoutActiveStoreAfterArchive(business.id) });
-  const openStoreDelete = (business) => { const hasRecords = storeHasRecords(business); setDeleteTarget({ type: "store", item: business, hasRecords, affectedStaff: hasRecords ? staffWithoutActiveStoreAfterArchive(business.id) : [] }); };
+  const requestArchiveStore = (business) => setDeleteTarget(
+    buildArchiveStoreDeleteTarget(business, staffWithoutActiveStoreAfterArchive(business.id)),
+  );
+  const openStoreDelete = (business) => {
+    const hasRecords = storeHasRecords(business);
+    setDeleteTarget(buildRemoveStoreDeleteTarget(business, {
+      hasRecords,
+      affectedStaff: hasRecords ? staffWithoutActiveStoreAfterArchive(business.id) : [],
+    }));
+  };
   const addStore = () => {
     const business = buildNewConfiguredBusiness({
       name: newStoreName,
@@ -2598,11 +2621,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
         }));
         showSettingsSaved();
       } catch (failure) {
-        setSettingsNotice(
-          failure instanceof Error && failure.message
-            ? failure.message
-            : (lang === "ar" ? "تعذر حفظ الفريق على الخادم." : "Failed to save team on server."),
-        );
+        setSettingsNotice(resolveTeamSaveFailureMessage(failure, lang));
       } finally {
         setTeamSaving(false);
       }
@@ -2803,7 +2822,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
                 <div className="flex items-center gap-2">
                   <SettingToggle disabled={!managingTeam} enabled={person.active} onToggle={() => toggleEmployeeActive(person.id)} />
                   {managingTeam && (
-                    <button onClick={() => setDeleteTarget({ type: "staff", item: person })} className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFF1EE] text-[#B44747]">
+                    <button onClick={() => setDeleteTarget(buildStaffDeleteTarget(person))} className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFF1EE] text-[#B44747]">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   )}
@@ -2860,7 +2879,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
       </motion.section>
     );
   }
-  if (section === "appearance") return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={text(lang, "notebookAppearance")} onBack={() => setSection("home")} /><div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><p className="mb-2 text-taq-meta font-bold text-[#827762]">{lang === "ar" ? "اختر شكل دفتر التقفيلة والتقارير وصور المشاركة." : "Choose the notebook style for closeouts, reports, and sharing."}</p><ThemePicker lang={lang} theme={draftNotebookTheme} onChange={(nextTheme) => { setDraftNotebookTheme(nextTheme); setThemeDirty(nextTheme !== notebookTheme); }} /><p className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "autoSavedAccount")}</p>{themeDirty && <div className="mt-4 grid grid-cols-[0.9fr_1.35fr] gap-3"><button onClick={() => { setDraftNotebookTheme(notebookTheme); setThemeDirty(false); }} className="rounded-2xl bg-[#F7F5EF] py-3 text-xs font-black">{text(lang, "cancelChanges")}</button><button onClick={() => { setNotebookTheme(draftNotebookTheme); setThemeDirty(false); showSettingsSaved(); }} className="rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">{text(lang, "saveSettings")}</button></div>}{settingsSuccess && <div className="mt-4 rounded-xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">{text(lang, "changesSaved")}</div>}</div></motion.section>;
+  if (section === "appearance") return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={text(lang, "notebookAppearance")} onBack={() => setSection("home")} /><div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><p className="mb-2 text-taq-meta font-bold text-[#827762]">{lang === "ar" ? "اختر شكل دفتر التقفيلة والتقارير وصور المشاركة." : "Choose the notebook style for closeouts, reports, and sharing."}</p><ThemePicker lang={lang} theme={draftNotebookTheme} onChange={(nextTheme) => { setDraftNotebookTheme(nextTheme); setThemeDirty(isNotebookThemeDirty(nextTheme, notebookTheme)); }} /><p className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "autoSavedAccount")}</p>{themeDirty && <div className="mt-4 grid grid-cols-[0.9fr_1.35fr] gap-3"><button onClick={() => { setDraftNotebookTheme(notebookTheme); setThemeDirty(false); }} className="rounded-2xl bg-[#F7F5EF] py-3 text-xs font-black">{text(lang, "cancelChanges")}</button><button onClick={() => { setNotebookTheme(draftNotebookTheme); setThemeDirty(false); showSettingsSaved(); }} className="rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">{text(lang, "saveSettings")}</button></div>}{settingsSuccess && <div className="mt-4 rounded-xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">{text(lang, "changesSaved")}</div>}</div></motion.section>;
   if (section === "subscription") return APP_IN_PRODUCTION_MODE ? <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={lang === "ar" ? "الخطة والاشتراك" : "Plan & subscription"} onBack={() => setSection("home")} /><div className="rounded-3xl bg-white p-5 ring-1 ring-black/[0.045]"><Badge tone="warning">{lang === "ar" ? "معطّل حاليًا" : "Disabled for now"}</Badge><p className="mt-4 text-taq-meta font-bold leading-6 text-[#716753]">{lang === "ar" ? "تم تعطيل SaaS في مرحلة الإطلاق الحالية. سيتم تفعيله لاحقًا دون التأثير على تشغيل المحلات." : "SaaS billing is disabled for the current launch phase and will be enabled later without affecting store operations."}</p></div></motion.section> : <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={lang === "ar" ? "الخطة والاشتراك" : "Plan & subscription"} onBack={() => setSection("home")} /><div className="rounded-3xl bg-white p-5 ring-1 ring-black/[0.045]"><Badge tone="navy">{text(lang, "currentPlan")}</Badge><h3 className="mt-4 text-lg font-black">{lang === "ar" ? "نسخة التطوير الحالية" : "Current development access"}</h3><p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">{text(lang, "monthlyPrice")}</p><div className="mt-5 rounded-2xl bg-[#FFF4D2] p-4 text-taq-meta font-bold leading-6 text-[#806528]">{lang === "ar" ? "سيتم ربط الاشتراك بالمنشأة وليس بالمحل، مع تحديد عدد المحلات والموظفين وميزات التصدير لاحقًا." : "Subscription will be tied to the organization, not an individual shop, with plan limits added later."}</div></div></motion.section>;
   if (section === "support") return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><PageHeader title={text(lang, "support")} onBack={() => setSection("home")} /><div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]"><SettingsLink icon={Smartphone} title={text(lang, "whatsappSupport")} onClick={onOpenSupport} border /><SettingsLink icon={FileText} title={text(lang, "helpCenter")} onClick={onOpenHelp} border={false} /></div></motion.section>;
   return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24"><div className="mb-5"><p className="text-xs font-bold text-[#8B8274]">{text(lang, "ownerAccount")}</p><h1 className="text-xl font-black">{text(lang, "settings")}</h1></div><button onClick={() => setSection("account")} className="mb-5 flex w-full items-center gap-4 rounded-3xl bg-white p-4 text-start ring-1 ring-black/[0.045]"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#112A46] text-white"><UserRound className="h-6 w-6" /></div><div className="min-w-0 flex-1"><p className="text-sm font-black">{ownerProfile?.name || text(lang, "ownerName")}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "myAccountSecurity")}</p></div><Arrow className="h-4 w-4 shrink-0 text-[#B99844]" /></button><p className="mb-2 text-xs font-bold text-[#716753]">{lang === "ar" ? "المنشأة" : "Organization"}</p><div className="mb-5 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]"><SettingsLink icon={Building2} title={lang === "ar" ? "المحلات" : "Shops"} value={`${activeStoredBusinesses.length}`} onClick={() => setSection("stores")} /><SettingsLink icon={UserRound} title={lang === "ar" ? "الفريق والصلاحيات" : "Team & access"} value={`${visibleStaff.length}`} onClick={() => setSection("team")} />{APP_IN_PRODUCTION_MODE ? null : <SettingsLink icon={CreditCard} title={lang === "ar" ? "الخطة والاشتراك" : "Plan & subscription"} value={lang === "ar" ? "تجريبي" : "Trial"} onClick={() => setSection("subscription")} border={false} />}</div><p className="mb-2 text-xs font-bold text-[#716753]">{lang === "ar" ? "التفضيلات" : "Preferences"}</p><div className="mb-5 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]"><SettingsLink icon={ReceiptText} title={text(lang, "notebookAppearance")} value={text(lang, notebookTheme)} onClick={() => setSection("appearance")} border={false} /></div><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "support")}</p><div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]"><SettingsLink icon={Smartphone} title={text(lang, "contactSupport")} onClick={() => setSection("support")} /><SettingsLink icon={UserRound} title={text(lang, "logout")} onClick={onLogout} danger border={false} /></div></motion.section>;

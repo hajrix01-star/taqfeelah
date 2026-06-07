@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyPersistedStoreChannelSettings,
   applyStoreProfileUpdate,
+  buildArchiveStoreDeleteTarget,
   buildNewConfiguredBusiness,
+  buildRemoveStoreDeleteTarget,
+  partitionConfiguredBusinesses,
+  toggleArchivedBusinessId,
 } from "./owner-settings-store-actions";
 
 const emptyStoreRecord = {
@@ -43,5 +48,23 @@ describe("owner settings store actions", () => {
       displayName: "New Name",
       customLocation: "Jeddah",
     });
+  });
+
+  it("partitions stores and builds delete targets", () => {
+    const partitioned = partitionConfiguredBusinesses(
+      [{ id: "shami" }, { id: "arz" }],
+      ["arz"],
+    );
+    expect(partitioned.active.map((store) => store.id)).toEqual(["shami"]);
+    expect(partitioned.archived.map((store) => store.id)).toEqual(["arz"]);
+    expect(toggleArchivedBusinessId(["arz"], "shami")).toEqual(["arz", "shami"]);
+    expect(buildArchiveStoreDeleteTarget({ id: "shami" }, [{ id: "ahmed" }])).toEqual({
+      type: "archive",
+      item: { id: "shami" },
+      affectedStaff: [{ id: "ahmed" }],
+    });
+    expect(buildRemoveStoreDeleteTarget({ id: "shami" }, { hasRecords: false }).type).toBe("store");
+    expect(applyPersistedStoreChannelSettings({}, "shami", { channels: [], activeIds: ["cash"] }).shami)
+      .toEqual({ channels: [], activeIds: ["cash"] });
   });
 });

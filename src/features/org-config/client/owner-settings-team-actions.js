@@ -131,3 +131,19 @@ export function toggleStoreSelection(storeIds, storeId) {
     ? storeIds.filter((item) => item !== storeId)
     : [...storeIds, storeId];
 }
+
+/**
+ * @param {Record<string, unknown>} person
+ */
+export function buildStaffDeleteTarget(person) {
+  return { type: "staff", item: person };
+}
+
+/**
+ * @param {unknown} failure
+ * @param {"ar" | "en"} [lang]
+ */
+export function resolveTeamSaveFailureMessage(failure, lang = "ar") {
+  if (failure instanceof Error && failure.message) return failure.message;
+  return lang === "ar" ? "تعذر حفظ الفريق على الخادم." : "Failed to save team on server.";
+}
