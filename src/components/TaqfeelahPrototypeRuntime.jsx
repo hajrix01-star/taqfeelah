@@ -107,7 +107,17 @@ import {
   migrateSavedSettings as applyLocalSavedSettingsMigration,
   OWNER_SETTINGS_STORAGE_KEY,
 } from "@/features/runtime-settings/client/migrate-local-saved-settings";
-import { readLocalSavedSettings } from "@/features/runtime-settings/client/read-local-saved-settings";
+import { buildOperationalEntry } from "@/features/entries/client/build-operational-entry";
+import {
+  buildCloseoutAlertRecord,
+  findDuplicateSummaryEntries,
+  isFutureOperationalEntryDate,
+  mergeLastCloseoutDateForStore,
+  resolveLatestActiveCloseoutDateFromEntries,
+  resolveOperationalEntrySaveFailureMessage,
+  resolveSuggestedEntryDate,
+  upsertCloseoutAlert,
+} from "@/features/operations/operational-entry-save-helpers";
 import { buildPrototypeDefaultStaff, readPrototypeAuthBoot as resolvePrototypeAuthBoot } from "@/features/demo/prototype-auth-boot";
 import { resolveOperationalEntriesBulkLoadWindow } from "@/features/entries/client/register-entries-load-window";
 import { isProductionAppMode } from "@/core/config/app-mode";
@@ -122,8 +132,13 @@ import { useOrgConfigRuntimeBridge } from "@/features/org-config/client/org-conf
 import {
   buildInitialStoreOperationalSettings,
   buildStoreOperationalPolicy,
+  ensureStoreOperationalSettingsForBusinesses,
   getStoreOperationalConfig,
 } from "@/features/org-config/client/store-operational-config";
+import {
+  createMigrateSavedSettings,
+  createReadSavedSettings,
+} from "@/features/org-config/client/owner-settings-bootstrap";
 import {
   buildOwnerProfileUpdate,
   isOwnerAuthDirty,
@@ -179,6 +194,7 @@ import {
 import {
   buildInitialStoreChannelSettings,
   createDefaultStoreChannelConfig,
+  ensureStoreChannelSettingsForBusinesses,
   resolveStoreChannelConfig as readStoreChannelConfig,
 } from "@/features/org-config/client/store-channel-config";
 import {
@@ -1282,6 +1298,17 @@ const PROTOTYPE_OWNER_USERNAME = (
 const PROTOTYPE_OWNER_PASSWORD = process.env.NEXT_PUBLIC_DEMO_OWNER_PASSWORD || (APP_IN_PRODUCTION_MODE ? "" : "demo123");
 const PROTOTYPE_EMPLOYEE_PIN_DEFAULT = process.env.NEXT_PUBLIC_DEMO_EMPLOYEE_PIN_DEFAULT || (APP_IN_PRODUCTION_MODE ? "" : "1234");
 const CLOSEOUT_ALERTS_STORAGE_KEY = "taqfeelah_closeout_alerts_v1";
+const migrateSavedSettings = createMigrateSavedSettings({
+  bindsToServerAuth: BINDS_TO_SERVER_AUTH,
+  storageKey: OWNER_SETTINGS_STORAGE_KEY,
+  closeoutAlertsKey: CLOSEOUT_ALERTS_STORAGE_KEY,
+  applyMigration: applyLocalSavedSettingsMigration,
+  autoResolveCloseouts: autoResolveSubmittedCloseoutsWithoutReview,
+});
+const readSavedSettings = createReadSavedSettings({
+  enabled: !BINDS_TO_SERVER_AUTH && !RUNTIME_SETTINGS_DB_SOURCE,
+  migrate: migrateSavedSettings,
+});
 const OPERATIONAL_ENTRIES_STORAGE_KEY = PROTOTYPE_DEMO_OPERATIONAL_ENTRIES_KEY;
 const ACKNOWLEDGED_DUPLICATE_SALES_STORAGE_KEY = "taqfeelah_acknowledged_duplicate_sales_v1";
 const LAST_CLOSEOUT_STORAGE_KEY = PROTOTYPE_DEMO_LAST_CLOSEOUT_KEY;
@@ -1617,35 +1644,10 @@ function operationTime(item, lang) {
   return new Intl.DateTimeFormat(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", { hour: "numeric", minute: "2-digit" }).format(new Date(item.createdAt));
 }
 function buildEntry(payload, actor) {
-  const id = newId(payload.type);
-  const createdAt = new Date().toISOString();
-  const amount = payload.type === "summary" ? (payload.salesChannels || []).reduce((sum, row) => sum + row.amount, 0) : toAmount(payload.amount);
-  return {
-    id,
-    businessId: payload.businessId,
-    date: payload.date,
-    createdAt,
-    type: payload.type,
-    categoryId: payload.categoryId || null,
-    amount,
-    salesChannels: payload.salesChannels || [],
-    note: payload.note?.trim() || "",
-    noteKey: payload.noteKey || null,
-    closeoutId: payload.closeoutId || null,
-    daySequence: Number.isInteger(payload.daySequence) ? payload.daySequence : null,
-    outflowId: payload.outflowId || null,
-    enteredBy: actor,
-    attachment: payload.attachment ? makeAttachment(id, payload.attachment) : null,
-    reviewed: false,
-    status: "active",
-    voidedAt: null,
-    voidedBy: null,
-    voidReason: "",
-    restoredAt: null,
-    restoredBy: null,
-    restoreReason: "",
-    auditTrail: [{ action: "created", at: createdAt, by: actor, reason: "" }],
-  };
+  return buildOperationalEntry(payload, actor, {
+    createId: () => newId(payload.type),
+    parseAmount: toAmount,
+  });
 }
 function newestEntries(entries) {
   return [...entries].sort((a, b) => `${b.date}|${b.createdAt || ""}`.localeCompare(`${a.date}|${a.createdAt || ""}`));
@@ -2382,28 +2384,6 @@ function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedStores, on
     </motion.section>
   );
 }
-function migrateSavedSettings(raw) {
-  return applyLocalSavedSettingsMigration(raw, {
-    skip: !raw || typeof window === "undefined" || BINDS_TO_SERVER_AUTH,
-    persistMigrated: (migrated) => {
-      window.localStorage.setItem(OWNER_SETTINGS_STORAGE_KEY, JSON.stringify(migrated));
-    },
-    clearCloseoutAlerts: () => {
-      window.localStorage.removeItem(CLOSEOUT_ALERTS_STORAGE_KEY);
-    },
-    resolveCloseouts: () => {
-      autoResolveSubmittedCloseoutsWithoutReview(() => false);
-    },
-  });
-}
-
-function readSavedSettings() {
-  return readLocalSavedSettings({
-    enabled: !BINDS_TO_SERVER_AUTH && !RUNTIME_SETTINGS_DB_SOURCE,
-    migrate: migrateSavedSettings,
-  });
-}
-
 const PROTOTYPE_DEFAULT_STAFF = buildPrototypeDefaultStaff(PROTOTYPE_EMPLOYEE_PIN_DEFAULT);
 
 function readPrototypeAuthBoot() {
@@ -5279,51 +5259,25 @@ export default function TaqfeelahPrototypeRuntime() {
     setCloseoutAlerts((current) => current.filter((alert) => getStoreOperationalConfig(storeOperationalSettings, alert.businessId).closeoutAlert));
   }, [storeOperationalSettings]);
   useEffect(() => {
-    setStoreChannelSettings((current) => {
-      let changed = false;
-      const next = { ...current };
-      configuredBusinesses.forEach((business) => {
-        if (!next[business.id]) {
-          next[business.id] = { channels: channels.map((channel) => ({ ...channel })), activeIds: channels.map((channel) => channel.id) };
-          changed = true;
-        }
-      });
-      return changed ? next : current;
-    });
-    setStoreOperationalSettings((current) => {
-      let changed = false;
-      const next = { ...current };
-      configuredBusinesses.forEach((business) => {
-        if (!next[business.id]) {
-          next[business.id] = getStoreOperationalConfig({}, business.id);
-          changed = true;
-        }
-      });
-      return changed ? next : current;
-    });
+    const businessIds = configuredBusinesses.map((business) => business.id);
+    setStoreChannelSettings((current) => ensureStoreChannelSettingsForBusinesses(current, businessIds, DEFAULT_STORE_CHANNEL_CONFIG));
+    setStoreOperationalSettings((current) => ensureStoreOperationalSettingsForBusinesses(current, businessIds));
   }, [configuredBusinesses]);
   useEffect(() => { if (selectedBusiness !== "all" && !configuredBusinesses.some((business) => business.id === selectedBusiness)) setSelectedBusiness("all"); }, [selectedBusiness, configuredBusinesses]);
   useEffect(() => { if (assignedEmployeeBusinesses.length > 0 && !assignedEmployeeBusinesses.some((business) => business.id === employeeBusinessId)) setEmployeeBusinessId(assignedEmployeeBusinesses[0].id); }, [employeeBusinessId, assignedEmployeeBusinesses]);
-  const hasPreviousCloseout = Boolean(currentEmployeeBusiness && lastCloseoutDates[currentEmployeeBusiness.id]);
   const todayDate = todayIsoDate();
-  const calculatedSuggestedEntryDate = hasPreviousCloseout ? nextDayIso(lastCloseoutDates[currentEmployeeBusiness.id]) : todayDate;
-  const suggestedEntryDate = calculatedSuggestedEntryDate > todayDate ? todayDate : calculatedSuggestedEntryDate;
+  const suggestedEntryDate = resolveSuggestedEntryDate({
+    lastCloseoutDate: currentEmployeeBusiness ? lastCloseoutDates[currentEmployeeBusiness.id] : undefined,
+    todayDate,
+    nextDay: nextDayIso,
+  });
   const pushCloseoutAlert = (payload, entry, actor) => {
     if (!closeoutAlertEnabledForBusiness(payload.businessId)) return;
-    setCloseoutAlerts((current) => [{
-      id: `co-${entry.id}`,
-      businessId: payload.businessId,
-      date: payload.date,
-      entryId: entry.id,
-      employeeNameAr: actor.nameAr,
-      employeeNameEn: actor.nameEn,
-      seen: false,
-      at: Date.now(),
-    }, ...current.filter((item) => item.id !== `co-${entry.id}`)]);
+    setCloseoutAlerts((current) => upsertCloseoutAlert(current, buildCloseoutAlertRecord(payload, entry, actor)));
   };
   const persistEmployeeEntry = async (payload) => {
     if (savingRef.current || !payload?.businessId || !activeEmployee || !assignedEmployeeBusinesses.some((business) => business.id === payload.businessId)) return;
-    if (payload.date > todayIsoDate()) { window.alert(text(lang, "futureDateNotAllowed")); return; }
+    if (isFutureOperationalEntryDate(payload.date, todayDate)) { window.alert(text(lang, "futureDateNotAllowed")); return; }
     savingRef.current = true; setSaving(true);
     try {
       const actor = { role: "employee", userId: activeEmployee.id, nameAr: activeEmployee.nameAr, nameEn: activeEmployee.nameEn };
@@ -5334,19 +5288,20 @@ export default function TaqfeelahPrototypeRuntime() {
           actorRole: "employee",
         });
         if (!created) {
-          window.alert(lang === "ar" ? "تعذر حفظ العملية على الخادم." : "Failed to save entry on server.");
+          window.alert(resolveOperationalEntrySaveFailureMessage(lang));
           return;
         }
         const refreshed = await loadOperationalEntriesFromApi();
         if (payload.type === "summary") {
-          const latestActiveCloseoutDate = refreshed
-            .filter((entry) => entry.businessId === payload.businessId && entry.type === "summary" && entryIsActive(entry))
-            .map((entry) => entry.date)
-            .sort()
-            .pop();
+          const latestActiveCloseoutDate = resolveLatestActiveCloseoutDateFromEntries(
+            refreshed,
+            payload.businessId,
+            payload.date,
+            entryIsActive,
+          );
           setLastCloseoutDates((current) => ({
             ...current,
-            [payload.businessId]: latestActiveCloseoutDate || payload.date,
+            [payload.businessId]: latestActiveCloseoutDate,
           }));
           const createdEntry = refreshed.find((entry) => entry.id === created.id);
           if (createdEntry) pushCloseoutAlert(payload, createdEntry, actor);
@@ -5361,7 +5316,7 @@ export default function TaqfeelahPrototypeRuntime() {
       }
       setOperationalEntries((current) => [entry, ...current]);
       if (payload.type === "summary") {
-        setLastCloseoutDates((current) => ({ ...current, [payload.businessId]: !current[payload.businessId] || payload.date > current[payload.businessId] ? payload.date : current[payload.businessId] }));
+        setLastCloseoutDates((current) => mergeLastCloseoutDateForStore(current, payload.businessId, payload.date));
         pushCloseoutAlert(payload, entry, actor);
       }
       setEmployeePage("home"); setSaved(true); window.setTimeout(() => setSaved(false), 2200);
@@ -5370,14 +5325,14 @@ export default function TaqfeelahPrototypeRuntime() {
   const saveEmployee = async (payload) => {
     if (savingRef.current || !payload?.businessId || !activeEmployee || !assignedEmployeeBusinesses.some((business) => business.id === payload.businessId)) return;
     if (payload.type === "summary") {
-      const previousEntries = operationalEntries.filter((entry) => entry.type === "summary" && entryIsActive(entry) && entry.businessId === payload.businessId && entry.date === payload.date);
+      const previousEntries = findDuplicateSummaryEntries(operationalEntries, payload, entryIsActive);
       if (previousEntries.length > 0) { setPendingDuplicateSummary({ payload, previousEntries }); return; }
     }
     await persistEmployeeEntry(payload);
   };
   const saveOwner = async (payload) => {
     if (savingRef.current || !payload?.businessId || !activeBusinesses.some((business) => business.id === payload.businessId)) return;
-    if (payload.date > todayIsoDate()) { window.alert(text(lang, "futureDateNotAllowed")); return; }
+    if (isFutureOperationalEntryDate(payload.date, todayDate)) { window.alert(text(lang, "futureDateNotAllowed")); return; }
     savingRef.current = true; setSaving(true);
     try {
       if (entriesApiEnabled) {
@@ -5387,19 +5342,20 @@ export default function TaqfeelahPrototypeRuntime() {
           actorRole: "owner",
         });
         if (!created) {
-          window.alert(lang === "ar" ? "تعذر حفظ العملية على الخادم." : "Failed to save entry on server.");
+          window.alert(resolveOperationalEntrySaveFailureMessage(lang));
           return;
         }
         const refreshed = await loadOperationalEntriesFromApi();
         if (payload.type === "summary") {
-          const latestActiveCloseoutDate = refreshed
-            .filter((entry) => entry.businessId === payload.businessId && entry.type === "summary" && entryIsActive(entry))
-            .map((entry) => entry.date)
-            .sort()
-            .pop();
+          const latestActiveCloseoutDate = resolveLatestActiveCloseoutDateFromEntries(
+            refreshed,
+            payload.businessId,
+            payload.date,
+            entryIsActive,
+          );
           setLastCloseoutDates((current) => ({
             ...current,
-            [payload.businessId]: latestActiveCloseoutDate || payload.date,
+            [payload.businessId]: latestActiveCloseoutDate,
           }));
         }
         setOwnerPage("home");
@@ -5425,7 +5381,7 @@ export default function TaqfeelahPrototypeRuntime() {
   };
   const saveOwnerSummary = async (payload) => {
     if (savingRef.current || !payload?.businessId) return;
-    const previousEntries = operationalEntries.filter((entry) => entry.type === "summary" && entryIsActive(entry) && entry.businessId === payload.businessId && entry.date === payload.date);
+    const previousEntries = findDuplicateSummaryEntries(operationalEntries, payload, entryIsActive);
     if (previousEntries.length > 0) { setPendingDuplicateSummary({ payload, previousEntries, actor: "owner" }); return; }
     await saveOwner(payload);
   };
@@ -5500,14 +5456,15 @@ export default function TaqfeelahPrototypeRuntime() {
         }
         const refreshed = await loadOperationalEntriesFromApi();
         if (payload.type === "summary") {
-          const latestActiveCloseoutDate = refreshed
-            .filter((entry) => entry.businessId === payload.businessId && entry.type === "summary" && entryIsActive(entry))
-            .map((entry) => entry.date)
-            .sort()
-            .pop();
+          const latestActiveCloseoutDate = resolveLatestActiveCloseoutDateFromEntries(
+            refreshed,
+            payload.businessId,
+            payload.date,
+            entryIsActive,
+          );
           setLastCloseoutDates((current) => ({
             ...current,
-            [payload.businessId]: latestActiveCloseoutDate || payload.date,
+            [payload.businessId]: latestActiveCloseoutDate,
           }));
         }
         if (pending.actor === "owner") {
@@ -5749,10 +5706,7 @@ export default function TaqfeelahPrototypeRuntime() {
       setOperationalEntries((current) => [...created, ...current]);
       const summaryEntry = created.find((entry) => entry.type === "summary");
       if (summaryEntry) {
-        setLastCloseoutDates((current) => ({
-          ...current,
-          [summaryEntry.businessId]: !current[summaryEntry.businessId] || summaryEntry.date > current[summaryEntry.businessId] ? summaryEntry.date : current[summaryEntry.businessId],
-        }));
+        setLastCloseoutDates((current) => mergeLastCloseoutDateForStore(current, summaryEntry.businessId, summaryEntry.date));
       }
     }
   }, [lang, removeOperationalEntriesForCloseout]);

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildInitialStoreChannelSettings,
   createDefaultStoreChannelConfig,
+  ensureStoreChannelSettingsForBusinesses,
   getStoreChannelConfig,
   resolveStoreChannelConfig,
 } from "./store-channel-config";
@@ -34,5 +35,11 @@ describe("store channel config", () => {
       channels: [{ id: "cash", retired: false }],
       activeIds: ["cash"],
     });
+  });
+
+  it("ensures default channel settings for new businesses", () => {
+    const next = ensureStoreChannelSettingsForBusinesses({}, ["shami"], defaultConfig);
+    expect(next.shami.activeIds).toEqual(["cash", "mada"]);
+    expect(ensureStoreChannelSettingsForBusinesses(next, ["shami"], defaultConfig)).toBe(next);
   });
 });

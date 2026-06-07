@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildInitialStoreOperationalSettings,
   buildStoreOperationalPolicy,
+  ensureStoreOperationalSettingsForBusinesses,
   getStoreOperationalConfig,
 } from "./store-operational-config";
 
@@ -23,6 +24,12 @@ describe("store operational config helpers", () => {
     expect(settings.shami.reviewEnabled).toBe(true);
     expect(settings.shami.closeoutReviewEnabled).toBe(true);
     expect(settings.arz.activeCategories).toContain("rent");
+  });
+
+  it("ensures operational settings exist for each configured business", () => {
+    const next = ensureStoreOperationalSettingsForBusinesses({}, ["shami"]);
+    expect(next.shami).toMatchObject({ reviewEnabled: false });
+    expect(ensureStoreOperationalSettingsForBusinesses(next, ["shami"])).toBe(next);
   });
 
   it("exposes store policy helpers from normalized settings", () => {

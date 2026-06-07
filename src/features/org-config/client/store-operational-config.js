@@ -38,6 +38,24 @@ export function buildInitialStoreOperationalSettings(savedSettings, storeList) {
   );
 }
 
+/**
+ * @param {Record<string, unknown>} current
+ * @param {string[]} businessIds
+ */
+export function ensureStoreOperationalSettingsForBusinesses(current, businessIds) {
+  let changed = false;
+  const next = { ...current };
+
+  businessIds.forEach((businessId) => {
+    if (!next[businessId]) {
+      next[businessId] = getStoreOperationalConfig({}, businessId);
+      changed = true;
+    }
+  });
+
+  return changed ? next : current;
+}
+
 export function buildStoreOperationalPolicy(settings) {
   return {
     reviewEnabledForBusiness: (businessId) => getStoreOperationalConfig(settings, businessId).reviewEnabled,

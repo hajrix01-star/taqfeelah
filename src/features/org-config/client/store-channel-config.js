@@ -36,6 +36,28 @@ export function resolveStoreChannelConfig(settings, storeId, defaultConfig) {
 }
 
 /**
+ * @param {Record<string, StoreChannelConfig>} current
+ * @param {string[]} businessIds
+ * @param {StoreChannelConfig} defaultConfig
+ */
+export function ensureStoreChannelSettingsForBusinesses(current, businessIds, defaultConfig) {
+  let changed = false;
+  const next = { ...current };
+
+  businessIds.forEach((businessId) => {
+    if (!next[businessId]) {
+      next[businessId] = {
+        channels: defaultConfig.channels.map((channel) => ({ ...channel })),
+        activeIds: [...defaultConfig.activeIds],
+      };
+      changed = true;
+    }
+  });
+
+  return changed ? next : current;
+}
+
+/**
  * @param {Record<string, unknown> | null | undefined} savedSettings
  * @param {Array<{ id: string }>} storeList
  * @param {StoreChannelConfig} defaultConfig
