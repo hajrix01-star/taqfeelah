@@ -118,6 +118,24 @@ import {
   resolveSuggestedEntryDate,
   upsertCloseoutAlert,
 } from "@/features/operations/operational-entry-save-helpers";
+import {
+  applyDuplicateApprovedAudit,
+  applyRestoreToEntry,
+  applyReviewToEntry,
+  applyVoidToEntry,
+  canRestoreOperationalEntry,
+  canVoidOperationalEntry,
+  duplicateSalesGroupKey,
+  duplicateSalesSignature,
+  mapOperationalEntryMutation,
+  mergeLastCloseoutDateAfterSummaryRestore,
+  mergeLastCloseoutDateAfterSummaryVoid,
+  resolveDuplicateSummaryAcknowledgeFailureMessage,
+  resolveDuplicateSummaryApproveFailureMessage,
+  resolveOperationalEntryRestoreFailureMessage,
+  resolveOperationalEntryReviewFailureMessage,
+  resolveOperationalEntryVoidFailureMessage,
+} from "@/features/operations/operational-entry-mutation-helpers";
 import { buildPrototypeDefaultStaff, readPrototypeAuthBoot as resolvePrototypeAuthBoot } from "@/features/demo/prototype-auth-boot";
 import { resolveOperationalEntriesBulkLoadWindow } from "@/features/entries/client/register-entries-load-window";
 import { isProductionAppMode } from "@/core/config/app-mode";
@@ -1495,8 +1513,6 @@ function expandRegisterCloseoutOperationRows(item, lang, salesChannelFilter = "a
 }
 const signedEntryAmount = (entry) => entry.type === "summary" ? entry.amount : -entry.amount;
 const entryWasRestored = (entry) => Boolean(entry.restoredAt);
-const duplicateSalesGroupKey = (group) => `${group.businessId}|${group.date}`;
-const duplicateSalesSignature = (entries = []) => entries.map((entry) => entry.id).sort().join("|");
 const entryDateMatches = (entry, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo) => {
   if (period === "day") return entry.date === selectedDate;
   if (period === "month") return entry.date.startsWith(monthSelectionValue(selectedMonth));
@@ -5373,7 +5389,9 @@ export default function TaqfeelahPrototypeRuntime() {
         catch { window.alert(text(lang, "attachmentSaveFailed")); return; }
       }
       setOperationalEntries((current) => [entry, ...current]);
-      if (payload.type === "summary") setLastCloseoutDates((current) => ({ ...current, [payload.businessId]: !current[payload.businessId] || payload.date > current[payload.businessId] ? payload.date : current[payload.businessId] }));
+      if (payload.type === "summary") {
+        setLastCloseoutDates((current) => mergeLastCloseoutDateForStore(current, payload.businessId, payload.date));
+      }
       setOwnerPage("home");
       if (payload.type !== "summary") setSavedOutflowShareTarget(entry);
       else { setSaved(true); window.setTimeout(() => setSaved(false), 2200); }
@@ -5397,29 +5415,33 @@ export default function TaqfeelahPrototypeRuntime() {
           entry: target,
         });
         if (!reviewed) {
-          window.alert(lang === "ar" ? "تعذر تحديث المراجعة على الخادم." : "Failed to update review on server.");
+          window.alert(resolveOperationalEntryReviewFailureMessage(lang));
           return;
         }
         await loadOperationalEntriesFromApi();
         setSelected(null);
       } catch (error) {
         console.warn("entry review api failed", error);
-        window.alert(lang === "ar" ? "تعذر تحديث المراجعة على الخادم." : "Failed to update review on server.");
+        window.alert(resolveOperationalEntryReviewFailureMessage(lang));
       }
       return;
     }
     const actionAt = new Date().toISOString();
-    setOperationalEntries((current) => current.map((entry) => entry.id === entryId && entryIsActive(entry) ? { ...entry, reviewed: true, reviewedAt: actionAt, reviewedBy: currentOwnerActor, auditTrail: [...(entry.auditTrail || []), { action: "reviewed", at: actionAt, by: currentOwnerActor, reason: "" }] } : entry));
+    setOperationalEntries((current) => mapOperationalEntryMutation(
+      current,
+      entryId,
+      (entry) => (entryIsActive(entry) ? applyReviewToEntry(entry, currentOwnerActor, actionAt) : entry),
+    ));
     setSelected(null);
   };
   const requestVoidOperation = (entryId) => {
     const target = operationalEntries.find((entry) => entry.id === entryId);
-    if (!target || entryIsVoided(target) || archivedBusinessIds.includes(target.businessId)) return;
+    if (!canVoidOperationalEntry(target, archivedBusinessIds, entryIsVoided)) return;
     setVoidTarget(target);
   };
   const requestRestoreOperation = (entryId) => {
     const target = operationalEntries.find((entry) => entry.id === entryId);
-    if (!target || !entryIsVoided(target) || archivedBusinessIds.includes(target.businessId)) return;
+    if (!canRestoreOperationalEntry(target, archivedBusinessIds, entryIsVoided)) return;
     setRestoreTarget(target);
   };
   const confirmDuplicateSummary = async () => {
@@ -5451,7 +5473,7 @@ export default function TaqfeelahPrototypeRuntime() {
           payload: apiPayload,
         });
         if (!created) {
-          window.alert(lang === "ar" ? "تعذر حفظ الملخص المكرر على الخادم." : "Failed to save duplicate summary on server.");
+          window.alert(resolveDuplicateSummaryApproveFailureMessage(lang));
           return;
         }
         const refreshed = await loadOperationalEntriesFromApi();
@@ -5511,25 +5533,25 @@ export default function TaqfeelahPrototypeRuntime() {
           entryIds: alert.entries.map((entry) => entry.id),
         });
         if (!acknowledged) {
-          window.alert(lang === "ar" ? "تعذر تأكيد الملخصات المكررة على الخادم." : "Failed to acknowledge duplicate summaries on server.");
+          window.alert(resolveDuplicateSummaryAcknowledgeFailureMessage(lang));
           return;
         }
         setAcknowledgedDuplicateSales((current) => ({ ...current, [duplicateSalesGroupKey(alert)]: duplicateSalesSignature(alert.entries) }));
       } catch (error) {
         console.warn("duplicate summary acknowledge api failed", error);
-        window.alert(lang === "ar" ? "تعذر تأكيد الملخصات المكررة على الخادم." : "Failed to acknowledge duplicate summaries on server.");
+        window.alert(resolveDuplicateSummaryAcknowledgeFailureMessage(lang));
       }
       return;
     }
     const actionAt = new Date().toISOString();
     const approvedIds = new Set(alert.entries.map((entry) => entry.id));
-    setOperationalEntries((current) => current.map((entry) => approvedIds.has(entry.id) ? { ...entry, auditTrail: [...(entry.auditTrail || []), { action: "duplicate_approved", at: actionAt, by: currentOwnerActor, reason: "" }] } : entry));
+    setOperationalEntries((current) => applyDuplicateApprovedAudit(current, approvedIds, currentOwnerActor, actionAt));
     setAcknowledgedDuplicateSales((current) => ({ ...current, [duplicateSalesGroupKey(alert)]: duplicateSalesSignature(alert.entries) }));
   };
   const confirmVoidOperation = async (reason = "") => {
     if (entriesApiEnabled) {
       const target = voidTarget;
-      if (!target || entryIsVoided(target) || archivedBusinessIds.includes(target.businessId)) { setVoidTarget(null); return; }
+      if (!canVoidOperationalEntry(target, archivedBusinessIds, entryIsVoided)) { setVoidTarget(null); return; }
       try {
         const voided = await voidStoreEntryViaApi({
           organizationId: closeoutsApiOrganizationId,
@@ -5539,39 +5561,42 @@ export default function TaqfeelahPrototypeRuntime() {
           reason: reason.trim(),
         });
         if (!voided) {
-          window.alert(lang === "ar" ? "تعذر إلغاء العملية على الخادم." : "Failed to void entry on server.");
+          window.alert(resolveOperationalEntryVoidFailureMessage(lang));
           return;
         }
         const refreshed = await loadOperationalEntriesFromApi();
         if (target.type === "summary") {
-          const latestActiveCloseoutDate = refreshed
-            .filter((entry) => entry.businessId === target.businessId && entry.type === "summary" && entryIsActive(entry))
-            .map((entry) => entry.date)
-            .sort()
-            .pop();
-          setLastCloseoutDates((current) => {
-            const next = { ...current };
-            if (latestActiveCloseoutDate) next[target.businessId] = latestActiveCloseoutDate;
-            else delete next[target.businessId];
-            return next;
-          });
+          setLastCloseoutDates((current) => mergeLastCloseoutDateAfterSummaryVoid(
+            current,
+            target.businessId,
+            refreshed,
+            entryIsActive,
+          ));
         }
         setVoidTarget(null);
         setSelected(null);
       } catch (error) {
         console.warn("entry void api failed", error);
-        window.alert(lang === "ar" ? "تعذر إلغاء العملية على الخادم." : "Failed to void entry on server.");
+        window.alert(resolveOperationalEntryVoidFailureMessage(lang));
       }
       return;
     }
     const target = voidTarget;
-    if (!target || entryIsVoided(target) || archivedBusinessIds.includes(target.businessId)) { setVoidTarget(null); return; }
+    if (!canVoidOperationalEntry(target, archivedBusinessIds, entryIsVoided)) { setVoidTarget(null); return; }
     const actionAt = new Date().toISOString();
-    const nextEntries = operationalEntries.map((entry) => entry.id === target.id ? { ...entry, status: "voided", voidedAt: actionAt, voidedBy: currentOwnerActor, voidReason: reason.trim(), auditTrail: [...(entry.auditTrail || []), { action: "voided", at: actionAt, by: currentOwnerActor, reason: reason.trim() }] } : entry);
+    const nextEntries = mapOperationalEntryMutation(
+      operationalEntries,
+      target.id,
+      (entry) => applyVoidToEntry(entry, currentOwnerActor, reason, actionAt),
+    );
     setOperationalEntries(nextEntries);
     if (target.type === "summary") {
-      const latestActiveCloseoutDate = nextEntries.filter((entry) => entry.businessId === target.businessId && entry.type === "summary" && entryIsActive(entry)).map((entry) => entry.date).sort().pop();
-      setLastCloseoutDates((current) => { const next = { ...current }; if (latestActiveCloseoutDate) next[target.businessId] = latestActiveCloseoutDate; else delete next[target.businessId]; return next; });
+      setLastCloseoutDates((current) => mergeLastCloseoutDateAfterSummaryVoid(
+        current,
+        target.businessId,
+        nextEntries,
+        entryIsActive,
+      ));
     }
     setVoidTarget(null);
     setSelected(null);
@@ -5579,7 +5604,7 @@ export default function TaqfeelahPrototypeRuntime() {
   const confirmRestoreOperation = async (reason = "") => {
     if (entriesApiEnabled) {
       const target = restoreTarget;
-      if (!target || !entryIsVoided(target) || archivedBusinessIds.includes(target.businessId)) { setRestoreTarget(null); return; }
+      if (!canRestoreOperationalEntry(target, archivedBusinessIds, entryIsVoided)) { setRestoreTarget(null); return; }
       try {
         const restored = await restoreStoreEntryViaApi({
           organizationId: closeoutsApiOrganizationId,
@@ -5589,34 +5614,44 @@ export default function TaqfeelahPrototypeRuntime() {
           reason: reason.trim(),
         });
         if (!restored) {
-          window.alert(lang === "ar" ? "تعذر استرجاع العملية على الخادم." : "Failed to restore entry on server.");
+          window.alert(resolveOperationalEntryRestoreFailureMessage(lang));
           return;
         }
         const refreshed = await loadOperationalEntriesFromApi();
         if (target.type === "summary") {
-          const latestActiveCloseoutDate = refreshed
-            .filter((entry) => entry.businessId === target.businessId && entry.type === "summary" && entryIsActive(entry))
-            .map((entry) => entry.date)
-            .sort()
-            .pop();
-          setLastCloseoutDates((current) => ({ ...current, [target.businessId]: latestActiveCloseoutDate || target.date }));
+          setLastCloseoutDates((current) => mergeLastCloseoutDateAfterSummaryRestore(
+            current,
+            target.businessId,
+            refreshed,
+            target.date,
+            entryIsActive,
+          ));
         }
         setRestoreTarget(null);
         setSelected(null);
       } catch (error) {
         console.warn("entry restore api failed", error);
-        window.alert(lang === "ar" ? "تعذر استرجاع العملية على الخادم." : "Failed to restore entry on server.");
+        window.alert(resolveOperationalEntryRestoreFailureMessage(lang));
       }
       return;
     }
     const target = restoreTarget;
-    if (!target || !entryIsVoided(target) || archivedBusinessIds.includes(target.businessId)) { setRestoreTarget(null); return; }
+    if (!canRestoreOperationalEntry(target, archivedBusinessIds, entryIsVoided)) { setRestoreTarget(null); return; }
     const actionAt = new Date().toISOString();
-    const nextEntries = operationalEntries.map((entry) => entry.id === target.id ? { ...entry, status: "active", restoredAt: actionAt, restoredBy: currentOwnerActor, restoreReason: reason.trim(), auditTrail: [...(entry.auditTrail || []), { action: "restored", at: actionAt, by: currentOwnerActor, reason: reason.trim() }] } : entry);
+    const nextEntries = mapOperationalEntryMutation(
+      operationalEntries,
+      target.id,
+      (entry) => applyRestoreToEntry(entry, currentOwnerActor, reason, actionAt),
+    );
     setOperationalEntries(nextEntries);
     if (target.type === "summary") {
-      const latestActiveCloseoutDate = nextEntries.filter((entry) => entry.businessId === target.businessId && entry.type === "summary" && entryIsActive(entry)).map((entry) => entry.date).sort().pop();
-      setLastCloseoutDates((current) => ({ ...current, [target.businessId]: latestActiveCloseoutDate || target.date }));
+      setLastCloseoutDates((current) => mergeLastCloseoutDateAfterSummaryRestore(
+        current,
+        target.businessId,
+        nextEntries,
+        target.date,
+        entryIsActive,
+      ));
     }
     setRestoreTarget(null);
     setSelected(null);
