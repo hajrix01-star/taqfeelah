@@ -1186,6 +1186,13 @@ const channels = [
   { id: "jahez", text: "jahez", icon: ShoppingBag },
   { id: "hunger", text: "hunger", icon: ShoppingBag },
 ];
+const DEFAULT_STORE_CHANNEL_CONFIG = {
+  channels: channels.map((channel) => ({ ...channel })),
+  activeIds: channels.map((channel) => channel.id),
+};
+const resolveStoreChannelConfig = (settings, storeId) => (
+  getStoreChannelConfig(settings, storeId, DEFAULT_STORE_CHANNEL_CONFIG)
+);
 
 const channelName = (channel, lang) => channel.custom ? (lang === "ar" ? channel.nameAr : channel.nameEn) : text(lang, channel.text);
 
