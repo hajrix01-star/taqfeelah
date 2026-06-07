@@ -34,6 +34,7 @@ from typing import Iterable
 import paramiko
 
 PRODUCTION_ENV_KEYS = [
+    "DEPLOYMENT_WAVE",
     "APP_MODE",
     "NEXT_PUBLIC_APP_MODE",
     "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE",
@@ -58,7 +59,16 @@ PRODUCTION_ENV_KEYS = [
 # Bootstrap defaults align with scripts/seed-closeouts-foundation.mjs so deploy can
 # proceed without GitHub app-env secrets. DATABASE_URL must still come from secrets
 # or an existing VPS .env.production file.
+WAVE_1_ENV_OVERRIDES: dict[str, str] = {
+    "DEPLOYMENT_WAVE": "1",
+    "NEXT_PUBLIC_CLOSEOUTS_API_ENABLED": "true",
+    "NEXT_PUBLIC_ENTRIES_API_ENABLED": "true",
+    "ALLOW_HEADER_AUTH_CONTEXT": "true",
+    "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE": "true",
+}
+
 PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
+    "DEPLOYMENT_WAVE": "1",
     "APP_MODE": "production",
     "NEXT_PUBLIC_APP_MODE": "production",
     "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE": "true",
@@ -330,6 +340,15 @@ def read_remote_production_env(vps: VPS, app_dir: str) -> dict[str, str]:
     return parse_env_file(out)
 
 
+def apply_deployment_wave_overrides(merged_env: dict[str, str]) -> dict[str, str]:
+    wave = os.environ.get("DEPLOYMENT_WAVE", merged_env.get("DEPLOYMENT_WAVE", "1")).strip()
+    if wave != "1":
+        return merged_env
+    result = dict(merged_env)
+    result.update(WAVE_1_ENV_OVERRIDES)
+    return result
+
+
 def resolve_production_env(existing_remote_env: dict[str, str] | None = None) -> dict[str, str]:
     merged = dict(PRODUCTION_ENV_BOOTSTRAP_DEFAULTS)
     if existing_remote_env:
@@ -340,6 +359,8 @@ def resolve_production_env(existing_remote_env: dict[str, str] | None = None) ->
         value = os.environ.get(key)
         if value:
             merged[key] = value
+
+    merged = apply_deployment_wave_overrides(merged)
 
     if not merged.get("DATABASE_URL"):
         raise RuntimeError(
@@ -626,6 +647,9 @@ def cmd_preflight(vps: VPS, domain: str, www_domain: str) -> None:
 
 
 def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
+    wave_org_id = PRODUCTION_ENV_BOOTSTRAP_DEFAULTS["NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID"]
+    wave_owner_id = PRODUCTION_ENV_BOOTSTRAP_DEFAULTS["NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID"]
+    wave_store_id = "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"
     verify_cmds = [
         "docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'",
         "nginx -t",
@@ -635,11 +659,19 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             f"curl -sS --max-time 20 -o /tmp/taqfeelah-auth-session.json "
             f"-w '%{{http_code}}' https://{shlex.quote(domain)}/api/v1/auth/session"
         ),
+        (
+            f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave1-entries.json "
+            f"-w '%{{http_code}}' https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/entries "
+            f"-H 'x-organization-id: {wave_org_id}' "
+            f"-H 'x-user-id: {wave_owner_id}' "
+            f"-H 'x-member-role: owner'"
+        ),
         f"curl -I --max-time 15 https://{shlex.quote(www_domain)} || true",
         "curl -I --max-time 15 https://hajrix.com || true",
         "curl -I --max-time 15 https://arz-lounge.com || true",
     ]
     auth_status_code: str | None = None
+    entries_status_code: str | None = None
     for c in verify_cmds:
         print_section(c)
         code, out, err = vps.run(c, check=False)
@@ -657,6 +689,18 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             if auth_status_code not in {"200", "503"}:
                 raise RuntimeError(
                     f"Auth session verification failed with HTTP {auth_status_code or 'unknown'}: {c}"
+                )
+            continue
+        if "/entries" in c and "wave1" in c:
+            entries_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run("cat /tmp/taqfeelah-wave1-entries.json 2>/dev/null || true", check=False)
+            if body.strip():
+                safe_print("Wave 1 entries API response preview:")
+                safe_print(body.strip()[:240])
+            if entries_status_code != "200":
+                raise RuntimeError(
+                    "Deployment wave 1 verification failed: entries API returned "
+                    f"HTTP {entries_status_code or 'unknown'}"
                 )
             continue
         if code != 0:
