@@ -225,10 +225,34 @@ import {
   resolveStoreChannelConfig as readStoreChannelConfig,
 } from "@/features/org-config/client/store-channel-config";
 import {
+  aggregateChannels,
   entriesInPeriod,
+  newestEntries,
   summarizeEntries,
+  summaryDayFromEntries,
   summaryMonthFromEntries,
 } from "@/features/operations/operational-analytics";
+import { groupAttachmentsFromEntries } from "@/features/entries/client/attachments-from-entries";
+import {
+  DEFAULT_REGISTER_LOG_FILTERS,
+  buildRegisterCloseoutSummaries,
+  buildRegisterSalesChannelOptions,
+  filterRegisterLogEntries,
+  registerLogFilterCount,
+  summarizeRegisterPeriod,
+} from "@/features/entries/client/register-log-display";
+import {
+  buildLocalReportDaysFromEntries,
+  buildOutflowByCategoryFromEntries,
+  computeOutflowAnalysisMetrics,
+  filterOutflowEntriesForPeriod,
+  percentageOfSalesAmount,
+} from "@/features/reports/client/operational-reports-display";
+import {
+  formatCalendarDate,
+  formatSelectedMonth,
+  logPeriodScopeLabel,
+} from "@/features/reports/client/report-period-labels";
 import { isPrototypeAccessMode } from "@/core/config/prototype-access-mode";
 import PrototypeAccessScreen from "@/features/demo/PrototypeAccessScreen";
 
@@ -1634,35 +1658,8 @@ function employeePinMatches(person, pin) {
   if (!expectedPin) return false;
   return `${pin}`.trim() === expectedPin;
 }
-function aggregateSalesChannelsFromGroupEntries(entries, lang, channelFilter = "all") {
-  const map = new Map();
-  entries.filter(entryIsActive).forEach((entry) => {
-    if (entry.type !== "summary") return;
-    (entry.salesChannels || []).forEach((row) => {
-      if (!row?.channelId || Number(row.amount) <= 0) return;
-      const fallback = channels.find((channel) => channel.id === row.channelId);
-      const name = row.name || (fallback ? channelName(fallback, lang) : row.channelId);
-      const current = map.get(row.channelId) || { channelId: row.channelId, name, amount: 0 };
-      map.set(row.channelId, { ...current, amount: current.amount + Number(row.amount) });
-    });
-  });
-  let result = [...map.values()].sort((a, b) => b.amount - a.amount);
-  if (channelFilter !== "all") {
-    result = result.filter((row) => row.channelId === channelFilter);
-  }
-  return result;
-}
-function summaryDayFromEntries(entries, businessId, date, reviewEnabledForBusiness = () => false) {
-  return { id: date, dayAr: formatCalendarDate(date, "ar"), dayEn: formatCalendarDate(date, "en"), fullAr: formatCalendarDate(date, "ar"), fullEn: formatCalendarDate(date, "en"), ...summarizeEntries(entriesInPeriod(entries, businessId, "day", date, "2026-05"), reviewEnabledForBusiness) };
-}
-function aggregateChannels(entries, businessId, period, selectedDate, selectedMonth, baseChannels = []) {
-  const relevant = entriesInPeriod(entries, businessId, period, selectedDate, selectedMonth).filter((entry) => entry.type === "summary" && entryIsActive(entry));
-  const mapped = new Map(baseChannels.map((channel) => [channel.id, { ...channel, amount: 0 }]));
-  relevant.forEach((entry) => (entry.salesChannels || []).forEach((row) => {
-    const current = mapped.get(row.channelId) || { id: row.channelId, custom: true, nameAr: row.name || row.channelId, nameEn: row.name || row.channelId, amount: 0 };
-    mapped.set(row.channelId, { ...current, amount: current.amount + row.amount });
-  }));
-  return [...mapped.values()].filter((channel) => channel.amount > 0);
+function summaryDayFromEntriesWithLabels(entries, businessId, date, reviewEnabledForBusiness = () => false) {
+  return summaryDayFromEntries(entries, businessId, date, reviewEnabledForBusiness, formatCalendarDate);
 }
 function operationTime(item, lang) {
   if (!item.createdAt) return opTime(item, lang);
@@ -1674,16 +1671,8 @@ function buildEntry(payload, actor) {
     parseAmount: toAmount,
   });
 }
-function newestEntries(entries) {
-  return [...entries].sort((a, b) => `${b.date}|${b.createdAt || ""}`.localeCompare(`${a.date}|${a.createdAt || ""}`));
-}
 function attachmentsFromEntries(entries) {
-  const grouped = new Map();
-  newestEntries(entries.filter(entryHasAttachment)).forEach((entry) => {
-    if (!grouped.has(entry.date)) grouped.set(entry.date, []);
-    grouped.get(entry.date).push({ id: entry.attachment.id, entryId: entry.id, title: noteLabel(entry, "ar"), titleEn: noteLabel(entry, "en"), amount: entry.amount, reviewed: entry.reviewed, businessId: entry.businessId, attachment: entry.attachment, entry });
-  });
-  return [...grouped.entries()].map(([date, items]) => ({ dayId: date, date, items }));
+  return groupAttachmentsFromEntries(entries, noteLabel);
 }
 
 function Badge({ children, tone = "neutral" }) {
@@ -2994,10 +2983,6 @@ function FinancialRows({ lang, rows = [] }) {
   );
 }
 
-function formatCalendarDate(dateString, lang) {
-  const date = new Date(`${dateString}T12:00:00`);
-  return new Intl.DateTimeFormat(lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-US", { day: "numeric", month: "long", year: "numeric" }).format(date);
-}
 function formatCalendarMonth(year, month, lang) {
   return new Intl.DateTimeFormat(lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-US", { month: "long", year: "numeric" }).format(new Date(year, month, 1));
 }
@@ -3016,10 +3001,6 @@ function monthSelectionParts(value) {
   const normalized = monthSelectionValue(value);
   const [year, month] = normalized.split("-").map(Number);
   return { year, month: month - 1, normalized };
-}
-function formatSelectedMonth(value, lang) {
-  const { year, month } = monthSelectionParts(value);
-  return formatCalendarMonth(year, month, lang);
 }
 function DateSelector({ lang, period, setPeriod, allowedPeriods = ["day", "month"], selectedDay, setSelectedDay, selectedDate = null, setSelectedDate = () => {}, fullCalendar = false, selectedMonth, setSelectedMonth, selectedYear = "2026", setSelectedYear = () => {}, customFrom = "2026-03-01", setCustomFrom = () => {}, customTo = "2026-05-31", setCustomTo = () => {}, compact = false }) {
   const [open, setOpen] = useState(false);
@@ -3266,7 +3247,7 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
   });
   const summaryApiHasData = summaryApiActive && !summaryLoading && Object.keys(summariesByStoreId).length > 0;
   const comparisonBusinesses = summaryApiHasData ? businessesWithDaySummaries : scopedBusinesses;
-  const daySummary = summaryDayFromEntries(operationalEntries, currentBusiness?.id, selectedDate, reviewEnabledForBusiness);
+  const daySummary = summaryDayFromEntriesWithLabels(operationalEntries, currentBusiness?.id, selectedDate, reviewEnabledForBusiness);
   const localCombinedResult = summarizeEntries(operationalEntries.filter((entry) => businessesList.some((business) => business.id === entry.businessId) && entryDateMatches(entry, period, selectedDate, selectedMonth, "2026", "2026-01-01", "2026-12-31")), reviewEnabledForBusiness);
   const apiStoreResult = summaryApiHasData && currentBusiness?.id ? getStoreResult(currentBusiness.id) : null;
   const result = isCombined
@@ -3353,13 +3334,6 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
 function ProofThumb({ paper = false }) { return <div className={`${paper ? "h-12 w-10" : "h-14 w-14 bg-[#E8E1D4]"} flex shrink-0 items-center justify-center rounded-xl`}><div className={`${paper ? "w-9 border border-[#CFBC82]" : "w-9"} rotate-[-3deg] rounded bg-white p-1.5 shadow-sm`}><div className="mb-1 h-1 w-5 rounded bg-[#D8D1C4]" /><div className="mb-1 h-1 w-full rounded bg-[#E9E2D6]" /><div className="h-1 w-7 rounded bg-[#E9E2D6]" /></div></div>; }
 function DayAttachments({ lang, group, reviewEnabled = false, onOpenOperation = () => {} }) { if (!group?.items?.length) return <NotebookRow><p className="text-xs font-bold text-[#806528]">{text(lang, "noAttachmentsDay")}</p></NotebookRow>; return <div className="py-3"><div className="flex gap-3 overflow-x-auto pb-1">{group.items.map((item) => <button key={item.id} onClick={() => onOpenOperation(item.entry)} className="min-w-[78px] text-center"><div className="mb-1 flex h-14 justify-center overflow-hidden rounded-xl"><AttachmentPreview attachment={item.attachment} className="h-14 w-14 rounded-xl" /></div><p className="truncate text-taq-meta font-bold">{lang === "ar" ? item.title : item.titleEn}</p><p className={`mt-0.5 text-taq-meta font-black ${item.entry.type === "summary" ? "text-[#257844]" : "text-[#B44747]"}`}><MoneyValue value={money(signedEntryAmount(item.entry), lang)} /></p>{reviewEnabled && !entryIsVoided(item.entry) && !item.reviewed && <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#B96725]" />}</button>)}</div></div>; }
 
-function logPeriodScopeLabel(lang, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo) {
-  if (period === "day") return formatCalendarDate(selectedDate, lang);
-  if (period === "month") return formatSelectedMonth(selectedMonth, lang);
-  if (period === "year") return selectedYear;
-  return `${formatCalendarDate(customFrom, lang)} — ${formatCalendarDate(customTo, lang)}`;
-}
-
 function LogFilterChip({ active, children, onClick, tone = "default" }) {
   const toneClass = {
     default: active ? "bg-[#112A46] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
@@ -3369,47 +3343,6 @@ function LogFilterChip({ active, children, onClick, tone = "default" }) {
     navy: active ? "bg-[#214B7B] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
   }[tone];
   return <button type="button" onClick={onClick} className={`rounded-full px-2.5 py-1 text-taq-meta font-black ${toneClass}`}>{children}</button>;
-}
-
-const DEFAULT_REGISTER_LOG_FILTERS = {
-  status: "all",
-  type: "all",
-  expenseCategory: "all",
-  attachmentOnly: false,
-  pendingReviewOnly: false,
-  actor: "all",
-  salesChannel: "all",
-};
-
-function summarizeRegisterPeriod(entries, lang, salesChannelFilter, channelOptions = []) {
-  const activeEntries = entries.filter(entryIsActive);
-  if (salesChannelFilter !== "all") {
-    const option = channelOptions.find((item) => item.id === salesChannelFilter);
-    let amount = 0;
-    activeEntries.forEach((entry) => {
-      if (entry.type !== "summary") return;
-      (entry.salesChannels || []).forEach((row) => {
-        if (row.channelId === salesChannelFilter) amount += Number(row.amount) || 0;
-      });
-    });
-    return {
-      mode: "channel",
-      label: option?.label || (lang === "ar" ? "قناة" : "Channel"),
-      amount,
-    };
-  }
-  const totals = summarizeEntries(entries);
-  return { mode: "totals", sales: totals.sales, expense: totals.expense, net: totals.net };
-}
-
-function registerLogFilterCount(filters) {
-  return Number(filters.status !== "all")
-    + Number(filters.type !== "all")
-    + Number(filters.expenseCategory !== "all")
-    + Number(filters.salesChannel !== "all")
-    + Number(filters.attachmentOnly)
-    + Number(filters.pendingReviewOnly)
-    + Number(filters.actor !== "all");
 }
 
 function RegisterFiltersSheet({ lang, open, onClose, onApply, draft, setDraft, typeItems, expenseCategoryItems, actorOptions, salesChannelOptions }) {
@@ -3676,94 +3609,42 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
     });
     return options;
   }, [periodEntries, lang]);
-  const salesChannelOptions = useMemo(() => {
-    const seen = new Set();
-    const options = [{ id: "all", label: lang === "ar" ? "كل القنوات" : "All channels" }];
-    periodEntries.forEach((entry) => {
-      if (entry.type !== "summary") return;
-      (entry.salesChannels || []).forEach((row) => {
-        if (!row?.channelId || seen.has(row.channelId)) return;
-        seen.add(row.channelId);
+  const salesChannelOptions = useMemo(
+    () => buildRegisterSalesChannelOptions(
+      periodEntries,
+      (row) => {
         const fallback = channels.find((channel) => channel.id === row.channelId);
-        options.push({
-          id: row.channelId,
-          label: row.name || (fallback ? channelName(fallback, lang) : row.channelId),
-        });
-      });
-    });
-    return options;
-  }, [periodEntries, lang]);
-  const matchesExpenseCategory = (entry) => {
-    if (logFilters.type !== "expense" || logFilters.expenseCategory === "all") return true;
-    if (entry.type !== "expense") return false;
-    return entryCategory(entry) === logFilters.expenseCategory;
-  };
-  const matchesActor = (entry) => logFilters.actor === "all" || entry.enteredBy?.userId === logFilters.actor;
-  const matchesSalesChannel = (entry) => {
-    if (logFilters.salesChannel === "all") return true;
-    if (entry.type !== "summary") return false;
-    return (entry.salesChannels || []).some((row) => row.channelId === logFilters.salesChannel && Number(row.amount) > 0);
-  };
-  const filteredEntries = periodEntries.filter((entry) => (logFilters.status === "all" || (logFilters.status === "active" ? entryIsActive(entry) : entryIsVoided(entry))) && (logFilters.type === "all" || entry.type === logFilters.type) && matchesExpenseCategory(entry) && matchesActor(entry) && matchesSalesChannel(entry) && (!logFilters.attachmentOnly || entryHasAttachment(entry)) && (!logFilters.pendingReviewOnly || (entryIsActive(entry) && entryHasAttachment(entry) && !entry.reviewed)));
+        return row.name || (fallback ? channelName(fallback, lang) : row.channelId);
+      },
+      lang === "ar" ? "كل القنوات" : "All channels",
+    ),
+    [periodEntries, lang],
+  );
+  const filteredEntries = useMemo(
+    () => filterRegisterLogEntries(periodEntries, logFilters, entryCategory),
+    [periodEntries, logFilters],
+  );
   const visibleEntries = newestEntries(filteredEntries);
   const {
     sameDayCloseoutCountByStoreDate,
     daySequenceByCloseoutId,
   } = useMemo(() => buildRegisterCloseoutDayContext(periodEntries), [periodEntries]);
-  const closeoutSummaries = useMemo(() => {
-    const grouped = new Map();
-    newestEntries(filteredEntries).forEach((entry) => {
-      // Keep each closeout independent by grouping on closeoutId when present.
-      const key = entry.closeoutId
-        ? `closeout|${entry.closeoutId}`
-        : `legacy-day|${entry.businessId}|${entry.date}`;
-      if (!grouped.has(key)) {
-        grouped.set(key, {
-          key,
-          businessId: entry.businessId,
-          closeoutId: entry.closeoutId || null,
-          date: entry.date,
-          entries: [],
-        });
-      }
-      grouped.get(key).entries.push(entry);
-    });
-    const summaries = [...grouped.values()].map((group) => {
-      const store = businessesList.find((business) => business.id === group.businessId) || null;
-      const totals = summarizeEntries(group.entries);
-      const salesChannels = aggregateSalesChannelsFromGroupEntries(group.entries, lang, logFilters.salesChannel);
-      const channelSalesTotal = salesChannels.reduce((sum, row) => sum + row.amount, 0);
-      const ownerEntered = group.entries.find((entry) => entry.enteredBy?.userId === ownerActor.userId) || group.entries[0];
-      const daySequence = group.entries.find((entry) => Number.isInteger(entry.daySequence))?.daySequence ?? null;
-      return {
-        ...group,
-        store,
-        totals,
-        salesChannels,
-        displaySales: logFilters.salesChannel === "all" ? totals.sales : channelSalesTotal,
-        operations: newestEntries(group.entries),
-        actorLabel: employeeName(ownerEntered, lang) || text(lang, "enteredByOwner"),
-        daySequence,
-      };
-    });
-    const sameDayCloseoutCountByStoreDate = new Map();
-    summaries.forEach((summary) => {
-      if (!summary.closeoutId) return;
-      const key = `${summary.businessId}|${summary.date}`;
-      sameDayCloseoutCountByStoreDate.set(key, (sameDayCloseoutCountByStoreDate.get(key) || 0) + 1);
-    });
-    return summaries.map((summary) => ({
-      ...summary,
-      sameDayCloseoutCount: summary.closeoutId
-        ? sameDayCloseoutCountByStoreDate.get(`${summary.businessId}|${summary.date}`) || 1
-        : 1,
-    })).filter((group) => logFilters.salesChannel === "all" || group.salesChannels.length > 0).sort((a, b) => {
-      if (a.date !== b.date) return b.date.localeCompare(a.date);
-      const aStamp = `${a.date}|${a.operations[0]?.createdAt || ""}`;
-      const bStamp = `${b.date}|${b.operations[0]?.createdAt || ""}`;
-      return bStamp.localeCompare(aStamp);
-    });
-  }, [filteredEntries, businessesList, lang, logFilters.salesChannel]);
+  const closeoutSummaries = useMemo(
+    () => buildRegisterCloseoutSummaries({
+      filteredEntries,
+      salesChannelFilter: logFilters.salesChannel,
+      resolveChannelName: (row) => {
+        const fallback = channels.find((channel) => channel.id === row.channelId);
+        return row.name || (fallback ? channelName(fallback, lang) : row.channelId);
+      },
+      resolveStore: (businessId) => businessesList.find((business) => business.id === businessId) || null,
+      resolveActorLabel: (group) => {
+        const ownerEntered = group.entries.find((entry) => entry.enteredBy?.userId === ownerActor.userId) || group.entries[0];
+        return employeeName(ownerEntered, lang) || text(lang, "enteredByOwner");
+      },
+    }),
+    [filteredEntries, businessesList, lang, logFilters.salesChannel],
+  );
   useEffect(() => {
     if (!visibleEntries.length) {
       setExpandedEntryId(null);
@@ -3798,7 +3679,12 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
   const registerCardStyle = useMemo(() => ({ backgroundColor: notebookCardBackground(notebookTheme) }), [notebookTheme]);
   const registerCardInsetStyle = useMemo(() => ({ backgroundColor: notebookCardBackground(notebookTheme, "inset") }), [notebookTheme]);
   const registerPeriodSummary = useMemo(
-    () => summarizeRegisterPeriod(filteredEntries, lang, logFilters.salesChannel, salesChannelOptions),
+    () => summarizeRegisterPeriod(
+      filteredEntries,
+      logFilters.salesChannel,
+      salesChannelOptions,
+      lang === "ar" ? "قناة" : "Channel",
+    ),
     [filteredEntries, lang, logFilters.salesChannel, salesChannelOptions],
   );
   const registerPeriodLabel = logPeriodScopeLabel(lang, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo);
@@ -4032,20 +3918,28 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
 
 function OutflowAnalysis({ lang, period, selectedBusiness, selectedDay, selectedDate, selectedMonth, selectedYear, customFrom, customTo, businessesList = businesses, operationalEntries = [], category = "all", setCategory = () => {}, showTransactions = false, setShowTransactions = () => {}, apiTransactions = null, apiTotal = null, apiCount = null }) {
   const useApiTransactions = Array.isArray(apiTransactions);
-  const visibleRecords = useApiTransactions
-    ? apiTransactions
-    : operationalEntries.filter((entry) => entryIsActive(entry) && entryIsOutflow(entry) && (selectedBusiness === "all" || entry.businessId === selectedBusiness) && (category === "all" || entryCategory(entry) === category) && entryDateMatches(entry, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo));
-  const total = typeof apiTotal === "number" ? apiTotal : visibleRecords.reduce((sum, record) => sum + record.amount, 0);
-  const average = typeof apiCount === "number" && apiCount > 0
-    ? total / apiCount
-    : visibleRecords.length
-      ? total / visibleRecords.length
-      : 0;
+  const localRecords = filterOutflowEntriesForPeriod({
+    entries: operationalEntries,
+    selectedBusiness,
+    category,
+    period,
+    selectedDate,
+    selectedMonth,
+    selectedYear,
+    customFrom,
+    customTo,
+    resolveCategory: entryCategory,
+  });
+  const { visibleRecords, total, count, average } = computeOutflowAnalysisMetrics(
+    useApiTransactions ? apiTransactions : localRecords,
+    apiTotal,
+    apiCount,
+  );
   const selectedCategoryLabel = category === "all" ? text(lang, "allCategories") : text(lang, outflowReportCategories.find((item) => item.id === category)?.label || "other");
   const totalLabel = category === "all" ? text(lang, "totalOutflow") : `${text(lang, "totalOutflow")} · ${selectedCategoryLabel}`;
   return <div><div className="flex min-h-[88px] flex-wrap content-center items-end gap-x-4 gap-y-3 pb-3 pt-2">{outflowReportCategories.map((item) => { const active = category === item.id; return <button key={item.id} onClick={() => setCategory(item.id)} className={`relative pb-1.5 text-taq-meta font-bold transition ${active ? "text-[#B44747]" : "text-[#806528]"}`}><span className="relative inline-flex whitespace-nowrap">{text(lang, item.label)}{active && <span className="absolute -bottom-[7px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span></button>; })}</div><FinancialRows lang={lang} rows={[
     { id: "total", label: totalLabel, value: money(total, lang), valueClassName: "text-[#B44747]" },
-    { id: "count", label: text(lang, "numberTransactions"), value: `${typeof apiCount === "number" ? apiCount : visibleRecords.length}` },
+    { id: "count", label: text(lang, "numberTransactions"), value: `${count}` },
     { id: "average", label: text(lang, "averageTransaction"), value: money(average, lang), valueClassName: "text-[#806528]" },
   ]} /><NotebookRow className="justify-center"><InkTab active={showTransactions} onClick={() => setShowTransactions(!showTransactions)}>{text(lang, showTransactions ? "hideTransactions" : "viewTransactions")}</InkTab></NotebookRow>{showTransactions && (visibleRecords.length ? <div>{newestEntries(visibleRecords).map((record) => { const store = businessesList.find((business) => business.id === record.businessId); return <NotebookRow key={record.id} lines={2}><div className="w-full"><div className="mb-1 flex items-end justify-between text-xs"><strong className="font-medium text-[#112A46]">{text(lang, outflowReportCategories.find((item) => item.id === entryCategory(record))?.label || "other")}</strong><strong className="tabular-nums font-bold text-[#B44747]"><MoneyValue value={money(-record.amount, lang)} /></strong></div><div className="flex justify-between text-taq-meta font-bold text-[#806528]"><span>{formatCalendarDate(record.date, lang)} · {businessName(store, lang, true)}</span><span>{entryHasAttachment(record) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}</span></div></div></NotebookRow>; })}</div> : <NotebookRow><p className="text-xs font-bold text-[#806528]">{text(lang, "noOutflowPeriod")}</p></NotebookRow>)}</div>;
 }
@@ -4057,7 +3951,9 @@ function RatioBadge({ value }) {
 function SummaryReportDetails({ lang, monthly, selectedBusiness, selectedDate, selectedMonth, reportChannels = channels, businessesList = businesses, section = "both", operationalEntries = [], apiChannelRows = null, apiOutflowCategories = null, salesBaseOverride = null }) {
   const salesBase = typeof salesBaseOverride === "number"
     ? salesBaseOverride
-    : (monthly ? summaryMonthFromEntries(operationalEntries, selectedBusiness, selectedMonth) : summaryDayFromEntries(operationalEntries, selectedBusiness, selectedDate)).sales;
+    : (monthly
+      ? summaryMonthFromEntries(operationalEntries, selectedBusiness, selectedMonth)
+      : summaryDayFromEntriesWithLabels(operationalEntries, selectedBusiness, selectedDate)).sales;
   const periodEntries = entriesInPeriod(operationalEntries, selectedBusiness, monthly ? "month" : "day", selectedDate, selectedMonth);
   const dynamicChannels = Array.isArray(apiChannelRows)
     ? apiChannelRows
@@ -4067,8 +3963,8 @@ function SummaryReportDetails({ lang, monthly, selectedBusiness, selectedDate, s
       ...outflowReportCategories.find((category) => category.id === item.id) || { id: item.id, label: item.id },
       amount: item.amount,
     })).filter((item) => item.amount > 0)
-    : outflowReportCategories.filter((item) => item.id !== "all").map((item) => ({ ...item, amount: periodEntries.filter((entry) => entryIsActive(entry) && entryIsOutflow(entry) && entryCategory(entry) === item.id).reduce((sum, entry) => sum + entry.amount, 0) })).filter((item) => item.amount > 0);
-  const percentageOfSales = (amount) => salesBase > 0 ? `${((amount / salesBase) * 100).toFixed(1)}%` : amount > 0 ? "—" : "0.0%";
+    : buildOutflowByCategoryFromEntries(periodEntries, outflowReportCategories, entryCategory);
+  const percentageOfSales = (amount) => percentageOfSalesAmount(amount, salesBase);
   return <>{(section === "sales" || section === "both") && dynamicChannels.map((channel) => <NotebookRow key={channel.id}><div className="flex w-full items-end justify-between ps-3 text-xs"><div className="flex items-center gap-2"><span className="font-medium text-[#716753]">{channelName(channel, lang)}</span><RatioBadge value={percentageOfSales(channel.amount)} /></div><strong className="tabular-nums font-bold text-[#112A46]"><MoneyValue value={money(channel.amount, lang)} /></strong></div></NotebookRow>)}{(section === "outflow" || section === "both") && outflowByCategory.map((item) => <NotebookRow key={item.id}><div className="flex w-full items-end justify-between ps-3 text-xs"><div className="flex items-center gap-2"><span className="font-medium text-[#716753]">{text(lang, item.label)}</span><RatioBadge value={percentageOfSales(item.amount)} /></div><strong className="tabular-nums font-bold text-[#B44747]"><MoneyValue value={money(item.amount, lang)} /></strong></div></NotebookRow>)}</>;
 }
 
@@ -4141,11 +4037,10 @@ function ReportsScreen({ lang, operationalEntries = [], archivedReadOnlyBusiness
   const totals = isCombined
     ? (reportsApiHasData ? apiCombinedTotals : localTotals)
     : (reportsApiHasData && apiSingleStoreTotals ? apiSingleStoreTotals : localTotals);
-  const reportDay = selectedStore ? summaryDayFromEntries(operationalEntries, selectedStore.id, selectedReportDate, reviewEnabledForBusiness) : { id: selectedReportDate };
-  const localReportDays = [...new Set(scopedEntries.filter((entry) => entryIsActive(entry) && entry.type === "summary" && entry.date.startsWith(monthSelectionValue(selectedReportMonth))).map((entry) => entry.date))]
-    .sort()
-    .reverse()
-    .map((date) => ({ id: date, dayAr: formatCalendarDate(date, "ar"), dayEn: formatCalendarDate(date, "en"), ...summarizeEntries(scopedEntries.filter((entry) => entry.date === date), reviewEnabledForBusiness) }));
+  const reportDay = selectedStore
+    ? summaryDayFromEntriesWithLabels(operationalEntries, selectedStore.id, selectedReportDate, reviewEnabledForBusiness)
+    : { id: selectedReportDate };
+  const localReportDays = buildLocalReportDaysFromEntries(scopedEntries, selectedReportMonth, reviewEnabledForBusiness);
   const reportDays = useApiDetailTabs
     ? apiDaysRows
       .filter((day) => day.id.startsWith(monthSelectionValue(selectedReportMonth)))
@@ -4313,7 +4208,7 @@ function NotebookShareModal({ lang, snapshot, onClose, businessesList = business
       fullEn: formatCalendarDate(shareDate, "en"),
       ...apiRecord,
     }
-    : summaryDayFromEntries(operationalEntries, business.id, shareDate);
+    : summaryDayFromEntriesWithLabels(operationalEntries, business.id, shareDate);
   const selectedMonthItem = formatSelectedMonth(snapshot.selectedMonth, lang);
   const scopedShareEntries = apiEntries || operationalEntries.filter((entry) => (combined ? includedBusinessIds.includes(entry.businessId) : entry.businessId === snapshot.selectedBusiness) && entryDateMatches(entry, sharePeriod, shareDate, snapshot.selectedMonth, shareYear, shareFrom, shareTo));
   const outflowCategory = snapshot.outflowCategory || "all";

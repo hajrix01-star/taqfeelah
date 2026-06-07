@@ -66,6 +66,44 @@ export function summaryMonthFromEntries(entries, businessId, month, reviewEnable
   return summarizeEntries(entriesInPeriod(entries, businessId, "month", "", month), reviewEnabledForBusiness);
 }
 
+export function summaryDayFromEntries(entries, businessId, date, reviewEnabledForBusiness = () => false, formatDayLabel) {
+  const format = typeof formatDayLabel === "function"
+    ? formatDayLabel
+    : (value) => value;
+  return {
+    id: date,
+    dayAr: format(date, "ar"),
+    dayEn: format(date, "en"),
+    fullAr: format(date, "ar"),
+    fullEn: format(date, "en"),
+    ...summarizeEntries(entriesInPeriod(entries, businessId, "day", date, "2026-05"), reviewEnabledForBusiness),
+  };
+}
+
+export function newestEntries(entries) {
+  return [...(Array.isArray(entries) ? entries : [])].sort(
+    (a, b) => `${b.date}|${b.createdAt || ""}`.localeCompare(`${a.date}|${a.createdAt || ""}`),
+  );
+}
+
+export function aggregateSalesChannelsFromGroupEntries(entries, channelFilter = "all", resolveChannelName = (row) => row.name || row.channelId) {
+  const map = new Map();
+  (Array.isArray(entries) ? entries : []).filter(entryIsActive).forEach((entry) => {
+    if (entry.type !== "summary") return;
+    (entry.salesChannels || []).forEach((row) => {
+      if (!row?.channelId || Number(row.amount) <= 0) return;
+      const name = resolveChannelName(row);
+      const current = map.get(row.channelId) || { channelId: row.channelId, name, amount: 0 };
+      map.set(row.channelId, { ...current, amount: current.amount + Number(row.amount) });
+    });
+  });
+  let result = [...map.values()].sort((a, b) => b.amount - a.amount);
+  if (channelFilter !== "all") {
+    result = result.filter((row) => row.channelId === channelFilter);
+  }
+  return result;
+}
+
 export function aggregateChannels(entries, businessId, period, selectedDate, selectedMonth, baseChannels = []) {
   const relevant = entriesInPeriod(entries, businessId, period, selectedDate, selectedMonth).filter(
     (entry) => entry.type === "summary" && entryIsActive(entry),
