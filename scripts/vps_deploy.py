@@ -56,6 +56,7 @@ PRODUCTION_ENV_KEYS = [
     "NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP",
     "NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED",
     "NEXT_PUBLIC_ORG_CONFIG_API_ENABLED",
+    "NEXT_PUBLIC_PHASE9_API_ENABLED",
 ]
 
 # Bootstrap defaults align with scripts/seed-closeouts-foundation.mjs so deploy can
@@ -401,6 +402,13 @@ def deployment_wave_requires_org_config_verify() -> bool:
     return int(wave) >= 4
 
 
+def deployment_wave_requires_phase9_verify() -> bool:
+    wave = os.environ.get("DEPLOYMENT_WAVE", "1").strip()
+    if not wave.isdigit():
+        return False
+    return int(wave) >= 5
+
+
 def resolve_production_env(existing_remote_env: dict[str, str] | None = None) -> dict[str, str]:
     merged = dict(PRODUCTION_ENV_BOOTSTRAP_DEFAULTS)
     if existing_remote_env:
@@ -705,6 +713,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     analytics_verify = deployment_wave_requires_analytics_verify()
     pagination_verify = deployment_wave_requires_pagination_verify()
     org_config_verify = deployment_wave_requires_org_config_verify()
+    phase9_verify = deployment_wave_requires_phase9_verify()
     verify_cmds = [
         "docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'",
         "nginx -t",
@@ -779,6 +788,38 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"-H 'x-member-role: owner'"
             ),
         ] if org_config_verify else []),
+        *([
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave5-notebook-export.json "
+                f"-w '%{{http_code}}' "
+                f"'https://{domain}/api/v1/exports/notebook?"
+                f"storeId={wave_store_id}&period=day&date=$(date -u +%Y-%m-%d)' "
+                f"-H 'x-organization-id: {wave_org_id}' "
+                f"-H 'x-user-id: {wave_owner_id}' "
+                f"-H 'x-member-role: owner'"
+            ),
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave5-duplicate-ack.json "
+                f"-w '%{{http_code}}' -X POST "
+                f"-H 'content-type: application/json' "
+                f"-d '{{}}' "
+                f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/entries/"
+                f"duplicate-summary/acknowledge "
+                f"-H 'x-organization-id: {wave_org_id}' "
+                f"-H 'x-user-id: {wave_owner_id}' "
+                f"-H 'x-member-role: owner'"
+            ),
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave5-inline-attachment.json "
+                f"-w '%{{http_code}}' -X POST "
+                f"-H 'content-type: application/json' "
+                f"-d '{{}}' "
+                f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/attachments/inline "
+                f"-H 'x-organization-id: {wave_org_id}' "
+                f"-H 'x-user-id: {wave_owner_id}' "
+                f"-H 'x-member-role: owner'"
+            ),
+        ] if phase9_verify else []),
         f"curl -I --max-time 15 https://{shlex.quote(www_domain)} || true",
         "curl -I --max-time 15 https://hajrix.com || true",
         "curl -I --max-time 15 https://arz-lounge.com || true",
@@ -913,6 +954,66 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 raise RuntimeError(
                     "Deployment wave 4 verification failed: sales-channels response "
                     "missing channels payload"
+                )
+            continue
+        if "wave5-notebook-export.json" in c:
+            notebook_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run(
+                "cat /tmp/taqfeelah-wave5-notebook-export.json 2>/dev/null || true",
+                check=False,
+            )
+            if body.strip():
+                safe_print("Wave 5 notebook export API response preview:")
+                safe_print(body.strip()[:240])
+            if notebook_status_code != "200":
+                raise RuntimeError(
+                    "Deployment wave 5 verification failed: notebook export API returned "
+                    f"HTTP {notebook_status_code or 'unknown'}"
+                )
+            if '"totals"' not in body:
+                raise RuntimeError(
+                    "Deployment wave 5 verification failed: notebook export response "
+                    "missing totals payload"
+                )
+            continue
+        if "wave5-duplicate-ack.json" in c:
+            duplicate_ack_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run(
+                "cat /tmp/taqfeelah-wave5-duplicate-ack.json 2>/dev/null || true",
+                check=False,
+            )
+            if body.strip():
+                safe_print("Wave 5 duplicate-summary acknowledge API response preview:")
+                safe_print(body.strip()[:240])
+            if duplicate_ack_status_code != "400":
+                raise RuntimeError(
+                    "Deployment wave 5 verification failed: duplicate-summary acknowledge "
+                    f"API returned HTTP {duplicate_ack_status_code or 'unknown'} (expected 400)"
+                )
+            if "entryIds" not in body and "VALIDATION_ERROR" not in body:
+                raise RuntimeError(
+                    "Deployment wave 5 verification failed: duplicate-summary acknowledge "
+                    "response missing validation payload"
+                )
+            continue
+        if "wave5-inline-attachment.json" in c:
+            inline_attachment_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run(
+                "cat /tmp/taqfeelah-wave5-inline-attachment.json 2>/dev/null || true",
+                check=False,
+            )
+            if body.strip():
+                safe_print("Wave 5 inline attachment API response preview:")
+                safe_print(body.strip()[:240])
+            if inline_attachment_status_code != "400":
+                raise RuntimeError(
+                    "Deployment wave 5 verification failed: inline attachment API returned "
+                    f"HTTP {inline_attachment_status_code or 'unknown'} (expected 400)"
+                )
+            if "VALIDATION_ERROR" not in body and "Invalid inline attachment" not in body:
+                raise RuntimeError(
+                    "Deployment wave 5 verification failed: inline attachment response "
+                    "missing validation payload"
                 )
             continue
         if code != 0:
