@@ -135,6 +135,24 @@ import {
   removeEmployeePinForPerson,
   storeHasOperationalRecords,
 } from "@/features/org-config/client/owner-settings-delete-actions";
+import { buildOwnerSettingsDeleteDialog } from "@/features/org-config/client/owner-settings-delete-dialog";
+import {
+  addCustomSalesChannel,
+  canRequestRetireSalesChannel,
+  cloneStoreChannelDraft,
+  restoreRetiredSalesChannel,
+  retireSalesChannelInDraft,
+  toggleSalesChannelActive,
+} from "@/features/org-config/client/owner-settings-channel-actions";
+import {
+  cloneStoreOperationalDraft,
+  mergeOperationalDraft,
+  toggleOperationalCategory,
+} from "@/features/org-config/client/owner-settings-operational-actions";
+import {
+  buildInitialStoreChannelSettings,
+  getStoreChannelConfig,
+} from "@/features/org-config/client/store-channel-config";
 import {
   entriesInPeriod,
   summarizeEntries,
@@ -2240,7 +2258,7 @@ function OwnerSummaryScreen({ lang, onBack, onSave, saving = false, selectedBusi
   const [summaryDate, setSummaryDate] = useState(() => todayIsoDate());
   const { attachment, processing, error, selectAttachment, clearAttachment } = useAttachmentCapture(lang);
   const selectedStore = businessesList.find((business) => business.id === businessId) || null;
-  const channelConfig = getStoreChannelConfig(storeChannelSettings, businessId);
+  const channelConfig = resolveStoreChannelConfig(storeChannelSettings, businessId);
   const salesChannels = selectedStore ? channelConfig.channels.filter((channel) => channelConfig.activeIds.includes(channel.id) && !channel.retired) : [];
   const [values, setValues] = useState({});
   const channelSignature = salesChannels.map((channel) => channel.id).join("|");
@@ -2402,7 +2420,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   const employeeStoreIds = (person) => person.storeIds || ["shami"];
   const displayBusinessName = (business) => businessName(business, lang);
   const displayLocation = (business) => businessLocation(business, lang);
-  const savedChannelConfig = getStoreChannelConfig(storeChannelSettings, settingsStoreId);
+  const savedChannelConfig = resolveStoreChannelConfig(storeChannelSettings, settingsStoreId);
   const savedOperationalConfig = getStoreOperationalConfig(storeOperationalSettings, settingsStoreId);
   const channelConfig = draftStoreChannelConfig || savedChannelConfig;
   const operationalConfig = draftStoreOperationalConfig || savedOperationalConfig;
@@ -2465,8 +2483,8 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
       setDraftStoreName(selectedStore?.displayName || displayBusinessName(selectedStore));
       setDraftStoreLocation(displayLocation(selectedStore));
     }
-    if (panel === "channels") setDraftStoreChannelConfig({ ...savedChannelConfig, channels: savedChannelConfig.channels.map((channel) => ({ ...channel })), activeIds: [...savedChannelConfig.activeIds] });
-    if (panel === "expenses" || panel === "review") setDraftStoreOperationalConfig({ ...savedOperationalConfig, activeCategories: [...savedOperationalConfig.activeCategories] });
+    if (panel === "channels") setDraftStoreChannelConfig(cloneStoreChannelDraft(savedChannelConfig));
+    if (panel === "expenses" || panel === "review") setDraftStoreOperationalConfig(cloneStoreOperationalDraft(savedOperationalConfig));
   };
   const backFromStorePanel = () => { resetStoreDrafts(); setStorePanel("overview"); };
   const saveStoreProfile = () => {
@@ -2485,29 +2503,30 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
     setStoreOperationalSettings((current) => ({ ...current, [settingsStoreId]: draftStoreOperationalConfig }));
     showSettingsSaved(); backFromStorePanel();
   };
-  const updateOperationalDraft = (updates) => setDraftStoreOperationalConfig((current) => ({ ...(current || savedOperationalConfig), ...updates }));
+  const updateOperationalDraft = (updates) => setDraftStoreOperationalConfig((current) => mergeOperationalDraft(current || savedOperationalConfig, updates));
   const updateChannelDraft = (updater) => setDraftStoreChannelConfig((current) => updater(current || savedChannelConfig));
   const toggleChannel = (id) => {
-    if (channelConfig.activeIds.includes(id) && channelConfig.activeIds.length === 1) { setSettingsNotice(text(lang, "atLeastOneChannel")); return; }
+    const result = toggleSalesChannelActive(channelConfig, id);
+    if (result.blocked) { setSettingsNotice(text(lang, "atLeastOneChannel")); return; }
     setSettingsNotice("");
-    updateChannelDraft((config) => ({ ...config, activeIds: config.activeIds.includes(id) ? config.activeIds.filter((item) => item !== id) : [...config.activeIds, id] }));
+    updateChannelDraft(() => result.config);
   };
   const requestRetireChannel = (channel) => {
-    if (channelConfig.activeIds.includes(channel.id) && channelConfig.activeIds.length === 1) { setSettingsNotice(text(lang, "atLeastOneChannel")); return; }
+    if (!canRequestRetireSalesChannel(channelConfig, channel)) { setSettingsNotice(text(lang, "atLeastOneChannel")); return; }
     setDeleteTarget({ type: "channel", item: channel });
   };
-  const restoreSalesChannel = (channel) => updateChannelDraft((config) => ({ channels: config.channels.map((item) => item.id === channel.id ? { ...item, retired: false } : item), activeIds: config.activeIds.includes(channel.id) ? config.activeIds : [...config.activeIds, channel.id] }));
+  const restoreSalesChannel = (channel) => updateChannelDraft((config) => restoreRetiredSalesChannel(config, channel));
   const addSalesChannel = () => {
-    const name = newChannelName.trim();
-    if (!name) return;
-    const id = `channel-${Date.now()}`;
-    updateChannelDraft((config) => ({ channels: [...config.channels, { id, custom: true, nameAr: name, nameEn: name, icon: CreditCard }], activeIds: [...config.activeIds, id] }));
+    const result = addCustomSalesChannel(channelConfig, newChannelName, { icon: CreditCard });
+    if (!result.added) return;
+    setDraftStoreChannelConfig(result.config);
     setNewChannelName("");
   };
   const toggleCategory = (id) => {
-    if (operationalConfig.activeCategories.includes(id) && operationalConfig.activeCategories.length === 1) { setSettingsNotice(text(lang, "atLeastOneCategory")); return; }
+    const result = toggleOperationalCategory(operationalConfig, id);
+    if (result.blocked) { setSettingsNotice(text(lang, "atLeastOneCategory")); return; }
     setSettingsNotice("");
-    updateOperationalDraft({ activeCategories: operationalConfig.activeCategories.includes(id) ? operationalConfig.activeCategories.filter((item) => item !== id) : [...operationalConfig.activeCategories, id] });
+    setDraftStoreOperationalConfig(result.config);
   };
   const toggleArchive = (id) => setArchivedBusinessIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   const storeHasRecords = (business) => storeHasOperationalRecords(operationalEntries, business.id);
@@ -2624,10 +2643,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
         },
         closeStore,
         retireChannel: (channel) => {
-          updateChannelDraft((config) => ({
-            activeIds: config.activeIds.filter((id) => id !== channel.id),
-            channels: config.channels.map((item) => (item.id === channel.id ? { ...item, retired: true } : item)),
-          }));
+          updateChannelDraft((config) => retireSalesChannelInDraft(config, channel));
         },
         removeStaffMember: (personId) => {
           const removePerson = (current) => current.map((person) => (
@@ -2644,11 +2660,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
     });
     setDeleteTarget(null);
   };
-  const deleteDialog = deleteTarget ? {
-    title: deleteTarget.type === "archive" ? text(lang, "archiveStoreTitle") : deleteTarget.type === "store" ? text(lang, deleteTarget.hasRecords ? "storeDeleteWithDataTitle" : "storeDeleteEmptyTitle") : text(lang, deleteTarget.type === "channel" ? "channelDeleteTitle" : "userDeleteTitle"),
-    desc: deleteTarget.type === "archive" ? text(lang, "archiveStoreDesc") : deleteTarget.type === "store" ? text(lang, deleteTarget.hasRecords ? "storeDeleteWithDataDesc" : "storeDeleteEmptyDesc") : text(lang, deleteTarget.type === "channel" ? "channelDeleteDesc" : "userDeleteDesc"),
-    action: deleteTarget.type === "archive" ? text(lang, "confirmArchive") : deleteTarget.type === "store" ? text(lang, deleteTarget.hasRecords ? "archiveAndKeepData" : "deleteEmptyStore") : text(lang, deleteTarget.type === "channel" ? "retireChannel" : "revokeAccess"),
-  } : null;
+  const deleteDialog = buildOwnerSettingsDeleteDialog(deleteTarget, (key) => text(lang, key));
   const DeleteDialog = () => <AnimatePresence>{deleteDialog && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 flex items-end bg-[#112A46]/45 sm:items-center sm:justify-center sm:p-6 lg:items-end lg:justify-start lg:p-0"><motion.div initial={{ y: 20 }} animate={{ y: 0 }} exit={{ y: 20 }} className="relative z-10 w-full rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[560px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"><div className="mb-4 flex items-start justify-between"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF1EE] text-[#B44747]"><Trash2 className="h-5 w-5" /></div><button onClick={() => setDeleteTarget(null)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white"><X className="h-4 w-4" /></button></div><h3 className="text-base font-black">{deleteDialog.title}</h3><p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">{deleteDialog.desc}</p><div className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "safeDeleteNotice")}</div>{deleteTarget?.affectedStaff?.length > 0 && <div className="mt-3 rounded-2xl bg-[#FFF1EE] p-3 text-taq-meta font-bold leading-5 text-[#B44747]"><p>{text(lang, "archiveStaffWarning")}</p><p className="mt-1">{deleteTarget.affectedStaff.map((person) => lang === "ar" ? person.nameAr : person.nameEn).join(" · ")}</p></div>}<div className="mt-5 grid grid-cols-[0.9fr_1.35fr] gap-3"><button onClick={() => setDeleteTarget(null)} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.06]">{text(lang, "cancel")}</button><button onClick={confirmDelete} className="rounded-2xl bg-[#B44747] py-3.5 text-xs font-black text-white">{deleteDialog.action}</button></div></motion.div></motion.div>}</AnimatePresence>;
   const Arrow = lang === "ar" ? ChevronLeft : ChevronRight;
   const SettingsLink = ({ icon: Icon, title, desc = "", value = "", onClick, danger = false, border = true }) => <button onClick={onClick} className={`flex w-full items-center gap-3 px-4 py-4 text-start ${border ? "border-b border-[#F0ECE2]" : ""}`}><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${danger ? "bg-[#FFF1EE] text-[#B44747]" : "bg-[#F7F5EF] text-[#806528]"}`}><Icon className="h-5 w-5" /></span><span className="min-w-0 flex-1"><span className={`block text-taq-body-sm font-black ${danger ? "text-[#B44747]" : "text-[#112A46]"}`}>{title}</span>{desc && <span className="mt-0.5 block truncate text-taq-meta font-bold text-[#827762]">{desc}</span>}</span>{value && <span className="shrink-0 text-taq-meta font-bold text-[#827762]">{value}</span>}<Arrow className={`h-4 w-4 shrink-0 ${danger ? "text-[#B44747]" : "text-[#B99844]"}`} /></button>;
@@ -4781,15 +4793,6 @@ function RestoreOperationDialog({ lang, item, onCancel, onConfirm }) {
   const isSale = item.type === "summary";
   return <AnimatePresence><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[60] flex items-end bg-[#112A46]/50 sm:items-center sm:justify-center sm:p-6 lg:items-end lg:justify-start lg:p-0"><motion.div initial={{ y: 18 }} animate={{ y: 0 }} exit={{ y: 18 }} className="relative z-10 w-full rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[560px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"><div className="mb-4 flex items-start justify-between"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E6F5E9] text-[#257844]"><Check className="h-5 w-5" /></div><button onClick={onCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]"><X className="h-4 w-4" /></button></div><h3 className="text-base font-black">{text(lang, "restoreDialogTitle")}</h3><p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">{text(lang, "restoreConfirm")}</p><div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-black/[0.045]"><div className="flex items-center justify-between gap-2"><div className="flex items-center gap-2"><Badge tone={isSale ? "success" : "warning"}>{operationDisplayLabel(item, lang)}</Badge><span className="text-taq-meta font-bold text-[#827762]">{opDate(item, lang)}</span></div><strong className={`tabular-nums text-sm font-black ${isSale ? "text-[#257844]" : "text-[#B44747]"}`}>{money(signedEntryAmount(item), lang)}</strong></div></div><div className="mt-4"><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "restoreReasonPrompt")}</p><textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={160} placeholder={text(lang, "restoreReasonPrompt")} className="min-h-[72px] w-full resize-none rounded-2xl bg-white px-4 py-3 text-sm font-bold outline-none ring-1 ring-black/[0.05]" /></div><div className="mt-5 grid grid-cols-[0.9fr_1.35fr] gap-3"><button onClick={onCancel} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.06]">{text(lang, "cancel")}</button><button onClick={() => onConfirm(reason.trim())} className="rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white">{text(lang, "confirmRestore")}</button></div></motion.div></motion.div></AnimatePresence>;
 }
-function buildInitialStoreChannelSettings(savedSettings, storeList) {
-  if (savedSettings?.storeChannelSettings) return savedSettings.storeChannelSettings;
-  const legacyChannels = savedSettings?.configuredChannels || channels;
-  const legacyActiveIds = savedSettings?.activeChannels || legacyChannels.filter((channel) => !channel.retired).map((channel) => channel.id);
-  return Object.fromEntries(storeList.map((business) => [business.id, { channels: legacyChannels.map((channel) => ({ ...channel })), activeIds: [...legacyActiveIds] }]));
-}
-function getStoreChannelConfig(settings, storeId) {
-  return settings[storeId] || { channels: channels.map((channel) => ({ ...channel })), activeIds: channels.map((channel) => channel.id) };
-}
 function nextDayIso(dateString) {
   const date = new Date(`${dateString}T12:00:00`);
   date.setDate(date.getDate() + 1);
@@ -5015,7 +5018,7 @@ export default function TaqfeelahPrototypeRuntime() {
   const [staff, setStaff] = useState(initialSettings?.staff || (BINDS_TO_SERVER_AUTH ? [] : PROTOTYPE_DEFAULT_STAFF));
   const [ownerProfile, setOwnerProfile] = useState(initialSettings?.ownerProfile || { name: "محمد الهاجري" });
   const currentOwnerActor = { ...ownerActor, nameAr: ownerProfile.name, nameEn: ownerProfile.name };
-  const [storeChannelSettings, setStoreChannelSettings] = useState(() => buildInitialStoreChannelSettings(initialSettings, initialBusinesses));
+  const [storeChannelSettings, setStoreChannelSettings] = useState(() => buildInitialStoreChannelSettings(initialSettings, initialBusinesses, DEFAULT_STORE_CHANNEL_CONFIG));
   const [storeOperationalSettings, setStoreOperationalSettings] = useState(() => buildInitialStoreOperationalSettings(initialSettings, initialBusinesses));
   const [authOwnerUsername, setAuthOwnerUsername] = useState(() => initialAuthConfig.ownerUsername || PROTOTYPE_OWNER_USERNAME || "hajri");
   const [authOwnerPassword, setAuthOwnerPassword] = useState(() => initialAuthConfig.ownerPassword || PROTOTYPE_OWNER_PASSWORD || "123");
@@ -5068,10 +5071,10 @@ export default function TaqfeelahPrototypeRuntime() {
     : null;
   const assignedEmployeeBusinesses = activeBusinesses.filter((business) => (activeEmployee?.storeIds || []).includes(business.id));
   const currentEmployeeBusiness = assignedEmployeeBusinesses.find((business) => business.id === employeeBusinessId) || assignedEmployeeBusinesses[0] || null;
-  const currentEmployeeChannelConfig = getStoreChannelConfig(storeChannelSettings, currentEmployeeBusiness?.id);
+  const currentEmployeeChannelConfig = resolveStoreChannelConfig(storeChannelSettings, currentEmployeeBusiness?.id);
   const currentEmployeeOperationalConfig = getStoreOperationalConfig(storeOperationalSettings, currentEmployeeBusiness?.id);
   const resolveStoreSalesChannels = useCallback((storeId) => {
-    const channelConfig = getStoreChannelConfig(storeChannelSettings, storeId);
+    const channelConfig = resolveStoreChannelConfig(storeChannelSettings, storeId);
     return channelConfig.channels
       .filter((channel) => channelConfig.activeIds.includes(channel.id) && !channel.retired)
       .map((channel) => ({ ...channel, displayName: channelName(channel, lang) }));
@@ -5079,7 +5082,7 @@ export default function TaqfeelahPrototypeRuntime() {
   const currentEmployeeCategories = expenseCategories.filter((item) => currentEmployeeOperationalConfig.activeCategories.includes(item.id));
   const activeOwnerStoreId = activeViewBusiness === "all" ? activeBusinesses[0]?.id : activeViewBusiness;
   const reportSettingsStoreId = archivedReadOnlyBusinessId || activeOwnerStoreId;
-  const reportChannelConfig = getStoreChannelConfig(storeChannelSettings, reportSettingsStoreId);
+  const reportChannelConfig = resolveStoreChannelConfig(storeChannelSettings, reportSettingsStoreId);
   const {
     reviewEnabledForBusiness,
     closeoutReviewEnabledForBusiness,
