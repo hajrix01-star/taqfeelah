@@ -41,8 +41,10 @@
 |----------|---------|---------|
 | `NEXT_PUBLIC_AUTH_API_ENABLED` | `false` | Wire real auth UI flows |
 | `AUTH_DB_CREDENTIALS_ENABLED` | `false` | Validate credentials in `auth_identities` |
+| `NEXT_PUBLIC_SAAS_ADMIN_ENABLED` | `false` | Shows `/saas-admin` shell |
 | `SAAS_ADMIN_API_ENABLED` | `false` | Platform admin APIs |
 | `USAGE_TRACKING_ENABLED` | `false` | Usage event recording |
+| `SAAS_PLATFORM_ADMIN_USER_IDS` | empty | Comma-separated platform admin UUIDs |
 
 ## Temporary ID maps (prototype period only)
 
@@ -66,7 +68,8 @@ Required by `assertProductionRuntimeEnv()` today; target is removal after sessio
 4. **Wave 4 (org config):** `NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true`
 5. **Wave 5 (enhancements):** `NEXT_PUBLIC_PHASE9_API_ENABLED=true`
 6. **Wave 3 (scale):** `NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true` (under load)
-7. **Wave 6 (launch):** `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false`, `AUTH_DB_CREDENTIALS_ENABLED=true`, `NEXT_PUBLIC_AUTH_API_ENABLED=true`
+7. **Wave 6 (launch):** run `pnpm db:seed:auth` then `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false`, `AUTH_DB_CREDENTIALS_ENABLED=true`, `NEXT_PUBLIC_AUTH_API_ENABLED=true`, `ALLOW_HEADER_AUTH_CONTEXT=false`, `DEPLOYMENT_WAVE=6`
+8. **Wave 7 (SaaS):** run `pnpm db:seed:saas`, set `SAAS_PLATFORM_ADMIN_USER_IDS`, then `SAAS_ADMIN_API_ENABLED=true`, `NEXT_PUBLIC_SAAS_ADMIN_ENABLED=true`, optional `USAGE_TRACKING_ENABLED=true`, `DEPLOYMENT_WAVE=7`
 
 ## Code modules
 

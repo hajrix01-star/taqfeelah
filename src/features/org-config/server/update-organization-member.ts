@@ -136,21 +136,27 @@ export async function updateOrganizationMember(rawInput: z.infer<typeof inputSch
       if (nextRole !== "owner") {
         throw new ValidationError("Owner password credentials require role=owner.");
       }
-      await upsertOwnerPasswordIdentity({
-        userId: member.userId,
-        username: input.credentials.username,
-        password: input.credentials.password,
-      });
+      await upsertOwnerPasswordIdentity(
+        {
+          userId: member.userId,
+          username: input.credentials.username,
+          password: input.credentials.password,
+        },
+        tx,
+      );
     }
 
     if (input.credentials?.type === "employee_pin") {
       if (nextRole === "owner") {
         throw new ValidationError("Employee pin credentials cannot be used for owner role.");
       }
-      await upsertEmployeePinIdentity({
-        userId: member.userId,
-        pin: input.credentials.pin,
-      });
+      await upsertEmployeePinIdentity(
+        {
+          userId: member.userId,
+          pin: input.credentials.pin,
+        },
+        tx,
+      );
     }
 
     await tx.insert(auditEvents).values({

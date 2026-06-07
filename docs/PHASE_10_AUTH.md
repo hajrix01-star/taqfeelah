@@ -17,15 +17,19 @@
 - `POST /api/v1/members` and `PATCH /api/v1/members/:memberId`
 - OTP stubs: `POST /api/v1/auth/otp/request`, `POST /api/v1/auth/otp/verify`
 - `createAuthSession` supports DB credentials when `AUTH_DB_CREDENTIALS_ENABLED=true`
-- Client helpers: `members-api-client.js`, `auth-api-client.js`
+- Client session helpers: `runtime-session-and-settings-api-client.js`
+- Member credentials via org-config: `org-config-api-client.js`
+- Seed scripts: `pnpm db:seed:auth`, `pnpm db:migrate:auth`
+- Deploy scaffold: `DEPLOYMENT_WAVE=6` in `scripts/vps_deploy.py` (inactive until product flips wave)
 
 ## Activation sequence (pre-launch only)
 
-1. Seed/migrate members and credentials via members API
+1. Run `pnpm db:seed:auth` (or `pnpm db:migrate:auth` on existing VPS runtime settings)
 2. Set `AUTH_DB_CREDENTIALS_ENABLED=true`
 3. Set `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false`
 4. Set `ALLOW_HEADER_AUTH_CONTEXT=false`
-5. Verify owner password + employee PIN via `/api/v1/auth/session`
+5. Set `NEXT_PUBLIC_AUTH_API_ENABLED=true` and bump `DEPLOYMENT_WAVE=6`
+6. Deploy — wave 6 verify runs POST owner login, bad-password 401, employee PIN 200
 
 ## Not activated yet
 

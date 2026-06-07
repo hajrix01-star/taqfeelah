@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
@@ -33,20 +34,29 @@ export const users = pgTable("users", {
   updatedAt,
 });
 
-export const authIdentities = pgTable("auth_identities", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  provider: text("provider").notNull(),
-  phoneNumber: text("phone_number"),
-  username: text("username"),
-  passwordHash: text("password_hash"),
-  verifiedAt: timestamp("verified_at", { withTimezone: true }),
-  status: text("status").notNull().default("active"),
-  createdAt,
-  updatedAt,
-});
+export const authIdentities = pgTable(
+  "auth_identities",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    phoneNumber: text("phone_number"),
+    username: text("username"),
+    passwordHash: text("password_hash"),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    status: text("status").notNull().default("active"),
+    createdAt,
+    updatedAt,
+  },
+  (table) => ({
+    userProviderUq: uniqueIndex("auth_identities_user_provider_uq").on(table.userId, table.provider),
+    usernamePasswordUq: uniqueIndex("auth_identities_username_password_uq")
+      .on(table.provider, table.username)
+      .where(sql`${table.provider} = 'username_password'`),
+  }),
+);
 
 export const organizationMembers = pgTable(
   "organization_members",

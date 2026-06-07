@@ -3,6 +3,7 @@ import { getDb } from "@/core/db/client";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
+import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
 import { attachments, auditEvents, entries, entrySalesChannels } from "@/core/db/schema";
 
 const salesChannelSchema = z.object({
@@ -149,6 +150,15 @@ export async function createStoreEntry(rawInput: CreateEntryInput) {
       ...createdEntry,
       salesChannels: normalizedSalesChannels,
     };
+  });
+
+  void fireUsageEventSafe({
+    organizationId: input.organizationId,
+    storeId: input.storeId,
+    userId: input.actorUserId,
+    eventName: "entry_created",
+    eventDate: input.date,
+    metadata: { type: input.type, entryId: result.id },
   });
 
   return {

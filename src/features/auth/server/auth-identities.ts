@@ -5,6 +5,12 @@ import { authIdentities } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import { hashPassword, verifyPassword } from "@/features/auth/server/password-hash";
 
+type AuthIdentityDb = Pick<ReturnType<typeof getDb>, "select" | "insert" | "update">;
+
+function resolveDb(executor?: AuthIdentityDb) {
+  return executor ?? getDb();
+}
+
 const ownerPasswordSchema = z.object({
   userId: z.string().uuid(),
   username: z.string().trim().min(1).max(120),
@@ -16,14 +22,17 @@ const employeePinSchema = z.object({
   pin: z.string().trim().min(4).max(12),
 });
 
-export async function upsertOwnerPasswordIdentity(rawInput: z.infer<typeof ownerPasswordSchema>) {
+export async function upsertOwnerPasswordIdentity(
+  rawInput: z.infer<typeof ownerPasswordSchema>,
+  executor?: AuthIdentityDb,
+) {
   const parsed = ownerPasswordSchema.safeParse(rawInput);
   if (!parsed.success) {
     throw new ValidationError("Invalid owner password identity input.", parsed.error.flatten());
   }
   const input = parsed.data;
   const passwordHash = await hashPassword(input.password);
-  const db = getDb();
+  const db = resolveDb(executor);
   const username = input.username.trim().toLowerCase();
 
   const [existing] = await db
@@ -64,14 +73,17 @@ export async function upsertOwnerPasswordIdentity(rawInput: z.infer<typeof owner
   return { id: created.id, userId: input.userId, provider: "username_password" as const };
 }
 
-export async function upsertEmployeePinIdentity(rawInput: z.infer<typeof employeePinSchema>) {
+export async function upsertEmployeePinIdentity(
+  rawInput: z.infer<typeof employeePinSchema>,
+  executor?: AuthIdentityDb,
+) {
   const parsed = employeePinSchema.safeParse(rawInput);
   if (!parsed.success) {
     throw new ValidationError("Invalid employee pin identity input.", parsed.error.flatten());
   }
   const input = parsed.data;
   const passwordHash = await hashPassword(input.pin);
-  const db = getDb();
+  const db = resolveDb(executor);
 
   const [existing] = await db
     .select({ id: authIdentities.id })

@@ -57,6 +57,12 @@ PRODUCTION_ENV_KEYS = [
     "NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED",
     "NEXT_PUBLIC_ORG_CONFIG_API_ENABLED",
     "NEXT_PUBLIC_PHASE9_API_ENABLED",
+    "AUTH_DB_CREDENTIALS_ENABLED",
+    "NEXT_PUBLIC_AUTH_API_ENABLED",
+    "SAAS_ADMIN_API_ENABLED",
+    "NEXT_PUBLIC_SAAS_ADMIN_ENABLED",
+    "USAGE_TRACKING_ENABLED",
+    "SAAS_PLATFORM_ADMIN_USER_IDS",
 ]
 
 # Bootstrap defaults align with scripts/seed-closeouts-foundation.mjs so deploy can
@@ -91,11 +97,40 @@ WAVE_4_ENV_OVERRIDES: dict[str, str] = {
     "NEXT_PUBLIC_ORG_CONFIG_API_ENABLED": "true",
 }
 
+# Wave 5 enables Phase 9 APIs (notebook export, inline attachments, duplicate summary).
+WAVE_5_ENV_OVERRIDES: dict[str, str] = {
+    **WAVE_4_ENV_OVERRIDES,
+    "DEPLOYMENT_WAVE": "5",
+    "NEXT_PUBLIC_PHASE9_API_ENABLED": "true",
+}
+
+# Wave 6 enables real auth (Phase 10). Requires auth_identities seed before deploy.
+WAVE_6_ENV_OVERRIDES: dict[str, str] = {
+    **WAVE_5_ENV_OVERRIDES,
+    "DEPLOYMENT_WAVE": "6",
+    "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE": "false",
+    "ALLOW_HEADER_AUTH_CONTEXT": "false",
+    "AUTH_DB_CREDENTIALS_ENABLED": "true",
+    "NEXT_PUBLIC_AUTH_API_ENABLED": "true",
+}
+
+# Wave 7 scaffolds SaaS admin (Phase 11). SaaS flags stay OFF until product enables them.
+WAVE_7_ENV_OVERRIDES: dict[str, str] = {
+    **WAVE_6_ENV_OVERRIDES,
+    "DEPLOYMENT_WAVE": "7",
+    "SAAS_ADMIN_API_ENABLED": "false",
+    "NEXT_PUBLIC_SAAS_ADMIN_ENABLED": "false",
+    "USAGE_TRACKING_ENABLED": "false",
+}
+
 WAVE_ENV_OVERRIDES: dict[str, dict[str, str]] = {
     "1": WAVE_1_ENV_OVERRIDES,
     "2": WAVE_2_ENV_OVERRIDES,
     "3": WAVE_3_ENV_OVERRIDES,
     "4": WAVE_4_ENV_OVERRIDES,
+    "5": WAVE_5_ENV_OVERRIDES,
+    "6": WAVE_6_ENV_OVERRIDES,
+    "7": WAVE_7_ENV_OVERRIDES,
 }
 
 PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
@@ -409,6 +444,20 @@ def deployment_wave_requires_phase9_verify() -> bool:
     return int(wave) >= 5
 
 
+def deployment_wave_requires_auth_verify() -> bool:
+    wave = os.environ.get("DEPLOYMENT_WAVE", "1").strip()
+    if not wave.isdigit():
+        return False
+    return int(wave) >= 6
+
+
+def deployment_wave_requires_saas_verify() -> bool:
+    wave = os.environ.get("DEPLOYMENT_WAVE", "1").strip()
+    if not wave.isdigit():
+        return False
+    return int(wave) >= 7
+
+
 def resolve_production_env(existing_remote_env: dict[str, str] | None = None) -> dict[str, str]:
     merged = dict(PRODUCTION_ENV_BOOTSTRAP_DEFAULTS)
     if existing_remote_env:
@@ -714,6 +763,12 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     pagination_verify = deployment_wave_requires_pagination_verify()
     org_config_verify = deployment_wave_requires_org_config_verify()
     phase9_verify = deployment_wave_requires_phase9_verify()
+    auth_verify = deployment_wave_requires_auth_verify()
+    saas_verify = deployment_wave_requires_saas_verify()
+    auth_owner_username = os.environ.get("AUTH_OWNER_USERNAME", "hajri")
+    auth_owner_password = os.environ.get("AUTH_OWNER_PASSWORD", "123")
+    auth_employee_user_id = "4cf1450d-08d8-4ca1-b180-1c2642174a79"
+    auth_employee_pin = "1234"
     verify_cmds = [
         "docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'",
         "nginx -t",
@@ -1015,6 +1070,68 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 raise RuntimeError(
                     "Deployment wave 5 verification failed: inline attachment response "
                     "missing validation payload"
+                )
+            continue
+        if "wave6-auth-owner.json" in c:
+            owner_auth_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run(
+                "cat /tmp/taqfeelah-wave6-auth-owner.json 2>/dev/null || true",
+                check=False,
+            )
+            if body.strip():
+                safe_print("Wave 6 owner auth response preview:")
+                safe_print(body.strip()[:240])
+            if owner_auth_status_code != "200":
+                raise RuntimeError(
+                    "Deployment wave 6 verification failed: owner auth POST returned "
+                    f"HTTP {owner_auth_status_code or 'unknown'} (expected 200). "
+                    "Run scripts/seed-auth-credentials.mjs before wave 6."
+                )
+            continue
+        if "wave6-auth-bad.json" in c:
+            bad_auth_status_code = out.strip()[-3:] if out.strip() else None
+            if bad_auth_status_code != "401":
+                raise RuntimeError(
+                    "Deployment wave 6 verification failed: invalid owner auth POST returned "
+                    f"HTTP {bad_auth_status_code or 'unknown'} (expected 401)"
+                )
+            continue
+        if "wave6-auth-employee.json" in c:
+            employee_auth_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run(
+                "cat /tmp/taqfeelah-wave6-auth-employee.json 2>/dev/null || true",
+                check=False,
+            )
+            if body.strip():
+                safe_print("Wave 6 employee auth response preview:")
+                safe_print(body.strip()[:240])
+            if employee_auth_status_code != "200":
+                raise RuntimeError(
+                    "Deployment wave 6 verification failed: employee auth POST returned "
+                    f"HTTP {employee_auth_status_code or 'unknown'} (expected 200)"
+                )
+            continue
+        if "wave7-saas-kpis.json" in c:
+            saas_kpis_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run(
+                "cat /tmp/taqfeelah-wave7-saas-kpis.json 2>/dev/null || true",
+                check=False,
+            )
+            if body.strip():
+                safe_print("Wave 7 SaaS KPIs response preview:")
+                safe_print(body.strip()[:240])
+            if saas_kpis_status_code != "503":
+                raise RuntimeError(
+                    "Deployment wave 7 verification failed: SaaS KPIs API returned "
+                    f"HTTP {saas_kpis_status_code or 'unknown'} (expected 503 while disabled)"
+                )
+            continue
+        if "wave7-saas-page.html" in c:
+            saas_page_status_code = out.strip()[-3:] if out.strip() else None
+            if saas_page_status_code != "200":
+                raise RuntimeError(
+                    "Deployment wave 7 verification failed: /saas-admin returned "
+                    f"HTTP {saas_page_status_code or 'unknown'} (expected 200)"
                 )
             continue
         if code != 0:

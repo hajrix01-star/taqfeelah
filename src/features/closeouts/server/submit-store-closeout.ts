@@ -8,6 +8,7 @@ import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { resolveCloseoutAutoReview } from "@/features/closeouts/server/closeout-review-policy";
 import { resolveCloseoutDaySequence } from "@/features/closeouts/server/resolve-closeout-day-sequence";
 import { readStoreOperationalSettingsRecord } from "@/features/org-config/server/read-store-operational-settings";
+import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
 
 const salesChannelSchema = z.object({
   salesChannelId: z.string().uuid(),
@@ -194,6 +195,15 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
     { type: "summary", amountHalalas: totalSalesHalalas },
     ...input.outflows.map((row) => ({ type: row.type, amountHalalas: row.amountHalalas })),
   ]);
+
+  void fireUsageEventSafe({
+    organizationId: input.organizationId,
+    storeId: input.storeId,
+    userId: input.actorUserId,
+    eventName: "closeout_submitted",
+    eventDate: input.date,
+    metadata: { closeoutId: input.closeoutId, mode: input.mode },
+  });
 
   return {
     closeoutId: input.closeoutId,

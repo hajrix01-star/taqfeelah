@@ -123,17 +123,36 @@
 
 ---
 
-### الموجة 6 — الدخول الحقيقي (مؤجّل)
+### الموجة 6 — الدخول الحقيقي (مؤسّسة — غير مفعّلة)
+
+**الحالة:** البنية جاهزة في الكود وسكربت النشر — **لم تُفعَّل** على الإنتاج (`DEPLOYMENT_WAVE` ما زال 5).
 
 **المراحل التقنية:** 10
 
-راجع `docs/PHASE_10_AUTH.md`. يتطلب إيقاف prototype access على الإنتاج.
+| العلم | عند التفعيل |
+|-------|-------------|
+| `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false` | شاشة دخول حقيقية |
+| `AUTH_DB_CREDENTIALS_ENABLED=true` | كلمات المرور من `auth_identities` |
+| `NEXT_PUBLIC_AUTH_API_ENABLED=true` | ربط واجهة الدخول بالـ API |
+| `ALLOW_HEADER_AUTH_CONTEXT=false` | إيقاف سياق prototype |
+
+**قبل التفعيل:** `pnpm db:seed:auth` أو `pnpm db:migrate:auth` على VPS.
+
+**تحقق تلقائي (عند wave ≥ 6):** POST دخول مالك 200، كلمة مرور خاطئة 401، PIN موظف 200.
+
+راجع `docs/PHASE_10_AUTH.md`.
 
 ---
 
-### الموجة 7 — SaaS (مؤجّل)
+### الموجة 7 — SaaS (مؤسّسة — غير مفعّلة)
+
+**الحالة:** البنية جاهزة — أعلام SaaS تبقى `false` حتى قرار المنتج.
 
 **المراحل التقنية:** 11
+
+**تحقق تلقائي (عند wave ≥ 7):** `GET /api/v1/saas-admin/kpis/overview` → 503 (مغلق)، `GET /saas-admin` → 200.
+
+**قبل تفعيل SaaS:** `pnpm db:seed:saas` + `SAAS_PLATFORM_ADMIN_USER_IDS`.
 
 راجع `docs/PHASE_11_SAAS_ADMIN.md`.
 
