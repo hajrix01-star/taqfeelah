@@ -690,7 +690,9 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
         *([
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave2-summary-day.json "
-                f"-w '%{{http_code}}' https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/summary/day "
+                f"-w '%{{http_code}}' "
+                f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/summary/day"
+                f"?date=$(date -u +%Y-%m-%d) "
                 f"-H 'x-organization-id: {wave_org_id}' "
                 f"-H 'x-user-id: {wave_owner_id}' "
                 f"-H 'x-member-role: owner'"
