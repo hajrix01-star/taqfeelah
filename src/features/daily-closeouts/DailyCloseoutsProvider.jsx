@@ -157,6 +157,17 @@ export function DailyCloseoutsProvider({
     return remoteList;
   }, [apiStrictMode, autoApprovePendingCloseoutsWithoutReview, dbSourceMode, loadCloseoutsFromApi, skipLocalPersistence]);
 
+  const reloadCloseoutsAndPreserveSubmitted = useCallback(async (submittedCloseout) => {
+    const remoteList = await reloadCloseoutsFromApi();
+    const inRemote = remoteList.some(
+      (item) => item.id === submittedCloseout?.id && item.date === submittedCloseout?.date,
+    );
+    if (!inRemote && submittedCloseout?.id) {
+      upsertCloseout(submittedCloseout);
+    }
+    return remoteList;
+  }, [reloadCloseoutsFromApi, upsertCloseout]);
+
   useEffect(() => {
     if (typeof loadCloseoutsFromApi !== "function") return;
     reloadCloseoutsFromApi().catch((error) => {
@@ -224,7 +235,7 @@ export function DailyCloseoutsProvider({
           }
           setSyncError("");
           if (dbSourceMode) {
-            await reloadCloseoutsFromApi();
+            await reloadCloseoutsAndPreserveSubmitted(next);
             if (autoReview) await onSyncToOperationalEntries(next);
             return result;
           }
@@ -272,7 +283,7 @@ export function DailyCloseoutsProvider({
     logEvent,
     onSubmitCloseoutToApi,
     onSyncToOperationalEntries,
-    reloadCloseoutsFromApi,
+    reloadCloseoutsAndPreserveSubmitted,
     saveCloseoutRecord,
     useApiWrites,
   ]);
@@ -316,7 +327,7 @@ export function DailyCloseoutsProvider({
           }
           setSyncError("");
           if (dbSourceMode) {
-            await reloadCloseoutsFromApi();
+            await reloadCloseoutsAndPreserveSubmitted(next);
             if (autoReview) await onSyncToOperationalEntries(next);
             return result;
           }
@@ -364,7 +375,7 @@ export function DailyCloseoutsProvider({
     logEvent,
     onSubmitCloseoutToApi,
     onSyncToOperationalEntries,
-    reloadCloseoutsFromApi,
+    reloadCloseoutsAndPreserveSubmitted,
     saveCloseoutRecord,
     useApiWrites,
   ]);

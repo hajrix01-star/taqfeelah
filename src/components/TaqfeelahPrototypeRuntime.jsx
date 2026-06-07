@@ -5130,9 +5130,12 @@ export default function TaqfeelahPrototypeRuntime() {
   const activeBusinesses = configuredBusinesses.filter((business) => !archivedBusinessIds.includes(business.id));
   const reportingBusinesses = configuredBusinesses;
   const activeViewBusiness = activeBusinesses.length === 1 ? activeBusinesses[0].id : selectedBusiness === "all" || activeBusinesses.some((business) => business.id === selectedBusiness) ? selectedBusiness : "all";
-  const activeEmployee = employee && loggedInEmployeeId
+  const activeEmployeeRaw = employee && loggedInEmployeeId
     ? staff.find((person) => (person.id === loggedInEmployeeId || person.apiUserId === loggedInEmployeeId) && person.active && !person.removed) || null
     : null;
+  const activeEmployee = activeEmployeeRaw && !activeEmployeeRaw.apiUserId && isUuid(sessionUserId)
+    ? { ...activeEmployeeRaw, apiUserId: sessionUserId }
+    : activeEmployeeRaw;
   const assignedEmployeeBusinesses = activeBusinesses.filter((business) => (activeEmployee?.storeIds || []).includes(business.id));
   const currentEmployeeBusiness = assignedEmployeeBusinesses.find((business) => business.id === employeeBusinessId) || assignedEmployeeBusinesses[0] || null;
   const currentEmployeeChannelConfig = resolveStoreChannelConfig(storeChannelSettings, currentEmployeeBusiness?.id);
@@ -5884,7 +5887,9 @@ export default function TaqfeelahPrototypeRuntime() {
   const closeoutsApiStrictMode = isCloseoutsApiStrictMode();
   const closeoutsApiOrganizationId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
   const closeoutsApiOwnerUserId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";
-  const ownerApiUserId = sessionUserId || closeoutsApiOwnerUserId;
+  const ownerApiUserId = employee
+    ? closeoutsApiOwnerUserId
+    : (sessionUserId || closeoutsApiOwnerUserId);
   const apiActorRole = employee ? "employee" : "owner";
   const apiActorUserId = employee
     ? (sessionUserId || activeEmployee?.apiUserId || activeEmployee?.id || "")
@@ -6194,8 +6199,11 @@ export default function TaqfeelahPrototypeRuntime() {
       envUserIdMap,
       envSalesChannelIdMap,
     });
+    if (employee && loggedInEmployeeId && isUuid(sessionUserId)) {
+      maps.userIdMap[loggedInEmployeeId] = sessionUserId;
+    }
     setRuntimeApiIdMaps(maps);
-  }, [closeoutsApiEnabled, configuredBusinesses, entriesApiEnabled, staff, storeChannelSettings]);
+  }, [closeoutsApiEnabled, configuredBusinesses, employee, entriesApiEnabled, loggedInEmployeeId, sessionUserId, staff, storeChannelSettings]);
 
   if (!loggedIn) {
     return (

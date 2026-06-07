@@ -218,7 +218,7 @@ export async function fetchStoreCloseoutsViaApi({
   const mappedStoreId = mapToUuid(storeId, storeIdMap);
 
   if (!mappedOrganizationId || !mappedActorUserId || !mappedStoreId) {
-    return null;
+    return [];
   }
 
   const search = new URLSearchParams();

@@ -168,7 +168,7 @@ describe("closeouts api client", () => {
     expect(failure?.unmappedChannels?.[0]?.channelId).toBe("custom-pos-99");
   });
 
-  it("returns null when required UUID mapping is missing", async () => {
+  it("returns empty list when required UUID mapping is missing", async () => {
     process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP = "{}";
     process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP = "{}";
     process.env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP = "{}";
@@ -189,6 +189,24 @@ describe("closeouts api client", () => {
     });
 
     expect(result).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns empty list when fetch mapping is missing", async () => {
+    process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP = "{}";
+    process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP = "{}";
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client.js");
+    const result = await fetchStoreCloseoutsViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "unknown",
+      actorRole: "employee",
+      storeId: "shami",
+    });
+
+    expect(result).toEqual([]);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

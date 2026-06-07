@@ -1,3 +1,5 @@
+import { getCloseoutApiMaps, isUuid } from "../closeouts/client/closeouts-api-client";
+
 /** Owner-controlled window for which past closeouts an employee may view. */
 
 export const EMPLOYEE_HISTORY_VISIBILITY = {
@@ -38,13 +40,58 @@ export function isEntryDateWithinEmployeeHistory(entryDate, visibility, todayIso
   return entryDate >= cutoff;
 }
 
+function reverseLookupLegacyUserId(value, userIdMap) {
+  if (!isUuid(value) || !userIdMap || typeof userIdMap !== "object") return "";
+  for (const [legacyId, mappedId] of Object.entries(userIdMap)) {
+    if (typeof mappedId === "string" && mappedId.toLowerCase() === value.toLowerCase()) return legacyId;
+  }
+  return "";
+}
+
+function mapLegacyUserIdToApi(value, userIdMap) {
+  if (!value || typeof value !== "string" || !value.trim()) return "";
+  if (isUuid(value)) return value;
+  const mapped = userIdMap[value] || userIdMap[value.trim()];
+  return isUuid(mapped) ? mapped : "";
+}
+
+/** Collect comparable actor ids for an employee (legacy id, api uuid, runtime map aliases). */
+export function resolveEmployeeActorIds(employee) {
+  const employeeId = typeof employee === "string" ? employee : employee?.id;
+  const apiUserId = typeof employee === "object" ? employee?.apiUserId : "";
+  const { userIdMap } = getCloseoutApiMaps();
+  const ids = new Set();
+  for (const raw of [employeeId, apiUserId]) {
+    if (typeof raw !== "string" || !raw.trim()) continue;
+    ids.add(raw);
+    const mapped = mapLegacyUserIdToApi(raw, userIdMap);
+    if (mapped) ids.add(mapped);
+    const legacy = reverseLookupLegacyUserId(raw, userIdMap);
+    if (legacy) ids.add(legacy);
+  }
+  return [...ids];
+}
+
+function resolveCloseoutActorIds(closeout) {
+  const { userIdMap } = getCloseoutApiMaps();
+  const ids = new Set();
+  for (const raw of [closeout?.openedByUserId, closeout?.submittedByUserId]) {
+    if (typeof raw !== "string" || !raw.trim()) continue;
+    ids.add(raw);
+    const mapped = mapLegacyUserIdToApi(raw, userIdMap);
+    if (mapped) ids.add(mapped);
+    const legacy = reverseLookupLegacyUserId(raw, userIdMap);
+    if (legacy) ids.add(legacy);
+  }
+  return [...ids];
+}
+
 /** Match closeouts opened or submitted by this employee (legacy rows may lack openedByUserId). */
 export function closeoutBelongsToEmployee(closeout, employee) {
   if (!closeout || !employee) return false;
-  const employeeId = typeof employee === "string" ? employee : employee.id;
-  const apiUserId = typeof employee === "object" ? employee.apiUserId : "";
-  const actorIds = [employeeId, apiUserId].filter((value) => typeof value === "string" && value.trim());
-  if (actorIds.some((id) => closeout.openedByUserId === id || closeout.submittedByUserId === id)) return true;
+  const employeeIds = resolveEmployeeActorIds(employee);
+  const closeoutIds = resolveCloseoutActorIds(closeout);
+  if (employeeIds.some((id) => closeoutIds.includes(id))) return true;
 
   // Legacy prototype rows may miss user IDs; fall back to employee name matching.
   const candidateNames = typeof employee === "object"

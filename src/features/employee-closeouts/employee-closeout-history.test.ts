@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { setRuntimeApiIdMaps } from "../closeouts/client/closeouts-api-client";
 import { closeoutBelongsToEmployee } from "./employee-closeout-history";
 
 describe("closeoutBelongsToEmployee", () => {
@@ -28,5 +29,27 @@ describe("closeoutBelongsToEmployee", () => {
       { openedByName: "Ahmed", submittedByName: "Ahmed" },
       employee,
     )).toBe(true);
+  });
+
+  it("matches API uuid closeout rows to legacy staff id via runtime user map", () => {
+    setRuntimeApiIdMaps({
+      userIdMap: {
+        "staff-1780679715016": "acb24f1e-bf77-48d7-ba01-1e77d2c8c713",
+      },
+    });
+
+    expect(closeoutBelongsToEmployee(
+      {
+        openedByUserId: "acb24f1e-bf77-48d7-ba01-1e77d2c8c713",
+        submittedByUserId: "acb24f1e-bf77-48d7-ba01-1e77d2c8c713",
+      },
+      {
+        id: "staff-1780679715016",
+        nameAr: "AHMED",
+        nameEn: "AHMED",
+      },
+    )).toBe(true);
+
+    setRuntimeApiIdMaps(null);
   });
 });
