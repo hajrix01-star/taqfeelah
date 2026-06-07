@@ -125,10 +125,29 @@ import {
   getStoreOperationalConfig,
 } from "@/features/org-config/client/store-operational-config";
 import {
+  buildOwnerProfileUpdate,
+  isOwnerAuthDirty,
+  isOwnerProfileDirty,
+  validateOwnerAuthCredentials,
+} from "@/features/org-config/client/owner-settings-account-actions";
+import {
   buildOwnerSettingsLocalStoragePayload,
   buildOwnerSettingsTeamPersistPayload,
   persistOwnerSettingsToLocalStorage,
 } from "@/features/org-config/client/owner-settings-local-persistence";
+import {
+  applyStoreProfileUpdate,
+  buildNewConfiguredBusiness,
+} from "@/features/org-config/client/owner-settings-store-actions";
+import {
+  buildNewStaffMember,
+  canAddStaffMember,
+  cloneStaffDraft,
+  prepareSavedTeamDraft,
+  toggleEmployeeActiveInDraft,
+  toggleEmployeeStoreInDraft,
+  toggleStoreSelection,
+} from "@/features/org-config/client/owner-settings-team-actions";
 import {
   applyOwnerSettingsDeleteTarget,
   listStaffWithoutActiveStoreAfterArchive,
@@ -2455,20 +2474,19 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
 
   const showSettingsSaved = () => { setSettingsSuccess(true); window.setTimeout(() => setSettingsSuccess(false), 2200); };
   const saveOwnerProfile = () => {
-    const name = draftOwnerName.trim();
-    if (!name) return;
-    setOwnerProfile({ ...ownerProfile, name });
+    const nextProfile = buildOwnerProfileUpdate(ownerProfile, draftOwnerName);
+    if (!nextProfile) return;
+    setOwnerProfile(nextProfile);
     showSettingsSaved();
   };
   const saveAuthCredentials = () => {
-    const ownerUsername = draftAuthOwnerUsername.trim();
-    const ownerPassword = draftAuthOwnerPassword.trim();
-    if (!ownerUsername || !ownerPassword) {
+    const credentials = validateOwnerAuthCredentials(draftAuthOwnerUsername, draftAuthOwnerPassword);
+    if (!credentials.valid) {
       setSettingsNotice(lang === "ar" ? "اسم المستخدم وكلمة المرور للمالك مطلوبان." : "Owner username and password are required.");
       return;
     }
-    setAuthOwnerUsername(ownerUsername);
-    setAuthOwnerPassword(ownerPassword);
+    setAuthOwnerUsername(credentials.username);
+    setAuthOwnerPassword(credentials.password);
     setAuthEmployeePins(draftAuthEmployeePins || {});
     setSettingsNotice("");
     showSettingsSaved();
@@ -2488,9 +2506,11 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   };
   const backFromStorePanel = () => { resetStoreDrafts(); setStorePanel("overview"); };
   const saveStoreProfile = () => {
-    const name = draftStoreName.trim();
-    if (!settingsStoreId || !name) return;
-    setConfiguredBusinesses((current) => current.map((business) => business.id === settingsStoreId ? { ...business, displayName: name, customLocation: draftStoreLocation.trim() } : business));
+    if (!settingsStoreId || !draftStoreName.trim()) return;
+    setConfiguredBusinesses((current) => applyStoreProfileUpdate(current, settingsStoreId, {
+      name: draftStoreName,
+      location: draftStoreLocation,
+    }));
     showSettingsSaved(); backFromStorePanel();
   };
   const saveChannelSettings = () => {
@@ -2538,24 +2558,24 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   const requestArchiveStore = (business) => setDeleteTarget({ type: "archive", item: business, affectedStaff: staffWithoutActiveStoreAfterArchive(business.id) });
   const openStoreDelete = (business) => { const hasRecords = storeHasRecords(business); setDeleteTarget({ type: "store", item: business, hasRecords, affectedStaff: hasRecords ? staffWithoutActiveStoreAfterArchive(business.id) : [] }); };
   const addStore = () => {
-    if (!newStoreName.trim()) return;
-    const id = `custom-${Date.now()}`;
-    setConfiguredBusinesses((current) => [...current, { id, nameAr: newStoreName.trim(), nameEn: newStoreName.trim(), customLocation: newStoreLocation.trim(), day: { ...emptyStoreRecord }, month: { ...emptyStoreRecord } }]);
+    const business = buildNewConfiguredBusiness({
+      name: newStoreName,
+      location: newStoreLocation,
+      emptyStoreRecord,
+    });
+    if (!business) return;
+    setConfiguredBusinesses((current) => [...current, business]);
     setNewStoreName(""); setNewStoreLocation(""); setShowAddStore(false); showSettingsSaved();
   };
-  const startManagingTeam = () => { setDraftStaff(staff.map((person) => ({ ...person, storeIds: [...(person.storeIds || [])] }))); setManagingTeam(true); };
+  const startManagingTeam = () => { setDraftStaff(cloneStaffDraft(staff)); setManagingTeam(true); };
   const cancelManagingTeam = () => { setDraftStaff(null); setManagingTeam(false); setNewEmployeeName(""); setNewEmployeeMobile(""); setNewEmployeeStoreIds([]); };
   const saveManagingTeam = async () => {
     if (!draftStaff || teamSaving) return;
-    const nextStaff = draftStaff.map((person) => ({
-      ...person,
-      pin: draftAuthEmployeePins?.[person.id] || person.pin || "1234",
-    }));
-    const allowedIds = new Set(nextStaff.map((person) => person.id));
-    const nextPins = Object.fromEntries(
-      Object.entries({ ...(authEmployeePins || {}), ...(draftAuthEmployeePins || {}) })
-        .filter(([personId]) => allowedIds.has(personId)),
-    );
+    const { staff: nextStaff, employeePins: nextPins } = prepareSavedTeamDraft(draftStaff, {
+      draftAuthEmployeePins,
+      authEmployeePins,
+      defaultPin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT || "1234",
+    });
     setStaff(nextStaff);
     setAuthEmployeePins(nextPins);
     cancelManagingTeam();
@@ -2563,14 +2583,12 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
       setTeamSaving(true);
       setSettingsNotice("");
       try {
-        await onPersistSettingsNow({
+        await onPersistSettingsNow(buildOwnerSettingsTeamPersistPayload({
           staff: nextStaff,
-          authConfig: {
-            ownerUsername: authOwnerUsername,
-            ownerPassword: authOwnerPassword,
-            employeePins: nextPins,
-          },
-        });
+          authOwnerUsername,
+          authOwnerPassword,
+          authEmployeePins: nextPins,
+        }));
         showSettingsSaved();
       } catch (failure) {
         setSettingsNotice(
@@ -2586,18 +2604,29 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
     showSettingsSaved();
   };
   const addStaff = () => {
-    if (!newEmployeeName.trim() || newEmployeeStoreIds.length === 0 || !managingTeam) return;
-    const newStaffId = `staff-${Date.now()}`;
-    setDraftStaff((current) => [...(current || staff), { id: newStaffId, nameAr: newEmployeeName.trim(), nameEn: newEmployeeName.trim(), mobile: newEmployeeMobile.trim(), active: true, storeIds: newEmployeeStoreIds, pin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT }]);
-    setDraftAuthEmployeePins((current) => ({ ...(current || {}), [newStaffId]: PROTOTYPE_EMPLOYEE_PIN_DEFAULT || "1234" }));
+    if (!canAddStaffMember({ name: newEmployeeName, storeIds: newEmployeeStoreIds, managingTeam })) return;
+    const created = buildNewStaffMember({
+      name: newEmployeeName,
+      mobile: newEmployeeMobile,
+      storeIds: newEmployeeStoreIds,
+      defaultPin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT,
+    });
+    setDraftStaff((current) => [...(current || staff), created.member]);
+    setDraftAuthEmployeePins((current) => ({ ...(current || {}), ...created.employeePinsPatch }));
     setNewEmployeeName(""); setNewEmployeeMobile(""); setNewEmployeeStoreIds([]);
   };
   const updateDraftEmployeePin = (personId, value) => {
     setDraftAuthEmployeePins((current) => ({ ...(current || {}), [personId]: value }));
   };
-  const toggleEmployeeActive = (personId) => { if (managingTeam) setDraftStaff((current) => (current || staff).map((person) => person.id === personId ? { ...person, active: !person.active } : person)); };
-  const toggleEmployeeStore = (personId, storeId) => { if (!managingTeam) return; setDraftStaff((current) => (current || staff).map((person) => { if (person.id !== personId) return person; const assigned = employeeStoreIds(person); const next = assigned.includes(storeId) ? assigned.filter((item) => item !== storeId) : [...assigned, storeId]; return { ...person, storeIds: next.length ? next : assigned }; })); };
-  const toggleNewEmployeeStore = (storeId) => setNewEmployeeStoreIds((current) => current.includes(storeId) ? current.filter((item) => item !== storeId) : [...current, storeId]);
+  const toggleEmployeeActive = (personId) => {
+    if (!managingTeam) return;
+    setDraftStaff((current) => toggleEmployeeActiveInDraft(current || staff, personId));
+  };
+  const toggleEmployeeStore = (personId, storeId) => {
+    if (!managingTeam) return;
+    setDraftStaff((current) => toggleEmployeeStoreInDraft(current || staff, personId, storeId));
+  };
+  const toggleNewEmployeeStore = (storeId) => setNewEmployeeStoreIds((current) => toggleStoreSelection(current, storeId));
   const confirmDelete = () => {
     applyOwnerSettingsDeleteTarget({
       deleteTarget,
@@ -2676,9 +2705,13 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   }
 
   if (section === "account") {
-    const ownerProfileDirty = draftOwnerName.trim() && draftOwnerName.trim() !== ownerProfile?.name;
-    const authDirty = draftAuthOwnerUsername.trim() !== (authOwnerUsername || "")
-      || draftAuthOwnerPassword.trim() !== (authOwnerPassword || "");
+    const ownerProfileDirty = isOwnerProfileDirty(draftOwnerName, ownerProfile?.name);
+    const authDirty = isOwnerAuthDirty({
+      draftUsername: draftAuthOwnerUsername,
+      draftPassword: draftAuthOwnerPassword,
+      currentUsername: authOwnerUsername || "",
+      currentPassword: authOwnerPassword || "",
+    });
     return (
       <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
         <PageHeader title={text(lang, "myAccountSecurity")} onBack={() => setSection("home")} />
