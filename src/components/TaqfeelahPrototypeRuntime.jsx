@@ -114,7 +114,6 @@ import {
   isFutureOperationalEntryDate,
   mergeLastCloseoutDateForStore,
   resolveLatestActiveCloseoutDateFromEntries,
-  resolveOperationalEntrySaveFailureMessage,
   resolveSuggestedEntryDate,
   upsertCloseoutAlert,
 } from "@/features/operations/operational-entry-save-helpers";
@@ -136,6 +135,16 @@ import {
   resolveOperationalEntryReviewFailureMessage,
   resolveOperationalEntryVoidFailureMessage,
 } from "@/features/operations/operational-entry-mutation-helpers";
+import {
+  buildEmployeeEntryActor,
+  buildPendingDuplicateSummaryState,
+  canPersistOperationalEntry,
+  findCreatedEntryInRefreshedList,
+  persistOperationalEntryLocally,
+  persistOperationalEntryThroughApi,
+  resolveSummaryLastCloseoutUpdate,
+  shouldGateSummarySaveOnDuplicates,
+} from "@/features/operations/operational-entry-persist-helpers";
 import { buildPrototypeDefaultStaff, readPrototypeAuthBoot as resolvePrototypeAuthBoot } from "@/features/demo/prototype-auth-boot";
 import { resolveOperationalEntriesBulkLoadWindow } from "@/features/entries/client/register-entries-load-window";
 import { isProductionAppMode } from "@/core/config/app-mode";
@@ -5291,116 +5300,150 @@ export default function TaqfeelahPrototypeRuntime() {
     if (!closeoutAlertEnabledForBusiness(payload.businessId)) return;
     setCloseoutAlerts((current) => upsertCloseoutAlert(current, buildCloseoutAlertRecord(payload, entry, actor)));
   };
+  const assignedEmployeeBusinessIds = assignedEmployeeBusinesses.map((business) => business.id);
+  const activeBusinessIds = activeBusinesses.map((business) => business.id);
   const persistEmployeeEntry = async (payload) => {
-    if (savingRef.current || !payload?.businessId || !activeEmployee || !assignedEmployeeBusinesses.some((business) => business.id === payload.businessId)) return;
+    if (!canPersistOperationalEntry({
+      saving: savingRef.current,
+      payload,
+      allowedBusinessIds: assignedEmployeeBusinessIds,
+    }) || !activeEmployee) return;
     if (isFutureOperationalEntryDate(payload.date, todayDate)) { window.alert(text(lang, "futureDateNotAllowed")); return; }
     savingRef.current = true; setSaving(true);
     try {
-      const actor = { role: "employee", userId: activeEmployee.id, nameAr: activeEmployee.nameAr, nameEn: activeEmployee.nameEn };
+      const actor = buildEmployeeEntryActor(activeEmployee);
       if (entriesApiEnabled) {
-        const created = await createOperationalEntryInApi({
+        const result = await persistOperationalEntryThroughApi({
+          createOperationalEntryInApi,
+          loadOperationalEntriesFromApi,
           payload,
           actorUserId: activeEmployee.id,
           actorRole: "employee",
+          lang,
         });
-        if (!created) {
-          window.alert(resolveOperationalEntrySaveFailureMessage(lang));
+        if (!result.ok) {
+          window.alert(result.failureMessage);
           return;
         }
-        const refreshed = await loadOperationalEntriesFromApi();
         if (payload.type === "summary") {
-          const latestActiveCloseoutDate = resolveLatestActiveCloseoutDateFromEntries(
-            refreshed,
-            payload.businessId,
-            payload.date,
+          const summaryUpdate = resolveSummaryLastCloseoutUpdate(
+            payload,
+            result.refreshed,
+            result.created.id,
             entryIsActive,
           );
           setLastCloseoutDates((current) => ({
             ...current,
-            [payload.businessId]: latestActiveCloseoutDate,
+            [summaryUpdate.businessId]: summaryUpdate.date,
           }));
-          const createdEntry = refreshed.find((entry) => entry.id === created.id);
-          if (createdEntry) pushCloseoutAlert(payload, createdEntry, actor);
+          if (summaryUpdate.createdEntry) pushCloseoutAlert(payload, summaryUpdate.createdEntry, actor);
         }
         setEmployeePage("home"); setSaved(true); window.setTimeout(() => setSaved(false), 2200);
         return;
       }
-      const entry = buildEntry(payload, actor);
-      if (entry.attachment) {
-        try { await storeAttachmentPayload(entry.attachment); }
-        catch { window.alert(text(lang, "attachmentSaveFailed")); return; }
+      const local = await persistOperationalEntryLocally({
+        payload,
+        actor,
+        buildEntry,
+        storeAttachmentPayload,
+      });
+      if (!local.ok) {
+        if (local.attachmentFailed) window.alert(text(lang, "attachmentSaveFailed"));
+        return;
       }
-      setOperationalEntries((current) => [entry, ...current]);
+      setOperationalEntries((current) => [local.entry, ...current]);
       if (payload.type === "summary") {
         setLastCloseoutDates((current) => mergeLastCloseoutDateForStore(current, payload.businessId, payload.date));
-        pushCloseoutAlert(payload, entry, actor);
+        pushCloseoutAlert(payload, local.entry, actor);
       }
       setEmployeePage("home"); setSaved(true); window.setTimeout(() => setSaved(false), 2200);
     } finally { savingRef.current = false; setSaving(false); }
   };
   const saveEmployee = async (payload) => {
-    if (savingRef.current || !payload?.businessId || !activeEmployee || !assignedEmployeeBusinesses.some((business) => business.id === payload.businessId)) return;
-    if (payload.type === "summary") {
+    if (!canPersistOperationalEntry({
+      saving: savingRef.current,
+      payload,
+      allowedBusinessIds: assignedEmployeeBusinessIds,
+    }) || !activeEmployee) return;
+    if (shouldGateSummarySaveOnDuplicates(payload)) {
       const previousEntries = findDuplicateSummaryEntries(operationalEntries, payload, entryIsActive);
-      if (previousEntries.length > 0) { setPendingDuplicateSummary({ payload, previousEntries }); return; }
+      if (previousEntries.length > 0) {
+        setPendingDuplicateSummary(buildPendingDuplicateSummaryState(payload, previousEntries));
+        return;
+      }
     }
     await persistEmployeeEntry(payload);
   };
   const saveOwner = async (payload) => {
-    if (savingRef.current || !payload?.businessId || !activeBusinesses.some((business) => business.id === payload.businessId)) return;
+    if (!canPersistOperationalEntry({
+      saving: savingRef.current,
+      payload,
+      allowedBusinessIds: activeBusinessIds,
+    })) return;
     if (isFutureOperationalEntryDate(payload.date, todayDate)) { window.alert(text(lang, "futureDateNotAllowed")); return; }
     savingRef.current = true; setSaving(true);
     try {
       if (entriesApiEnabled) {
-        const created = await createOperationalEntryInApi({
+        const result = await persistOperationalEntryThroughApi({
+          createOperationalEntryInApi,
+          loadOperationalEntriesFromApi,
           payload,
           actorUserId: ownerApiUserId,
           actorRole: "owner",
+          lang,
         });
-        if (!created) {
-          window.alert(resolveOperationalEntrySaveFailureMessage(lang));
+        if (!result.ok) {
+          window.alert(result.failureMessage);
           return;
         }
-        const refreshed = await loadOperationalEntriesFromApi();
         if (payload.type === "summary") {
-          const latestActiveCloseoutDate = resolveLatestActiveCloseoutDateFromEntries(
-            refreshed,
-            payload.businessId,
-            payload.date,
+          const summaryUpdate = resolveSummaryLastCloseoutUpdate(
+            payload,
+            result.refreshed,
+            result.created.id,
             entryIsActive,
           );
           setLastCloseoutDates((current) => ({
             ...current,
-            [payload.businessId]: latestActiveCloseoutDate,
+            [summaryUpdate.businessId]: summaryUpdate.date,
           }));
         }
         setOwnerPage("home");
         if (payload.type !== "summary") {
-          const createdEntry = refreshed.find((entry) => entry.id === created.id);
-          setSavedOutflowShareTarget(createdEntry || null);
+          setSavedOutflowShareTarget(findCreatedEntryInRefreshedList(result.refreshed, result.created.id));
         } else {
           setSaved(true); window.setTimeout(() => setSaved(false), 2200);
         }
         return;
       }
-      const entry = buildEntry(payload, currentOwnerActor);
-      if (entry.attachment) {
-        try { await storeAttachmentPayload(entry.attachment); }
-        catch { window.alert(text(lang, "attachmentSaveFailed")); return; }
+      const local = await persistOperationalEntryLocally({
+        payload,
+        actor: currentOwnerActor,
+        buildEntry,
+        storeAttachmentPayload,
+      });
+      if (!local.ok) {
+        if (local.attachmentFailed) window.alert(text(lang, "attachmentSaveFailed"));
+        return;
       }
-      setOperationalEntries((current) => [entry, ...current]);
+      setOperationalEntries((current) => [local.entry, ...current]);
       if (payload.type === "summary") {
         setLastCloseoutDates((current) => mergeLastCloseoutDateForStore(current, payload.businessId, payload.date));
       }
       setOwnerPage("home");
-      if (payload.type !== "summary") setSavedOutflowShareTarget(entry);
+      if (payload.type !== "summary") setSavedOutflowShareTarget(local.entry);
       else { setSaved(true); window.setTimeout(() => setSaved(false), 2200); }
     } finally { savingRef.current = false; setSaving(false); }
   };
   const saveOwnerSummary = async (payload) => {
     if (savingRef.current || !payload?.businessId) return;
-    const previousEntries = findDuplicateSummaryEntries(operationalEntries, payload, entryIsActive);
-    if (previousEntries.length > 0) { setPendingDuplicateSummary({ payload, previousEntries, actor: "owner" }); return; }
+    if (shouldGateSummarySaveOnDuplicates(payload)) {
+      const previousEntries = findDuplicateSummaryEntries(operationalEntries, payload, entryIsActive);
+      if (previousEntries.length > 0) {
+        setPendingDuplicateSummary(buildPendingDuplicateSummaryState(payload, previousEntries, "owner"));
+        return;
+      }
+    }
     await saveOwner(payload);
   };
   const confirmReview = async (entryId) => {

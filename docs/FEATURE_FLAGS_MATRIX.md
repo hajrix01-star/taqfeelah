@@ -58,13 +58,15 @@ Required by `assertProductionRuntimeEnv()` today; target is removal after sessio
 
 ## Recommended VPS rollout order
 
+> **Product-facing waves (Arabic):** see `docs/DEPLOYMENT_WAVES.md` — موجات 1–7 تجمع المراحل التقنية 1–11.
+
 1. `DATABASE_URL` + seed
-2. `NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true`
-3. `NEXT_PUBLIC_ENTRIES_API_ENABLED=true`
-4. `NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true`
-5. `NEXT_PUBLIC_PHASE9_API_ENABLED=true`
-6. `NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true` (under load)
-7. Before public launch: `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false`, `AUTH_DB_CREDENTIALS_ENABLED=true`, `NEXT_PUBLIC_AUTH_API_ENABLED=true`
+2. **Wave 1 (core):** `NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true` + `NEXT_PUBLIC_ENTRIES_API_ENABLED=true`
+3. **Wave 2 (analytics):** home/reports SQL paths (phases 4–6; inherits entries API)
+4. **Wave 4 (org config):** `NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true`
+5. **Wave 5 (enhancements):** `NEXT_PUBLIC_PHASE9_API_ENABLED=true`
+6. **Wave 3 (scale):** `NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true` (under load)
+7. **Wave 6 (launch):** `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false`, `AUTH_DB_CREDENTIALS_ENABLED=true`, `NEXT_PUBLIC_AUTH_API_ENABLED=true`
 
 ## Code modules
 
