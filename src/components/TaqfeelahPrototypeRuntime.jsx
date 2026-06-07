@@ -37,7 +37,7 @@ import OwnerCloseoutReviewPanel from "@/features/owner-closeout-review/OwnerClos
 import ReturnCloseoutModal from "@/features/owner-closeout-review/ReturnCloseoutModal";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
 import LanHintBanner from "@/features/demo/LanHintBanner";
-import { clearAuthSession, clearEmployeeCredentials, clearOwnerCredentials, readEmployeeCredentials, readOwnerCredentials, saveAuthSession, saveEmployeeCredentials, saveOwnerCredentials } from "@/features/demo/login-credentials-storage";
+import { clearEmployeeCredentials, clearOwnerCredentials, readEmployeeCredentials, readOwnerCredentials, saveEmployeeCredentials, saveOwnerCredentials } from "@/features/demo/login-credentials-storage";
 import { readLocalStorageJson } from "@/features/demo/prototype-storage";
 import AttachmentLightbox from "./AttachmentLightbox";
 import {
@@ -106,13 +106,20 @@ import {
 } from "@/features/phase9/client/phase9-api-client";
 import { useNotebookExportShareData } from "@/features/phase9/client/use-notebook-export-share-data";
 import { resolvePayloadAttachmentForPhase9Api } from "@/features/phase9/client/inline-attachment-api-flow";
+import { fetchEmployeeLoginRosterViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
 import {
-  fetchEmployeeLoginRosterViaApi,
-  getSessionStatusViaApi,
-  loginEmployeeSessionViaApi,
-  loginOwnerSessionViaApi,
-  logoutSessionViaApi,
-} from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
+  applyEmployeeLoginSuccess,
+  applyLogoutReset,
+  applyOwnerLoginSuccess,
+  applyServerSessionBootstrap,
+} from "@/features/auth/client/auth-runtime-orchestrator";
+import {
+  fetchServerSessionStatus,
+  loginEmployeeViaSessionBridge,
+  loginOwnerViaSessionBridge,
+  logoutViaSessionBridge,
+  readSessionBootState,
+} from "@/features/auth/client/session-bridge";
 import {
   applyRuntimeSettingsSnapshotPatch,
   buildRuntimeSettingsSnapshot,
@@ -162,7 +169,7 @@ import {
   resolveSummaryLastCloseoutUpdate,
   shouldGateSummarySaveOnDuplicates,
 } from "@/features/operations/operational-entry-persist-helpers";
-import { buildPrototypeDefaultStaff, readPrototypeAuthBoot as resolvePrototypeAuthBoot } from "@/features/demo/prototype-auth-boot";
+import { buildPrototypeDefaultStaff } from "@/features/demo/prototype-auth-boot";
 import { resolveOperationalEntriesBulkLoadWindow } from "@/features/entries/client/register-entries-load-window";
 import { isProductionAppMode } from "@/core/config/app-mode";
 import { isCloseoutsApiDbSourceMode, isCloseoutsApiStrictMode } from "@/core/config/closeouts-api-mode";
@@ -270,7 +277,6 @@ import {
   formatSelectedMonth,
   logPeriodScopeLabel,
 } from "@/features/reports/client/report-period-labels";
-import { isPrototypeAccessMode } from "@/core/config/prototype-access-mode";
 import PrototypeAccessScreen from "@/features/demo/PrototypeAccessScreen";
 
 function AppFontStyles() {
@@ -1347,14 +1353,16 @@ const auditDateTime = (timestamp, lang) => {
 };
 // طبقة السجل التشغيلي: المصدر الوحيد للأرقام والمرفقات والتقارير داخل البروتايب.
 // البنية مقصودة لتنتقل لاحقًا إلى API/DB دون إعادة تصميم الواجهة.
-const APP_IN_PRODUCTION_MODE = isProductionAppMode();
-const PROTOTYPE_ACCESS_MODE = isPrototypeAccessMode();
-const BINDS_TO_SERVER_AUTH = APP_IN_PRODUCTION_MODE && !PROTOTYPE_ACCESS_MODE;
-const ENTRIES_API_DB_SOURCE = isEntriesApiDbSourceMode();
-const REGISTER_ENTRIES_PAGINATION_ENABLED = isRegisterEntriesPaginationEnabled();
-const CLOSEOUTS_API_DB_SOURCE = isCloseoutsApiDbSourceMode();
-const RUNTIME_SETTINGS_DB_SOURCE = ENTRIES_API_DB_SOURCE;
-const ORG_CONFIG_API_ENABLED = isOrgConfigApiEnabled();
+const {
+  appInProductionMode: APP_IN_PRODUCTION_MODE,
+  prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
+  bindsToServerAuth: BINDS_TO_SERVER_AUTH,
+  entriesApiDbSource: ENTRIES_API_DB_SOURCE,
+  registerEntriesPaginationEnabled: REGISTER_ENTRIES_PAGINATION_ENABLED,
+  closeoutsApiDbSource: CLOSEOUTS_API_DB_SOURCE,
+  runtimeSettingsDbSource: RUNTIME_SETTINGS_DB_SOURCE,
+  orgConfigApiEnabled: ORG_CONFIG_API_ENABLED,
+} = resolveRuntimeCapabilities();
 
 const PROTOTYPE_SUPPORT_WHATSAPP = "966501234567";
 const PROTOTYPE_DEMO_OTP = process.env.NEXT_PUBLIC_DEMO_OTP || (APP_IN_PRODUCTION_MODE ? "" : "1234");
@@ -1727,7 +1735,11 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
     if (APP_IN_PRODUCTION_MODE) {
       setSubmitting(true);
       try {
-        const session = await loginOwnerSessionViaApi({ username: username.trim(), password });
+        const session = await loginOwnerViaSessionBridge({
+          username: username.trim(),
+          password,
+          useServerAuth: APP_IN_PRODUCTION_MODE,
+        });
         onOwnerLogin(typeof session?.userId === "string" ? session.userId : "");
       } catch (failure) {
         const message = failure instanceof Error && failure.message
@@ -1895,9 +1907,10 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
     if (APP_IN_PRODUCTION_MODE) {
       setSubmitting(true);
       try {
-        const session = await loginEmployeeSessionViaApi({
+        const session = await loginEmployeeViaSessionBridge({
           employeeId: employeeIdentifier,
           pin: pin.trim(),
+          useServerAuth: APP_IN_PRODUCTION_MODE,
         });
         onLogin(person?.id || employeeIdentifier, typeof session?.userId === "string" ? session.userId : "");
       } catch (failure) {
@@ -2385,7 +2398,7 @@ function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedStores, on
 const PROTOTYPE_DEFAULT_STAFF = buildPrototypeDefaultStaff(PROTOTYPE_EMPLOYEE_PIN_DEFAULT);
 
 function readPrototypeAuthBoot() {
-  return resolvePrototypeAuthBoot({
+  return readSessionBootState({
     bindsToServerAuth: BINDS_TO_SERVER_AUTH,
     prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
     readSavedSettings,
@@ -4972,21 +4985,18 @@ export default function TaqfeelahPrototypeRuntime() {
   useEffect(() => {
     if (!BINDS_TO_SERVER_AUTH) return;
     let cancelled = false;
-    getSessionStatusViaApi()
+    fetchServerSessionStatus()
       .then((session) => {
-        if (cancelled || !session?.authenticated) return;
-        setSessionUserId(typeof session.userId === "string" ? session.userId : "");
-        setLoggedIn(true);
-        setAuthScreen("owner");
-        if (session.role === "employee") {
-          setEmployee(true);
-          setLoggedInEmployeeId(session.userId);
-          setEmployeePage("closeouts");
-          return;
-        }
-        setEmployee(false);
-        setLoggedInEmployeeId(null);
-        setOwnerPage("home");
+        if (cancelled) return;
+        applyServerSessionBootstrap(session, {
+          setSessionUserId,
+          setLoggedIn,
+          setAuthScreen,
+          setEmployee,
+          setLoggedInEmployeeId,
+          setEmployeePage,
+          setOwnerPage,
+        });
       })
       .catch((error) => {
         if (cancelled) return;
@@ -5584,31 +5594,37 @@ export default function TaqfeelahPrototypeRuntime() {
     setSelected(null);
   };
   const completeOwnerLogin = (apiUserId = "") => {
-    if (!PROTOTYPE_ACCESS_MODE) {
-      saveAuthSession({ role: "owner" });
-    }
-    setSessionUserId(typeof apiUserId === "string" ? apiUserId : "");
-    setLoggedIn(true);
-    setEmployee(false);
-    setLoggedInEmployeeId(null);
-    setAuthScreen("owner");
-    setOwnerPage("home");
+    applyOwnerLoginSuccess({
+      apiUserId,
+      prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
+      apply: {
+        setSessionUserId,
+        setLoggedIn,
+        setEmployee,
+        setLoggedInEmployeeId,
+        setAuthScreen,
+        setOwnerPage,
+      },
+    });
   };
   const completeEmployeeLogin = (personId, apiUserId = "") => {
-    const person = staff.find((item) => item.id === personId && item.active && !item.removed);
-    const resolvedEmployeeId = person?.id || (typeof apiUserId === "string" && apiUserId ? apiUserId : personId);
-    if (!resolvedEmployeeId) return;
-    if (!PROTOTYPE_ACCESS_MODE) {
-      saveAuthSession({ role: "employee", employeeId: resolvedEmployeeId });
-    }
-    setSessionUserId(typeof apiUserId === "string" ? apiUserId : "");
-    setLoggedIn(true);
-    setEmployee(true);
-    setLoggedInEmployeeId(resolvedEmployeeId);
-    setEmployeeBusinessId(person?.storeIds?.[0] || activeBusinesses[0]?.id || "");
-    setEmployeeThemeOverride(readEmployeeNotebookTheme(resolvedEmployeeId));
-    setEmployeePage("closeouts");
-    setAuthScreen("owner");
+    applyEmployeeLoginSuccess({
+      personId,
+      apiUserId,
+      staff,
+      activeBusinesses,
+      prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
+      apply: {
+        setSessionUserId,
+        setLoggedIn,
+        setEmployee,
+        setLoggedInEmployeeId,
+        setEmployeeBusinessId,
+        setEmployeeThemeOverride,
+        setEmployeePage,
+        setAuthScreen,
+      },
+    });
   };
   const removeOperationalEntriesForCloseout = useCallback((closeoutId, storeId = null) => {
     if (!closeoutId) return;
@@ -5724,68 +5740,65 @@ export default function TaqfeelahPrototypeRuntime() {
     setSelected(entry || null);
   }, []);
   const logout = async () => {
-    if (BINDS_TO_SERVER_AUTH) {
-      try {
-        await logoutSessionViaApi();
-      } catch (error) {
-        console.warn("logout api failed", error);
-      }
+    try {
+      await logoutViaSessionBridge({ useServerAuth: BINDS_TO_SERVER_AUTH });
+    } catch (error) {
+      console.warn("logout api failed", error);
     }
-    clearAuthSession();
-    setSessionUserId("");
-    setLoggedIn(false);
-    setEmployee(false);
-    setLoggedInEmployeeId(null);
-    setAuthScreen("owner");
-    setEmployeePage("closeouts");
-    setOwnerPage("home");
-    setOwnerReviewCloseout(null);
-    setReturnCloseoutTarget(null);
-    setSelected(null);
-    setVoidTarget(null);
-    setRestoreTarget(null);
-    setSavedOutflowShareTarget(null);
-    setPendingDuplicateSummary(null);
-    setDuplicateReviewFocus(null);
-    setAttachmentReviewRequest(null);
-    setShareSnapshot(null);
-    setQuickAddOpen(false);
-    setArchivedReadOnlyBusinessId(null);
-    setSelectedBusiness("all");
-    if (BINDS_TO_SERVER_AUTH) {
-      setOperationalEntries([]);
-      setStaff([]);
-      setConfiguredBusinesses([]);
-      setArchivedBusinessIds([]);
-      setAuthOwnerUsername("");
-      setAuthOwnerPassword("");
-      setAuthEmployeePins({});
-      setOwnerProfile({ name: "" });
-    }
+    applyLogoutReset({
+      bindsToServerAuth: BINDS_TO_SERVER_AUTH,
+      apply: {
+        setSessionUserId,
+        setLoggedIn,
+        setEmployee,
+        setLoggedInEmployeeId,
+        setAuthScreen,
+        setEmployeePage,
+        setOwnerPage,
+        setOwnerReviewCloseout,
+        setReturnCloseoutTarget,
+        setSelected,
+        setVoidTarget,
+        setRestoreTarget,
+        setSavedOutflowShareTarget,
+        setPendingDuplicateSummary,
+        setDuplicateReviewFocus,
+        setAttachmentReviewRequest,
+        setShareSnapshot,
+        setQuickAddOpen,
+        setArchivedReadOnlyBusinessId,
+        setSelectedBusiness,
+        setOperationalEntries,
+        setStaff,
+        setConfiguredBusinesses,
+        setArchivedBusinessIds,
+        setAuthOwnerUsername,
+        setAuthOwnerPassword,
+        setAuthEmployeePins,
+        setOwnerProfile,
+      },
+    });
   };
   const ownerDisplayName = ownerProfile?.name || (lang === "ar" ? "المالك" : "Owner");
-  const closeoutsApiEnabled = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ENABLED === "true";
-  const closeoutsApiStrictMode = isCloseoutsApiStrictMode();
-  const closeoutsApiOrganizationId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
-  const closeoutsApiOwnerUserId = process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";
-  const ownerApiUserId = employee
-    ? closeoutsApiOwnerUserId
-    : (sessionUserId || closeoutsApiOwnerUserId);
-  const apiActorRole = employee ? "employee" : "owner";
-  const apiActorUserId = employee
-    ? (sessionUserId || activeEmployee?.apiUserId || activeEmployee?.id || "")
-    : ownerApiUserId;
-  const apiTargetStoreIdsKey = (employee ? assignedEmployeeBusinesses : reportingBusinesses)
-    .map((store) => store.id)
-    .filter(Boolean)
-    .join("|");
-  const entriesApiEnabled = process.env.NEXT_PUBLIC_ENTRIES_API_ENABLED
-    ? process.env.NEXT_PUBLIC_ENTRIES_API_ENABLED === "true"
-    : closeoutsApiEnabled;
-  const phase9ApiEnabled = process.env.NEXT_PUBLIC_PHASE9_API_ENABLED
-    ? process.env.NEXT_PUBLIC_PHASE9_API_ENABLED === "true"
-    : entriesApiEnabled;
-  const entriesApiStrictMode = isEntriesApiStrictMode();
+  const {
+    closeoutsApiEnabled,
+    closeoutsApiStrictMode,
+    entriesApiEnabled,
+    entriesApiStrictMode,
+    phase9ApiEnabled,
+    organizationId: closeoutsApiOrganizationId,
+    ownerUserId: closeoutsApiOwnerUserId,
+    ownerApiUserId,
+    apiActorRole,
+    apiActorUserId,
+    apiTargetStoreIdsKey,
+  } = resolveRuntimeApiActorContext({
+    employee,
+    sessionUserId,
+    activeEmployee,
+    assignedEmployeeBusinesses,
+    reportingBusinesses,
+  });
 
   const createOperationalEntryInApi = useCallback(async ({ payload, actorUserId, actorRole }) => {
     if (!entriesApiEnabled) {

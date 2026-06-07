@@ -1,15 +1,8 @@
-import { isProductionAppMode } from "@/core/config/app-mode";
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
-import { isPrototypeAccessMode } from "@/core/config/prototype-access-mode";
+import { bindsToServerAuth, usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
 import { isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
 
-export function bindsToServerAuth() {
-  return isProductionAppMode() && !isPrototypeAccessMode();
-}
-
-export function usesRuntimeSettingsApi() {
-  return bindsToServerAuth() || isEntriesApiDbSourceMode();
-}
+export { bindsToServerAuth, usesRuntimeSettingsApi };
 
 export function readOwnerSettingsApiAuth() {
   if (bindsToServerAuth()) return {};
