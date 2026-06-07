@@ -793,7 +793,8 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave5-notebook-export.json "
                 f"-w '%{{http_code}}' "
                 f"'https://{domain}/api/v1/exports/notebook?"
-                f"storeId={wave_store_id}&period=day&date=$(date -u +%Y-%m-%d)' "
+                f"storeId={wave_store_id}&period=day&date='"
+                f"$(date -u +%Y-%m-%d) "
                 f"-H 'x-organization-id: {wave_org_id}' "
                 f"-H 'x-user-id: {wave_owner_id}' "
                 f"-H 'x-member-role: owner'"
@@ -801,23 +802,23 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave5-duplicate-ack.json "
                 f"-w '%{{http_code}}' -X POST "
+                f"-H 'x-organization-id: {wave_org_id}' "
+                f"-H 'x-user-id: {wave_owner_id}' "
+                f"-H 'x-member-role: owner' "
                 f"-H 'content-type: application/json' "
                 f"-d '{{}}' "
                 f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/entries/"
-                f"duplicate-summary/acknowledge "
-                f"-H 'x-organization-id: {wave_org_id}' "
-                f"-H 'x-user-id: {wave_owner_id}' "
-                f"-H 'x-member-role: owner'"
+                f"duplicate-summary/acknowledge"
             ),
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave5-inline-attachment.json "
                 f"-w '%{{http_code}}' -X POST "
-                f"-H 'content-type: application/json' "
-                f"-d '{{}}' "
-                f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/attachments/inline "
                 f"-H 'x-organization-id: {wave_org_id}' "
                 f"-H 'x-user-id: {wave_owner_id}' "
-                f"-H 'x-member-role: owner'"
+                f"-H 'x-member-role: owner' "
+                f"-H 'content-type: application/json' "
+                f"-d '{{}}' "
+                f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/attachments/inline"
             ),
         ] if phase9_verify else []),
         f"curl -I --max-time 15 https://{shlex.quote(www_domain)} || true",
