@@ -1,93 +1,29 @@
-import { buildSalesChannelIdMap } from "@/core/client/sales-channel-catalog";
+import {
+  isUuid,
+  mapToUuid,
+  reverseLookupKeyByUuid,
+  toMoneyHalalas,
+} from "@/core/client/api-id-utils";
+import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+import {
+  getCloseoutApiMaps,
+  getRuntimeApiMaps,
+  hasCloseoutApiActorMapping,
+  hasCloseoutApiStoreMapping,
+  setRuntimeApiIdMaps,
+} from "@/core/client/runtime-api-maps-state";
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-let cachedMaps = null;
-let runtimeMapOverrides = null;
-
-/** Merge runtime settings store/user/channel maps on top of build-time env maps. */
-export function setRuntimeApiIdMaps(overrides) {
-  if (!overrides || typeof overrides !== "object") {
-    runtimeMapOverrides = null;
-    cachedMaps = null;
-    return;
-  }
-  runtimeMapOverrides = {
-    storeIdMap: overrides.storeIdMap && typeof overrides.storeIdMap === "object" ? overrides.storeIdMap : {},
-    userIdMap: overrides.userIdMap && typeof overrides.userIdMap === "object" ? overrides.userIdMap : {},
-    salesChannelIdMap: overrides.salesChannelIdMap && typeof overrides.salesChannelIdMap === "object"
-      ? overrides.salesChannelIdMap
-      : {},
-  };
-  cachedMaps = null;
-}
-
-export function isUuid(value) {
-  return typeof value === "string" && uuidPattern.test(value);
-}
-
-function parseJsonMap(rawValue) {
-  if (!rawValue || typeof rawValue !== "string") return {};
-  try {
-    const parsed = JSON.parse(rawValue);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-export function getCloseoutApiMaps() {
-  if (cachedMaps) return cachedMaps;
-  const envSalesChannelIdMap = parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP);
-  cachedMaps = {
-    storeIdMap: {
-      ...parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP),
-      ...(runtimeMapOverrides?.storeIdMap || {}),
-    },
-    userIdMap: {
-      ...parseJsonMap(process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP),
-      ...(runtimeMapOverrides?.userIdMap || {}),
-    },
-    salesChannelIdMap: {
-      ...buildSalesChannelIdMap({ envSalesChannelIdMap }),
-      ...(runtimeMapOverrides?.salesChannelIdMap || {}),
-    },
-  };
-  return cachedMaps;
-}
+export {
+  getCloseoutApiMaps,
+  getRuntimeApiMaps,
+  hasCloseoutApiActorMapping,
+  hasCloseoutApiStoreMapping,
+  isUuid,
+  setRuntimeApiIdMaps,
+};
 
 function getMaps() {
-  return getCloseoutApiMaps();
-}
-
-function mapToUuid(value, map) {
-  if (isUuid(value)) return value;
-  if (typeof value !== "string" || !value.trim()) return "";
-  const mapped = map[value] || map[value.trim()];
-  return isUuid(mapped) ? mapped : "";
-}
-
-/** True when legacy or UUID actor id can be sent to closeouts API. */
-export function hasCloseoutApiActorMapping(actorUserId) {
-  const { userIdMap } = getMaps();
-  return Boolean(mapToUuid(actorUserId, userIdMap));
-}
-
-/** True when legacy or UUID store id can be sent to closeouts API. */
-export function hasCloseoutApiStoreMapping(storeId) {
-  const { storeIdMap } = getMaps();
-  return Boolean(mapToUuid(storeId, storeIdMap));
-}
-
-function reverseLookupKeyByUuid(uuidValue, map) {
-  if (!isUuid(uuidValue) || !map || typeof map !== "object") return "";
-  for (const [key, value] of Object.entries(map)) {
-    if (isUuid(value) && value.toLowerCase() === uuidValue.toLowerCase()) return key;
-  }
-  return "";
-}
-
-function toHalalas(value) {
-  return Math.round(Number(value || 0) * 100);
+  return getRuntimeApiMaps();
 }
 
 function listCloseoutSalesRows(closeout) {
@@ -100,7 +36,7 @@ function extractSalesChannels(closeout) {
     .map((row) => ({
       salesChannelId: mapToUuid(row?.channelId || row?.id, salesChannelIdMap),
       channelName: row?.name || row?.channelName || row?.channelLabel || row?.channelId || row?.id,
-      amountHalalas: toHalalas(row?.amount),
+      amountHalalas: toMoneyHalalas(row?.amount),
       legacyChannelId: row?.channelId || row?.id || "",
     }))
     .filter((row) => isUuid(row.salesChannelId) && row.amountHalalas > 0);
@@ -123,7 +59,7 @@ export function diagnoseCloseoutSubmitFailure({
   if (!mappedStoreId) return { code: "unmapped_store", unmappedChannels: [] };
 
   const unmappedChannels = listCloseoutSalesRows(closeout)
-    .filter((row) => toHalalas(row?.amount) > 0)
+    .filter((row) => toMoneyHalalas(row?.amount) > 0)
     .map((row) => ({
       channelId: row?.channelId || row?.id || "",
       name: row?.name || row?.channelName || "",
@@ -146,7 +82,7 @@ function extractOutflows(closeout) {
   return (closeout?.outflows || [])
     .map((row) => ({
       type: row?.type,
-      amountHalalas: toHalalas(row?.amount),
+      amountHalalas: toMoneyHalalas(row?.amount),
       categoryId: isUuid(row?.categoryId) ? row.categoryId : null,
       categoryName: typeof row?.category === "string"
         ? row.category
@@ -166,27 +102,19 @@ export async function submitCloseoutViaApi({
   autoReview = false,
   requireReview = false,
 }) {
-  const { userIdMap, storeIdMap } = getMaps();
-  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
-  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
+  const { storeIdMap } = getMaps();
   const mappedStoreId = mapToUuid(closeout?.storeId, storeIdMap);
-
-  if (!mappedOrganizationId || !mappedActorUserId || !mappedStoreId) {
-    return null;
-  }
+  if (!mappedStoreId) return null;
 
   const salesChannels = extractSalesChannels(closeout);
   if (!salesChannels.length) return null;
 
-  const response = await fetch(`/api/v1/stores/${mappedStoreId}/closeouts`, {
+  return fetchApiJsonWithPrototypeContext(`/api/v1/stores/${mappedStoreId}/closeouts`, {
+    organizationId,
+    actorUserId,
+    actorRole,
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-organization-id": mappedOrganizationId,
-      "x-user-id": mappedActorUserId,
-      "x-member-role": actorRole,
-    },
-    body: JSON.stringify({
+    body: {
       mode,
       autoReview: autoReview === true,
       requireReview: requireReview === true,
@@ -195,13 +123,9 @@ export async function submitCloseoutViaApi({
       salesChannels,
       outflows: extractOutflows(closeout),
       note: closeout?.note || "",
-    }),
+    },
+    errorMessage: "closeout submit api failed.",
   });
-
-  if (!response.ok) {
-    throw new Error(`closeout submit api failed: ${response.status}`);
-  }
-  return response.json();
 }
 
 export async function fetchStoreCloseoutsViaApi({
@@ -213,11 +137,8 @@ export async function fetchStoreCloseoutsViaApi({
   dateTo = "",
 }) {
   const { userIdMap, storeIdMap, salesChannelIdMap } = getMaps();
-  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
-  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
   const mappedStoreId = mapToUuid(storeId, storeIdMap);
-
-  if (!mappedOrganizationId || !mappedActorUserId || !mappedStoreId) {
+  if (!mapToUuid(actorUserId, userIdMap) || !isUuid(organizationId) || !mappedStoreId) {
     return [];
   }
 
@@ -226,36 +147,31 @@ export async function fetchStoreCloseoutsViaApi({
   if (typeof dateTo === "string" && dateTo) search.set("dateTo", dateTo);
   const query = search.toString();
 
-  const response = await fetch(`/api/v1/stores/${mappedStoreId}/closeouts${query ? `?${query}` : ""}`, {
-    method: "GET",
-    headers: {
-      "x-organization-id": mappedOrganizationId,
-      "x-user-id": mappedActorUserId,
-      "x-member-role": actorRole,
+  const payload = await fetchApiJsonWithPrototypeContext(
+    `/api/v1/stores/${mappedStoreId}/closeouts${query ? `?${query}` : ""}`,
+    {
+      organizationId,
+      actorUserId,
+      actorRole,
+      errorMessage: "closeout fetch api failed.",
     },
-  });
+  );
 
-  if (!response.ok) {
-    throw new Error(`closeout fetch api failed: ${response.status}`);
-  }
-  const payload = await response.json();
   if (!Array.isArray(payload)) return [];
   return payload.map((item) => {
     if (!item || typeof item !== "object") return item;
-    const mappedStoreId = reverseLookupKeyByUuid(item.storeId, storeIdMap) || storeId;
+    const mappedStoreLegacyId = reverseLookupKeyByUuid(item.storeId, storeIdMap) || storeId;
     const salesRows = Array.isArray(item.sales)
       ? item.sales.map((row) => ({
         ...row,
         channelId: reverseLookupKeyByUuid(row?.channelId, salesChannelIdMap) || row?.channelId,
       }))
       : item.sales;
-    const mappedOpenedByUserId = reverseLookupKeyByUuid(item.openedByUserId, userIdMap) || item.openedByUserId;
-    const mappedSubmittedByUserId = reverseLookupKeyByUuid(item.submittedByUserId, userIdMap) || item.submittedByUserId;
     return {
       ...item,
-      storeId: mappedStoreId,
-      openedByUserId: mappedOpenedByUserId,
-      submittedByUserId: mappedSubmittedByUserId,
+      storeId: mappedStoreLegacyId,
+      openedByUserId: reverseLookupKeyByUuid(item.openedByUserId, userIdMap) || item.openedByUserId,
+      submittedByUserId: reverseLookupKeyByUuid(item.submittedByUserId, userIdMap) || item.submittedByUserId,
       sales: salesRows,
     };
   });
@@ -269,32 +185,23 @@ export async function reviewCloseoutViaApi({
   action,
   reason = "",
 }) {
-  const { userIdMap, storeIdMap } = getMaps();
-  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
-  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
+  const { storeIdMap } = getMaps();
   const mappedStoreId = mapToUuid(closeout?.storeId, storeIdMap);
+  if (!mappedStoreId || !closeout?.id) return null;
 
-  if (!mappedOrganizationId || !mappedActorUserId || !mappedStoreId || !closeout?.id) {
-    return null;
-  }
-
-  const response = await fetch(`/api/v1/stores/${mappedStoreId}/closeouts/${encodeURIComponent(closeout.id)}/review`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-organization-id": mappedOrganizationId,
-      "x-user-id": mappedActorUserId,
-      "x-member-role": actorRole,
+  return fetchApiJsonWithPrototypeContext(
+    `/api/v1/stores/${mappedStoreId}/closeouts/${encodeURIComponent(closeout.id)}/review`,
+    {
+      organizationId,
+      actorUserId,
+      actorRole,
+      method: "POST",
+      body: {
+        action,
+        date: closeout.date,
+        reason,
+      },
+      errorMessage: "closeout review api failed.",
     },
-    body: JSON.stringify({
-      action,
-      date: closeout.date,
-      reason,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`closeout review api failed: ${response.status}`);
-  }
-  return response.json();
+  );
 }

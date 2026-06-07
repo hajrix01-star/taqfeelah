@@ -1,4 +1,5 @@
-import { getCloseoutApiMaps, isUuid } from "../closeouts/client/closeouts-api-client";
+import { isUuid } from "@/core/client/api-id-utils";
+import { getRuntimeApiMaps } from "@/core/client/runtime-api-maps-state";
 
 /** Owner-controlled window for which past closeouts an employee may view. */
 
@@ -59,7 +60,7 @@ function mapLegacyUserIdToApi(value, userIdMap) {
 export function resolveEmployeeActorIds(employee) {
   const employeeId = typeof employee === "string" ? employee : employee?.id;
   const apiUserId = typeof employee === "object" ? employee?.apiUserId : "";
-  const { userIdMap } = getCloseoutApiMaps();
+  const { userIdMap } = getRuntimeApiMaps();
   const ids = new Set();
   for (const raw of [employeeId, apiUserId]) {
     if (typeof raw !== "string" || !raw.trim()) continue;
@@ -73,7 +74,7 @@ export function resolveEmployeeActorIds(employee) {
 }
 
 function resolveCloseoutActorIds(closeout) {
-  const { userIdMap } = getCloseoutApiMaps();
+  const { userIdMap } = getRuntimeApiMaps();
   const ids = new Set();
   for (const raw of [closeout?.openedByUserId, closeout?.submittedByUserId]) {
     if (typeof raw !== "string" || !raw.trim()) continue;

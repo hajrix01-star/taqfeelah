@@ -1,50 +1,17 @@
+import { isUuid, mapToUuid, reverseLookupKeyByUuid } from "@/core/client/api-id-utils";
+import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
 import {
-  getCloseoutApiMaps,
+  getRuntimeApiMaps,
   setRuntimeApiIdMaps,
-} from "@/features/closeouts/client/closeouts-api-client.js";
-
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-let cachedMaps = null;
+} from "@/core/client/runtime-api-maps-state";
+import { resolvePrototypeApiContext } from "@/core/client/prototype-api-context";
 
 export function setOrgConfigRuntimeApiIdMaps(overrides) {
   setRuntimeApiIdMaps(overrides);
-  cachedMaps = null;
-}
-
-function isUuid(value) {
-  return typeof value === "string" && uuidPattern.test(value);
 }
 
 function getMaps() {
-  if (cachedMaps) return cachedMaps;
-  cachedMaps = getCloseoutApiMaps();
-  return cachedMaps;
-}
-
-function mapToUuid(value, map) {
-  if (isUuid(value)) return value;
-  if (typeof value !== "string" || !value.trim()) return "";
-  const mapped = map[value] || map[value.trim()];
-  return isUuid(mapped) ? mapped : "";
-}
-
-function reverseLookupKeyByUuid(uuidValue, map) {
-  if (!isUuid(uuidValue) || !map || typeof map !== "object") return "";
-  for (const [key, value] of Object.entries(map)) {
-    if (isUuid(value) && value.toLowerCase() === uuidValue.toLowerCase()) return key;
-  }
-  return "";
-}
-
-function authHeaders({ organizationId, actorUserId, actorRole }) {
-  const { userIdMap } = getMaps();
-  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
-  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
-  return {
-    "x-organization-id": mappedOrganizationId,
-    "x-user-id": mappedActorUserId,
-    "x-member-role": actorRole,
-  };
+  return getRuntimeApiMaps();
 }
 
 export async function fetchOrganizationStoresViaApi({
@@ -55,12 +22,13 @@ export async function fetchOrganizationStoresViaApi({
 }) {
   const { storeIdMap } = getMaps();
   const search = new URLSearchParams({ status });
-  const response = await fetch(`/api/v1/stores?${search.toString()}`, {
-    method: "GET",
-    headers: authHeaders({ organizationId, actorUserId, actorRole }),
+  const payload = await fetchApiJsonWithPrototypeContext(`/api/v1/stores?${search.toString()}`, {
+    organizationId,
+    actorUserId,
+    actorRole,
+    errorMessage: "stores list api failed",
+    errorStyle: "status",
   });
-  if (!response.ok) throw new Error(`stores list api failed: ${response.status}`);
-  const payload = await response.json();
   const stores = Array.isArray(payload?.stores) ? payload.stores : [];
   return {
     stores: stores.map((store) => ({
@@ -82,12 +50,16 @@ export async function fetchStoreSalesChannelsViaApi({
   if (!mappedStoreId) return { storeId, channels: [] };
 
   const search = new URLSearchParams({ status });
-  const response = await fetch(`/api/v1/stores/${mappedStoreId}/sales-channels?${search.toString()}`, {
-    method: "GET",
-    headers: authHeaders({ organizationId, actorUserId, actorRole }),
-  });
-  if (!response.ok) throw new Error(`sales channels api failed: ${response.status}`);
-  const payload = await response.json();
+  const payload = await fetchApiJsonWithPrototypeContext(
+    `/api/v1/stores/${mappedStoreId}/sales-channels?${search.toString()}`,
+    {
+      organizationId,
+      actorUserId,
+      actorRole,
+      errorMessage: "sales channels api failed",
+      errorStyle: "status",
+    },
+  );
   const channels = Array.isArray(payload?.channels) ? payload.channels : [];
   return {
     storeId,
@@ -106,12 +78,13 @@ export async function fetchOrganizationMembersViaApi({
 }) {
   const { storeIdMap, userIdMap } = getMaps();
   const search = new URLSearchParams({ status });
-  const response = await fetch(`/api/v1/members?${search.toString()}`, {
-    method: "GET",
-    headers: authHeaders({ organizationId, actorUserId, actorRole }),
+  const payload = await fetchApiJsonWithPrototypeContext(`/api/v1/members?${search.toString()}`, {
+    organizationId,
+    actorUserId,
+    actorRole,
+    errorMessage: "members list api failed",
+    errorStyle: "status",
   });
-  if (!response.ok) throw new Error(`members list api failed: ${response.status}`);
-  const payload = await response.json();
   const members = Array.isArray(payload?.members) ? payload.members : [];
   return {
     members: members.map((member) => ({
@@ -132,19 +105,18 @@ export async function createOrganizationStoreViaApi({
   name,
   location = "",
 }) {
-  const response = await fetch("/api/v1/stores", {
+  const payload = await fetchApiJsonWithPrototypeContext("/api/v1/stores", {
+    organizationId,
+    actorUserId,
+    actorRole,
     method: "POST",
-    headers: {
-      ...authHeaders({ organizationId, actorUserId, actorRole }),
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
+    body: {
       name,
       location: location || undefined,
-    }),
+    },
+    errorMessage: "store create api failed",
+    errorStyle: "status",
   });
-  if (!response.ok) throw new Error(`store create api failed: ${response.status}`);
-  const payload = await response.json();
   const store = payload?.store || payload;
   return {
     ...store,
@@ -160,23 +132,24 @@ export async function updateStoreOperationalSettingsViaApi({
   patch,
   reason,
 }) {
-  const { storeIdMap } = getMaps();
-  const mappedStoreId = mapToUuid(storeId, storeIdMap);
-  if (!mappedStoreId) throw new Error("store operational settings api failed: missing store mapping");
+  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  if (!context) throw new Error("store operational settings api failed: missing store mapping");
 
-  const response = await fetch(`/api/v1/stores/${mappedStoreId}/operational-settings`, {
-    method: "PATCH",
-    headers: {
-      ...authHeaders({ organizationId, actorUserId, actorRole }),
-      "content-type": "application/json",
+  const payload = await fetchApiJsonWithPrototypeContext(
+    `/api/v1/stores/${context.storeId}/operational-settings`,
+    {
+      organizationId,
+      actorUserId,
+      actorRole,
+      method: "PATCH",
+      body: {
+        ...(patch || {}),
+        ...(typeof reason === "string" && reason.trim() ? { reason: reason.trim() } : {}),
+      },
+      errorMessage: "store operational settings api failed",
+      errorStyle: "status",
     },
-    body: JSON.stringify({
-      ...(patch || {}),
-      ...(typeof reason === "string" && reason.trim() ? { reason: reason.trim() } : {}),
-    }),
-  });
-  if (!response.ok) throw new Error(`store operational settings api failed: ${response.status}`);
-  const payload = await response.json();
+  );
   return payload?.operationalSettings || payload;
 }
 
@@ -191,8 +164,8 @@ export async function updateOrganizationStoreViaApi({
   reason,
 }) {
   const { storeIdMap } = getMaps();
-  const mappedStoreId = mapToUuid(storeId, storeIdMap);
-  if (!mappedStoreId) throw new Error("store update api failed: missing store mapping");
+  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  if (!context) throw new Error("store update api failed: missing store mapping");
 
   const body = {};
   if (typeof name === "string" && name.trim()) body.name = name.trim();
@@ -200,16 +173,15 @@ export async function updateOrganizationStoreViaApi({
   if (status === "active" || status === "archived") body.status = status;
   if (typeof reason === "string" && reason.trim()) body.reason = reason.trim();
 
-  const response = await fetch(`/api/v1/stores/${mappedStoreId}`, {
+  const payload = await fetchApiJsonWithPrototypeContext(`/api/v1/stores/${context.storeId}`, {
+    organizationId,
+    actorUserId,
+    actorRole,
     method: "PATCH",
-    headers: {
-      ...authHeaders({ organizationId, actorUserId, actorRole }),
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(body),
+    body,
+    errorMessage: "store update api failed",
+    errorStyle: "status",
   });
-  if (!response.ok) throw new Error(`store update api failed: ${response.status}`);
-  const payload = await response.json();
   const store = payload?.store || payload;
   return {
     ...store,
@@ -226,25 +198,26 @@ export async function updateStoreSalesChannelViaApi({
   status,
   reason,
 }) {
-  const { storeIdMap } = getMaps();
-  const mappedStoreId = mapToUuid(storeId, storeIdMap);
-  if (!mappedStoreId) throw new Error("sales channel update api failed: missing store mapping");
+  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  if (!context) throw new Error("sales channel update api failed: missing store mapping");
   if (!isUuid(salesChannelId)) throw new Error("sales channel update api failed: missing channel id");
 
-  const response = await fetch(`/api/v1/stores/${mappedStoreId}/sales-channels`, {
-    method: "PATCH",
-    headers: {
-      ...authHeaders({ organizationId, actorUserId, actorRole }),
-      "content-type": "application/json",
+  const payload = await fetchApiJsonWithPrototypeContext(
+    `/api/v1/stores/${context.storeId}/sales-channels`,
+    {
+      organizationId,
+      actorUserId,
+      actorRole,
+      method: "PATCH",
+      body: {
+        salesChannelId,
+        status,
+        reason,
+      },
+      errorMessage: "sales channel update api failed",
+      errorStyle: "status",
     },
-    body: JSON.stringify({
-      salesChannelId,
-      status,
-      reason,
-    }),
-  });
-  if (!response.ok) throw new Error(`sales channel update api failed: ${response.status}`);
-  const payload = await response.json();
+  );
   return payload?.channel || payload;
 }
 
@@ -259,7 +232,7 @@ export async function createOrganizationMemberViaApi({
 }) {
   const { storeIdMap } = getMaps();
   const mappedStoreIds = storeIds
-    .map((storeId) => mapToUuid(storeId, storeIdMap))
+    .map((id) => mapToUuid(id, storeIdMap))
     .filter((value) => isUuid(value));
 
   const body = {
@@ -271,16 +244,15 @@ export async function createOrganizationMemberViaApi({
     body.credentials = { type: "employee_pin", pin: pin.trim() };
   }
 
-  const response = await fetch("/api/v1/members", {
+  const payload = await fetchApiJsonWithPrototypeContext("/api/v1/members", {
+    organizationId,
+    actorUserId,
+    actorRole,
     method: "POST",
-    headers: {
-      ...authHeaders({ organizationId, actorUserId, actorRole }),
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(body),
+    body,
+    errorMessage: "member create api failed",
+    errorStyle: "status",
   });
-  if (!response.ok) throw new Error(`member create api failed: ${response.status}`);
-  const payload = await response.json();
   return payload?.member || payload;
 }
 
@@ -303,7 +275,7 @@ export async function updateOrganizationMemberViaApi({
   if (status === "active" || status === "inactive") body.status = status;
   if (Array.isArray(storeIds)) {
     body.storeIds = storeIds
-      .map((storeId) => mapToUuid(storeId, storeIdMap))
+      .map((id) => mapToUuid(id, storeIdMap))
       .filter((value) => isUuid(value));
   }
   if (typeof pin === "string" && pin.trim()) {
@@ -311,16 +283,15 @@ export async function updateOrganizationMemberViaApi({
   }
   if (typeof reason === "string" && reason.trim()) body.reason = reason.trim();
 
-  const response = await fetch(`/api/v1/members/${memberId}`, {
+  const payload = await fetchApiJsonWithPrototypeContext(`/api/v1/members/${memberId}`, {
+    organizationId,
+    actorUserId,
+    actorRole,
     method: "PATCH",
-    headers: {
-      ...authHeaders({ organizationId, actorUserId, actorRole }),
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(body),
+    body,
+    errorMessage: "member update api failed",
+    errorStyle: "status",
   });
-  if (!response.ok) throw new Error(`member update api failed: ${response.status}`);
-  const payload = await response.json();
   return payload?.member || payload;
 }
 

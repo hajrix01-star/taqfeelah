@@ -1,55 +1,21 @@
 import {
-  getCloseoutApiMaps,
+  isUuid,
+  mapToUuid,
+  reverseLookupKeyByUuid,
+  toMoneyHalalas,
+} from "@/core/client/api-id-utils";
+import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+import {
+  getRuntimeApiMaps,
   setRuntimeApiIdMaps,
-} from "@/features/closeouts/client/closeouts-api-client.js";
-
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-let cachedMaps = null;
+} from "@/core/client/runtime-api-maps-state";
 
 export function setPhase9RuntimeApiIdMaps(overrides) {
   setRuntimeApiIdMaps(overrides);
-  cachedMaps = null;
-}
-
-function isUuid(value) {
-  return typeof value === "string" && uuidPattern.test(value);
 }
 
 function getMaps() {
-  if (cachedMaps) return cachedMaps;
-  cachedMaps = getCloseoutApiMaps();
-  return cachedMaps;
-}
-
-function mapToUuid(value, map) {
-  if (isUuid(value)) return value;
-  if (typeof value !== "string" || !value.trim()) return "";
-  const mapped = map[value] || map[value.trim()];
-  return isUuid(mapped) ? mapped : "";
-}
-
-function reverseLookupKeyByUuid(uuidValue, map) {
-  if (!isUuid(uuidValue) || !map || typeof map !== "object") return "";
-  for (const [key, value] of Object.entries(map)) {
-    if (isUuid(value) && value.toLowerCase() === uuidValue.toLowerCase()) return key;
-  }
-  return "";
-}
-
-function toHalalas(value) {
-  return Math.round(Number(value || 0) * 100);
-}
-
-function authHeaders({ organizationId, actorUserId, actorRole }) {
-  const { userIdMap } = getMaps();
-  const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
-  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
-  return {
-    "content-type": "application/json",
-    "x-organization-id": mappedOrganizationId,
-    "x-user-id": mappedActorUserId,
-    "x-member-role": actorRole,
-  };
+  return getRuntimeApiMaps();
 }
 
 function mapSummaryPayloadToApiBody(payload) {
@@ -58,7 +24,7 @@ function mapSummaryPayloadToApiBody(payload) {
     .map((row) => ({
       salesChannelId: mapToUuid(row?.channelId || row?.id, salesChannelIdMap),
       channelName: row?.name || row?.channelName || row?.channelLabel || row?.channelId || row?.id,
-      amountHalalas: toHalalas(row?.amount),
+      amountHalalas: toMoneyHalalas(row?.amount),
     }))
     .filter((row) => isUuid(row.salesChannelId) && row.amountHalalas > 0);
 
@@ -94,22 +60,21 @@ export async function approveDuplicateSummaryViaApi({
   const mappedStoreId = mapToUuid(storeId, storeIdMap);
   if (!mappedStoreId || !isUuid(organizationId) || !date) return null;
 
-  const response = await fetch(
+  return fetchApiJsonWithPrototypeContext(
     `/api/v1/stores/${mappedStoreId}/entries/duplicate-summary/approve`,
     {
+      organizationId,
+      actorUserId,
+      actorRole,
       method: "POST",
-      headers: authHeaders({ organizationId, actorUserId, actorRole }),
-      body: JSON.stringify({
+      body: {
         date,
         payload: mapSummaryPayloadToApiBody(payload),
-      }),
+      },
+      errorMessage: "duplicate summary approve api failed",
+      errorStyle: "status",
     },
   );
-
-  if (!response.ok) {
-    throw new Error(`duplicate summary approve api failed: ${response.status}`);
-  }
-  return response.json();
 }
 
 export async function acknowledgeDuplicateSummariesViaApi({
@@ -125,22 +90,21 @@ export async function acknowledgeDuplicateSummariesViaApi({
   const mappedEntryIds = (Array.isArray(entryIds) ? entryIds : []).filter((value) => isUuid(value));
   if (!mappedStoreId || !isUuid(organizationId) || !date || !mappedEntryIds.length) return null;
 
-  const response = await fetch(
+  return fetchApiJsonWithPrototypeContext(
     `/api/v1/stores/${mappedStoreId}/entries/duplicate-summary/acknowledge`,
     {
+      organizationId,
+      actorUserId,
+      actorRole,
       method: "POST",
-      headers: authHeaders({ organizationId, actorUserId, actorRole }),
-      body: JSON.stringify({
+      body: {
         date,
         entryIds: mappedEntryIds,
-      }),
+      },
+      errorMessage: "duplicate summary acknowledge api failed",
+      errorStyle: "status",
     },
   );
-
-  if (!response.ok) {
-    throw new Error(`duplicate summary acknowledge api failed: ${response.status}`);
-  }
-  return response.json();
 }
 
 export async function fetchNotebookExportViaApi({
@@ -167,16 +131,17 @@ export async function fetchNotebookExportViaApi({
   if (date) search.set("date", date);
   if (month) search.set("month", month);
 
-  const response = await fetch(`/api/v1/exports/notebook?${search.toString()}`, {
-    method: "GET",
-    headers: authHeaders({ organizationId, actorUserId, actorRole }),
-  });
+  const payload = await fetchApiJsonWithPrototypeContext(
+    `/api/v1/exports/notebook?${search.toString()}`,
+    {
+      organizationId,
+      actorUserId,
+      actorRole,
+      errorMessage: "notebook export api failed",
+      errorStyle: "status",
+    },
+  );
 
-  if (!response.ok) {
-    throw new Error(`notebook export api failed: ${response.status}`);
-  }
-
-  const payload = await response.json();
   return {
     ...payload,
     storeId: reverseLookupKeyByUuid(payload?.storeId, storeIdMap) || storeId,
@@ -194,14 +159,16 @@ export async function registerInlineAttachmentViaApi({
   const mappedStoreId = mapToUuid(storeId, storeIdMap);
   if (!mappedStoreId || !isUuid(organizationId) || !attachment) return null;
 
-  const response = await fetch(`/api/v1/stores/${mappedStoreId}/attachments/inline`, {
-    method: "POST",
-    headers: authHeaders({ organizationId, actorUserId, actorRole }),
-    body: JSON.stringify({ attachment }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`inline attachment api failed: ${response.status}`);
-  }
-  return response.json();
+  return fetchApiJsonWithPrototypeContext(
+    `/api/v1/stores/${mappedStoreId}/attachments/inline`,
+    {
+      organizationId,
+      actorUserId,
+      actorRole,
+      method: "POST",
+      body: { attachment },
+      errorMessage: "inline attachment api failed",
+      errorStyle: "status",
+    },
+  );
 }

@@ -1,70 +1,42 @@
-import { buildPrototypeApiAuthHeaders } from "@/core/client/prototype-api-auth-headers";
-
-function resolvePrototypeAuthHeaders({ organizationId, actorUserId, actorRole } = {}) {
-  if (!organizationId || !actorUserId || !actorRole) return {};
-  return buildPrototypeApiAuthHeaders({ organizationId, actorUserId, actorRole });
-}
-
-async function parseErrorMessage(response, fallback) {
-  try {
-    const payload = await response.json();
-    if (payload?.error?.message) return payload.error.message;
-    return fallback;
-  } catch {
-    return fallback;
-  }
-}
+import { fetchApiJson, fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
 
 export async function loginOwnerSessionViaApi({ username, password }) {
-  const response = await fetch("/api/v1/auth/session", {
+  return fetchApiJson("/api/v1/auth/session", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({
+    body: {
       mode: "owner_password",
       username,
       password,
-    }),
+    },
+    errorMessage: "Owner login failed.",
   });
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, "Owner login failed."));
-  }
-  return response.json();
 }
 
 export async function getSessionStatusViaApi() {
-  const response = await fetch("/api/v1/auth/session", {
-    method: "GET",
+  return fetchApiJson("/api/v1/auth/session", {
+    errorMessage: "Failed to resolve session.",
   });
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, "Failed to resolve session."));
-  }
-  return response.json();
 }
 
 export async function loginEmployeeSessionViaApi({ employeeId, pin }) {
-  const response = await fetch("/api/v1/auth/session", {
+  return fetchApiJson("/api/v1/auth/session", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({
+    body: {
       mode: "employee_pin",
       employeeId,
       pin,
-    }),
+    },
+    errorMessage: "Employee login failed.",
   });
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, "Employee login failed."));
-  }
-  return response.json();
 }
 
 export async function logoutSessionViaApi() {
-  const response = await fetch("/api/v1/auth/session", {
+  return fetchApiJson("/api/v1/auth/session", {
     method: "DELETE",
+    errorMessage: "Logout failed.",
   });
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, "Logout failed."));
-  }
-  return response.json();
 }
 
 export async function fetchRuntimeSettingsViaApi({
@@ -72,24 +44,18 @@ export async function fetchRuntimeSettingsViaApi({
   actorUserId,
   actorRole,
 } = {}) {
-  const response = await fetch("/api/v1/runtime/settings", {
-    method: "GET",
-    headers: resolvePrototypeAuthHeaders({ organizationId, actorUserId, actorRole }),
+  return fetchApiJsonWithPrototypeContext("/api/v1/runtime/settings", {
+    organizationId,
+    actorUserId,
+    actorRole,
+    errorMessage: "Failed to load runtime settings.",
   });
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, "Failed to load runtime settings."));
-  }
-  return response.json();
 }
 
 export async function fetchEmployeeLoginRosterViaApi() {
-  const response = await fetch("/api/v1/auth/employee-roster", {
-    method: "GET",
+  return fetchApiJson("/api/v1/auth/employee-roster", {
+    errorMessage: "Failed to load employee roster.",
   });
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, "Failed to load employee roster."));
-  }
-  return response.json();
 }
 
 export async function saveRuntimeSettingsViaApi({
@@ -99,19 +65,15 @@ export async function saveRuntimeSettingsViaApi({
   actorUserId,
   actorRole,
 } = {}) {
-  const response = await fetch("/api/v1/runtime/settings", {
+  return fetchApiJsonWithPrototypeContext("/api/v1/runtime/settings", {
+    organizationId,
+    actorUserId,
+    actorRole,
     method: "PUT",
-    headers: {
-      "content-type": "application/json",
-      ...resolvePrototypeAuthHeaders({ organizationId, actorUserId, actorRole }),
-    },
-    body: JSON.stringify({
+    body: {
       settings,
       reason,
-    }),
+    },
+    errorMessage: "Failed to save runtime settings.",
   });
-  if (!response.ok) {
-    throw new Error(await parseErrorMessage(response, "Failed to save runtime settings."));
-  }
-  return response.json();
 }

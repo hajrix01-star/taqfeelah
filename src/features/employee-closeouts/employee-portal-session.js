@@ -1,4 +1,4 @@
-import { isUuid } from "../closeouts/client/closeouts-api-client";
+import { isUuid } from "@/core/client/api-id-utils";
 
 export function employeePinMatches(person, pin, defaultPin = "") {
   const expectedPin = `${person?.pin || defaultPin}`.trim();

@@ -1,5 +1,5 @@
 import { buildSalesChannelIdMap } from "@/core/client/sales-channel-catalog";
-import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
+import { isUuid } from "@/core/client/api-id-utils";
 
 type RuntimeBusiness = {
   id?: string;
