@@ -54,6 +54,7 @@ PRODUCTION_ENV_KEYS = [
     "NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP",
     "NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP",
     "NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP",
+    "NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED",
 ]
 
 # Bootstrap defaults align with scripts/seed-closeouts-foundation.mjs so deploy can
@@ -74,9 +75,17 @@ WAVE_2_ENV_OVERRIDES: dict[str, str] = {
     "DEPLOYMENT_WAVE": "2",
 }
 
+# Wave 3 enables explicit cursor pagination for the owner register (phase 7).
+WAVE_3_ENV_OVERRIDES: dict[str, str] = {
+    **WAVE_2_ENV_OVERRIDES,
+    "DEPLOYMENT_WAVE": "3",
+    "NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED": "true",
+}
+
 WAVE_ENV_OVERRIDES: dict[str, dict[str, str]] = {
     "1": WAVE_1_ENV_OVERRIDES,
     "2": WAVE_2_ENV_OVERRIDES,
+    "3": WAVE_3_ENV_OVERRIDES,
 }
 
 PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
@@ -367,6 +376,13 @@ def deployment_wave_requires_analytics_verify() -> bool:
     if not wave.isdigit():
         return False
     return int(wave) >= 2
+
+
+def deployment_wave_requires_pagination_verify() -> bool:
+    wave = os.environ.get("DEPLOYMENT_WAVE", "1").strip()
+    if not wave.isdigit():
+        return False
+    return int(wave) >= 3
 
 
 def resolve_production_env(existing_remote_env: dict[str, str] | None = None) -> dict[str, str]:
@@ -671,6 +687,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     wave_owner_id = PRODUCTION_ENV_BOOTSTRAP_DEFAULTS["NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID"]
     wave_store_id = "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"
     analytics_verify = deployment_wave_requires_analytics_verify()
+    pagination_verify = deployment_wave_requires_pagination_verify()
     verify_cmds = [
         "docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'",
         "nginx -t",
@@ -707,6 +724,17 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"-H 'x-member-role: owner'"
             ),
         ] if analytics_verify else []),
+        *([
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave3-entries-paginated.json "
+                f"-w '%{{http_code}}' "
+                f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/entries"
+                f"?status=active&paginated=1&limit=25 "
+                f"-H 'x-organization-id: {wave_org_id}' "
+                f"-H 'x-user-id: {wave_owner_id}' "
+                f"-H 'x-member-role: owner'"
+            ),
+        ] if pagination_verify else []),
         f"curl -I --max-time 15 https://{shlex.quote(www_domain)} || true",
         "curl -I --max-time 15 https://hajrix.com || true",
         "curl -I --max-time 15 https://arz-lounge.com || true",
@@ -715,6 +743,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     entries_status_code: str | None = None
     summary_day_status_code: str | None = None
     reports_days_status_code: str | None = None
+    entries_paginated_status_code: str | None = None
     for c in verify_cmds:
         print_section(c)
         code, out, err = vps.run(c, check=False)
@@ -768,6 +797,26 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 raise RuntimeError(
                     "Deployment wave 2 verification failed: reports/days API returned "
                     f"HTTP {reports_days_status_code or 'unknown'}"
+                )
+            continue
+        if "/entries" in c and "wave3" in c and "paginated" in c:
+            entries_paginated_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run(
+                "cat /tmp/taqfeelah-wave3-entries-paginated.json 2>/dev/null || true",
+                check=False,
+            )
+            if body.strip():
+                safe_print("Wave 3 paginated entries API response preview:")
+                safe_print(body.strip()[:240])
+            if entries_paginated_status_code != "200":
+                raise RuntimeError(
+                    "Deployment wave 3 verification failed: paginated entries API returned "
+                    f"HTTP {entries_paginated_status_code or 'unknown'}"
+                )
+            if '"items"' not in body:
+                raise RuntimeError(
+                    "Deployment wave 3 verification failed: paginated entries response "
+                    "missing items payload"
                 )
             continue
         if code != 0:
