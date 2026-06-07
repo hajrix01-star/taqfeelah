@@ -55,6 +55,7 @@ PRODUCTION_ENV_KEYS = [
     "NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP",
     "NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP",
     "NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED",
+    "NEXT_PUBLIC_ORG_CONFIG_API_ENABLED",
 ]
 
 # Bootstrap defaults align with scripts/seed-closeouts-foundation.mjs so deploy can
@@ -82,10 +83,18 @@ WAVE_3_ENV_OVERRIDES: dict[str, str] = {
     "NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED": "true",
 }
 
+# Wave 4 enables explicit org-config APIs for stores, team, and sales channels (phase 8).
+WAVE_4_ENV_OVERRIDES: dict[str, str] = {
+    **WAVE_3_ENV_OVERRIDES,
+    "DEPLOYMENT_WAVE": "4",
+    "NEXT_PUBLIC_ORG_CONFIG_API_ENABLED": "true",
+}
+
 WAVE_ENV_OVERRIDES: dict[str, dict[str, str]] = {
     "1": WAVE_1_ENV_OVERRIDES,
     "2": WAVE_2_ENV_OVERRIDES,
     "3": WAVE_3_ENV_OVERRIDES,
+    "4": WAVE_4_ENV_OVERRIDES,
 }
 
 PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
@@ -383,6 +392,13 @@ def deployment_wave_requires_pagination_verify() -> bool:
     if not wave.isdigit():
         return False
     return int(wave) >= 3
+
+
+def deployment_wave_requires_org_config_verify() -> bool:
+    wave = os.environ.get("DEPLOYMENT_WAVE", "1").strip()
+    if not wave.isdigit():
+        return False
+    return int(wave) >= 4
 
 
 def resolve_production_env(existing_remote_env: dict[str, str] | None = None) -> dict[str, str]:
@@ -688,6 +704,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     wave_store_id = "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"
     analytics_verify = deployment_wave_requires_analytics_verify()
     pagination_verify = deployment_wave_requires_pagination_verify()
+    org_config_verify = deployment_wave_requires_org_config_verify()
     verify_cmds = [
         "docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'",
         "nginx -t",
@@ -735,6 +752,33 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"-H 'x-member-role: owner'"
             ),
         ] if pagination_verify else []),
+        *([
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave4-stores.json "
+                f"-w '%{{http_code}}' "
+                f"'https://{domain}/api/v1/stores?status=active' "
+                f"-H 'x-organization-id: {wave_org_id}' "
+                f"-H 'x-user-id: {wave_owner_id}' "
+                f"-H 'x-member-role: owner'"
+            ),
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave4-members.json "
+                f"-w '%{{http_code}}' "
+                f"'https://{domain}/api/v1/members?status=active' "
+                f"-H 'x-organization-id: {wave_org_id}' "
+                f"-H 'x-user-id: {wave_owner_id}' "
+                f"-H 'x-member-role: owner'"
+            ),
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave4-sales-channels.json "
+                f"-w '%{{http_code}}' "
+                f"'https://{domain}/api/v1/stores/{wave_store_id}/sales-channels"
+                f"?status=active' "
+                f"-H 'x-organization-id: {wave_org_id}' "
+                f"-H 'x-user-id: {wave_owner_id}' "
+                f"-H 'x-member-role: owner'"
+            ),
+        ] if org_config_verify else []),
         f"curl -I --max-time 15 https://{shlex.quote(www_domain)} || true",
         "curl -I --max-time 15 https://hajrix.com || true",
         "curl -I --max-time 15 https://arz-lounge.com || true",
@@ -817,6 +861,58 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 raise RuntimeError(
                     "Deployment wave 3 verification failed: paginated entries response "
                     "missing items payload"
+                )
+            continue
+        if "wave4-stores.json" in c:
+            stores_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run("cat /tmp/taqfeelah-wave4-stores.json 2>/dev/null || true", check=False)
+            if body.strip():
+                safe_print("Wave 4 stores API response preview:")
+                safe_print(body.strip()[:240])
+            if stores_status_code != "200":
+                raise RuntimeError(
+                    "Deployment wave 4 verification failed: stores API returned "
+                    f"HTTP {stores_status_code or 'unknown'}"
+                )
+            if '"stores"' not in body:
+                raise RuntimeError(
+                    "Deployment wave 4 verification failed: stores response missing stores payload"
+                )
+            continue
+        if "wave4-members.json" in c:
+            members_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run("cat /tmp/taqfeelah-wave4-members.json 2>/dev/null || true", check=False)
+            if body.strip():
+                safe_print("Wave 4 members API response preview:")
+                safe_print(body.strip()[:240])
+            if members_status_code != "200":
+                raise RuntimeError(
+                    "Deployment wave 4 verification failed: members API returned "
+                    f"HTTP {members_status_code or 'unknown'}"
+                )
+            if '"members"' not in body:
+                raise RuntimeError(
+                    "Deployment wave 4 verification failed: members response missing members payload"
+                )
+            continue
+        if "wave4-sales-channels.json" in c:
+            channels_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run(
+                "cat /tmp/taqfeelah-wave4-sales-channels.json 2>/dev/null || true",
+                check=False,
+            )
+            if body.strip():
+                safe_print("Wave 4 sales-channels API response preview:")
+                safe_print(body.strip()[:240])
+            if channels_status_code != "200":
+                raise RuntimeError(
+                    "Deployment wave 4 verification failed: sales-channels API returned "
+                    f"HTTP {channels_status_code or 'unknown'}"
+                )
+            if '"channels"' not in body:
+                raise RuntimeError(
+                    "Deployment wave 4 verification failed: sales-channels response "
+                    "missing channels payload"
                 )
             continue
         if code != 0:
