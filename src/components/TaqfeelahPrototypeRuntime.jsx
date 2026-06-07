@@ -171,11 +171,7 @@ import {
 } from "@/features/operations/operational-entry-persist-helpers";
 import { buildPrototypeDefaultStaff } from "@/features/demo/prototype-auth-boot";
 import { resolveOperationalEntriesBulkLoadWindow } from "@/features/entries/client/register-entries-load-window";
-import { isProductionAppMode } from "@/core/config/app-mode";
-import { isCloseoutsApiDbSourceMode, isCloseoutsApiStrictMode } from "@/core/config/closeouts-api-mode";
-import { isEntriesApiDbSourceMode, isEntriesApiStrictMode } from "@/core/config/entries-api-mode";
-import { isRegisterEntriesPaginationEnabled } from "@/core/config/register-entries-pagination-mode";
-import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
+import { resolveRuntimeApiActorContext, resolveRuntimeCapabilities } from "@/core/config/runtime-capabilities";
 import { useRegisterEntriesFromApi } from "@/features/entries/client/use-register-entries-from-api";
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
