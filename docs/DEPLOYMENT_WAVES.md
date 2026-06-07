@@ -112,6 +112,19 @@
 
 ---
 
+## استكشاف مشاكل النشر (SSH من GitHub)
+
+إذا فشل **Preflight VPS connectivity** وظهر `TCP *:22 — blocked or timed out`:
+
+1. **الموقع قد يبقى شغالاً** — هذا يعني أن Nginx والتطبيق يعملان، لكن GitHub لا يستطيع الدخول عبر SSH للنشر.
+2. **جرّب أولاً:** من GitHub Actions اضغط **Re-run failed jobs** (أحياناً الحظر مؤقت).
+3. **على VPS (Hostinger hPanel أو SSH يدوي):**
+   - تأكد أن خدمة SSH تعمل: `systemctl status ssh`
+   - راجع fail2ban: `fail2ban-client status sshd` — إن وُجد حظر، انتظر أو أزل الحظر
+   - راجع الجدار الناري: `ufw status` — المنفذ 22 (أو `VPS_PORT`) مفتوح
+4. **تحقق من سر GitHub `VPS_PORT`:** إن كان SSH على منفذ غير 22، يجب أن يطابق المنفذ الفعلي.
+5. بعد الإصلاح: أعد تشغيل workflow **Production Deploy** (أو انتظر النشر التالي مع push).
+
 ## مرجع الأعلام التفصيلي
 
 `docs/FEATURE_FLAGS_MATRIX.md` — جدول كل متغير بيئة وترتيبه التقني.

@@ -99,11 +99,11 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_CONNECT_TIMEOUT: "20"
-          VPS_CONNECT_RETRIES: "4"
-          VPS_RETRY_DELAY_SECONDS: "8"
-          VPS_PROBE_RETRIES: "4"
-          VPS_PROBE_RETRY_DELAY_SECONDS: "10"
+          VPS_CONNECT_TIMEOUT: "30"
+          VPS_CONNECT_RETRIES: "8"
+          VPS_RETRY_DELAY_SECONDS: "12"
+          VPS_PROBE_RETRIES: "6"
+          VPS_PROBE_RETRY_DELAY_SECONDS: "15"
         run: |
           python scripts/vps_deploy.py preflight \
             --domain taqfeelah.com \

@@ -1229,7 +1229,11 @@ def main() -> int:
         if not any("reachable" in line for line in probe_lines):
             raise RuntimeError(
                 "VPS port is not reachable from GitHub Actions.\n"
-                "Check VPS firewall, fail2ban, SSH service, and VPS_HOST.\n"
+                "The site may still be online while SSH from CI is blocked.\n"
+                "Common causes: fail2ban after repeated deploys, UFW/firewall, SSH down, wrong VPS_PORT.\n"
+                "On VPS: systemctl status ssh; fail2ban-client status sshd; ufw status.\n"
+                "Then Re-run failed jobs in GitHub Actions, or wait 15–30 min for bans to expire.\n"
+                "See docs/DEPLOYMENT_WAVES.md (troubleshooting section).\n"
                 + "\n".join(probe_lines)
             )
 
