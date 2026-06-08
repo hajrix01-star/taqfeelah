@@ -55,6 +55,15 @@ describe("prototype runtime module boundary smoke", () => {
     })).toBe("8 يونيو · B");
   });
 
+  it("loads prototype attachment storage and UI exports", async () => {
+    const storage = await import("@/features/attachments/client/prototype-attachment-storage");
+    const ui = await import("@/components/prototype-runtime/prototype-runtime-attachment-ui");
+    expect(storage.storeAttachmentPayload).toBeTypeOf("function");
+    expect(storage.stripEmbeddedAttachmentImages).toBeTypeOf("function");
+    expect(ui.useAttachmentCapture).toBeTypeOf("function");
+    expect(ui.AttachmentCapture).toBeTypeOf("function");
+  });
+
   it("loads runtime capability resolver", async () => {
     const { resolveRuntimeCapabilities } = await import("@/core/config/runtime-capabilities");
     const capabilities = resolveRuntimeCapabilities({

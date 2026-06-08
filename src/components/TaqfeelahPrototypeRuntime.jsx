@@ -27,9 +27,19 @@ import AttachmentLightbox from "./AttachmentLightbox";
 import { createPrototypeMonthDemoOperationalEntries } from "@/features/demo/prototype-month-demo-seed";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  makeAttachment,
+  storeAttachmentPayload,
+  stripEmbeddedAttachmentImages,
+} from "@/features/attachments/client/prototype-attachment-storage";
+import {
+  AttachmentCapture,
+  AttachmentPreview,
+  useAttachmentCapture,
+  useAttachmentSource,
+} from "./prototype-runtime/prototype-runtime-attachment-ui";
+import {
   Bell,
   CalendarDays,
-  Camera,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -258,123 +268,6 @@ const toAmount = (value) => {
 };
 const newId = (prefix = "entry") => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 const ownerActor = { role: "owner", userId: "owner", nameAr: "محمد الهاجري", nameEn: "Mohammad Alhajri" };
-const MAX_ATTACHMENT_SOURCE_BYTES = 8 * 1024 * 1024;
-const MAX_ATTACHMENT_STORED_BYTES = 260 * 1024;
-const MAX_ATTACHMENT_EDGE = 1280;
-const MIN_ATTACHMENT_QUALITY = 0.38;
-const makeAttachment = (id, prepared = null) => prepared ? { ...prepared, id: `attachment-${id}` } : null;
-const approximateDataUrlBytes = (value = "") => Math.ceil((value.length * 3) / 4);
-async function prepareAttachment(file) {
-  if (!file?.type?.startsWith("image/")) throw new Error("invalid");
-  if (file.size > MAX_ATTACHMENT_SOURCE_BYTES) throw new Error("large");
-  const sourceUrl = URL.createObjectURL(file);
-  try {
-    const image = await new Promise((resolve, reject) => {
-      const element = new Image();
-      element.onload = () => resolve(element);
-      element.onerror = reject;
-      element.src = sourceUrl;
-    });
-    let scale = Math.min(1, MAX_ATTACHMENT_EDGE / Math.max(image.naturalWidth, image.naturalHeight));
-    let quality = 0.8;
-    let dataUrl = "";
-    for (let attempt = 0; attempt < 9; attempt += 1) {
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
-      const context = canvas.getContext("2d", { alpha: false });
-      if (!context) throw new Error("invalid");
-      context.drawImage(image, 0, 0, canvas.width, canvas.height);
-      dataUrl = canvas.toDataURL("image/jpeg", quality);
-      if (approximateDataUrlBytes(dataUrl) <= MAX_ATTACHMENT_STORED_BYTES) break;
-      if (quality > MIN_ATTACHMENT_QUALITY) quality -= 0.1;
-      else scale *= 0.82;
-    }
-    const sizeBytes = approximateDataUrlBytes(dataUrl);
-    if (sizeBytes > MAX_ATTACHMENT_STORED_BYTES) throw new Error("large");
-    return { kind: "image", name: file.name || "attachment.jpg", mimeType: "image/jpeg", sizeBytes, dataUrl };
-  } finally {
-    URL.revokeObjectURL(sourceUrl);
-  }
-}
-
-// المرفقات تحفظ خارج LocalStorage حتى لا تتضخم السجلات وتنهار سرعة البروتايب.
-const ATTACHMENT_DB_NAME = "taqfeelah_attachment_store";
-const ATTACHMENT_STORE_NAME = "images";
-function openAttachmentDatabase() {
-  return new Promise((resolve, reject) => {
-    if (typeof indexedDB === "undefined") return reject(new Error("unsupported"));
-    const request = indexedDB.open(ATTACHMENT_DB_NAME, 1);
-    request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains(ATTACHMENT_STORE_NAME)) request.result.createObjectStore(ATTACHMENT_STORE_NAME); };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-async function storeAttachmentPayload(attachment) {
-  if (!attachment?.id || !attachment?.dataUrl) return;
-  const database = await openAttachmentDatabase();
-  await new Promise((resolve, reject) => {
-    const transaction = database.transaction(ATTACHMENT_STORE_NAME, "readwrite");
-    transaction.objectStore(ATTACHMENT_STORE_NAME).put(attachment.dataUrl, attachment.id);
-    transaction.oncomplete = resolve;
-    transaction.onerror = () => reject(transaction.error);
-  });
-  database.close();
-}
-async function deleteAttachmentPayload(attachmentId) {
-  if (!attachmentId) return;
-  const database = await openAttachmentDatabase();
-  await new Promise((resolve, reject) => {
-    const transaction = database.transaction(ATTACHMENT_STORE_NAME, "readwrite");
-    transaction.objectStore(ATTACHMENT_STORE_NAME).delete(attachmentId);
-    transaction.oncomplete = resolve;
-    transaction.onerror = () => reject(transaction.error);
-  });
-  database.close();
-}
-async function readAttachmentPayload(attachmentId) {
-  if (!attachmentId) return null;
-  try {
-    const database = await openAttachmentDatabase();
-    const result = await new Promise((resolve, reject) => {
-      const transaction = database.transaction(ATTACHMENT_STORE_NAME, "readonly");
-      const request = transaction.objectStore(ATTACHMENT_STORE_NAME).get(attachmentId);
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error);
-    });
-    database.close();
-    return result;
-  } catch { return null; }
-}
-function stripEmbeddedAttachmentImages(entries) {
-  return entries.map((entry) => entry.attachment ? { ...entry, attachment: { ...entry.attachment, dataUrl: undefined } } : entry);
-}
-function useAttachmentCapture(lang) {
-  const [attachment, setAttachment] = useState(null);
-  const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState("");
-  const selectAttachment = async (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    setProcessing(true); setError("");
-    try { setAttachment(await prepareAttachment(file)); }
-    catch (failure) { setError(text(lang, failure?.message === "invalid" ? "invalidAttachment" : "attachmentTooLarge")); }
-    finally { setProcessing(false); }
-  };
-  const clearAttachment = () => { setAttachment(null); setError(""); };
-  return { attachment, processing, error, selectAttachment, clearAttachment };
-}
-function useAttachmentSource(attachment) {
-  const [source, setSource] = useState(attachment?.dataUrl || null);
-  useEffect(() => {
-    let mounted = true;
-    setSource(attachment?.dataUrl || null);
-    if (!attachment?.dataUrl && attachment?.id) readAttachmentPayload(attachment.id).then((saved) => { if (mounted) setSource(saved); });
-    return () => { mounted = false; };
-  }, [attachment?.id, attachment?.dataUrl]);
-  return source;
-}
 function draftNeedsConfirmation(...values) {
   return values.some((value) => value && (typeof value !== "object" || Object.values(value).some(Boolean)));
 }
@@ -617,18 +510,6 @@ function SummaryScreen({ lang, onBack, onSave, saving = false, salesChannels = c
 
 function Choice({ active, children, onClick }) { return <button onClick={onClick} className={`rounded-2xl py-3 text-xs font-extrabold ${active ? "bg-[#112A46] text-white" : "bg-white text-[#716753] ring-1 ring-black/[0.05]"}`}>{children}</button>; }
 function FieldLabel({ label, optional, value }) { return <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.05]"><p className="mb-2 text-xs font-bold text-[#716753]">{label} <span className="font-normal">({optional})</span></p><div className="rounded-2xl bg-[#F7F5EF] px-4 py-3 text-sm text-[#716753]">{value}</div></div>; }
-function AttachmentPreview({ attachment, className = "" }) {
-  const source = useAttachmentSource(attachment);
-  if (!source) return <ProofThumb />;
-  return <img src={source} alt="" className={`object-cover ${className}`} />;
-}
-function AttachmentCapture({ lang, attachment, processing, error, onSelect, onClear, tall = false }) {
-  return <div><label className={`relative flex w-full cursor-pointer items-center justify-center gap-3 overflow-hidden rounded-3xl border-2 border-dashed border-[#D7CBAF] bg-[#FFFDF7] ${tall ? "h-40 flex-col" : "min-h-24 px-4 py-3"}`}>
-    <input type="file" accept="image/*" capture="environment" onChange={onSelect} className="sr-only" />
-    {attachment ? <><AttachmentPreview attachment={attachment} className="absolute inset-0 h-full w-full opacity-25" /><Check className={`${tall ? "h-8 w-8" : "h-6 w-6"} relative text-[#39A160]`} /></> : <Camera className={`${tall ? "h-8 w-8" : "h-6 w-6"} text-[#B99844]`} />}
-    <div className={`relative ${tall ? "text-center" : "text-start"}`}><p className="text-sm font-extrabold">{processing ? text(lang, "processingPhoto") : attachment ? text(lang, "replacePhoto") : text(lang, "cameraOrGallery")}</p><p className="text-taq-meta text-[#827762]">{attachment ? text(lang, "attachmentStoredLocally") : text(lang, "optional")}</p></div>
-  </label>{attachment && <button onClick={onClear} className="mt-2 text-taq-meta font-bold text-[#B44747]">{text(lang, "removePhoto")}</button>}{error && <p className="mt-2 text-taq-meta font-bold text-[#B44747]">{error}</p>}</div>;
-}
 
 function StoreOperationPicker({ lang, businessesList = businesses, selectedId, onSelect }) {
   const [open, setOpen] = useState(false);
@@ -873,7 +754,6 @@ function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = 
   );
 }
 
-function ProofThumb({ paper = false }) { return <div className={`${paper ? "h-12 w-10" : "h-14 w-14 bg-[#E8E1D4]"} flex shrink-0 items-center justify-center rounded-xl`}><div className={`${paper ? "w-9 border border-[#CFBC82]" : "w-9"} rotate-[-3deg] rounded bg-white p-1.5 shadow-sm`}><div className="mb-1 h-1 w-5 rounded bg-[#D8D1C4]" /><div className="mb-1 h-1 w-full rounded bg-[#E9E2D6]" /><div className="h-1 w-7 rounded bg-[#E9E2D6]" /></div></div>; }
 function DayAttachments({ lang, group, reviewEnabled = false, onOpenOperation = () => {} }) { if (!group?.items?.length) return <NotebookRow><p className="text-xs font-bold text-[#806528]">{text(lang, "noAttachmentsDay")}</p></NotebookRow>; return <div className="py-3"><div className="flex gap-3 overflow-x-auto pb-1">{group.items.map((item) => <button key={item.id} onClick={() => onOpenOperation(item.entry)} className="min-w-[78px] text-center"><div className="mb-1 flex h-14 justify-center overflow-hidden rounded-xl"><AttachmentPreview attachment={item.attachment} className="h-14 w-14 rounded-xl" /></div><p className="truncate text-taq-meta font-bold">{lang === "ar" ? item.title : item.titleEn}</p><p className={`mt-0.5 text-taq-meta font-black ${item.entry.type === "summary" ? "text-[#257844]" : "text-[#B44747]"}`}><MoneyValue value={money(signedEntryAmount(item.entry), lang)} /></p>{reviewEnabled && !entryIsVoided(item.entry) && !item.reviewed && <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#B96725]" />}</button>)}</div></div>; }
 
 function LogFilterChip({ active, children, onClick, tone = "default" }) {
