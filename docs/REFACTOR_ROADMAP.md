@@ -52,7 +52,7 @@ main      →  دمج دفعة واحدة     →  نشر VPS تلقائي
 | PR | الحالة | ملاحظة |
 |----|--------|--------|
 | PR #85 (الدفعة 1–3) | 🟢 مدمج على `main` | 2026-06-08 — نشر VPS تلقائي |
-| PR-4 (imports + policy) | 🟡 فرع مفتوح | `refactor/owner-settings-imports-policy` — لا دمج حتى طلب صريح |
+| PR #86 (imports + policy) | 🟡 PR مفتوح | CI — لا دمج حتى طلب صريح |
 | لاحقًا مرفقات + منطق | ⬜ مؤجّل | بعد PR-4 مستقر |
 
 ---
@@ -219,7 +219,7 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 | 2026-06-08 | PR-1 مكتمل (كود). بدء PR-2: resolveSubmitCloseoutId، trustServerDaySequenceOnly، findCloseoutsForStoreDate، إصلاح دمج drafts، اختبارات |
 | 2026-06-08 | PR-3 مكتمل (كود): نقل TopBar وBottomNav إلى prototype-runtime-chrome.jsx؛ Runtime ~3360 سطر |
 | 2026-06-08 | دمج PR #85 على main (`f29f62b`). اعتماد سياسة: PR=اختبار، main=نشر دفعة واحدة |
-| 2026-06-08 | PR-4 (فرع): سياسة merge-deploy في `.cursor/rules`، إصلاح OwnerSettingsSection imports |
+| 2026-06-08 | PR #86: سياسة merge-deploy، إصلاح OwnerSettingsSection imports، smoke + تنظيف imports في Runtime |
 
 ---
 

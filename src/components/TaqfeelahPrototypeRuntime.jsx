@@ -2,32 +2,19 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { PROTOTYPE_BUILD_STAMP } from "@/prototype-build-stamp.mjs";
 import { DailyCloseoutsProvider, useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
-import { buildOperationalEntriesFromCloseout } from "@/features/daily-closeouts/daily-closeouts-demo-store";
-import { autoResolveSubmittedCloseoutsWithoutReview, readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-demo-store";
-import { readCloseoutEvents } from "@/features/daily-closeouts/daily-closeouts-demo-store";
-import { applyNotebookThemeCssVariables, notebookCardBackground, notebookLinesBackground, notebookThemes, resolveNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
+import { buildOperationalEntriesFromCloseout, readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-demo-store";
+import { applyNotebookThemeCssVariables, notebookCardBackground, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
 import { shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
 import EmployeeCloseoutsView from "@/features/employee-closeouts/EmployeeCloseoutsView";
 import DailyCloseoutEntryFlow from "@/features/employee-closeouts/DailyCloseoutEntryFlow";
-import EmployeeHistoryVisibilityPicker from "@/features/employee-closeouts/EmployeeHistoryVisibilityPicker";
-import { employeeHistoryVisibilityLabel } from "@/features/employee-closeouts/employee-closeout-history";
 import {
   employeeDisplayName,
   filterEmployeeHomePreviewEntries,
   filterEmployeeStoreEntries,
 } from "@/features/employee-closeouts/employee-entries-display";
 import {
-  employeePinMatches,
-  filterActiveLoginStaff,
-  normalizeEmployeeLoginRosterStaff,
   patchRuntimeApiMapsForEmployeeSession,
-  resolveActiveEmployee,
-  resolveAssignedEmployeeBusinesses,
-  resolveCurrentEmployeeBusiness,
-  resolveEmployeeBusinessId,
-  resolveEmployeeLoginStaff,
   syncLoggedInEmployeeIdFromSession,
 } from "@/features/employee-closeouts/employee-portal-session";
 import { readEmployeeNotebookTheme, writeEmployeeNotebookTheme } from "@/features/employee-closeouts/employee-theme-storage";
@@ -35,15 +22,12 @@ import PendingCloseoutsNotice from "@/features/owner-closeout-review/PendingClos
 import OwnerCloseoutReviewPanel from "@/features/owner-closeout-review/OwnerCloseoutReviewPanel";
 import ReturnCloseoutModal from "@/features/owner-closeout-review/ReturnCloseoutModal";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
-import LanHintBanner from "@/features/demo/LanHintBanner";
-import { clearEmployeeCredentials, clearOwnerCredentials, readEmployeeCredentials, readOwnerCredentials, saveEmployeeCredentials, saveOwnerCredentials } from "@/features/demo/login-credentials-storage";
 import { readLocalStorageJson } from "@/features/demo/prototype-storage";
 import AttachmentLightbox from "./AttachmentLightbox";
 import { createPrototypeMonthDemoOperationalEntries } from "@/features/demo/prototype-month-demo-seed";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
-  Building2,
   CalendarDays,
   Camera,
   Check,
@@ -51,7 +35,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  CreditCard,
   Download,
   FileImage,
   FileSpreadsheet,
@@ -59,11 +42,6 @@ import {
   Plus,
   ReceiptText,
   Send,
-  Share2,
-  ShoppingBag,
-  Smartphone,
-  Wallet,
-  Trash2,
   X,
 } from "lucide-react";
 import { getEnabledOwnerLoginMethods, isOwnerLoginMethodEnabled } from "@/core/auth/owner-login-methods";
@@ -113,10 +91,6 @@ import {
   readSessionBootState,
 } from "@/features/auth/client/session-bridge";
 import { readOwnerSettingsApiAuth } from "@/features/runtime-settings/client/runtime-settings-bridge";
-import {
-  migrateSavedSettings as applyLocalSavedSettingsMigration,
-  OWNER_SETTINGS_STORAGE_KEY,
-} from "@/features/runtime-settings/client/migrate-local-saved-settings";
 import { buildOperationalEntry } from "@/features/entries/client/build-operational-entry";
 import {
   buildCloseoutAlertRecord,
@@ -346,7 +320,7 @@ import {
   NotebookMarginTools,
   NotebookDateBar,
 } from "./prototype-runtime/prototype-runtime-notebook";
-import { OwnerSettingsScreen, SettingToggle, ActionRow } from "./prototype-runtime/OwnerSettingsSection";
+import { OwnerSettingsScreen, ActionRow } from "./prototype-runtime/OwnerSettingsSection";
 import { RatioBadge, ReportsScreen } from "./prototype-runtime/OwnerReportsSection";
 import { Badge, InkTab } from "./prototype-runtime/prototype-runtime-shell-ui";
 

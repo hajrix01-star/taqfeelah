@@ -21,6 +21,13 @@ describe("prototype runtime module boundary smoke", () => {
     expect(chrome.Logo).toBeTypeOf("function");
   });
 
+  it("loads owner settings section exports", async () => {
+    const settings = await import("@/components/prototype-runtime/OwnerSettingsSection");
+    expect(settings.OwnerSettingsScreen).toBeTypeOf("function");
+    expect(settings.SettingToggle).toBeTypeOf("function");
+    expect(settings.ActionRow).toBeTypeOf("function");
+  });
+
   it("loads prototype-runtime entry helper exports", async () => {
     const helpers = await import("@/components/prototype-runtime/prototype-runtime-entry-helpers");
     expect(helpers.entryHasAttachment).toBeTypeOf("function");
