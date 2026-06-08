@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { registerInlineAttachment } from "./inline-attachment";
+import { registerInlineAttachment, resolveInlineAttachmentDataUrl } from "./inline-attachment";
 
 const tinyPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
@@ -22,6 +22,15 @@ describe("registerInlineAttachment", () => {
 
     expect(first.storageKey).toBe(second.storageKey);
     expect(first.storageKey.startsWith("inline:v1:")).toBe(true);
+    expect(resolveInlineAttachmentDataUrl(first.storageKey)).toBe(tinyPng);
+  });
+
+  it("keeps legacy raw data URLs readable", () => {
+    expect(resolveInlineAttachmentDataUrl(tinyPng)).toBe(tinyPng);
+  });
+
+  it("does not expose unknown storage keys as inline data", () => {
+    expect(resolveInlineAttachmentDataUrl("object-storage/receipt.jpg")).toBe("");
   });
 
   it("rejects unsupported mime type", () => {

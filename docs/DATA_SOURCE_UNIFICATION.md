@@ -93,6 +93,9 @@ auditable, and repeatable:
 - Browser persistence is now centrally blocked for production app mode.
 - Employee notebook-theme preferences are part of the runtime settings snapshot
   and persist through the runtime settings API/DB path when enabled.
+- DB entry attachments now use a server-normalized inline storage key for new
+  writes, while legacy raw `data:` rows remain readable. IndexedDB remains only
+  a prototype/local fallback.
 - Prototype/demo mode can still use local browser storage until each legacy
   fallback has a DB-backed replacement and migration script.
 
