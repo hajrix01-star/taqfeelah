@@ -26,8 +26,31 @@ import {
   writeCloseoutAlerts,
 } from "./owner-shell-storage.js";
 
+function stableJson(value) {
+  try {
+    return JSON.stringify(value ?? null);
+  } catch {
+    return "";
+  }
+}
+
+function resolveStoredCloseoutAlerts(ownerShellPreferences, bindsToServerAuth) {
+  if (Array.isArray(ownerShellPreferences?.closeoutAlerts)) {
+    return ownerShellPreferences.closeoutAlerts;
+  }
+  return readCloseoutAlerts(bindsToServerAuth);
+}
+
+function resolveStoredAcknowledgedDuplicateSales(ownerShellPreferences, bindsToServerAuth) {
+  const stored = ownerShellPreferences?.acknowledgedDuplicateSales;
+  if (stored && typeof stored === "object" && !Array.isArray(stored)) return stored;
+  return readAcknowledgedDuplicateSales(bindsToServerAuth);
+}
+
 export function useOwnerShellState({
   bindsToServerAuth,
+  ownerShellPreferences = {},
+  onOwnerShellPreferencesChange = null,
   operationalEntries = [],
   activeBusinesses = [],
   configuredBusinesses = [],
@@ -44,12 +67,14 @@ export function useOwnerShellState({
   const [helpOpen, setHelpOpen] = useState(false);
   const [ownerReviewCloseout, setOwnerReviewCloseout] = useState(null);
   const [returnCloseoutTarget, setReturnCloseoutTarget] = useState(null);
-  const [closeoutAlerts, setCloseoutAlerts] = useState(() => readCloseoutAlerts(bindsToServerAuth));
+  const [closeoutAlerts, setCloseoutAlerts] = useState(
+    () => resolveStoredCloseoutAlerts(ownerShellPreferences, bindsToServerAuth),
+  );
   const [duplicateReviewFocus, setDuplicateReviewFocus] = useState(null);
   const [attachmentReviewRequest, setAttachmentReviewRequest] = useState(null);
   const [shareSnapshot, setShareSnapshot] = useState(null);
   const [acknowledgedDuplicateSales, setAcknowledgedDuplicateSales] = useState(
-    () => readAcknowledgedDuplicateSales(bindsToServerAuth),
+    () => resolveStoredAcknowledgedDuplicateSales(ownerShellPreferences, bindsToServerAuth),
   );
 
   const navApply = useMemo(() => ({
@@ -119,6 +144,38 @@ export function useOwnerShellState({
   useEffect(() => {
     writeAcknowledgedDuplicateSales(acknowledgedDuplicateSales, bindsToServerAuth);
   }, [acknowledgedDuplicateSales, bindsToServerAuth]);
+
+  useEffect(() => {
+    const incomingCloseoutAlerts = ownerShellPreferences?.closeoutAlerts;
+    if (Array.isArray(incomingCloseoutAlerts) && stableJson(incomingCloseoutAlerts) !== stableJson(closeoutAlerts)) {
+      setCloseoutAlerts(incomingCloseoutAlerts);
+    }
+    const incomingAcknowledgedDuplicateSales = ownerShellPreferences?.acknowledgedDuplicateSales;
+    if (
+      incomingAcknowledgedDuplicateSales
+      && typeof incomingAcknowledgedDuplicateSales === "object"
+      && !Array.isArray(incomingAcknowledgedDuplicateSales)
+      && stableJson(incomingAcknowledgedDuplicateSales) !== stableJson(acknowledgedDuplicateSales)
+    ) {
+      setAcknowledgedDuplicateSales(incomingAcknowledgedDuplicateSales);
+    }
+  }, [acknowledgedDuplicateSales, closeoutAlerts, ownerShellPreferences]);
+
+  useEffect(() => {
+    if (typeof onOwnerShellPreferencesChange !== "function") return;
+    const next = {
+      ...(ownerShellPreferences || {}),
+      closeoutAlerts,
+      acknowledgedDuplicateSales,
+    };
+    if (stableJson(next) === stableJson(ownerShellPreferences)) return;
+    onOwnerShellPreferencesChange(next);
+  }, [
+    acknowledgedDuplicateSales,
+    closeoutAlerts,
+    onOwnerShellPreferencesChange,
+    ownerShellPreferences,
+  ]);
 
   useEffect(() => {
     if (selectedBusiness !== "all" && !configuredBusinesses.some((business) => business.id === selectedBusiness)) {

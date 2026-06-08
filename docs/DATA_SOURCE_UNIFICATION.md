@@ -93,6 +93,9 @@ auditable, and repeatable:
 - Browser persistence is now centrally blocked for production app mode.
 - Employee notebook-theme preferences are part of the runtime settings snapshot
   and persist through the runtime settings API/DB path when enabled.
+- Owner shell notification preferences, including closeout alert state and
+  duplicate-sales acknowledgements, are part of the runtime settings snapshot
+  when the DB settings API is enabled.
 - DB entry attachments now use a server-normalized inline storage key for new
   writes, while legacy raw `data:` rows remain readable. IndexedDB remains only
   a prototype/local fallback.

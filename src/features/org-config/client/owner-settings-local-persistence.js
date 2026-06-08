@@ -8,6 +8,7 @@ export function buildOwnerSettingsLocalStoragePayload({
   storeOperationalSettings,
   notebookTheme,
   employeePreferences = {},
+  ownerShellPreferences = {},
   staff,
   ownerProfile,
   authOwnerUsername,
@@ -21,6 +22,7 @@ export function buildOwnerSettingsLocalStoragePayload({
     storeOperationalSettings,
     notebookTheme,
     employeePreferences,
+    ownerShellPreferences,
     staff,
     ownerProfile,
     authConfig: {
