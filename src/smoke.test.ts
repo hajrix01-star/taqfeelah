@@ -65,6 +65,16 @@ describe("prototype runtime module boundary smoke", () => {
     expect(utils.toAmount).toBeTypeOf("function");
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
+  it("loads operation dialog exports", async () => {
+    const dialogs = await import("@/components/prototype-runtime/prototype-runtime-operation-dialogs");
+    expect(dialogs.OperationModal).toBeTypeOf("function");
+    expect(dialogs.QuickAddSheet).toBeTypeOf("function");
+    expect(dialogs.VoidOperationDialog).toBeTypeOf("function");
+    expect(dialogs.RestoreOperationDialog).toBeTypeOf("function");
+    expect(dialogs.DuplicateSalesDialog).toBeTypeOf("function");
+    expect(dialogs.SavedOutflowShareDialog).toBeTypeOf("function");
+  }, SMOKE_IMPORT_TIMEOUT_MS);
+
   it("loads prototype attachment storage and UI exports", async () => {
     const storage = await import("@/features/attachments/client/prototype-attachment-storage");
     const ui = await import("@/components/prototype-runtime/prototype-runtime-attachment-ui");
