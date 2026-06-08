@@ -1,7 +1,25 @@
 # خارطة refactor التشغيلية — تقفيلة V2
 
 > **ملف حي:** يُحدَّث بعد كل مرحلة مكتملة أو merge.  
-> آخر تحديث: **2026-06-08** — PR-3 تفكيك UI (مكتمل كود).
+> آخر تحديث: **2026-06-08** — اعتماد سياسة الدمج والنشر الدفعي (مالك المنتج).
+
+---
+
+## سياسة الدمج والنشر المعتمدة ✅
+
+> **معتمدة من مالك المنتج — 2026-06-08.** قاعدة المشروع: `.cursor/rules/merge-deploy-batch-policy.mdc`
+
+```text
+PR / فرع  →  تطوير + اختبار CI  →  لا يلمس اللايف
+main      →  دمج دفعة واحدة     →  نشر VPS تلقائي
+```
+
+| قاعدة | التفاصيل |
+|-------|----------|
+| **لا دمج على `main`** | إلا بطلب صريح: «الدفعة جاهزة للايف» / «ادمج» / «انشر» |
+| **تجميع التعديلات** | PR واحد (أو قليل) لكل دفعة منطقية — تجنب نشرات متكررة |
+| **الاختبار** | CI أخضر على PR قبل أي دمج |
+| **الاستثناء** | hotfix إنتاج فقط — بموافقة صريحة |
 
 ---
 
@@ -26,17 +44,16 @@
 ## الحالة الحالية
 
 ```text
-المرحلة النشطة: — (الثلاثة PRs الرئيسية مكتملة كودًا)
-التقدم الإجمالي:  █████████░  ~95% (ينتظر smoke:browser + smoke:closeouts يدويًا)
-المرحلة التالية:  merge الفرع → تشغيل DB يدويًا → مرحلة لاحقة (PR-4+)
+المرحلة النشطة: PR #86 — CI أخضر، جاهز للدمج
+التقدم الإجمالي:  ██████████  دفعة refactor مدمجة — `f29f62b`
+المرحلة التالية:  دمج PR #86 عند طلب «جاهز للايف» / «ادمج»
 ```
 
 | PR | الحالة | ملاحظة |
 |----|--------|--------|
-| PR-1 بوابة الاستقرار | 🟢 مكتمل (كود) | lint + typecheck + test ✅ |
-| PR-2 عقد الداتا والتقفيلات | 🟢 مكتمل (كود) | ينتظر `smoke:closeouts` على DB |
-| PR-3 تفكيك UI فقط | 🟢 مكتمل (كود) | TopBar + BottomNav → chrome.jsx |
-| لاحقًا مرفقات + منطق | ⬜ مؤجّل | بعد أسبوع تشغيل مستقر |
+| PR #85 (الدفعة 1–3) | 🟢 مدمج على `main` | 2026-06-08 — نشر VPS تلقائي |
+| PR #86 (imports + policy) | 🟢 CI أخضر | https://github.com/hajrix01-star/taqfeelah/pull/86 — دمج عند طلب صريح |
+| لاحقًا مرفقات + منطق | ⬜ مؤجّل | بعد PR-4 مستقر |
 
 ---
 
@@ -141,7 +158,8 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 
 - [x] نقل `TopBar` → `prototype-runtime-chrome.jsx`
 - [x] نقل `BottomNav` في نفس PR
-- [ ] مكوّنات عرضية إضافية (مؤجّل — OwnerSettingsSection imports ناقصة)
+- [x] إصلاح `OwnerSettingsSection.jsx` imports + `no-undef` ESLint
+- [ ] مكوّنات عرضية إضافية (مؤجّل)
 - [x] **لا نقل** state / hooks / API loading
 
 ### تشك لست
@@ -153,8 +171,7 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 
 ### ملاحظة معروفة (من PR-1)
 
-`OwnerSettingsSection.jsx` فيه imports ناقصة (`no-undef` عند توسيع ESLint).  
-**يُصلَح في PR-3** عند نقل/تنظيف chrome — أو PR صغير منفصل إن لزم قبل ذلك.
+`OwnerSettingsSection.jsx` — imports نُقلت من Runtime؛ **مُصلَح في PR-4** مع `no-undef` على الملف.
 
 ---
 
@@ -201,6 +218,8 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 | 2026-06-08 | إنشاء الملف. خطة 3 PRs. بدء PR-1: smoke.test.ts، check:refactor، eslint no-undef، إصلاح RatioBadge + OperationModal hooks |
 | 2026-06-08 | PR-1 مكتمل (كود). بدء PR-2: resolveSubmitCloseoutId، trustServerDaySequenceOnly، findCloseoutsForStoreDate، إصلاح دمج drafts، اختبارات |
 | 2026-06-08 | PR-3 مكتمل (كود): نقل TopBar وBottomNav إلى prototype-runtime-chrome.jsx؛ Runtime ~3360 سطر |
+| 2026-06-08 | دمج PR #85 على main (`f29f62b`). اعتماد سياسة: PR=اختبار، main=نشر دفعة واحدة |
+| 2026-06-08 | PR #86: سياسة merge-deploy، إصلاح OwnerSettingsSection imports، smoke + تنظيف imports في Runtime |
 
 ---
 

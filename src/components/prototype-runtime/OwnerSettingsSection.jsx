@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Bell,
   Building2,
   ChevronDown,
   ChevronLeft,
@@ -16,6 +17,9 @@ import {
   UserRound,
   X,
 } from "lucide-react";
+import { resolveStoreChannelConfig } from "@/features/org-config/client/store-channel-config";
+import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
+import EmployeeHistoryVisibilityPicker from "@/features/employee-closeouts/EmployeeHistoryVisibilityPicker";
 import { isNotebookThemeDirty } from "@/features/org-config/client/owner-settings-appearance-actions";
 import {
   buildOwnerProfileUpdate,
@@ -72,10 +76,15 @@ import {
   businessName,
   businessLocation,
   channelName,
+  emptyStoreRecord,
   expenseCategories,
   text,
 } from "./prototype-runtime-demo-data";
-import { APP_IN_PRODUCTION_MODE } from "./prototype-runtime-boot";
+import {
+  APP_IN_PRODUCTION_MODE,
+  PROTOTYPE_EMPLOYEE_PIN_DEFAULT,
+  RUNTIME_SETTINGS_DB_SOURCE,
+} from "./prototype-runtime-boot";
 import { BackTitle } from "./prototype-runtime-chrome";
 import { ThemePicker } from "./prototype-runtime-notebook";
 
