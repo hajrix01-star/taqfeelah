@@ -44,7 +44,6 @@ import {
   Send,
   X,
 } from "lucide-react";
-import { getEnabledOwnerLoginMethods, isOwnerLoginMethodEnabled } from "@/core/auth/owner-login-methods";
 import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
 import {
   diagnoseCloseoutSubmitFailure,
@@ -59,24 +58,14 @@ import {
 import { formatCloseoutDayLabel } from "@/features/closeouts/client/closeout-day-label";
 import {
   buildRegisterCloseoutDayContext,
-  filterSummaryChannelRows,
   summaryEntryDisplayAmount,
-  summarySalesChannelLabel as buildSummarySalesChannelLabel,
 } from "@/features/entries/client/register-operation-display";
 import {
   createStoreEntryViaApi,
   fetchStoreEntriesViaApi,
-  restoreStoreEntryViaApi,
-  reviewStoreEntryViaApi,
-  voidStoreEntryViaApi,
 } from "@/features/entries/client/store-entries-api-client";
-import {
-  acknowledgeDuplicateSummariesViaApi,
-  approveDuplicateSummaryViaApi,
-} from "@/features/phase9/client/phase9-api-client";
 import { useNotebookExportShareData } from "@/features/phase9/client/use-notebook-export-share-data";
 import { resolvePayloadAttachmentForPhase9Api } from "@/features/phase9/client/inline-attachment-api-flow";
-import { fetchEmployeeLoginRosterViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
 import {
   applyEmployeeLoginSuccess,
   applyLogoutReset,
@@ -85,42 +74,16 @@ import {
 } from "@/features/auth/client/auth-runtime-orchestrator";
 import {
   fetchServerSessionStatus,
-  loginEmployeeViaSessionBridge,
-  loginOwnerViaSessionBridge,
   logoutViaSessionBridge,
-  readSessionBootState,
 } from "@/features/auth/client/session-bridge";
 import { readOwnerSettingsApiAuth } from "@/features/runtime-settings/client/runtime-settings-bridge";
 import { buildOperationalEntry } from "@/features/entries/client/build-operational-entry";
 import {
-  buildCloseoutAlertRecord,
   findDuplicateSummaryEntries,
   isFutureOperationalEntryDate,
   mergeLastCloseoutDateForStore,
-  resolveLatestActiveCloseoutDateFromEntries,
-  resolveSuggestedEntryDate,
-  upsertCloseoutAlert,
 } from "@/features/operations/operational-entry-save-helpers";
 import {
-  applyDuplicateApprovedAudit,
-  applyRestoreToEntry,
-  applyReviewToEntry,
-  applyVoidToEntry,
-  canRestoreOperationalEntry,
-  canVoidOperationalEntry,
-  duplicateSalesGroupKey,
-  duplicateSalesSignature,
-  mapOperationalEntryMutation,
-  mergeLastCloseoutDateAfterSummaryRestore,
-  mergeLastCloseoutDateAfterSummaryVoid,
-  resolveDuplicateSummaryAcknowledgeFailureMessage,
-  resolveDuplicateSummaryApproveFailureMessage,
-  resolveOperationalEntryRestoreFailureMessage,
-  resolveOperationalEntryReviewFailureMessage,
-  resolveOperationalEntryVoidFailureMessage,
-} from "@/features/operations/operational-entry-mutation-helpers";
-import {
-  buildEmployeeEntryActor,
   buildPendingDuplicateSummaryState,
   canPersistOperationalEntry,
   findCreatedEntryInRefreshedList,
@@ -177,16 +140,12 @@ import {
   channelName,
   expenseCategories,
   outflowReportCategories,
-  emptyStoreRecord,
   businesses,
   businessName,
   businessLocation,
-  businessRecord,
-  combinedTotals,
   text,
   money,
   fullDate,
-  shortDate,
   opDate,
   opTime,
   auditDateTime,

@@ -44,16 +44,17 @@ main      →  دمج دفعة واحدة     →  نشر VPS تلقائي
 ## الحالة الحالية
 
 ```text
-المرحلة النشطة: PR #86 — CI أخضر، جاهز للدمج
-التقدم الإجمالي:  ██████████  دفعة refactor مدمجة — `f29f62b`
-المرحلة التالية:  دمج PR #86 عند طلب «جاهز للايف» / «ادمج»
+المرحلة النشطة: PR-5 — تنظيف imports Runtime (فرع، لم يُدمج)
+التقدم الإجمالي:  ██████████  دفعتا refactor منشورة — `54efa88` (Deploy ✅)
+المرحلة التالية:  CI على PR → دمج عند طلب صريح
 ```
 
 | PR | الحالة | ملاحظة |
 |----|--------|--------|
 | PR #85 (الدفعة 1–3) | 🟢 مدمج على `main` | 2026-06-08 — نشر VPS تلقائي |
-| PR #86 (imports + policy) | 🟢 CI أخضر | https://github.com/hajrix01-star/taqfeelah/pull/86 — دمج عند طلب صريح |
-| لاحقًا مرفقات + منطق | ⬜ مؤجّل | بعد PR-4 مستقر |
+| PR #86 (imports + policy) | 🟢 منشور | `54efa88` — Deploy + CI ✅ |
+| PR-5 (Runtime imports) | 🟡 فرع مفتوح | `refactor/runtime-import-cleanup-batch2` |
+| لاحقًا مرفقات + منطق | ⬜ مؤجّل | بعد PR-5 مستقر |
 
 ---
 
@@ -84,7 +85,7 @@ corepack pnpm check:refactor
 - [x] إصلاح `RatioBadge` import (كان مفقودًا بعد استخراج `OwnerReportsSection`)
 - [x] إصلاح ترتيب hooks في `OperationModal` (قواعد React)
 - [x] `lint` + `typecheck` + `test` ✅
-- [ ] `pnpm check:refactor` كاملًا (يشمل `smoke:browser`) — عند merge
+- [x] `pnpm check:refactor` كاملًا (يشمل `smoke:browser`) — CI ✅ على PR #86
 - [x] merge PR-1 (كود مدمج في الفرع الحالي)
 
 ### تشك لست — بعد الدمج
@@ -165,7 +166,7 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 ### تشك لست
 
 - [x] `lint` + `typecheck` + `test` ✅
-- [ ] `pnpm check:refactor` كاملًا (يشمل smoke:browser)
+- [x] `pnpm check:refactor` كاملًا (يشمل smoke:browser) — CI ✅
 - [x] نقل حرفي — نفس classNames وترتيب DOM
 - [ ] TopBar + BottomNav — تحقق يدوي سريع
 
@@ -220,6 +221,8 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 | 2026-06-08 | PR-3 مكتمل (كود): نقل TopBar وBottomNav إلى prototype-runtime-chrome.jsx؛ Runtime ~3360 سطر |
 | 2026-06-08 | دمج PR #85 على main (`f29f62b`). اعتماد سياسة: PR=اختبار، main=نشر دفعة واحدة |
 | 2026-06-08 | PR #86: سياسة merge-deploy، إصلاح OwnerSettingsSection imports، smoke + تنظيف imports في Runtime |
+| 2026-06-08 | دمج PR #86 على main (`54efa88`). smoke 7 اختبارات، Runtime −100 سطر imports |
+| 2026-06-08 | نشر PR #86 ناجح (Deploy + CI ✅). بدء PR-5: تنظيف imports إضافي في Runtime |
 
 ---
 
