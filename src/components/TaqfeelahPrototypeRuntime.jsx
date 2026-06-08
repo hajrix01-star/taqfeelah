@@ -92,9 +92,8 @@ import {
   resolveSummaryLastCloseoutUpdate,
   shouldGateSummarySaveOnDuplicates,
 } from "@/features/operations/operational-entry-persist-helpers";
-import { buildPrototypeDefaultStaff } from "@/features/demo/prototype-auth-boot";
 import { resolveOperationalEntriesBulkLoadWindow } from "@/features/entries/client/register-entries-load-window";
-import { resolveRuntimeApiActorContext, resolveRuntimeCapabilities } from "@/core/config/runtime-capabilities";
+import { resolveRuntimeApiActorContext } from "@/core/config/runtime-capabilities";
 import { useEmployeeEntryActions } from "@/features/employee-shell/client/use-employee-entry-actions";
 import { useEmployeePortalState } from "@/features/employee-shell/client/use-employee-portal-state";
 import { useOwnerSettingsState } from "@/features/org-config/client/use-owner-settings-state";
@@ -102,7 +101,6 @@ import { useOwnerShellState } from "@/features/owner-shell/client/use-owner-shel
 import { resolveSelectedOperationReviewEnabled } from "@/features/operations/client/register-operations-selection";
 import { useRegisterOperationsState } from "@/features/operations/client/use-register-operations-state";
 import { useRegisterSelectionState } from "@/features/operations/client/use-register-selection-state";
-import { CLOSEOUT_ALERTS_STORAGE_KEY } from "@/features/owner-shell/client/owner-shell-storage";
 import { useRegisterEntriesFromApi } from "@/features/entries/client/use-register-entries-from-api";
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
@@ -151,19 +149,14 @@ import {
   auditDateTime,
 } from "./prototype-runtime/prototype-runtime-demo-data";
 import {
-  APP_IN_PRODUCTION_MODE,
   PROTOTYPE_ACCESS_MODE,
   BINDS_TO_SERVER_AUTH,
   ENTRIES_API_DB_SOURCE,
   REGISTER_ENTRIES_PAGINATION_ENABLED,
   CLOSEOUTS_API_DB_SOURCE,
-  RUNTIME_SETTINGS_DB_SOURCE,
   ORG_CONFIG_API_ENABLED,
-  PROTOTYPE_SUPPORT_WHATSAPP,
-  PROTOTYPE_DEMO_OTP,
   PROTOTYPE_OWNER_USERNAME,
   PROTOTYPE_OWNER_PASSWORD,
-  PROTOTYPE_EMPLOYEE_PIN_DEFAULT,
   migrateSavedSettings,
   readSavedSettings,
   OPERATIONAL_ENTRIES_STORAGE_KEY,
@@ -195,21 +188,16 @@ import {
   Notebook,
   ThemePicker,
   NotebookRow,
-  NotebookInk,
   MoneyValue,
   NumberLine,
   FinancialRows,
   formatCalendarMonth,
   isoCalendarDate,
   todayIsoDate,
-  monthSelectionValue,
-  monthSelectionParts,
   DateSelector,
   StoreScopeTabs,
   StoreComparison,
   NotebookHeading,
-  NotebookMarginTools,
-  NotebookDateBar,
 } from "./prototype-runtime/prototype-runtime-notebook";
 import { OwnerSettingsScreen, ActionRow } from "./prototype-runtime/OwnerSettingsSection";
 import { RatioBadge, ReportsScreen } from "./prototype-runtime/OwnerReportsSection";
