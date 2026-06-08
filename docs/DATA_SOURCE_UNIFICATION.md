@@ -16,6 +16,38 @@ This includes:
 
 Browser storage is not a production source of truth.
 
+## Production readiness contract
+
+Production mode must be fully DB-backed. Do not merge/deploy this mode until the
+environment is configured with:
+
+```bash
+APP_MODE=production
+NEXT_PUBLIC_APP_MODE=production
+NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false
+ALLOW_HEADER_AUTH_CONTEXT=false
+DATABASE_URL=...
+AUTH_SESSION_SECRET=...
+NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true
+NEXT_PUBLIC_ENTRIES_API_ENABLED=true
+NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true
+NEXT_PUBLIC_PHASE9_API_ENABLED=true
+NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true
+NEXT_PUBLIC_AUTH_API_ENABLED=true
+AUTH_DB_CREDENTIALS_ENABLED=true
+NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true
+AUTH_ORGANIZATION_ID=...
+AUTH_OWNER_USER_ID=...
+NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP=...
+NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP=...
+NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP=...
+```
+
+If any required value is missing, server APIs fail fast with a configuration
+error instead of silently falling back to prototype/demo/local sources. This is
+intentional: it prevents the previous class of issues where production appeared
+to boot but did not fetch stores, users, or operational data correctly.
+
 ## Browser storage policy
 
 `localStorage`, `sessionStorage`, and IndexedDB are allowed only for

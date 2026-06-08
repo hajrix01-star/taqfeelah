@@ -10,6 +10,12 @@ const productionEnv = {
   AUTH_SESSION_SECRET: "test-session-secret-32chars",
   NEXT_PUBLIC_CLOSEOUTS_API_ENABLED: "true",
   NEXT_PUBLIC_ENTRIES_API_ENABLED: "true",
+  NEXT_PUBLIC_ORG_CONFIG_API_ENABLED: "true",
+  NEXT_PUBLIC_PHASE9_API_ENABLED: "true",
+  NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED: "true",
+  NEXT_PUBLIC_AUTH_API_ENABLED: "true",
+  AUTH_DB_CREDENTIALS_ENABLED: "true",
+  NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE: "true",
   AUTH_ORGANIZATION_ID: "00000000-0000-4000-8000-000000000001",
   AUTH_OWNER_USER_ID: "00000000-0000-4000-8000-000000000002",
   NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP: JSON.stringify({ owner: "00000000-0000-4000-8000-000000000002" }),
@@ -87,23 +93,33 @@ describe("assertProductionRuntimeEnv", () => {
     expect(() => assertProductionRuntimeEnv()).not.toThrow();
   });
 
-  it("allows prototype access on production VPS during database-first rollout", () => {
+  it("rejects prototype access in production unified mode", () => {
     stubProductionEnv({ NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true", ALLOW_HEADER_AUTH_CONTEXT: "true" });
-    expect(() => assertProductionRuntimeEnv()).not.toThrow();
-  });
-
-  it("rejects prototype access when DB credentials auth is enabled", () => {
-    stubProductionEnv({
-      NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true",
-      AUTH_DB_CREDENTIALS_ENABLED: "true",
-    });
     expect(() => assertProductionRuntimeEnv()).toThrow(ServiceUnavailableError);
     expect(() => assertProductionRuntimeEnv()).toThrow(/NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false/);
   });
 
-  it("rejects header auth bypass when launch-ready production is configured", () => {
+  it("rejects production without DB credentials auth", () => {
+    stubProductionEnv({
+      AUTH_DB_CREDENTIALS_ENABLED: "false",
+    });
+    expect(() => assertProductionRuntimeEnv()).toThrow(ServiceUnavailableError);
+    expect(() => assertProductionRuntimeEnv()).toThrow(/AUTH_DB_CREDENTIALS_ENABLED=true/);
+  });
+
+  it("rejects header auth bypass in production unified mode", () => {
     stubProductionEnv({ ALLOW_HEADER_AUTH_CONTEXT: "true" });
     expect(() => assertProductionRuntimeEnv()).toThrow(ServiceUnavailableError);
-    expect(() => assertProductionRuntimeEnv()).toThrow(/ALLOW_HEADER_AUTH_CONTEXT/);
+    expect(() => assertProductionRuntimeEnv()).toThrow(/ALLOW_HEADER_AUTH_CONTEXT=false/);
+  });
+
+  it("rejects production when required DB API flags are incomplete", () => {
+    stubProductionEnv({
+      NEXT_PUBLIC_ORG_CONFIG_API_ENABLED: "false",
+      NEXT_PUBLIC_AUTH_API_ENABLED: "false",
+    });
+    expect(() => assertProductionRuntimeEnv()).toThrow(ServiceUnavailableError);
+    expect(() => assertProductionRuntimeEnv()).toThrow(/NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true/);
+    expect(() => assertProductionRuntimeEnv()).toThrow(/NEXT_PUBLIC_AUTH_API_ENABLED=true/);
   });
 });

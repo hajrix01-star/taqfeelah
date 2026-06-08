@@ -9,7 +9,7 @@
 | `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` | `true` (ON) | Keeps prototype role picker |
 | `NEXT_PUBLIC_AUTH_API_ENABLED` | `false` | Optional client wiring for real auth UI |
 | `AUTH_DB_CREDENTIALS_ENABLED` | `false` | Login reads `auth_identities` instead of env/runtime JSON |
-| `ALLOW_HEADER_AUTH_CONTEXT` | `true` in prototype VPS | Temporary API header context |
+| `ALLOW_HEADER_AUTH_CONTEXT` | `true` only in prototype/dev | Temporary API header context |
 
 ## What was added (foundations)
 
@@ -28,8 +28,10 @@
 2. Set `AUTH_DB_CREDENTIALS_ENABLED=true`
 3. Set `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false`
 4. Set `ALLOW_HEADER_AUTH_CONTEXT=false`
-5. Set `NEXT_PUBLIC_AUTH_API_ENABLED=true` and bump `DEPLOYMENT_WAVE=6`
-6. Deploy — wave 6 verify runs POST owner login, bad-password 401, employee PIN 200
+5. Set `NEXT_PUBLIC_AUTH_API_ENABLED=true`
+6. Set `NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true`
+7. Keep all DB data-source flags enabled (`entries`, `closeouts`, `org-config`, `phase9`, pagination)
+8. Deploy — wave 6 verify runs POST owner login, bad-password 401, employee PIN 200
 
 ## Not activated yet
 

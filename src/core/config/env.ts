@@ -16,12 +16,16 @@ const envSchema = z.object({
   AUTH_EMPLOYEE_PIN_MAP: z.string().optional(),
   NEXT_PUBLIC_CLOSEOUTS_API_ENABLED: z.enum(["true", "false"]).optional(),
   NEXT_PUBLIC_ENTRIES_API_ENABLED: z.enum(["true", "false"]).optional(),
+  NEXT_PUBLIC_ORG_CONFIG_API_ENABLED: z.enum(["true", "false"]).optional(),
+  NEXT_PUBLIC_PHASE9_API_ENABLED: z.enum(["true", "false"]).optional(),
+  NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED: z.enum(["true", "false"]).optional(),
   NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID: z.string().uuid().optional(),
   NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID: z.string().uuid().optional(),
   NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP: z.string().optional(),
   NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP: z.string().optional(),
   NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP: z.string().optional(),
   ALLOW_HEADER_AUTH_CONTEXT: z.enum(["true", "false"]).optional(),
+  NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE: z.enum(["true", "false"]).optional(),
   NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: z.enum(["true", "false"]).optional(),
   AUTH_DB_CREDENTIALS_ENABLED: z.enum(["true", "false"]).optional(),
   NEXT_PUBLIC_AUTH_API_ENABLED: z.enum(["true", "false"]).optional(),
@@ -101,6 +105,24 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
   if (env.NEXT_PUBLIC_ENTRIES_API_ENABLED !== "true") {
     missing.push("NEXT_PUBLIC_ENTRIES_API_ENABLED=true");
   }
+  if (env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED !== "true") {
+    missing.push("NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true");
+  }
+  if (env.NEXT_PUBLIC_PHASE9_API_ENABLED !== "true") {
+    missing.push("NEXT_PUBLIC_PHASE9_API_ENABLED=true");
+  }
+  if (env.NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED !== "true") {
+    missing.push("NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true");
+  }
+  if (env.NEXT_PUBLIC_AUTH_API_ENABLED !== "true") {
+    missing.push("NEXT_PUBLIC_AUTH_API_ENABLED=true");
+  }
+  if (env.AUTH_DB_CREDENTIALS_ENABLED !== "true") {
+    missing.push("AUTH_DB_CREDENTIALS_ENABLED=true");
+  }
+  if (env.NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE !== "true") {
+    missing.push("NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true");
+  }
 
   const authCfg = getProductionAuthRuntimeConfig(env);
   if (!authCfg.organizationId) {
@@ -119,11 +141,11 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
     missing.push("NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP");
   }
   const launchReady = env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE === "false";
-  if (env.AUTH_DB_CREDENTIALS_ENABLED === "true" && !launchReady) {
-    missing.push("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false (required when AUTH_DB_CREDENTIALS_ENABLED=true)");
+  if (!launchReady) {
+    missing.push("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false");
   }
-  if (launchReady && env.ALLOW_HEADER_AUTH_CONTEXT === "true") {
-    missing.push("ALLOW_HEADER_AUTH_CONTEXT must not be true when prototype access is disabled");
+  if (env.ALLOW_HEADER_AUTH_CONTEXT !== "false") {
+    missing.push("ALLOW_HEADER_AUTH_CONTEXT=false");
   }
 
   if (missing.length > 0) {

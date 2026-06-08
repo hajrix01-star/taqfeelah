@@ -19,11 +19,13 @@
 | `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` | `true` (ON) | `false` | Skip real auth; role picker |
 | `ALLOW_HEADER_AUTH_CONTEXT` | `true` in dev, `false` in prod NODE_ENV | not `true` | Header-based API auth for prototype |
 
-`assertProductionRuntimeEnv()` launch rules:
+`assertProductionRuntimeEnv()` production-unified rules:
 
-- `AUTH_DB_CREDENTIALS_ENABLED=true` requires `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false`
-- `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false` requires `ALLOW_HEADER_AUTH_CONTEXT` not `true`
-- Prototype-on-VPS (`PROTOTYPE_ACCESS_MODE=true` + header auth) remains allowed during database-first rollout
+- `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false` is required.
+- `ALLOW_HEADER_AUTH_CONTEXT=false` is required.
+- `NEXT_PUBLIC_AUTH_API_ENABLED=true` and `AUTH_DB_CREDENTIALS_ENABLED=true` are required.
+- All DB data-source flags must be explicitly `true`.
+- Prototype-on-VPS is no longer a production-unified state; keep it only on prototype/dev environments.
 
 ## Data source flags (cascade)
 
@@ -68,7 +70,7 @@ Required by `assertProductionRuntimeEnv()` today; target is removal after sessio
 4. **Wave 4 (org config):** `NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true`
 5. **Wave 5 (enhancements):** `NEXT_PUBLIC_PHASE9_API_ENABLED=true`
 6. **Wave 3 (scale):** `NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true` (under load)
-7. **Wave 6 (launch):** run `pnpm db:seed:auth` then `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false`, `AUTH_DB_CREDENTIALS_ENABLED=true`, `NEXT_PUBLIC_AUTH_API_ENABLED=true`, `ALLOW_HEADER_AUTH_CONTEXT=false`, `DEPLOYMENT_WAVE=6`
+7. **Wave 6 (launch):** run `pnpm db:seed:auth` then set `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false`, `AUTH_DB_CREDENTIALS_ENABLED=true`, `NEXT_PUBLIC_AUTH_API_ENABLED=true`, `ALLOW_HEADER_AUTH_CONTEXT=false`, `NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true`, and keep all DB data-source flags `true`.
 8. **Wave 7 (SaaS):** run `pnpm db:seed:saas`, set `SAAS_PLATFORM_ADMIN_USER_IDS`, then `SAAS_ADMIN_API_ENABLED=true`, `NEXT_PUBLIC_SAAS_ADMIN_ENABLED=true`, optional `USAGE_TRACKING_ENABLED=true`, `DEPLOYMENT_WAVE=7`
 
 ## Code modules
