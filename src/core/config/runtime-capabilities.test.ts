@@ -21,7 +21,7 @@ describe("runtime capabilities", () => {
     expect(caps.bindsToServerAuth).toBe(true);
   });
 
-  it("keeps prototype access open by default", () => {
+  it("keeps prototype access open by default until auth launch", () => {
     process.env.NEXT_PUBLIC_APP_MODE = "production";
     delete process.env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE;
 

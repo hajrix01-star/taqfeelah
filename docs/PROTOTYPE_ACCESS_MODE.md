@@ -16,9 +16,9 @@ Speed up UI and domain work without username/password, OTP, session cookies, or 
 
 ## Enablement
 
-**ON by default** on every environment (desktop, mobile, `taqfeelah.com`).
+**ON by default** until the explicit auth launch phase.
 
-Disable before launch:
+Disable only when real auth is ready to launch:
 
 ```bash
 NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false
@@ -43,7 +43,13 @@ While prototype access is active, the UI may call store APIs with mapped prototy
 ALLOW_HEADER_AUTH_CONTEXT=true
 ```
 
-Set this alongside the seeded org/store/user ID maps (`NEXT_PUBLIC_CLOSEOUTS_*`) and run `node scripts/seed-closeouts-foundation.mjs` once. VPS deploy bootstrap includes `ALLOW_HEADER_AUTH_CONTEXT=true` during the prototype period.
+Set this alongside the seeded org/store/user ID maps (`NEXT_PUBLIC_CLOSEOUTS_*`) and run `node scripts/seed-closeouts-foundation.mjs` once. During source unification this remains the current entry/API context path; switch to `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false` and `ALLOW_HEADER_AUTH_CONTEXT=false` only in the later auth launch phase.
+
+### Production browser-storage policy
+
+Production mode does not treat browser storage as a durable source, including UI
+preferences. See `docs/DATA_SOURCE_UNIFICATION.md` for the source-of-truth and
+migration rules.
 
 ### Phase 1 — operational entries from DB
 

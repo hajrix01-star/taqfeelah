@@ -8,7 +8,7 @@ describe("isPrototypeAccessMode", () => {
     __resetEnvCacheForTests();
   });
 
-  it("is enabled by default in production app mode", () => {
+  it("is enabled by default until the auth launch phase", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
     expect(isPrototypeAccessMode()).toBe(true);
@@ -25,5 +25,12 @@ describe("isPrototypeAccessMode", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
     vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "false");
     expect(isPrototypeAccessMode()).toBe(false);
+  });
+
+  it("explicit flag wins over app mode for isolated previews", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
+    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "true");
+    expect(isPrototypeAccessMode()).toBe(true);
   });
 });

@@ -4,6 +4,7 @@ import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { getDb } from "@/core/db/client";
 import { attachments, auditEvents, entries, entrySalesChannels, users } from "@/core/db/schema";
+import { resolveInlineAttachmentDataUrl } from "@/features/entries/server/inline-attachment";
 import { ValidationError } from "@/core/errors/app-error";
 import { decodeEntryListCursor, encodeEntryListCursor } from "./entry-list-cursor";
 
@@ -283,7 +284,7 @@ export async function listStoreEntries(rawInput: Input) {
     if (!current || row.createdAt > current.createdAt) {
       attachmentByEntryId.set(row.entryId, {
         id: row.id,
-        dataUrl: row.storageKey,
+        dataUrl: resolveInlineAttachmentDataUrl(row.storageKey),
         name: row.originalFileName || "attachment.jpg",
         mimeType: row.mimeType,
         sizeBytes: row.sizeBytes,

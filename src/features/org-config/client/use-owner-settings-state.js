@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 import { autoResolveSubmittedCloseoutsWithoutReview } from "@/features/daily-closeouts/daily-closeouts-demo-store";
+import { isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
 import { useOrgConfigRuntimeBridge } from "./org-config-runtime-bridge.js";
 import {
   applyRuntimeSettingsSnapshotPatch,
@@ -57,9 +59,16 @@ export function useOwnerSettingsState({
     () => buildInitialStoreOperationalSettings(initialSettings, initialBusinesses),
   );
   const [notebookTheme, setNotebookTheme] = useState(() => {
+    if (isValidNotebookTheme(initialSettings?.notebookTheme)) return initialSettings.notebookTheme;
+    if (!isBrowserPersistentStorageAllowed({ scope: "ui-preferences" })) return "yellow";
     if (typeof window === "undefined") return "yellow";
     return window.localStorage.getItem("taqfeelah_notebook_theme") || "yellow";
   });
+  const [employeePreferences, setEmployeePreferences] = useState(
+    () => (initialSettings?.employeePreferences && typeof initialSettings.employeePreferences === "object"
+      ? initialSettings.employeePreferences
+      : {}),
+  );
   const [authOwnerUsername, setAuthOwnerUsername] = useState(
     () => initialAuthConfig.ownerUsername || prototypeOwnerUsername || "hajri",
   );
@@ -100,6 +109,7 @@ export function useOwnerSettingsState({
       orgConfigApiEnabled,
       storeOperationalSettings,
       notebookTheme,
+      employeePreferences,
       ownerProfile,
       authConfig: {
         ownerUsername: authOwnerUsername,
@@ -117,6 +127,7 @@ export function useOwnerSettingsState({
       authOwnerPassword,
       authOwnerUsername,
       configuredBusinesses,
+      employeePreferences,
       notebookTheme,
       orgConfigApiEnabled,
       ownerProfile,
@@ -137,6 +148,7 @@ export function useOwnerSettingsState({
         setStaff,
         setStoreOperationalSettings,
         setNotebookTheme,
+        setEmployeePreferences,
         setOwnerProfile,
         setAuthOwnerUsername,
         setAuthOwnerPassword,
@@ -184,7 +196,10 @@ export function useOwnerSettingsState({
   }, [channelNameFn, defaultStoreChannelConfig, lang, storeChannelSettings]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (
+      typeof window !== "undefined"
+      && isBrowserPersistentStorageAllowed({ scope: "ui-preferences" })
+    ) {
       window.localStorage.setItem("taqfeelah_notebook_theme", notebookTheme);
     }
   }, [notebookTheme]);
@@ -207,7 +222,11 @@ export function useOwnerSettingsState({
   }, [bindsToServerAuth, closeoutsApiDbSource, storeOperationalSettings]);
 
   useEffect(() => {
-    if (bindsToServerAuth || typeof window === "undefined") return;
+    if (
+      bindsToServerAuth
+      || typeof window === "undefined"
+      || !isBrowserPersistentStorageAllowed({ scope: "operational-fallback" })
+    ) return;
     window.localStorage.setItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(lastCloseoutDates));
   }, [bindsToServerAuth, lastCloseoutDates]);
 
@@ -226,6 +245,8 @@ export function useOwnerSettingsState({
     setStoreOperationalSettings,
     notebookTheme,
     setNotebookTheme,
+    employeePreferences,
+    setEmployeePreferences,
     authOwnerUsername,
     setAuthOwnerUsername,
     authOwnerPassword,

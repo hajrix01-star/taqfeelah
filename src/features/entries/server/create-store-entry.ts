@@ -5,6 +5,7 @@ import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
 import { attachments, auditEvents, entries, entrySalesChannels } from "@/core/db/schema";
+import { registerInlineAttachment } from "@/features/entries/server/inline-attachment";
 
 const salesChannelSchema = z.object({
   salesChannelId: z.string().uuid(),
@@ -107,7 +108,16 @@ export async function createStoreEntry(rawInput: CreateEntryInput) {
     }
 
     if (input.attachment) {
-      const storageKey = input.attachment.storageKey || input.attachment.dataUrl;
+      const normalizedAttachment = input.attachment.storageKey
+        ? input.attachment
+        : registerInlineAttachment({
+          kind: input.attachment.kind,
+          name: input.attachment.name,
+          mimeType: input.attachment.mimeType,
+          sizeBytes: input.attachment.sizeBytes,
+          dataUrl: input.attachment.dataUrl,
+        });
+      const storageKey = normalizedAttachment.storageKey;
       if (!storageKey) {
         throw new ValidationError("Attachment requires dataUrl or storageKey.");
       }
@@ -116,9 +126,9 @@ export async function createStoreEntry(rawInput: CreateEntryInput) {
         storeId: input.storeId,
         entryId: createdEntry.id,
         storageKey,
-        originalFileName: input.attachment.name || "attachment.jpg",
-        mimeType: input.attachment.mimeType || "image/jpeg",
-        sizeBytes: input.attachment.sizeBytes,
+        originalFileName: normalizedAttachment.name || "attachment.jpg",
+        mimeType: normalizedAttachment.mimeType || "image/jpeg",
+        sizeBytes: normalizedAttachment.sizeBytes,
       });
     }
 

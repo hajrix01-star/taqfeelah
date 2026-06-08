@@ -14,6 +14,7 @@ describe("read local saved settings", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it("returns null when local storage reads are disabled", () => {
@@ -36,5 +37,13 @@ describe("read local saved settings", () => {
   it("returns null when local storage contains invalid json", () => {
     getItem.mockReturnValue("{bad json");
     expect(readLocalSavedSettingsRaw()).toBeNull();
+  });
+
+  it("does not read browser storage in production app mode", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
+    getItem.mockReturnValue(JSON.stringify({ notebookTheme: "ivory" }));
+
+    expect(readLocalSavedSettings()).toBeNull();
+    expect(getItem).not.toHaveBeenCalled();
   });
 });

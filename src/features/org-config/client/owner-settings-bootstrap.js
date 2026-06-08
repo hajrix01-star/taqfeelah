@@ -1,4 +1,5 @@
 import { readLocalSavedSettings } from "@/features/runtime-settings/client/read-local-saved-settings";
+import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 
 /**
  * @param {Object} deps
@@ -16,8 +17,16 @@ export function createMigrateSavedSettings({
   autoResolveCloseouts,
 }) {
   return function migrateSavedSettings(raw) {
+    if (
+      !raw
+      || typeof window === "undefined"
+      || bindsToServerAuth
+      || !isBrowserPersistentStorageAllowed({ scope: "legacy-settings" })
+    ) {
+      return raw;
+    }
     return applyMigration(raw, {
-      skip: !raw || typeof window === "undefined" || bindsToServerAuth,
+      skip: false,
       persistMigrated: (migrated) => {
         window.localStorage.setItem(storageKey, JSON.stringify(migrated));
       },

@@ -18,6 +18,7 @@ describe("runtime settings bridge", () => {
       orgConfigApiEnabled: true,
       storeOperationalSettings: { shami: { reviewEnabled: true } },
       notebookTheme: "yellow",
+      employeePreferences: { ahmed: { notebookTheme: "classic" } },
       ownerProfile: { nameAr: "مالك" },
       authConfig: { ownerUsername: "owner", ownerPassword: "demo", employeePins: {} },
       configuredBusinesses: [{ id: "shami" }],
@@ -29,6 +30,7 @@ describe("runtime settings bridge", () => {
     expect(snapshot).toEqual({
       storeOperationalSettings: { shami: { reviewEnabled: true } },
       notebookTheme: "yellow",
+      employeePreferences: { ahmed: { notebookTheme: "classic" } },
       ownerProfile: { nameAr: "مالك" },
       authConfig: { ownerUsername: "owner", ownerPassword: "demo", employeePins: {} },
     });
@@ -43,6 +45,7 @@ describe("runtime settings bridge", () => {
       orgConfigApiEnabled: false,
       storeOperationalSettings: {},
       notebookTheme: "ivory",
+      employeePreferences: { ahmed: { notebookTheme: "ivory" } },
       ownerProfile: {},
       authConfig: { ownerUsername: "owner", ownerPassword: "demo", employeePins: {} },
       configuredBusinesses: businesses,
@@ -81,6 +84,7 @@ describe("runtime settings bridge", () => {
       setConfiguredBusinesses: vi.fn(),
       setStoreOperationalSettings: vi.fn(),
       setNotebookTheme: vi.fn(),
+      setEmployeePreferences: vi.fn(),
       setAuthOwnerUsername: vi.fn(),
     };
 
@@ -90,6 +94,7 @@ describe("runtime settings bridge", () => {
         configuredBusinesses: [{ id: "shami" }],
         storeOperationalSettings: { shami: { reviewEnabled: true } },
         notebookTheme: "yellow",
+        employeePreferences: { ahmed: { notebookTheme: "classic" } },
         authConfig: { ownerUsername: "  hajri  " },
       },
       apply,
@@ -98,6 +103,7 @@ describe("runtime settings bridge", () => {
     expect(apply.setConfiguredBusinesses).not.toHaveBeenCalled();
     expect(apply.setStoreOperationalSettings).toHaveBeenCalledWith({ shami: { reviewEnabled: true } });
     expect(apply.setNotebookTheme).toHaveBeenCalledWith("yellow");
+    expect(apply.setEmployeePreferences).toHaveBeenCalledWith({ ahmed: { notebookTheme: "classic" } });
     expect(apply.setAuthOwnerUsername).toHaveBeenCalledWith("hajri");
   });
 

@@ -18,6 +18,7 @@ export function buildRuntimeSettingsSnapshot({
   orgConfigApiEnabled,
   storeOperationalSettings,
   notebookTheme,
+  employeePreferences,
   ownerProfile,
   authConfig,
   configuredBusinesses,
@@ -28,6 +29,7 @@ export function buildRuntimeSettingsSnapshot({
   const shared = {
     storeOperationalSettings,
     notebookTheme,
+    employeePreferences,
     ownerProfile,
     authConfig,
   };
@@ -85,6 +87,9 @@ export function applyRuntimeSettingsSnapshotPatch({ migrated, orgConfigApiEnable
   }
   if (typeof migrated.notebookTheme === "string" && isValidNotebookTheme(migrated.notebookTheme) && apply.setNotebookTheme) {
     apply.setNotebookTheme(migrated.notebookTheme);
+  }
+  if (migrated.employeePreferences && typeof migrated.employeePreferences === "object" && apply.setEmployeePreferences) {
+    apply.setEmployeePreferences(migrated.employeePreferences);
   }
   if (migrated.ownerProfile && typeof migrated.ownerProfile === "object" && apply.setOwnerProfile) {
     apply.setOwnerProfile(migrated.ownerProfile);

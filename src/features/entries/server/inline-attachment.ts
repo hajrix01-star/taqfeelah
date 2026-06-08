@@ -11,6 +11,7 @@ const inlineAttachmentSchema = z.object({
 });
 
 const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
+const INLINE_STORAGE_PREFIX = "inline:v1:";
 
 export function registerInlineAttachment(rawInput: unknown) {
   const parsed = inlineAttachmentSchema.safeParse(rawInput);
@@ -36,7 +37,16 @@ export function registerInlineAttachment(rawInput: unknown) {
     name: input.name || "attachment.jpg",
     mimeType,
     sizeBytes: input.sizeBytes,
-    storageKey: `inline:v1:${digest}:${input.dataUrl}`,
+    storageKey: `${INLINE_STORAGE_PREFIX}${digest}:${input.dataUrl}`,
     checksum: digest,
   };
+}
+
+export function resolveInlineAttachmentDataUrl(storageKey: string | null | undefined): string {
+  if (!storageKey) return "";
+  if (storageKey.startsWith("data:")) return storageKey;
+  if (!storageKey.startsWith(INLINE_STORAGE_PREFIX)) return "";
+  const payloadStart = storageKey.indexOf(":data:");
+  if (payloadStart === -1) return "";
+  return storageKey.slice(payloadStart + 1);
 }
