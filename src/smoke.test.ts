@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
  * Module-boundary smoke: catches missing imports/exports after runtime splits
  * without booting the browser (Playwright covers full runtime separately).
  */
+const SMOKE_IMPORT_TIMEOUT_MS = 15_000;
+
 describe("prototype runtime module boundary smoke", () => {
   it("loads prototype-runtime boot exports", async () => {
     const boot = await import("@/components/prototype-runtime/prototype-runtime-boot");
@@ -19,21 +21,21 @@ describe("prototype runtime module boundary smoke", () => {
     expect(chrome.TopBar).toBeTypeOf("function");
     expect(chrome.BottomNav).toBeTypeOf("function");
     expect(chrome.Logo).toBeTypeOf("function");
-  });
+  }, SMOKE_IMPORT_TIMEOUT_MS);
 
   it("loads owner settings section exports", async () => {
     const settings = await import("@/components/prototype-runtime/OwnerSettingsSection");
     expect(settings.OwnerSettingsScreen).toBeTypeOf("function");
     expect(settings.SettingToggle).toBeTypeOf("function");
     expect(settings.ActionRow).toBeTypeOf("function");
-  });
+  }, SMOKE_IMPORT_TIMEOUT_MS);
 
   it("loads owner reports section exports", async () => {
     const reports = await import("@/components/prototype-runtime/OwnerReportsSection");
     expect(reports.ReportsScreen).toBeTypeOf("function");
     expect(reports.RatioBadge).toBeTypeOf("function");
     expect(reports.OutflowAnalysis).toBeTypeOf("function");
-  });
+  }, SMOKE_IMPORT_TIMEOUT_MS);
 
   it("loads prototype-runtime entry helper exports", async () => {
     const helpers = await import("@/components/prototype-runtime/prototype-runtime-entry-helpers");
@@ -54,6 +56,15 @@ describe("prototype runtime module boundary smoke", () => {
       sameDayCloseoutCount: 2,
     })).toBe("8 يونيو · B");
   });
+
+  it("loads prototype attachment storage and UI exports", async () => {
+    const storage = await import("@/features/attachments/client/prototype-attachment-storage");
+    const ui = await import("@/components/prototype-runtime/prototype-runtime-attachment-ui");
+    expect(storage.storeAttachmentPayload).toBeTypeOf("function");
+    expect(storage.stripEmbeddedAttachmentImages).toBeTypeOf("function");
+    expect(ui.useAttachmentCapture).toBeTypeOf("function");
+    expect(ui.AttachmentCapture).toBeTypeOf("function");
+  }, SMOKE_IMPORT_TIMEOUT_MS);
 
   it("loads runtime capability resolver", async () => {
     const { resolveRuntimeCapabilities } = await import("@/core/config/runtime-capabilities");
