@@ -89,10 +89,14 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
   if (!isServerProductionMode(env)) return;
 
   const missing: string[] = [];
+  const authApiEnabled = env.NEXT_PUBLIC_AUTH_API_ENABLED === "true";
+  const authDbCredentialsEnabled = env.AUTH_DB_CREDENTIALS_ENABLED === "true";
+  const authLaunchRequested =
+    authApiEnabled
+    || authDbCredentialsEnabled
+    || env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE === "false";
+
   if (!env.DATABASE_URL) missing.push("DATABASE_URL");
-  if (!env.AUTH_SESSION_SECRET || env.AUTH_SESSION_SECRET.length < 16) {
-    missing.push("AUTH_SESSION_SECRET(min 16 chars)");
-  }
   if ((env.APP_MODE || "prototype") !== "production") {
     missing.push("APP_MODE=production");
   }
@@ -114,12 +118,6 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
   if (env.NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED !== "true") {
     missing.push("NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true");
   }
-  if (env.NEXT_PUBLIC_AUTH_API_ENABLED !== "true") {
-    missing.push("NEXT_PUBLIC_AUTH_API_ENABLED=true");
-  }
-  if (env.AUTH_DB_CREDENTIALS_ENABLED !== "true") {
-    missing.push("AUTH_DB_CREDENTIALS_ENABLED=true");
-  }
   if (env.NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE !== "true") {
     missing.push("NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true");
   }
@@ -140,12 +138,20 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
   if (Object.keys(parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP)).length === 0) {
     missing.push("NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP");
   }
-  const launchReady = env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE === "false";
-  if (!launchReady) {
-    missing.push("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false");
+  if (authLaunchRequested && (!env.AUTH_SESSION_SECRET || env.AUTH_SESSION_SECRET.length < 16)) {
+    missing.push("AUTH_SESSION_SECRET(min 16 chars) (only when launching auth)");
   }
-  if (env.ALLOW_HEADER_AUTH_CONTEXT !== "false") {
-    missing.push("ALLOW_HEADER_AUTH_CONTEXT=false");
+  if (authLaunchRequested && !authApiEnabled) {
+    missing.push("NEXT_PUBLIC_AUTH_API_ENABLED=true (only when launching auth)");
+  }
+  if (authLaunchRequested && !authDbCredentialsEnabled) {
+    missing.push("AUTH_DB_CREDENTIALS_ENABLED=true (only when launching auth)");
+  }
+  if (authLaunchRequested && env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE !== "false") {
+    missing.push("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false (only when launching auth)");
+  }
+  if (authLaunchRequested && env.ALLOW_HEADER_AUTH_CONTEXT === "true") {
+    missing.push("ALLOW_HEADER_AUTH_CONTEXT=false (only when launching auth)");
   }
 
   if (missing.length > 0) {

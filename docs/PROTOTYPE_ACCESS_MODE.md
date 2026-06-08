@@ -16,12 +16,9 @@ Speed up UI and domain work without username/password, OTP, session cookies, or 
 
 ## Enablement
 
-**ON by default** only in prototype/development app mode.
+**ON by default** until the explicit auth launch phase.
 
-Production app mode defaults Prototype Access Mode **OFF** so an omitted flag
-cannot reopen local/demo access.
-
-Disable before launch, or rely on production app defaults:
+Disable only when real auth is ready to launch:
 
 ```bash
 NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false

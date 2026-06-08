@@ -2,7 +2,7 @@
 
 > **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day|month|period`, `GET /reports/days|channels|outflow|attachments` (wired to owner reports when entries API is enabled), snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, `POST /stores/:storeId/closeouts/:closeoutId/review`, `GET /stores/:storeId/entries`, Phase 8 org config routes, and Phase 9 duplicate-summary / notebook export / inline attachments are implemented; remaining endpoints are planned.  
 > **Auth:** Session rollout in progress. Preferred source is signed session cookie (`AUTH_SESSION_COOKIE_NAME`), with optional temporary header fallback controlled by `ALLOW_HEADER_AUTH_CONTEXT`.  
-> **Prototype period:** While Prototype Access Mode is ON in prototype/dev environments, server APIs may accept `x-organization-id` / `x-user-id` / `x-member-role` when `ALLOW_HEADER_AUTH_CONTEXT=true`. Production-unified mode requires signed session cookies and `ALLOW_HEADER_AUTH_CONTEXT=false`.  
+> **Source-unification period:** Until auth launch, Prototype Access Mode remains ON and server APIs may accept `x-organization-id` / `x-user-id` / `x-member-role` when `ALLOW_HEADER_AUTH_CONTEXT=true`. Signed session cookies become required only in the explicit auth launch phase.  
 > **UI:** Must not require design changes — responses feed existing approved screens.
 
 Base path (proposal): `/api/v1`

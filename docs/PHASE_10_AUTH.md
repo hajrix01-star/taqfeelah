@@ -6,7 +6,7 @@
 
 | Flag | Default | Purpose |
 |------|---------|---------|
-| `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` | `true` in prototype/dev, `false` in production app mode | Keeps prototype role picker |
+| `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` | `true` until auth launch | Keeps prototype role picker |
 | `NEXT_PUBLIC_AUTH_API_ENABLED` | `false` | Optional client wiring for real auth UI |
 | `AUTH_DB_CREDENTIALS_ENABLED` | `false` | Login reads `auth_identities` instead of env/runtime JSON |
 | `ALLOW_HEADER_AUTH_CONTEXT` | `true` only in prototype/dev | Temporary API header context |
@@ -22,7 +22,7 @@
 - Seed scripts: `pnpm db:seed:auth`, `pnpm db:migrate:auth`
 - Deploy scaffold: `DEPLOYMENT_WAVE=6` in `scripts/vps_deploy.py` (inactive until product flips wave)
 
-## Activation sequence (pre-launch only)
+## Activation sequence (after source unification only)
 
 1. Run `pnpm db:seed:auth` (or `pnpm db:migrate:auth` on existing VPS runtime settings)
 2. Set `AUTH_DB_CREDENTIALS_ENABLED=true`

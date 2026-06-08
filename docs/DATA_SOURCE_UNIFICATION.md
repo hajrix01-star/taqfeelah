@@ -12,35 +12,45 @@ This includes:
 - organization configuration, stores, channels, staff, and permissions
 - owner/runtime settings, notebook theme, and user-facing preferences
 - attachment metadata and server-managed object/inline storage references
-- authentication/session state through signed server sessions
+- authentication/session state through signed server sessions (future auth launch)
 
 Browser storage is not a production source of truth.
 
 ## Production readiness contract
 
-Production mode must be fully DB-backed. Do not merge/deploy this mode until the
-environment is configured with:
+Production source-unification mode must be DB-backed while keeping the current
+no-password/prototype entry flow until the auth launch phase. Do not merge/deploy
+this mode until the environment is configured with:
 
 ```bash
 APP_MODE=production
 NEXT_PUBLIC_APP_MODE=production
-NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false
-ALLOW_HEADER_AUTH_CONTEXT=false
 DATABASE_URL=...
-AUTH_SESSION_SECRET=...
 NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true
 NEXT_PUBLIC_ENTRIES_API_ENABLED=true
 NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true
 NEXT_PUBLIC_PHASE9_API_ENABLED=true
 NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true
-NEXT_PUBLIC_AUTH_API_ENABLED=true
-AUTH_DB_CREDENTIALS_ENABLED=true
 NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true
+NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=true
+ALLOW_HEADER_AUTH_CONTEXT=true
 AUTH_ORGANIZATION_ID=...
 AUTH_OWNER_USER_ID=...
 NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP=...
 NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP=...
 NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP=...
+```
+
+Auth/SaaS activation is intentionally deferred until after full source
+unification and product approval. Only then should these auth-launch values be
+enabled together:
+
+```bash
+NEXT_PUBLIC_AUTH_API_ENABLED=true
+AUTH_DB_CREDENTIALS_ENABLED=true
+NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false
+ALLOW_HEADER_AUTH_CONTEXT=false
+AUTH_SESSION_SECRET=...
 ```
 
 If any required value is missing, server APIs fail fast with a configuration
