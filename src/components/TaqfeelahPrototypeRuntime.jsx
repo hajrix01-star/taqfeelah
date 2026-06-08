@@ -18,7 +18,7 @@ import PendingCloseoutsNotice from "@/features/owner-closeout-review/PendingClos
 import OwnerCloseoutReviewPanel from "@/features/owner-closeout-review/OwnerCloseoutReviewPanel";
 import ReturnCloseoutModal from "@/features/owner-closeout-review/ReturnCloseoutModal";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
-import { readLocalStorageJson } from "@/features/demo/prototype-storage";
+import { readLocalStorageJson, safeSetLocalStorageItem } from "@/features/demo/prototype-storage";
 import { createPrototypeMonthDemoOperationalEntries } from "@/features/demo/prototype-month-demo-seed";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -2024,7 +2024,11 @@ export default function TaqfeelahPrototypeRuntime() {
   }, [employee, employeeNotebookTheme, notebookTheme]);
   useEffect(() => {
     if (BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE || typeof window === "undefined") return;
-    window.localStorage.setItem(OPERATIONAL_ENTRIES_STORAGE_KEY, JSON.stringify(stripEmbeddedAttachmentImages(operationalEntries)));
+    safeSetLocalStorageItem(
+      OPERATIONAL_ENTRIES_STORAGE_KEY,
+      JSON.stringify(stripEmbeddedAttachmentImages(operationalEntries)),
+      { scope: "operational-fallback" },
+    );
   }, [operationalEntries]);
   const saveOwner = async (payload) => {
     if (!canPersistOperationalEntry({

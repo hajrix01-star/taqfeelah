@@ -1,3 +1,5 @@
+import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
+
 export const MAX_ATTACHMENT_SOURCE_BYTES = 8 * 1024 * 1024;
 export const MAX_ATTACHMENT_STORED_BYTES = 260 * 1024;
 const MAX_ATTACHMENT_EDGE = 1280;
@@ -67,6 +69,7 @@ function openAttachmentDatabase() {
 }
 
 export async function storeAttachmentPayload(attachment) {
+  if (!isBrowserPersistentStorageAllowed({ scope: "attachments-fallback" })) return;
   if (!attachment?.id || !attachment?.dataUrl) return;
   const database = await openAttachmentDatabase();
   await new Promise((resolve, reject) => {
@@ -79,6 +82,7 @@ export async function storeAttachmentPayload(attachment) {
 }
 
 export async function deleteAttachmentPayload(attachmentId) {
+  if (!isBrowserPersistentStorageAllowed({ scope: "attachments-fallback" })) return;
   if (!attachmentId) return;
   const database = await openAttachmentDatabase();
   await new Promise((resolve, reject) => {
@@ -91,6 +95,7 @@ export async function deleteAttachmentPayload(attachmentId) {
 }
 
 export async function readAttachmentPayload(attachmentId) {
+  if (!isBrowserPersistentStorageAllowed({ scope: "attachments-fallback" })) return null;
   if (!attachmentId) return null;
   try {
     const database = await openAttachmentDatabase();

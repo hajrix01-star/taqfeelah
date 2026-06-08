@@ -45,6 +45,12 @@ ALLOW_HEADER_AUTH_CONTEXT=true
 
 Set this alongside the seeded org/store/user ID maps (`NEXT_PUBLIC_CLOSEOUTS_*`) and run `node scripts/seed-closeouts-foundation.mjs` once. VPS deploy bootstrap includes `ALLOW_HEADER_AUTH_CONTEXT=true` during the prototype period.
 
+### Production browser-storage policy
+
+Production mode does not treat browser storage as a durable source, including UI
+preferences. See `docs/DATA_SOURCE_UNIFICATION.md` for the source-of-truth and
+migration rules.
+
 ### Phase 1 — operational entries from DB
 
 When `NEXT_PUBLIC_ENTRIES_API_ENABLED=true` (or inherited from closeouts API flag):

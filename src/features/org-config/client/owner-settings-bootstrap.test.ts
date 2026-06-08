@@ -18,6 +18,7 @@ describe("owner settings bootstrap", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it("creates migrate helper with persistence side effects", () => {
@@ -47,5 +48,24 @@ describe("owner settings bootstrap", () => {
     const migrate = vi.fn((raw) => raw);
     const read = createReadSavedSettings({ enabled: true, migrate });
     expect(read()).toBeNull();
+  });
+
+  it("skips migration side effects when browser persistence is disabled", () => {
+    vi.stubEnv("NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE", "true");
+    const applyMigration = vi.fn();
+    const autoResolveCloseouts = vi.fn();
+
+    const migrate = createMigrateSavedSettings({
+      bindsToServerAuth: false,
+      storageKey: "taqfeelah_settings",
+      closeoutAlertsKey: "taqfeelah_alerts",
+      applyMigration,
+      autoResolveCloseouts,
+    });
+
+    expect(migrate({ staff: [] })).toEqual({ staff: [] });
+    expect(setItem).not.toHaveBeenCalled();
+    expect(removeItem).not.toHaveBeenCalled();
+    expect(autoResolveCloseouts).not.toHaveBeenCalled();
   });
 });

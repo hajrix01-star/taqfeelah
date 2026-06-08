@@ -42,7 +42,9 @@ export function readCloseoutEvents() {
 
 export function writeCloseoutEvents(events) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(CLOSEOUT_EVENTS_STORAGE_KEY, JSON.stringify(events));
+  safeSetLocalStorageItem(CLOSEOUT_EVENTS_STORAGE_KEY, JSON.stringify(events), {
+    scope: "operational-fallback",
+  });
 }
 
 export function appendCloseoutEvent(events, payload) {

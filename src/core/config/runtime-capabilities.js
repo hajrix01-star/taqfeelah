@@ -1,4 +1,5 @@
 import { isProductionAppMode } from "@/core/config/app-mode";
+import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 import { isCloseoutsApiDbSourceMode, isCloseoutsApiEnabled, isCloseoutsApiStrictMode } from "@/core/config/closeouts-api-mode";
 import { isEntriesApiDbSourceMode, isEntriesApiEnabled, isEntriesApiStrictMode } from "@/core/config/entries-api-mode";
 import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
@@ -22,6 +23,7 @@ import { isRegisterEntriesPaginationEnabled } from "@/core/config/register-entri
  * @property {boolean} registerEntriesPaginationEnabled
  * @property {boolean} runtimeSettingsDbSource
  * @property {boolean} usesRuntimeSettingsApi
+ * @property {boolean} browserPersistentStorageAllowed
  */
 
 /**
@@ -51,6 +53,7 @@ export function resolveRuntimeCapabilities(env = process.env) {
     registerEntriesPaginationEnabled: isRegisterEntriesPaginationEnabled(env),
     runtimeSettingsDbSource: entriesApiDbSource,
     usesRuntimeSettingsApi: bindsToServerAuth || entriesApiDbSource,
+    browserPersistentStorageAllowed: isBrowserPersistentStorageAllowed({ env }),
   };
 }
 

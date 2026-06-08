@@ -19,6 +19,7 @@ describe("owner settings local persistence", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it("builds local storage payload with auth config envelope", () => {
@@ -50,6 +51,13 @@ describe("owner settings local persistence", () => {
 
   it("skips local storage writes when disabled", () => {
     expect(persistOwnerSettingsToLocalStorage({ staff: [] }, { enabled: false })).toBe(false);
+    expect(setItem).not.toHaveBeenCalled();
+  });
+
+  it("skips local storage writes in production app mode", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
+
+    expect(persistOwnerSettingsToLocalStorage({ notebookTheme: "yellow" })).toBe(false);
     expect(setItem).not.toHaveBeenCalled();
   });
 

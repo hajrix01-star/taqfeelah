@@ -1,4 +1,5 @@
 import { OWNER_SETTINGS_STORAGE_KEY } from "@/features/runtime-settings/client/migrate-local-saved-settings";
+import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 
 export function buildOwnerSettingsLocalStoragePayload({
   configuredBusinesses,
@@ -42,6 +43,7 @@ export function persistOwnerSettingsToLocalStorage(payload, {
   enabled = true,
   storageKey = OWNER_SETTINGS_STORAGE_KEY,
 } = {}) {
+  if (!isBrowserPersistentStorageAllowed({ scope: "legacy-settings" })) return false;
   if (!enabled || typeof window === "undefined") return false;
   window.localStorage.setItem(storageKey, JSON.stringify(payload));
   return true;

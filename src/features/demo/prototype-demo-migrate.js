@@ -1,5 +1,6 @@
 import { DAILY_CLOSEOUTS_STORAGE_KEY, CLOSEOUT_EVENTS_STORAGE_KEY } from "../daily-closeouts/daily-closeouts-demo-store";
 import { isProductionAppMode } from "@/core/config/app-mode";
+import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 import {
   createPrototypeMonthDemoDataset,
   PROTOTYPE_DEMO_DATASET_VERSION,
@@ -14,6 +15,7 @@ let migrateInFlight = false;
 export function migratePrototypeDemoDatasetIfNeeded() {
   if (typeof window === "undefined") return { migrated: false };
   if (isProductionAppMode()) return { migrated: false, skipped: "production-mode" };
+  if (!isBrowserPersistentStorageAllowed({ scope: "prototype-demo" })) return { migrated: false, skipped: "browser-persistence-disabled" };
   const current = window.localStorage.getItem(PROTOTYPE_DEMO_DATASET_VERSION_KEY);
   if (current === PROTOTYPE_DEMO_DATASET_VERSION) {
     // Repair path: dataset version is set, but closeouts key may be missing/cleared.
