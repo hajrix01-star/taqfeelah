@@ -1,8 +1,8 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { assertOrganizationAccess } from "@/core/auth/assert-organization-access";
 import { getDb } from "@/core/db/client";
-import { auditEvents } from "@/core/db/schema";
+import { auditEvents, memberStoreAccess, organizationMembers, stores, users } from "@/core/db/schema";
 import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
 import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { ValidationError } from "@/core/errors/app-error";
@@ -199,16 +199,92 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
 }
 
 export async function getEmployeeLoginRoster(organizationId: string) {
-  const envelope = await readRuntimeSettingsEnvelope(organizationId);
-  const staff = Array.isArray(envelope.settings?.staff) ? envelope.settings.staff : [];
-  return staff
-    .filter((entry) => entry && typeof entry === "object")
-    .map((entry) => entry as Record<string, unknown>)
-    .filter((person) => person.active !== false && person.removed !== true)
-    .map((person) => ({
-      id: typeof person.id === "string" ? person.id : "",
-      nameAr: typeof person.nameAr === "string" ? person.nameAr : "",
-      nameEn: typeof person.nameEn === "string" ? person.nameEn : "",
-    }))
-    .filter((person) => person.id);
+  if (!z.string().uuid().safeParse(organizationId).success) {
+    throw new ValidationError("Invalid organization id for employee roster lookup.");
+  }
+
+  const db = getDb();
+  const memberRows = await db
+    .select({
+      memberId: organizationMembers.id,
+      userId: users.id,
+      name: users.name,
+    })
+    .from(organizationMembers)
+    .innerJoin(users, eq(users.id, organizationMembers.userId))
+    .where(
+      and(
+        eq(organizationMembers.organizationId, organizationId),
+        eq(organizationMembers.status, "active"),
+        eq(organizationMembers.role, "employee"),
+      ),
+    )
+    .orderBy(asc(users.name));
+
+  const memberIds = memberRows.map((row) => row.memberId);
+  const accessRows = memberIds.length
+    ? await db
+      .select({
+        memberId: memberStoreAccess.organizationMemberId,
+        storeId: stores.id,
+      })
+      .from(memberStoreAccess)
+      .innerJoin(stores, eq(stores.id, memberStoreAccess.storeId))
+      .where(
+        and(
+          eq(stores.organizationId, organizationId),
+          eq(stores.status, "active"),
+          inArray(memberStoreAccess.organizationMemberId, memberIds),
+        ),
+      )
+    : [];
+
+  const envAuth = getProductionAuthRuntimeConfig();
+  return mapEmployeeLoginRosterRows({
+    memberRows,
+    accessRows,
+    userIdMap: envAuth.userIdMap,
+    storeIdMap: envAuth.storeIdMap,
+  });
+}
+
+export function mapEmployeeLoginRosterRows({
+  memberRows,
+  accessRows,
+  userIdMap,
+  storeIdMap,
+}: {
+  memberRows: Array<{ memberId: string; userId: string; name: string }>;
+  accessRows: Array<{ memberId: string; storeId: string }>;
+  userIdMap: Record<string, string>;
+  storeIdMap: Record<string, string>;
+}) {
+  const reverseUserIdMap = new Map(
+    Object.entries(userIdMap).map(([legacyId, userId]) => [userId, legacyId]),
+  );
+  const reverseStoreIdMap = new Map(
+    Object.entries(storeIdMap).map(([legacyId, storeId]) => [storeId, legacyId]),
+  );
+  const storeIdsByMemberId = new Map<string, string[]>();
+  accessRows.forEach((row) => {
+    const current = storeIdsByMemberId.get(row.memberId) || [];
+    current.push(reverseStoreIdMap.get(row.storeId) || row.storeId);
+    storeIdsByMemberId.set(row.memberId, current);
+  });
+
+  return memberRows
+    .map((member) => {
+      const storeIds = [...new Set(storeIdsByMemberId.get(member.memberId) || [])];
+      return {
+        id: reverseUserIdMap.get(member.userId) || member.userId,
+        apiUserId: member.userId,
+        memberId: member.memberId,
+        nameAr: member.name,
+        nameEn: member.name,
+        active: true,
+        removed: false,
+        storeIds,
+      };
+    })
+    .filter((person) => person.id && person.storeIds.length > 0);
 }

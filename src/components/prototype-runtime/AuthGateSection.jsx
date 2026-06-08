@@ -248,7 +248,7 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
           pin: pin.trim(),
           useServerAuth: APP_IN_PRODUCTION_MODE,
         });
-        onLogin(person?.id || employeeIdentifier, typeof session?.userId === "string" ? session.userId : "");
+        onLogin(person?.id || employeeIdentifier, typeof session?.userId === "string" ? session.userId : "", person || null);
       } catch (failure) {
         const message = failure instanceof Error && failure.message
           ? failure.message
@@ -262,7 +262,7 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
     setError("");
     if (rememberMe) saveEmployeeCredentials({ employeeId: employeeIdentifier, pin: pin.trim() });
     else clearEmployeeCredentials();
-    if (!APP_IN_PRODUCTION_MODE) onLogin(person?.id || employeeIdentifier);
+    if (!APP_IN_PRODUCTION_MODE) onLogin(person?.id || employeeIdentifier, "", person || null);
   };
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-[800px] flex-col px-6 pb-8 pt-10">
