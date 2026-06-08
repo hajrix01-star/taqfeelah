@@ -34,7 +34,7 @@
 | 5 | **PR #87 — تنظيف imports (batch 2)** | ✅ | مدمج `2fe613c` — نشر VPS ✅ |
 | 6 | **Hotfix #88 — حماية `channel config`** | ✅ | مدمج `254e16f` — إصلاح تعطل بوابة الموظف على الإنتاج |
 | 7 | **مرحلة لاحقة — PR-4+** *(مجزّأة)* | 🟠 لم ينتهي | جارية — PR #89 |
-| 7.0 | ↳ **PR #89 — استخراج مرفقات البروتايب** | 🟠 لم ينتهي | فرع `refactor/pr4-attachment-extraction` — بانتظار CI |
+| 7.0 | ↳ **PR #89 — استخراج مرفقات البروتايب** | 🟠 لم ينتهي | [PR #89](https://github.com/hajrix01-star/taqfeelah/pull/89) — بانتظار CI |
 | 7.1 | ↳ مرفقات (سقف حجم/عدد، object storage) | 🟠 لم ينتهي | IndexedDB + ضغط صور مُستخرَجة في #89؛ object storage لاحقًا |
 | 7.2 | ↳ استخراج hooks من Runtime | 🟠 لم ينتهي | hooks المرفقات مُستخرَجة في #89؛ باقي Runtime لاحقًا |
 | 7.3 | ↳ Auth كامل + إيقاف `ALLOW_HEADER_AUTH_CONTEXT` | 🟠 لم ينتهي | قبل الإطلاق العام |
@@ -93,7 +93,7 @@ main      →  دمج دفعة واحدة     →  نشر VPS تلقائي
 | PR #86 (imports + policy) | 🟢 مدمج على `main` | `54efa88` |
 | PR #87 (imports batch 2) | 🟢 مدمج على `main` | `2fe613c` — نشر VPS ✅ |
 | PR #88 (hotfix channels) | 🟢 مدمج على `main` | `254e16f` |
-| PR #89 (attachments extract) | 🟡 فرع مفتوح | `refactor/pr4-attachment-extraction` |
+| PR #89 (attachments extract) | 🟡 مفتوح | https://github.com/hajrix01-star/taqfeelah/pull/89 |
 | لاحقًا PR-4+ | 🟡 جاري | مكوّنات عرضية + auth |
 
 ---
