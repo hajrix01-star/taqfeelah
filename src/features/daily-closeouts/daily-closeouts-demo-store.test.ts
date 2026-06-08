@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { CLOSEOUT_STATUS } from "./closeout-status";
-import { isCloseoutWorkflowFailure, withCloseoutTotals } from "./daily-closeouts-demo-store";
+import {
+  findCloseoutForStoreDate,
+  findCloseoutsForStoreDate,
+  isCloseoutWorkflowFailure,
+  withCloseoutTotals,
+} from "./daily-closeouts-demo-store";
 
 describe("withCloseoutTotals status normalization", () => {
   it("promotes inconsistent draft records with submitted metadata to submitted", () => {
@@ -55,6 +60,28 @@ describe("withCloseoutTotals status normalization", () => {
     });
 
     expect(closeout.status).toBe(CLOSEOUT_STATUS.REVIEWED);
+  });
+});
+
+describe("findCloseoutsForStoreDate", () => {
+  it("returns all closeouts for the same store and date", () => {
+    const closeouts = [
+      { id: "c1", storeId: "shami", date: "2026-06-06", status: CLOSEOUT_STATUS.REVIEWED, submittedAt: "2026-06-06T08:00:00Z" },
+      { id: "c2", storeId: "shami", date: "2026-06-06", status: CLOSEOUT_STATUS.REVIEWED, submittedAt: "2026-06-06T10:00:00Z" },
+      { id: "c3", storeId: "arz", date: "2026-06-06", status: CLOSEOUT_STATUS.REVIEWED, submittedAt: "2026-06-06T09:00:00Z" },
+    ];
+
+    expect(findCloseoutsForStoreDate(closeouts, "shami", "2026-06-06")).toHaveLength(2);
+    expect(findCloseoutForStoreDate(closeouts, "shami", "2026-06-06")?.id).toBe("c2");
+  });
+
+  it("prefers an in-progress draft over submitted closeouts", () => {
+    const closeouts = [
+      { id: "c1", storeId: "shami", date: "2026-06-06", status: CLOSEOUT_STATUS.REVIEWED, submittedAt: "2026-06-06T10:00:00Z" },
+      { id: "c2", storeId: "shami", date: "2026-06-06", status: CLOSEOUT_STATUS.DRAFT, submittedAt: null },
+    ];
+
+    expect(findCloseoutForStoreDate(closeouts, "shami", "2026-06-06")?.id).toBe("c2");
   });
 });
 

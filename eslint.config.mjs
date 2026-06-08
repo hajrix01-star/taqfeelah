@@ -19,6 +19,12 @@ const eslintConfig = [
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    files: ["src/components/TaqfeelahPrototypeRuntime.jsx"],
+    rules: {
+      "no-undef": "error",
+    },
+  },
 ];
 
 export default eslintConfig;
