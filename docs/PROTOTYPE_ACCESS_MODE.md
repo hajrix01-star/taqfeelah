@@ -43,7 +43,7 @@ While prototype access is active, the UI may call store APIs with mapped prototy
 ALLOW_HEADER_AUTH_CONTEXT=true
 ```
 
-Set this alongside the seeded org/store/user ID maps (`NEXT_PUBLIC_CLOSEOUTS_*`) and run `node scripts/seed-closeouts-foundation.mjs` once. This is prototype/dev-only now; production-unified mode requires `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false` and `ALLOW_HEADER_AUTH_CONTEXT=false`.
+Set this alongside the seeded org/store/user ID maps (`NEXT_PUBLIC_CLOSEOUTS_*`) and run `node scripts/seed-closeouts-foundation.mjs` once. During source unification this remains the current entry/API context path; switch to `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false` and `ALLOW_HEADER_AUTH_CONTEXT=false` only in the later auth launch phase.
 
 ### Production browser-storage policy
 

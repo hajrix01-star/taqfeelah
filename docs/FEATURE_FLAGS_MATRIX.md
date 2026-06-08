@@ -17,7 +17,7 @@
 | Variable | Default (unset) | Production required | Purpose |
 |----------|-----------------|---------------------|---------|
 | `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` | `true` (ON until auth launch) | `true` for source-unification, `false` only for auth launch | Skip real auth; role picker |
-| `ALLOW_HEADER_AUTH_CONTEXT` | `true` in dev, `false` in prod NODE_ENV | not `true` | Header-based API auth for prototype |
+| `ALLOW_HEADER_AUTH_CONTEXT` | `true` until auth launch | `true` for source-unification, `false` only for auth launch | Header-based API auth for prototype/source-unification |
 
 `assertProductionRuntimeEnv()` source-unification rules:
 
