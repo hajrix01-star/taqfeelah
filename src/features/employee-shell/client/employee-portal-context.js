@@ -19,6 +19,7 @@ import { resolveSuggestedEntryDate } from "@/features/operations/operational-ent
  * @param {Array<{ id?: string }>} [input.activeBusinesses]
  * @param {string} [input.employeeBusinessId]
  * @param {Record<string, unknown>} [input.storeChannelSettings]
+ * @param {{ channels: Array<Record<string, unknown>>; activeIds: string[] }} [input.defaultStoreChannelConfig]
  * @param {Record<string, unknown>} [input.storeOperationalSettings]
  * @param {string} [input.notebookTheme]
  * @param {string | null} [input.employeeThemeOverride]
@@ -36,6 +37,7 @@ export function buildEmployeePortalContext({
   activeBusinesses = [],
   employeeBusinessId = "",
   storeChannelSettings = {},
+  defaultStoreChannelConfig,
   storeOperationalSettings = {},
   notebookTheme = "yellow",
   employeeThemeOverride = null,
@@ -60,6 +62,7 @@ export function buildEmployeePortalContext({
   const currentEmployeeChannelConfig = resolveStoreChannelConfig(
     storeChannelSettings,
     currentEmployeeBusiness?.id,
+    defaultStoreChannelConfig,
   );
   const currentEmployeeOperationalConfig = getStoreOperationalConfig(
     storeOperationalSettings,

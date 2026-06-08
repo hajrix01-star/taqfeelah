@@ -19,6 +19,16 @@ describe("store channel config", () => {
     expect(getStoreChannelConfig({}, "shami", defaultConfig)).toEqual(defaultConfig);
   });
 
+  it("never returns undefined when store settings are missing", () => {
+    expect(getStoreChannelConfig({}, "shami")).toEqual({ channels: [], activeIds: [] });
+    expect(resolveStoreChannelConfig({}, "unknown-store", defaultConfig)).toEqual(defaultConfig);
+    expect(getStoreChannelConfig(
+      { shami: { channels: null, activeIds: null } as unknown as typeof defaultConfig },
+      "shami",
+      defaultConfig,
+    )).toEqual(defaultConfig);
+  });
+
   it("builds default and resolved channel config helpers", () => {
     const created = createDefaultStoreChannelConfig([{ id: "cash" }, { id: "mada" }]);
     expect(created.activeIds).toEqual(["cash", "mada"]);

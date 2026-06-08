@@ -2419,6 +2419,7 @@ export default function TaqfeelahPrototypeRuntime() {
     sessionUserId,
     activeBusinesses,
     storeChannelSettings,
+    defaultStoreChannelConfig: DEFAULT_STORE_CHANNEL_CONFIG,
     storeOperationalSettings,
     notebookTheme,
     expenseCategories,
