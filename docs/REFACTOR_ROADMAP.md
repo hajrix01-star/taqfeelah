@@ -204,7 +204,7 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 - [x] نقل `TopBar` → `prototype-runtime-chrome.jsx`
 - [x] نقل `BottomNav` في نفس PR
 - [x] إصلاح `OwnerSettingsSection.jsx` imports + `no-undef` ESLint
-- [ ] مكوّنات عرضية إضافية (مؤجّل)
+- [x] مكوّنات عرضية إضافية (PR #90 مدمج؛ PR #91 تنظيف legacy)
 - [x] **لا نقل** state / hooks / API loading
 
 ### تشك لست
