@@ -24,8 +24,8 @@ import {
   resolveStoreChannelConfig,
   text,
 } from "./prototype-runtime-demo-data";
+import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import {
-  formatCalendarDate,
   formatCalendarMonth,
   isoCalendarDate,
   MoneyValue,

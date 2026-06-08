@@ -65,6 +65,11 @@ describe("prototype runtime module boundary smoke", () => {
     expect(utils.toAmount).toBeTypeOf("function");
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
+  it("loads employee settings screen exports", async () => {
+    const employeeSettings = await import("@/components/prototype-runtime/prototype-runtime-employee-settings-screen");
+    expect(employeeSettings.EmployeeSettingsScreen).toBeTypeOf("function");
+  }, SMOKE_IMPORT_TIMEOUT_MS);
+
   it("loads operation dialog exports", async () => {
     const dialogs = await import("@/components/prototype-runtime/prototype-runtime-operation-dialogs");
     expect(dialogs.OperationModal).toBeTypeOf("function");

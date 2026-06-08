@@ -8,11 +8,7 @@ import { applyNotebookThemeCssVariables, notebookCardBackground, notebookThemes 
 import { shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
 import EmployeeCloseoutsView from "@/features/employee-closeouts/EmployeeCloseoutsView";
 import DailyCloseoutEntryFlow from "@/features/employee-closeouts/DailyCloseoutEntryFlow";
-import {
-  employeeDisplayName,
-  filterEmployeeHomePreviewEntries,
-  filterEmployeeStoreEntries,
-} from "@/features/employee-closeouts/employee-entries-display";
+import { employeeDisplayName } from "@/features/employee-closeouts/employee-entries-display";
 import {
   patchRuntimeApiMapsForEmployeeSession,
   syncLoggedInEmployeeIdFromSession,
@@ -30,16 +26,9 @@ import {
   storeAttachmentPayload,
   stripEmbeddedAttachmentImages,
 } from "@/features/attachments/client/prototype-attachment-storage";
-import {
-  AttachmentCapture,
-  AttachmentPreview,
-  useAttachmentCapture,
-} from "./prototype-runtime/prototype-runtime-attachment-ui";
-import {
-  draftNeedsConfirmation,
-  sanitizeAmountInput,
-  toAmount,
-} from "./prototype-runtime/prototype-runtime-entry-form-utils";
+import { AttachmentPreview } from "./prototype-runtime/prototype-runtime-attachment-ui";
+import { toAmount } from "./prototype-runtime/prototype-runtime-entry-form-utils";
+import { EmployeeSettingsScreen } from "./prototype-runtime/prototype-runtime-employee-settings-screen";
 import {
   OwnerExpenseScreen,
   OwnerSummaryScreen,
@@ -57,15 +46,11 @@ import {
   CalendarDays,
   Check,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   ChevronUp,
   Download,
   FileImage,
   FileSpreadsheet,
   FileText,
-  Plus,
-  ReceiptText,
   Send,
   X,
 } from "lucide-react";
@@ -129,7 +114,6 @@ import { useRegisterSelectionState } from "@/features/operations/client/use-regi
 import { useRegisterEntriesFromApi } from "@/features/entries/client/use-register-entries-from-api";
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
-import { isNotebookThemeDirty } from "@/features/org-config/client/owner-settings-appearance-actions";
 import {
   aggregateChannels,
   buildBusinessesWithEntrySummaries,
@@ -169,7 +153,6 @@ import {
   text,
   money,
   fullDate,
-  opDate,
   opTime,
 } from "./prototype-runtime/prototype-runtime-demo-data";
 import {
@@ -186,7 +169,7 @@ import {
   OPERATIONAL_ENTRIES_STORAGE_KEY,
   PROTOTYPE_DEFAULT_STAFF,
 } from "./prototype-runtime/prototype-runtime-boot";
-import { BackTitle, BottomNav, Logo, TopBar } from "./prototype-runtime/prototype-runtime-chrome";
+import { BottomNav, Logo, TopBar } from "./prototype-runtime/prototype-runtime-chrome";
 import {
   HelpCenterSheet,
   EmployeeLoginScreen,
@@ -201,7 +184,6 @@ import {
   operationDisplayLabel,
   expandRegisterCloseoutOperationRows,
   signedEntryAmount,
-  entryWasRestored,
   entryDateMatches,
   entryHasAttachment,
   entryIsActive,
@@ -210,12 +192,10 @@ import {
 } from "./prototype-runtime/prototype-runtime-entry-helpers";
 import {
   Notebook,
-  ThemePicker,
   NotebookRow,
   MoneyValue,
   NumberLine,
   FinancialRows,
-  formatCalendarMonth,
   isoCalendarDate,
   todayIsoDate,
   DateSelector,
@@ -223,7 +203,7 @@ import {
   StoreComparison,
   NotebookHeading,
 } from "./prototype-runtime/prototype-runtime-notebook";
-import { OwnerSettingsScreen, ActionRow } from "./prototype-runtime/OwnerSettingsSection";
+import { OwnerSettingsScreen } from "./prototype-runtime/OwnerSettingsSection";
 import { RatioBadge, ReportsScreen } from "./prototype-runtime/OwnerReportsSection";
 import { Badge, InkTab } from "./prototype-runtime/prototype-runtime-shell-ui";
 
@@ -342,225 +322,6 @@ function attachmentsFromEntries(entries) {
 }
 
 
-
-
-function EmployeeStoreContext({ lang, currentStore, assignedStores, onSelect, dark = false }) {
-  const [open, setOpen] = useState(false);
-  const selectorRef = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const closeOutside = (event) => { if (selectorRef.current && !selectorRef.current.contains(event.target)) setOpen(false); };
-    document.addEventListener("pointerdown", closeOutside);
-    return () => document.removeEventListener("pointerdown", closeOutside);
-  }, [open]);
-  if (!currentStore) return <div className="mb-4 rounded-2xl bg-[#FFF1EE] p-4 text-xs font-bold text-[#B44747]">{text(lang, "noAssignedStores")}</div>;
-  return (
-    <div ref={selectorRef} className="relative">
-      <p className={`text-taq-meta font-bold ${dark ? "text-white/60" : "text-[#827762]"}`}>{text(lang, "currentWorkStore")}</p>
-      <button onClick={() => assignedStores.length > 1 && setOpen(!open)} className={`mt-1 flex w-full items-center justify-between text-start ${dark ? "text-white" : "text-[#112A46]"}`}>
-        <div><p className="text-sm font-black">{businessName(currentStore, lang)}</p><p className={`mt-0.5 text-taq-meta font-bold ${dark ? "text-white/65" : "text-[#827762]"}`}>{businessLocation(currentStore, lang)}</p></div>
-        {assignedStores.length > 1 && <div className={`flex items-center gap-1 rounded-full px-2 py-1 text-taq-nav font-bold ${dark ? "bg-white/10 text-white" : "bg-[#FFF0CB] text-[#806528]"}`}>{text(lang, "switchWorkStore")}<ChevronDown className="h-3 w-3" /></div>}
-      </button>
-      <AnimatePresence>{open && assignedStores.length > 1 && <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute start-0 end-0 top-[58px] z-30 rounded-2xl bg-white p-2 shadow-xl ring-1 ring-[#E8E1D4]">{assignedStores.map((business) => <button key={business.id} onClick={() => { onSelect(business.id); setOpen(false); }} className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-start ${currentStore.id === business.id ? "bg-[#FFF4D2]" : ""}`}><div><p className="text-taq-meta font-black text-[#112A46]">{businessName(business, lang)}</p><p className="text-taq-nav font-bold text-[#827762]">{businessLocation(business, lang)}</p></div>{currentStore.id === business.id && <Check className="h-4 w-4 text-[#112A46]" />}</button>)}</motion.div>}</AnimatePresence>
-    </div>
-  );
-}
-
-function EmployeeHome({ lang, onSummary, onExpense, onViewAll, currentStore, assignedStores, onSelectStore, activeEmployeeId, operationalEntries = [] }) {
-  const entries = filterEmployeeHomePreviewEntries(operationalEntries, currentStore?.id, activeEmployeeId);
-  return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
-      <div className="mb-5 rounded-3xl bg-[#112A46] p-5 text-white">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-taq-meta font-bold text-white/65">{text(lang, "todayEntries")}</p>
-            <h1 className="mt-1 text-lg font-black">{text(lang, "openEntry")}</h1>
-          </div>
-          <span className="rounded-full bg-white/10 px-3 py-1 text-taq-meta font-black text-[#E4B84A]">{text(lang, "active")}</span>
-        </div>
-        <EmployeeStoreContext lang={lang} currentStore={currentStore} assignedStores={assignedStores} onSelect={onSelectStore} dark />
-      </div>
-      <div className="mb-5 grid grid-cols-2 gap-3">
-        <button onClick={onSummary} className="flex min-h-[124px] flex-col items-start justify-between rounded-[24px] bg-[#112A46] p-4 text-start text-white shadow-sm">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10"><ReceiptText className="h-5 w-5" /></span>
-          <span><strong className="block text-taq-meta font-black leading-5">{text(lang, "enterDailySummary")}</strong><small className="mt-1 block text-taq-nav font-bold leading-4 text-white/65">{text(lang, "salesChannelsAndTotal")}</small></span>
-        </button>
-        <button onClick={onExpense} className="flex min-h-[124px] flex-col items-start justify-between rounded-[24px] bg-white p-4 text-start text-[#112A46] shadow-sm ring-1 ring-black/[0.045]">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF0CB] text-[#806528]"><Plus className="h-5 w-5" /></span>
-          <span><strong className="block text-taq-meta font-black leading-5">{text(lang, "addPurchaseExpense")}</strong><small className="mt-1 block text-taq-nav font-bold leading-4 text-[#827762]">{text(lang, "amountNoteOptionalPhoto")}</small></span>
-        </button>
-      </div>
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-taq-body-sm font-black">{text(lang, "recentEntries")}</h3>
-        <button type="button" onClick={onViewAll} className="text-xs font-bold text-[#9A823E]">{text(lang, "viewAll")}</button>
-      </div>
-      <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
-        {entries.length ? entries.map((entry, index) => (
-          <div key={entry.id} className={`flex items-center justify-between px-4 py-4 ${index < entries.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}>
-            <div className="flex min-w-0 items-center gap-3">
-              <span className={`h-9 w-1 shrink-0 rounded-full ${entry.type === "summary" ? "bg-[#39A160]" : "bg-[#E4B84A]"}`} />
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-bold">{operationDisplayLabel(entry, lang)}</p>
-                  {entryIsVoided(entry) && <Badge tone="warning">{text(lang, "voided")}</Badge>}
-                  {entryIsActive(entry) && entryWasRestored(entry) && <Badge tone="success">{text(lang, "restored")}</Badge>}
-                </div>
-                <p className="text-taq-meta text-[#8B8274]">{opTime(entry, lang)} آ· {text(lang, entry.type)}</p>
-              </div>
-            </div>
-            <strong className={`shrink-0 tabular-nums text-sm font-bold ${entryIsVoided(entry) ? "line-through text-[#A99D87]" : entry.type === "summary" ? "text-[#257844]" : "text-[#B44747]"}`}><MoneyValue value={money(signedEntryAmount(entry), lang)} /></strong>
-          </div>
-        )) : (
-          <div className="p-8 text-center text-xs font-bold text-[#827762]">{text(lang, "noEntriesDay")}</div>
-        )}
-      </div>
-    </motion.section>
-  );
-}
-
-function EmployeeEntriesScreen({ lang, reviewEnabled = false, currentStore, assignedStores, onSelectStore, activeEmployeeId, operationalEntries = [] }) {
-  const entries = newestEntries(filterEmployeeStoreEntries(operationalEntries, currentStore?.id, activeEmployeeId));
-  return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
-    <div className="mb-5"><p className="text-xs font-bold text-[#8B8274]">{text(lang, "tracking")}</p><h1 className="text-xl font-black">{text(lang, "myEntries")}</h1></div>
-    <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><EmployeeStoreContext lang={lang} currentStore={currentStore} assignedStores={assignedStores} onSelect={onSelectStore} /></div>
-    {entries.length === 0 ? <div className="rounded-3xl bg-white p-8 text-center text-xs font-bold text-[#827762] ring-1 ring-black/[0.045]">{text(lang, "noEntriesDay")}</div> : <div className="space-y-3">{entries.map((item) => { const isSale = item.type === "summary"; const signedAmount = isSale ? item.amount : -item.amount; return <div key={item.id} className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-black">{operationDisplayLabel(item, lang)}</p>{entryIsVoided(item) && <Badge tone="warning">{text(lang, "voided")}</Badge>}{entryHasAttachment(item) && <Badge tone="navy">{text(lang, "attachmentExists")}</Badge>}</div><p className="mt-1 text-taq-meta font-bold text-[#827762]">{formatCalendarDate(item.date, lang)} آ· {opTime(item, lang)}</p></div><strong className={`shrink-0 tabular-nums text-sm font-black ${entryIsVoided(item) ? "text-[#A99D87] line-through" : isSale ? "text-[#257844]" : "text-[#B44747]"}`}><MoneyValue value={money(signedAmount, lang)} /></strong></div>{reviewEnabled && entryIsActive(item) && entryHasAttachment(item) && <p className={`mt-3 text-taq-meta font-black ${item.reviewed ? "text-[#257844]" : "text-[#B96725]"}`}>{item.reviewed ? text(lang, "reviewed") : text(lang, "waitingReview")}</p>}</div>; })}</div>}
-  </motion.section>;
-}
-
-function Stat({ label, value }) { return <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><p className="text-taq-meta font-bold text-[#827762]">{label}</p><p className="mt-2 text-xl font-black">{value}</p></div>; }
-
-function EntryDatePicker({ lang, value, onChange, showSuggestion = false }) {
-  const [open, setOpen] = useState(false);
-  const selected = new Date(`${value}T12:00:00`);
-  const [calendarView, setCalendarView] = useState({ year: selected.getFullYear(), month: selected.getMonth() });
-  const pickerRef = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const closeOutside = (event) => { if (pickerRef.current && !pickerRef.current.contains(event.target)) setOpen(false); };
-    const closeEscape = (event) => { if (event.key === "Escape") setOpen(false); };
-    document.addEventListener("pointerdown", closeOutside);
-    document.addEventListener("keydown", closeEscape);
-    return () => { document.removeEventListener("pointerdown", closeOutside); document.removeEventListener("keydown", closeEscape); };
-  }, [open]);
-  const firstWeekday = new Date(calendarView.year, calendarView.month, 1).getDay();
-  const numberOfDays = new Date(calendarView.year, calendarView.month + 1, 0).getDate();
-  const dates = Array.from({ length: firstWeekday }, (_, index) => ({ key: `blank-${index}` })).concat(Array.from({ length: numberOfDays }, (_, index) => ({ key: `${index + 1}`, day: index + 1, iso: isoCalendarDate(calendarView.year, calendarView.month, index + 1) })));
-  const todayLimit = todayIsoDate();
-  const weekDays = lang === "ar" ? ["ح", "ن", "ث", "ر", "خ", "ج", "س"] : ["S", "M", "T", "W", "T", "F", "S"];
-  const previous = () => setCalendarView((current) => current.month === 0 ? { year: current.year - 1, month: 11 } : { year: current.year, month: current.month - 1 });
-  const next = () => setCalendarView((current) => current.month === 11 ? { year: current.year + 1, month: 0 } : { year: current.year, month: current.month + 1 });
-  return (
-    <div ref={pickerRef} className="relative mb-5">
-      <div className="mb-2 flex items-center justify-between gap-2"><p className="text-xs font-bold text-[#716753]">{text(lang, "date")}</p>{showSuggestion && <span className="rounded-full bg-[#FFF0CB] px-2 py-1 text-taq-nav font-bold text-[#806528]">{text(lang, "suggestedNextCloseout")}</span>}</div>
-      <button onClick={() => { setCalendarView({ year: selected.getFullYear(), month: selected.getMonth() }); setOpen(!open); }} className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3.5 text-sm font-black text-[#112A46] ring-1 ring-black/[0.05]">
-        <span>{formatCalendarDate(value, lang)}</span><CalendarDays className="h-4 w-4 text-[#B99844]" />
-      </button>
-      {showSuggestion && <p className="mt-2 text-taq-meta font-bold text-[#827762]">{text(lang, "changeDateAnytime")}</p>}
-      <AnimatePresence>{open && <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute start-0 end-0 top-[78px] z-30 rounded-2xl bg-[#FFFDF7] p-3 shadow-xl ring-1 ring-[#D8CCA8]">
-        <div className="mb-3 flex items-center justify-between"><button onClick={previous} className="flex h-8 w-8 items-center justify-center rounded-xl text-[#806528]"><ChevronRight className={`h-4 w-4 ${lang === "en" ? "rotate-180" : ""}`} /></button><strong className="text-xs">{formatCalendarMonth(calendarView.year, calendarView.month, lang)}</strong><button onClick={next} className="flex h-8 w-8 items-center justify-center rounded-xl text-[#806528]"><ChevronLeft className={`h-4 w-4 ${lang === "en" ? "rotate-180" : ""}`} /></button></div>
-        <div className="mb-2 grid grid-cols-7 text-center text-taq-meta font-bold text-[#957D43]">{weekDays.map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}</div>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold">{dates.map((date) => date.day ? <button key={date.key} disabled={date.iso > todayLimit} onClick={() => { if (date.iso <= todayLimit) { onChange(date.iso); setOpen(false); } }} className={`flex h-8 items-center justify-center rounded-lg ${date.iso > todayLimit ? "cursor-not-allowed text-[#C8C0B1]" : date.iso === value ? "bg-[#B44747] text-white" : "text-[#112A46] hover:bg-[#FFF0CB]"}`}>{date.day}</button> : <span key={date.key} className="h-8" />)}</div>
-      </motion.div>}</AnimatePresence>
-    </div>
-  );
-}
-
-function ExpenseScreen({ lang, onBack, onSave, saving = false, initialDate = todayIsoDate(), currentStore, assignedStores, onSelectStore, activeCategories = expenseCategories }) {
-  const [kind, setKind] = useState("purchases");
-  const [category, setCategory] = useState(activeCategories[0]?.id || "other");
-  const [amount, setAmount] = useState("");
-  const [note, setNote] = useState("");
-  const [operationDate, setOperationDate] = useState(initialDate);
-  const { attachment, processing, error, selectAttachment, clearAttachment } = useAttachmentCapture(lang);
-  useEffect(() => { if (!activeCategories.some((item) => item.id === category)) setCategory(activeCategories[0]?.id || "other"); }, [activeCategories, category]);
-  const canSave = Boolean(currentStore && toAmount(amount) > 0 && (kind !== "expense" || activeCategories.length > 0));
-  const changeStore = (businessId) => {
-    if (businessId !== currentStore?.id && draftNeedsConfirmation(amount, note, attachment) && !window.confirm(text(lang, "discardDraftOnStoreChange"))) return;
-    if (businessId !== currentStore?.id) { setAmount(""); setNote(""); clearAttachment(); }
-    onSelectStore(businessId);
-  };
-  const submit = () => canSave && !processing && !saving && onSave({ date: operationDate, businessId: currentStore.id, type: kind, categoryId: kind === "expense" ? category : kind, amount: toAmount(amount), note, attachment });
-  return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px] lg:max-w-none"><BackTitle lang={lang} title={text(lang, "newOutflow")} onBack={onBack} /><div className="space-y-5 px-5"><div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><EmployeeStoreContext lang={lang} currentStore={currentStore} assignedStores={assignedStores} onSelect={changeStore} /></div><EntryDatePicker lang={lang} value={operationDate} onChange={setOperationDate} /><div><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "transactionType")}</p><div className="grid grid-cols-3 gap-2">{["purchases", "expense", "withdrawal"].map((item) => <Choice key={item} active={kind === item} onClick={() => setKind(item)}>{text(lang, item)}</Choice>)}</div></div>{kind === "expense" && <div><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "category")}</p>{activeCategories.length ? <div className="grid grid-cols-3 gap-2">{activeCategories.map((item) => <Choice key={item.id} active={category === item.id} onClick={() => setCategory(item.id)}>{text(lang, item.label)}</Choice>)}</div> : <p className="rounded-xl bg-[#FFF1EE] p-3 text-taq-meta font-bold text-[#B44747]">{text(lang, "atLeastOneCategory")}</p>}</div>}<div className="rounded-3xl bg-white p-5 ring-1 ring-black/[0.05]"><p className="text-xs font-bold text-[#716753]">{text(lang, "howMuch")}</p><div className="mt-2 flex items-center gap-2" dir="ltr"><input inputMode="decimal" value={amount} onChange={(event) => setAmount(sanitizeAmountInput(event.target.value))} placeholder="0" className="w-full min-w-0 bg-transparent text-4xl font-black outline-none" /><span className="mt-3 text-sm font-bold text-[#786D58]">{lang === "ar" ? "ر.س" : "SAR"}</span></div></div><div className="grid grid-cols-2 gap-3"><SmallInfo label={text(lang, "date")} value={formatCalendarDate(operationDate, lang)} /><SmallInfo label={text(lang, "category")} value={kind === "expense" ? text(lang, activeCategories.find((item) => item.id === category)?.label || "other") : text(lang, kind)} /></div><AttachmentCapture lang={lang} attachment={attachment} processing={processing} error={error} onSelect={selectAttachment} onClear={clearAttachment} tall /><div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.05]"><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "note")} <span className="font-normal">({text(lang, "optional")})</span></p><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder={text(lang, "notePlaceholder")} className="min-h-[52px] w-full resize-none rounded-2xl bg-[#F7F5EF] px-4 py-3 text-sm outline-none" /></div><button disabled={!canSave || processing || saving} onClick={submit} className={`w-full rounded-2xl py-4 text-sm font-extrabold text-white ${canSave && !processing && !saving ? "bg-[#39A160]" : "bg-[#B8C0B7]"}`}>{text(lang, saving ? "saving" : "save")}</button></div></motion.section>;
-}
-
-function SummaryScreen({ lang, onBack, onSave, saving = false, salesChannels = channels, suggestedDate = todayIsoDate(), showDateSuggestion = false, currentStore, assignedStores, onSelectStore }) {
-  const [values, setValues] = useState(Object.fromEntries(salesChannels.map((item) => [item.id, ""])));
-  const [summaryDate, setSummaryDate] = useState(suggestedDate);
-  const { attachment, processing, error, selectAttachment, clearAttachment } = useAttachmentCapture(lang);
-  const salesChannelSignature = salesChannels.map((channel) => channel.id).join("|");
-  useEffect(() => {
-    setValues(Object.fromEntries(salesChannels.map((item) => [item.id, ""])));
-    setSummaryDate(suggestedDate);
-    clearAttachment();
-  }, [currentStore?.id, salesChannelSignature, suggestedDate]);
-  const total = useMemo(() => Object.values(values).reduce((sum, item) => sum + toAmount(item), 0), [values]);
-  const canSave = Boolean(currentStore && total > 0);
-  const changeStore = (businessId) => {
-    if (businessId !== currentStore?.id && draftNeedsConfirmation(values, attachment, summaryDate !== suggestedDate ? "changed-date" : "") && !window.confirm(text(lang, "discardDraftOnStoreChange"))) return;
-    if (businessId !== currentStore?.id) { setValues(Object.fromEntries(salesChannels.map((item) => [item.id, ""]))); clearAttachment(); }
-    onSelectStore(businessId);
-  };
-  const submit = () => canSave && !processing && !saving && onSave({ date: summaryDate, businessId: currentStore.id, type: "summary", salesChannels: salesChannels.map((channel) => ({ channelId: channel.id, name: channelName(channel, lang), amount: toAmount(values[channel.id]) })).filter((row) => row.amount > 0), attachment, noteKey: "salesSummary" });
-  return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px] lg:max-w-none"><BackTitle lang={lang} title={text(lang, "dailySummary")} onBack={onBack} /><div className="px-5"><div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]"><EmployeeStoreContext lang={lang} currentStore={currentStore} assignedStores={assignedStores} onSelect={changeStore} /></div><EntryDatePicker lang={lang} value={summaryDate} onChange={setSummaryDate} showSuggestion={showDateSuggestion} /><p className="mb-3 text-xs font-bold text-[#716753]">{text(lang, "salesChannels")}</p>{salesChannels.length === 0 ? <div className="mb-4 rounded-3xl bg-white p-5 text-xs font-bold text-[#B44747] ring-1 ring-black/[0.05]">{text(lang, "noSalesChannels")}</div> : <div className="mb-4 grid grid-cols-3 gap-2">{salesChannels.map((channel) => <label key={channel.id} className="rounded-2xl bg-white px-2 py-3 text-center ring-1 ring-black/[0.05]"><span className="mb-2 block min-h-[30px] text-taq-meta font-bold leading-4 text-[#716753]">{channelName(channel, lang)}</span><div dir="ltr" className="flex items-center justify-center gap-1"><input inputMode="decimal" value={values[channel.id] ?? ""} onChange={(e) => setValues({ ...values, [channel.id]: sanitizeAmountInput(e.target.value) })} className="min-w-0 w-full bg-[#F7F5EF] px-1 py-2 text-center text-sm font-black outline-none" /><span className="text-taq-nav font-bold text-[#827762]">{lang === "ar" ? "ر.س" : "SAR"}</span></div></label>)}</div>}<div className="mb-5 flex justify-between rounded-3xl bg-[#112A46] p-5 text-white"><span className="text-sm font-bold text-white/70">{text(lang, "totalSales")}</span><strong><MoneyValue value={money(total, lang)} /></strong></div><AttachmentCapture lang={lang} attachment={attachment} processing={processing} error={error} onSelect={selectAttachment} onClear={clearAttachment} /><button disabled={!canSave || processing || saving} onClick={submit} className={`mt-5 w-full rounded-2xl py-4 text-sm font-extrabold text-white ${canSave && !processing && !saving ? "bg-[#39A160]" : "bg-[#B8C0B7]"}`}>{text(lang, saving ? "saving" : "save")}</button></div></motion.section>;
-}
-
-function Choice({ active, children, onClick }) { return <button onClick={onClick} className={`rounded-2xl py-3 text-xs font-extrabold ${active ? "bg-[#112A46] text-white" : "bg-white text-[#716753] ring-1 ring-black/[0.05]"}`}>{children}</button>; }
-function FieldLabel({ label, optional, value }) { return <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.05]"><p className="mb-2 text-xs font-bold text-[#716753]">{label} <span className="font-normal">({optional})</span></p><div className="rounded-2xl bg-[#F7F5EF] px-4 py-3 text-sm text-[#716753]">{value}</div></div>; }
-
-function SmallInfo({ label, value }) { return <div className="rounded-2xl bg-white p-3 ring-1 ring-black/[0.05]"><p className="text-taq-meta font-bold text-[#716753]">{label}</p><p className="mt-1 text-xs font-black">{value}</p></div>; }
-
-function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedStores, onSelectStore, employeeNotebookTheme, setEmployeeNotebookTheme, onOpenSupport, onOpenHelp }) {
-  const perms = ["permissionSummary", "permissionOutflow", "permissionAttach"];
-  const [draftTheme, setDraftTheme] = useState(employeeNotebookTheme);
-  const [savedNotice, setSavedNotice] = useState(false);
-  useEffect(() => { setDraftTheme(employeeNotebookTheme); }, [employeeNotebookTheme]);
-  const saveTheme = () => {
-    setEmployeeNotebookTheme(draftTheme);
-    setSavedNotice(true);
-    window.setTimeout(() => setSavedNotice(false), 2200);
-  };
-  const themeDirty = isNotebookThemeDirty(draftTheme, employeeNotebookTheme);
-  return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-28 pt-1">
-      <BackTitle lang={lang} title={text(lang, "settings")} onBack={onBack} inNotebook />
-      <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "linkedStores")}</p>
-      <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
-        <EmployeeStoreContext lang={lang} currentStore={currentStore} assignedStores={assignedStores} onSelect={onSelectStore} />
-        <div className="mt-4 space-y-2 border-t border-[#F0ECE2] pt-3">
-          {assignedStores.map((business) => (
-            <div key={business.id} className="flex items-center gap-2 text-taq-meta font-bold text-[#716753]">
-              <Check className="h-4 w-4 text-[#39A160]" />
-              {businessName(business, lang)}
-            </div>
-          ))}
-        </div>
-      </div>
-      <p className="mb-2 text-xs font-bold text-[#716753]">{lang === "ar" ? "شكل دفتر واجهتي" : "My notebook theme"}</p>
-      <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
-        <ThemePicker lang={lang} theme={draftTheme} onChange={setDraftTheme} />
-        <p className="mt-3 text-taq-meta font-bold leading-5 text-[#806528]">{lang === "ar" ? "يُطبّق على قائمة التقفيلات وشاشة الإدخال فقط. الافتراضي من إعدادات المحل." : "Applies to your closeout list and entry flow. Defaults to store settings."}</p>
-        <button type="button" onClick={saveTheme} disabled={!themeDirty} className={`mt-4 w-full rounded-2xl py-3.5 text-xs font-extrabold text-white transition ${themeDirty ? "bg-[#112A46]" : "cursor-not-allowed bg-[#B8C0B7]"}`}>
-          {text(lang, savedNotice ? "savedNotice" : "save")}
-        </button>
-      </div>
-      <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "permissions")}</p>
-      <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
-        <p className="mb-4 text-taq-meta font-bold text-[#806528]">{text(lang, "employeeEntryOnly")}</p>
-        {perms.map((key) => (
-          <div key={key} className="mb-3 flex items-center gap-2 last:mb-0">
-            <Check className="h-4 w-4 text-[#39A160]" />
-            <span className="text-xs font-bold">{text(lang, key)}</span>
-          </div>
-        ))}
-        <p className="mt-4 border-t border-[#F0ECE2] pt-3 text-taq-meta font-bold text-[#827762]">{text(lang, "ownerOnly")}</p>
-      </div>
-      <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
-        <ActionRow label={text(lang, "support")} lang={lang} border onClick={onOpenSupport} />
-        <ActionRow label={text(lang, "helpCenter")} lang={lang} onClick={onOpenHelp} />
-      </div>
-    </motion.section>
-  );
-}
 
 
 function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], pendingEmployeeCloseouts = [], onViewPendingCloseouts = () => {}, onReviewCloseout = () => {}, onDismissCloseout = () => {}, onReviewDuplicate = () => {}, onAcknowledgeDuplicate = () => {}, reviewEnabledForBusiness = () => false, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, reviewEnabled = false, businessesList = businesses, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", summaryRefreshKey = 0 }) {
