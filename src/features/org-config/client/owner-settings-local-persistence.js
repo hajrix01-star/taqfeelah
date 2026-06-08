@@ -7,6 +7,7 @@ export function buildOwnerSettingsLocalStoragePayload({
   storeChannelSettings,
   storeOperationalSettings,
   notebookTheme,
+  employeePreferences = {},
   staff,
   ownerProfile,
   authOwnerUsername,
@@ -19,6 +20,7 @@ export function buildOwnerSettingsLocalStoragePayload({
     storeChannelSettings,
     storeOperationalSettings,
     notebookTheme,
+    employeePreferences,
     staff,
     ownerProfile,
     authConfig: {

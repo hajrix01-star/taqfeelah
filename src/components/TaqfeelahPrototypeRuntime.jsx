@@ -4,7 +4,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom";
 import { DailyCloseoutsProvider, useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
 import { buildOperationalEntriesFromCloseout, readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-demo-store";
-import { applyNotebookThemeCssVariables, notebookCardBackground, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
+import {
+  applyNotebookThemeCssVariables,
+  isValidNotebookTheme,
+  notebookCardBackground,
+  notebookThemes,
+} from "@/features/daily-closeouts/notebook-themes";
 import { shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
 import EmployeeCloseoutsView from "@/features/employee-closeouts/EmployeeCloseoutsView";
 import DailyCloseoutEntryFlow from "@/features/employee-closeouts/DailyCloseoutEntryFlow";
@@ -1710,6 +1715,8 @@ export default function TaqfeelahPrototypeRuntime() {
     setStoreOperationalSettings,
     notebookTheme,
     setNotebookTheme,
+    employeePreferences,
+    setEmployeePreferences,
     authOwnerUsername,
     setAuthOwnerUsername,
     authOwnerPassword,
@@ -1788,6 +1795,32 @@ export default function TaqfeelahPrototypeRuntime() {
       ? readEmployeeNotebookTheme(prototypeAuthBoot.loggedInEmployeeId)
       : null,
   });
+
+  const activeEmployeePreferenceTheme = activeEmployee?.id
+    ? employeePreferences?.[activeEmployee.id]?.notebookTheme
+    : null;
+
+  useEffect(() => {
+    if (!isValidNotebookTheme(activeEmployeePreferenceTheme)) return;
+    if (employeeThemeOverride === activeEmployeePreferenceTheme) return;
+    setEmployeeThemeOverride(activeEmployeePreferenceTheme);
+  }, [activeEmployeePreferenceTheme, employeeThemeOverride, setEmployeeThemeOverride]);
+
+  useEffect(() => {
+    if (!activeEmployee?.id || !isValidNotebookTheme(employeeThemeOverride)) return;
+    if (
+      isValidNotebookTheme(activeEmployeePreferenceTheme)
+      && activeEmployeePreferenceTheme !== employeeThemeOverride
+    ) return;
+    if (employeePreferences?.[activeEmployee.id]?.notebookTheme === employeeThemeOverride) return;
+    setEmployeePreferences((current) => ({
+      ...(current || {}),
+      [activeEmployee.id]: {
+        ...((current || {})[activeEmployee.id] || {}),
+        notebookTheme: employeeThemeOverride,
+      },
+    }));
+  }, [activeEmployee?.id, activeEmployeePreferenceTheme, employeePreferences, employeeThemeOverride, setEmployeePreferences]);
 
   const {
     closeoutsApiEnabled,

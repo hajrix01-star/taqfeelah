@@ -64,6 +64,11 @@ export function useOwnerSettingsState({
     if (typeof window === "undefined") return "yellow";
     return window.localStorage.getItem("taqfeelah_notebook_theme") || "yellow";
   });
+  const [employeePreferences, setEmployeePreferences] = useState(
+    () => (initialSettings?.employeePreferences && typeof initialSettings.employeePreferences === "object"
+      ? initialSettings.employeePreferences
+      : {}),
+  );
   const [authOwnerUsername, setAuthOwnerUsername] = useState(
     () => initialAuthConfig.ownerUsername || prototypeOwnerUsername || "hajri",
   );
@@ -104,6 +109,7 @@ export function useOwnerSettingsState({
       orgConfigApiEnabled,
       storeOperationalSettings,
       notebookTheme,
+      employeePreferences,
       ownerProfile,
       authConfig: {
         ownerUsername: authOwnerUsername,
@@ -121,6 +127,7 @@ export function useOwnerSettingsState({
       authOwnerPassword,
       authOwnerUsername,
       configuredBusinesses,
+      employeePreferences,
       notebookTheme,
       orgConfigApiEnabled,
       ownerProfile,
@@ -141,6 +148,7 @@ export function useOwnerSettingsState({
         setStaff,
         setStoreOperationalSettings,
         setNotebookTheme,
+        setEmployeePreferences,
         setOwnerProfile,
         setAuthOwnerUsername,
         setAuthOwnerPassword,
@@ -237,6 +245,8 @@ export function useOwnerSettingsState({
     setStoreOperationalSettings,
     notebookTheme,
     setNotebookTheme,
+    employeePreferences,
+    setEmployeePreferences,
     authOwnerUsername,
     setAuthOwnerUsername,
     authOwnerPassword,

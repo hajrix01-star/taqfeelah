@@ -49,6 +49,8 @@ auditable, and repeatable:
 - Entries, summaries, reports, closeouts, org config, auth, and runtime settings
   already have DB/API paths behind feature flags.
 - Browser persistence is now centrally blocked for production app mode.
+- Employee notebook-theme preferences are part of the runtime settings snapshot
+  and persist through the runtime settings API/DB path when enabled.
 - Prototype/demo mode can still use local browser storage until each legacy
   fallback has a DB-backed replacement and migration script.
 
