@@ -95,7 +95,7 @@ function Badge({ children, tone = "neutral" }) {
 }
 
 function SettingToggle({ enabled, onToggle, disabled = false }) { return <button disabled={disabled} onClick={onToggle} className={`relative h-6 w-11 rounded-full transition ${disabled ? "cursor-not-allowed opacity-55" : ""} ${enabled ? "bg-[#39A160]" : "bg-[#D9D3C7]"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition ${enabled ? "left-1" : "left-6"}`} /></button>; }
-function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, employeePreferences = {}, storeChannelSettings, setStoreChannelSettings, storeOperationalSettings, setStoreOperationalSettings, configuredBusinesses, setConfiguredBusinesses, archivedBusinessIds, setArchivedBusinessIds, staff, setStaff, ownerProfile, setOwnerProfile, authOwnerUsername, setAuthOwnerUsername, authOwnerPassword, setAuthOwnerPassword, authEmployeePins, setAuthEmployeePins, operationalEntries = [], selectedBusiness, setSelectedBusiness, setOwnerPage, setArchivedReadOnlyBusinessId, setLastCloseoutDates, onPersistSettingsNow = null, onLogout = () => {}, onOpenSupport = () => {}, onOpenHelp = () => {} }) {
+function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, employeePreferences = {}, ownerShellPreferences = {}, storeChannelSettings, setStoreChannelSettings, storeOperationalSettings, setStoreOperationalSettings, configuredBusinesses, setConfiguredBusinesses, archivedBusinessIds, setArchivedBusinessIds, staff, setStaff, ownerProfile, setOwnerProfile, authOwnerUsername, setAuthOwnerUsername, authOwnerPassword, setAuthOwnerPassword, authEmployeePins, setAuthEmployeePins, operationalEntries = [], selectedBusiness, setSelectedBusiness, setOwnerPage, setArchivedReadOnlyBusinessId, setLastCloseoutDates, onPersistSettingsNow = null, onLogout = () => {}, onOpenSupport = () => {}, onOpenHelp = () => {} }) {
   const [section, setSection] = useState("home");
   const [settingsStoreId, setSettingsStoreId] = useState(null);
   const [storePanel, setStorePanel] = useState("overview");
@@ -158,6 +158,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, employeePr
         storeOperationalSettings,
         notebookTheme,
         employeePreferences,
+        ownerShellPreferences,
         staff,
         ownerProfile,
         authOwnerUsername,
@@ -166,7 +167,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, employeePr
       }),
       { enabled: !APP_IN_PRODUCTION_MODE && !RUNTIME_SETTINGS_DB_SOURCE },
     );
-  }, [configuredBusinesses, archivedBusinessIds, employeePreferences, storeChannelSettings, storeOperationalSettings, notebookTheme, staff, ownerProfile, authOwnerUsername, authOwnerPassword, authEmployeePins]);
+  }, [configuredBusinesses, archivedBusinessIds, employeePreferences, ownerShellPreferences, storeChannelSettings, storeOperationalSettings, notebookTheme, staff, ownerProfile, authOwnerUsername, authOwnerPassword, authEmployeePins]);
   useEffect(() => { setDraftNotebookTheme(notebookTheme); setThemeDirty(false); }, [notebookTheme]);
   useEffect(() => { setDraftOwnerName(ownerProfile?.name || text(lang, "ownerName")); }, [ownerProfile?.name, lang]);
   useEffect(() => { setDraftAuthOwnerUsername(authOwnerUsername || ""); }, [authOwnerUsername]);

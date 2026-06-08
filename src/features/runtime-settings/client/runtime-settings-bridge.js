@@ -19,6 +19,7 @@ export function buildRuntimeSettingsSnapshot({
   storeOperationalSettings,
   notebookTheme,
   employeePreferences,
+  ownerShellPreferences,
   ownerProfile,
   authConfig,
   configuredBusinesses,
@@ -30,6 +31,7 @@ export function buildRuntimeSettingsSnapshot({
     storeOperationalSettings,
     notebookTheme,
     employeePreferences,
+    ownerShellPreferences,
     ownerProfile,
     authConfig,
   };
@@ -90,6 +92,9 @@ export function applyRuntimeSettingsSnapshotPatch({ migrated, orgConfigApiEnable
   }
   if (migrated.employeePreferences && typeof migrated.employeePreferences === "object" && apply.setEmployeePreferences) {
     apply.setEmployeePreferences(migrated.employeePreferences);
+  }
+  if (migrated.ownerShellPreferences && typeof migrated.ownerShellPreferences === "object" && apply.setOwnerShellPreferences) {
+    apply.setOwnerShellPreferences(migrated.ownerShellPreferences);
   }
   if (migrated.ownerProfile && typeof migrated.ownerProfile === "object" && apply.setOwnerProfile) {
     apply.setOwnerProfile(migrated.ownerProfile);

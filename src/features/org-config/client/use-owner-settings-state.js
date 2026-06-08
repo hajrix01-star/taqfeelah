@@ -69,6 +69,11 @@ export function useOwnerSettingsState({
       ? initialSettings.employeePreferences
       : {}),
   );
+  const [ownerShellPreferences, setOwnerShellPreferences] = useState(
+    () => (initialSettings?.ownerShellPreferences && typeof initialSettings.ownerShellPreferences === "object"
+      ? initialSettings.ownerShellPreferences
+      : {}),
+  );
   const [authOwnerUsername, setAuthOwnerUsername] = useState(
     () => initialAuthConfig.ownerUsername || prototypeOwnerUsername || "hajri",
   );
@@ -110,6 +115,7 @@ export function useOwnerSettingsState({
       storeOperationalSettings,
       notebookTheme,
       employeePreferences,
+      ownerShellPreferences,
       ownerProfile,
       authConfig: {
         ownerUsername: authOwnerUsername,
@@ -130,6 +136,7 @@ export function useOwnerSettingsState({
       employeePreferences,
       notebookTheme,
       orgConfigApiEnabled,
+      ownerShellPreferences,
       ownerProfile,
       staff,
       storeChannelSettings,
@@ -149,6 +156,7 @@ export function useOwnerSettingsState({
         setStoreOperationalSettings,
         setNotebookTheme,
         setEmployeePreferences,
+        setOwnerShellPreferences,
         setOwnerProfile,
         setAuthOwnerUsername,
         setAuthOwnerPassword,
@@ -247,6 +255,8 @@ export function useOwnerSettingsState({
     setNotebookTheme,
     employeePreferences,
     setEmployeePreferences,
+    ownerShellPreferences,
+    setOwnerShellPreferences,
     authOwnerUsername,
     setAuthOwnerUsername,
     authOwnerPassword,
