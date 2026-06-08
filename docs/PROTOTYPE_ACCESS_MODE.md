@@ -16,9 +16,12 @@ Speed up UI and domain work without username/password, OTP, session cookies, or 
 
 ## Enablement
 
-**ON by default** on every environment (desktop, mobile, `taqfeelah.com`).
+**ON by default** only in prototype/development app mode.
 
-Disable before launch:
+Production app mode defaults Prototype Access Mode **OFF** so an omitted flag
+cannot reopen local/demo access.
+
+Disable before launch, or rely on production app defaults:
 
 ```bash
 NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false

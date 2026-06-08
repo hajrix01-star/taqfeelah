@@ -16,7 +16,7 @@
 
 | Variable | Default (unset) | Production required | Purpose |
 |----------|-----------------|---------------------|---------|
-| `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` | `true` (ON) | `false` | Skip real auth; role picker |
+| `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` | `true` in prototype/dev, `false` in production app mode | `false` | Skip real auth; role picker |
 | `ALLOW_HEADER_AUTH_CONTEXT` | `true` in dev, `false` in prod NODE_ENV | not `true` | Header-based API auth for prototype |
 
 `assertProductionRuntimeEnv()` production-unified rules:

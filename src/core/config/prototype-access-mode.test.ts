@@ -8,14 +8,20 @@ describe("isPrototypeAccessMode", () => {
     __resetEnvCacheForTests();
   });
 
-  it("is enabled by default in production app mode", () => {
+  it("is disabled by default in production app mode", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
-    expect(isPrototypeAccessMode()).toBe(true);
+    expect(isPrototypeAccessMode()).toBe(false);
   });
 
   it("is enabled in development by default", () => {
     vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+    expect(isPrototypeAccessMode()).toBe(true);
+  });
+
+  it("can be enabled explicitly for prototype environments", () => {
+    vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
     expect(isPrototypeAccessMode()).toBe(true);
   });
@@ -25,5 +31,12 @@ describe("isPrototypeAccessMode", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
     vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "false");
     expect(isPrototypeAccessMode()).toBe(false);
+  });
+
+  it("explicit flag wins over app mode for isolated previews", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
+    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "true");
+    expect(isPrototypeAccessMode()).toBe(true);
   });
 });
