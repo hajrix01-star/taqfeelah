@@ -14,11 +14,22 @@ alwaysApply: true
 
 ## Agent rules
 
-- Develop on branches; open or update PRs for CI validation.
-- **Do not merge to `main`** unless the product owner explicitly says the batch is ready for live (e.g. «الدفعة جاهزة للايف», «ادمج», «انشر»).
+### Local-first (default)
+
+- **نفّذ الخطة محليًا أولًا** — لا `git push` بعد كل تعديل صغير.
+- بعد **كل مرحلة منطقية** داخل الدفعة:
+  1. `corepack pnpm check:refactor`
+  2. تأكد أن التطبيق يفتح محليًا (`corepack pnpm dev` أو smoke)
+  3. `git commit` محلي برسالة واضحة
+- **لا ترفع إلى GitHub** إلا بعد اكتمال **دفعة منطقية كاملة** (جاهزة كـ PR واحد).
+
+### Push and release
+
+- عند الرفع: فرع واحد → **PR واحد** → انتظر **CI أخضر**.
+- **Do not merge to `main`** unless the product owner explicitly says the batch is ready for live (e.g. «الدفعة جاهزة للايف», «ادمج», «انشر», «جاهز للايف»).
 - **Do not push to `main`** for incremental work; batch related changes into one PR when possible.
 - Prefer **one PR per logical batch** over many small merges that each trigger a slow VPS deploy.
-- Before merge: CI green on the PR; run `corepack pnpm check:refactor` when touching runtime.
+- Before merge request to owner: CI green on the PR; `check:refactor` already passed locally on the batch.
 - After merge: production deploy runs automatically — inform owner that live updates only after deploy workflow succeeds.
 
 ## Exceptions (still require explicit owner approval)
@@ -28,8 +39,9 @@ alwaysApply: true
 
 ## Arabic summary
 
+- **محلي أولًا** — commit بعد كل مرحلة، push فقط عند اكتمال الدفعة.
 - **PR = اختبار** — اللايف لا يتغير.
 - **main = نشر** — دمج متعمد فقط عند «جاهز للايف».
-- اجمع التعديلات، اختبر على PR، ادمج **دفعة واحدة**.
+- اجمع التعديلات، اختبر محليًا ثم على PR، ادمج **دفعة واحدة**.
 
 See also: `docs/REFACTOR_ROADMAP.md`, `docs/DEPLOYMENT_WAVES.md`.
