@@ -38,6 +38,15 @@ import {
   useAttachmentSource,
 } from "./prototype-runtime/prototype-runtime-attachment-ui";
 import {
+  draftNeedsConfirmation,
+  sanitizeAmountInput,
+  toAmount,
+} from "./prototype-runtime/prototype-runtime-entry-form-utils";
+import {
+  OwnerExpenseScreen,
+  OwnerSummaryScreen,
+} from "./prototype-runtime/prototype-runtime-owner-entry-screens";
+import {
   Bell,
   CalendarDays,
   Check,
@@ -251,26 +260,8 @@ function AppFontStyles() {
 
 const employeeActorAhmed = { role: "employee", userId: "ahmed", nameAr: "أحمد", nameEn: "Ahmed" };
 const employeeActorSara = { role: "employee", userId: "sara", nameAr: "سارة", nameEn: "Sara" };
-const MAX_ENTRY_AMOUNT = 9999999;
-const westernizeDigits = (value = "") => String(value).replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit))).replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
-function sanitizeAmountInput(value) {
-  const cleaned = westernizeDigits(value).replace(/[٬, ]/g, "").replace(/٫/g, ".").replace(/[^0-9.]/g, "");
-  const parts = cleaned.split(".");
-  const integer = (parts[0] || "").replace(/^0+(?=[0-9])/, "");
-  const decimal = parts.slice(1).join("").slice(0, 2);
-  const normalized = parts.length > 1 ? `${integer || "0"}.${decimal}` : integer;
-  if (Number(normalized || 0) > MAX_ENTRY_AMOUNT) return String(MAX_ENTRY_AMOUNT);
-  return normalized;
-}
-const toAmount = (value) => {
-  const parsed = Number(sanitizeAmountInput(value));
-  return Number.isFinite(parsed) && parsed >= 0 ? Math.min(parsed, MAX_ENTRY_AMOUNT) : 0;
-};
 const newId = (prefix = "entry") => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 const ownerActor = { role: "owner", userId: "owner", nameAr: "محمد الهاجري", nameEn: "Mohammad Alhajri" };
-function draftNeedsConfirmation(...values) {
-  return values.some((value) => value && (typeof value !== "object" || Object.values(value).some(Boolean)));
-}
 function isoDaysAgo(days) {
   const date = new Date();
   date.setDate(date.getDate() - days);
@@ -511,67 +502,6 @@ function SummaryScreen({ lang, onBack, onSave, saving = false, salesChannels = c
 function Choice({ active, children, onClick }) { return <button onClick={onClick} className={`rounded-2xl py-3 text-xs font-extrabold ${active ? "bg-[#112A46] text-white" : "bg-white text-[#716753] ring-1 ring-black/[0.05]"}`}>{children}</button>; }
 function FieldLabel({ label, optional, value }) { return <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.05]"><p className="mb-2 text-xs font-bold text-[#716753]">{label} <span className="font-normal">({optional})</span></p><div className="rounded-2xl bg-[#F7F5EF] px-4 py-3 text-sm text-[#716753]">{value}</div></div>; }
 
-function StoreOperationPicker({ lang, businessesList = businesses, selectedId, onSelect }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const pickerRef = useRef(null);
-  const selectedStore = businessesList.find((business) => business.id === selectedId) || null;
-  const searchable = businessesList.length > 2;
-  const filteredStores = businessesList.filter((business) => `${businessName(business, lang)} ${businessLocation(business, lang)}`.toLowerCase().includes(query.toLowerCase()));
-  useEffect(() => {
-    if (!open) return undefined;
-    const closeOutside = (event) => { if (pickerRef.current && !pickerRef.current.contains(event.target)) setOpen(false); };
-    document.addEventListener("pointerdown", closeOutside);
-    return () => document.removeEventListener("pointerdown", closeOutside);
-  }, [open]);
-  if (!searchable) {
-    return <div className="grid grid-cols-2 gap-2">{businessesList.map((business) => <button key={business.id} onClick={() => onSelect(business.id)} className={`rounded-2xl px-3 py-3 text-xs font-black ${selectedId === business.id ? "bg-[#112A46] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-black/[0.05]"}`}>{businessName(business, lang, true) || businessName(business, lang)}</button>)}</div>;
-  }
-  return <div ref={pickerRef} className="relative"><button onClick={() => setOpen(!open)} className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3 text-start text-xs font-black ring-1 ring-black/[0.05]"><span>{selectedStore ? businessName(selectedStore, lang) : text(lang, "selectStore")}</span><ChevronDown className="h-4 w-4 text-[#806528]" /></button><AnimatePresence>{open && <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute start-0 end-0 top-[50px] z-40 rounded-2xl bg-white p-3 shadow-xl ring-1 ring-[#E8E1D4]"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text(lang, "searchStore")} className="mb-2 w-full rounded-xl bg-[#F7F5EF] px-3 py-2.5 text-taq-meta font-bold outline-none" /><div className="max-h-48 overflow-y-auto">{filteredStores.map((business) => <button key={business.id} onClick={() => { onSelect(business.id); setOpen(false); setQuery(""); }} className={`mb-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-start ${selectedId === business.id ? "bg-[#FFF4D2]" : ""}`}><div><p className="text-taq-meta font-black">{businessName(business, lang)}</p><p className="text-taq-nav font-bold text-[#827762]">{businessLocation(business, lang)}</p></div>{selectedId === business.id && <Check className="h-4 w-4 text-[#112A46]" />}</button>)}</div></motion.div>}</AnimatePresence></div>;
-}
-
-function OwnerSummaryScreen({ lang, onBack, onSave, saving = false, selectedBusiness, businessesList = businesses, storeChannelSettings = {} }) {
-  const [businessId, setBusinessId] = useState(selectedBusiness === "all" ? "" : selectedBusiness);
-  const [summaryDate, setSummaryDate] = useState(() => todayIsoDate());
-  const { attachment, processing, error, selectAttachment, clearAttachment } = useAttachmentCapture(lang);
-  const selectedStore = businessesList.find((business) => business.id === businessId) || null;
-  const channelConfig = resolveStoreChannelConfig(storeChannelSettings, businessId);
-  const salesChannels = selectedStore ? channelConfig.channels.filter((channel) => channelConfig.activeIds.includes(channel.id) && !channel.retired) : [];
-  const [values, setValues] = useState({});
-  const channelSignature = salesChannels.map((channel) => channel.id).join("|");
-  useEffect(() => { setValues(Object.fromEntries(salesChannels.map((channel) => [channel.id, ""]))); clearAttachment(); }, [businessId, channelSignature]);
-  const total = useMemo(() => salesChannels.reduce((sum, channel) => sum + toAmount(values[channel.id]), 0), [salesChannels, values]);
-  const canSave = Boolean(selectedStore && salesChannels.length > 0 && total > 0 && summaryDate <= todayIsoDate());
-  const changeStore = (nextBusinessId) => {
-    if (nextBusinessId !== businessId && draftNeedsConfirmation(values, attachment) && !window.confirm(text(lang, "discardDraftOnStoreChange"))) return;
-    setBusinessId(nextBusinessId);
-  };
-  const submit = () => canSave && !processing && !saving && onSave({ date: summaryDate, businessId, type: "summary", salesChannels: salesChannels.map((channel) => ({ channelId: channel.id, name: channelName(channel, lang), amount: toAmount(values[channel.id]) })).filter((row) => row.amount > 0), attachment, noteKey: "salesSummary" });
-  return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px] lg:max-w-none"><BackTitle lang={lang} title={text(lang, "dailySummary")} onBack={onBack} /><div className="space-y-5 px-5"><EntryDatePicker lang={lang} value={summaryDate} onChange={setSummaryDate} /><div><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p><StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} /><p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseStoreForSummary")}</p></div><div><p className="mb-3 text-xs font-bold text-[#716753]">{text(lang, "salesChannels")}</p>{!selectedStore ? <div className="rounded-3xl bg-white p-5 text-xs font-bold text-[#827762] ring-1 ring-black/[0.05]">{text(lang, "chooseStoreForSummary")}</div> : salesChannels.length === 0 ? <div className="rounded-3xl bg-white p-5 text-xs font-bold text-[#B44747] ring-1 ring-black/[0.05]">{text(lang, "noSalesChannels")}</div> : <div className="grid grid-cols-3 gap-2">{salesChannels.map((channel) => <label key={channel.id} className="rounded-2xl bg-white px-2 py-3 text-center ring-1 ring-black/[0.05]"><span className="mb-2 block min-h-[30px] text-taq-meta font-bold leading-4 text-[#716753]">{channelName(channel, lang)}</span><div dir="ltr" className="flex items-center justify-center gap-1"><input inputMode="decimal" value={values[channel.id] || ""} onChange={(event) => setValues((current) => ({ ...current, [channel.id]: sanitizeAmountInput(event.target.value) }))} className="min-w-0 w-full bg-[#F7F5EF] px-1 py-2 text-center text-sm font-black outline-none" /><span className="text-taq-nav font-bold text-[#827762]">{lang === "ar" ? "ر.س" : "SAR"}</span></div></label>)}</div>}</div><div className="flex justify-between rounded-3xl bg-[#112A46] p-5 text-white"><span className="text-sm font-bold text-white/70">{text(lang, "totalSales")}</span><strong><MoneyValue value={money(total, lang)} /></strong></div><AttachmentCapture lang={lang} attachment={attachment} processing={processing} error={error} onSelect={selectAttachment} onClear={clearAttachment} /><button disabled={!canSave || processing || saving} onClick={submit} className={`w-full rounded-2xl py-4 text-sm font-extrabold text-white ${canSave && !processing && !saving ? "bg-[#39A160]" : "bg-[#B8C0B7]"}`}>{text(lang, saving ? "saving" : "save")}</button></div></motion.section>;
-}
-
-function OwnerExpenseScreen({ lang, onBack, onSave, saving = false, selectedBusiness, businessesList = businesses, storeOperationalSettings = {} }) {
-  const [businessId, setBusinessId] = useState(selectedBusiness === "all" ? "" : selectedBusiness);
-  const [kind, setKind] = useState("expense");
-  const [category, setCategory] = useState("other");
-  const [amount, setAmount] = useState("");
-  const [note, setNote] = useState("");
-  const [operationDate, setOperationDate] = useState(() => todayIsoDate());
-  const { attachment, processing, error, selectAttachment, clearAttachment } = useAttachmentCapture(lang);
-  const selectedStore = businessesList.find((business) => business.id === businessId);
-  const activeCategories = expenseCategories.filter((item) => getStoreOperationalConfig(storeOperationalSettings, businessId).activeCategories.includes(item.id));
-  useEffect(() => { if (!activeCategories.some((item) => item.id === category)) setCategory(activeCategories[0]?.id || "other"); }, [businessId, category, activeCategories]);
-  const canSave = Boolean(selectedStore && toAmount(amount) > 0 && (kind !== "expense" || activeCategories.length > 0));
-  const changeStore = (nextBusinessId) => {
-    if (nextBusinessId !== businessId && draftNeedsConfirmation(amount, note, attachment) && !window.confirm(text(lang, "discardDraftOnStoreChange"))) return;
-    if (nextBusinessId !== businessId) { setAmount(""); setNote(""); clearAttachment(); }
-    setBusinessId(nextBusinessId);
-  };
-  const payload = () => ({ date: operationDate, businessId, type: kind, categoryId: kind === "expense" ? category : kind, amount: toAmount(amount), note, attachment });
-  const categoryLabel = kind === "expense" ? text(lang, activeCategories.find((item) => item.id === category)?.label || "other") : text(lang, kind);
-  const submit = () => canSave && !processing && !saving && onSave(payload());
-  return <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px] lg:max-w-none"><BackTitle lang={lang} title={text(lang, "addOutflow")} onBack={onBack} /><div className="space-y-5 px-5"><div className="rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "ownerOutflowNotice")}</div><EntryDatePicker lang={lang} value={operationDate} onChange={setOperationDate} /><div><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p><StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} /><p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseOperationStore")}</p></div><div><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "transactionType")}</p><div className="grid grid-cols-3 gap-2">{["expense", "purchases", "withdrawal"].map((item) => <Choice key={item} active={kind === item} onClick={() => setKind(item)}>{text(lang, item)}</Choice>)}</div></div>{kind === "expense" && <div><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "category")}</p>{activeCategories.length ? <div className="grid grid-cols-3 gap-2">{activeCategories.map((item) => <Choice key={item.id} active={category === item.id} onClick={() => setCategory(item.id)}>{text(lang, item.label)}</Choice>)}</div> : <p className="rounded-xl bg-[#FFF1EE] p-3 text-taq-meta font-bold text-[#B44747]">{text(lang, "atLeastOneCategory")}</p>}</div>}<div className="rounded-3xl bg-white p-5 ring-1 ring-black/[0.05]"><p className="text-xs font-bold text-[#716753]">{text(lang, "amount")}</p><div className="mt-2 flex items-center gap-2" dir="ltr"><input inputMode="decimal" value={amount} onChange={(event) => setAmount(sanitizeAmountInput(event.target.value))} placeholder="0" className="w-full min-w-0 bg-transparent text-4xl font-black outline-none" /><span className="mt-3 text-sm font-bold text-[#786D58]">{lang === "ar" ? "ر.س" : "SAR"}</span></div></div><div className="grid grid-cols-2 gap-3"><SmallInfo label={text(lang, "date")} value={formatCalendarDate(operationDate, lang)} /><SmallInfo label={text(lang, "category")} value={categoryLabel} /></div><div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.05]"><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "note")} <span className="font-normal">({text(lang, "optional")})</span></p><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder={text(lang, "notePlaceholder")} className="min-h-[52px] w-full resize-none rounded-2xl bg-[#F7F5EF] px-4 py-3 text-sm outline-none" /></div><AttachmentCapture lang={lang} attachment={attachment} processing={processing} error={error} onSelect={selectAttachment} onClear={clearAttachment} /><button disabled={!canSave || processing || saving} onClick={submit} className={`w-full rounded-2xl py-4 text-sm font-extrabold text-white transition ${canSave && !processing && !saving ? "bg-[#112A46]" : "cursor-not-allowed bg-[#B8C0B7]"}`}>{text(lang, saving ? "saving" : "saveOutflow")}</button></div></motion.section>;
-}
 function SmallInfo({ label, value }) { return <div className="rounded-2xl bg-white p-3 ring-1 ring-black/[0.05]"><p className="text-taq-meta font-bold text-[#716753]">{label}</p><p className="mt-1 text-xs font-black">{value}</p></div>; }
 
 function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedStores, onSelectStore, employeeNotebookTheme, setEmployeeNotebookTheme, onOpenSupport, onOpenHelp }) {
