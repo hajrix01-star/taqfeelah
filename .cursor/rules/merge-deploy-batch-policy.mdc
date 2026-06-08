@@ -1,0 +1,35 @@
+---
+description: Batch PR testing vs single main merge/deploy — product owner approved
+alwaysApply: true
+---
+
+# Merge and Deploy Batch Policy
+
+## Approved workflow (product owner, 2026-06-08)
+
+| Layer | Role | Touches live/VPS? |
+|-------|------|-------------------|
+| Feature branch + PR | Development and automated CI testing | **No** |
+| `main` | Release gate — merge triggers production deploy | **Yes** |
+
+## Agent rules
+
+- Develop on branches; open or update PRs for CI validation.
+- **Do not merge to `main`** unless the product owner explicitly says the batch is ready for live (e.g. «الدفعة جاهزة للايف», «ادمج», «انشر»).
+- **Do not push to `main`** for incremental work; batch related changes into one PR when possible.
+- Prefer **one PR per logical batch** over many small merges that each trigger a slow VPS deploy.
+- Before merge: CI green on the PR; run `corepack pnpm check:refactor` when touching runtime.
+- After merge: production deploy runs automatically — inform owner that live updates only after deploy workflow succeeds.
+
+## Exceptions (still require explicit owner approval)
+
+- Hotfix for broken production
+- Revert of a bad deploy
+
+## Arabic summary
+
+- **PR = اختبار** — اللايف لا يتغير.
+- **main = نشر** — دمج متعمد فقط عند «جاهز للايف».
+- اجمع التعديلات، اختبر على PR، ادمج **دفعة واحدة**.
+
+See also: `docs/REFACTOR_ROADMAP.md`, `docs/DEPLOYMENT_WAVES.md`.
