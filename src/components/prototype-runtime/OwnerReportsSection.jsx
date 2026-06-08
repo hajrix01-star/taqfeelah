@@ -9,9 +9,9 @@ import {
   buildBusinessesWithEntrySummaries,
   entriesInPeriod,
   entryTotalsHaveActivity,
-  entryTotalsHaveFinancialActivity,
   newestEntries,
-  preferLocalTotalsOverEmptyApi,
+  resolveOwnerPeriodSummaryPreference,
+  resolveOwnerSingleStoreTotals,
   summarizeEntries,
   summaryMonthFromEntries,
 } from "@/features/operations/operational-analytics";
@@ -115,7 +115,7 @@ function SummaryReportDetails({ lang, monthly, selectedBusiness, selectedDate, s
   return <>{(section === "sales" || section === "both") && dynamicChannels.map((channel) => <NotebookRow key={channel.id}><div className="flex w-full items-end justify-between ps-3 text-xs"><div className="flex items-center gap-2"><span className="font-medium text-[#716753]">{channelName(channel, lang)}</span><RatioBadge value={percentageOfSales(channel.amount)} /></div><strong className="tabular-nums font-bold text-[#112A46]"><MoneyValue value={money(channel.amount, lang)} /></strong></div></NotebookRow>)}{(section === "outflow" || section === "both") && outflowByCategory.map((item) => <NotebookRow key={item.id}><div className="flex w-full items-end justify-between ps-3 text-xs"><div className="flex items-center gap-2"><span className="font-medium text-[#716753]">{text(lang, item.label)}</span><RatioBadge value={percentageOfSales(item.amount)} /></div><strong className="tabular-nums font-bold text-[#B44747]"><MoneyValue value={money(item.amount, lang)} /></strong></div></NotebookRow>)}</>;
 }
 
-function ReportsScreen({ lang, operationalEntries = [], archivedReadOnlyBusinessId = null, reviewEnabledForBusiness = () => false, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, configuredChannels = channels, reviewEnabled = false, businessesList = businesses, archivedBusinessIds = [], reportsApiEnabled = false, reportsApiOrganizationId = "", reportsApiActorUserId = "", reportsApiActorRole = "owner", summaryRefreshKey = 0 }) {
+function ReportsScreen({ lang, operationalEntries = [], operationalEntriesLoading = false, archivedReadOnlyBusinessId = null, reviewEnabledForBusiness = () => false, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, configuredChannels = channels, reviewEnabled = false, businessesList = businesses, archivedBusinessIds = [], reportsApiEnabled = false, reportsApiOrganizationId = "", reportsApiActorUserId = "", reportsApiActorRole = "owner", summaryRefreshKey = 0 }) {
   const [period, setPeriod] = useState("day");
   const [selectedReportDay, setSelectedReportDay] = useState(() => todayIsoDate());
   const [selectedReportDate, setSelectedReportDate] = useState(() => todayIsoDate());
@@ -175,7 +175,6 @@ function ReportsScreen({ lang, operationalEntries = [], archivedReadOnlyBusiness
     includeOutflowTransactions: showOutflowTransactions,
     refreshKey: summaryRefreshKey,
   });
-  const reportsApiHasData = reportsApiEnabled && !reportsApiLoading && reportsApiLoaded && entryTotalsHaveFinancialActivity(apiCombinedTotals);
   const scopedEntries = operationalEntries.filter((entry) => isCombined ? visibleReportBusinesses.some((business) => business.id === entry.businessId) : entry.businessId === safeSelectedBusiness);
   const periodEntries = scopedEntries.filter((entry) => entryDateMatches(entry, period, selectedReportDate, selectedReportMonth, selectedReportYear, customFrom, customTo));
   const localTotals = summarizeEntries(periodEntries, reviewEnabledForBusiness);
@@ -187,13 +186,16 @@ function ReportsScreen({ lang, operationalEntries = [], archivedReadOnlyBusiness
     selectedMonth: selectedReportMonth,
     reviewEnabledForBusiness,
   });
-  const preferEntrySummaries = !reportsApiHasData
-    || (entryTotalsHaveFinancialActivity(localTotals) && !entryTotalsHaveFinancialActivity(apiCombinedTotals));
+  const preferEntrySummaries = resolveOwnerPeriodSummaryPreference({
+    localTotals,
+    apiTotals: apiCombinedTotals,
+    entriesLoading: operationalEntriesLoading,
+  });
   const comparisonBusinesses = preferEntrySummaries ? localComparisonBusinesses : businessesWithSummaries;
-  const useApiDetailTabs = reportsApiHasData && !isCombined && !preferEntrySummaries;
+  const useApiDetailTabs = reportsApiEnabled && !reportsApiLoading && reportsApiLoaded && !isCombined && !preferEntrySummaries;
   const totals = isCombined
     ? preferEntrySummaries ? localTotals : apiCombinedTotals
-    : preferLocalTotalsOverEmptyApi(localTotals, reportsApiHasData ? apiSingleStoreTotals : null);
+    : resolveOwnerSingleStoreTotals(localTotals, apiSingleStoreTotals, preferEntrySummaries);
   const reportDay = selectedStore
     ? summaryDayFromEntriesWithLabels(operationalEntries, selectedStore.id, selectedReportDate, reviewEnabledForBusiness)
     : { id: selectedReportDate };

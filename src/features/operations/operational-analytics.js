@@ -143,6 +143,27 @@ export function preferLocalTotalsOverEmptyApi(localTotals, apiTotals) {
 }
 
 /**
+ * Owner home/reports: choose entry-derived totals vs SQL summary API.
+ * Entries win whenever they carry financial activity; while entries are still
+ * loading we avoid locking onto a faster empty API snapshot.
+ */
+export function resolveOwnerPeriodSummaryPreference({
+  localTotals,
+  apiTotals,
+  entriesLoading = false,
+}) {
+  if (entryTotalsHaveFinancialActivity(localTotals)) return true;
+  if (entriesLoading) return true;
+  return !entryTotalsHaveFinancialActivity(apiTotals);
+}
+
+export function resolveOwnerSingleStoreTotals(localTotals, apiTotals, preferEntryDerived) {
+  return preferEntryDerived
+    ? localTotals
+    : preferLocalTotalsOverEmptyApi(localTotals, apiTotals);
+}
+
+/**
  * @param {Object} input
  * @param {Array<{ id?: string, day?: object, month?: object }>} [input.businesses]
  * @param {Array<{ id?: string, businessId?: string, date?: string, type?: string, status?: string, amount?: number }>} [input.operationalEntries]

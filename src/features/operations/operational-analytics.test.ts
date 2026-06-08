@@ -4,6 +4,8 @@ import {
   entryTotalsHaveActivity,
   entryTotalsHaveFinancialActivity,
   preferLocalTotalsOverEmptyApi,
+  resolveOwnerPeriodSummaryPreference,
+  resolveOwnerSingleStoreTotals,
 } from "./operational-analytics";
 
 describe("operational analytics summary helpers", () => {
@@ -32,11 +34,34 @@ describe("operational analytics summary helpers", () => {
     const api = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 2, pending: 1 };
     expect(entryTotalsHaveActivity(api)).toBe(true);
     expect(entryTotalsHaveFinancialActivity(api)).toBe(false);
-    expect(
-      !entryTotalsHaveFinancialActivity(api)
-      || (entryTotalsHaveFinancialActivity(local) && !entryTotalsHaveFinancialActivity(api)),
-    ).toBe(true);
+    expect(resolveOwnerPeriodSummaryPreference({ localTotals: local, apiTotals: api })).toBe(true);
     expect(preferLocalTotalsOverEmptyApi(local, api)).toEqual(local);
+  });
+
+  it("always prefers entry-derived totals when local has financial activity", () => {
+    const local = { sales: 200, expense: 0, net: 200, ratio: "0.0%", proofs: 0, pending: 0 };
+    const api = { sales: 150, expense: 0, net: 150, ratio: "0.0%", proofs: 0, pending: 0 };
+    expect(resolveOwnerPeriodSummaryPreference({ localTotals: local, apiTotals: api })).toBe(true);
+  });
+
+  it("avoids locking onto empty API totals while entries are still loading", () => {
+    const empty = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0, pending: 0 };
+    expect(resolveOwnerPeriodSummaryPreference({
+      localTotals: empty,
+      apiTotals: empty,
+      entriesLoading: true,
+    })).toBe(true);
+  });
+
+  it("falls back to API totals only after entries settle without financial activity", () => {
+    const empty = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0, pending: 0 };
+    const api = { sales: 400, expense: 20, net: 380, ratio: "5.0%", proofs: 0, pending: 0 };
+    expect(resolveOwnerPeriodSummaryPreference({
+      localTotals: empty,
+      apiTotals: api,
+      entriesLoading: false,
+    })).toBe(false);
+    expect(resolveOwnerSingleStoreTotals(empty, api, false)).toEqual(api);
   });
 
   it("builds per-store day summaries from operational entries", () => {
