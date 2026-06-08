@@ -4,15 +4,27 @@
  * @property {string[]} activeIds
  */
 
+const EMPTY_STORE_CHANNEL_CONFIG = Object.freeze({
+  channels: [],
+  activeIds: [],
+});
+
+function normalizeStoreChannelConfig(config, fallback = EMPTY_STORE_CHANNEL_CONFIG) {
+  if (!config || !Array.isArray(config.channels) || !Array.isArray(config.activeIds)) {
+    return fallback;
+  }
+  return config;
+}
+
 /**
  * @param {Record<string, StoreChannelConfig | undefined>} settings
  * @param {string | null | undefined} storeId
- * @param {StoreChannelConfig} defaultConfig
+ * @param {StoreChannelConfig} [defaultConfig]
  * @returns {StoreChannelConfig}
  */
-export function getStoreChannelConfig(settings, storeId, defaultConfig) {
-  if (!storeId) return defaultConfig;
-  return settings?.[storeId] || defaultConfig;
+export function getStoreChannelConfig(settings, storeId, defaultConfig = EMPTY_STORE_CHANNEL_CONFIG) {
+  if (!storeId) return normalizeStoreChannelConfig(defaultConfig);
+  return normalizeStoreChannelConfig(settings?.[storeId], normalizeStoreChannelConfig(defaultConfig));
 }
 
 /**

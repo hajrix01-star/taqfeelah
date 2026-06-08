@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { resolveStoreChannelConfig } from "@/features/org-config/client/store-channel-config";
+import { DEFAULT_STORE_CHANNEL_CONFIG } from "./prototype-runtime-demo-data";
 import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
 import EmployeeHistoryVisibilityPicker from "@/features/employee-closeouts/EmployeeHistoryVisibilityPicker";
 import { isNotebookThemeDirty } from "@/features/org-config/client/owner-settings-appearance-actions";
@@ -134,7 +135,11 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, storeChann
   const employeeStoreIds = (person) => person.storeIds || ["shami"];
   const displayBusinessName = (business) => businessName(business, lang);
   const displayLocation = (business) => businessLocation(business, lang);
-  const savedChannelConfig = resolveStoreChannelConfig(storeChannelSettings, settingsStoreId);
+  const savedChannelConfig = resolveStoreChannelConfig(
+    storeChannelSettings,
+    settingsStoreId,
+    DEFAULT_STORE_CHANNEL_CONFIG,
+  );
   const savedOperationalConfig = getStoreOperationalConfig(storeOperationalSettings, settingsStoreId);
   const channelConfig = draftStoreChannelConfig || savedChannelConfig;
   const operationalConfig = draftStoreOperationalConfig || savedOperationalConfig;
