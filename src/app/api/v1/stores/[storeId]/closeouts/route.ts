@@ -3,6 +3,7 @@ import { ServiceUnavailableError, ValidationError } from "@/core/errors/app-erro
 import { readEnv } from "@/core/config/env";
 import { resolveRequestContext } from "@/core/auth/request-context";
 import { listStoreCloseouts } from "@/features/closeouts/server/list-store-closeouts";
+import { resolveSubmitCloseoutId } from "@/features/closeouts/server/resolve-submit-closeout-id";
 import { submitStoreCloseout } from "@/features/closeouts/server/submit-store-closeout";
 
 export const dynamic = "force-dynamic";
@@ -22,9 +23,7 @@ export async function POST(request: Request, context: RouteContext) {
     const requestContext = resolveRequestContext(request, { requireUser: true });
     const body = await request.json();
     const mode = body?.mode === "resubmit" ? "resubmit" : "submit";
-    const closeoutId = typeof body?.closeoutId === "string" && body.closeoutId.trim()
-      ? body.closeoutId.trim()
-      : `closeout-${params.storeId}-${body?.date || ""}`;
+    const closeoutId = resolveSubmitCloseoutId(body?.closeoutId);
 
     if (typeof body?.date !== "string" || !body.date) {
       throw new ValidationError("Body field 'date' is required.");

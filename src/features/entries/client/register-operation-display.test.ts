@@ -61,4 +61,15 @@ describe("buildRegisterCloseoutDayContext", () => {
     expect(context.sameDayCloseoutCountByStoreDate.get("b1|2026-06-06")).toBe(2);
     expect(context.daySequenceByCloseoutId.get("c2")).toBe(2);
   });
+
+  it("does not invent daySequence when trustServerDaySequenceOnly is true", () => {
+    const context = buildRegisterCloseoutDayContext([
+      { businessId: "b1", date: "2026-06-06", closeoutId: "c1", createdAt: "2026-06-06T08:00:00Z" },
+      { businessId: "b1", date: "2026-06-06", closeoutId: "c2", daySequence: 2, createdAt: "2026-06-06T10:00:00Z" },
+    ], { trustServerDaySequenceOnly: true });
+
+    expect(context.sameDayCloseoutCountByStoreDate.get("b1|2026-06-06")).toBe(2);
+    expect(context.daySequenceByCloseoutId.get("c1")).toBeNull();
+    expect(context.daySequenceByCloseoutId.get("c2")).toBe(2);
+  });
 });

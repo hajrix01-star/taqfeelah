@@ -95,4 +95,31 @@ describe("closeouts route integration", () => {
       actorRole: "owner",
     }));
   });
+
+  it("POST generates a server closeout id when body omits closeoutId", async () => {
+    submitStoreCloseout.mockResolvedValueOnce({
+      summaryEntryId: "entry-2",
+      closeoutId: "generated-closeout",
+      status: "active",
+    });
+
+    const { POST } = await import("../stores/[storeId]/closeouts/route");
+    const response = await POST(
+      ownerRequest(`http://localhost/api/v1/stores/${TEST_STORE_ID}/closeouts`, {
+        method: "POST",
+        body: JSON.stringify({
+          date: "2026-06-06",
+          salesChannels: [],
+          outflows: [],
+        }),
+      }),
+      routeStoreContext(),
+    );
+
+    expect(response.status).toBe(201);
+    const submittedCloseoutId = submitStoreCloseout.mock.calls[0]?.[0]?.closeoutId;
+    expect(typeof submittedCloseoutId).toBe("string");
+    expect(submittedCloseoutId).not.toBe(`closeout-${TEST_STORE_ID}-2026-06-06`);
+    expect(submittedCloseoutId.length).toBeGreaterThan(10);
+  });
 });

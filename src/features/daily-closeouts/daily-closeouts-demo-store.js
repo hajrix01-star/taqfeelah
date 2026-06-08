@@ -148,8 +148,24 @@ export function createDraftCloseout({ storeId, storeName, date, employee, notebo
   });
 }
 
+export function findCloseoutsForStoreDate(closeouts, storeId, date) {
+  return (Array.isArray(closeouts) ? closeouts : []).filter(
+    (item) => item.storeId === storeId && item.date === date,
+  );
+}
+
 export function findCloseoutForStoreDate(closeouts, storeId, date) {
-  return closeouts.find((item) => item.storeId === storeId && item.date === date) || null;
+  const matches = findCloseoutsForStoreDate(closeouts, storeId, date);
+  if (!matches.length) return null;
+  const draft = matches.find(
+    (item) => item.status === CLOSEOUT_STATUS.DRAFT && !item.submittedAt,
+  );
+  if (draft) return draft;
+  return [...matches].sort((a, b) => {
+    const aTime = a.submittedAt || a.openedAt || "";
+    const bTime = b.submittedAt || b.openedAt || "";
+    return aTime < bTime ? 1 : -1;
+  })[0];
 }
 
 export function sortCloseoutsNewestFirst(closeouts) {

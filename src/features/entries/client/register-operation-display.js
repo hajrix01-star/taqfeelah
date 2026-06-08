@@ -24,7 +24,12 @@ export function summaryEntryDisplayAmount(entry, salesChannelFilter = "all") {
     .reduce((sum, row) => sum + Number(row.amount || 0), 0);
 }
 
-export function buildRegisterCloseoutDayContext(entries = []) {
+/**
+ * @param {object[]} entries
+ * @param {{ trustServerDaySequenceOnly?: boolean }} [options]
+ */
+export function buildRegisterCloseoutDayContext(entries = [], options = {}) {
+  const { trustServerDaySequenceOnly = false } = options;
   const closeoutMetaById = new Map();
   (Array.isArray(entries) ? entries : []).forEach((entry) => {
     if (!entry?.closeoutId) return;
@@ -57,7 +62,10 @@ export function buildRegisterCloseoutDayContext(entries = []) {
     });
     sameDayCloseoutCountByStoreDate.set(key, ordered.length);
     ordered.forEach((item, index) => {
-      daySequenceByCloseoutId.set(item.closeoutId, item.daySequence ?? index + 1);
+      const sequence = Number.isInteger(item.daySequence)
+        ? item.daySequence
+        : (trustServerDaySequenceOnly ? null : index + 1);
+      daySequenceByCloseoutId.set(item.closeoutId, sequence);
     });
   });
   return { sameDayCloseoutCountByStoreDate, daySequenceByCloseoutId };

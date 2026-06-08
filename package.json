@@ -24,6 +24,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "check:refactor": "pnpm lint && pnpm typecheck && pnpm test && pnpm smoke:browser",
     "smoke:browser": "playwright test",
     "smoke:closeouts": "node scripts/closeouts-api-smoke.mjs",
     "db:generate": "drizzle-kit generate",
