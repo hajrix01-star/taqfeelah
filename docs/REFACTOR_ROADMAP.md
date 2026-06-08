@@ -1,7 +1,7 @@
 # خارطة refactor التشغيلية — تقفيلة V2
 
 > **ملف حي:** يُحدَّث بعد كل مرحلة مكتملة أو merge.  
-> آخر تحديث: **2026-06-08** — PR #90 مدمج ومنشور (`01d9cde`)؛ PR #91 تنظيف legacy محليًا.
+> آخر تحديث: **2026-06-08** — PR #91 مدمج ومنشور (`8e4fc59`)؛ Runtime ~2624 سطر.
 
 ---
 
@@ -33,15 +33,15 @@
 | 4.2 | ↳ تنظيف imports ميتة في Runtime (الدفعة 1) | ✅ | ~100+ import محذوف |
 | 5 | **PR #87 — تنظيف imports (batch 2)** | ✅ | مدمج `2fe613c` — نشر VPS ✅ |
 | 6 | **Hotfix #88 — حماية `channel config`** | ✅ | مدمج `254e16f` — إصلاح تعطل بوابة الموظف على الإنتاج |
-| 7 | **مرحلة لاحقة — PR-4+** *(مجزّأة)* | 🟠 لم ينتهي | PR #91 تنظيف؛ hooks/auth قبل الإطلاق |
+| 7 | **مرحلة لاحقة — PR-4+** *(مجزّأة)* | 🟠 لم ينتهي | hooks/auth قبل الإطلاق |
 | 7.0 | ↳ **PR #89 — استخراج مرفقات البروتايب** | ✅ | مدمج `193be00` — نشر VPS |
 | 7.0.1 | ↳ **PR #90 — مكوّنات العرض (batch 1+2)** | ✅ | مدمج `01d9cde` — نشر VPS ✅ تأكيد إنتاج |
-| 7.0.2 | ↳ **PR #91 — تنظيف legacy موظف** | 🟠 لم ينتهي | محليًا: حذف ميت + `EmployeeSettingsScreen` + إصلاح import |
+| 7.0.2 | ↳ **PR #91 — تنظيف legacy موظف** | ✅ | مدمج `8e4fc59` — نشر VPS |
 | 7.1 | ↳ مرفقات (سقف حجم/عدد، object storage) | 🟠 لم ينتهي | IndexedDB + ضغط صور ✅ في #89؛ object storage لاحقًا |
 | 7.2 | ↳ استخراج hooks من Runtime | 🟠 لم ينتهي | hooks المرفقات ✅ في #89؛ باقي Runtime في #90+ |
 | 7.3 | ↳ Auth كامل + إيقاف `ALLOW_HEADER_AUTH_CONTEXT` | 🟠 لم ينتهي | قبل الإطلاق العام |
 
-**ملخص سريع:** ✅ **23** بند · 🟠 **6** بنود لم تنتهِ · النشط: **PR #91** (تنظيف legacy — لا تغيير UI).
+**ملخص سريع:** ✅ **24** بند · 🟠 **5** بنود لم تنتهِ · النشط: **hooks / auth** قبل الإطلاق العام.
 
 ---
 
@@ -84,9 +84,9 @@ main      →  دمج دفعة واحدة     →  نشر VPS تلقائي
 ## الحالة الحالية
 
 ```text
-المرحلة النشطة: PR #91 — تنظيف legacy موظف (محليًا)
-التقدم الإجمالي:  ██████████████████░  #90 منشور؛ #91 محليًا
-المرحلة التالية:  فحوصات + commit → رفع عند اكتمال الدفعة
+المرحلة النشطة: PR-4+ — hooks / auth / object storage
+التقدم الإجمالي:  ███████████████████░  #91 منشور؛ Runtime ~2624 سطر
+المرحلة التالية:  7.2 hooks · 7.3 auth · 7.1 object storage
 ```
 
 | PR | الحالة | ملاحظة |
@@ -97,7 +97,7 @@ main      →  دمج دفعة واحدة     →  نشر VPS تلقائي
 | PR #88 (hotfix channels) | 🟢 مدمج على `main` | `254e16f` |
 | PR #89 (attachments extract) | 🟢 مدمج على `main` | `193be00` — نشر VPS |
 | PR #90 (entry screens + dialogs) | 🟢 مدمج على `main` | `01d9cde` — نشر VPS ✅ |
-| PR #91 (employee legacy cleanup) | 🟡 قيد التحضير | محليًا — لم يُرفع بعد |
+| PR #91 (employee legacy cleanup) | 🟢 مدمج على `main` | `8e4fc59` — نشر VPS |
 | لاحقًا PR-4+ | 🟡 جاري | auth + object storage |
 
 ---
@@ -274,6 +274,7 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 | 2026-06-08 | PR #90 batch 2 محليًا: `prototype-runtime-operation-dialogs.jsx` — OperationModal، QuickAddSheet، void/restore/duplicate، SavedOutflowShare |
 | 2026-06-08 | دمج PR #90 على main (`01d9cde`) — نشر VPS ✅ — تأكيد إنتاج سليم |
 | 2026-06-08 | بدء PR #91: حذف شاشات موظف legacy ميتة، استخراج `EmployeeSettingsScreen`، إصلاح `formatCalendarDate` import |
+| 2026-06-08 | دمج PR #91 على main (`8e4fc59`) — نشر VPS — Runtime ~2624 سطر |
 
 ---
 
