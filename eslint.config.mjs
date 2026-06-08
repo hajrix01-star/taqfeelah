@@ -23,6 +23,7 @@ const eslintConfig = [
     files: [
       "src/components/TaqfeelahPrototypeRuntime.jsx",
       "src/components/prototype-runtime/OwnerSettingsSection.jsx",
+      "src/components/prototype-runtime/OwnerReportsSection.jsx",
     ],
     rules: {
       "no-undef": "error",

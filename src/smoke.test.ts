@@ -28,6 +28,13 @@ describe("prototype runtime module boundary smoke", () => {
     expect(settings.ActionRow).toBeTypeOf("function");
   });
 
+  it("loads owner reports section exports", async () => {
+    const reports = await import("@/components/prototype-runtime/OwnerReportsSection");
+    expect(reports.ReportsScreen).toBeTypeOf("function");
+    expect(reports.RatioBadge).toBeTypeOf("function");
+    expect(reports.OutflowAnalysis).toBeTypeOf("function");
+  });
+
   it("loads prototype-runtime entry helper exports", async () => {
     const helpers = await import("@/components/prototype-runtime/prototype-runtime-entry-helpers");
     expect(helpers.entryHasAttachment).toBeTypeOf("function");

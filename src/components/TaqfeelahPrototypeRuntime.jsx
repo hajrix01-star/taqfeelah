@@ -142,73 +142,12 @@ import { useRegisterSelectionState } from "@/features/operations/client/use-regi
 import { CLOSEOUT_ALERTS_STORAGE_KEY } from "@/features/owner-shell/client/owner-shell-storage";
 import { useRegisterEntriesFromApi } from "@/features/entries/client/use-register-entries-from-api";
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
-import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
-import {
-  createMigrateSavedSettings,
-  createReadSavedSettings,
-} from "@/features/org-config/client/owner-settings-bootstrap";
-import {
-  buildOwnerProfileUpdate,
-  isOwnerAuthDirty,
-  isOwnerProfileDirty,
-  validateOwnerAuthCredentials,
-} from "@/features/org-config/client/owner-settings-account-actions";
-import {
-  buildOwnerSettingsLocalStoragePayload,
-  buildOwnerSettingsTeamPersistPayload,
-  persistOwnerSettingsToLocalStorage,
-} from "@/features/org-config/client/owner-settings-local-persistence";
 import { isNotebookThemeDirty } from "@/features/org-config/client/owner-settings-appearance-actions";
-import {
-  applyPersistedStoreChannelSettings,
-  applyPersistedStoreOperationalSettings,
-  applyStoreProfileUpdate,
-  buildArchiveStoreDeleteTarget,
-  buildNewConfiguredBusiness,
-  buildRemoveStoreDeleteTarget,
-  partitionConfiguredBusinesses,
-  toggleArchivedBusinessId,
-} from "@/features/org-config/client/owner-settings-store-actions";
-import { resolveStorePanelOpenDrafts } from "@/features/org-config/client/owner-settings-store-panel-actions";
-import {
-  buildNewStaffMember,
-  buildStaffDeleteTarget,
-  canAddStaffMember,
-  cloneStaffDraft,
-  prepareSavedTeamDraft,
-  resolveTeamSaveFailureMessage,
-  toggleEmployeeActiveInDraft,
-  toggleEmployeeStoreInDraft,
-  toggleStoreSelection,
-} from "@/features/org-config/client/owner-settings-team-actions";
-import {
-  applyOwnerSettingsDeleteTarget,
-  listStaffWithoutActiveStoreAfterArchive,
-  removeEmployeePinForPerson,
-  storeHasOperationalRecords,
-} from "@/features/org-config/client/owner-settings-delete-actions";
-import { buildOwnerSettingsDeleteDialog } from "@/features/org-config/client/owner-settings-delete-dialog";
-import {
-  addCustomSalesChannel,
-  canRequestRetireSalesChannel,
-  restoreRetiredSalesChannel,
-  retireSalesChannelInDraft,
-  toggleSalesChannelActive,
-} from "@/features/org-config/client/owner-settings-channel-actions";
-import {
-  mergeOperationalDraft,
-  toggleOperationalCategory,
-} from "@/features/org-config/client/owner-settings-operational-actions";
-import {
-  createDefaultStoreChannelConfig,
-  resolveStoreChannelConfig as readStoreChannelConfig,
-} from "@/features/org-config/client/store-channel-config";
 import {
   aggregateChannels,
   buildBusinessesWithEntrySummaries,
   entriesInPeriod,
-  entryTotalsHaveActivity,
   newestEntries,
   resolveOwnerPeriodSummaryPreference,
   resolveOwnerSingleStoreTotals,
@@ -225,13 +164,6 @@ import {
   registerLogFilterCount,
   summarizeRegisterPeriod,
 } from "@/features/entries/client/register-log-display";
-import {
-  buildLocalReportDaysFromEntries,
-  buildOutflowByCategoryFromEntries,
-  computeOutflowAnalysisMetrics,
-  filterOutflowEntriesForPeriod,
-  percentageOfSalesAmount,
-} from "@/features/reports/client/operational-reports-display";
 import {
   formatCalendarDate,
   formatSelectedMonth,
