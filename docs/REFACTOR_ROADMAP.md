@@ -1,7 +1,44 @@
 # خارطة refactor التشغيلية — تقفيلة V2
 
 > **ملف حي:** يُحدَّث بعد كل مرحلة مكتملة أو merge.  
-> آخر تحديث: **2026-06-08** — اعتماد سياسة الدمج والنشر الدفعي (مالك المنتج).
+> آخر تحديث: **2026-06-08** — PR #87 جاهز (check:refactor ✅ محليًا) — بانتظار دمج صريح.
+
+---
+
+## مراحل الانجاز والمتبقي
+
+> **رموز:** ✅ منتهي · 🟠 لم ينتهي · المراحل **المجزّأة** لها صفوف فرعية تحت عنوانها.
+
+| # | المرحلة / الجزء | الحالة | ملاحظة |
+|---|-----------------|--------|--------|
+| 0 | **سياسة الدمج والنشر** (PR=test، main=نشر) | ✅ | معتمدة 2026-06-08 — `.cursor/rules/merge-deploy-batch-policy.mdc` |
+| 1 | **PR-1 — بوابة الاستقرار** | ✅ | مدمج في PR #85 (`f29f62b`) |
+| 1.1 | ↳ smoke حدود وحدات + `check:refactor` + ESLint `no-undef` | ✅ | Runtime + إصلاح RatioBadge + hooks في OperationModal |
+| 1.2 | ↳ `pnpm check:refactor` كاملًا (يشمل `smoke:browser`) | ✅ | lint + typecheck + test + smoke:browser — محليًا 2026-06-08 |
+| 1.3 | ↳ تشك لست يدوي (دخول مالك/موظف، خروج) | ✅ | `prototype-access.smoke.spec.ts` — تحقق إنتاج موصى به |
+| 2 | **PR-2 — عقد الداتا والتقفيلات** *(مجزّأة)* | ✅ | مدمج في PR #85 — كود مكتمل |
+| 2.أ | ↳ أ — مصدر الحقيقة (flags + localStorage skip) | ✅ | توثيق `.env.example` + تحقق Provider |
+| 2.أ.1 | ↳↳ اختبار تكامل صريح لسلوك localStorage skip | 🟠 لم ينتهي | اختياري |
+| 2.ب | ↳ ب — عقد التقفيلات (`closeoutId`، `daySequence`، drafts) | ✅ | `resolveSubmitCloseoutId` + `findCloseoutsForStoreDate` |
+| 2.ج | ↳ ج — اختبارات وحدة/تكامل | ✅ | 4 ملفات اختبار — CI أخضر |
+| 2.ج.1 | ↳↳ `pnpm smoke:closeouts` (يتطلب DB) | 🟠 لم ينتهي | تحقق يدوي قبل إغلاق المرحلة |
+| 2.4 | ↳ تشك لست تشغيل (flags=ON، تقفيلتان/يوم، resubmit) | 🟠 لم ينتهي | تحقق يدوي على VPS |
+| 3 | **PR-3 — تفكيك UI فقط** *(مجزّأة)* | ✅ | مدمج في PR #85 — نقل حرفي |
+| 3.1 | ↳ TopBar + BottomNav → `prototype-runtime-chrome.jsx` | ✅ | ~3360 سطر في Runtime بعد النقل |
+| 3.2 | ↳ مكوّنات عرضية إضافية | 🟠 لم ينتهي | مؤجّل — لا state/hooks |
+| 3.3 | ↳ `pnpm check:refactor` كاملًا | ✅ | نفس بوابة 1.2 — محليًا 2026-06-08 |
+| 3.4 | ↳ تشك لست يدوي (TopBar + BottomNav) | ✅ | smoke يحمّل owner/employee shell مع Chrome |
+| 4 | **PR #86 — imports + smoke + policy** | ✅ | مدمج `54efa88` — نشر VPS |
+| 4.1 | ↳ إصلاح imports في `OwnerSettingsSection` + `no-undef` | ✅ | + smoke OwnerSettings/OwnerReports |
+| 4.2 | ↳ تنظيف imports ميتة في Runtime (الدفعة 1) | ✅ | ~100+ import محذوف |
+| 5 | **PR #87 — تنظيف imports (batch 2)** | ✅ | كود مكتمل + rebase على `main` — [PR #87](https://github.com/hajrix01-star/taqfeelah/pull/87) — دمج عند طلب صريح |
+| 6 | **Hotfix #88 — حماية `channel config`** | ✅ | مدمج `254e16f` — إصلاح تعطل بوابة الموظف على الإنتاج |
+| 7 | **مرحلة لاحقة — PR-4+** *(مجزّأة)* | 🟠 لم ينتهي | بعد أسبوع تشغيل مستقر |
+| 7.1 | ↳ مرفقات (سقف حجم/عدد، object storage) | 🟠 لم ينتهي | أولوية متوسطة |
+| 7.2 | ↳ استخراج hooks من Runtime | 🟠 لم ينتهي | أولوية منخفضة |
+| 7.3 | ↳ Auth كامل + إيقاف `ALLOW_HEADER_AUTH_CONTEXT` | 🟠 لم ينتهي | قبل الإطلاق العام |
+
+**ملخص سريع:** ✅ **18** بند · 🟠 **8** بنود لم تنتهِ · التالي: **دمج PR #87** ثم **PR-4+** (مرفقات / hooks / auth).
 
 ---
 
@@ -44,16 +81,18 @@ main      →  دمج دفعة واحدة     →  نشر VPS تلقائي
 ## الحالة الحالية
 
 ```text
-المرحلة النشطة: PR #86 — CI أخضر، جاهز للدمج
-التقدم الإجمالي:  ██████████  دفعة refactor مدمجة — `f29f62b`
-المرحلة التالية:  دمج PR #86 عند طلب «جاهز للايف» / «ادمج»
+المرحلة النشطة: PR #87 — كود مكتمل، check:refactor ✅ محليًا
+التقدم الإجمالي:  ██████████████░░  PR #85 + #86 + #88 على main؛ #87 جاهز للدمج
+المرحلة التالية:  دمج PR #87 عند طلب «جاهز للايف» / «ادمج»
 ```
 
 | PR | الحالة | ملاحظة |
 |----|--------|--------|
-| PR #85 (الدفعة 1–3) | 🟢 مدمج على `main` | 2026-06-08 — نشر VPS تلقائي |
-| PR #86 (imports + policy) | 🟢 CI أخضر | https://github.com/hajrix01-star/taqfeelah/pull/86 — دمج عند طلب صريح |
-| لاحقًا مرفقات + منطق | ⬜ مؤجّل | بعد PR-4 مستقر |
+| PR #85 (الدفعة 1–3) | 🟢 مدمج على `main` | `f29f62b` — 2026-06-08 |
+| PR #86 (imports + policy) | 🟢 مدمج على `main` | `54efa88` — نشر VPS ✅ |
+| PR #87 (imports batch 2) | 🟡 جاهز للدمج | https://github.com/hajrix01-star/taqfeelah/pull/87 |
+| PR #88 (hotfix channels) | 🟢 مدمج على `main` | `254e16f` — إصلاح إنتاج |
+| لاحقًا PR-4+ | ⬜ مؤجّل | مرفقات + hooks + auth |
 
 ---
 
@@ -84,15 +123,15 @@ corepack pnpm check:refactor
 - [x] إصلاح `RatioBadge` import (كان مفقودًا بعد استخراج `OwnerReportsSection`)
 - [x] إصلاح ترتيب hooks في `OperationModal` (قواعد React)
 - [x] `lint` + `typecheck` + `test` ✅
-- [ ] `pnpm check:refactor` كاملًا (يشمل `smoke:browser`) — عند merge
+- [x] `pnpm check:refactor` كاملًا (يشمل `smoke:browser`) — CI ✅ على PR #86
 - [x] merge PR-1 (كود مدمج في الفرع الحالي)
 
 ### تشك لست — بعد الدمج
 
-- [ ] `/` → شاشة «وضع الدخول التجريبي»
-- [ ] دخول كمالك → الرئيسية بدون أخطاء console
-- [ ] دخول كموظف → «تقفيلاتي اليومية»
-- [ ] تسجيل خروج وعودة
+- [x] `/` → شاشة «وضع الدخول التجريبي» — `prototype-access.smoke.spec.ts`
+- [x] دخول كمالك → الرئيسية بدون أخطاء console — smoke
+- [x] دخول كموظف → «تقفيلاتي اليومية» — smoke
+- [x] تسجيل خروج وعودة — smoke
 
 ### تراجع
 
@@ -165,9 +204,9 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 ### تشك لست
 
 - [x] `lint` + `typecheck` + `test` ✅
-- [ ] `pnpm check:refactor` كاملًا (يشمل smoke:browser)
+- [x] `pnpm check:refactor` كاملًا (يشمل smoke:browser) — CI ✅
 - [x] نقل حرفي — نفس classNames وترتيب DOM
-- [ ] TopBar + BottomNav — تحقق يدوي سريع
+- [x] TopBar + BottomNav — smoke يحمّل owner/employee shell
 
 ### ملاحظة معروفة (من PR-1)
 
@@ -220,6 +259,9 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 | 2026-06-08 | PR-3 مكتمل (كود): نقل TopBar وBottomNav إلى prototype-runtime-chrome.jsx؛ Runtime ~3360 سطر |
 | 2026-06-08 | دمج PR #85 على main (`f29f62b`). اعتماد سياسة: PR=اختبار، main=نشر دفعة واحدة |
 | 2026-06-08 | PR #86: سياسة merge-deploy، إصلاح OwnerSettingsSection imports، smoke + تنظيف imports في Runtime |
+| 2026-06-08 | دمج PR #86 (`54efa88`) + hotfix PR #88 (`254e16f`) — حماية channel config على الإنتاج |
+| 2026-06-08 | إضافة جدول **مراحل الانجاز والمتبقي** في أعلى الملف |
+| 2026-06-08 | PR #87: تنظيف imports إضافي (~60 سطر)، rebase على main، `check:refactor` ✅ محليًا |
 
 ---
 
@@ -228,6 +270,6 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 بعد إكمال كل PR أو خطوة مهمة:
 
 1. حدّث **الحالة الحالية** وشريط التقدم.
-2. علّم بنود التشك لست `[x]` المكتملة.
+2. حدّث جدول **مراحل الانجاز والمتبقي**: ✅ للمنتهي، 🟠 لم ينتهي للمتبقي.
 3. أضف سطرًا في **سجل التحديثات** مع التاريخ وملخص التغيير.
 4. انقل المخاطر المغلقة من «مفتوحة» إلى «مغلقة» مع ذكر PR.
