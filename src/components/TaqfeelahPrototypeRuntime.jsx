@@ -239,6 +239,7 @@ import {
   buildBusinessesWithEntrySummaries,
   entriesInPeriod,
   entryTotalsHaveActivity,
+  entryTotalsHaveFinancialActivity,
   newestEntries,
   preferLocalTotalsOverEmptyApi,
   summarizeEntries,
@@ -325,7 +326,9 @@ import {
   entryWasRestored,
   entryDateMatches,
   entryHasAttachment,
+  entryIsActive,
   entryIsVoided,
+  entryIsOutflow,
 } from "./prototype-runtime/prototype-runtime-entry-helpers";
 import { BackTitle } from "./prototype-runtime/prototype-runtime-chrome";
 import {
@@ -390,8 +393,6 @@ function AppFontStyles() {
 
 const employeeActorAhmed = { role: "employee", userId: "ahmed", nameAr: "أحمد", nameEn: "Ahmed" };
 const employeeActorSara = { role: "employee", userId: "sara", nameAr: "سارة", nameEn: "Sara" };
-const OUTFLOW_ENTRY_TYPES = new Set(["purchases", "expense", "withdrawal"]);
-const entryIsOutflow = (entry) => OUTFLOW_ENTRY_TYPES.has(entry.type);
 const MAX_ENTRY_AMOUNT = 9999999;
 const westernizeDigits = (value = "") => String(value).replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit))).replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
 function sanitizeAmountInput(value) {
@@ -998,7 +999,6 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
     businessesWithDaySummaries,
     combinedResult: apiCombinedResult,
     getStoreResult,
-    summariesByStoreId,
     loading: summaryLoading,
   } = useStoreDaySummaries({
     enabled: summaryApiActive,
@@ -1011,7 +1011,7 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
     month: selectedMonth,
     refreshKey: summaryRefreshKey,
   });
-  const summaryApiHasData = summaryApiActive && !summaryLoading && Object.keys(summariesByStoreId).length > 0;
+  const summaryApiHasData = summaryApiActive && !summaryLoading && entryTotalsHaveFinancialActivity(apiCombinedResult);
   const localComparisonBusinesses = buildBusinessesWithEntrySummaries({
     businesses: scopedBusinesses,
     operationalEntries,
@@ -1025,7 +1025,7 @@ function OwnerHome({ lang, operationalEntries = [], duplicateSalesAlerts = [], c
   const apiStoreResult = summaryApiHasData && currentBusiness?.id ? getStoreResult(currentBusiness.id) : null;
   const localMonthResult = summaryMonthFromEntries(operationalEntries, currentBusiness?.id, selectedMonth, reviewEnabledForBusiness);
   const preferEntrySummaries = !summaryApiHasData
-    || (entryTotalsHaveActivity(localCombinedResult) && !entryTotalsHaveActivity(apiCombinedResult));
+    || (entryTotalsHaveFinancialActivity(localCombinedResult) && !entryTotalsHaveFinancialActivity(apiCombinedResult));
   const comparisonBusinesses = preferEntrySummaries ? localComparisonBusinesses : businessesWithDaySummaries;
   const result = isCombined
     ? preferEntrySummaries ? localCombinedResult : apiCombinedResult

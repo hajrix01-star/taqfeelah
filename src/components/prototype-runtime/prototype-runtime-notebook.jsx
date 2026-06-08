@@ -1,19 +1,22 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Share2 } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Share2 } from "lucide-react";
 import { notebookCardBackground, notebookLinesBackground, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
 import { formatCalendarDate, formatSelectedMonth } from "@/features/reports/client/report-period-labels";
 import {
+  businessLocation,
   businessName,
   businessRecord,
   businesses,
   channelName,
+  combinedTotals,
   emptyStoreRecord,
   money,
   text,
 } from "./prototype-runtime-demo-data";
+import { InkTab } from "./prototype-runtime-shell-ui";
 
 function Notebook({ children, theme = "yellow", lang = "ar", marginContent = null, fullPage = false }) {
   const isArabic = lang === "ar";

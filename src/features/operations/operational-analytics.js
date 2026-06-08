@@ -122,17 +122,21 @@ export function aggregateChannels(entries, businessId, period, selectedDate, sel
   return [...mapped.values()].filter((channel) => channel.amount > 0);
 }
 
+export function entryTotalsHaveFinancialActivity(totals) {
+  if (!totals || typeof totals !== "object") return false;
+  return (Number(totals.sales) || 0) > 0 || (Number(totals.expense) || 0) > 0;
+}
+
 export function entryTotalsHaveActivity(totals) {
   if (!totals || typeof totals !== "object") return false;
-  return (Number(totals.sales) || 0) > 0
-    || (Number(totals.expense) || 0) > 0
+  return entryTotalsHaveFinancialActivity(totals)
     || (Number(totals.proofs) || 0) > 0
     || (Number(totals.pending) || 0) > 0;
 }
 
 export function preferLocalTotalsOverEmptyApi(localTotals, apiTotals) {
   if (!apiTotals) return localTotals;
-  if (entryTotalsHaveActivity(localTotals) && !entryTotalsHaveActivity(apiTotals)) {
+  if (entryTotalsHaveFinancialActivity(localTotals) && !entryTotalsHaveFinancialActivity(apiTotals)) {
     return localTotals;
   }
   return apiTotals;

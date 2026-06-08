@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildBusinessesWithEntrySummaries,
   entryTotalsHaveActivity,
+  entryTotalsHaveFinancialActivity,
   preferLocalTotalsOverEmptyApi,
 } from "./operational-analytics";
 
@@ -24,6 +25,18 @@ describe("operational analytics summary helpers", () => {
       proofs: 0,
       pending: 0,
     });
+  });
+
+  it("treats API totals with only zero financials as empty for local preference", () => {
+    const local = { sales: 500, expense: 50, net: 450, ratio: "10.0%", proofs: 0, pending: 0 };
+    const api = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 2, pending: 1 };
+    expect(entryTotalsHaveActivity(api)).toBe(true);
+    expect(entryTotalsHaveFinancialActivity(api)).toBe(false);
+    expect(
+      !entryTotalsHaveFinancialActivity(api)
+      || (entryTotalsHaveFinancialActivity(local) && !entryTotalsHaveFinancialActivity(api)),
+    ).toBe(true);
+    expect(preferLocalTotalsOverEmptyApi(local, api)).toEqual(local);
   });
 
   it("builds per-store day summaries from operational entries", () => {

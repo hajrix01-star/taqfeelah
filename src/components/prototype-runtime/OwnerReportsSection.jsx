@@ -9,6 +9,7 @@ import {
   buildBusinessesWithEntrySummaries,
   entriesInPeriod,
   entryTotalsHaveActivity,
+  entryTotalsHaveFinancialActivity,
   newestEntries,
   preferLocalTotalsOverEmptyApi,
   summarizeEntries,
@@ -174,7 +175,7 @@ function ReportsScreen({ lang, operationalEntries = [], archivedReadOnlyBusiness
     includeOutflowTransactions: showOutflowTransactions,
     refreshKey: summaryRefreshKey,
   });
-  const reportsApiHasData = reportsApiEnabled && !reportsApiLoading && reportsApiLoaded;
+  const reportsApiHasData = reportsApiEnabled && !reportsApiLoading && reportsApiLoaded && entryTotalsHaveFinancialActivity(apiCombinedTotals);
   const scopedEntries = operationalEntries.filter((entry) => isCombined ? visibleReportBusinesses.some((business) => business.id === entry.businessId) : entry.businessId === safeSelectedBusiness);
   const periodEntries = scopedEntries.filter((entry) => entryDateMatches(entry, period, selectedReportDate, selectedReportMonth, selectedReportYear, customFrom, customTo));
   const localTotals = summarizeEntries(periodEntries, reviewEnabledForBusiness);
@@ -187,7 +188,7 @@ function ReportsScreen({ lang, operationalEntries = [], archivedReadOnlyBusiness
     reviewEnabledForBusiness,
   });
   const preferEntrySummaries = !reportsApiHasData
-    || (entryTotalsHaveActivity(localTotals) && !entryTotalsHaveActivity(apiCombinedTotals));
+    || (entryTotalsHaveFinancialActivity(localTotals) && !entryTotalsHaveFinancialActivity(apiCombinedTotals));
   const comparisonBusinesses = preferEntrySummaries ? localComparisonBusinesses : businessesWithSummaries;
   const useApiDetailTabs = reportsApiHasData && !isCombined && !preferEntrySummaries;
   const totals = isCombined

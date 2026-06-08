@@ -4,6 +4,11 @@ import {
   summarySalesChannelLabel as buildSummarySalesChannelLabel,
 } from "@/features/entries/client/register-operation-display";
 import {
+  entryDateMatches,
+  entryIsActive,
+  entryIsOutflow,
+} from "@/features/operations/operational-analytics";
+import {
   channelName,
   channels,
   expenseCategories,
@@ -49,12 +54,6 @@ function expandRegisterCloseoutOperationRows(item, lang, salesChannelFilter = "a
 }
 const signedEntryAmount = (entry) => entry.type === "summary" ? entry.amount : -entry.amount;
 const entryWasRestored = (entry) => Boolean(entry.restoredAt);
-const entryDateMatches = (entry, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo) => {
-  if (period === "day") return entry.date === selectedDate;
-  if (period === "month") return entry.date.startsWith(monthSelectionValue(selectedMonth));
-  if (period === "year") return entry.date.startsWith(`${selectedYear}-`);
-  return entry.date >= customFrom && entry.date <= customTo;
-};
 
 export const entryHasAttachment = (entry) => Boolean(entry.attachment);
 export const entryIsVoided = (entry) => entry.status === "voided";
@@ -68,4 +67,6 @@ export {
   signedEntryAmount,
   entryWasRestored,
   entryDateMatches,
+  entryIsActive,
+  entryIsOutflow,
 };
