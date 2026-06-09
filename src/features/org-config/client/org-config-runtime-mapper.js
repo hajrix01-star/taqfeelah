@@ -43,13 +43,16 @@ export function mapApiChannelToUi(channel) {
   if (template) {
     return {
       ...template,
+      id: channel.id,
+      legacyId,
       apiChannelId: channel.id,
       retired,
     };
   }
   const label = typeof channel?.name === "string" ? channel.name.trim() : legacyId;
   return {
-    id: legacyId || channel.id,
+    id: channel.id,
+    legacyId,
     apiChannelId: channel.id,
     custom: true,
     nameAr: label,
@@ -60,11 +63,13 @@ export function mapApiChannelToUi(channel) {
 }
 
 export function mapApiStoreToBusiness(store) {
-  const legacyId = store?.legacyId || (isUuid(store?.id) ? store.id : store?.id);
+  const legacyId = store?.legacyId && !isUuid(store.legacyId) ? store.legacyId : "";
   const name = typeof store?.name === "string" ? store.name.trim() : "";
+  const id = isUuid(store?.id) ? store.id : legacyId || store?.id;
   return {
-    id: legacyId,
+    id,
     dbStoreId: store.id,
+    legacyId,
     displayName: name,
     nameAr: name,
     nameEn: name,
@@ -76,14 +81,15 @@ export function mapApiStoreToBusiness(store) {
 
 export function mapApiMemberToStaff(member, { employeePins = {} } = {}) {
   const storeIds = (member?.storeAccess || [])
-    .map((row) => row.legacyStoreId || row.storeId)
+    .map((row) => row.storeId)
     .filter(Boolean);
   const memberId = member?.memberId || "";
   const userId = member?.userId || "";
   const legacyStaffId = member?.legacyStaffId || userId || memberId;
   const pin = employeePins[legacyStaffId] || employeePins[userId] || employeePins[memberId] || "1234";
   return {
-    id: legacyStaffId,
+    id: userId || legacyStaffId,
+    legacyId: legacyStaffId && legacyStaffId !== userId ? legacyStaffId : "",
     memberId,
     apiUserId: userId,
     nameAr: member?.name || "",
@@ -131,9 +137,8 @@ export function mapOrgConfigBundleToRuntime({
 
   const storeOperationalSettings = {};
   const storesByUuid = new Map(stores.map((store) => [store.id, store]));
-  const storesByLegacy = new Map(stores.map((store) => [store.legacyId || store.id, store]));
   configuredBusinesses.forEach((business) => {
-    const storeRow = storesByUuid.get(business.dbStoreId) || storesByLegacy.get(business.id);
+    const storeRow = storesByUuid.get(business.dbStoreId) || storesByUuid.get(business.id);
     if (storeRow?.operationalSettings) {
       storeOperationalSettings[business.id] = normalizeStoreOperationalSettings(storeRow.operationalSettings);
     }
@@ -153,6 +158,7 @@ export function buildOrgConfigPersistBaseline(snapshot) {
     businesses: (snapshot.configuredBusinesses || []).map((business) => ({
       id: business.id,
       dbStoreId: business.dbStoreId || "",
+      legacyId: business.legacyId || "",
       displayName: business.displayName || business.nameAr || business.nameEn || "",
       customLocation: business.customLocation || "",
     })),
@@ -161,6 +167,7 @@ export function buildOrgConfigPersistBaseline(snapshot) {
     storeOperationalSettings: snapshot.storeOperationalSettings || {},
     staff: (snapshot.staff || []).map((person) => ({
       id: person.id,
+      legacyId: person.legacyId || "",
       memberId: person.memberId || "",
       apiUserId: person.apiUserId || "",
       nameAr: person.nameAr || "",

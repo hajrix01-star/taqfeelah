@@ -244,7 +244,6 @@ export async function getEmployeeLoginRoster(organizationId: string) {
     memberRows,
     accessRows,
     userIdMap: envAuth.userIdMap,
-    storeIdMap: envAuth.storeIdMap,
   });
 }
 
@@ -252,31 +251,28 @@ export function mapEmployeeLoginRosterRows({
   memberRows,
   accessRows,
   userIdMap,
-  storeIdMap,
 }: {
   memberRows: Array<{ memberId: string; userId: string; name: string }>;
   accessRows: Array<{ memberId: string; storeId: string }>;
   userIdMap: Record<string, string>;
-  storeIdMap: Record<string, string>;
 }) {
   const reverseUserIdMap = new Map(
     Object.entries(userIdMap).map(([legacyId, userId]) => [userId, legacyId]),
   );
-  const reverseStoreIdMap = new Map(
-    Object.entries(storeIdMap).map(([legacyId, storeId]) => [storeId, legacyId]),
-  );
   const storeIdsByMemberId = new Map<string, string[]>();
   accessRows.forEach((row) => {
     const current = storeIdsByMemberId.get(row.memberId) || [];
-    current.push(reverseStoreIdMap.get(row.storeId) || row.storeId);
+    current.push(row.storeId);
     storeIdsByMemberId.set(row.memberId, current);
   });
 
   return memberRows
     .map((member) => {
       const storeIds = [...new Set(storeIdsByMemberId.get(member.memberId) || [])];
+      const legacyId = reverseUserIdMap.get(member.userId) || "";
       return {
-        id: reverseUserIdMap.get(member.userId) || member.userId,
+        id: member.userId,
+        legacyId,
         apiUserId: member.userId,
         memberId: member.memberId,
         nameAr: member.name,

@@ -25,21 +25,19 @@ describe("employee login roster mapping", () => {
       userIdMap: {
         ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
       },
-      storeIdMap: {
-        shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
-      },
     });
 
     expect(roster).toEqual([
       {
-        id: "ahmed",
+        id: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+        legacyId: "ahmed",
         apiUserId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
         memberId: "member-ahmed",
         nameAr: "Ahmed",
         nameEn: "Ahmed",
         active: true,
         removed: false,
-        storeIds: ["shami"],
+        storeIds: ["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"],
       },
     ]);
   });

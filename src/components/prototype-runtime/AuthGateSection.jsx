@@ -231,14 +231,22 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
     const saved = readEmployeeCredentials();
     if (!saved) return;
     setRememberMe(true);
-    if (saved.employeeId && activeStaff.some((person) => person.id === saved.employeeId)) setSelectedId(saved.employeeId);
+    if (saved.employeeId && activeStaff.some((person) => (
+      person.id === saved.employeeId
+      || person.legacyId === saved.employeeId
+      || person.apiUserId === saved.employeeId
+    ))) setSelectedId(saved.employeeId);
     else if (saved.employeeId) setManualEmployeeId(saved.employeeId);
     if (saved.pin) setPin(saved.pin);
   }, [activeStaff]);
   const submit = async () => {
     if (submitting) return;
     const employeeIdentifier = activeStaff.length > 0 ? selectedId : manualEmployeeId.trim();
-    const person = activeStaff.find((item) => item.id === employeeIdentifier);
+    const person = activeStaff.find((item) => (
+      item.id === employeeIdentifier
+      || item.legacyId === employeeIdentifier
+      || item.apiUserId === employeeIdentifier
+    ));
     if (!employeeIdentifier) { setError(text(lang, "noActiveEmployee")); return; }
     if (APP_IN_PRODUCTION_MODE) {
       setSubmitting(true);

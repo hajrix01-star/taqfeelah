@@ -112,3 +112,17 @@ UI state: memory/cache only
 Durable data: UI -> API -> PostgreSQL/object storage
 Prototype fallback: allowed only outside production app mode
 ```
+
+## Canonical identity invariant
+
+DB-backed runtime objects use database UUIDs as their canonical `id`.
+
+- Stores: `business.id` is the `stores.id` UUID; old values such as `shami`
+  are kept only as `legacyId`.
+- Staff: `person.id` is the `users.id` UUID; old values such as `ahmed` are
+  kept only as `legacyId`.
+- Sales channels loaded from DB use the sales-channel UUID as `id`; legacy
+  labels such as `cash` stay in `legacyId` for icons, labels, and temporary
+  compatibility maps.
+
+This prevents UI/API comparisons between two identities for the same entity.

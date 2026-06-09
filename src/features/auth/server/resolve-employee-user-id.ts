@@ -2,6 +2,7 @@ import { z } from "zod";
 
 type StaffPerson = {
   id?: string;
+  legacyId?: string;
   apiUserId?: string;
   nameAr?: string;
   nameEn?: string;
@@ -27,6 +28,8 @@ function findStaffPerson(staff: StaffPerson[], employeeId: string): StaffPerson 
   return staff.find((person) => {
     const id = typeof person.id === "string" ? normalizeEmployeeKey(person.id) : "";
     if (id === normalized || id.toLowerCase() === lowered) return true;
+    const legacyId = typeof person.legacyId === "string" ? normalizeEmployeeKey(person.legacyId) : "";
+    if (legacyId === normalized || legacyId.toLowerCase() === lowered) return true;
     const nameEn = typeof person.nameEn === "string" ? person.nameEn.trim().toLowerCase() : "";
     const nameAr = typeof person.nameAr === "string" ? person.nameAr.trim() : "";
     return nameEn === lowered || nameAr === normalized;
@@ -59,7 +62,9 @@ export function resolveEmployeeUserId(
       return person.apiUserId;
     }
     const legacyId = typeof person.id === "string" ? normalizeEmployeeKey(person.id) : "";
-    const fromStaffLegacyMap = legacyId ? mappedUserIdFromMap(legacyId, userIdMap) : "";
+    const explicitLegacyId = typeof person.legacyId === "string" ? normalizeEmployeeKey(person.legacyId) : "";
+    const fromStaffLegacyMap = (explicitLegacyId ? mappedUserIdFromMap(explicitLegacyId, userIdMap) : "")
+      || (legacyId ? mappedUserIdFromMap(legacyId, userIdMap) : "");
     if (fromStaffLegacyMap) return fromStaffLegacyMap;
   }
 
@@ -78,7 +83,9 @@ export function enrichStaffWithApiUserIds(
       return person;
     }
     const legacyId = typeof person.id === "string" ? normalizeEmployeeKey(person.id) : "";
-    const mapped = legacyId ? mappedUserIdFromMap(legacyId, userIdMap) : "";
+    const explicitLegacyId = typeof person.legacyId === "string" ? normalizeEmployeeKey(person.legacyId) : "";
+    const mapped = (explicitLegacyId ? mappedUserIdFromMap(explicitLegacyId, userIdMap) : "")
+      || (legacyId ? mappedUserIdFromMap(legacyId, userIdMap) : "");
     if (mapped) {
       person.apiUserId = mapped;
     }
