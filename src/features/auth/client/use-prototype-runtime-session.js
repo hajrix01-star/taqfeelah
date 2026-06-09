@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
+import { resolveClientOrganizationId } from "@/core/client/resolve-client-organization-id";
 import { isUuid, setRuntimeApiIdMaps } from "@/features/closeouts/client/closeouts-api-client";
 import {
+  patchEmployeeStaffStoreIdsFromHydration,
   patchRuntimeApiMapsForEmployeeSession,
   syncLoggedInEmployeeIdFromSession,
 } from "@/features/employee-closeouts/employee-portal-session";
@@ -71,11 +73,16 @@ export function usePrototypeRuntimeSessionSync({
   setArchivedBusinessIds,
   setStoreChannelSettings,
   setStoreOperationalSettings,
+  employeeBusinessId,
+  setEmployeeBusinessId,
   closeoutsApiEnabled,
   entriesApiEnabled,
   configuredBusinesses,
   storeChannelSettings,
 }) {
+  const employeeBusinessIdRef = useRef(employeeBusinessId);
+  employeeBusinessIdRef.current = employeeBusinessId;
+
   useEffect(() => {
     if (!APP_IN_PRODUCTION_MODE) return;
     let cancelled = false;
@@ -126,7 +133,8 @@ export function usePrototypeRuntimeSessionSync({
       setEmployeeRuntimeReady(true);
       return undefined;
     }
-    if (!ORG_CONFIG_API_ENABLED || !sessionUserId || !sessionOrganizationId) {
+    const resolvedOrganizationId = resolveClientOrganizationId({ sessionOrganizationId });
+    if (!ORG_CONFIG_API_ENABLED || !sessionUserId || !resolvedOrganizationId) {
       setEmployeeRuntimeReady(true);
       return undefined;
     }
@@ -138,6 +146,8 @@ export function usePrototypeRuntimeSessionSync({
     })
       .then((mapped) => {
         if (cancelled || !mapped) return;
+        const businesses = Array.isArray(mapped.configuredBusinesses) ? mapped.configuredBusinesses : [];
+
         applyOrgConfigMappedState(mapped, {
           setConfiguredBusinesses,
           setArchivedBusinessIds,
@@ -145,6 +155,24 @@ export function usePrototypeRuntimeSessionSync({
           setStaff,
           setStoreOperationalSettings,
         });
+
+        if (!businesses.length) return;
+
+        let patchedBusinessId = employeeBusinessIdRef.current;
+        setStaff((currentStaff) => {
+          const patch = patchEmployeeStaffStoreIdsFromHydration({
+            staff: currentStaff,
+            loggedInEmployeeId,
+            sessionUserId,
+            configuredBusinesses: businesses,
+            employeeBusinessId: patchedBusinessId,
+          });
+          patchedBusinessId = patch.employeeBusinessId;
+          return patch.staff;
+        });
+        if (patchedBusinessId !== employeeBusinessIdRef.current) {
+          setEmployeeBusinessId(patchedBusinessId);
+        }
       })
       .catch((error) => {
         if (cancelled) return;
@@ -159,10 +187,12 @@ export function usePrototypeRuntimeSessionSync({
   }, [
     employee,
     loggedIn,
+    loggedInEmployeeId,
     sessionOrganizationId,
     sessionUserId,
     setArchivedBusinessIds,
     setConfiguredBusinesses,
+    setEmployeeBusinessId,
     setEmployeeRuntimeReady,
     setStaff,
     setStoreChannelSettings,
