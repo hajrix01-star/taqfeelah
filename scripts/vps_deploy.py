@@ -9,17 +9,19 @@ Usage examples:
   python scripts/vps_deploy.py preflight --domain taqfeelah.com --www-domain www.taqfeelah.com
 
 Environment variables:
-  VPS_HOST, VPS_USER, VPS_PASS
+  VPS_HOST, VPS_USER, VPS_PASS (or VPS_SSH_PRIVATE_KEY)
   VPS_PORT (optional, default: 22)
   VPS_CONNECT_TIMEOUT (optional seconds, default: 25)
   VPS_CONNECT_RETRIES (optional, default: 3)
   VPS_RETRY_DELAY_SECONDS (optional seconds, default: 5)
+  POST_DEPLOY_BASELINE_VERIFY (optional, default: true on verify)
 """
 
 from __future__ import annotations
 
 import argparse
 import base64
+import io
 import os
 import shlex
 import socket
@@ -177,6 +179,8 @@ VPS_POSTGRES_USER = "taqfeelah"
 VPS_POSTGRES_PASSWORD = "taqfeelah_prod_local_v1"
 VPS_POSTGRES_DB = "taqfeelah"
 VPS_POSTGRES_PORT = 5433
+TAQFEELAH_APP_DIR = "/opt/taqfeelah"
+TAQFEELAH_APP_PORT = 3010
 
 
 def safe_print(value: str) -> None:
@@ -196,6 +200,7 @@ class VPS:
         password: str,
         *,
         port: int = 22,
+        pkey: paramiko.PKey | None = None,
         connect_timeout: float = 25,
         connect_retries: int = 3,
         retry_delay_seconds: float = 5,
@@ -203,6 +208,7 @@ class VPS:
         self.host = host
         self.user = user
         self.password = password
+        self.pkey = pkey
         self.port = port
         self.connect_timeout = connect_timeout
         self.connect_retries = max(1, connect_retries)
@@ -245,18 +251,24 @@ class VPS:
                     sock = socket.socket(family, socket.SOCK_STREAM)
                     sock.settimeout(self.connect_timeout)
                     sock.connect(sockaddr)
-                    client.connect(
-                        self.host,
-                        port=self.port,
-                        username=self.user,
-                        password=self.password,
-                        sock=sock,
-                        timeout=self.connect_timeout,
-                        banner_timeout=self.connect_timeout,
-                        auth_timeout=self.connect_timeout,
-                        look_for_keys=False,
-                        allow_agent=False,
-                    )
+                    connect_kwargs: dict = {
+                        "hostname": self.host,
+                        "port": self.port,
+                        "username": self.user,
+                        "sock": sock,
+                        "timeout": self.connect_timeout,
+                        "banner_timeout": self.connect_timeout,
+                        "auth_timeout": self.connect_timeout,
+                        "look_for_keys": False,
+                        "allow_agent": False,
+                    }
+                    if self.pkey is not None:
+                        connect_kwargs["pkey"] = self.pkey
+                        if self.password:
+                            connect_kwargs["password"] = self.password
+                    else:
+                        connect_kwargs["password"] = self.password
+                    client.connect(**connect_kwargs)
                     self.client = client
                     return self
                 except Exception as exc:
@@ -323,6 +335,49 @@ def get_required_env(name: str) -> str:
     if not value:
         raise RuntimeError(f"Missing required environment variable: {name}")
     return value
+
+
+def load_ssh_private_key_from_env() -> paramiko.PKey | None:
+    raw = os.environ.get("VPS_SSH_PRIVATE_KEY", "")
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    stream = io.StringIO(raw.strip())
+    for key_class in (paramiko.Ed25519Key, paramiko.ECDSAKey, paramiko.RSAKey):
+        try:
+            stream.seek(0)
+            return key_class.from_private_key(stream)
+        except Exception:
+            continue
+    raise RuntimeError("VPS_SSH_PRIVATE_KEY is set but could not be parsed as a private key")
+
+
+def open_vps_client(
+    *,
+    port: int | None = None,
+    connect_timeout: float | None = None,
+    connect_retries: int | None = None,
+    retry_delay_seconds: float | None = None,
+) -> VPS:
+    host = get_required_env("VPS_HOST")
+    user = get_required_env("VPS_USER")
+    password = os.environ.get("VPS_PASS", "").strip()
+    pkey = load_ssh_private_key_from_env()
+    if not password and pkey is None:
+        raise RuntimeError("Missing VPS auth: set VPS_PASS or VPS_SSH_PRIVATE_KEY")
+    return VPS(
+        host,
+        user,
+        password,
+        port=port if port is not None else parse_env_int("VPS_PORT", 22),
+        pkey=pkey,
+        connect_timeout=float(connect_timeout or os.environ.get("VPS_CONNECT_TIMEOUT", "25")),
+        connect_retries=connect_retries
+        if connect_retries is not None
+        else parse_env_int("VPS_CONNECT_RETRIES", 3),
+        retry_delay_seconds=retry_delay_seconds
+        if retry_delay_seconds is not None
+        else float(os.environ.get("VPS_RETRY_DELAY_SECONDS", "5")),
+    )
 
 
 def env_value_or_default(name: str, fallback: str) -> str:
@@ -764,6 +819,37 @@ def cmd_preflight(vps: VPS, domain: str, www_domain: str) -> None:
     safe_print("\nPreflight passed — safe to deploy.")
 
 
+def post_deploy_baseline_enabled() -> bool:
+    raw = os.environ.get("POST_DEPLOY_BASELINE_VERIFY", "true").strip().lower()
+    return raw not in {"0", "false", "no", "off"}
+
+
+def run_post_deploy_baseline(vps: VPS) -> None:
+    print_section("Post-deploy baseline: DB schema + closeout API checklist")
+    baseline_cmd = textwrap.dedent(
+        f"""
+        set -euo pipefail
+        cd {shlex.quote(TAQFEELAH_APP_DIR)}
+        set -a
+        . ./.env.production
+        set +a
+        node scripts/verify-plan-table-db.mjs
+        CHECK_BASE_URL="http://127.0.0.1:{TAQFEELAH_APP_PORT}" node scripts/db-source-unification-check.mjs
+        """
+    ).strip()
+    _, out, err = vps.run(baseline_cmd, check=True)
+    if out.strip():
+        safe_print(out.strip())
+    if err.strip():
+        safe_print("STDERR:")
+        safe_print(err.strip())
+    safe_print("Post-deploy baseline verify passed.")
+
+
+def cmd_baseline_verify(vps: VPS) -> None:
+    run_post_deploy_baseline(vps)
+
+
 def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     wave_org_id = PRODUCTION_ENV_BOOTSTRAP_DEFAULTS["NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID"]
     wave_owner_id = PRODUCTION_ENV_BOOTSTRAP_DEFAULTS["NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID"]
@@ -1145,6 +1231,9 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             continue
         if code != 0:
             raise RuntimeError(f"Verification command failed ({code}): {c}")
+
+    if post_deploy_baseline_enabled():
+        run_post_deploy_baseline(vps)
 
 
 def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> None:
@@ -1663,6 +1752,8 @@ def main() -> int:
     p_verify.add_argument("--domain", required=True)
     p_verify.add_argument("--www-domain", required=True)
 
+    sub.add_parser("baseline-verify")
+
     p_preflight = sub.add_parser("preflight")
     p_preflight.add_argument("--domain", required=True)
     p_preflight.add_argument("--www-domain", required=True)
@@ -1687,8 +1778,11 @@ def main() -> int:
     args = parser.parse_args()
 
     host = get_required_env("VPS_HOST")
-    user = get_required_env("VPS_USER")
-    password = get_required_env("VPS_PASS")
+    get_required_env("VPS_USER")
+    password = os.environ.get("VPS_PASS", "").strip()
+    pkey = load_ssh_private_key_from_env()
+    if not password and pkey is None:
+        raise RuntimeError("Missing VPS auth: set VPS_PASS or VPS_SSH_PRIVATE_KEY")
     port = parse_env_int("VPS_PORT", 22)
     connect_timeout = float(os.environ.get("VPS_CONNECT_TIMEOUT", "25"))
     connect_retries = parse_env_int("VPS_CONNECT_RETRIES", 3)
@@ -1719,10 +1813,7 @@ def main() -> int:
                 + "\n".join(probe_lines)
             )
 
-    with VPS(
-        host,
-        user,
-        password,
+    with open_vps_client(
         port=port,
         connect_timeout=connect_timeout,
         connect_retries=connect_retries,
@@ -1734,6 +1825,8 @@ def main() -> int:
             cmd_deploy(vps, args.domain, args.www_domain, args.local_path)
         elif args.action == "verify":
             cmd_verify(vps, args.domain, args.www_domain)
+        elif args.action == "baseline-verify":
+            cmd_baseline_verify(vps)
         elif args.action == "preflight":
             cmd_preflight(vps, args.domain, args.www_domain)
         elif args.action == "deploy-pm2":

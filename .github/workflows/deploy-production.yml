@@ -80,8 +80,8 @@ jobs:
             echo "::error::Missing GitHub secret VPS_USER"
             missing=1
           fi
-          if [ -z "${{ secrets.VPS_PASS }}" ]; then
-            echo "::error::Missing GitHub secret VPS_PASS"
+          if [ -z "${{ secrets.VPS_PASS }}" ] && [ -z "${{ secrets.VPS_SSH_PRIVATE_KEY }}" ]; then
+            echo "::error::Missing GitHub secret VPS_PASS or VPS_SSH_PRIVATE_KEY"
             missing=1
           fi
           if [ "$missing" -ne 0 ]; then
@@ -89,7 +89,7 @@ jobs:
             echo "Add repository secrets at:"
             echo "https://github.com/hajrix01-star/taqfeelah/settings/secrets/actions"
             echo ""
-            echo "Required: VPS_HOST, VPS_USER, VPS_PASS"
+            echo "Required: VPS_HOST, VPS_USER, and VPS_PASS or VPS_SSH_PRIVATE_KEY"
             exit 1
           fi
 
@@ -98,12 +98,13 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
+          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_CONNECT_TIMEOUT: "30"
-          VPS_CONNECT_RETRIES: "8"
-          VPS_RETRY_DELAY_SECONDS: "12"
-          VPS_PROBE_RETRIES: "6"
-          VPS_PROBE_RETRY_DELAY_SECONDS: "15"
+          VPS_CONNECT_RETRIES: "10"
+          VPS_RETRY_DELAY_SECONDS: "15"
+          VPS_PROBE_RETRIES: "8"
+          VPS_PROBE_RETRY_DELAY_SECONDS: "20"
         run: |
           python scripts/vps_deploy.py preflight \
             --domain taqfeelah.com \
@@ -114,10 +115,11 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
+          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_CONNECT_TIMEOUT: "25"
-          VPS_CONNECT_RETRIES: "8"
-          VPS_RETRY_DELAY_SECONDS: "12"
+          VPS_CONNECT_TIMEOUT: "30"
+          VPS_CONNECT_RETRIES: "10"
+          VPS_RETRY_DELAY_SECONDS: "15"
           RESET_FOUNDATION_ON_DEPLOY: ${{ contains(github.event.head_commit.message, '[reset-foundation]') }}
           RESET_FOUNDATION_CONFIRM: "reset-modern-foundation"
           DEPLOYMENT_WAVE: "5"
@@ -168,10 +170,12 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
+          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_CONNECT_TIMEOUT: "25"
-          VPS_CONNECT_RETRIES: "8"
-          VPS_RETRY_DELAY_SECONDS: "12"
+          VPS_CONNECT_TIMEOUT: "30"
+          VPS_CONNECT_RETRIES: "10"
+          VPS_RETRY_DELAY_SECONDS: "15"
+          POST_DEPLOY_BASELINE_VERIFY: "true"
           DEPLOYMENT_WAVE: "5"
         run: |
           set -euo pipefail

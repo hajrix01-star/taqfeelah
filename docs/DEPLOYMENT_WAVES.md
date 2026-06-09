@@ -177,12 +177,31 @@
 
 1. **الموقع قد يبقى شغالاً** — هذا يعني أن Nginx والتطبيق يعملان، لكن GitHub لا يستطيع الدخول عبر SSH للنشر.
 2. **جرّب أولاً:** من GitHub Actions اضغط **Re-run failed jobs** (أحياناً الحظر مؤقت).
-3. **على VPS (Hostinger hPanel أو SSH يدوي):**
+3. **مرة واحدة على VPS** (root): `bash scripts/vps-harden-github-deploy.sh` — يعيد تشغيل SSH، يفتح OpenSSH في UFW، ويرفع `maxretry` في fail2ban لتقليل حظر GitHub Actions.
+4. **على VPS (Hostinger hPanel أو SSH يدوي):**
    - تأكد أن خدمة SSH تعمل: `systemctl status ssh`
    - راجع fail2ban: `fail2ban-client status sshd` — إن وُجد حظر، انتظر أو أزل الحظر
    - راجع الجدار الناري: `ufw status` — المنفذ 22 (أو `VPS_PORT`) مفتوح
-4. **تحقق من سر GitHub `VPS_PORT`:** إن كان SSH على منفذ غير 22، يجب أن يطابق المنفذ الفعلي.
-5. بعد الإصلاح: أعد تشغيل workflow **Production Deploy** (أو انتظر النشر التالي مع push).
+5. **تحقق من سر GitHub `VPS_PORT`:** إن كان SSH على منفذ غير 22، يجب أن يطابق المنفذ الفعلي.
+6. **اختياري:** أضف سر `VPS_SSH_PRIVATE_KEY` (مفتاح deploy) بدل الاعتماد على `VPS_PASS` فقط.
+7. بعد الإصلاح: أعد تشغيل workflow **Production Deploy** (أو انتظر النشر التالي مع push).
+
+### تحقق baseline بعد النشر
+
+خطوة **Verify production** في GitHub Actions تشغّل (على VPS) عند `POST_DEPLOY_BASELINE_VERIFY=true`:
+
+- `node scripts/verify-plan-table-db.mjs` — جداول، `entries.closeout_id NOT NULL`، لا orphans
+- `CHECK_BASE_URL=http://127.0.0.1:3010 node scripts/db-source-unification-check.mjs` — مسار تقفيلة كامل عبر API المحلي
+
+تشغيل يدوي على VPS:
+
+```bash
+cd /opt/taqfeelah && set -a && . ./.env.production && set +a
+node scripts/verify-plan-table-db.mjs
+CHECK_BASE_URL="http://127.0.0.1:3010" node scripts/db-source-unification-check.mjs
+```
+
+أو من جهازك (بعد ضبط `VPS_*`): `python scripts/vps_deploy.py baseline-verify`
 
 ## مرجع الأعلام التفصيلي
 

@@ -10,14 +10,16 @@ const tables = await client.query(`
   select table_name
   from information_schema.tables
   where table_schema = 'public'
-    and table_name in ('daily_closeouts', 'entries', 'audit_events', '__drizzle_migrations')
+    and table_name in ('daily_closeouts', 'entries', 'audit_events')
   order by 1
 `);
 
 const closeoutCol = await client.query(`
-  select column_name
+  select column_name, is_nullable
   from information_schema.columns
-  where table_name = 'entries' and column_name = 'closeout_id'
+  where table_schema = 'public'
+    and table_name = 'entries'
+    and column_name = 'closeout_id'
 `);
 
 const closeoutSample = await client.query(`
@@ -51,13 +53,41 @@ const migrations = await client.query(`
   order by created_at
 `).catch(() => ({ rows: [] }));
 
-console.log(JSON.stringify({
+const report = {
   tables: tables.rows.map((r) => r.table_name),
   entriesHasCloseoutId: closeoutCol.rows.length > 0,
+  entriesCloseoutIdNotNull: closeoutCol.rows[0]?.is_nullable === "NO",
   closeoutSample: closeoutSample.rows,
   entryLink: entryLink.rows[0],
   returnedSample: returnedRow.rows[0] || null,
   drizzleMigrations: migrations.rows,
-}, null, 2));
+};
+
+console.log(JSON.stringify(report, null, 2));
+
+const failures = [];
+const tableNames = new Set(report.tables);
+for (const required of ["daily_closeouts", "entries"]) {
+  if (!tableNames.has(required)) failures.push(`missing table: ${required}`);
+}
+if (!report.entriesHasCloseoutId) failures.push("entries.closeout_id column missing");
+if (!report.entriesCloseoutIdNotNull) failures.push("entries.closeout_id is not NOT NULL");
+if ((report.entryLink?.unlinked ?? 0) > 0) {
+  failures.push(`entries.unlinked=${report.entryLink.unlinked} (expected 0)`);
+}
+if ((report.entryLink?.active_orphans ?? 0) > 0) {
+  failures.push(`entries.active_orphans=${report.entryLink.active_orphans} (expected 0)`);
+}
+if (report.drizzleMigrations.length < 3) {
+  failures.push(`drizzle migrations=${report.drizzleMigrations.length} (expected >= 3)`);
+}
 
 await client.end();
+
+if (failures.length > 0) {
+  console.error("\n❌ verify-plan-table-db failed:");
+  for (const message of failures) console.error(`  - ${message}`);
+  process.exit(1);
+}
+
+console.log("\n✅ verify-plan-table-db passed.");
