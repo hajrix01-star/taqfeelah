@@ -4,7 +4,7 @@
  * @property {string[]} activeIds
  */
 
-const EMPTY_STORE_CHANNEL_CONFIG = Object.freeze({
+export const EMPTY_STORE_CHANNEL_CONFIG = Object.freeze({
   channels: [],
   activeIds: [],
 });
@@ -52,16 +52,26 @@ export function resolveStoreChannelConfig(settings, storeId, defaultConfig) {
  * @param {string[]} businessIds
  * @param {StoreChannelConfig} defaultConfig
  */
-export function ensureStoreChannelSettingsForBusinesses(current, businessIds, defaultConfig) {
+export function ensureStoreChannelSettingsForBusinesses(
+  current,
+  businessIds,
+  defaultConfig,
+  { allowPrototypeDefaults = true } = {},
+) {
   let changed = false;
   const next = { ...current };
 
   businessIds.forEach((businessId) => {
     if (!next[businessId]) {
-      next[businessId] = {
-        channels: defaultConfig.channels.map((channel) => ({ ...channel })),
-        activeIds: [...defaultConfig.activeIds],
-      };
+      next[businessId] = allowPrototypeDefaults
+        ? {
+          channels: defaultConfig.channels.map((channel) => ({ ...channel })),
+          activeIds: [...defaultConfig.activeIds],
+        }
+        : {
+          channels: [],
+          activeIds: [],
+        };
       changed = true;
     }
   });

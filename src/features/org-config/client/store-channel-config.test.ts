@@ -52,4 +52,14 @@ describe("store channel config", () => {
     expect(next.shami.activeIds).toEqual(["cash", "mada"]);
     expect(ensureStoreChannelSettingsForBusinesses(next, ["shami"], defaultConfig)).toBe(next);
   });
+
+  it("skips prototype defaults when DB org config is the source", () => {
+    const next = ensureStoreChannelSettingsForBusinesses(
+      {},
+      ["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"],
+      defaultConfig,
+      { allowPrototypeDefaults: false },
+    );
+    expect(next["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"]).toEqual({ channels: [], activeIds: [] });
+  });
 });

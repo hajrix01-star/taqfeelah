@@ -69,16 +69,32 @@ describe("runtime settings bridge", () => {
     expect(usesRuntimeSettingsApi()).toBe(true);
   });
 
-  it("resolveOwnerSettingsApiAuth returns prototype header auth when entries API is enabled outside production auth", () => {
+  it("resolveOwnerSettingsApiAuth returns env UUID fallback when entries API is enabled without session", () => {
     vi.stubEnv("NEXT_PUBLIC_ENTRIES_API_ENABLED", "true");
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
-    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID", "org-1");
-    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID", "owner-1");
+    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID", "11111111-1111-4111-8111-111111111111");
+    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID", "22222222-2222-4222-8222-222222222222");
 
     expect(resolveOwnerSettingsApiAuth()).toEqual({
-      organizationId: "org-1",
-      actorUserId: "owner-1",
+      organizationId: "11111111-1111-4111-8111-111111111111",
+      actorUserId: "22222222-2222-4222-8222-222222222222",
       actorRole: "owner",
+    });
+  });
+
+  it("resolveOwnerSettingsApiAuth prefers session UUIDs in production prototype-access mode", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
+    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "true");
+    vi.stubEnv("NEXT_PUBLIC_ENTRIES_API_ENABLED", "true");
+
+    expect(resolveOwnerSettingsApiAuth({
+      sessionOrganizationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      sessionUserId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      actorRole: "employee",
+    })).toEqual({
+      organizationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      actorUserId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      actorRole: "employee",
     });
   });
 

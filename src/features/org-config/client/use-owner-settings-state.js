@@ -167,14 +167,17 @@ export function useOwnerSettingsState({
     });
   }, [migrateSavedSettings, orgConfigApiEnabled]);
 
-  const ownerSettingsApiAuth = resolveOwnerSettingsApiAuth({
-    sessionOrganizationId,
-    sessionUserId,
-    actorRole: isEmployee ? "employee" : "owner",
-  });
+  const ownerSettingsApiAuth = useMemo(
+    () => resolveOwnerSettingsApiAuth({
+      sessionOrganizationId,
+      sessionUserId,
+      actorRole: isEmployee ? "employee" : "owner",
+    }),
+    [isEmployee, sessionOrganizationId, sessionUserId],
+  );
 
   const { error: orgConfigSyncError } = useOrgConfigRuntimeBridge({
-    enabled: orgConfigApiEnabled && usesRuntimeSettingsApi(),
+    enabled: orgConfigApiEnabled && usesRuntimeSettingsApi() && !isEmployee,
     auth: ownerSettingsApiAuth,
     loggedIn,
     isEmployee,
@@ -226,9 +229,10 @@ export function useOwnerSettingsState({
       current,
       businessIds,
       defaultStoreChannelConfig,
+      { allowPrototypeDefaults: !closeoutsApiDbSource && !orgConfigApiEnabled },
     ));
     setStoreOperationalSettings((current) => ensureStoreOperationalSettingsForBusinesses(current, businessIds));
-  }, [configuredBusinesses, defaultStoreChannelConfig]);
+  }, [closeoutsApiDbSource, configuredBusinesses, defaultStoreChannelConfig, orgConfigApiEnabled]);
 
   useEffect(() => {
     if (bindsToServerAuth || closeoutsApiDbSource) return;

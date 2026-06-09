@@ -14,18 +14,23 @@ export function resolveOwnerSettingsApiAuth({
   sessionUserId = "",
   actorRole = "owner",
 } = {}) {
-  if (bindsToServerAuth()) {
+  const sessionOrg = isUuid(sessionOrganizationId) ? sessionOrganizationId : "";
+  const sessionUser = isUuid(sessionUserId) ? sessionUserId : "";
+
+  if (bindsToServerAuth() || sessionOrg || sessionUser) {
     return {
-      organizationId: isUuid(sessionOrganizationId) ? sessionOrganizationId : "",
-      actorUserId: isUuid(sessionUserId) ? sessionUserId : "",
+      organizationId: sessionOrg,
+      actorUserId: sessionUser,
       actorRole,
     };
   }
   if (!isEntriesApiDbSourceMode()) return {};
+  const envOrg = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
+  const envOwner = process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";
   return {
-    organizationId: process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "",
-    actorUserId: process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "owner",
-    actorRole: "owner",
+    organizationId: isUuid(envOrg) ? envOrg : "",
+    actorUserId: isUuid(envOwner) ? envOwner : "",
+    actorRole,
   };
 }
 

@@ -150,6 +150,7 @@ import {
   logPeriodScopeLabel,
 } from "@/features/reports/client/report-period-labels";
 import PrototypeAccessScreen from "@/features/demo/PrototypeAccessScreen";
+import { EMPTY_STORE_CHANNEL_CONFIG } from "@/features/org-config/client/store-channel-config";
 import {
   channels,
   DEFAULT_STORE_CHANNEL_CONFIG,
@@ -1826,7 +1827,9 @@ export default function TaqfeelahPrototypeRuntime() {
     sessionUserId,
     activeBusinesses,
     storeChannelSettings,
-    defaultStoreChannelConfig: DEFAULT_STORE_CHANNEL_CONFIG,
+    defaultStoreChannelConfig: ORG_CONFIG_API_ENABLED
+      ? EMPTY_STORE_CHANNEL_CONFIG
+      : DEFAULT_STORE_CHANNEL_CONFIG,
     storeOperationalSettings,
     notebookTheme,
     expenseCategories,
@@ -2653,7 +2656,7 @@ export default function TaqfeelahPrototypeRuntime() {
       setEmployeeRuntimeReady(true);
       return undefined;
     }
-    if (!ORG_CONFIG_API_ENABLED || !sessionUserId || !closeoutsApiOrganizationId) {
+    if (!ORG_CONFIG_API_ENABLED || !sessionUserId || !sessionOrganizationId) {
       setEmployeeRuntimeReady(true);
       return undefined;
     }
@@ -2661,7 +2664,7 @@ export default function TaqfeelahPrototypeRuntime() {
     setEmployeeRuntimeReady(false);
     loadEmployeeRuntimeContextFromApi({
       sessionUserId,
-      sessionOrganizationId: closeoutsApiOrganizationId,
+      sessionOrganizationId,
     })
       .then((mapped) => {
         if (cancelled || !mapped) return;
@@ -2684,9 +2687,9 @@ export default function TaqfeelahPrototypeRuntime() {
       cancelled = true;
     };
   }, [
-    closeoutsApiOrganizationId,
     employee,
     loggedIn,
+    sessionOrganizationId,
     sessionUserId,
     setArchivedBusinessIds,
     setConfiguredBusinesses,
