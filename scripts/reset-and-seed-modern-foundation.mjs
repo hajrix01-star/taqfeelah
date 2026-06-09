@@ -1,0 +1,298 @@
+#!/usr/bin/env node
+
+import process from "node:process";
+import { Client } from "pg";
+
+const CONFIRMATION = "reset-modern-foundation";
+
+const IDS = {
+  organization: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+  store: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+  owner: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
+  ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+  sara: "85f696d6-f655-4f2d-9f56-1f13c2f4c66c",
+  channels: {
+    cash: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+    mada: "7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c",
+    apple: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d",
+    jahez: "9e5c3a4b-0d6f-4a1c-c3e4-5f6a7b8c9d0e",
+    hunger: "af6d4b5c-1e7a-4b2d-d4f5-6a7b8c9d0e1f",
+    card: "bb16ea8f-8abf-4ca9-ab0d-e3a8f69f8db1",
+    online: "f0f8dd28-4fbe-4bf2-9074-2be703f10ccd",
+  },
+};
+
+const CHANNELS = [
+  ["cash", "Cash"],
+  ["mada", "Mada"],
+  ["apple", "Apple Pay"],
+  ["jahez", "Jahez"],
+  ["hunger", "HungerStation"],
+  ["card", "Card"],
+  ["online", "Online"],
+];
+
+const OUTFLOW_CATEGORIES = [
+  ["rent", "Rent"],
+  ["salary", "Salary"],
+  ["utility", "Utilities"],
+  ["phone", "Phone"],
+  ["maintenance", "Maintenance"],
+  ["other", "Other"],
+];
+
+function envValue(name, fallback = "") {
+  const value = process.env[name];
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function assertConfirmed() {
+  if (process.env.RESET_FOUNDATION_CONFIRM !== CONFIRMATION) {
+    throw new Error(`Refusing to reset database without RESET_FOUNDATION_CONFIRM=${CONFIRMATION}`);
+  }
+}
+
+async function resetData(client) {
+  await client.query(`
+    truncate table
+      payment_events,
+      invoices,
+      subscriptions,
+      daily_org_metrics,
+      daily_saas_metrics,
+      usage_events,
+      attachments,
+      entry_sales_channels,
+      audit_events,
+      entries,
+      member_store_access,
+      organization_members,
+      auth_identities,
+      sales_channels,
+      outflow_categories,
+      stores,
+      users,
+      organizations
+    restart identity cascade
+  `);
+}
+
+async function seedCore(client) {
+  await client.query(
+    `insert into organizations (id, name, status)
+     values ($1, $2, 'active')`,
+    [IDS.organization, "Taqfeelah Production Foundation"],
+  );
+
+  await client.query(
+    `insert into stores (id, organization_id, name, location, status, operational_settings)
+     values ($1, $2, $3, $4, 'active', $5::jsonb)`,
+    [
+      IDS.store,
+      IDS.organization,
+      "مشويات المعلم الشامي",
+      "",
+      JSON.stringify({
+        activeCategories: OUTFLOW_CATEGORIES.map(([id]) => id),
+        reviewEnabled: false,
+        closeoutReviewEnabled: false,
+        employeeHistoryVisibility: "all",
+        closeoutAlert: false,
+        attachmentAlert: false,
+        notebookTheme: null,
+      }),
+    ],
+  );
+
+  const users = [
+    [IDS.owner, "Owner", "owner"],
+    [IDS.ahmed, "Ahmed", "employee"],
+    [IDS.sara, "Sara", "employee"],
+  ];
+
+  for (const [userId, name] of users) {
+    await client.query(
+      `insert into users (id, name, status)
+       values ($1, $2, 'active')`,
+      [userId, name],
+    );
+  }
+
+  const members = [
+    [IDS.owner, "owner"],
+    [IDS.ahmed, "employee"],
+    [IDS.sara, "employee"],
+  ];
+
+  for (const [userId, role] of members) {
+    await client.query(
+      `insert into organization_members (organization_id, user_id, role, status)
+       values ($1, $2, $3, 'active')`,
+      [IDS.organization, userId, role],
+    );
+  }
+
+  const employeeMembers = await client.query(
+    `select id, user_id
+     from organization_members
+     where organization_id = $1 and role = 'employee'`,
+    [IDS.organization],
+  );
+
+  for (const row of employeeMembers.rows) {
+    await client.query(
+      `insert into member_store_access (organization_member_id, store_id)
+       values ($1, $2)`,
+      [row.id, IDS.store],
+    );
+  }
+
+  for (const [legacyId, name] of CHANNELS) {
+    await client.query(
+      `insert into sales_channels (id, organization_id, store_id, name, status)
+       values ($1, $2, $3, $4, 'active')`,
+      [IDS.channels[legacyId], IDS.organization, IDS.store, name],
+    );
+  }
+
+  for (const [legacyId, name] of OUTFLOW_CATEGORIES) {
+    await client.query(
+      `insert into outflow_categories (organization_id, store_id, name, status)
+       values ($1, $2, $3, 'active')`,
+      [IDS.organization, IDS.store, name],
+    );
+  }
+}
+
+async function seedRuntimeSettings(client) {
+  const settings = {
+    notebookTheme: "yellow",
+    employeePreferences: {},
+    ownerShellPreferences: {
+      closeoutAlerts: [],
+      acknowledgedDuplicateSales: {},
+    },
+    ownerProfile: {
+      name: "محمد الهاجري",
+    },
+    configuredBusinesses: [
+      {
+        id: IDS.store,
+        legacyId: "shami",
+        dbStoreId: IDS.store,
+        displayName: "مشويات المعلم الشامي",
+        nameAr: "مشويات المعلم الشامي",
+        nameEn: "Al-Shami Grill",
+        customLocation: "",
+      },
+    ],
+    archivedBusinessIds: [],
+    storeOperationalSettings: {
+      [IDS.store]: {
+        activeCategories: OUTFLOW_CATEGORIES.map(([id]) => id),
+        reviewEnabled: false,
+        closeoutReviewEnabled: false,
+        employeeHistoryVisibility: "all",
+        closeoutAlert: false,
+        attachmentAlert: false,
+        notebookTheme: null,
+      },
+    },
+    staff: [
+      {
+        id: IDS.ahmed,
+        legacyId: "ahmed",
+        apiUserId: IDS.ahmed,
+        nameAr: "أحمد",
+        nameEn: "Ahmed",
+        mobile: "",
+        active: true,
+        removed: false,
+        storeIds: [IDS.store],
+      },
+      {
+        id: IDS.sara,
+        legacyId: "sara",
+        apiUserId: IDS.sara,
+        nameAr: "سارة",
+        nameEn: "Sara",
+        mobile: "",
+        active: true,
+        removed: false,
+        storeIds: [IDS.store],
+      },
+    ],
+    authConfig: {
+      ownerUsername: envValue("AUTH_OWNER_USERNAME", "hajri"),
+      ownerPassword: envValue("AUTH_OWNER_PASSWORD", "123"),
+      employeePins: {
+        [IDS.ahmed]: "1234",
+        [IDS.sara]: "1234",
+        ahmed: "1234",
+        sara: "1234",
+      },
+    },
+  };
+
+  await client.query(
+    `insert into audit_events (
+       organization_id,
+       store_id,
+       entry_id,
+       actor_user_id,
+       action,
+       reason,
+       metadata
+     )
+     values ($1, null, null, $2, 'runtime_settings_saved', 'reset_modern_foundation', $3::jsonb)`,
+    [IDS.organization, IDS.owner, JSON.stringify({ settings, schemaVersion: 2 })],
+  );
+}
+
+async function verifyFoundation(client) {
+  const checks = await client.query(`
+    select
+      (select count(*) from organizations) as organizations,
+      (select count(*) from stores) as stores,
+      (select count(*) from users) as users,
+      (select count(*) from organization_members where role = 'employee') as employees,
+      (select count(*) from member_store_access) as store_access,
+      (select count(*) from sales_channels) as sales_channels,
+      (select count(*) from entries) as entries
+  `);
+  const row = checks.rows[0];
+  console.log("Modern foundation counts:", row);
+  if (Number(row.organizations) !== 1) throw new Error("Expected exactly one organization.");
+  if (Number(row.stores) !== 1) throw new Error("Expected exactly one store.");
+  if (Number(row.employees) !== 2) throw new Error("Expected exactly two employees.");
+  if (Number(row.store_access) !== 2) throw new Error("Expected two employee store access grants.");
+  if (Number(row.entries) !== 0) throw new Error("Expected zero historical entries after reset.");
+}
+
+async function main() {
+  assertConfirmed();
+  const databaseUrl = envValue("DATABASE_URL");
+  if (!databaseUrl) throw new Error("DATABASE_URL is required.");
+
+  const client = new Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    await client.query("begin");
+    await resetData(client);
+    await seedCore(client);
+    await seedRuntimeSettings(client);
+    await verifyFoundation(client);
+    await client.query("commit");
+    console.log("Reset and modern foundation seed completed.");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

@@ -4,15 +4,18 @@ import { isUuid } from "@/core/client/api-id-utils";
 type RuntimeBusiness = {
   id?: string;
   dbStoreId?: string;
+  legacyId?: string;
 };
 
 type RuntimeStaff = {
   id?: string;
   apiUserId?: string;
+  legacyId?: string;
 };
 
 type RuntimeChannel = {
   id?: string;
+  legacyId?: string;
   apiChannelId?: string;
 };
 
@@ -45,10 +48,14 @@ export function buildRuntimeApiIdMaps({
   const userIdMap: Record<string, string> = { ...envUserIdMap };
 
   for (const person of staff) {
-    const legacyId = typeof person?.id === "string" ? person.id.trim() : "";
-    const apiUserId = typeof person?.apiUserId === "string" ? person.apiUserId.trim() : "";
+    const canonicalId = typeof person?.id === "string" ? person.id.trim() : "";
+    const legacyId = typeof person?.legacyId === "string" ? person.legacyId.trim() : "";
+    const apiUserId = (typeof person?.apiUserId === "string" ? person.apiUserId.trim() : "") || canonicalId;
     if (legacyId && isUuid(apiUserId)) {
       userIdMap[legacyId] = apiUserId;
+    }
+    if (canonicalId && !isUuid(canonicalId) && isUuid(apiUserId)) {
+      userIdMap[canonicalId] = apiUserId;
     }
   }
 
@@ -56,11 +63,13 @@ export function buildRuntimeApiIdMaps({
   const businesses = Array.isArray(configuredBusinesses) ? configuredBusinesses : [];
 
   for (const business of businesses) {
-    const legacyStoreId = typeof business?.id === "string" ? business.id.trim() : "";
-    if (!legacyStoreId || isUuid(legacyStoreId)) continue;
+    const canonicalId = typeof business?.id === "string" ? business.id.trim() : "";
+    const explicitLegacyId = typeof business?.legacyId === "string" ? business.legacyId.trim() : "";
+    const legacyStoreId = explicitLegacyId || (canonicalId && !isUuid(canonicalId) ? canonicalId : "");
+    if (!legacyStoreId) continue;
     if (isUuid(storeIdMap[legacyStoreId])) continue;
 
-    const configuredDbStoreId = typeof business?.dbStoreId === "string" ? business.dbStoreId.trim() : "";
+    const configuredDbStoreId = (typeof business?.dbStoreId === "string" ? business.dbStoreId.trim() : "") || canonicalId;
     if (isUuid(configuredDbStoreId)) {
       storeIdMap[legacyStoreId] = configuredDbStoreId;
       continue;

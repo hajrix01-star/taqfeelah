@@ -522,6 +522,10 @@ def build_production_env_payload(merged_env: dict[str, str]) -> str:
     return base64.b64encode(payload).decode("ascii")
 
 
+def env_flag_enabled(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() == "true"
+
+
 def cmd_audit(vps: VPS) -> None:
     checks: Iterable[str] = [
         "hostname && whoami && uptime",
@@ -1234,6 +1238,22 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             """
         ).strip()
     )
+
+    if env_flag_enabled("RESET_FOUNDATION_ON_DEPLOY"):
+        confirm = os.environ.get("RESET_FOUNDATION_CONFIRM", "")
+        print_section("Reset and seed modern foundation")
+        vps.run(
+            textwrap.dedent(
+                f"""
+                set -euo pipefail
+                cd {shlex.quote(app_dir)}
+                set -a
+                . ./.env.production
+                set +a
+                RESET_FOUNDATION_CONFIRM={shlex.quote(confirm)} node scripts/reset-and-seed-modern-foundation.mjs
+                """
+            ).strip()
+        )
 
     print_section("Seed closeouts foundation when DATABASE_URL is configured")
     _, seed_out, seed_err = vps.run(

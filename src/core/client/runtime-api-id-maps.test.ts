@@ -23,6 +23,33 @@ describe("buildRuntimeApiIdMaps", () => {
     expect(maps.userIdMap["staff-1"]).toBe("acb24f1e-bf77-48d7-ba01-1e77d2c8c713");
   });
 
+  it("maps explicit legacy ids while keeping canonical UUID ids untouched", () => {
+    const maps = buildRuntimeApiIdMaps({
+      configuredBusinesses: [{
+        id: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        legacyId: "shami",
+      }],
+      staff: [{
+        id: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+        legacyId: "ahmed",
+      }],
+      storeChannelSettings: {
+        "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c": {
+          channels: [{
+            id: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+            legacyId: "cash",
+          }],
+        },
+      },
+      envStoreIdMap,
+      envUserIdMap,
+    });
+
+    expect(maps.storeIdMap.shami).toBe("302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c");
+    expect(maps.userIdMap.ahmed).toBe("4cf1450d-08d8-4ca1-b180-1c2642174a79");
+    expect(maps.salesChannelIdMap.cash).toBe("9bc40d4f-c773-4ba3-87db-b8bb1467dafb");
+  });
+
   it("maps prototype sales channels including mada", () => {
     const maps = buildRuntimeApiIdMaps({
       envStoreIdMap,

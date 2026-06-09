@@ -29,6 +29,7 @@ export function isUuid(value: string): boolean {
 
 export function salesChannelDisplayName(channel: {
   id?: string;
+  legacyId?: string;
   custom?: boolean;
   nameEn?: string;
   nameAr?: string;
@@ -39,7 +40,13 @@ export function salesChannelDisplayName(channel: {
     const nameAr = typeof channel.nameAr === "string" ? channel.nameAr.trim() : "";
     return nameEn || nameAr || String(channel.id || "Channel");
   }
-  const legacyId = typeof channel.id === "string" ? channel.id.trim() : "";
+  const legacyId = typeof channel.legacyId === "string" && channel.legacyId.trim()
+    ? channel.legacyId.trim()
+    : typeof channel.text === "string" && channel.text.trim()
+      ? channel.text.trim()
+      : typeof channel.id === "string"
+        ? channel.id.trim()
+        : "";
   return CHANNEL_LABELS[legacyId] || legacyId || "Channel";
 }
 
@@ -58,6 +65,7 @@ export function resolveLegacySalesChannelUuid(
 
 type RuntimeChannel = {
   id?: string;
+  legacyId?: string;
   apiChannelId?: string;
   custom?: boolean;
   nameEn?: string;
@@ -90,8 +98,13 @@ export function buildSalesChannelIdMap({
   for (const config of Object.values(storeChannelSettings)) {
     if (!config || typeof config !== "object") continue;
     for (const channel of config.channels || []) {
-      const legacyId = typeof channel?.id === "string" ? channel.id.trim() : "";
-      const apiChannelId = typeof channel?.apiChannelId === "string" ? channel.apiChannelId.trim() : "";
+      const legacyId = typeof channel?.legacyId === "string" && channel.legacyId.trim()
+        ? channel.legacyId.trim()
+        : typeof channel?.id === "string" && !isUuid(channel.id)
+          ? channel.id.trim()
+          : "";
+      const apiChannelId = (typeof channel?.apiChannelId === "string" ? channel.apiChannelId.trim() : "")
+        || (typeof channel?.id === "string" && isUuid(channel.id) ? channel.id.trim() : "");
       if (legacyId && isUuid(apiChannelId)) {
         map[legacyId] = apiChannelId;
       }

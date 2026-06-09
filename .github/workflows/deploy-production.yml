@@ -118,6 +118,8 @@ jobs:
           VPS_CONNECT_TIMEOUT: "25"
           VPS_CONNECT_RETRIES: "8"
           VPS_RETRY_DELAY_SECONDS: "12"
+          RESET_FOUNDATION_ON_DEPLOY: ${{ contains(github.event.head_commit.message, '[reset-foundation]') }}
+          RESET_FOUNDATION_CONFIRM: "reset-modern-foundation"
           DEPLOYMENT_WAVE: "5"
           APP_MODE: "production"
           NEXT_PUBLIC_APP_MODE: "production"

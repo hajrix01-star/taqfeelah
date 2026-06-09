@@ -9,7 +9,11 @@ export function employeePinMatches(person, pin, defaultPin = "") {
 export function findActiveStaffMember(staff, loggedInEmployeeId) {
   if (!loggedInEmployeeId) return null;
   return (Array.isArray(staff) ? staff : []).find(
-    (person) => (person.id === loggedInEmployeeId || person.apiUserId === loggedInEmployeeId)
+    (person) => (
+      person.id === loggedInEmployeeId
+      || person.apiUserId === loggedInEmployeeId
+      || person.legacyId === loggedInEmployeeId
+    )
       && person.active
       && !person.removed,
   ) || null;
@@ -56,7 +60,7 @@ export function resolveEmployeeBusinessId(assignedBusinesses, currentBusinessId)
 export function syncLoggedInEmployeeIdFromSession(staff, sessionUserId, loggedInEmployeeId) {
   if (!sessionUserId) return null;
   const matched = (Array.isArray(staff) ? staff : []).find(
-    (person) => person.apiUserId === sessionUserId || person.id === loggedInEmployeeId,
+    (person) => person.apiUserId === sessionUserId || person.id === loggedInEmployeeId || person.legacyId === loggedInEmployeeId,
   );
   if (matched?.id && matched.id !== loggedInEmployeeId) return matched.id;
   return null;
