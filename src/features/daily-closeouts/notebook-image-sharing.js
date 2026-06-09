@@ -39,44 +39,48 @@ export async function shareImageThroughSystem({ file, caption = "", title = "", 
 }
 
 /**
- * WhatsApp often drops `text` when `files` are attached via Web Share.
- * Open wa.me with the caption first, then copy the image when possible.
+ * Prefer the native share sheet with the image first (mobile WhatsApp flow).
+ * Opening wa.me before sharing the file breaks image delivery on many devices.
+ *
+ * @param {{ file?: File | null, caption?: string, title?: string }} params
+ * @returns {Promise<{ ok: boolean, method: string, copied?: boolean }>}
  */
 export async function shareImageThroughWhatsApp({
-  file,
+  file = null,
   caption = "",
   title = "",
 }) {
   if (!caption && !file) return { ok: false, method: "none" };
 
-  const textCopied = await copyShareCaptionText(caption);
-  if (caption) {
-    openWhatsAppWithText(caption);
+  if (!file) {
+    const textCopied = await copyShareCaptionText(caption);
+    if (caption) openWhatsAppWithText(caption);
+    return { ok: Boolean(caption), method: "text-only", copied: textCopied };
   }
 
-  if (!file) {
-    return { ok: Boolean(caption), method: "text-only", copied: textCopied };
+  const systemShare = await shareImageThroughSystem({
+    file,
+    caption,
+    title,
+    allowFileOnlyFallback: true,
+  });
+  if (systemShare.method === "share" || systemShare.method === "abort") {
+    return { ok: true, method: systemShare.method, copied: false };
   }
 
   if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
     try {
       const type = file.type || "image/png";
       await navigator.clipboard.write([new ClipboardItem({ [type]: file })]);
+      const textCopied = await copyShareCaptionText(caption);
+      if (caption) openWhatsAppWithText(caption);
       return { ok: true, method: "clipboard", copied: textCopied };
     } catch {
-      // fall through to native share sheet for the image only
+      // fall through to text-only fallback
     }
   }
 
-  const systemShare = await shareImageThroughSystem({
-    file,
-    caption: "",
-    title,
-    allowFileOnlyFallback: true,
-  });
-  if (systemShare.method === "share" || systemShare.method === "abort") {
-    return { ok: true, method: systemShare.method, copied: textCopied };
-  }
-
+  const textCopied = await copyShareCaptionText(caption);
+  if (caption) openWhatsAppWithText(caption);
   return { ok: Boolean(caption), method: "text-only", copied: textCopied };
 }
