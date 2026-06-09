@@ -165,6 +165,7 @@ import {
   opTime,
 } from "./prototype-runtime/prototype-runtime-demo-data";
 import {
+  APP_IN_PRODUCTION_MODE,
   PROTOTYPE_ACCESS_MODE,
   BINDS_TO_SERVER_AUTH,
   ENTRIES_API_DB_SOURCE,
@@ -1721,6 +1722,7 @@ function OwnerCloseoutModals({
 export default function TaqfeelahPrototypeRuntime() {
   const [lang, setLang] = useState("ar");
   const [sessionUserId, setSessionUserId] = useState("");
+  const [sessionOrganizationId, setSessionOrganizationId] = useState("");
   const [loggedIn, setLoggedIn] = useState(() => readPrototypeAuthBoot().loggedIn);
   const [authScreen, setAuthScreen] = useState("owner");
   const [employee, setEmployee] = useState(() => readPrototypeAuthBoot().employee);
@@ -1875,6 +1877,7 @@ export default function TaqfeelahPrototypeRuntime() {
   } = resolveRuntimeApiActorContext({
     employee,
     sessionUserId,
+    sessionOrganizationId,
     activeEmployee,
     assignedEmployeeBusinesses,
     reportingBusinesses,
@@ -2068,13 +2071,14 @@ export default function TaqfeelahPrototypeRuntime() {
   );
 
   useEffect(() => {
-    if (!BINDS_TO_SERVER_AUTH) return;
+    if (!APP_IN_PRODUCTION_MODE) return;
     let cancelled = false;
     fetchServerSessionStatus()
       .then((session) => {
         if (cancelled) return;
         applyServerSessionBootstrap(session, {
           setSessionUserId,
+          setSessionOrganizationId,
           setLoggedIn,
           setAuthScreen,
           setEmployee,
@@ -2087,6 +2091,7 @@ export default function TaqfeelahPrototypeRuntime() {
         if (cancelled) return;
         console.warn("session bootstrap failed", error);
         setSessionUserId("");
+        setSessionOrganizationId("");
       });
     return () => {
       cancelled = true;
@@ -2262,12 +2267,14 @@ export default function TaqfeelahPrototypeRuntime() {
     setSaving,
   });
 
-  const completeOwnerLogin = (apiUserId = "") => {
+  const completeOwnerLogin = (apiUserId = "", organizationId = "") => {
     applyOwnerLoginSuccess({
       apiUserId,
+      organizationId,
       prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
       apply: {
         setSessionUserId,
+        setSessionOrganizationId,
         setLoggedIn,
         setEmployee,
         setLoggedInEmployeeId,
@@ -2276,7 +2283,7 @@ export default function TaqfeelahPrototypeRuntime() {
       },
     });
   };
-  const completeEmployeeLogin = (personId, apiUserId = "", rosterPerson = null) => {
+  const completeEmployeeLogin = (personId, apiUserId = "", rosterPerson = null, organizationId = "") => {
     const loginStaff = rosterPerson && !staff.some((person) => person.id === rosterPerson.id)
       ? [rosterPerson, ...staff]
       : staff;
@@ -2290,11 +2297,13 @@ export default function TaqfeelahPrototypeRuntime() {
     applyEmployeeLoginSuccess({
       personId,
       apiUserId,
+      organizationId,
       staff: loginStaff,
       activeBusinesses,
       prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
       apply: {
         setSessionUserId,
+        setSessionOrganizationId,
         setLoggedIn,
         setEmployee,
         setLoggedInEmployeeId,
@@ -2398,7 +2407,7 @@ export default function TaqfeelahPrototypeRuntime() {
   }, [removeOperationalEntriesForCloseout]);
   const logout = async () => {
     try {
-      await logoutViaSessionBridge({ useServerAuth: BINDS_TO_SERVER_AUTH });
+      await logoutViaSessionBridge({ useServerAuth: APP_IN_PRODUCTION_MODE });
     } catch (error) {
       console.warn("logout api failed", error);
     }
@@ -2406,6 +2415,7 @@ export default function TaqfeelahPrototypeRuntime() {
       bindsToServerAuth: BINDS_TO_SERVER_AUTH,
       apply: {
         setSessionUserId,
+        setSessionOrganizationId,
         setLoggedIn,
         setEmployee,
         setLoggedInEmployeeId,
@@ -2630,13 +2640,16 @@ export default function TaqfeelahPrototypeRuntime() {
       setEmployeeRuntimeReady(true);
       return undefined;
     }
-    if (!ORG_CONFIG_API_ENABLED || !sessionUserId) {
+    if (!ORG_CONFIG_API_ENABLED || !sessionUserId || !closeoutsApiOrganizationId) {
       setEmployeeRuntimeReady(true);
       return undefined;
     }
     let cancelled = false;
     setEmployeeRuntimeReady(false);
-    loadEmployeeRuntimeContextFromApi({ sessionUserId })
+    loadEmployeeRuntimeContextFromApi({
+      sessionUserId,
+      sessionOrganizationId: closeoutsApiOrganizationId,
+    })
       .then((mapped) => {
         if (cancelled || !mapped) return;
         applyOrgConfigMappedState(mapped, {
@@ -2658,6 +2671,7 @@ export default function TaqfeelahPrototypeRuntime() {
       cancelled = true;
     };
   }, [
+    closeoutsApiOrganizationId,
     employee,
     loggedIn,
     sessionUserId,
@@ -2733,7 +2747,11 @@ export default function TaqfeelahPrototypeRuntime() {
       onSyncToOperationalEntries={syncCloseoutToOperationalEntries}
       onSubmitCloseoutToApi={syncSubmitCloseoutToApi}
       onReviewCloseoutInApi={syncReviewCloseoutToApi}
-      loadCloseoutsFromApi={closeoutsApiEnabled && (!employee || employeeRuntimeReady) ? loadCloseoutsFromApi : null}
+      loadCloseoutsFromApi={
+        closeoutsApiEnabled && closeoutsApiOrganizationId && (!employee || employeeRuntimeReady)
+          ? loadCloseoutsFromApi
+          : null
+      }
       closeoutReviewRequiredForStore={closeoutReviewEnabledForBusiness}
       apiStrictMode={closeoutsApiStrictMode}
       dbSourceMode={CLOSEOUTS_API_DB_SOURCE}

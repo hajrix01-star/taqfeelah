@@ -1,3 +1,4 @@
+import { resolveClientOrganizationId } from "@/core/client/resolve-client-organization-id";
 import { isProductionAppMode } from "@/core/config/app-mode";
 import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 import { isCloseoutsApiDbSourceMode, isCloseoutsApiEnabled, isCloseoutsApiStrictMode } from "@/core/config/closeouts-api-mode";
@@ -84,6 +85,7 @@ export function usesRuntimeSettingsApi() {
  * @param {boolean} [input.employee]
  * @param {string} [input.sessionUserId]
  * @param {{ apiUserId?: string, id?: string, storeIds?: string[] } | null | undefined} [input.activeEmployee]
+ * @param {string} [input.sessionOrganizationId]
  * @param {Array<{ id?: string }>} [input.assignedEmployeeBusinesses]
  * @param {Array<{ id?: string }>} [input.reportingBusinesses]
  * @param {Record<string, string | undefined>} [input.env]
@@ -91,13 +93,17 @@ export function usesRuntimeSettingsApi() {
 export function resolveRuntimeApiActorContext({
   employee = false,
   sessionUserId = "",
+  sessionOrganizationId = "",
   activeEmployee = null,
   assignedEmployeeBusinesses = [],
   reportingBusinesses = [],
   env = readRuntimeCapabilitiesEnv(),
 } = {}) {
   const capabilities = resolveRuntimeCapabilities(env);
-  const organizationId = env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
+  const organizationId = resolveClientOrganizationId({
+    sessionOrganizationId,
+    envOrganizationId: env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "",
+  });
   const ownerUserId = env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";
   const ownerApiUserId = employee ? ownerUserId : (sessionUserId || ownerUserId);
   const apiActorRole = employee ? "employee" : "owner";
