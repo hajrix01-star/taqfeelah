@@ -92,4 +92,40 @@ describe("store summary api client", () => {
     expect(result?.totalSales?.amountHalalas).toBe(420000);
     expect(result?.month).toBe("2026-06");
   });
+
+  it("throws a diagnostic error when context mapping is missing", async () => {
+    process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP = "{}";
+    process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP = "{}";
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreDaySummaryViaApi } = await import("./store-summary-api-client.js");
+
+    await expect(fetchStoreDaySummaryViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      storeId: "shami",
+      date: "2026-06-05",
+    })).rejects.toThrow("day summary API context missing/invalid");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("throws when summary payload is null instead of treating it as zero", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => new Response("null", { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreDaySummaryViaApi } = await import("./store-summary-api-client.js");
+
+    await expect(fetchStoreDaySummaryViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      storeId: "shami",
+      date: "2026-06-05",
+    })).rejects.toThrow("day summary API returned invalid payload");
+  });
 });

@@ -19,6 +19,24 @@ function getMaps() {
   return getRuntimeApiMaps();
 }
 
+function assertEntriesApiContext(context, resource) {
+  if (!context) {
+    throw new Error(`${resource} API context missing/invalid: organizationId, actorUserId, or storeId mapping.`);
+  }
+}
+
+function resolveEntriesItemsPayload(payload, resource) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && typeof payload === "object" && Array.isArray(payload.items)) return payload.items;
+  throw new Error(`${resource} API returned invalid payload.`);
+}
+
+function assertEntriesPagePayload(payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload) || !Array.isArray(payload.items)) {
+    throw new Error("entries page API returned invalid payload.");
+  }
+}
+
 function mapEntryItems(items, { storeId, storeIdMap, salesChannelIdMap }) {
   return items.map((item) => {
     if (!item || typeof item !== "object") return item;
@@ -48,7 +66,7 @@ export async function fetchStoreEntriesViaApi({
   limit = 800,
 }) {
   const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
-  if (!context) return null;
+  assertEntriesApiContext(context, "entries fetch");
 
   const search = new URLSearchParams();
   if (typeof dateFrom === "string" && dateFrom) search.set("dateFrom", dateFrom);
@@ -68,8 +86,7 @@ export async function fetchStoreEntriesViaApi({
   );
 
   const { storeIdMap, salesChannelIdMap } = getMaps();
-  const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.items) ? payload.items : []);
-  if (!items.length && !Array.isArray(payload) && !Array.isArray(payload?.items)) return [];
+  const items = resolveEntriesItemsPayload(payload, "entries fetch");
   return mapEntryItems(items, { storeId, storeIdMap, salesChannelIdMap });
 }
 
@@ -85,7 +102,7 @@ export async function fetchStoreEntriesPageViaApi({
   cursor = "",
 }) {
   const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
-  if (!context) return { items: [], nextCursor: null };
+  assertEntriesApiContext(context, "entries page");
 
   const search = new URLSearchParams({ paginated: "1" });
   if (typeof dateFrom === "string" && dateFrom) search.set("dateFrom", dateFrom);
@@ -106,7 +123,8 @@ export async function fetchStoreEntriesPageViaApi({
   );
 
   const { storeIdMap, salesChannelIdMap } = getMaps();
-  const rawItems = Array.isArray(payload?.items) ? payload.items : [];
+  assertEntriesPagePayload(payload);
+  const rawItems = payload.items;
   return {
     items: mapEntryItems(rawItems, { storeId, storeIdMap, salesChannelIdMap }),
     nextCursor: typeof payload?.nextCursor === "string" ? payload.nextCursor : null,

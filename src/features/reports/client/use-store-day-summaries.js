@@ -53,12 +53,14 @@ export function useStoreDaySummaries({
   const [summariesByStoreId, setSummariesByStoreId] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     if (!enabled || !periodKey || !organizationId || !actorUserId || !storeIdsKey) {
       setSummariesByStoreId({});
       setLoading(false);
       setError("");
+      setLoaded(false);
       return undefined;
     }
 
@@ -67,6 +69,7 @@ export function useStoreDaySummaries({
     const load = async () => {
       setLoading(true);
       setError("");
+      setLoaded(false);
       try {
         const storeIds = storeIdsKey.split("|").filter(Boolean);
         const fetched = await Promise.all(
@@ -92,11 +95,13 @@ export function useStoreDaySummaries({
           next[storeId] = mapDaySummaryToUiTotals(summary);
         });
         setSummariesByStoreId(next);
+        setLoaded(true);
       } catch (loadError) {
         if (cancelled) return;
         console.warn(`${period} summary API load failed`, loadError);
         setSummariesByStoreId({});
         setError("failed");
+        setLoaded(false);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -136,6 +141,7 @@ export function useStoreDaySummaries({
     getStoreResult,
     loading,
     error,
+    loaded,
     enabled,
     period,
   };

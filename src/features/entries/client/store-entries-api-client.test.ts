@@ -131,4 +131,38 @@ describe("store entries api client", () => {
     expect(String(url)).toContain("cursor=cursor-1");
     expect(String(url)).toContain("dateFrom=2026-06-01");
   });
+
+  it("throws a diagnostic error when entries context mapping is missing", async () => {
+    process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP = "{}";
+    process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP = "{}";
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreEntriesPageViaApi } = await import("./store-entries-api-client.js");
+
+    await expect(fetchStoreEntriesPageViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      storeId: "shami",
+    })).rejects.toThrow("entries page API context missing/invalid");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("throws when entries payload is invalid instead of returning an empty list", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => new Response(JSON.stringify({ rows: [] }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreEntriesViaApi } = await import("./store-entries-api-client.js");
+
+    await expect(fetchStoreEntriesViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      storeId: "shami",
+    })).rejects.toThrow("entries fetch API returned invalid payload");
+  });
 });

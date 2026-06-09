@@ -123,6 +123,7 @@ import {
   aggregateChannels,
   buildBusinessesWithEntrySummaries,
   entriesInPeriod,
+  entryTotalsHaveFinancialActivity,
   newestEntries,
   resolveOwnerPeriodSummaryPreference,
   resolveOwnerSingleStoreTotals,
@@ -300,8 +301,9 @@ function createDemoOperationalEntries() {
 }
 function readOperationalEntries() {
   if (typeof window === "undefined") return BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE ? [] : createDemoOperationalEntries();
+  if (BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE) return [];
   const stored = readLocalStorageJson(OPERATIONAL_ENTRIES_STORAGE_KEY, null);
-  if (!Array.isArray(stored) || stored.length === 0) return BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE ? [] : createDemoOperationalEntries();
+  if (!Array.isArray(stored) || stored.length === 0) return createDemoOperationalEntries();
   return stored.map((entry) => ({
     ...entry,
     auditTrail: Array.isArray(entry.auditTrail) && entry.auditTrail.length
@@ -345,6 +347,7 @@ function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = 
     businessesWithDaySummaries,
     combinedResult: apiCombinedResult,
     getStoreResult,
+    error: summaryApiError,
   } = useStoreDaySummaries({
     enabled: summaryApiActive,
     period: monthly ? "month" : "day",
@@ -373,6 +376,11 @@ function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = 
     apiTotals: apiCombinedResult,
     entriesLoading: operationalEntriesLoading,
   });
+  const localSummaryHasFinancialActivity = entryTotalsHaveFinancialActivity(localCombinedResult);
+  const summaryLoadFailedWithoutFallback = summaryApiActive && summaryApiError && !localSummaryHasFinancialActivity;
+  const summaryLoadErrorMessage = lang === "ar"
+    ? "تعذر تحميل الملخص المالي من الخادم. لم يتم عرض أرقام بديلة حتى لا تظهر أصفار غير صحيحة."
+    : "Failed to load the financial summary from the server. No fallback figures are shown to avoid incorrect zero totals.";
   const comparisonBusinesses = preferEntrySummaries ? localComparisonBusinesses : businessesWithDaySummaries;
   const result = isCombined
     ? preferEntrySummaries ? localCombinedResult : apiCombinedResult
@@ -397,18 +405,30 @@ function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = 
         <StoreScopeTabs lang={lang} businessesList={businessesList} selectedBusiness={selectedBusiness} setSelectedBusiness={(id) => { setSelectedBusiness(id); setExpanded(false); setShowAttachments(false); }} />
         {isCombined ? (
           <div>
-            <StoreComparison lang={lang} monthly={monthly} reviewEnabled={reviewEnabled} businessesList={comparisonBusinesses} />
-            <NotebookRow lines={2}><p className="w-full text-taq-meta font-bold text-[#806528]">{text(lang, "chooseStoreForDetails")}</p></NotebookRow>
+            {summaryLoadFailedWithoutFallback ? (
+              <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{summaryLoadErrorMessage}</p></NotebookRow>
+            ) : (
+              <>
+                <StoreComparison lang={lang} monthly={monthly} reviewEnabled={reviewEnabled} businessesList={comparisonBusinesses} />
+                <NotebookRow lines={2}><p className="w-full text-taq-meta font-bold text-[#806528]">{text(lang, "chooseStoreForDetails")}</p></NotebookRow>
+              </>
+            )}
           </div>
         ) : (
           <div>
-            <NotebookRow><NumberLine lang={lang} handwritten label={text(lang, "sales")} value={money(result.sales, lang)} /></NotebookRow>
-            <NotebookRow><NumberLine lang={lang} handwritten label={text(lang, "purchasesExpenses")} value={money(result.expense, lang)} valueClassName="text-[#B44747]" /></NotebookRow>
-            <NotebookRow><div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "outflowRatio")}</span><strong className="text-[#B44747]">{result.ratio}</strong></div></NotebookRow>
-            <NotebookRow strong lines={2}><div className="flex w-full items-end justify-between"><span className="text-sm font-extrabold">{monthly ? text(lang, "recordedMonthResult") : text(lang, "netMovement")}</span><strong className={`tabular-nums text-2xl font-extrabold ${result.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(result.net, lang)} /></strong></div></NotebookRow>
-            <NotebookRow>{monthly ? <div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "attachments")}</span><span>{result.proofs}{reviewEnabled && <> آ· <span className="text-[#B96725]">{result.pending} {text(lang, "notReviewed")}</span></>}</span></div> : <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span className="relative pb-1">{text(lang, "attachments")}{showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span><span>{result.proofs}{reviewEnabled && <> آ· <span className="text-[#B96725]">{result.pending} {text(lang, "notReviewed")}</span></>}</span></button>}</NotebookRow>
-            {!monthly && showAttachments && <DayAttachments lang={lang} group={attachmentGroup} reviewEnabled={reviewEnabledForBusiness(currentBusiness.id)} onOpenOperation={onOpenOperation} />}
-            <NotebookRow className="justify-center"><InkTab active={expanded} showActiveUnderline={false} onClick={() => setExpanded(!expanded)} className="inline-flex items-center gap-1">{expanded ? text(lang, "hideDetails") : text(lang, "showMore")}{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</InkTab></NotebookRow>
+            {summaryLoadFailedWithoutFallback ? (
+              <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{summaryLoadErrorMessage}</p></NotebookRow>
+            ) : (
+              <>
+                <NotebookRow><NumberLine lang={lang} handwritten label={text(lang, "sales")} value={money(result.sales, lang)} /></NotebookRow>
+                <NotebookRow><NumberLine lang={lang} handwritten label={text(lang, "purchasesExpenses")} value={money(result.expense, lang)} valueClassName="text-[#B44747]" /></NotebookRow>
+                <NotebookRow><div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "outflowRatio")}</span><strong className="text-[#B44747]">{result.ratio}</strong></div></NotebookRow>
+                <NotebookRow strong lines={2}><div className="flex w-full items-end justify-between"><span className="text-sm font-extrabold">{monthly ? text(lang, "recordedMonthResult") : text(lang, "netMovement")}</span><strong className={`tabular-nums text-2xl font-extrabold ${result.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(result.net, lang)} /></strong></div></NotebookRow>
+                <NotebookRow>{monthly ? <div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "attachments")}</span><span>{result.proofs}{reviewEnabled && <> آ· <span className="text-[#B96725]">{result.pending} {text(lang, "notReviewed")}</span></>}</span></div> : <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span className="relative pb-1">{text(lang, "attachments")}{showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span><span>{result.proofs}{reviewEnabled && <> آ· <span className="text-[#B96725]">{result.pending} {text(lang, "notReviewed")}</span></>}</span></button>}</NotebookRow>
+                {!monthly && showAttachments && <DayAttachments lang={lang} group={attachmentGroup} reviewEnabled={reviewEnabledForBusiness(currentBusiness.id)} onOpenOperation={onOpenOperation} />}
+                <NotebookRow className="justify-center"><InkTab active={expanded} showActiveUnderline={false} onClick={() => setExpanded(!expanded)} className="inline-flex items-center gap-1">{expanded ? text(lang, "hideDetails") : text(lang, "showMore")}{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</InkTab></NotebookRow>
+              </>
+            )}
           </div>
         )}
       </Notebook>
@@ -625,7 +645,7 @@ function LogStoreFilter({ lang, businessesList = businesses, selectedBusiness, s
   );
 }
 
-function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, reviewFocus = null, attachmentReviewRequest = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesRefreshKey = 0 }) {
+function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, reviewFocus = null, attachmentReviewRequest = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesRefreshKey = 0, registerEntriesSyncError = "", closeoutsSyncError = "" }) {
   const [period, setPeriod] = useState("day");
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
@@ -675,7 +695,7 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
   );
   const {
     entries: apiRegisterEntries,
-    loading: apiRegisterEntriesLoading,
+    error: apiRegisterEntriesError,
     hasMore: apiRegisterEntriesHasMore,
     loadMore: loadMoreRegisterEntries,
     loadAllRemaining: loadAllRegisterEntries,
@@ -698,8 +718,16 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
     [activeBusinesses, customFrom, customTo, operationalEntries, period, safeBusinessId, selectedDate, selectedMonth, selectedYear],
   );
   const periodEntries = registerEntriesApiEnabled
-    ? (apiRegisterEntries.length || !apiRegisterEntriesLoading ? apiRegisterEntries : localPeriodEntries)
+    ? apiRegisterEntries
     : localPeriodEntries;
+  const registerEntriesLoadError = registerEntriesApiEnabled && (apiRegisterEntriesError || registerEntriesSyncError);
+  const closeoutsLoadError = registerEntriesApiEnabled && (apiRegisterEntriesError || registerEntriesSyncError || closeoutsSyncError);
+  const registerEntriesLoadErrorMessage = lang === "ar"
+    ? "تعذر تحميل العمليات من الخادم. لم يتم عرض بيانات محلية بديلة."
+    : "Failed to load operations from the server. No local fallback data is shown.";
+  const closeoutsLoadErrorMessage = lang === "ar"
+    ? "تعذر تحميل التقفيلات من الخادم. لم يتم عرض بيانات محلية بديلة."
+    : "Failed to load closeouts from the server. No local fallback data is shown.";
   const registerLoadMoreRef = useRef(null);
   useEffect(() => {
     if (!registerEntriesApiEnabled || logView !== "operations" || !apiRegisterEntriesHasMore) return undefined;
@@ -915,7 +943,9 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
           <span>{logView === "operations" ? `${visibleEntries.length} ${text(lang, "operations")}` : `${closeoutSummaries.length} ${lang === "ar" ? "تقفيلات" : "Closeouts"}`}</span>
         </div>
 
-        {logView === "operations" && (visibleEntries.length === 0 ? (
+        {logView === "operations" && (registerEntriesLoadError ? (
+          <div className="rounded-2xl px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10" style={registerCardStyle}>{registerEntriesLoadErrorMessage}</div>
+        ) : visibleEntries.length === 0 ? (
           <div className="rounded-2xl px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]" style={registerCardStyle}>{text(lang, "noOperationsMatch")}</div>
         ) : (
           <div className="space-y-2.5">
@@ -977,7 +1007,9 @@ function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntr
           </div>
         ))}
 
-        {logView === "closeouts" && (closeoutSummaries.length === 0 ? (
+        {logView === "closeouts" && (closeoutsLoadError ? (
+          <div className="rounded-2xl px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10" style={registerCardStyle}>{closeoutsLoadErrorMessage}</div>
+        ) : closeoutSummaries.length === 0 ? (
           <div className="rounded-2xl px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]" style={registerCardStyle}>{text(lang, "noCloseoutsPeriod")}</div>
         ) : (
           <div className="space-y-2.5">
@@ -1575,8 +1607,8 @@ function OwnerHomeConnected(props) {
 }
 
 function OwnerRegisterConnected(props) {
-  const { events } = useDailyCloseouts();
-  return <OwnerRegisterScreen {...props} closeoutEvents={events} />;
+  const { events, syncError } = useDailyCloseouts();
+  return <OwnerRegisterScreen {...props} closeoutEvents={events} closeoutsSyncError={syncError} />;
 }
 
 function formatDateTimeLabel(iso, lang) {
@@ -1875,21 +1907,30 @@ export default function TaqfeelahPrototypeRuntime() {
       return [];
     }
     if (!isUuid(closeoutsApiOrganizationId)) {
-      if (entriesApiStrictMode) throw new Error("organization id is missing/invalid for entries API.");
-      return [];
+      const message = lang === "ar"
+        ? "تعذر تحميل العمليات: معرف المنظمة غير صالح لمسار API."
+        : "Failed to load operations: organization id is missing/invalid for entries API.";
+      setOperationalEntriesSyncError(message);
+      throw new Error(message);
     }
     if (!hasCloseoutApiActorMapping(apiActorUserId)) {
-      if (entriesApiStrictMode) throw new Error("actor user id is missing/invalid for entries API.");
-      return [];
+      const message = lang === "ar"
+        ? "تعذر تحميل العمليات: معرف المستخدم غير مربوط بالخادم."
+        : "Failed to load operations: actor user id is missing/invalid for entries API.";
+      setOperationalEntriesSyncError(message);
+      throw new Error(message);
     }
 
     const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
     setOperationalEntriesLoading(true);
     if (!targetStoreIds.length) {
       setOperationalEntries([]);
-      setOperationalEntriesSyncError("");
       setOperationalEntriesLoading(false);
-      return [];
+      const message = lang === "ar"
+        ? "تعذر تحميل العمليات: لا يوجد محل مربوط بالخادم لهذا السياق."
+        : "Failed to load operations: no store id is mapped for this API context.";
+      setOperationalEntriesSyncError(message);
+      throw new Error(message);
     }
 
     try {
@@ -1935,6 +1976,7 @@ export default function TaqfeelahPrototypeRuntime() {
     closeoutsApiOrganizationId,
     entriesApiEnabled,
     entriesApiStrictMode,
+    lang,
   ]);
 
   loadOperationalEntriesFromApiRef.current = loadOperationalEntriesFromApi;
@@ -2485,17 +2527,29 @@ export default function TaqfeelahPrototypeRuntime() {
       return [];
     }
     if (!isUuid(closeoutsApiOrganizationId)) {
-      if (closeoutsApiStrictMode) throw new Error("organization id is missing/invalid for closeouts API.");
-      return [];
+      throw new Error(
+        lang === "ar"
+          ? "تعذر تحميل التقفيلات: معرف المنظمة غير صالح لمسار API."
+          : "Failed to load closeouts: organization id is missing/invalid for closeouts API.",
+      );
     }
 
     if (!hasCloseoutApiActorMapping(apiActorUserId)) {
-      if (closeoutsApiStrictMode) throw new Error("actor user id is missing/invalid for closeouts API.");
-      return [];
+      throw new Error(
+        lang === "ar"
+          ? "تعذر تحميل التقفيلات: معرف المستخدم غير مربوط بالخادم."
+          : "Failed to load closeouts: actor user id is missing/invalid for closeouts API.",
+      );
     }
 
     const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
-    if (!targetStoreIds.length) return [];
+    if (!targetStoreIds.length) {
+      throw new Error(
+        lang === "ar"
+          ? "تعذر تحميل التقفيلات: لا يوجد محل مربوط بالخادم لهذا السياق."
+          : "Failed to load closeouts: no store id is mapped for this API context.",
+      );
+    }
 
     const fetched = await Promise.all(
       targetStoreIds.map((storeId) => fetchStoreCloseoutsViaApi({
@@ -2524,6 +2578,7 @@ export default function TaqfeelahPrototypeRuntime() {
     closeoutsApiEnabled,
     closeoutsApiOrganizationId,
     closeoutsApiStrictMode,
+    lang,
   ]);
 
   useEffect(() => {

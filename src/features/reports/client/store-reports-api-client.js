@@ -9,6 +9,24 @@ export function setReportsRuntimeApiIdMaps(overrides) {
   setRuntimeApiIdMaps(overrides);
 }
 
+function assertReportApiContext(context, resource) {
+  if (!context) {
+    throw new Error(`${resource} API context missing/invalid: organizationId, actorUserId, or storeId mapping.`);
+  }
+}
+
+function assertReportRange({ from, to }, resource) {
+  if (!from || !to) {
+    throw new Error(`${resource} API context missing/invalid: from/to range.`);
+  }
+}
+
+function assertReportPayload(payload, resource) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error(`${resource} API returned invalid payload.`);
+  }
+}
+
 function buildReportQuery({ storeId, from, to, extra = {} }) {
   const search = new URLSearchParams({ storeId, from, to });
   Object.entries(extra).forEach(([key, value]) => {
@@ -29,9 +47,10 @@ async function fetchReport(path, {
   extra = {},
 }) {
   const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
-  if (!context || !from || !to) return null;
+  assertReportApiContext(context, `${path} report`);
+  assertReportRange({ from, to }, `${path} report`);
 
-  return fetchApiJsonWithPrototypeContext(
+  const payload = await fetchApiJsonWithPrototypeContext(
     `/api/v1/reports/${path}?${buildReportQuery({
       storeId: context.storeId,
       from,
@@ -46,6 +65,8 @@ async function fetchReport(path, {
       errorStyle: "status",
     },
   );
+  assertReportPayload(payload, `${path} report`);
+  return payload;
 }
 
 export async function fetchStorePeriodSummaryViaApi({
@@ -58,7 +79,8 @@ export async function fetchStorePeriodSummaryViaApi({
   period = "day",
 }) {
   const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
-  if (!context || !from || !to) return null;
+  assertReportApiContext(context, "period summary");
+  assertReportRange({ from, to }, "period summary");
 
   let path = `/api/v1/stores/${context.storeId}/summary/period?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
   if (period === "day" && from === to) {
@@ -67,13 +89,15 @@ export async function fetchStorePeriodSummaryViaApi({
     path = `/api/v1/stores/${context.storeId}/summary/month?month=${encodeURIComponent(from.slice(0, 7))}`;
   }
 
-  return fetchApiJsonWithPrototypeContext(path, {
+  const payload = await fetchApiJsonWithPrototypeContext(path, {
     organizationId,
     actorUserId,
     actorRole,
     errorMessage: "period summary api failed",
     errorStyle: "status",
   });
+  assertReportPayload(payload, "period summary");
+  return payload;
 }
 
 export function fetchStoreDaysReportViaApi(args) {

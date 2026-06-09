@@ -6,6 +6,24 @@ export function setSummaryRuntimeApiIdMaps(overrides) {
   setRuntimeApiIdMaps(overrides);
 }
 
+function assertSummaryApiContext(context, resource) {
+  if (!context) {
+    throw new Error(`${resource} API context missing/invalid: organizationId, actorUserId, or storeId mapping.`);
+  }
+}
+
+function assertSummaryPeriodKey(value, key, resource) {
+  if (!value) {
+    throw new Error(`${resource} API context missing/invalid: ${key}.`);
+  }
+}
+
+function assertSummaryPayload(payload, resource) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error(`${resource} API returned invalid payload.`);
+  }
+}
+
 export async function fetchStoreDaySummaryViaApi({
   organizationId,
   actorUserId,
@@ -14,10 +32,11 @@ export async function fetchStoreDaySummaryViaApi({
   date,
 }) {
   const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
-  if (!context || !date) return null;
+  assertSummaryApiContext(context, "day summary");
+  assertSummaryPeriodKey(date, "date", "day summary");
 
   const search = new URLSearchParams({ date });
-  return fetchApiJsonWithPrototypeContext(
+  const payload = await fetchApiJsonWithPrototypeContext(
     `/api/v1/stores/${context.storeId}/summary/day?${search.toString()}`,
     {
       organizationId,
@@ -27,6 +46,8 @@ export async function fetchStoreDaySummaryViaApi({
       errorStyle: "status",
     },
   );
+  assertSummaryPayload(payload, "day summary");
+  return payload;
 }
 
 export async function fetchStoreMonthSummaryViaApi({
@@ -37,10 +58,11 @@ export async function fetchStoreMonthSummaryViaApi({
   month,
 }) {
   const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
-  if (!context || !month) return null;
+  assertSummaryApiContext(context, "month summary");
+  assertSummaryPeriodKey(month, "month", "month summary");
 
   const search = new URLSearchParams({ month });
-  return fetchApiJsonWithPrototypeContext(
+  const payload = await fetchApiJsonWithPrototypeContext(
     `/api/v1/stores/${context.storeId}/summary/month?${search.toString()}`,
     {
       organizationId,
@@ -50,4 +72,6 @@ export async function fetchStoreMonthSummaryViaApi({
       errorStyle: "status",
     },
   );
+  assertSummaryPayload(payload, "month summary");
+  return payload;
 }

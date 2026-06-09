@@ -26,6 +26,14 @@ function getMaps() {
   return getRuntimeApiMaps();
 }
 
+function buildCloseoutFetchContextError({ organizationId, mappedActorUserId, mappedStoreId }) {
+  const missing = [];
+  if (!isUuid(organizationId)) missing.push("organizationId");
+  if (!mappedActorUserId) missing.push("actorUserId");
+  if (!mappedStoreId) missing.push("storeId");
+  return new Error(`closeouts fetch API context missing/invalid: ${missing.join(", ")}.`);
+}
+
 function listCloseoutSalesRows(closeout) {
   return Array.isArray(closeout?.sales) ? closeout.sales : Object.values(closeout?.sales || {});
 }
@@ -138,8 +146,13 @@ export async function fetchStoreCloseoutsViaApi({
 }) {
   const { userIdMap, storeIdMap, salesChannelIdMap } = getMaps();
   const mappedStoreId = mapToUuid(storeId, storeIdMap);
-  if (!mapToUuid(actorUserId, userIdMap) || !isUuid(organizationId) || !mappedStoreId) {
-    return [];
+  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
+  if (!mappedActorUserId || !isUuid(organizationId) || !mappedStoreId) {
+    throw buildCloseoutFetchContextError({
+      organizationId,
+      mappedActorUserId,
+      mappedStoreId,
+    });
   }
 
   const search = new URLSearchParams();
@@ -157,7 +170,9 @@ export async function fetchStoreCloseoutsViaApi({
     },
   );
 
-  if (!Array.isArray(payload)) return [];
+  if (!Array.isArray(payload)) {
+    throw new Error("closeouts fetch API returned invalid payload.");
+  }
   return payload.map((item) => {
     if (!item || typeof item !== "object") return item;
     const mappedStoreLegacyId = reverseLookupKeyByUuid(item.storeId, storeIdMap) || storeId;
