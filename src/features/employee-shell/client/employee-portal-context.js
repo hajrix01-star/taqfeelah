@@ -5,6 +5,7 @@ import {
   resolveActiveEmployee,
   resolveAssignedEmployeeBusinesses,
   resolveCurrentEmployeeBusiness,
+  synthesizeEmployeeBusinessesFromStoreIds,
 } from "@/features/employee-closeouts/employee-portal-session";
 import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
 import { resolveStoreChannelConfig } from "@/features/org-config/client/store-channel-config";
@@ -54,7 +55,10 @@ export function buildEmployeePortalContext({
     sessionUserId,
     uuidChecker,
   });
-  const assignedEmployeeBusinesses = resolveAssignedEmployeeBusinesses(activeBusinesses, activeEmployee);
+  const matchedEmployeeBusinesses = resolveAssignedEmployeeBusinesses(activeBusinesses, activeEmployee);
+  const assignedEmployeeBusinesses = matchedEmployeeBusinesses.length
+    ? matchedEmployeeBusinesses
+    : synthesizeEmployeeBusinessesFromStoreIds(activeEmployee?.storeIds);
   const currentEmployeeBusiness = resolveCurrentEmployeeBusiness(
     assignedEmployeeBusinesses,
     employeeBusinessId,

@@ -83,7 +83,7 @@ export function usesRuntimeSettingsApi() {
  * @param {Object} input
  * @param {boolean} [input.employee]
  * @param {string} [input.sessionUserId]
- * @param {{ apiUserId?: string, id?: string } | null | undefined} [input.activeEmployee]
+ * @param {{ apiUserId?: string, id?: string, storeIds?: string[] } | null | undefined} [input.activeEmployee]
  * @param {Array<{ id?: string }>} [input.assignedEmployeeBusinesses]
  * @param {Array<{ id?: string }>} [input.reportingBusinesses]
  * @param {Record<string, string | undefined>} [input.env]
@@ -104,10 +104,17 @@ export function resolveRuntimeApiActorContext({
   const apiActorUserId = employee
     ? (sessionUserId || activeEmployee?.apiUserId || activeEmployee?.id || "")
     : ownerApiUserId;
-  const apiTargetStoreIdsKey = (employee ? assignedEmployeeBusinesses : reportingBusinesses)
+  const targetBusinesses = employee ? assignedEmployeeBusinesses : reportingBusinesses;
+  let apiTargetStoreIdsKey = targetBusinesses
     .map((store) => store.id)
     .filter(Boolean)
     .join("|");
+
+  if (employee && !apiTargetStoreIdsKey) {
+    apiTargetStoreIdsKey = (activeEmployee?.storeIds || [])
+      .filter((storeId) => typeof storeId === "string" && storeId.trim())
+      .join("|");
+  }
 
   return {
     ...capabilities,

@@ -112,6 +112,24 @@ export function mapApiMemberToStaff(member, { employeePins = {} } = {}) {
   };
 }
 
+export function mapEmployeeStoresBundleToRuntime({
+  stores = [],
+  channelsByStoreId = {},
+}) {
+  const mapped = mapOrgConfigBundleToRuntime({
+    stores,
+    channelsByStoreId,
+    members: [],
+    employeePins: {},
+  });
+  return {
+    configuredBusinesses: mapped.configuredBusinesses,
+    archivedBusinessIds: mapped.archivedBusinessIds,
+    storeChannelSettings: mapped.storeChannelSettings,
+    storeOperationalSettings: mapped.storeOperationalSettings,
+  };
+}
+
 export function mapOrgConfigBundleToRuntime({
   stores = [],
   channelsByStoreId = {},

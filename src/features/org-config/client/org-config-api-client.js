@@ -295,7 +295,7 @@ export async function updateOrganizationMemberViaApi({
   return payload?.member || payload;
 }
 
-export async function fetchOrgConfigBundleViaApi({
+async function fetchStoresAndChannelsBundleViaApi({
   organizationId,
   actorUserId,
   actorRole,
@@ -321,6 +321,25 @@ export async function fetchOrgConfigBundleViaApi({
   channelResults.forEach((result, index) => {
     const storeUuid = stores[index]?.id || result.storeId;
     channelsByStoreId[storeUuid] = result.channels || [];
+  });
+
+  return { stores, channelsByStoreId };
+}
+
+/** Stores + channels only — safe for employee role (no members list). */
+export async function fetchEmployeeRuntimeBundleViaApi(auth) {
+  return fetchStoresAndChannelsBundleViaApi(auth);
+}
+
+export async function fetchOrgConfigBundleViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+}) {
+  const { stores, channelsByStoreId } = await fetchStoresAndChannelsBundleViaApi({
+    organizationId,
+    actorUserId,
+    actorRole,
   });
 
   const { members } = await fetchOrganizationMembersViaApi({
