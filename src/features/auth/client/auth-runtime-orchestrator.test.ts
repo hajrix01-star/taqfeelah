@@ -18,6 +18,7 @@ vi.mock("@/features/employee-closeouts/employee-theme-storage", () => ({
 describe("auth runtime orchestrator", () => {
   it("applies owner login success state", () => {
     const apply = {
+      setSessionOrganizationId: vi.fn(),
       setSessionUserId: vi.fn(),
       setSessionOrganizationId: vi.fn(),
       setLoggedIn: vi.fn(),
@@ -34,6 +35,7 @@ describe("auth runtime orchestrator", () => {
       apply,
     });
 
+    expect(apply.setSessionOrganizationId).toHaveBeenCalledWith("org-uuid");
     expect(apply.setSessionUserId).toHaveBeenCalledWith("owner-uuid");
     expect(apply.setSessionOrganizationId).toHaveBeenCalledWith("org-uuid");
     expect(apply.setLoggedIn).toHaveBeenCalledWith(true);
@@ -74,6 +76,7 @@ describe("auth runtime orchestrator", () => {
 
   it("bootstraps authenticated employee session from server", () => {
     const apply = {
+      setSessionOrganizationId: vi.fn(),
       setSessionUserId: vi.fn(),
       setSessionOrganizationId: vi.fn(),
       setLoggedIn: vi.fn(),

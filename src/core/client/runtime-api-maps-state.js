@@ -1,5 +1,6 @@
 import { buildSalesChannelIdMap } from "@/core/client/sales-channel-catalog";
 import { isUuid, mapToUuid, parseJsonMap } from "@/core/client/api-id-utils";
+import { bindsToServerAuth } from "@/core/config/runtime-capabilities";
 
 let cachedMaps = null;
 let runtimeMapOverrides = null;
@@ -34,7 +35,10 @@ export function getRuntimeApiMaps() {
       ...(runtimeMapOverrides?.userIdMap || {}),
     },
     salesChannelIdMap: {
-      ...buildSalesChannelIdMap({ envSalesChannelIdMap }),
+      ...buildSalesChannelIdMap({
+        envSalesChannelIdMap,
+        includeCatalogDefaults: !bindsToServerAuth(),
+      }),
       ...(runtimeMapOverrides?.salesChannelIdMap || {}),
     },
   };

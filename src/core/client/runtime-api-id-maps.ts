@@ -31,6 +31,7 @@ type BuildRuntimeApiIdMapsInput = {
   envStoreIdMap?: Record<string, string>;
   envUserIdMap?: Record<string, string>;
   envSalesChannelIdMap?: Record<string, string>;
+  includeCatalogDefaults?: boolean;
 };
 
 /**
@@ -43,6 +44,7 @@ export function buildRuntimeApiIdMaps({
   envStoreIdMap = {},
   envUserIdMap = {},
   envSalesChannelIdMap = {},
+  includeCatalogDefaults = true,
 }: BuildRuntimeApiIdMapsInput = {}) {
   const storeIdMap: Record<string, string> = { ...envStoreIdMap };
   const userIdMap: Record<string, string> = { ...envUserIdMap };
@@ -87,6 +89,7 @@ export function buildRuntimeApiIdMaps({
   const salesChannelIdMap = buildSalesChannelIdMap({
     envSalesChannelIdMap,
     storeChannelSettings,
+    includeCatalogDefaults,
   });
 
   return { storeIdMap, userIdMap, salesChannelIdMap };

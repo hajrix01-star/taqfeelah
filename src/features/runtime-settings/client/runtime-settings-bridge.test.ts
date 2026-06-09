@@ -3,7 +3,7 @@ import {
   applyRuntimeSettingsSnapshotPatch,
   buildRuntimeSettingsPersistPayload,
   buildRuntimeSettingsSnapshot,
-  readOwnerSettingsApiAuth,
+  resolveOwnerSettingsApiAuth,
   serializeRuntimeSettingsSignature,
   usesRuntimeSettingsApi,
 } from "./runtime-settings-bridge";
@@ -69,15 +69,29 @@ describe("runtime settings bridge", () => {
     expect(usesRuntimeSettingsApi()).toBe(true);
   });
 
-  it("readOwnerSettingsApiAuth returns prototype header auth when entries API is enabled outside production auth", () => {
+  it("resolveOwnerSettingsApiAuth returns prototype header auth when entries API is enabled outside production auth", () => {
     vi.stubEnv("NEXT_PUBLIC_ENTRIES_API_ENABLED", "true");
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
     vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID", "org-1");
     vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID", "owner-1");
 
-    expect(readOwnerSettingsApiAuth()).toEqual({
+    expect(resolveOwnerSettingsApiAuth()).toEqual({
       organizationId: "org-1",
       actorUserId: "owner-1",
+      actorRole: "owner",
+    });
+  });
+
+  it("resolveOwnerSettingsApiAuth uses session UUIDs in production server-auth mode", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
+    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "false");
+
+    expect(resolveOwnerSettingsApiAuth({
+      sessionOrganizationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      sessionUserId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    })).toEqual({
+      organizationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      actorUserId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
       actorRole: "owner",
     });
   });

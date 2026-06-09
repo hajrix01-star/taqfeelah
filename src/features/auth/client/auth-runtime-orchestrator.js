@@ -98,8 +98,8 @@ export function applyEmployeeLoginSuccess({
 export function applyServerSessionBootstrap(session, apply = {}) {
   if (!session?.authenticated) return false;
 
-  apply.setSessionUserId?.(typeof session.userId === "string" ? session.userId : "");
   apply.setSessionOrganizationId?.(typeof session.organizationId === "string" ? session.organizationId : "");
+  apply.setSessionUserId?.(typeof session.userId === "string" ? session.userId : "");
   apply.setLoggedIn?.(true);
   apply.setAuthScreen?.("owner");
 
@@ -117,8 +117,8 @@ export function applyServerSessionBootstrap(session, apply = {}) {
 }
 
 export function applyLogoutReset({ bindsToServerAuth, apply = {} }) {
-  apply.setSessionUserId?.("");
   apply.setSessionOrganizationId?.("");
+  apply.setSessionUserId?.("");
   apply.setLoggedIn?.(false);
   apply.setEmployee?.(false);
   apply.setLoggedInEmployeeId?.(null);

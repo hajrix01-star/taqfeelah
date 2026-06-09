@@ -1,4 +1,5 @@
 import { resolveClientOrganizationId } from "@/core/client/resolve-client-organization-id";
+import { isUuid } from "@/core/client/api-id-utils";
 import { isProductionAppMode } from "@/core/config/app-mode";
 import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 import { isCloseoutsApiDbSourceMode, isCloseoutsApiEnabled, isCloseoutsApiStrictMode } from "@/core/config/closeouts-api-mode";
@@ -7,6 +8,7 @@ import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { isPhase9ApiEnabled } from "@/core/config/phase9-api-mode";
 import { isPrototypeAccessMode } from "@/core/config/prototype-access-mode";
 import { isRegisterEntriesPaginationEnabled } from "@/core/config/register-entries-pagination-mode";
+import { readPublicEnvString } from "@/core/config/public-env";
 
 /**
  * @typedef {Object} RuntimeCapabilities
@@ -80,20 +82,25 @@ export function usesRuntimeSettingsApi() {
   return resolveRuntimeCapabilities().usesRuntimeSettingsApi;
 }
 
+function readUuidEnvString(key, env = readRuntimeCapabilitiesEnv()) {
+  const value = readPublicEnvString(key, env);
+  return isUuid(value) ? value : "";
+}
+
 /**
  * @param {Object} input
  * @param {boolean} [input.employee]
+ * @param {string} [input.sessionOrganizationId]
  * @param {string} [input.sessionUserId]
  * @param {{ apiUserId?: string, id?: string, storeIds?: string[] } | null | undefined} [input.activeEmployee]
- * @param {string} [input.sessionOrganizationId]
  * @param {Array<{ id?: string }>} [input.assignedEmployeeBusinesses]
  * @param {Array<{ id?: string }>} [input.reportingBusinesses]
  * @param {Record<string, string | undefined>} [input.env]
  */
 export function resolveRuntimeApiActorContext({
   employee = false,
-  sessionUserId = "",
   sessionOrganizationId = "",
+  sessionUserId = "",
   activeEmployee = null,
   assignedEmployeeBusinesses = [],
   reportingBusinesses = [],
@@ -104,7 +111,7 @@ export function resolveRuntimeApiActorContext({
     sessionOrganizationId,
     envOrganizationId: env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "",
   });
-  const ownerUserId = env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";
+  const ownerUserId = readUuidEnvString("NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID", env);
   const ownerApiUserId = employee ? ownerUserId : (sessionUserId || ownerUserId);
   const apiActorRole = employee ? "employee" : "owner";
   const apiActorUserId = employee

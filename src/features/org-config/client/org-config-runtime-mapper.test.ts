@@ -4,6 +4,7 @@ import {
   mapApiChannelToUi,
   mapApiStoreToBusiness,
   mapOrgConfigBundleToRuntime,
+  validateOrgConfigDbChannelMappings,
 } from "./org-config-runtime-mapper.js";
 
 describe("org config runtime mapper", () => {
@@ -79,6 +80,17 @@ describe("org config runtime mapper", () => {
       name: "Cash",
       status: "active",
     })).toThrow("sales channel id must be a canonical UUID");
+  });
+
+  it("rejects active channels without canonical apiChannelId in strict DB mode", () => {
+    expect(() => validateOrgConfigDbChannelMappings({
+      storeChannelSettings: {
+        shami: {
+          channels: [{ id: "cash", nameEn: "Cash" }],
+          activeIds: ["cash"],
+        },
+      },
+    }, { strict: true })).toThrow(/canonical UUID in DB source mode/i);
   });
 
   it("maps archived stores into archived ids", () => {

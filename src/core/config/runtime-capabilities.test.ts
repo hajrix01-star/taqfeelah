@@ -99,6 +99,21 @@ describe("runtime capabilities", () => {
     expect(context.organizationId).toBe("66666666-6666-4666-8666-666666666666");
   });
 
+  it("prefers session organization id over env when server auth is active", () => {
+    process.env.NEXT_PUBLIC_APP_MODE = "production";
+    process.env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE = "false";
+    process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID = "11111111-1111-4111-8111-111111111111";
+
+    const context = resolveRuntimeApiActorContext({
+      sessionOrganizationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      sessionUserId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      env: process.env,
+    });
+
+    expect(context.bindsToServerAuth).toBe(true);
+    expect(context.organizationId).toBe("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+  });
+
   it("falls back to active employee store ids when assigned businesses are empty", () => {
     process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID = "11111111-1111-4111-8111-111111111111";
 

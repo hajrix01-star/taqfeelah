@@ -342,12 +342,27 @@ export async function fetchOrgConfigBundleViaApi({
     actorRole,
   });
 
-  const { members } = await fetchOrganizationMembersViaApi({
-    organizationId,
-    actorUserId,
-    actorRole,
-    status: "all",
-  });
+  let members = [];
+  if (actorRole === "owner" || actorRole === "manager") {
+    const membersPayload = await fetchOrganizationMembersViaApi({
+      organizationId,
+      actorUserId,
+      actorRole,
+      status: "all",
+    });
+    members = membersPayload.members || [];
+  } else {
+    members = [{
+      userId: actorUserId,
+      legacyStaffId: actorUserId,
+      role: "employee",
+      status: "active",
+      storeAccess: stores.map((store) => ({
+        storeId: store.id,
+        legacyStoreId: store.legacyId || store.id,
+      })),
+    }];
+  }
 
   return { stores, channelsByStoreId, members };
 }

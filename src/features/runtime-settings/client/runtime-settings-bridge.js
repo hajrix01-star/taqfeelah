@@ -1,17 +1,37 @@
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 import { bindsToServerAuth, usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
 import { isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
+import { isUuid } from "@/core/client/api-id-utils";
 
 export { bindsToServerAuth, usesRuntimeSettingsApi };
 
-export function readOwnerSettingsApiAuth() {
-  if (bindsToServerAuth()) return {};
+/**
+ * Resolve API auth headers for owner settings/org-config calls.
+ * Production server-auth uses the signed-in session; prototype/DB-dev uses env UUIDs.
+ */
+export function resolveOwnerSettingsApiAuth({
+  sessionOrganizationId = "",
+  sessionUserId = "",
+  actorRole = "owner",
+} = {}) {
+  if (bindsToServerAuth()) {
+    return {
+      organizationId: isUuid(sessionOrganizationId) ? sessionOrganizationId : "",
+      actorUserId: isUuid(sessionUserId) ? sessionUserId : "",
+      actorRole,
+    };
+  }
   if (!isEntriesApiDbSourceMode()) return {};
   return {
     organizationId: process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "",
     actorUserId: process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "owner",
     actorRole: "owner",
   };
+}
+
+/** @deprecated Use resolveOwnerSettingsApiAuth with explicit session context. */
+export function readOwnerSettingsApiAuth() {
+  return resolveOwnerSettingsApiAuth();
 }
 
 export function buildRuntimeSettingsSnapshot({

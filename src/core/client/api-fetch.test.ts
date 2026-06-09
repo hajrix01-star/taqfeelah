@@ -28,11 +28,14 @@ describe("api-fetch", () => {
   });
 
   it("fetchApiJson returns parsed JSON on success", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 })),
-    );
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchApiJson("/api/v1/stores")).resolves.toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/stores", {
+      method: "GET",
+      headers: {},
+      credentials: "include",
+    });
   });
 });

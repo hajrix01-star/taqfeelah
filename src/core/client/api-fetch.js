@@ -51,7 +51,7 @@ export async function fetchApiJson(url, {
     init.body = typeof body === "string" ? body : JSON.stringify(body);
   }
 
-  const response = await fetch(url, init);
+  const response = await fetch(url, { ...init, credentials: "include" });
   if (!response.ok) {
     throw new Error(await buildFetchError(response, errorMessage, errorStyle));
   }

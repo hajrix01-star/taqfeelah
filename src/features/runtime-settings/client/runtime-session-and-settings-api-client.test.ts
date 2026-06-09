@@ -31,6 +31,7 @@ describe("runtime settings api client", () => {
 
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/runtime/settings", {
       method: "GET",
+      credentials: "include",
       headers: {
         "x-organization-id": "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
         "x-user-id": "e8f3e35b-6051-4da3-8b10-979700c2f00f",

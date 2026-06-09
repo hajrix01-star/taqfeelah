@@ -8,7 +8,7 @@ import { useOrgConfigRuntimeBridge } from "./org-config-runtime-bridge.js";
 import {
   applyRuntimeSettingsSnapshotPatch,
   buildRuntimeSettingsSnapshot,
-  readOwnerSettingsApiAuth,
+  resolveOwnerSettingsApiAuth,
   usesRuntimeSettingsApi,
 } from "@/features/runtime-settings/client/runtime-settings-bridge.js";
 import { useRuntimeSettingsFromApi } from "@/features/runtime-settings/client/use-runtime-settings-from-api.js";
@@ -29,6 +29,8 @@ export function useOwnerSettingsState({
   bindsToServerAuth,
   orgConfigApiEnabled,
   closeoutsApiDbSource,
+  sessionOrganizationId = "",
+  sessionUserId = "",
   loggedIn,
   isEmployee,
   lang,
@@ -165,9 +167,15 @@ export function useOwnerSettingsState({
     });
   }, [migrateSavedSettings, orgConfigApiEnabled]);
 
+  const ownerSettingsApiAuth = resolveOwnerSettingsApiAuth({
+    sessionOrganizationId,
+    sessionUserId,
+    actorRole: isEmployee ? "employee" : "owner",
+  });
+
   const { error: orgConfigSyncError } = useOrgConfigRuntimeBridge({
     enabled: orgConfigApiEnabled && usesRuntimeSettingsApi(),
-    auth: readOwnerSettingsApiAuth(),
+    auth: ownerSettingsApiAuth,
     loggedIn,
     isEmployee,
     employeePins: authEmployeePins,
@@ -188,7 +196,7 @@ export function useOwnerSettingsState({
     persistNow: persistRuntimeSettingsNow,
   } = useRuntimeSettingsFromApi({
     enabled: usesRuntimeSettingsApi(),
-    auth: readOwnerSettingsApiAuth(),
+    auth: ownerSettingsApiAuth,
     loggedIn,
     isEmployee,
     lang,

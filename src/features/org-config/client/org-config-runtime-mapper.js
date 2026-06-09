@@ -180,6 +180,22 @@ export function mapOrgConfigBundleToRuntime({
   };
 }
 
+/** Ensure active sales channels loaded from DB APIs carry canonical UUID apiChannelId values. */
+export function validateOrgConfigDbChannelMappings(mapped, { strict = false } = {}) {
+  if (!strict || !mapped || typeof mapped !== "object") return;
+  const settings = mapped.storeChannelSettings || {};
+  for (const [storeId, config] of Object.entries(settings)) {
+    const activeIds = Array.isArray(config?.activeIds) ? config.activeIds : [];
+    for (const channel of config?.channels || []) {
+      if (!activeIds.includes(channel?.id) || channel?.retired) continue;
+      if (!isUuid(channel?.apiChannelId)) {
+        const label = channel?.nameAr || channel?.nameEn || channel?.id || storeId;
+        throw new Error(`sales channel id must be a canonical UUID in DB source mode (${label}).`);
+      }
+    }
+  }
+}
+
 export function buildOrgConfigPersistBaseline(snapshot) {
   (snapshot.configuredBusinesses || []).forEach((business) => {
     assertCanonicalUuidId("store", business.id);

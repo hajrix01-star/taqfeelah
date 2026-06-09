@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchOrgConfigBundleViaApi } from "./org-config-api-client.js";
+import { bindsToServerAuth } from "@/core/config/runtime-capabilities";
 import {
   buildOrgConfigPersistBaseline,
   mapOrgConfigBundleToRuntime,
+  validateOrgConfigDbChannelMappings,
 } from "./org-config-runtime-mapper.js";
 import { persistOrgConfigSnapshot } from "./org-config-runtime-sync.js";
 
@@ -26,7 +28,7 @@ export function useOrgConfigFromApi({
   const persistTimerRef = useRef(null);
 
   const loadOrgConfig = useCallback(async () => {
-    if (!enabled || !loggedIn || isEmployee) return;
+    if (!enabled || !loggedIn) return;
     setLoading(true);
     setError("");
     try {
@@ -35,6 +37,7 @@ export function useOrgConfigFromApi({
         ...bundle,
         employeePins,
       });
+      validateOrgConfigDbChannelMappings(mapped, { strict: bindsToServerAuth() });
       applyingRef.current = true;
       onHydrate(mapped);
       baselineRef.current = buildOrgConfigPersistBaseline(mapped);
@@ -46,16 +49,16 @@ export function useOrgConfigFromApi({
       applyingRef.current = false;
       setLoading(false);
     }
-  }, [auth, employeePins, enabled, isEmployee, loggedIn, onHydrate]);
+  }, [auth, employeePins, enabled, loggedIn, onHydrate]);
 
   useEffect(() => {
-    if (!enabled || !loggedIn || isEmployee) {
+    if (!enabled || !loggedIn) {
       hydratedRef.current = !enabled;
       baselineRef.current = "";
       return;
     }
     loadOrgConfig();
-  }, [enabled, isEmployee, loadOrgConfig, loggedIn]);
+  }, [enabled, loadOrgConfig, loggedIn]);
 
   useEffect(() => {
     if (!enabled || !loggedIn || isEmployee || !hydratedRef.current || applyingRef.current) return;

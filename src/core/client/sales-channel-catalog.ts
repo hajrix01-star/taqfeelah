@@ -82,14 +82,19 @@ type StoreChannelSettings = Record<string, {
 export function buildSalesChannelIdMap({
   envSalesChannelIdMap = {},
   storeChannelSettings = {},
+  includeCatalogDefaults = true,
 }: {
   envSalesChannelIdMap?: Record<string, string>;
   storeChannelSettings?: StoreChannelSettings;
+  /** When false (production DB source), only DB-backed apiChannelId/env maps are trusted. */
+  includeCatalogDefaults?: boolean;
 } = {}): Record<string, string> {
   const map: Record<string, string> = {};
 
-  for (const [legacyId, uuid] of Object.entries(DEFAULT_SALES_CHANNEL_UUIDS)) {
-    if (isUuid(uuid)) map[legacyId] = uuid;
+  if (includeCatalogDefaults) {
+    for (const [legacyId, uuid] of Object.entries(DEFAULT_SALES_CHANNEL_UUIDS)) {
+      if (isUuid(uuid)) map[legacyId] = uuid;
+    }
   }
   for (const [legacyId, uuid] of Object.entries(envSalesChannelIdMap)) {
     if (isUuid(uuid)) map[legacyId] = uuid;
