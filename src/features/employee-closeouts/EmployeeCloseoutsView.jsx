@@ -203,14 +203,14 @@ export default function EmployeeCloseoutsView({
     const fn = isResubmit ? resubmitCloseout : submitCloseout;
     const next = await fn({ closeout, employee, reviewWorkflowEnabled });
     if (isCloseoutWorkflowFailure(next)) {
-      const message = next.phase === "save"
+      const fallback = next.phase === "save"
         ? (lang === "ar" ? "تعذر الحفظ." : "Failed to save.")
         : (lang === "ar" ? "تعذر الإرسال." : "Failed to send.");
-      window.alert(message);
+      window.alert(syncError || fallback);
       return;
     }
     if (!next) {
-      window.alert(lang === "ar" ? "تعذر الإرسال." : "Failed to send.");
+      window.alert(syncError || (lang === "ar" ? "تعذر الإرسال." : "Failed to send."));
       return;
     }
     setEntryCloseout(null);

@@ -6,6 +6,7 @@ import { ValidationError } from "@/core/errors/app-error";
 import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
 import { attachments, auditEvents, entries, entrySalesChannels } from "@/core/db/schema";
 import { registerInlineAttachment } from "@/features/entries/server/inline-attachment";
+import { resolveStoreSalesChannelsForWrite } from "@/features/org-config/server/resolve-store-sales-channels-for-write";
 
 const salesChannelSchema = z.object({
   salesChannelId: z.string().uuid(),
@@ -56,7 +57,15 @@ export async function createStoreEntry(rawInput: CreateEntryInput) {
     minimumRole: "employee",
   });
 
-  const normalizedSalesChannels = input.salesChannels.filter((row) => row.amountHalalas > 0);
+  const db = getDb();
+  const normalizedSalesChannels = input.type === "summary"
+    ? await resolveStoreSalesChannelsForWrite(
+      db,
+      input.organizationId,
+      input.storeId,
+      input.salesChannels.filter((row) => row.amountHalalas > 0),
+    )
+    : input.salesChannels.filter((row) => row.amountHalalas > 0);
   const totalSalesHalalas = normalizedSalesChannels.reduce((sum, row) => sum + row.amountHalalas, 0);
 
   if (input.type === "summary" && totalSalesHalalas <= 0) {
@@ -66,7 +75,6 @@ export async function createStoreEntry(rawInput: CreateEntryInput) {
     throw new ValidationError("Non-summary entry requires a positive amountHalalas.");
   }
 
-  const db = getDb();
   const result = await db.transaction(async (tx) => {
     const amountHalalas = input.type === "summary" ? totalSalesHalalas : input.amountHalalas!;
     const [createdEntry] = await tx
