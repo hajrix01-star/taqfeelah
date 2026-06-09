@@ -64,6 +64,9 @@ export function buildRuntimeApiIdMaps({
 
   for (const business of businesses) {
     const canonicalId = typeof business?.id === "string" ? business.id.trim() : "";
+    if (isUuid(canonicalId)) {
+      storeIdMap[canonicalId] = canonicalId;
+    }
     const explicitLegacyId = typeof business?.legacyId === "string" ? business.legacyId.trim() : "";
     const legacyStoreId = explicitLegacyId || (canonicalId && !isUuid(canonicalId) ? canonicalId : "");
     if (!legacyStoreId) continue;

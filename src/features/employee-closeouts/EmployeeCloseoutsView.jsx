@@ -51,6 +51,7 @@ export default function EmployeeCloseoutsView({
   onEntryActiveChange,
   findForStoreDate: findForStoreDateProp,
   saving,
+  employeeRuntimeReady = true,
 }) {
   const {
     closeouts,
@@ -165,6 +166,12 @@ export default function EmployeeCloseoutsView({
   const openSettings = useCallback(() => setShowSettings(true), []);
 
   const startNewCloseout = useCallback(() => {
+    if (!employeeRuntimeReady) {
+      window.alert(lang === "ar"
+        ? "جاري تحميل إعدادات المحل من الخادم… انتظر لحظة ثم أعد المحاولة."
+        : "Store settings are still loading from the server… wait a moment and try again.");
+      return;
+    }
     if (!currentStoreId) return;
     const today = new Date();
     const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -177,7 +184,7 @@ export default function EmployeeCloseoutsView({
       notebookTheme,
     });
     setEntryCloseout(upsertCloseout(draft));
-  }, [currentStoreId, employee, storeLabel, notebookTheme, upsertCloseout]);
+  }, [currentStoreId, employee, employeeRuntimeReady, lang, storeLabel, notebookTheme, upsertCloseout]);
 
   useEffect(() => {
     onRegisterAdd?.(startNewCloseout);
@@ -268,7 +275,12 @@ export default function EmployeeCloseoutsView({
             <h1 className="relative mx-auto mb-6 w-fit pb-3 text-center text-taq-hero font-extrabold tracking-tight text-[#112A46] after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-[68px] after:-translate-x-1/2 after:bg-[#D69C2F]">
               {lang === "ar" ? "تقفيلاتي اليومية" : "My daily closeouts"}
             </h1>
-            {!channelsReady && (
+            {!employeeRuntimeReady && (
+              <div className="mb-4 rounded-2xl bg-[#FFF4D2]/95 p-3 text-taq-meta font-bold text-[#806528] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
+                {lang === "ar" ? "جاري تحميل إعدادات المحل وقنوات البيع من الخادم…" : "Loading store settings and sales channels from the server…"}
+              </div>
+            )}
+            {employeeRuntimeReady && !channelsReady && (
               <div className="mb-4 rounded-2xl bg-[#FFF1EE]/90 p-3 text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10 backdrop-blur-sm">
                 {lang === "ar" ? "لا توجد قنوات بيع مفعّلة لهذا المحل. اطلب من المالك تفعيلها من الإعدادات." : "No active sales channels for this store. Ask the owner to enable them in settings."}
               </div>

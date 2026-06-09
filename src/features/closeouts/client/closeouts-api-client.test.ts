@@ -139,6 +139,41 @@ describe("closeouts api client", () => {
     expect(payload.salesChannels[0].amountHalalas).toBe(25000);
   });
 
+  it("resolves hydrated store channel ids before submit", async () => {
+    process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP = JSON.stringify({
+      shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+    });
+    process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP = JSON.stringify({
+      ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+    });
+
+    const { diagnoseCloseoutSubmitFailure, setRuntimeApiIdMaps } = await import("./closeouts-api-client.js");
+    setRuntimeApiIdMaps({
+      storeIdMap: { shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c" },
+      userIdMap: { ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79" },
+      salesChannelIdMap: {},
+    });
+
+    const storeChannels = [{
+      id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      legacyId: "cash",
+      apiChannelId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      text: "cash",
+    }];
+
+    const failure = diagnoseCloseoutSubmitFailure({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "ahmed",
+      closeout: {
+        storeId: "shami",
+        sales: { cash: { channelId: "cash", name: "كاش", amount: 100 } },
+      },
+      storeChannels,
+    });
+
+    expect(failure).toBeNull();
+  });
+
   it("diagnoses unmapped custom sales channels", async () => {
     process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP = JSON.stringify({
       shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
