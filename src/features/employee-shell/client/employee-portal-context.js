@@ -1,4 +1,5 @@
 import { isUuid } from "@/core/client/api-id-utils";
+import { usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
 import { resolveNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
 import { readEmployeeNotebookTheme } from "@/features/employee-closeouts/employee-theme-storage";
 import {
@@ -80,7 +81,7 @@ export function buildEmployeePortalContext({
     storeId: currentEmployeeBusiness?.id,
     globalTheme: notebookTheme,
     employeeThemeOverride: employeeThemeOverride
-      || (activeEmployee ? readEmployeeNotebookTheme(activeEmployee.id) : null),
+      || (!usesRuntimeSettingsApi() && activeEmployee ? readEmployeeNotebookTheme(activeEmployee.id) : null),
   });
   const suggestedEntryDate = resolveSuggestedEntryDate({
     lastCloseoutDate: currentEmployeeBusiness

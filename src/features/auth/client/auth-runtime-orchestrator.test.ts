@@ -15,6 +15,10 @@ vi.mock("@/features/employee-closeouts/employee-theme-storage", () => ({
   readEmployeeNotebookTheme: vi.fn(() => "classic"),
 }));
 
+vi.mock("@/core/config/runtime-capabilities", () => ({
+  usesRuntimeSettingsApi: vi.fn(() => false),
+}));
+
 describe("auth runtime orchestrator", () => {
   it("applies owner login success state", () => {
     const apply = {

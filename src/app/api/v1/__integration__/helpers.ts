@@ -4,6 +4,7 @@ import { __resetEnvCacheForTests } from "@/core/config/env";
 export const TEST_ORGANIZATION_ID = "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1";
 export const TEST_STORE_ID = "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c";
 export const TEST_OWNER_USER_ID = "e8f3e35b-6051-4da3-8b10-979700c2f00f";
+export const TEST_EMPLOYEE_USER_ID = "a1b2c3d4-e5f6-4789-a012-3456789abcde";
 export const TEST_MEMBER_ID = "d4e5f6a7-b8c9-4012-d345-6789abcdef01";
 
 export function setupRouteIntegrationEnv() {
@@ -24,6 +25,17 @@ export function ownerRequest(url: string, init: RequestInit = {}) {
   headers.set("x-organization-id", TEST_ORGANIZATION_ID);
   headers.set("x-user-id", TEST_OWNER_USER_ID);
   headers.set("x-member-role", "owner");
+  if (init.body && !headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
+  return new Request(url, { ...init, headers });
+}
+
+export function employeeRequest(url: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers);
+  headers.set("x-organization-id", TEST_ORGANIZATION_ID);
+  headers.set("x-user-id", TEST_EMPLOYEE_USER_ID);
+  headers.set("x-member-role", "employee");
   if (init.body && !headers.has("content-type")) {
     headers.set("content-type", "application/json");
   }

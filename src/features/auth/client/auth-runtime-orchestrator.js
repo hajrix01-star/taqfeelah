@@ -1,4 +1,5 @@
 import { readEmployeeNotebookTheme } from "@/features/employee-closeouts/employee-theme-storage";
+import { usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
 import {
   persistLocalEmployeeSession,
   persistLocalOwnerSession,
@@ -89,7 +90,9 @@ export function applyEmployeeLoginSuccess({
   apply.setEmployee?.(true);
   apply.setLoggedInEmployeeId?.(resolvedEmployeeId);
   apply.setEmployeeBusinessId?.(person?.storeIds?.[0] || activeBusinesses[0]?.id || "");
-  apply.setEmployeeThemeOverride?.(readEmployeeNotebookTheme(resolvedEmployeeId));
+  if (!usesRuntimeSettingsApi()) {
+    apply.setEmployeeThemeOverride?.(readEmployeeNotebookTheme(resolvedEmployeeId));
+  }
   apply.setEmployeePage?.("closeouts");
   apply.setAuthScreen?.("owner");
   return true;
