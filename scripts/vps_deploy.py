@@ -1239,7 +1239,9 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
         ).strip()
     )
 
-    if env_flag_enabled("RESET_FOUNDATION_ON_DEPLOY"):
+    reset_foundation_on_deploy = env_flag_enabled("RESET_FOUNDATION_ON_DEPLOY")
+
+    if reset_foundation_on_deploy:
         confirm = os.environ.get("RESET_FOUNDATION_CONFIRM", "")
         print_section("Reset and seed modern foundation")
         vps.run(
@@ -1255,85 +1257,88 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             ).strip()
         )
 
-    print_section("Seed closeouts foundation when DATABASE_URL is configured")
-    _, seed_out, seed_err = vps.run(
-        textwrap.dedent(
-            f"""
-            set -euo pipefail
-            cd {shlex.quote(app_dir)}
-            set -a
-            . ./.env.production
-            set +a
-            node scripts/seed-closeouts-foundation.mjs
-            """
-        ).strip(),
-        check=False,
-    )
-    if seed_out.strip():
-        safe_print(seed_out.strip())
-    if seed_err.strip():
-        safe_print("STDERR:")
-        safe_print(seed_err.strip())
+    if reset_foundation_on_deploy:
+        safe_print("Skipping legacy seed/repair scripts after modern foundation reset.")
+    else:
+        print_section("Seed closeouts foundation when DATABASE_URL is configured")
+        _, seed_out, seed_err = vps.run(
+            textwrap.dedent(
+                f"""
+                set -euo pipefail
+                cd {shlex.quote(app_dir)}
+                set -a
+                . ./.env.production
+                set +a
+                node scripts/seed-closeouts-foundation.mjs
+                """
+            ).strip(),
+            check=False,
+        )
+        if seed_out.strip():
+            safe_print(seed_out.strip())
+        if seed_err.strip():
+            safe_print("STDERR:")
+            safe_print(seed_err.strip())
 
-    print_section("Repair staff store access for custom store IDs")
-    _, staff_repair_out, staff_repair_err = vps.run(
-        textwrap.dedent(
-            f"""
-            set -euo pipefail
-            cd {shlex.quote(app_dir)}
-            set -a
-            . ./.env.production
-            set +a
-            node scripts/repair-staff-store-access.mjs
-            """
-        ).strip(),
-        check=False,
-    )
-    if staff_repair_out.strip():
-        safe_print(staff_repair_out.strip())
-    if staff_repair_err.strip():
-        safe_print("STDERR:")
-        safe_print(staff_repair_err.strip())
+        print_section("Repair staff store access for custom store IDs")
+        _, staff_repair_out, staff_repair_err = vps.run(
+            textwrap.dedent(
+                f"""
+                set -euo pipefail
+                cd {shlex.quote(app_dir)}
+                set -a
+                . ./.env.production
+                set +a
+                node scripts/repair-staff-store-access.mjs
+                """
+            ).strip(),
+            check=False,
+        )
+        if staff_repair_out.strip():
+            safe_print(staff_repair_out.strip())
+        if staff_repair_err.strip():
+            safe_print("STDERR:")
+            safe_print(staff_repair_err.strip())
 
-    print_section("Repair sales channels for prototype/UI channel ids")
-    _, channel_repair_out, channel_repair_err = vps.run(
-        textwrap.dedent(
-            f"""
-            set -euo pipefail
-            cd {shlex.quote(app_dir)}
-            set -a
-            . ./.env.production
-            set +a
-            node scripts/repair-sales-channels.mjs
-            """
-        ).strip(),
-        check=False,
-    )
-    if channel_repair_out.strip():
-        safe_print(channel_repair_out.strip())
-    if channel_repair_err.strip():
-        safe_print("STDERR:")
-        safe_print(channel_repair_err.strip())
+        print_section("Repair sales channels for prototype/UI channel ids")
+        _, channel_repair_out, channel_repair_err = vps.run(
+            textwrap.dedent(
+                f"""
+                set -euo pipefail
+                cd {shlex.quote(app_dir)}
+                set -a
+                . ./.env.production
+                set +a
+                node scripts/repair-sales-channels.mjs
+                """
+            ).strip(),
+            check=False,
+        )
+        if channel_repair_out.strip():
+            safe_print(channel_repair_out.strip())
+        if channel_repair_err.strip():
+            safe_print("STDERR:")
+            safe_print(channel_repair_err.strip())
 
-    print_section("Repair stuck employee closeouts (auto-approve pending)")
-    _, repair_out, repair_err = vps.run(
-        textwrap.dedent(
-            f"""
-            set -euo pipefail
-            cd {shlex.quote(app_dir)}
-            set -a
-            . ./.env.production
-            set +a
-            node scripts/repair-stuck-closeouts.mjs
-            """
-        ).strip(),
-        check=False,
-    )
-    if repair_out.strip():
-        safe_print(repair_out.strip())
-    if repair_err.strip():
-        safe_print("STDERR:")
-        safe_print(repair_err.strip())
+        print_section("Repair stuck employee closeouts (auto-approve pending)")
+        _, repair_out, repair_err = vps.run(
+            textwrap.dedent(
+                f"""
+                set -euo pipefail
+                cd {shlex.quote(app_dir)}
+                set -a
+                . ./.env.production
+                set +a
+                node scripts/repair-stuck-closeouts.mjs
+                """
+            ).strip(),
+            check=False,
+        )
+        if repair_out.strip():
+            safe_print(repair_out.strip())
+        if repair_err.strip():
+            safe_print("STDERR:")
+            safe_print(repair_err.strip())
 
     print_section("Start isolated PM2 process")
     vps.run(
