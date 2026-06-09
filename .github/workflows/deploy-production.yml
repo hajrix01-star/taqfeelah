@@ -119,9 +119,10 @@ jobs:
           VPS_CONNECT_RETRIES: "8"
           VPS_RETRY_DELAY_SECONDS: "12"
           DEPLOYMENT_WAVE: "5"
-          APP_MODE: ${{ secrets.APP_MODE }}
-          NEXT_PUBLIC_APP_MODE: ${{ secrets.NEXT_PUBLIC_APP_MODE }}
-          NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: ${{ secrets.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE }}
+          APP_MODE: "production"
+          NEXT_PUBLIC_APP_MODE: "production"
+          NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true"
+          ALLOW_HEADER_AUTH_CONTEXT: "true"
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTH_SESSION_SECRET: ${{ secrets.AUTH_SESSION_SECRET }}
           AUTH_ORGANIZATION_ID: ${{ secrets.AUTH_ORGANIZATION_ID }}
