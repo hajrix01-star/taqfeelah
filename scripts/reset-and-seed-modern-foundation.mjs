@@ -15,8 +15,8 @@ const IDS = {
     cash: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
     mada: "7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c",
     apple: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d",
-    jahez: "9e5c3a4b-0d6f-4a1c-c3e4-5f6a7b8c9d0e",
-    hunger: "af6d4b5c-1e7a-4b2d-d4f5-6a7b8c9d0e1f",
+    jahez: "9e5c3a4b-0d6f-4a1c-a3e4-5f6a7b8c9d0e",
+    hunger: "af6d4b5c-1e7a-4b2d-a4f5-6a7b8c9d0e1f",
     card: "bb16ea8f-8abf-4ca9-ab0d-e3a8f69f8db1",
     online: "f0f8dd28-4fbe-4bf2-9074-2be703f10ccd",
   },
@@ -65,6 +65,7 @@ async function resetData(client) {
       entry_sales_channels,
       audit_events,
       entries,
+      daily_closeouts,
       member_store_access,
       organization_members,
       auth_identities,
@@ -81,7 +82,7 @@ async function seedCore(client) {
   await client.query(
     `insert into organizations (id, name, status)
      values ($1, $2, 'active')`,
-    [IDS.organization, "Taqfeelah Production Foundation"],
+    [IDS.organization, "شركة النجاح"],
   );
 
   await client.query(
@@ -90,7 +91,7 @@ async function seedCore(client) {
     [
       IDS.store,
       IDS.organization,
-      "مشويات المعلم الشامي",
+      "شركة النجاح — الفرع الرئيسي",
       "",
       JSON.stringify({
         activeCategories: OUTFLOW_CATEGORIES.map(([id]) => id),
@@ -105,9 +106,9 @@ async function seedCore(client) {
   );
 
   const users = [
-    [IDS.owner, "Owner", "owner"],
-    [IDS.ahmed, "Ahmed", "employee"],
-    [IDS.sara, "Sara", "employee"],
+    [IDS.owner, "محمد الهاجري", "owner"],
+    [IDS.ahmed, "أحمد", "employee"],
+    [IDS.sara, "سارة", "employee"],
   ];
 
   for (const [userId, name] of users) {
@@ -180,9 +181,9 @@ async function seedRuntimeSettings(client) {
         id: IDS.store,
         legacyId: "shami",
         dbStoreId: IDS.store,
-        displayName: "مشويات المعلم الشامي",
-        nameAr: "مشويات المعلم الشامي",
-        nameEn: "Al-Shami Grill",
+        displayName: "شركة النجاح",
+        nameAr: "شركة النجاح",
+        nameEn: "Al-Najah Company",
         customLocation: "",
       },
     ],
@@ -258,15 +259,24 @@ async function verifyFoundation(client) {
       (select count(*) from organization_members where role = 'employee') as employees,
       (select count(*) from member_store_access) as store_access,
       (select count(*) from sales_channels) as sales_channels,
-      (select count(*) from entries) as entries
+      (select count(*) from outflow_categories) as outflow_categories,
+      (select count(*) from entries) as entries,
+      (select count(*) from daily_closeouts) as daily_closeouts
   `);
   const row = checks.rows[0];
-  console.log("Modern foundation counts:", row);
+  console.log("Al-Najah foundation counts:", row);
   if (Number(row.organizations) !== 1) throw new Error("Expected exactly one organization.");
   if (Number(row.stores) !== 1) throw new Error("Expected exactly one store.");
   if (Number(row.employees) !== 2) throw new Error("Expected exactly two employees.");
   if (Number(row.store_access) !== 2) throw new Error("Expected two employee store access grants.");
+  if (Number(row.sales_channels) !== CHANNELS.length) {
+    throw new Error(`Expected ${CHANNELS.length} sales channels.`);
+  }
+  if (Number(row.outflow_categories) !== OUTFLOW_CATEGORIES.length) {
+    throw new Error(`Expected ${OUTFLOW_CATEGORIES.length} outflow categories.`);
+  }
   if (Number(row.entries) !== 0) throw new Error("Expected zero historical entries after reset.");
+  if (Number(row.daily_closeouts) !== 0) throw new Error("Expected zero closeouts after reset.");
 }
 
 async function main() {
@@ -283,7 +293,7 @@ async function main() {
     await seedRuntimeSettings(client);
     await verifyFoundation(client);
     await client.query("commit");
-    console.log("Reset and modern foundation seed completed.");
+    console.log("Reset and Al-Najah foundation seed completed.");
   } catch (error) {
     await client.query("rollback");
     throw error;

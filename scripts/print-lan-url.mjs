@@ -2,7 +2,7 @@ import { buildLanPageUrls } from "./lan-hosts.mjs";
 import { PROTOTYPE_BUILD_STAMP } from "../src/prototype-build-stamp.mjs";
 
 const port = Number(process.env.PORT) || 3000;
-const path = "/prototype-runtime";
+const path = "/app";
 const urls = buildLanPageUrls(port, path, PROTOTYPE_BUILD_STAMP);
 
 console.log("");

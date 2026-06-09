@@ -4,12 +4,6 @@ function getEnv(name, fallback = "") {
   return process.env[name] || fallback;
 }
 
-function required(name) {
-  const value = getEnv(name);
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
-  return value;
-}
-
 function isoDateNow() {
   const d = new Date();
   const y = d.getUTCFullYear();
@@ -34,12 +28,12 @@ async function callJson(url, init) {
 }
 
 async function main() {
-  const baseUrl = getEnv("CLOSEOUTS_SMOKE_BASE_URL", "https://www.taqfeelah.com").replace(/\/$/, "");
-  const organizationId = required("CLOSEOUTS_SMOKE_ORGANIZATION_ID");
-  const storeId = required("CLOSEOUTS_SMOKE_STORE_ID");
-  const employeeUserId = required("CLOSEOUTS_SMOKE_EMPLOYEE_USER_ID");
-  const ownerUserId = required("CLOSEOUTS_SMOKE_OWNER_USER_ID");
-  const salesChannelId = required("CLOSEOUTS_SMOKE_SALES_CHANNEL_ID");
+  const baseUrl = getEnv("CLOSEOUTS_SMOKE_BASE_URL", "http://localhost:3000").replace(/\/$/, "");
+  const organizationId = getEnv("CLOSEOUTS_SMOKE_ORGANIZATION_ID", "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1");
+  const storeId = getEnv("CLOSEOUTS_SMOKE_STORE_ID", "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c");
+  const employeeUserId = getEnv("CLOSEOUTS_SMOKE_EMPLOYEE_USER_ID", "4cf1450d-08d8-4ca1-b180-1c2642174a79");
+  const ownerUserId = getEnv("CLOSEOUTS_SMOKE_OWNER_USER_ID", "e8f3e35b-6051-4da3-8b10-979700c2f00f");
+  const salesChannelId = getEnv("CLOSEOUTS_SMOKE_SALES_CHANNEL_ID", "9bc40d4f-c773-4ba3-87db-b8bb1467dafb");
   const date = getEnv("CLOSEOUTS_SMOKE_DATE", isoDateNow());
 
   const closeoutId = `smoke-${date}-${randomUUID().slice(0, 8)}`;

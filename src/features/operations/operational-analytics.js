@@ -4,6 +4,7 @@ import {
   countPendingReviewsFromUiEntries,
   countProofsFromUiEntries,
 } from "@/domain/attachment-review/stats";
+import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 
 export const OUTFLOW_ENTRY_TYPES = new Set(["purchases", "expense", "withdrawal"]);
 
@@ -151,13 +152,25 @@ export function resolveOwnerPeriodSummaryPreference({
   localTotals,
   apiTotals,
   entriesLoading = false,
+  entriesDbSource = isEntriesApiDbSourceMode(),
 }) {
+  if (entriesDbSource) {
+    return false;
+  }
   if (entryTotalsHaveFinancialActivity(localTotals)) return true;
   if (entriesLoading) return true;
   return !entryTotalsHaveFinancialActivity(apiTotals);
 }
 
-export function resolveOwnerSingleStoreTotals(localTotals, apiTotals, preferEntryDerived) {
+export function resolveOwnerSingleStoreTotals(
+  localTotals,
+  apiTotals,
+  preferEntryDerived,
+  { entriesDbSource = isEntriesApiDbSourceMode() } = {},
+) {
+  if (entriesDbSource) {
+    return apiTotals ?? localTotals;
+  }
   return preferEntryDerived
     ? localTotals
     : preferLocalTotalsOverEmptyApi(localTotals, apiTotals);

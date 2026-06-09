@@ -5,7 +5,7 @@ import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { toRiyals } from "@/core/money/halalas";
-import { auditEvents, entries, stores, users } from "@/core/db/schema";
+import { dailyCloseouts, entries, entrySalesChannels, stores, users } from "@/core/db/schema";
 import {
   closeoutTotalsFromHalalas,
   closeoutTotalsFromRiyalRows,
@@ -22,45 +22,7 @@ const listCloseoutsInputSchema = z.object({
   dateTo: closeoutDateSchema.optional(),
 });
 
-const submitMetadataSchema = z.object({
-  closeoutId: z.string().trim().min(1).max(120),
-  date: closeoutDateSchema,
-  totalSalesHalalas: z.coerce.number().int().nonnegative().optional(),
-  totalOutflowHalalas: z.coerce.number().int().nonnegative().optional(),
-  salesChannels: z
-    .array(
-      z.object({
-        salesChannelId: z.string().uuid(),
-        channelName: z.string().trim().min(1).max(120),
-        amountHalalas: z.coerce.number().int().nonnegative(),
-      }),
-    )
-    .optional(),
-  outflows: z
-    .array(
-      z.object({
-        type: z.enum(["purchases", "expense", "withdrawal"]),
-        amountHalalas: z.coerce.number().int().positive(),
-        categoryId: z.string().nullable().optional(),
-        categoryName: z.string().optional(),
-        typeLabel: z.string().optional(),
-        note: z.string().optional().nullable(),
-      }),
-    )
-    .optional(),
-  outflowEntryIds: z.array(z.string().uuid()).optional(),
-  summaryEntryId: z.string().uuid().optional(),
-  note: z.string().optional(),
-  daySequence: z.coerce.number().int().positive().optional(),
-});
-
-const reviewMetadataSchema = z.object({
-  closeoutId: z.string().trim().min(1).max(120),
-  date: closeoutDateSchema,
-});
-
 type ListCloseoutsInput = z.infer<typeof listCloseoutsInputSchema>;
-type SubmitMetadata = z.infer<typeof submitMetadataSchema>;
 
 type CloseoutOutflowRow = {
   id: string;
@@ -72,28 +34,10 @@ type CloseoutOutflowRow = {
   amount: number;
 };
 
-type EventAggregate = {
-  closeoutId: string;
-  date: string;
-  submit: {
-    createdAt: Date;
-    actorUserId: string;
-    metadata: SubmitMetadata;
-  } | null;
-  approved: {
-    createdAt: Date;
-    actorUserId: string;
-  } | null;
-  returned: {
-    createdAt: Date;
-    actorUserId: string;
-    reason: string | null;
-  } | null;
-};
-
-function toTimestamp(date: Date): number {
-  const value = date.getTime();
-  return Number.isFinite(value) ? value : 0;
+function mapCloseoutStatus(status: string): "submitted" | "reviewed" | "returned" {
+  if (status === "approved") return "reviewed";
+  if (status === "returned") return "returned";
+  return "submitted";
 }
 
 export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
@@ -127,222 +71,171 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
     )
     .limit(1);
 
-  const rows = await db
+  const closeoutRows = await db
     .select({
-      action: auditEvents.action,
-      actorUserId: auditEvents.actorUserId,
-      createdAt: auditEvents.createdAt,
-      reason: auditEvents.reason,
-      metadata: auditEvents.metadata,
+      id: dailyCloseouts.id,
+      clientCloseoutId: dailyCloseouts.clientCloseoutId,
+      date: dailyCloseouts.date,
+      daySequence: dailyCloseouts.daySequence,
+      status: dailyCloseouts.status,
+      submittedByUserId: dailyCloseouts.submittedByUserId,
+      reviewedByUserId: dailyCloseouts.reviewedByUserId,
+      reviewedAt: dailyCloseouts.reviewedAt,
+      returnReason: dailyCloseouts.returnReason,
+      note: dailyCloseouts.note,
+      createdAt: dailyCloseouts.createdAt,
     })
-    .from(auditEvents)
+    .from(dailyCloseouts)
     .where(
       and(
-        eq(auditEvents.organizationId, input.organizationId),
-        eq(auditEvents.storeId, input.storeId),
-        inArray(auditEvents.action, [
-          "closeout_submitted",
-          "closeout_resubmitted",
-          "closeout_approved",
-          "closeout_returned",
-        ]),
-        input.dateFrom ? sql`${auditEvents.metadata} ->> 'date' >= ${input.dateFrom}` : undefined,
-        input.dateTo ? sql`${auditEvents.metadata} ->> 'date' <= ${input.dateTo}` : undefined,
+        eq(dailyCloseouts.organizationId, input.organizationId),
+        eq(dailyCloseouts.storeId, input.storeId),
+        input.dateFrom ? sql`${dailyCloseouts.date} >= ${input.dateFrom}` : undefined,
+        input.dateTo ? sql`${dailyCloseouts.date} <= ${input.dateTo}` : undefined,
       ),
     )
-    .orderBy(desc(auditEvents.createdAt));
+    .orderBy(desc(dailyCloseouts.date), desc(dailyCloseouts.createdAt));
 
-  const aggregates = new Map<string, EventAggregate>();
-  for (const row of rows) {
-    const metadata =
-      row.action === "closeout_submitted" || row.action === "closeout_resubmitted"
-        ? submitMetadataSchema.safeParse(row.metadata)
-        : reviewMetadataSchema.safeParse(row.metadata);
+  if (closeoutRows.length === 0) return [];
 
-    if (!metadata.success) continue;
-    const closeoutId = metadata.data.closeoutId;
-    const date = metadata.data.date;
-    const key = `${closeoutId}:${date}`;
-    const current = aggregates.get(key) || {
-      closeoutId,
-      date,
-      submit: null,
-      approved: null,
-      returned: null,
-    };
+  const closeoutIds = closeoutRows.map((row) => row.id);
+  const entryRows = await db
+    .select({
+      id: entries.id,
+      closeoutId: entries.closeoutId,
+      type: entries.type,
+      categoryId: entries.categoryId,
+      note: entries.note,
+      amountHalalas: entries.amountHalalas,
+    })
+    .from(entries)
+    .where(
+      and(
+        eq(entries.organizationId, input.organizationId),
+        eq(entries.storeId, input.storeId),
+        inArray(entries.closeoutId, closeoutIds),
+      ),
+    );
 
-    if (row.action === "closeout_submitted" || row.action === "closeout_resubmitted") {
-      const eventAt = toTimestamp(row.createdAt);
-      const currentSubmitAt = current.submit ? toTimestamp(current.submit.createdAt) : -1;
-      if (!current.submit || eventAt >= currentSubmitAt) {
-        current.submit = {
-          createdAt: row.createdAt,
-          actorUserId: row.actorUserId,
-          metadata: metadata.data,
-        };
-      }
-    }
-    if (row.action === "closeout_approved" && !current.approved) {
-      current.approved = {
-        createdAt: row.createdAt,
-        actorUserId: row.actorUserId,
-      };
-    }
-    if (row.action === "closeout_returned" && !current.returned) {
-      current.returned = {
-        createdAt: row.createdAt,
-        actorUserId: row.actorUserId,
-        reason: row.reason,
-      };
-    }
+  const summaryEntryIds = entryRows
+    .filter((row) => row.type === "summary")
+    .map((row) => row.id);
 
-    aggregates.set(key, current);
+  const salesByEntryId = new Map<string, Array<{ channelId: string; name: string; amount: number }>>();
+  if (summaryEntryIds.length > 0) {
+    const salesRows = await db
+      .select({
+        entryId: entrySalesChannels.entryId,
+        salesChannelId: entrySalesChannels.salesChannelId,
+        channelNameSnapshot: entrySalesChannels.channelNameSnapshot,
+        amountHalalas: entrySalesChannels.amountHalalas,
+      })
+      .from(entrySalesChannels)
+      .where(
+        and(
+          eq(entrySalesChannels.organizationId, input.organizationId),
+          eq(entrySalesChannels.storeId, input.storeId),
+          inArray(entrySalesChannels.entryId, summaryEntryIds),
+        ),
+      );
+
+    salesRows.forEach((row) => {
+      const current = salesByEntryId.get(row.entryId) || [];
+      current.push({
+        channelId: row.salesChannelId,
+        name: row.channelNameSnapshot,
+        amount: toRiyals(row.amountHalalas),
+      });
+      salesByEntryId.set(row.entryId, current);
+    });
   }
 
+  const entriesByCloseoutId = new Map<string, typeof entryRows>();
+  entryRows.forEach((row) => {
+    if (!row.closeoutId) return;
+    const current = entriesByCloseoutId.get(row.closeoutId) || [];
+    current.push(row);
+    entriesByCloseoutId.set(row.closeoutId, current);
+  });
+
   const actorIds = [...new Set(
-    [...aggregates.values()].flatMap((item) => ([
-      item.submit?.actorUserId,
-      item.approved?.actorUserId,
-      item.returned?.actorUserId,
-    ].filter(Boolean))),
+    closeoutRows.flatMap((row) => [
+      row.submittedByUserId,
+      row.reviewedByUserId,
+    ].filter(Boolean)),
   )] as string[];
 
   const actorNameById = new Map<string, string>();
   if (actorIds.length > 0) {
     const actorRows = await db
-      .select({
-        id: users.id,
-        name: users.name,
-      })
+      .select({ id: users.id, name: users.name })
       .from(users)
       .where(inArray(users.id, actorIds));
     actorRows.forEach((actorRow) => actorNameById.set(actorRow.id, actorRow.name));
   }
 
-  const outflowEntryIds = [...new Set(
-    [...aggregates.values()].flatMap((item) => item.submit?.metadata.outflowEntryIds || []),
-  )];
-  const outflowEntryById = new Map<string, {
-    id: string;
-    type: string;
-    categoryId: string | null;
-    note: string | null;
-    amountHalalas: number;
-  }>();
-  if (outflowEntryIds.length > 0) {
-    const outflowRows = await db
-      .select({
-        id: entries.id,
-        type: entries.type,
-        categoryId: entries.categoryId,
-        note: entries.note,
-        amountHalalas: entries.amountHalalas,
-      })
-      .from(entries)
-      .where(
-        and(
-          eq(entries.organizationId, input.organizationId),
-          eq(entries.storeId, input.storeId),
-          inArray(entries.id, outflowEntryIds),
-        ),
-      );
-    outflowRows.forEach((row) => outflowEntryById.set(row.id, row));
-  }
+  return closeoutRows.map((row) => {
+    const linkedEntries = entriesByCloseoutId.get(row.id) || [];
+    const summaryEntry = linkedEntries.find((entry) => entry.type === "summary");
+    const salesRows = summaryEntry ? salesByEntryId.get(summaryEntry.id) || [] : [];
 
-  const closeouts = [...aggregates.values()]
-    .filter((item) => Boolean(item.submit))
-    .map((item) => {
-      const submit = item.submit!;
-      const submitAt = toTimestamp(submit.createdAt);
-      const approvedAt = item.approved ? toTimestamp(item.approved.createdAt) : -1;
-      const returnedAt = item.returned ? toTimestamp(item.returned.createdAt) : -1;
-      const approvedAfterSubmit = approvedAt >= submitAt;
-      const returnedAfterSubmit = returnedAt >= submitAt;
+    const outflowRows: CloseoutOutflowRow[] = linkedEntries
+      .filter((entry) => entry.type !== "summary")
+      .map((entry, index) => {
+        const entryType: CloseoutOutflowRow["type"] =
+          entry.type === "purchases" || entry.type === "expense" || entry.type === "withdrawal"
+            ? entry.type
+            : "expense";
+        return {
+          id: `${row.clientCloseoutId}-out-${index + 1}`,
+          type: entryType,
+          typeLabel: "",
+          categoryId: entry.categoryId || null,
+          category: "",
+          note: entry.note || "",
+          amount: toRiyals(entry.amountHalalas),
+        };
+      });
 
-      let status: "submitted" | "reviewed" | "returned" = "submitted";
-      if (approvedAfterSubmit || returnedAfterSubmit) {
-        if (returnedAfterSubmit && returnedAt >= approvedAt) status = "returned";
-        else status = "reviewed";
-      }
+    const totalSalesHalalas = linkedEntries
+      .filter((entry) => entry.type === "summary")
+      .reduce((sum, entry) => sum + entry.amountHalalas, 0);
+    const totalOutflowHalalas = linkedEntries
+      .filter((entry) => entry.type !== "summary")
+      .reduce((sum, entry) => sum + entry.amountHalalas, 0);
 
-      const salesRows = (submit.metadata.salesChannels || []).map((row) => ({
-        channelId: row.salesChannelId,
-        name: row.channelName,
-        amount: toRiyals(row.amountHalalas),
-      }));
-      let outflowRows: CloseoutOutflowRow[] = (submit.metadata.outflows || []).map((row, index) => ({
-        id: `${item.closeoutId}-out-${index + 1}`,
-        type: row.type,
-        typeLabel: row.typeLabel || "",
-        categoryId: row.categoryId || null,
-        category: row.categoryName || "",
-        note: row.note || "",
-        amount: toRiyals(row.amountHalalas),
-      }));
-      if (!outflowRows.length) {
-        const linkedEntryIds = submit.metadata.outflowEntryIds || [];
-        outflowRows = linkedEntryIds
-          .map((entryId, index) => {
-            const row = outflowEntryById.get(entryId);
-            if (!row) return null;
-            const entryType: CloseoutOutflowRow["type"] =
-              row.type === "purchases" || row.type === "expense" || row.type === "withdrawal"
-                ? row.type
-                : "expense";
-            return {
-              id: `${item.closeoutId}-out-${index + 1}`,
-              type: entryType,
-              typeLabel: "",
-              categoryId: row.categoryId || null,
-              category: "",
-              note: row.note || "",
-              amount: toRiyals(row.amountHalalas),
-            };
-          })
-          .filter((row): row is NonNullable<typeof row> => Boolean(row));
-      }
+    const totals = totalSalesHalalas > 0 || totalOutflowHalalas > 0
+      ? closeoutTotalsFromHalalas(totalSalesHalalas, totalOutflowHalalas)
+      : closeoutTotalsFromRiyalRows(salesRows, outflowRows);
 
-      const totals = submit.metadata.totalSalesHalalas != null && submit.metadata.totalOutflowHalalas != null
-        ? closeoutTotalsFromHalalas(submit.metadata.totalSalesHalalas, submit.metadata.totalOutflowHalalas)
-        : closeoutTotalsFromRiyalRows(salesRows, outflowRows);
+    const status = mapCloseoutStatus(row.status);
+    const submittedByName = actorNameById.get(row.submittedByUserId) || "";
+    const reviewedByName = row.reviewedByUserId ? actorNameById.get(row.reviewedByUserId) || "" : null;
 
-      const submittedByName = actorNameById.get(submit.actorUserId) || "";
-      const reviewedByName = item.approved ? actorNameById.get(item.approved.actorUserId) || "" : null;
-      const returnedByName = item.returned ? actorNameById.get(item.returned.actorUserId) || "" : null;
-
-      return {
-        id: item.closeoutId,
-        storeId: input.storeId,
-        storeName: storeRow?.name || "",
-        date: item.date,
-        daySequence: submit.metadata.daySequence ?? null,
-        status,
-        notebookTheme: "yellow",
-        openedByUserId: submit.actorUserId,
-        openedByName: submittedByName,
-        submittedByUserId: submit.actorUserId,
-        submittedByName,
-        submittedAt: submit.createdAt.toISOString(),
-        reviewedAt: status === "reviewed" && item.approved ? item.approved.createdAt.toISOString() : null,
-        reviewedByName: status === "reviewed" ? reviewedByName : null,
-        returnedAt: status === "returned" && item.returned ? item.returned.createdAt.toISOString() : null,
-        returnedByName: status === "returned" ? returnedByName : null,
-        returnReason: status === "returned" ? item.returned?.reason || null : null,
-        note: submit.metadata.note || "",
-        sales: salesRows,
-        outflows: outflowRows,
-        attachments: [],
-        syncedToEntries: status === "reviewed",
-        totals,
-      };
-    })
-    .sort((a, b) => {
-      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
-      const aTime = a.submittedAt || "";
-      const bTime = b.submittedAt || "";
-      if (aTime !== bTime) return aTime < bTime ? 1 : -1;
-      return a.id < b.id ? -1 : 1;
-    });
-
-  return closeouts;
+    return {
+      id: row.clientCloseoutId,
+      storeId: input.storeId,
+      storeName: storeRow?.name || "",
+      date: row.date,
+      daySequence: row.daySequence,
+      status,
+      notebookTheme: "yellow",
+      openedByUserId: row.submittedByUserId,
+      openedByName: submittedByName,
+      submittedByUserId: row.submittedByUserId,
+      submittedByName,
+      submittedAt: row.createdAt.toISOString(),
+      reviewedAt: status === "reviewed" && row.reviewedAt ? row.reviewedAt.toISOString() : null,
+      reviewedByName: status === "reviewed" ? reviewedByName : null,
+      returnedAt: status === "returned" && row.reviewedAt ? row.reviewedAt.toISOString() : null,
+      returnedByName: status === "returned" ? reviewedByName : null,
+      returnReason: status === "returned" ? row.returnReason || null : null,
+      note: row.note || "",
+      sales: salesRows,
+      outflows: outflowRows,
+      attachments: [],
+      syncedToEntries: status === "reviewed",
+      totals,
+    };
+  });
 }

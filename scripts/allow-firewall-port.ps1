@@ -23,4 +23,4 @@ try {
   Write-Host $_.Exception.Message
   exit 1
 }
-Write-Host "Retry on phone: http://<your-LAN-IP>:$port/prototype-runtime"
+Write-Host "Retry on phone: http://<your-LAN-IP>:$port/app"

@@ -22,7 +22,8 @@ export function useOrgConfigFromApi({
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const hydratedRef = useRef(!enabled);
+  const [hydrated, setHydrated] = useState(false);
+  const hydratedRef = useRef(false);
   const applyingRef = useRef(false);
   const baselineRef = useRef("");
   const persistTimerRef = useRef(null);
@@ -42,6 +43,7 @@ export function useOrgConfigFromApi({
       onHydrate(mapped);
       baselineRef.current = buildOrgConfigPersistBaseline(mapped);
       hydratedRef.current = true;
+      setHydrated(true);
     } catch (failure) {
       console.warn("org config load failed", failure);
       setError(failure instanceof Error ? failure.message : "org config load failed");
@@ -53,10 +55,13 @@ export function useOrgConfigFromApi({
 
   useEffect(() => {
     if (!enabled || !loggedIn) {
-      hydratedRef.current = !enabled;
+      hydratedRef.current = false;
+      setHydrated(false);
       baselineRef.current = "";
       return;
     }
+    hydratedRef.current = false;
+    setHydrated(false);
     loadOrgConfig();
   }, [enabled, loadOrgConfig, loggedIn]);
 
@@ -112,7 +117,7 @@ export function useOrgConfigFromApi({
   return {
     loading,
     error,
-    hydrated: hydratedRef.current,
+    hydrated,
     reload: loadOrgConfig,
   };
 }

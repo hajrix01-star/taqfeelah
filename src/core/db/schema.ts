@@ -144,6 +144,49 @@ export const outflowCategories = pgTable("outflow_categories", {
   retiredAt: timestamp("retired_at", { withTimezone: true }),
 });
 
+export const dailyCloseouts = pgTable(
+  "daily_closeouts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    daySequence: integer("day_sequence").notNull(),
+    clientCloseoutId: text("client_closeout_id").notNull(),
+    status: text("status").notNull().default("submitted"),
+    submittedByUserId: uuid("submitted_by_user_id")
+      .notNull()
+      .references(() => users.id),
+    reviewedByUserId: uuid("reviewed_by_user_id").references(() => users.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    returnReason: text("return_reason"),
+    note: text("note"),
+    createdAt,
+    updatedAt,
+  },
+  (table) => ({
+    storeDateSequenceUq: uniqueIndex("daily_closeouts_store_date_sequence_uq").on(
+      table.storeId,
+      table.date,
+      table.daySequence,
+    ),
+    storeClientCloseoutUq: uniqueIndex("daily_closeouts_store_client_closeout_uq").on(
+      table.storeId,
+      table.clientCloseoutId,
+    ),
+    orgStoreDateStatusIdx: index("daily_closeouts_org_store_date_status_idx").on(
+      table.organizationId,
+      table.storeId,
+      table.date,
+      table.status,
+    ),
+  }),
+);
+
 export const entries = pgTable(
   "entries",
   {
@@ -154,6 +197,9 @@ export const entries = pgTable(
     storeId: uuid("store_id")
       .notNull()
       .references(() => stores.id, { onDelete: "cascade" }),
+    closeoutId: uuid("closeout_id")
+      .notNull()
+      .references(() => dailyCloseouts.id, { onDelete: "restrict" }),
     date: date("date").notNull(),
     type: text("type").notNull(),
     amountHalalas: integer("amount_halalas").notNull(),
@@ -192,6 +238,7 @@ export const entries = pgTable(
       table.createdAt,
       table.id,
     ),
+    closeoutIdx: index("entries_closeout_idx").on(table.closeoutId),
   }),
 );
 

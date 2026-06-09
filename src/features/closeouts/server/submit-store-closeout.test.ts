@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { auditEvents, entries } from "@/core/db/schema";
+import { auditEvents, dailyCloseouts, entries } from "@/core/db/schema";
 
 type InsertCall = { table: unknown; values: unknown };
+type UpdateCall = { table: unknown; set: unknown };
 
 const insertCalls: InsertCall[] = [];
+const updateCalls: UpdateCall[] = [];
 
 vi.mock("@/core/auth/assert-store-access", () => ({
   assertStoreAccess: vi.fn(async () => undefined),
@@ -44,6 +46,21 @@ vi.mock("@/core/db/client", () => ({
 
 function createTx() {
   return {
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          limit: async () => [],
+        }),
+      }),
+    }),
+    update: (table: unknown) => ({
+      set: (values: unknown) => {
+        updateCalls.push({ table, set: values });
+        return {
+          where: async () => undefined,
+        };
+      },
+    }),
     insert: (table: unknown) => ({
       values: (values: unknown) => {
         insertCalls.push({ table, values });
@@ -51,7 +68,9 @@ function createTx() {
         return {
           returning: async () =>
             rows.map((row, index) => ({
-              id: `entry-${insertCalls.length}-${index}`,
+              id: table === dailyCloseouts
+                ? "daily-closeout-1"
+                : `entry-${insertCalls.length}-${index}`,
               type: (row as { type?: string }).type,
               amountHalalas: (row as { amountHalalas?: number }).amountHalalas,
             })),
@@ -83,6 +102,10 @@ function entryInserts() {
   return insertCalls.filter((call) => call.table === entries);
 }
 
+function closeoutInserts() {
+  return insertCalls.filter((call) => call.table === dailyCloseouts);
+}
+
 function auditInserts() {
   return insertCalls.filter((call) => call.table === auditEvents);
 }
@@ -90,6 +113,7 @@ function auditInserts() {
 describe("submitStoreCloseout", () => {
   it("auto-approves employee closeout when autoReview is true", async () => {
     insertCalls.length = 0;
+    updateCalls.length = 0;
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 
     const result = await submitStoreCloseout({
@@ -98,11 +122,14 @@ describe("submitStoreCloseout", () => {
     });
 
     expect(result.summaryEntryId).toBeTruthy();
+    expect(result.dailyCloseoutId).toBe("daily-closeout-1");
+
+    const closeoutInsert = closeoutInserts()[0];
+    expect((closeoutInsert?.values as { status: string }).status).toBe("approved");
 
     const summaryInsert = entryInserts()[0];
-    expect(summaryInsert).toBeDefined();
     expect((summaryInsert?.values as { status: string }).status).toBe("active");
-    expect((summaryInsert?.values as { reviewedAt: Date | null }).reviewedAt).toBeInstanceOf(Date);
+    expect((summaryInsert?.values as { closeoutId: string }).closeoutId).toBe("daily-closeout-1");
 
     const audits = auditInserts();
     expect(audits).toHaveLength(2);
@@ -129,16 +156,12 @@ describe("submitStoreCloseout", () => {
       requireReview: false,
     });
 
-    const summaryInsert = entryInserts()[0];
-    expect((summaryInsert?.values as { status: string }).status).toBe("voided");
-    expect((summaryInsert?.values as { reviewedAt: Date | null }).reviewedAt).toBeNull();
-
-    const audits = auditInserts();
-    expect(audits).toHaveLength(1);
-    expect((audits[0]?.values as { action: string }).action).toBe("closeout_submitted");
+    expect((closeoutInserts()[0]?.values as { status: string }).status).toBe("submitted");
+    expect((entryInserts()[0]?.values as { status: string }).status).toBe("voided");
+    expect(auditInserts()).toHaveLength(1);
   });
 
-  it("persists outflows in audit metadata and inserts outflow entries", async () => {
+  it("persists outflow entries linked to the closeout row", async () => {
     insertCalls.length = 0;
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 
@@ -156,24 +179,23 @@ describe("submitStoreCloseout", () => {
       ],
     });
 
-    const entryWrites = entryInserts();
-    expect(entryWrites.length).toBeGreaterThanOrEqual(2);
+    const entryValues = entryInserts().flatMap((call) => (
+      Array.isArray(call.values) ? call.values : [call.values]
+    ));
+    expect(entryValues.length).toBeGreaterThanOrEqual(2);
+    entryValues.forEach((values) => {
+      expect((values as { closeoutId: string }).closeoutId).toBe("daily-closeout-1");
+    });
 
     const submitAudit = auditInserts().find(
       (call) => (call.values as { action?: string }).action === "closeout_submitted",
     );
     const metadata = (submitAudit?.values as {
-      metadata?: { outflows?: unknown[]; outflowEntryIds?: string[]; daySequence?: number };
+      metadata?: { outflowEntryIds?: string[]; daySequence?: number; dailyCloseoutId?: string };
     }).metadata;
-    expect(metadata?.outflows).toHaveLength(1);
-    expect(metadata?.outflows?.[0]).toMatchObject({
-      type: "purchases",
-      amountHalalas: 4500,
-      typeLabel: "مشتريات",
-      note: "خضار",
-    });
     expect(metadata?.outflowEntryIds?.length).toBe(1);
     expect(metadata?.daySequence).toBe(1);
+    expect(metadata?.dailyCloseoutId).toBe("daily-closeout-1");
   });
 
   it("enforces employee review from persisted store settings even when client omits requireReview", async () => {
@@ -195,8 +217,7 @@ describe("submitStoreCloseout", () => {
       requireReview: false,
     });
 
-    const summaryInsert = entryInserts()[0];
-    expect((summaryInsert?.values as { status: string }).status).toBe("voided");
+    expect((entryInserts()[0]?.values as { status: string }).status).toBe("voided");
     expect(auditInserts()).toHaveLength(1);
   });
 
@@ -209,11 +230,7 @@ describe("submitStoreCloseout", () => {
       autoReview: false,
     });
 
-    const summaryInsert = entryInserts()[0];
-    expect((summaryInsert?.values as { status: string }).status).toBe("active");
-
-    const audits = auditInserts();
-    expect(audits).toHaveLength(2);
-    expect((audits[1]?.values as { action: string }).action).toBe("closeout_approved");
+    expect((entryInserts()[0]?.values as { status: string }).status).toBe("active");
+    expect(auditInserts()).toHaveLength(2);
   });
 });

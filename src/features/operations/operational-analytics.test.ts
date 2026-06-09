@@ -64,6 +64,29 @@ describe("operational analytics summary helpers", () => {
     expect(resolveOwnerSingleStoreTotals(empty, api, false)).toEqual(api);
   });
 
+  it("prefers API totals in DB source mode while entries are loading", () => {
+    const empty = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0, pending: 0 };
+    const demo = { sales: 900, expense: 50, net: 850, ratio: "5.6%", proofs: 0, pending: 0 };
+    expect(resolveOwnerPeriodSummaryPreference({
+      localTotals: demo,
+      apiTotals: empty,
+      entriesLoading: true,
+      entriesDbSource: true,
+    })).toBe(false);
+  });
+
+  it("always prefers API totals in DB source mode even when local entries have activity", () => {
+    const local = { sales: 900, expense: 50, net: 850, ratio: "5.6%", proofs: 0, pending: 0 };
+    const api = { sales: 400, expense: 20, net: 380, ratio: "5.0%", proofs: 0, pending: 0 };
+    expect(resolveOwnerPeriodSummaryPreference({
+      localTotals: local,
+      apiTotals: api,
+      entriesLoading: false,
+      entriesDbSource: true,
+    })).toBe(false);
+    expect(resolveOwnerSingleStoreTotals(local, api, false, { entriesDbSource: true })).toEqual(api);
+  });
+
   it("builds per-store day summaries from operational entries", () => {
     const businesses = buildBusinessesWithEntrySummaries({
       businesses: [{ id: "shami" }, { id: "arz" }],

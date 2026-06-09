@@ -3,10 +3,14 @@ import { z } from "zod";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { getDb } from "@/core/db/client";
-import { attachments, auditEvents, entries, entrySalesChannels, users } from "@/core/db/schema";
+import { attachments, auditEvents, dailyCloseouts, entries, entrySalesChannels, users } from "@/core/db/schema";
 import { resolveInlineAttachmentDataUrl } from "@/features/entries/server/inline-attachment";
 import { ValidationError } from "@/core/errors/app-error";
 import { decodeEntryListCursor, encodeEntryListCursor } from "./entry-list-cursor";
+import {
+  closeoutLinkedEntryScope,
+  includeListedEntryRow,
+} from "./closeout-linked-entry-filter";
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD");
 
@@ -21,19 +25,6 @@ const inputSchema = z.object({
   limit: z.number().int().min(1).max(1000).default(500),
   cursor: z.string().trim().min(1).optional(),
   paginated: z.boolean().default(false),
-});
-
-const closeoutSubmitMetadataSchema = z.object({
-  closeoutId: z.string().trim().min(1).max(120),
-  date: dateSchema,
-  summaryEntryId: z.string().uuid().optional(),
-  outflowEntryIds: z.array(z.string().uuid()).optional(),
-  daySequence: z.coerce.number().int().positive().optional(),
-});
-
-const closeoutReviewMetadataSchema = z.object({
-  closeoutId: z.string().trim().min(1).max(120),
-  date: dateSchema,
 });
 
 type Input = z.infer<typeof inputSchema>;
@@ -90,10 +81,12 @@ export async function listStoreEntries(rawInput: Input) {
   const decodedCursor = input.cursor ? decodeEntryListCursor(input.cursor) : null;
 
   const db = getDb();
+  const linkedScope = closeoutLinkedEntryScope(input.organizationId, input.storeId);
   const rows = await db
     .select({
       id: entries.id,
       storeId: entries.storeId,
+      closeoutId: entries.closeoutId,
       date: entries.date,
       createdAt: entries.createdAt,
       type: entries.type,
@@ -115,104 +108,46 @@ export async function listStoreEntries(rawInput: Input) {
         input.dateTo ? sql`${entries.date} <= ${input.dateTo}` : undefined,
         input.status === "all" ? undefined : eq(entries.status, input.status),
         decodedCursor ? cursorBeforeClause(decodedCursor) : undefined,
+        linkedScope,
       ),
     )
     .orderBy(desc(entries.date), desc(entries.createdAt), desc(entries.id))
     .limit(effectiveLimit + 1);
 
-  const closeoutAuditRows = await db
-    .select({
-      action: auditEvents.action,
-      actorUserId: auditEvents.actorUserId,
-      createdAt: auditEvents.createdAt,
-      reason: auditEvents.reason,
-      metadata: auditEvents.metadata,
-    })
-    .from(auditEvents)
-    .where(
-      and(
-        eq(auditEvents.organizationId, input.organizationId),
-        eq(auditEvents.storeId, input.storeId),
-        inArray(auditEvents.action, [
-          "closeout_submitted",
-          "closeout_resubmitted",
-          "closeout_approved",
-          "closeout_returned",
-        ]),
-        input.dateFrom ? sql`${auditEvents.metadata} ->> 'date' >= ${input.dateFrom}` : undefined,
-        input.dateTo ? sql`${auditEvents.metadata} ->> 'date' <= ${input.dateTo}` : undefined,
-      ),
-    );
+  const closeoutIds = [...new Set(rows.map((row) => row.closeoutId).filter(Boolean))] as string[];
+  const closeoutMetaById = new Map<string, {
+    clientCloseoutId: string;
+    daySequence: number;
+    status: string;
+  }>();
 
-  const closeoutIdByEntryId = new Map<string, string>();
-  const closeoutDaySequenceByKey = new Map<string, number>();
-  const closeoutStateByKey = new Map<string, { submittedAt: number; approvedAt: number; returnedAt: number }>();
-  closeoutAuditRows.forEach((row) => {
-    if (row.action === "closeout_submitted" || row.action === "closeout_resubmitted") {
-      const parsedMetadata = closeoutSubmitMetadataSchema.safeParse(row.metadata);
-      if (!parsedMetadata.success) return;
-      const metadata = parsedMetadata.data;
-      if (metadata.summaryEntryId) {
-        closeoutIdByEntryId.set(metadata.summaryEntryId, metadata.closeoutId);
-      }
-      (metadata.outflowEntryIds || []).forEach((entryId) => {
-        closeoutIdByEntryId.set(entryId, metadata.closeoutId);
+  if (closeoutIds.length > 0) {
+    const closeoutRows = await db
+      .select({
+        id: dailyCloseouts.id,
+        clientCloseoutId: dailyCloseouts.clientCloseoutId,
+        daySequence: dailyCloseouts.daySequence,
+        status: dailyCloseouts.status,
+      })
+      .from(dailyCloseouts)
+      .where(
+        and(
+          eq(dailyCloseouts.organizationId, input.organizationId),
+          eq(dailyCloseouts.storeId, input.storeId),
+          inArray(dailyCloseouts.id, closeoutIds),
+        ),
+      );
+
+    closeoutRows.forEach((row) => {
+      closeoutMetaById.set(row.id, {
+        clientCloseoutId: row.clientCloseoutId,
+        daySequence: row.daySequence,
+        status: row.status,
       });
-      const key = `${metadata.closeoutId}:${metadata.date}`;
-      if (metadata.daySequence) {
-        closeoutDaySequenceByKey.set(key, metadata.daySequence);
-      }
-      const currentState = closeoutStateByKey.get(key) || {
-        submittedAt: 0,
-        approvedAt: 0,
-        returnedAt: 0,
-      };
-      currentState.submittedAt = Math.max(currentState.submittedAt, row.createdAt.getTime());
-      closeoutStateByKey.set(key, currentState);
-      return;
-    }
+    });
+  }
 
-    const parsedMetadata = closeoutReviewMetadataSchema.safeParse(row.metadata);
-    if (!parsedMetadata.success) return;
-    const metadata = parsedMetadata.data;
-    const key = `${metadata.closeoutId}:${metadata.date}`;
-    const currentState = closeoutStateByKey.get(key) || {
-      submittedAt: 0,
-      approvedAt: 0,
-      returnedAt: 0,
-    };
-    const createdAtMs = row.createdAt.getTime();
-    if (row.action === "closeout_approved") {
-      currentState.approvedAt = Math.max(currentState.approvedAt, createdAtMs);
-    } else if (row.action === "closeout_returned") {
-      currentState.returnedAt = Math.max(currentState.returnedAt, createdAtMs);
-    }
-    closeoutStateByKey.set(key, currentState);
-  });
-
-  const closeoutStatusByKey = new Map<string, "submitted" | "reviewed" | "returned">();
-  closeoutStateByKey.forEach((state, key) => {
-    if (state.submittedAt === 0) {
-      closeoutStatusByKey.set(key, "submitted");
-      return;
-    }
-    if (state.approvedAt >= state.submittedAt && state.approvedAt >= state.returnedAt) {
-      closeoutStatusByKey.set(key, "reviewed");
-      return;
-    }
-    if (state.returnedAt >= state.submittedAt && state.returnedAt >= state.approvedAt) {
-      closeoutStatusByKey.set(key, "returned");
-      return;
-    }
-    closeoutStatusByKey.set(key, "submitted");
-  });
-
-  const filteredRows = rows.filter((row) => {
-    const closeoutId = closeoutIdByEntryId.get(row.id);
-    if (!closeoutId) return true;
-    const status = closeoutStatusByKey.get(`${closeoutId}:${row.date}`);
-    return status === "reviewed";
-  });
+  const filteredRows = rows.filter((row) => includeListedEntryRow(row, closeoutMetaById));
 
   const hasMore = filteredRows.length > effectiveLimit;
   const pageRows = hasMore ? filteredRows.slice(0, effectiveLimit) : filteredRows;
@@ -419,12 +354,12 @@ export async function listStoreEntries(rawInput: Input) {
       salesChannels: salesByEntryId.get(row.id) || [],
       note: row.note || "",
       noteKey: null,
-      closeoutId: closeoutIdByEntryId.get(row.id) || null,
-      daySequence: (() => {
-        const closeoutId = closeoutIdByEntryId.get(row.id);
-        if (!closeoutId) return null;
-        return closeoutDaySequenceByKey.get(`${closeoutId}:${row.date}`) ?? null;
-      })(),
+      closeoutId: row.closeoutId
+        ? closeoutMetaById.get(row.closeoutId)?.clientCloseoutId || null
+        : null,
+      daySequence: row.closeoutId
+        ? closeoutMetaById.get(row.closeoutId)?.daySequence ?? null
+        : null,
       outflowId: null,
       enteredBy: createdBy,
       attachment: attachment

@@ -7,6 +7,7 @@ import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { resolveOutflowCategoryKey } from "@/features/reports/server/outflow-category-key";
 import { assertBoundedReportRange } from "@/features/reports/server/report-date-range";
+import { mergeEntryScopeWithCloseoutLink } from "@/features/entries/server/closeout-linked-entry-filter";
 
 const inputSchema = z.object({
   organizationId: z.string().uuid(),
@@ -38,6 +39,18 @@ export async function getStoreOutflowReport(rawInput: z.infer<typeof inputSchema
   });
 
   const db = getDb();
+  const entryScope = mergeEntryScopeWithCloseoutLink(
+    input.organizationId,
+    input.storeId,
+    and(
+      eq(entries.organizationId, input.organizationId),
+      eq(entries.storeId, input.storeId),
+      gte(entries.date, range.from),
+      lte(entries.date, range.to),
+      eq(entries.status, "active"),
+      inArray(entries.type, OUTFLOW_TYPES),
+    ),
+  );
   const rows = await db
     .select({
       id: entries.id,
@@ -51,16 +64,7 @@ export async function getStoreOutflowReport(rawInput: z.infer<typeof inputSchema
     .from(entries)
     .leftJoin(outflowCategories, eq(outflowCategories.id, entries.categoryId))
     .leftJoin(attachments, eq(attachments.entryId, entries.id))
-    .where(
-      and(
-        eq(entries.organizationId, input.organizationId),
-        eq(entries.storeId, input.storeId),
-        gte(entries.date, range.from),
-        lte(entries.date, range.to),
-        eq(entries.status, "active"),
-        inArray(entries.type, OUTFLOW_TYPES),
-      ),
-    )
+    .where(entryScope)
     .orderBy(desc(entries.date), desc(entries.createdAt));
 
   const categoryTotals = new Map<string, number>();

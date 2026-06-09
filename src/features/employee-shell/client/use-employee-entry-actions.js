@@ -17,6 +17,7 @@ import {
   resolveSummaryLastCloseoutUpdate,
   shouldGateSummarySaveOnDuplicates,
 } from "@/features/operations/operational-entry-persist-helpers";
+import { resolveStandaloneEntryBlockedMessage } from "@/features/operations/client/closeout-required-entry-message";
 
 export function useEmployeeEntryActions({
   lang,
@@ -26,6 +27,7 @@ export function useEmployeeEntryActions({
   activeEmployee,
   assignedEmployeeBusinessIds,
   entriesApiEnabled,
+  entriesApiDbSource = false,
   createOperationalEntryInApi,
   loadOperationalEntriesFromApi,
   buildEntry,
@@ -51,6 +53,11 @@ export function useEmployeeEntryActions({
       window.alert(text(lang, "futureDateNotAllowed"));
       return;
     }
+    const blockedMessage = resolveStandaloneEntryBlockedMessage(entriesApiDbSource, lang);
+    if (blockedMessage) {
+      window.alert(blockedMessage);
+      return;
+    }
     savingRef.current = true;
     setSaving(true);
     try {
@@ -63,6 +70,7 @@ export function useEmployeeEntryActions({
           actorUserId: activeEmployee.id,
           actorRole: "employee",
           lang,
+          entriesApiDbSource,
         });
         if (!result.ok) {
           window.alert(result.failureMessage);
@@ -131,6 +139,7 @@ export function useEmployeeEntryActions({
     closeoutAlertEnabledForBusiness,
     createOperationalEntryInApi,
     entriesApiEnabled,
+    entriesApiDbSource,
     entryIsActive,
     lang,
     loadOperationalEntriesFromApi,

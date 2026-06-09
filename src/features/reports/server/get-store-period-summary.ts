@@ -8,6 +8,7 @@ import { ValidationError } from "@/core/errors/app-error";
 import { calculateDaySummary } from "@/domain/cash-movement/calculations";
 import { queryAttachmentStatsForStoreScope } from "@/features/reports/server/attachment-stats-query";
 import { assertBoundedReportRange } from "@/features/reports/server/report-date-range";
+import { mergeEntryScopeWithCloseoutLink } from "@/features/entries/server/closeout-linked-entry-filter";
 
 const inputSchema = z.object({
   organizationId: z.string().uuid(),
@@ -37,13 +38,17 @@ export async function getStorePeriodSummary(rawInput: z.infer<typeof inputSchema
   });
 
   const db = getDb();
-  const entryScope = and(
-    eq(entries.organizationId, input.organizationId),
-    eq(entries.storeId, input.storeId),
-    gte(entries.date, range.from),
-    lte(entries.date, range.to),
-    eq(entries.status, "active"),
-    inArray(entries.type, ALLOWED_TYPES),
+  const entryScope = mergeEntryScopeWithCloseoutLink(
+    input.organizationId,
+    input.storeId,
+    and(
+      eq(entries.organizationId, input.organizationId),
+      eq(entries.storeId, input.storeId),
+      gte(entries.date, range.from),
+      lte(entries.date, range.to),
+      eq(entries.status, "active"),
+      inArray(entries.type, ALLOWED_TYPES),
+    ),
   );
 
   const rows = await db

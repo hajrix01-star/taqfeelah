@@ -30,6 +30,7 @@ import {
   resolveOperationalEntryReviewFailureMessage,
   resolveOperationalEntryVoidFailureMessage,
 } from "@/features/operations/operational-entry-mutation-helpers";
+import { duplicateSummaryBlockedInDbSourceMessage } from "@/features/operations/client/closeout-required-entry-message";
 import {
   resolveOwnerOperationOpenAction,
   resolveRestoreOperationTarget,
@@ -48,6 +49,7 @@ export function useRegisterOperationsState({
   operationalEntries = [],
   archivedBusinessIds = [],
   entriesApiEnabled = false,
+  entriesApiDbSource = false,
   phase9ApiEnabled = false,
   closeoutsApiOrganizationId = "",
   ownerApiUserId = "",
@@ -315,6 +317,10 @@ export function useRegisterOperationsState({
     const pending = pendingDuplicateSummary;
     if (!pending?.payload) return;
     setPendingDuplicateSummary(null);
+    if (entriesApiDbSource) {
+      window.alert(duplicateSummaryBlockedInDbSourceMessage(lang));
+      return;
+    }
     if (phase9ApiEnabled && entriesApiEnabled) {
       const payload = pending.payload;
       const actorUserId = pending.actor === "owner" ? ownerApiUserId : activeEmployee?.id;
@@ -389,6 +395,7 @@ export function useRegisterOperationsState({
   }, [
     activeEmployee,
     closeoutsApiOrganizationId,
+    entriesApiDbSource,
     entriesApiEnabled,
     entryIsActive,
     lang,

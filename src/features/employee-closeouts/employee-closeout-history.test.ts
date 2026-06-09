@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { setRuntimeApiIdMaps } from "../closeouts/client/closeouts-api-client";
-import { closeoutBelongsToEmployee } from "./employee-closeout-history";
+import {
+  closeoutBelongsToEmployee,
+  closeoutMatchesStore,
+  storeIdsReferToSameStore,
+} from "./employee-closeout-history";
 
 describe("closeoutBelongsToEmployee", () => {
   const employee = {
@@ -49,6 +53,42 @@ describe("closeoutBelongsToEmployee", () => {
         nameEn: "AHMED",
       },
     )).toBe(true);
+
+    setRuntimeApiIdMaps(null);
+  });
+});
+
+describe("storeIdsReferToSameStore", () => {
+  it("matches legacy store id with hydrated UUID via runtime map", () => {
+    setRuntimeApiIdMaps({
+      storeIdMap: {
+        shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+      },
+    });
+
+    expect(storeIdsReferToSameStore("shami", "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c")).toBe(true);
+    expect(storeIdsReferToSameStore("302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c", "shami")).toBe(true);
+
+    setRuntimeApiIdMaps(null);
+  });
+});
+
+describe("closeoutMatchesStore", () => {
+  it("matches closeout legacy store id against hydrated business record", () => {
+    setRuntimeApiIdMaps({
+      storeIdMap: {
+        shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+      },
+    });
+
+    const business = {
+      id: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+      dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+      legacyId: "shami",
+    };
+
+    expect(closeoutMatchesStore({ storeId: "shami" }, business)).toBe(true);
+    expect(closeoutMatchesStore({ storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c" }, business)).toBe(true);
 
     setRuntimeApiIdMaps(null);
   });

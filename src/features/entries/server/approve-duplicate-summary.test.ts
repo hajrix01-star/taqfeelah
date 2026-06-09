@@ -20,6 +20,10 @@ vi.mock("@/features/entries/server/create-store-entry", () => ({
   createStoreEntry: vi.fn(async () => createdEntry),
 }));
 
+vi.mock("@/core/config/entries-api-mode", () => ({
+  isEntriesApiDbSourceMode: vi.fn(() => false),
+}));
+
 const auditValues = vi.fn(async () => undefined);
 const existingRows = [{ id: "11111111-1111-4111-8111-111111111111" }];
 
@@ -65,5 +69,27 @@ describe("approveDuplicateSummary", () => {
         previousEntryIds: ["11111111-1111-4111-8111-111111111111"],
       }),
     }));
+  });
+
+  it("rejects duplicate approval in db source mode", async () => {
+    const { isEntriesApiDbSourceMode } = await import("@/core/config/entries-api-mode");
+    vi.mocked(isEntriesApiDbSourceMode).mockReturnValue(true);
+
+    const { approveDuplicateSummary } = await import("./approve-duplicate-summary");
+    const { createStoreEntry } = await import("./create-store-entry");
+    vi.mocked(createStoreEntry).mockClear();
+
+    await expect(approveDuplicateSummary({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+      actorUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
+      actorRole: "owner",
+      date: "2026-06-05",
+      payload: { type: "summary", salesChannels: [] },
+    })).rejects.toMatchObject({
+      message: "Duplicate summary approval is unavailable in database mode. Submit another closeout for the same day instead.",
+    });
+
+    expect(createStoreEntry).not.toHaveBeenCalled();
   });
 });

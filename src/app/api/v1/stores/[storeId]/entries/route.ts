@@ -80,7 +80,9 @@ export async function POST(request: Request, context: RouteContext) {
       amountHalalas: body?.amountHalalas,
       categoryId: body?.categoryId,
       note: body?.note,
+      closeoutId: body?.closeoutId,
       salesChannels: Array.isArray(body?.salesChannels) ? body.salesChannels : [],
+      attachment: body?.attachment,
     });
 
     return ok(result, { status: 201 });

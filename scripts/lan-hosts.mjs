@@ -52,7 +52,7 @@ export function buildAllowedDevOrigins(port = Number(process.env.PORT) || 3000) 
 }
 
 /** @param {number} [port] */
-export function buildLanPageUrls(port = Number(process.env.PORT) || 3000, path = "/prototype-runtime", cacheBust = "") {
+export function buildLanPageUrls(port = Number(process.env.PORT) || 3000, path = "/app", cacheBust = "") {
   const query = cacheBust ? `?b=${encodeURIComponent(cacheBust)}` : "";
   const pagePath = `${path}${query}`;
   return localLanIpv4Addresses().map((address) => `http://${address}:${port}${pagePath}`);

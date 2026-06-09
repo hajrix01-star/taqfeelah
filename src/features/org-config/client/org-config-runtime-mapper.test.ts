@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_SALES_CHANNEL_UUIDS } from "@/core/client/sales-channel-catalog";
+import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
 import {
   assertCanonicalUuidId,
   mapApiChannelToUi,
@@ -91,6 +93,12 @@ describe("org config runtime mapper", () => {
         },
       },
     }, { strict: true })).toThrow(/canonical UUID in DB source mode/i);
+  });
+
+  it("catalog channel UUIDs pass canonical DB id validation", () => {
+    for (const [legacyId, uuid] of Object.entries(DEFAULT_SALES_CHANNEL_UUIDS)) {
+      expect(isUuid(uuid), `${legacyId} must be a canonical UUID`).toBe(true);
+    }
   });
 
   it("maps archived stores into archived ids", () => {

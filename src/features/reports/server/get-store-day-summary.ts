@@ -7,6 +7,7 @@ import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { calculateDaySummary } from "@/domain/cash-movement/calculations";
 import { queryAttachmentStatsForStoreScope } from "@/features/reports/server/attachment-stats-query";
 import { type MemberRole } from "@/core/auth/roles";
+import { mergeEntryScopeWithCloseoutLink } from "@/features/entries/server/closeout-linked-entry-filter";
 
 const summaryInputSchema = z.object({
   storeId: z.string().uuid(),
@@ -55,35 +56,30 @@ export async function getStoreDaySummary(rawInput: SummaryInput) {
   }
 
   const db = getDb();
+  const entryScope = mergeEntryScopeWithCloseoutLink(
+    input.organizationId,
+    input.storeId,
+    and(
+      eq(entries.organizationId, input.organizationId),
+      eq(entries.storeId, input.storeId),
+      eq(entries.date, input.date),
+      eq(entries.status, "active"),
+      inArray(entries.type, ALLOWED_TYPES),
+    ),
+  );
   const rows = await db
     .select({
       type: entries.type,
       amountHalalas: entries.amountHalalas,
     })
     .from(entries)
-    .where(
-      and(
-        eq(entries.organizationId, input.organizationId),
-        eq(entries.storeId, input.storeId),
-        eq(entries.date, input.date),
-        eq(entries.status, "active"),
-        inArray(entries.type, ALLOWED_TYPES),
-      ),
-    );
+    .where(entryScope);
 
   const result = calculateDaySummary(
     rows.map((row) => ({
       type: row.type as (typeof ALLOWED_TYPES)[number],
       amountHalalas: row.amountHalalas,
     })),
-  );
-
-  const entryScope = and(
-    eq(entries.organizationId, input.organizationId),
-    eq(entries.storeId, input.storeId),
-    eq(entries.date, input.date),
-    eq(entries.status, "active"),
-    inArray(entries.type, ALLOWED_TYPES),
   );
 
   const attachmentStats = await queryAttachmentStatsForStoreScope(

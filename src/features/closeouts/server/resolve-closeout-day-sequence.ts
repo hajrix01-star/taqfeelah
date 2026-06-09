@@ -1,11 +1,12 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
-import { auditEvents } from "@/core/db/schema";
-import { parseCloseoutDaySequence } from "@/features/closeouts/server/parse-closeout-day-sequence";
+import { and, eq, sql } from "drizzle-orm";
+import { dailyCloseouts } from "@/core/db/schema";
 
 type SequenceTx = {
   select: (fields: unknown) => {
     from: (table: unknown) => {
-      where: (condition: unknown) => unknown;
+      where: (condition: unknown) => {
+        limit?: (count: number) => Promise<Array<{ daySequence?: number; maxSequence?: number }>>;
+      } | Promise<Array<{ maxSequence?: number }>>;
     };
   };
 };
@@ -21,41 +22,34 @@ export async function resolveCloseoutDaySequence(
   },
 ): Promise<number> {
   if (input.mode === "resubmit") {
-    const previousQuery = tx
-      .select({ metadata: auditEvents.metadata })
-      .from(auditEvents)
+    const existingQuery = tx
+      .select({ daySequence: dailyCloseouts.daySequence })
+      .from(dailyCloseouts)
       .where(
         and(
-          eq(auditEvents.organizationId, input.organizationId),
-          eq(auditEvents.storeId, input.storeId),
-          inArray(auditEvents.action, ["closeout_submitted", "closeout_resubmitted"]),
-          sql`${auditEvents.metadata} ->> 'closeoutId' = ${input.closeoutId}`,
+          eq(dailyCloseouts.organizationId, input.organizationId),
+          eq(dailyCloseouts.storeId, input.storeId),
+          eq(dailyCloseouts.clientCloseoutId, input.closeoutId),
         ),
       ) as {
-      orderBy: (...args: unknown[]) => {
-        limit: (count: number) => Promise<Array<{ metadata?: unknown }>>;
-      };
+      limit: (count: number) => Promise<Array<{ daySequence?: number }>>;
     };
-    const previousRows = await previousQuery.orderBy(desc(auditEvents.createdAt)).limit(1);
-
-    const previousSequence = parseCloseoutDaySequence(previousRows[0]?.metadata);
-    if (previousSequence) return previousSequence;
+    const existingRows = await existingQuery.limit(1);
+    if (existingRows[0]?.daySequence) return existingRows[0].daySequence;
   }
 
   const maxRows = await (tx
     .select({
-      maxSequence: sql<number>`coalesce(max((${auditEvents.metadata} ->> 'daySequence')::int), 0)`,
+      maxSequence: sql<number>`coalesce(max(${dailyCloseouts.daySequence}), 0)`,
     })
-    .from(auditEvents)
+    .from(dailyCloseouts)
     .where(
       and(
-        eq(auditEvents.organizationId, input.organizationId),
-        eq(auditEvents.storeId, input.storeId),
-        inArray(auditEvents.action, ["closeout_submitted", "closeout_resubmitted"]),
-        sql`${auditEvents.metadata} ->> 'date' = ${input.date}`,
+        eq(dailyCloseouts.organizationId, input.organizationId),
+        eq(dailyCloseouts.storeId, input.storeId),
+        eq(dailyCloseouts.date, input.date),
       ),
     ) as Promise<Array<{ maxSequence?: number }>>);
 
-  const maxSequence = Number(maxRows[0]?.maxSequence || 0);
-  return maxSequence + 1;
+  return Number(maxRows[0]?.maxSequence || 0) + 1;
 }

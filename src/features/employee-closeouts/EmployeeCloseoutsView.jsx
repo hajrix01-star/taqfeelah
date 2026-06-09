@@ -15,6 +15,7 @@ import {
 import { CLOSEOUT_STATUS } from "../daily-closeouts/closeout-status";
 import {
   closeoutBelongsToEmployee,
+  closeoutMatchesStore,
   employeeHistoryVisibilityLabel,
   isCloseoutWithinEmployeeHistory,
 } from "./employee-closeout-history";
@@ -49,9 +50,14 @@ export default function EmployeeCloseoutsView({
   onRegisterAdd,
   onRegisterSettingsOpener,
   onEntryActiveChange,
+  onCloseoutSubmitted,
   findForStoreDate: findForStoreDateProp,
   saving,
   employeeRuntimeReady = true,
+  trustServerDaySequenceOnly = false,
+  entryPhaseRef = null,
+  pageTitle = "",
+  showStorePicker = true,
 }) {
   const {
     closeouts,
@@ -108,8 +114,10 @@ export default function EmployeeCloseoutsView({
   }, [expandedId]);
 
   const myStoreCloseouts = useMemo(
-    () => closeouts.filter((item) => item.storeId === currentStore?.id && closeoutBelongsToEmployee(item, employee)),
-    [closeouts, currentStore?.id, employee],
+    () => closeouts.filter(
+      (item) => closeoutMatchesStore(item, currentStore) && closeoutBelongsToEmployee(item, employee),
+    ),
+    [closeouts, currentStore, employee],
   );
 
   const storeCloseouts = useMemo(
@@ -131,6 +139,7 @@ export default function EmployeeCloseoutsView({
   );
 
   const dailySequenceById = useMemo(() => {
+    if (trustServerDaySequenceOnly) return new Map();
     const byDate = new Map();
     myStoreCloseouts.forEach((item) => {
       const list = byDate.get(item.date) || [];
@@ -148,7 +157,7 @@ export default function EmployeeCloseoutsView({
       ordered.forEach((item, index) => serialMap.set(item.id, index + 1));
     });
     return serialMap;
-  }, [myStoreCloseouts]);
+  }, [myStoreCloseouts, trustServerDaySequenceOnly]);
 
   const displayCloseouts = useMemo(() => {
     if (!storeCloseouts.length) return [];
@@ -156,9 +165,11 @@ export default function EmployeeCloseoutsView({
       ...item,
       uiExpanded: expandedId === item.id,
       isPrevious: index > 0,
-      dailySequence: dailySequenceById.get(item.id) || 1,
+      dailySequence: trustServerDaySequenceOnly
+        ? (Number.isInteger(item.daySequence) ? item.daySequence : null)
+        : (item.daySequence ?? dailySequenceById.get(item.id) ?? null),
     }));
-  }, [storeCloseouts, expandedId, dailySequenceById]);
+  }, [storeCloseouts, expandedId, dailySequenceById, trustServerDaySequenceOnly]);
 
   const currentStoreId = currentStore?.id || null;
   const storeLabel = useMemo(() => resolveEmployeeStoreName(currentStore, lang), [currentStore, lang]);
@@ -187,9 +198,12 @@ export default function EmployeeCloseoutsView({
   }, [currentStoreId, employee, employeeRuntimeReady, lang, storeLabel, notebookTheme, upsertCloseout]);
 
   useEffect(() => {
-    onRegisterAdd?.(startNewCloseout);
+    onRegisterAdd?.(() => {
+      if (entryPhaseRef?.current) entryPhaseRef.current = null;
+      startNewCloseout();
+    });
     return () => onRegisterAdd?.(null);
-  }, [onRegisterAdd, startNewCloseout]);
+  }, [entryPhaseRef, onRegisterAdd, startNewCloseout]);
 
   useEffect(() => {
     onRegisterSettingsOpener?.(openSettings);
@@ -225,6 +239,7 @@ export default function EmployeeCloseoutsView({
     setExpandedId(null);
     setShareTarget(next);
     setShareNewlySubmitted(true);
+    onCloseoutSubmitted?.(next);
   };
 
   const handleCancelEntry = (closeout) => {
@@ -273,7 +288,7 @@ export default function EmployeeCloseoutsView({
         ) : (
           <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-28 pt-1">
             <h1 className="relative mx-auto mb-6 w-fit pb-3 text-center text-taq-hero font-extrabold tracking-tight text-[#112A46] after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-[68px] after:-translate-x-1/2 after:bg-[#D69C2F]">
-              {lang === "ar" ? "تقفيلاتي اليومية" : "My daily closeouts"}
+              {pageTitle || (lang === "ar" ? "تقفيلاتي اليومية" : "My daily closeouts")}
             </h1>
             {!employeeRuntimeReady && (
               <div className="mb-4 rounded-2xl bg-[#FFF4D2]/95 p-3 text-taq-meta font-bold text-[#806528] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
@@ -315,7 +330,7 @@ export default function EmployeeCloseoutsView({
                 )}
               </div>
             )}
-            {assignedStores.length > 1 && (
+            {showStorePicker && assignedStores.length > 1 && (
               <div className="mb-4 flex flex-wrap gap-2">
                 {assignedStores.map((store) => (
                   <button
@@ -344,7 +359,7 @@ export default function EmployeeCloseoutsView({
                     closeout={day}
                     expanded={day.uiExpanded}
                     reviewWorkflowEnabled={reviewWorkflowEnabled}
-                    daySequence={day.daySequence ?? dailySequenceById.get(day.id) ?? null}
+                    daySequence={day.dailySequence ?? null}
                     sameDayCloseoutCount={sameDayCloseoutCountByDate.get(day.date) || 1}
                     formatDate={(date) => formatCalendarDate(date, lang)}
                     onToggle={() => toggleExpandedCard(day.id)}

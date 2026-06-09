@@ -1,4 +1,5 @@
 import { refreshOperationalEntriesBestEffort } from "./client/refresh-operational-entries-best-effort";
+import { resolveStandaloneEntryBlockedMessage } from "./client/closeout-required-entry-message";
 import {
   resolveLatestActiveCloseoutDateFromEntries,
   resolveOperationalEntrySaveFailureMessage,
@@ -82,6 +83,7 @@ export function resolveSummaryLastCloseoutUpdate(payload, refreshed, createdId, 
  * @param {string} deps.actorUserId
  * @param {"owner" | "employee"} deps.actorRole
  * @param {"ar" | "en"} [deps.lang]
+ * @param {boolean} [deps.entriesApiDbSource]
  */
 export async function persistOperationalEntryThroughApi({
   createOperationalEntryInApi,
@@ -90,7 +92,12 @@ export async function persistOperationalEntryThroughApi({
   actorUserId,
   actorRole,
   lang = "ar",
+  entriesApiDbSource = false,
 }) {
+  const blockedMessage = resolveStandaloneEntryBlockedMessage(entriesApiDbSource, lang);
+  if (blockedMessage) {
+    return { ok: false, failureMessage: blockedMessage };
+  }
   let created;
   try {
     created = await createOperationalEntryInApi({

@@ -108,6 +108,21 @@ describe("operational entry persist helpers", () => {
     });
     expect(failed).toEqual({ ok: false, failureMessage: "Failed to save entry on server." });
 
+    const blocked = await persistOperationalEntryThroughApi({
+      createOperationalEntryInApi,
+      loadOperationalEntriesFromApi,
+      payload: { businessId: "shami", type: "expense" },
+      actorUserId: "owner",
+      actorRole: "owner",
+      lang: "ar",
+      entriesApiDbSource: true,
+    });
+    expect(blocked).toEqual({
+      ok: false,
+      failureMessage: "لا يمكن حفظ داخل أو خارج بدون تقفيلة. افتح «تقفيلاتي» أو اختر تقفيلة أولًا.",
+    });
+    expect(createOperationalEntryInApi).toHaveBeenCalledTimes(3);
+
     const buildEntry = vi.fn().mockReturnValue({ id: "local-1", attachment: null });
     const local = await persistOperationalEntryLocally({
       payload: { businessId: "shami" },

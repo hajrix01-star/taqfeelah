@@ -1,5 +1,21 @@
-import { isUuid } from "@/core/client/api-id-utils";
+import { isUuid, mapToUuid } from "@/core/client/api-id-utils";
 import { getRuntimeApiMaps } from "@/core/client/runtime-api-maps-state";
+
+/** Compare legacy store ids (shami) with DB UUIDs from org-config hydration. */
+export function storeIdsReferToSameStore(left, right) {
+  if (!left || !right) return false;
+  if (left === right) return true;
+  const { storeIdMap } = getRuntimeApiMaps();
+  const leftUuid = isUuid(left) ? left : mapToUuid(left, storeIdMap);
+  const rightUuid = isUuid(right) ? right : mapToUuid(right, storeIdMap);
+  return Boolean(leftUuid && rightUuid && leftUuid === rightUuid);
+}
+
+export function closeoutMatchesStore(closeout, store) {
+  if (!closeout?.storeId || !store) return false;
+  const storeIds = [store.id, store.dbStoreId, store.legacyId].filter(Boolean);
+  return storeIds.some((storeId) => storeIdsReferToSameStore(closeout.storeId, storeId));
+}
 
 /** Owner-controlled window for which past closeouts an employee may view. */
 

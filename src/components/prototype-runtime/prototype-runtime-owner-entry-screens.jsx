@@ -117,7 +117,12 @@ export function OwnerSummaryScreen({
   const salesChannels = selectedStore ? channelConfig.channels.filter((channel) => channelConfig.activeIds.includes(channel.id) && !channel.retired) : [];
   const [values, setValues] = useState({});
   const channelSignature = salesChannels.map((channel) => channel.id).join("|");
-  useEffect(() => { setValues(Object.fromEntries(salesChannels.map((channel) => [channel.id, ""]))); clearAttachment(); }, [businessId, channelSignature, clearAttachment, salesChannels]);
+  useEffect(() => {
+    setValues(Object.fromEntries(salesChannels.map((channel) => [channel.id, ""])));
+    clearAttachment();
+  // channelSignature captures salesChannels identity; omit unstable array/callback refs.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId, channelSignature]);
   const total = useMemo(() => salesChannels.reduce((sum, channel) => sum + toAmount(values[channel.id]), 0), [salesChannels, values]);
   const canSave = Boolean(selectedStore && salesChannels.length > 0 && total > 0 && summaryDate <= todayIsoDate());
   const changeStore = (nextBusinessId) => {
@@ -172,7 +177,13 @@ export function OwnerExpenseScreen({
   const { attachment, processing, error, selectAttachment, clearAttachment } = useAttachmentCapture(lang);
   const selectedStore = businessesList.find((business) => business.id === businessId);
   const activeCategories = expenseCategories.filter((item) => getStoreOperationalConfig(storeOperationalSettings, businessId).activeCategories.includes(item.id));
-  useEffect(() => { if (!activeCategories.some((item) => item.id === category)) setCategory(activeCategories[0]?.id || "other"); }, [businessId, category, activeCategories]);
+  const activeCategoryIds = activeCategories.map((item) => item.id).join("|");
+  useEffect(() => {
+    if (!activeCategories.some((item) => item.id === category)) {
+      setCategory(activeCategories[0]?.id || "other");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId, category, activeCategoryIds]);
   const canSave = Boolean(selectedStore && toAmount(amount) > 0 && (kind !== "expense" || activeCategories.length > 0));
   const changeStore = (nextBusinessId) => {
     if (nextBusinessId !== businessId && draftNeedsConfirmation(amount, note, attachment) && !window.confirm(text(lang, "discardDraftOnStoreChange"))) return;

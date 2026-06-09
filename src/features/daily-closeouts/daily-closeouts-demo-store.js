@@ -1,4 +1,5 @@
 import { readLocalStorageJson, safeSetLocalStorageItem } from "../demo/prototype-storage";
+import { storeIdsReferToSameStore } from "../employee-closeouts/employee-closeout-history";
 import { computeCloseoutTotals } from "./closeout-calculations";
 import { CLOSEOUT_STATUS } from "./closeout-status";
 
@@ -152,7 +153,9 @@ export function createDraftCloseout({ storeId, storeName, date, employee, notebo
 
 export function findCloseoutsForStoreDate(closeouts, storeId, date) {
   return (Array.isArray(closeouts) ? closeouts : []).filter(
-    (item) => item.storeId === storeId && item.date === date,
+    (item) => item.date === date && (
+      item.storeId === storeId || storeIdsReferToSameStore(item.storeId, storeId)
+    ),
   );
 }
 

@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const port = Number(process.env.PORT) || 3000;
-  const urls = buildLanPageUrls(port, "/prototype-runtime", PROTOTYPE_BUILD_STAMP);
+  const urls = buildLanPageUrls(port, "/app", PROTOTYPE_BUILD_STAMP);
   return Response.json({
     build: PROTOTYPE_BUILD_STAMP,
     urls,

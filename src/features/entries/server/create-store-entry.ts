@@ -5,6 +5,7 @@ import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
 import { attachments, auditEvents, entries, entrySalesChannels } from "@/core/db/schema";
+import { assertCloseoutLinkedEntry, CLOSEOUT_REQUIRED_FOR_ENTRY_MESSAGE } from "@/features/entries/server/assert-closeout-linked-entry";
 import { registerInlineAttachment } from "@/features/entries/server/inline-attachment";
 import { resolveStoreSalesChannelsForWrite } from "@/features/org-config/server/resolve-store-sales-channels-for-write";
 
@@ -24,6 +25,7 @@ const createEntryInputSchema = z.object({
   amountHalalas: z.number().int().positive().optional(),
   categoryId: z.string().uuid().nullable().optional(),
   note: z.string().trim().max(500).optional(),
+  closeoutId: z.string().uuid().optional(),
   salesChannels: z.array(salesChannelSchema).default([]),
   attachment: z
     .object({
@@ -58,6 +60,14 @@ export async function createStoreEntry(rawInput: CreateEntryInput) {
   });
 
   const db = getDb();
+  const linkedCloseoutId = await assertCloseoutLinkedEntry(db, {
+    organizationId: input.organizationId,
+    storeId: input.storeId,
+    closeoutId: input.closeoutId,
+  });
+  if (!linkedCloseoutId) {
+    throw new ValidationError(CLOSEOUT_REQUIRED_FOR_ENTRY_MESSAGE);
+  }
   const normalizedSalesChannels = input.type === "summary"
     ? await resolveStoreSalesChannelsForWrite(
       db,
@@ -89,6 +99,7 @@ export async function createStoreEntry(rawInput: CreateEntryInput) {
         categoryId: input.type === "summary" ? null : (input.categoryId || null),
         note: input.note || null,
         enteredByUserId: input.actorUserId,
+        closeoutId: linkedCloseoutId,
         status: "active",
       })
       .returning({

@@ -7,8 +7,8 @@ export const DEFAULT_SALES_CHANNEL_UUIDS: Record<string, string> = {
   online: "f0f8dd28-4fbe-4bf2-9074-2be703f10ccd",
   mada: "7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c",
   apple: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d",
-  jahez: "9e5c3a4b-0d6f-4a1c-c3e4-5f6a7b8c9d0e",
-  hunger: "af6d4b5c-1e7a-4b2d-d4f5-6a7b8c9d0e1f",
+  jahez: "9e5c3a4b-0d6f-4a1c-a3e4-5f6a7b8c9d0e",
+  hunger: "af6d4b5c-1e7a-4b2d-a4f5-6a7b8c9d0e1f",
 };
 
 export const PROTOTYPE_SALES_CHANNEL_IDS = ["cash", "mada", "apple", "jahez", "hunger"] as const;

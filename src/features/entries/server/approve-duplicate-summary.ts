@@ -4,7 +4,9 @@ import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { getDb } from "@/core/db/client";
 import { auditEvents, entries } from "@/core/db/schema";
+import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 import { ValidationError } from "@/core/errors/app-error";
+import { DUPLICATE_SUMMARY_BLOCKED_IN_DB_SOURCE_MESSAGE } from "@/features/entries/server/assert-closeout-linked-entry";
 import { createStoreEntry } from "@/features/entries/server/create-store-entry";
 
 const salesChannelSchema = z.object({
@@ -45,6 +47,10 @@ export async function approveDuplicateSummary(rawInput: z.infer<typeof inputSche
     throw new ValidationError("Invalid duplicate summary approve input.", parsed.error.flatten());
   }
   const input = parsed.data;
+
+  if (isEntriesApiDbSourceMode()) {
+    throw new ValidationError(DUPLICATE_SUMMARY_BLOCKED_IN_DB_SOURCE_MESSAGE);
+  }
 
   await assertStoreAccess({
     organizationId: input.organizationId,

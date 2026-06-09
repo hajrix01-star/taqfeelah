@@ -8,6 +8,20 @@
       "when": 1780527807531,
       "tag": "0000_init_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781019794434,
+      "tag": "0001_daily_closeouts",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781020400000,
+      "tag": "0002_entries_closeout_id_not_null",
+      "breakpoints": true
     }
   ]
 }

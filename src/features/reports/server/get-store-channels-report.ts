@@ -6,6 +6,7 @@ import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { assertBoundedReportRange } from "@/features/reports/server/report-date-range";
+import { mergeEntryScopeWithCloseoutLink } from "@/features/entries/server/closeout-linked-entry-filter";
 
 const inputSchema = z.object({
   organizationId: z.string().uuid(),
@@ -33,6 +34,18 @@ export async function getStoreChannelsReport(rawInput: z.infer<typeof inputSchem
   });
 
   const db = getDb();
+  const entryScope = mergeEntryScopeWithCloseoutLink(
+    input.organizationId,
+    input.storeId,
+    and(
+      eq(entrySalesChannels.organizationId, input.organizationId),
+      eq(entrySalesChannels.storeId, input.storeId),
+      gte(entries.date, range.from),
+      lte(entries.date, range.to),
+      eq(entries.status, "active"),
+      eq(entries.type, "summary"),
+    ),
+  );
   const rows = await db
     .select({
       salesChannelId: entrySalesChannels.salesChannelId,
@@ -41,16 +54,7 @@ export async function getStoreChannelsReport(rawInput: z.infer<typeof inputSchem
     })
     .from(entrySalesChannels)
     .innerJoin(entries, eq(entries.id, entrySalesChannels.entryId))
-    .where(
-      and(
-        eq(entrySalesChannels.organizationId, input.organizationId),
-        eq(entrySalesChannels.storeId, input.storeId),
-        gte(entries.date, range.from),
-        lte(entries.date, range.to),
-        eq(entries.status, "active"),
-        eq(entries.type, "summary"),
-      ),
-    )
+    .where(entryScope)
     .groupBy(entrySalesChannels.salesChannelId, entrySalesChannels.channelNameSnapshot)
     .orderBy(sql`coalesce(sum(${entrySalesChannels.amountHalalas}), 0) desc`);
 

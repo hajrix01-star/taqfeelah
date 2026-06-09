@@ -1,6 +1,7 @@
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
-import { auditEvents, entries, entrySalesChannels } from "@/core/db/schema";
+import { auditEvents, dailyCloseouts, entries, entrySalesChannels } from "@/core/db/schema";
 import { calculateDaySummary } from "@/domain/cash-movement/calculations";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
@@ -38,7 +39,6 @@ const closeoutSubmitSchema = z.object({
   note: z.string().trim().max(500).optional(),
   mode: z.enum(["submit", "resubmit"]).default("submit"),
   autoReview: z.boolean().default(false),
-  /** When true, employee closeout stays pending until owner review. Omitted/false = auto-approve (product default). */
   requireReview: z.boolean().optional(),
 });
 
@@ -84,13 +84,77 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
   });
   const initialEntryStatus = canAutoReview ? "active" : "voided";
   const initialReviewedAt = canAutoReview ? new Date() : null;
+  const closeoutStatus = canAutoReview ? "approved" : "submitted";
+  const reviewedAt = canAutoReview ? new Date() : null;
+  const reviewedByUserId = canAutoReview ? input.actorUserId : null;
 
   const txResult = await db.transaction(async (tx) => {
+    const daySequence = await resolveCloseoutDaySequence(tx as Parameters<typeof resolveCloseoutDaySequence>[0], {
+      organizationId: input.organizationId,
+      storeId: input.storeId,
+      date: input.date,
+      closeoutId: input.closeoutId,
+      mode: input.mode,
+    });
+
+    let closeoutRowId: string;
+
+    if (input.mode === "resubmit") {
+      const [existingCloseout] = await tx
+        .select({ id: dailyCloseouts.id })
+        .from(dailyCloseouts)
+        .where(
+          and(
+            eq(dailyCloseouts.organizationId, input.organizationId),
+            eq(dailyCloseouts.storeId, input.storeId),
+            eq(dailyCloseouts.clientCloseoutId, input.closeoutId),
+          ),
+        )
+        .limit(1);
+
+      if (!existingCloseout) {
+        throw new ValidationError("Closeout not found for resubmit.");
+      }
+
+      closeoutRowId = existingCloseout.id;
+      await tx
+        .update(dailyCloseouts)
+        .set({
+          status: closeoutStatus,
+          submittedByUserId: input.actorUserId,
+          reviewedByUserId,
+          reviewedAt,
+          returnReason: null,
+          note: input.note || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(dailyCloseouts.id, closeoutRowId));
+    } else {
+      const [insertedCloseout] = await tx
+        .insert(dailyCloseouts)
+        .values({
+          organizationId: input.organizationId,
+          storeId: input.storeId,
+          date: input.date,
+          daySequence,
+          clientCloseoutId: input.closeoutId,
+          status: closeoutStatus,
+          submittedByUserId: input.actorUserId,
+          reviewedByUserId,
+          reviewedAt,
+          note: input.note || null,
+        })
+        .returning({ id: dailyCloseouts.id });
+
+      closeoutRowId = insertedCloseout.id;
+    }
+
     const [summaryEntry] = await tx
       .insert(entries)
       .values({
         organizationId: input.organizationId,
         storeId: input.storeId,
+        closeoutId: closeoutRowId,
         date: input.date,
         type: "summary",
         amountHalalas: totalSalesHalalas,
@@ -120,6 +184,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
           input.outflows.map((row) => ({
             organizationId: input.organizationId,
             storeId: input.storeId,
+            closeoutId: closeoutRowId,
             date: input.date,
             type: row.type,
             amountHalalas: row.amountHalalas,
@@ -134,14 +199,6 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
         .returning({ id: entries.id, type: entries.type, amountHalalas: entries.amountHalalas })
       : [];
 
-    const daySequence = await resolveCloseoutDaySequence(tx as Parameters<typeof resolveCloseoutDaySequence>[0], {
-      organizationId: input.organizationId,
-      storeId: input.storeId,
-      date: input.date,
-      closeoutId: input.closeoutId,
-      mode: input.mode,
-    });
-
     await tx.insert(auditEvents).values({
       organizationId: input.organizationId,
       storeId: input.storeId,
@@ -151,26 +208,13 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
       reason: input.note || null,
       metadata: {
         closeoutId: input.closeoutId,
+        dailyCloseoutId: closeoutRowId,
         date: input.date,
         daySequence,
         summaryEntryId: summaryEntry.id,
         outflowEntryIds: outflowEntries.map((row) => row.id),
         totalSalesHalalas,
         totalOutflowHalalas,
-        salesChannels: normalizedChannels.map((row) => ({
-          salesChannelId: row.salesChannelId,
-          channelName: row.channelName,
-          amountHalalas: row.amountHalalas,
-        })),
-        outflows: input.outflows.map((row) => ({
-          type: row.type,
-          amountHalalas: row.amountHalalas,
-          categoryId: row.categoryId || null,
-          categoryName: row.categoryName || "",
-          typeLabel: row.typeLabel || "",
-          note: row.note || "",
-        })),
-        note: input.note || "",
       },
     });
 
@@ -183,8 +227,8 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
         reason: null,
         metadata: {
           closeoutId: input.closeoutId,
+          dailyCloseoutId: closeoutRowId,
           date: input.date,
-          sourceSubmissionAuditId: null,
           autoReview: true,
         },
       });
@@ -194,6 +238,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
       summaryEntryId: summaryEntry.id,
       outflowEntryIds: outflowEntries.map((row) => row.id),
       daySequence,
+      dailyCloseoutId: closeoutRowId,
     };
   });
 
@@ -217,6 +262,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
     daySequence: txResult.daySequence,
     summaryEntryId: txResult.summaryEntryId,
     outflowEntryIds: txResult.outflowEntryIds,
+    dailyCloseoutId: txResult.dailyCloseoutId,
     totals: {
       totalSalesHalalas: calculated.totalSalesHalalas,
       totalOutflowHalalas: calculated.totalOutflowHalalas,

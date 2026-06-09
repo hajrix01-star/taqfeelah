@@ -1,7 +1,7 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
-import { auditEvents, entries } from "@/core/db/schema";
+import { auditEvents, dailyCloseouts, entries } from "@/core/db/schema";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
@@ -19,13 +19,6 @@ const reviewInputSchema = z.object({
 
 type ReviewInput = z.infer<typeof reviewInputSchema>;
 
-const submitMetadataSchema = z.object({
-  closeoutId: z.string().trim().min(1).max(120),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  summaryEntryId: z.string().uuid().optional(),
-  outflowEntryIds: z.array(z.string().uuid()).optional(),
-});
-
 export async function reviewStoreCloseout(rawInput: ReviewInput) {
   const parsed = reviewInputSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -42,49 +35,53 @@ export async function reviewStoreCloseout(rawInput: ReviewInput) {
   });
 
   const db = getDb();
-  const [latestSubmit] = await db
-    .select({
-      id: auditEvents.id,
-      createdAt: auditEvents.createdAt,
-      metadata: auditEvents.metadata,
-    })
-    .from(auditEvents)
+  const [closeoutRow] = await db
+    .select({ id: dailyCloseouts.id })
+    .from(dailyCloseouts)
     .where(
       and(
-        eq(auditEvents.organizationId, input.organizationId),
-        eq(auditEvents.storeId, input.storeId),
-        sql`${auditEvents.action} in ('closeout_submitted', 'closeout_resubmitted')`,
-        sql`${auditEvents.metadata} ->> 'closeoutId' = ${input.closeoutId}`,
-        sql`${auditEvents.metadata} ->> 'date' = ${input.date}`,
+        eq(dailyCloseouts.organizationId, input.organizationId),
+        eq(dailyCloseouts.storeId, input.storeId),
+        eq(dailyCloseouts.clientCloseoutId, input.closeoutId),
+        eq(dailyCloseouts.date, input.date),
       ),
     )
-    .orderBy(desc(auditEvents.createdAt))
     .limit(1);
 
-  const parsedSubmitMetadata = submitMetadataSchema.safeParse(latestSubmit?.metadata);
-  const targetEntryIds = parsedSubmitMetadata.success
-    ? [
-      ...(parsedSubmitMetadata.data.summaryEntryId ? [parsedSubmitMetadata.data.summaryEntryId] : []),
-      ...(parsedSubmitMetadata.data.outflowEntryIds || []),
-    ]
-    : [];
+  if (!closeoutRow) {
+    throw new ValidationError("Closeout not found for review.");
+  }
+
+  const nextStatus = input.action === "approve" ? "approved" : "returned";
+  const reviewedAt = new Date();
 
   const [created] = await db.transaction(async (tx) => {
-    if (input.action === "approve" && targetEntryIds.length > 0) {
+    if (input.action === "approve") {
       await tx
         .update(entries)
         .set({
           status: "active",
-          reviewedAt: new Date(),
+          reviewedAt,
         })
         .where(
           and(
             eq(entries.organizationId, input.organizationId),
             eq(entries.storeId, input.storeId),
-            inArray(entries.id, targetEntryIds),
+            eq(entries.closeoutId, closeoutRow.id),
           ),
         );
     }
+
+    await tx
+      .update(dailyCloseouts)
+      .set({
+        status: nextStatus,
+        reviewedByUserId: input.actorUserId,
+        reviewedAt,
+        returnReason: input.action === "return" ? input.reason || null : null,
+        updatedAt: reviewedAt,
+      })
+      .where(eq(dailyCloseouts.id, closeoutRow.id));
 
     return tx
       .insert(auditEvents)
@@ -96,8 +93,8 @@ export async function reviewStoreCloseout(rawInput: ReviewInput) {
         reason: input.reason || null,
         metadata: {
           closeoutId: input.closeoutId,
+          dailyCloseoutId: closeoutRow.id,
           date: input.date,
-          sourceSubmissionAuditId: latestSubmit?.id || null,
         },
       })
       .returning({ id: auditEvents.id, createdAt: auditEvents.createdAt });

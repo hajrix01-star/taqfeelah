@@ -86,7 +86,7 @@ describe("entries route integration", () => {
     }));
   });
 
-  it("POST creates store entry", async () => {
+  it("POST creates store entry when closeoutId is provided", async () => {
     createStoreEntry.mockResolvedValueOnce({
       id: "entry-3",
       type: "expense",
@@ -102,6 +102,7 @@ describe("entries route integration", () => {
           type: "expense",
           amountHalalas: 2500,
           categoryId: "rent",
+          closeoutId: "11111111-1111-4111-8111-111111111111",
         }),
       }),
       routeStoreContext(),
@@ -112,6 +113,7 @@ describe("entries route integration", () => {
       date: "2026-06-05",
       type: "expense",
       amountHalalas: 2500,
+      closeoutId: "11111111-1111-4111-8111-111111111111",
       actorRole: "owner",
     }));
   });

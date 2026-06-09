@@ -4,12 +4,14 @@ import {
   reverseLookupKeyByUuid,
   toMoneyHalalas,
 } from "@/core/client/api-id-utils";
+import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
 import {
   getRuntimeApiMaps,
   setRuntimeApiIdMaps as applyRuntimeApiIdMaps,
 } from "@/core/client/runtime-api-maps-state";
 import { resolvePrototypeApiContext } from "@/core/client/prototype-api-context";
+import { closeoutRequiredEntryMessage } from "@/features/operations/client/closeout-required-entry-message";
 
 export function setRuntimeApiIdMaps(overrides) {
   applyRuntimeApiIdMaps(overrides);
@@ -131,6 +133,13 @@ export async function fetchStoreEntriesPageViaApi({
   };
 }
 
+function resolveEntrySalesChannelUuid(channelId, salesChannelIdMap) {
+  const mapped = mapToUuid(channelId, salesChannelIdMap);
+  if (isUuid(mapped)) return mapped;
+  if (typeof channelId === "string" && isUuid(channelId.trim())) return channelId.trim();
+  return "";
+}
+
 export async function createStoreEntryViaApi({
   organizationId,
   actorUserId,
@@ -146,39 +155,54 @@ export async function createStoreEntryViaApi({
   });
   if (!context) return null;
 
+  if (isEntriesApiDbSourceMode() && !isUuid(payload?.closeoutDbId)) {
+    throw new Error(closeoutRequiredEntryMessage("en"));
+  }
+
   const mappedSalesChannels = (payload?.salesChannels || [])
     .map((row) => ({
-      salesChannelId: mapToUuid(row?.channelId || row?.id, salesChannelIdMap),
+      salesChannelId: resolveEntrySalesChannelUuid(row?.channelId || row?.id, salesChannelIdMap),
       channelName: row?.name || row?.channelName || row?.channelLabel || row?.channelId || row?.id,
       amountHalalas: toMoneyHalalas(row?.amount),
     }))
     .filter((row) => isUuid(row.salesChannelId) && row.amountHalalas > 0);
+
+  if (payload?.type === "summary" && mappedSalesChannels.length === 0) {
+    throw new Error("entry create failed: summary requires at least one mapped sales channel amount.");
+  }
+
+  const amountHalalas = toMoneyHalalas(payload?.amount);
+  const body = {
+    date: payload?.date,
+    type: payload?.type,
+    categoryId: isUuid(payload?.categoryId) ? payload.categoryId : null,
+    note: typeof payload?.note === "string" ? payload.note : "",
+    salesChannels: mappedSalesChannels,
+  };
+  if (amountHalalas > 0) {
+    body.amountHalalas = amountHalalas;
+  }
+  if (isUuid(payload?.closeoutDbId)) {
+    body.closeoutId = payload.closeoutDbId;
+  }
+  if (payload?.attachment && typeof payload.attachment === "object") {
+    body.attachment = {
+      kind: payload.attachment.kind || "image",
+      name: payload.attachment.name || "attachment.jpg",
+      mimeType: payload.attachment.mimeType || "image/jpeg",
+      sizeBytes: Number(payload.attachment.sizeBytes || 0),
+      ...(payload.attachment.storageKey
+        ? { storageKey: payload.attachment.storageKey }
+        : { dataUrl: payload.attachment.dataUrl || "" }),
+    };
+  }
 
   return fetchApiJsonWithPrototypeContext(`/api/v1/stores/${context.storeId}/entries`, {
     organizationId,
     actorUserId,
     actorRole,
     method: "POST",
-    body: {
-      date: payload?.date,
-      type: payload?.type,
-      amountHalalas: toMoneyHalalas(payload?.amount),
-      categoryId: isUuid(payload?.categoryId) ? payload.categoryId : null,
-      note: typeof payload?.note === "string" ? payload.note : "",
-      salesChannels: mappedSalesChannels,
-      attachment:
-        payload?.attachment && typeof payload.attachment === "object"
-          ? {
-            kind: payload.attachment.kind || "image",
-            name: payload.attachment.name || "attachment.jpg",
-            mimeType: payload.attachment.mimeType || "image/jpeg",
-            sizeBytes: Number(payload.attachment.sizeBytes || 0),
-            ...(payload.attachment.storageKey
-              ? { storageKey: payload.attachment.storageKey }
-              : { dataUrl: payload.attachment.dataUrl || "" }),
-          }
-          : undefined,
-    },
+    body,
     errorMessage: "entry create api failed",
     errorStyle: "status",
   });

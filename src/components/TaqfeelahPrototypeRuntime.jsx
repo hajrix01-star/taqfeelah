@@ -150,6 +150,7 @@ import {
   logPeriodScopeLabel,
 } from "@/features/reports/client/report-period-labels";
 import PrototypeAccessScreen from "@/features/demo/PrototypeAccessScreen";
+import { readPrototypeAccessAuthContext } from "@/core/client/prototype-access-auth-context";
 import { EMPTY_STORE_CHANNEL_CONFIG } from "@/features/org-config/client/store-channel-config";
 import {
   channels,
@@ -1778,6 +1779,8 @@ export default function TaqfeelahPrototypeRuntime() {
     persistRuntimeSettingsNow,
     runtimeSettingsSyncError,
     orgConfigSyncError,
+    orgConfigLoading,
+    orgConfigHydrated,
     resolveStoreSalesChannels,
   } = useOwnerSettingsState({
     bindsToServerAuth: BINDS_TO_SERVER_AUTH,
@@ -1798,6 +1801,13 @@ export default function TaqfeelahPrototypeRuntime() {
     ownerActor,
     channelNameFn: channelName,
   });
+
+  const ownerOrgConfigReady = useMemo(
+    () => !ORG_CONFIG_API_ENABLED
+      || employee
+      || (orgConfigHydrated && !orgConfigLoading && activeBusinesses.length > 0),
+    [activeBusinesses.length, employee, orgConfigHydrated, orgConfigLoading],
+  );
 
   const {
     employeePage,
@@ -1889,6 +1899,17 @@ export default function TaqfeelahPrototypeRuntime() {
     reportingBusinesses,
   });
 
+  const runtimeApiStoresReady = useMemo(
+    () => {
+      if (!ORG_CONFIG_API_ENABLED) return true;
+      if (employee) {
+        return employeeRuntimeReady && Boolean(apiTargetStoreIdsKey);
+      }
+      return ownerOrgConfigReady && Boolean(apiTargetStoreIdsKey);
+    },
+    [apiTargetStoreIdsKey, employee, employeeRuntimeReady, ownerOrgConfigReady],
+  );
+
   const runtimeApiAuth = useMemo(
     () => resolveOwnerSettingsApiAuth({
       sessionOrganizationId,
@@ -1948,11 +1969,7 @@ export default function TaqfeelahPrototypeRuntime() {
     if (!targetStoreIds.length) {
       setOperationalEntries([]);
       setOperationalEntriesLoading(false);
-      const message = lang === "ar"
-        ? "تعذر تحميل العمليات: لا يوجد محل مربوط بالخادم لهذا السياق."
-        : "Failed to load operations: no store id is mapped for this API context.";
-      setOperationalEntriesSyncError(message);
-      throw new Error(message);
+      return [];
     }
 
     try {
@@ -2034,6 +2051,7 @@ export default function TaqfeelahPrototypeRuntime() {
     acknowledgedDuplicateSales,
     setAcknowledgedDuplicateSales,
     activeViewBusiness,
+    activeOwnerStoreId,
     reportSettingsStoreId,
     ownerReviewEnabled,
     duplicateSalesAlerts,
@@ -2062,6 +2080,77 @@ export default function TaqfeelahPrototypeRuntime() {
     closeoutAlertEnabledForBusiness,
     setSelected: registerSelection.setSelected,
   });
+
+  const ownerAddHandlerRef = useRef(null);
+  const [ownerEntryActive, setOwnerEntryActive] = useState(false);
+
+  const ownerCloseoutActor = useMemo(() => ({
+    id: ownerApiUserId || currentOwnerActor?.userId || "owner",
+    apiUserId: ownerApiUserId,
+    nameAr: ownerProfile?.nameAr || ownerDisplayName,
+    nameEn: ownerProfile?.nameEn || ownerDisplayName,
+    submitActorRole: "owner",
+  }), [currentOwnerActor?.userId, ownerApiUserId, ownerDisplayName, ownerProfile?.nameAr, ownerProfile?.nameEn]);
+
+  const ownerCloseoutBusiness = useMemo(() => {
+    const storeId = activeOwnerStoreId || activeBusinesses[0]?.id;
+    return activeBusinesses.find((business) => business.id === storeId) || activeBusinesses[0] || null;
+  }, [activeBusinesses, activeOwnerStoreId]);
+
+  const ownerCloseoutChannelConfig = useMemo(
+    () => resolveStoreChannelConfig(storeChannelSettings, ownerCloseoutBusiness?.id),
+    [ownerCloseoutBusiness?.id, storeChannelSettings],
+  );
+
+  const openOwnerCloseoutEntry = useCallback(() => {
+    if (!runtimeApiStoresReady) {
+      window.alert(lang === "ar"
+        ? "جاري تحميل إعدادات المحل من الخادم… انتظر لحظة ثم أعد المحاولة."
+        : "Store settings are still loading from the server… wait a moment and try again.");
+      return;
+    }
+    if (!ownerCloseoutBusiness?.id) {
+      window.alert(text(lang, "chooseStoreForSummary"));
+      return;
+    }
+    if (activeViewBusiness === "all" && activeBusinesses.length > 1) {
+      window.alert(text(lang, "chooseStoreForSummary"));
+      return;
+    }
+    setQuickAddOpen(false);
+    setOwnerPage("closeouts");
+    window.requestAnimationFrame(() => {
+      ownerAddHandlerRef.current?.();
+    });
+  }, [
+    activeBusinesses.length,
+    activeViewBusiness,
+    lang,
+    ownerCloseoutBusiness?.id,
+    runtimeApiStoresReady,
+    setOwnerPage,
+    setQuickAddOpen,
+  ]);
+
+  const handleOpenQuickAddSummary = useCallback(() => {
+    if (ENTRIES_API_DB_SOURCE) {
+      openOwnerCloseoutEntry();
+      return;
+    }
+    openQuickAddSummary();
+  }, [openOwnerCloseoutEntry, openQuickAddSummary]);
+
+  const handleOpenQuickAddExpense = useCallback(() => {
+    if (ENTRIES_API_DB_SOURCE) {
+      openOwnerCloseoutEntry();
+      return;
+    }
+    openQuickAddExpense();
+  }, [openOwnerCloseoutEntry, openQuickAddExpense]);
+
+  const handleOwnerQuickAddOpen = useCallback(() => {
+    setQuickAddOpen(true);
+  }, [setQuickAddOpen]);
 
   const {
     selected,
@@ -2136,6 +2225,10 @@ export default function TaqfeelahPrototypeRuntime() {
     );
   }, [operationalEntries]);
   const saveOwner = async (payload) => {
+    if (ENTRIES_API_DB_SOURCE) {
+      window.alert(text(lang, "closeoutRequiredForEntry"));
+      return;
+    }
     if (!canPersistOperationalEntry({
       saving: savingRef.current,
       payload,
@@ -2152,6 +2245,7 @@ export default function TaqfeelahPrototypeRuntime() {
           actorUserId: ownerApiUserId,
           actorRole: "owner",
           lang,
+          entriesApiDbSource: ENTRIES_API_DB_SOURCE,
         });
         if (!result.ok) {
           window.alert(result.failureMessage);
@@ -2202,6 +2296,10 @@ export default function TaqfeelahPrototypeRuntime() {
     } finally { savingRef.current = false; setSaving(false); }
   };
   const saveOwnerSummary = async (payload) => {
+    if (ENTRIES_API_DB_SOURCE) {
+      window.alert(text(lang, "closeoutRequiredForEntry"));
+      return;
+    }
     if (savingRef.current || !payload?.businessId) return;
     if (shouldGateSummarySaveOnDuplicates(payload)) {
       const previousEntries = findDuplicateSummaryEntries(operationalEntries, payload, entryIsActive);
@@ -2221,6 +2319,7 @@ export default function TaqfeelahPrototypeRuntime() {
     activeEmployee,
     assignedEmployeeBusinessIds,
     entriesApiEnabled,
+    entriesApiDbSource: ENTRIES_API_DB_SOURCE,
     createOperationalEntryInApi,
     loadOperationalEntriesFromApi,
     buildEntry,
@@ -2259,6 +2358,7 @@ export default function TaqfeelahPrototypeRuntime() {
     archivedBusinessIds,
     entriesApiEnabled,
     phase9ApiEnabled,
+    entriesApiDbSource: ENTRIES_API_DB_SOURCE,
     closeoutsApiOrganizationId,
     ownerApiUserId,
     currentOwnerActor,
@@ -2474,11 +2574,15 @@ export default function TaqfeelahPrototypeRuntime() {
     }
     const actorUserId = employee?.apiUserId || employee?.id;
     const storeChannels = currentEmployeeChannelConfig?.channels || [];
+    const isOwnerSubmit = employee?.submitActorRole === "owner";
+    const ownerStoreChannels = isOwnerSubmit && ownerCloseoutBusiness?.id === closeout?.storeId
+      ? (ownerCloseoutChannelConfig?.channels || [])
+      : storeChannels;
     const submitFailure = diagnoseCloseoutSubmitFailure({
       organizationId: closeoutsApiOrganizationId,
       actorUserId,
       closeout,
-      storeChannels,
+      storeChannels: isOwnerSubmit ? ownerStoreChannels : storeChannels,
     });
     if (submitFailure) {
       throw new Error(buildCloseoutSubmitFailureMessage(submitFailure, lang));
@@ -2495,12 +2599,12 @@ export default function TaqfeelahPrototypeRuntime() {
     const result = await submitCloseoutViaApi({
       organizationId: closeoutsApiOrganizationId,
       actorUserId,
-      actorRole: "employee",
+      actorRole: isOwnerSubmit ? "owner" : "employee",
       closeout,
-      storeChannels,
+      storeChannels: isOwnerSubmit ? ownerStoreChannels : storeChannels,
       mode: action === "resubmit" ? "resubmit" : "submit",
-      autoReview: !reviewWorkflowEnabled,
-      requireReview: reviewWorkflowEnabled === true,
+      autoReview: isOwnerSubmit ? true : !reviewWorkflowEnabled,
+      requireReview: isOwnerSubmit ? false : reviewWorkflowEnabled === true,
     });
     if (!result) {
       throw new Error(lang === "ar"
@@ -2518,6 +2622,8 @@ export default function TaqfeelahPrototypeRuntime() {
     entriesApiEnabled,
     lang,
     loadOperationalEntriesFromApi,
+    ownerCloseoutBusiness?.id,
+    ownerCloseoutChannelConfig?.channels,
   ]);
 
   const syncReviewCloseoutToApi = useCallback(async ({ action, closeout, reason = "" }) => {
@@ -2628,6 +2734,9 @@ export default function TaqfeelahPrototypeRuntime() {
       }
       return;
     }
+    if (!runtimeApiStoresReady) {
+      return;
+    }
     loadOperationalEntriesFromApi().catch((error) => {
       console.warn("operational entries API load failed", error);
       setOperationalEntriesSyncError(
@@ -2636,7 +2745,15 @@ export default function TaqfeelahPrototypeRuntime() {
           : "Failed to refresh operational register from server.",
       );
     });
-  }, [entriesApiEnabled, entriesApiStrictMode, lang, loadOperationalEntriesFromApi, loggedIn]);
+  }, [
+    employee,
+    entriesApiEnabled,
+    entriesApiStrictMode,
+    lang,
+    loadOperationalEntriesFromApi,
+    loggedIn,
+    runtimeApiStoresReady,
+  ]);
 
   useEffect(() => {
     if (!operationalEntriesSyncError) return;
@@ -2699,9 +2816,31 @@ export default function TaqfeelahPrototypeRuntime() {
   ]);
 
   const enterPrototypeAsEmployee = () => {
-    const person = staff.find((item) => item.active && !item.removed) || PROTOTYPE_DEFAULT_STAFF[0];
+    const { organizationId, defaultEmployeeLegacyId, defaultEmployeeUserId } = readPrototypeAccessAuthContext();
+    const person = staff.find((item) => item.active && !item.removed)
+      || (defaultEmployeeUserId
+        ? {
+          id: defaultEmployeeUserId,
+          apiUserId: defaultEmployeeUserId,
+          legacyId: defaultEmployeeLegacyId,
+          active: true,
+          removed: false,
+          storeIds: [],
+        }
+        : null)
+      || PROTOTYPE_DEFAULT_STAFF[0];
     if (!person?.id) return;
-    completeEmployeeLogin(person.id, person.apiUserId || "");
+    completeEmployeeLogin(
+      person.id,
+      person.apiUserId || defaultEmployeeUserId || "",
+      person,
+      organizationId,
+    );
+  };
+
+  const enterPrototypeAsOwner = () => {
+    const { organizationId, ownerUserId } = readPrototypeAccessAuthContext();
+    completeOwnerLogin(ownerUserId, organizationId);
   };
 
   useEffect(() => {
@@ -2746,7 +2885,7 @@ export default function TaqfeelahPrototypeRuntime() {
           <PrototypeAccessScreen
             lang={lang}
             setLang={setLang}
-            onOwner={() => completeOwnerLogin()}
+            onOwner={enterPrototypeAsOwner}
             onEmployee={enterPrototypeAsEmployee}
           />
         ) : authScreen === "owner" ? (
@@ -2754,6 +2893,29 @@ export default function TaqfeelahPrototypeRuntime() {
         ) : (
           <EmployeeLoginScreen lang={lang} setLang={setLang} staff={staff} onBack={() => setAuthScreen("owner")} onLogin={completeEmployeeLogin} />
         )}
+      </div>
+    );
+  }
+  if (ORG_CONFIG_API_ENABLED && !employee && !ownerOrgConfigReady && !orgConfigSyncError) {
+    return (
+      <div dir={lang === "ar" ? "rtl" : "ltr"} className="flex min-h-[100dvh] items-center justify-center bg-[#F8F6F0] px-6 font-sans text-[#112A46]">
+        <AppFontStyles />
+        <p className="text-center text-sm font-bold text-[#827762]">
+          {lang === "ar" ? "جاري تحميل بيانات المنشأة من قاعدة البيانات..." : "Loading organization data from database..."}
+        </p>
+      </div>
+    );
+  }
+  if (ORG_CONFIG_API_ENABLED && !employee && activeBusinesses.length === 0 && orgConfigSyncError) {
+    return (
+      <div dir={lang === "ar" ? "rtl" : "ltr"} className="flex min-h-[100dvh] items-center justify-center bg-[#F8F6F0] px-6 font-sans text-[#112A46]">
+        <AppFontStyles />
+        <div className="max-w-sm rounded-3xl bg-white p-6 text-center ring-1 ring-black/[0.045]">
+          <p className="text-sm font-black text-[#B44747]">
+            {lang === "ar" ? "تعذر تحميل بيانات المنشأة" : "Failed to load organization data"}
+          </p>
+          <p className="mt-2 text-taq-meta font-bold text-[#827762]">{orgConfigSyncError}</p>
+        </div>
       </div>
     );
   }
@@ -2765,7 +2927,9 @@ export default function TaqfeelahPrototypeRuntime() {
       onSubmitCloseoutToApi={syncSubmitCloseoutToApi}
       onReviewCloseoutInApi={syncReviewCloseoutToApi}
       loadCloseoutsFromApi={
-        closeoutsApiEnabled && closeoutsApiOrganizationId && (!employee || employeeRuntimeReady)
+        closeoutsApiEnabled
+        && closeoutsApiOrganizationId
+        && runtimeApiStoresReady
           ? loadCloseoutsFromApi
           : null
       }
@@ -2782,7 +2946,7 @@ export default function TaqfeelahPrototypeRuntime() {
             setLang={setLang}
             employee={employee}
             employeeName={employee && activeEmployee ? (lang === "ar" ? activeEmployee.nameAr : activeEmployee.nameEn) : ""}
-            notebookMode={employee || (!employee && (ownerPage === "home" || ownerPage === "reports" || ownerPage === "register"))}
+            notebookMode={employee || (!employee && (ownerPage === "home" || ownerPage === "reports" || ownerPage === "register" || ownerPage === "closeouts"))}
             notebookTheme={employee ? employeeNotebookTheme : notebookTheme}
             onLogout={logout}
             onEmployeeSettings={() => employeeSettingsOpenerRef.current?.()}
@@ -2790,9 +2954,9 @@ export default function TaqfeelahPrototypeRuntime() {
             showNotifications={ownerNotificationsVisible}
             hasNotificationBadge={ownerNotificationBadge}
           />
-          <div className="taq-scroll relative min-h-0 overflow-y-auto overscroll-y-contain">{employee && !activeEmployee && <section className="px-5 pb-24"><div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">{text(lang, "noActiveEmployee")}</div></section>}{employee && activeEmployee && employeePage === "closeouts" && <EmployeeCloseoutsView lang={lang} employee={activeEmployee} employeeRuntimeReady={employeeRuntimeReady} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} salesChannels={currentEmployeeChannelConfig.channels.filter((channel) => currentEmployeeChannelConfig.activeIds.includes(channel.id) && !channel.retired).map((channel) => ({ ...channel, displayName: channelName(channel, lang) }))} notebookTheme={employeeNotebookTheme} reviewWorkflowEnabled={closeoutReviewEnabledForBusiness(currentEmployeeBusiness?.id)} employeeHistoryVisibility={currentEmployeeOperationalConfig.employeeHistoryVisibility || "all"} formatCalendarDate={formatCalendarDate} channelLabel={(channel) => channel.displayName || channelName(channel, lang)} settingsPanel={({ onBack }) => <EmployeeSettingsScreen lang={lang} onBack={onBack} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} employeeNotebookTheme={employeeThemeOverride || readEmployeeNotebookTheme(activeEmployee.id) || employeeNotebookTheme} setEmployeeNotebookTheme={(theme) => { writeEmployeeNotebookTheme(activeEmployee.id, theme); setEmployeeThemeOverride(theme); }} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />} onEntryActiveChange={setEmployeeEntryActive} onRegisterAdd={(handler) => { employeeAddHandlerRef.current = handler || (() => {}); }} onRegisterSettingsOpener={(handler) => { employeeSettingsOpenerRef.current = handler || (() => {}); }} saving={saving} />}{!employee && ownerPage === "home" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><OwnerHomeConnected lang={lang} operationalEntries={operationalEntries} operationalEntriesLoading={operationalEntriesLoading} duplicateSalesAlerts={duplicateSalesAlerts} closeoutAlerts={unseenCloseoutAlerts} closeoutReviewEnabledForBusiness={closeoutReviewEnabledForBusiness} onViewPendingCloseouts={(closeout) => { setOwnerReviewCloseout(closeout); setSelectedBusiness(closeout.storeId); }} onReviewCloseout={reviewCloseoutAlert} onDismissCloseout={dismissCloseoutAlert} onReviewDuplicate={reviewDuplicateSales} onAcknowledgeDuplicate={acknowledgeDuplicateSales} reviewEnabledForBusiness={reviewEnabledForBusiness} onOpenOperation={handleOpenOwnerOperation} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} selectedBusiness={activeViewBusiness} setSelectedBusiness={setSelectedBusiness} reviewEnabled={ownerReviewEnabled} businessesList={activeBusinesses} summaryApiEnabled={entriesApiEnabled} summaryApiOrganizationId={closeoutsApiOrganizationId} summaryApiActorUserId={ownerApiUserId} summaryApiActorRole="owner" summaryRefreshKey={summaryRefreshKey} /></NotebookScrollSurface>}{!employee && ownerPage === "add-summary" && <OwnerSummaryScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeChannelSettings={storeChannelSettings} onBack={() => setOwnerPage("home")} onSave={saveOwnerSummary} />}{!employee && ownerPage === "add-expense" && <OwnerExpenseScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeOperationalSettings={storeOperationalSettings} onBack={() => setOwnerPage("home")} onSave={saveOwner} />}{!employee && ownerPage === "reports" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><ReportsScreen lang={lang} operationalEntries={operationalEntries} operationalEntriesLoading={operationalEntriesLoading} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} reviewEnabledForBusiness={reviewEnabledForBusiness} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} configuredChannels={reportChannelConfig.channels} reviewEnabled={ownerReviewEnabled} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} reportsApiEnabled={entriesApiEnabled} reportsApiOrganizationId={closeoutsApiOrganizationId} reportsApiActorUserId={ownerApiUserId} reportsApiActorRole="owner" summaryRefreshKey={summaryRefreshKey} /></NotebookScrollSurface>}{!employee && ownerPage === "register" && <OwnerRegisterConnected lang={lang} onOpenOperation={handleOpenOwnerOperation} reviewFocus={duplicateReviewFocus} attachmentReviewRequest={attachmentReviewRequest} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} notebookTheme={notebookTheme} registerEntriesApiEnabled={entriesApiEnabled && REGISTER_ENTRIES_PAGINATION_ENABLED} registerEntriesApiOrganizationId={closeoutsApiOrganizationId} registerEntriesApiActorUserId={ownerApiUserId} registerEntriesApiActorRole="owner" registerEntriesRefreshKey={summaryRefreshKey} />}{!employee && ownerPage === "settings" && <OwnerSettingsScreen lang={lang} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} setOwnerPage={setOwnerPage} setArchivedReadOnlyBusinessId={setArchivedReadOnlyBusinessId} setLastCloseoutDates={setLastCloseoutDates} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} employeePreferences={employeePreferences} ownerShellPreferences={ownerShellPreferences} storeChannelSettings={storeChannelSettings} setStoreChannelSettings={setStoreChannelSettings} storeOperationalSettings={storeOperationalSettings} setStoreOperationalSettings={setStoreOperationalSettings} configuredBusinesses={configuredBusinesses} setConfiguredBusinesses={setConfiguredBusinesses} archivedBusinessIds={archivedBusinessIds} setArchivedBusinessIds={setArchivedBusinessIds} staff={staff} setStaff={setStaff} ownerProfile={ownerProfile} setOwnerProfile={setOwnerProfile} authOwnerUsername={authOwnerUsername} setAuthOwnerUsername={setAuthOwnerUsername} authOwnerPassword={authOwnerPassword} setAuthOwnerPassword={setAuthOwnerPassword} authEmployeePins={authEmployeePins} setAuthEmployeePins={setAuthEmployeePins} onPersistSettingsNow={persistRuntimeSettingsNow} onLogout={logout} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />}{saved && <div className="sticky bottom-4 left-4 right-4 z-30 mx-auto max-w-md rounded-2xl bg-[#112A46] p-4 text-xs font-bold text-white">{text(lang, "savedNotice")}</div>}
+          <div className="taq-scroll relative min-h-0 overflow-y-auto overscroll-y-contain">{employee && !activeEmployee && <section className="px-5 pb-24"><div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">{text(lang, "noActiveEmployee")}</div></section>}{employee && activeEmployee && employeePage === "closeouts" && <EmployeeCloseoutsView lang={lang} employee={activeEmployee} employeeRuntimeReady={employeeRuntimeReady} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} salesChannels={currentEmployeeChannelConfig.channels.filter((channel) => currentEmployeeChannelConfig.activeIds.includes(channel.id) && !channel.retired).map((channel) => ({ ...channel, displayName: channelName(channel, lang) }))} notebookTheme={employeeNotebookTheme} reviewWorkflowEnabled={closeoutReviewEnabledForBusiness(currentEmployeeBusiness?.id)} employeeHistoryVisibility={currentEmployeeOperationalConfig.employeeHistoryVisibility || "all"} formatCalendarDate={formatCalendarDate} channelLabel={(channel) => channel.displayName || channelName(channel, lang)} settingsPanel={({ onBack }) => <EmployeeSettingsScreen lang={lang} onBack={onBack} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} employeeNotebookTheme={employeeThemeOverride || readEmployeeNotebookTheme(activeEmployee.id) || employeeNotebookTheme} setEmployeeNotebookTheme={(theme) => { writeEmployeeNotebookTheme(activeEmployee.id, theme); setEmployeeThemeOverride(theme); }} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />} onEntryActiveChange={setEmployeeEntryActive} onRegisterAdd={(handler) => { employeeAddHandlerRef.current = handler || (() => {}); }} onRegisterSettingsOpener={(handler) => { employeeSettingsOpenerRef.current = handler || (() => {}); }} saving={saving} trustServerDaySequenceOnly={CLOSEOUTS_API_DB_SOURCE} />}{!employee && ownerPage === "closeouts" && <EmployeeCloseoutsView lang={lang} employee={ownerCloseoutActor} employeeRuntimeReady={runtimeApiStoresReady} currentStore={ownerCloseoutBusiness} assignedStores={activeBusinesses} onSelectStore={setSelectedBusiness} salesChannels={ownerCloseoutChannelConfig.channels.filter((channel) => ownerCloseoutChannelConfig.activeIds.includes(channel.id) && !channel.retired).map((channel) => ({ ...channel, displayName: channelName(channel, lang) }))} notebookTheme={notebookTheme} reviewWorkflowEnabled={closeoutReviewEnabledForBusiness(ownerCloseoutBusiness?.id)} employeeHistoryVisibility="all" formatCalendarDate={formatCalendarDate} channelLabel={(channel) => channel.displayName || channelName(channel, lang)} onRegisterAdd={(handler) => { ownerAddHandlerRef.current = handler || (() => {}); }} onEntryActiveChange={setOwnerEntryActive} saving={saving} trustServerDaySequenceOnly={CLOSEOUTS_API_DB_SOURCE} pageTitle={lang === "ar" ? "تسجيل تقفيلة" : "Record closeout"} onCloseoutSubmitted={() => setOwnerPage("home")} />}{!employee && ownerPage === "home" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><OwnerHomeConnected lang={lang} operationalEntries={operationalEntries} operationalEntriesLoading={operationalEntriesLoading} duplicateSalesAlerts={duplicateSalesAlerts} closeoutAlerts={unseenCloseoutAlerts} closeoutReviewEnabledForBusiness={closeoutReviewEnabledForBusiness} onViewPendingCloseouts={(closeout) => { setOwnerReviewCloseout(closeout); setSelectedBusiness(closeout.storeId); }} onReviewCloseout={reviewCloseoutAlert} onDismissCloseout={dismissCloseoutAlert} onReviewDuplicate={reviewDuplicateSales} onAcknowledgeDuplicate={acknowledgeDuplicateSales} reviewEnabledForBusiness={reviewEnabledForBusiness} onOpenOperation={handleOpenOwnerOperation} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} selectedBusiness={activeViewBusiness} setSelectedBusiness={setSelectedBusiness} reviewEnabled={ownerReviewEnabled} businessesList={activeBusinesses} summaryApiEnabled={entriesApiEnabled} summaryApiOrganizationId={closeoutsApiOrganizationId} summaryApiActorUserId={ownerApiUserId} summaryApiActorRole="owner" summaryRefreshKey={summaryRefreshKey} /></NotebookScrollSurface>}{!employee && ownerPage === "add-summary" && !ENTRIES_API_DB_SOURCE && <OwnerSummaryScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeChannelSettings={storeChannelSettings} onBack={() => setOwnerPage("home")} onSave={saveOwnerSummary} />}{!employee && ownerPage === "add-expense" && !ENTRIES_API_DB_SOURCE && <OwnerExpenseScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeOperationalSettings={storeOperationalSettings} onBack={() => setOwnerPage("home")} onSave={saveOwner} />}{!employee && ownerPage === "reports" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><ReportsScreen lang={lang} operationalEntries={operationalEntries} operationalEntriesLoading={operationalEntriesLoading} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} reviewEnabledForBusiness={reviewEnabledForBusiness} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} configuredChannels={reportChannelConfig.channels} reviewEnabled={ownerReviewEnabled} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} reportsApiEnabled={entriesApiEnabled} reportsApiOrganizationId={closeoutsApiOrganizationId} reportsApiActorUserId={ownerApiUserId} reportsApiActorRole="owner" summaryRefreshKey={summaryRefreshKey} /></NotebookScrollSurface>}{!employee && ownerPage === "register" && <OwnerRegisterConnected lang={lang} onOpenOperation={handleOpenOwnerOperation} reviewFocus={duplicateReviewFocus} attachmentReviewRequest={attachmentReviewRequest} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} notebookTheme={notebookTheme} registerEntriesApiEnabled={entriesApiEnabled && REGISTER_ENTRIES_PAGINATION_ENABLED} registerEntriesApiOrganizationId={closeoutsApiOrganizationId} registerEntriesApiActorUserId={ownerApiUserId} registerEntriesApiActorRole="owner" registerEntriesRefreshKey={summaryRefreshKey} />}{!employee && ownerPage === "settings" && <OwnerSettingsScreen lang={lang} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} setOwnerPage={setOwnerPage} setArchivedReadOnlyBusinessId={setArchivedReadOnlyBusinessId} setLastCloseoutDates={setLastCloseoutDates} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} employeePreferences={employeePreferences} ownerShellPreferences={ownerShellPreferences} storeChannelSettings={storeChannelSettings} setStoreChannelSettings={setStoreChannelSettings} storeOperationalSettings={storeOperationalSettings} setStoreOperationalSettings={setStoreOperationalSettings} configuredBusinesses={configuredBusinesses} setConfiguredBusinesses={setConfiguredBusinesses} archivedBusinessIds={archivedBusinessIds} setArchivedBusinessIds={setArchivedBusinessIds} staff={staff} setStaff={setStaff} ownerProfile={ownerProfile} setOwnerProfile={setOwnerProfile} authOwnerUsername={authOwnerUsername} setAuthOwnerUsername={setAuthOwnerUsername} authOwnerPassword={authOwnerPassword} setAuthOwnerPassword={setAuthOwnerPassword} authEmployeePins={authEmployeePins} setAuthEmployeePins={setAuthEmployeePins} onPersistSettingsNow={persistRuntimeSettingsNow} onLogout={logout} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />}{saved && <div className="sticky bottom-4 left-4 right-4 z-30 mx-auto max-w-md rounded-2xl bg-[#112A46] p-4 text-xs font-bold text-white">{text(lang, "savedNotice")}</div>}
           </div>
-          {!(employee && employeeEntryActive) && <BottomNav lang={lang} employee={employee} active={employee ? employeePage : ownerPage} onAdd={() => { if (employee) employeeAddHandlerRef.current?.(); else setQuickAddOpen(true); }} onChange={(page) => { setQuickAddOpen(false); if (employee) changeEmployeePage(page); else changeOwnerPage(page); }} />}{!employee && <QuickAddSheet lang={lang} employee={false} open={quickAddOpen} onClose={() => setQuickAddOpen(false)} onSummary={openQuickAddSummary} onExpense={openQuickAddExpense} />}<OperationModal lang={lang} item={selected} onClose={() => setSelected(null)} onReview={confirmReview} onVoid={requestVoidOperation} onRestore={requestRestoreOperation} reviewEnabled={selectedOperationReviewEnabled} canVoid={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} canRestore={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} /><DuplicateSalesDialog lang={lang} draft={pendingDuplicateSummary?.payload || null} previousEntries={pendingDuplicateSummary?.previousEntries || []} businessesList={activeBusinesses} onCancel={() => setPendingDuplicateSummary(null)} onConfirm={confirmDuplicateSummary} /><VoidOperationDialog lang={lang} item={voidTarget} onCancel={() => setVoidTarget(null)} onConfirm={confirmVoidOperation} /><RestoreOperationDialog lang={lang} item={restoreTarget} onCancel={() => setRestoreTarget(null)} onConfirm={confirmRestoreOperation} /><SavedOutflowShareDialog lang={lang} item={savedOutflowShareTarget} businessesList={activeBusinesses} onClose={() => setSavedOutflowShareTarget(null)} /><NotebookShareModal lang={lang} snapshot={shareSnapshot} onClose={() => setShareSnapshot(null)} businessesList={reportingBusinesses} operationalEntries={operationalEntries} archivedBusinessIds={archivedBusinessIds} notebookExportApiEnabled={phase9ApiEnabled && entriesApiEnabled} notebookExportAuth={runtimeApiAuth} />
+          {!(employee && employeeEntryActive) && !(!employee && ownerEntryActive) && <BottomNav lang={lang} employee={employee} active={employee ? employeePage : ownerPage} onAdd={() => { if (employee) employeeAddHandlerRef.current?.(); else handleOwnerQuickAddOpen(); }} onChange={(page) => { setQuickAddOpen(false); if (employee) changeEmployeePage(page); else changeOwnerPage(page); }} />}{!employee && <QuickAddSheet lang={lang} employee={false} open={quickAddOpen} onClose={() => setQuickAddOpen(false)} onSummary={handleOpenQuickAddSummary} onExpense={handleOpenQuickAddExpense} />}<OperationModal lang={lang} item={selected} onClose={() => setSelected(null)} onReview={confirmReview} onVoid={requestVoidOperation} onRestore={requestRestoreOperation} reviewEnabled={selectedOperationReviewEnabled} canVoid={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} canRestore={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} /><DuplicateSalesDialog lang={lang} draft={pendingDuplicateSummary?.payload || null} previousEntries={pendingDuplicateSummary?.previousEntries || []} businessesList={activeBusinesses} onCancel={() => setPendingDuplicateSummary(null)} onConfirm={confirmDuplicateSummary} /><VoidOperationDialog lang={lang} item={voidTarget} onCancel={() => setVoidTarget(null)} onConfirm={confirmVoidOperation} /><RestoreOperationDialog lang={lang} item={restoreTarget} onCancel={() => setRestoreTarget(null)} onConfirm={confirmRestoreOperation} /><SavedOutflowShareDialog lang={lang} item={savedOutflowShareTarget} businessesList={activeBusinesses} onClose={() => setSavedOutflowShareTarget(null)} /><NotebookShareModal lang={lang} snapshot={shareSnapshot} onClose={() => setShareSnapshot(null)} businessesList={reportingBusinesses} operationalEntries={operationalEntries} archivedBusinessIds={archivedBusinessIds} notebookExportApiEnabled={phase9ApiEnabled && entriesApiEnabled} notebookExportAuth={runtimeApiAuth} />
           <OwnerCloseoutModals
             lang={lang}
             ownerReviewCloseout={ownerReviewCloseout}

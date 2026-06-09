@@ -92,6 +92,7 @@ describe("store entries api client", () => {
     const body = JSON.parse(String(init?.body || "{}"));
     expect(body.salesChannels[0].salesChannelId).toBe("9bc40d4f-c773-4ba3-87db-b8bb1467dafb");
     expect(body.salesChannels[0].amountHalalas).toBe(10000);
+    expect(body.amountHalalas).toBeUndefined();
   });
 
   it("fetches paginated entries and remaps ids to runtime keys", async () => {

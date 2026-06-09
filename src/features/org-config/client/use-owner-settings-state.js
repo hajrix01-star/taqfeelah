@@ -46,13 +46,14 @@ export function useOwnerSettingsState({
 }) {
   const initialSettings = readSavedSettings();
   const initialAuthConfig = initialSettings?.authConfig || {};
-  const initialBusinesses = initialSettings?.configuredBusinesses || (bindsToServerAuth ? [] : defaultBusinesses);
+  const skipDemoBootstrap = bindsToServerAuth || orgConfigApiEnabled || closeoutsApiDbSource;
+  const initialBusinesses = initialSettings?.configuredBusinesses || (skipDemoBootstrap ? [] : defaultBusinesses);
 
   const [configuredBusinesses, setConfiguredBusinesses] = useState(initialBusinesses);
   const [archivedBusinessIds, setArchivedBusinessIds] = useState(
     initialSettings?.archivedBusinessIds || initialSettings?.archivedStores || [],
   );
-  const [staff, setStaff] = useState(initialSettings?.staff || (bindsToServerAuth ? [] : defaultStaff));
+  const [staff, setStaff] = useState(initialSettings?.staff || (skipDemoBootstrap ? [] : defaultStaff));
   const [ownerProfile, setOwnerProfile] = useState(initialSettings?.ownerProfile || { name: "محمد الهاجري" });
   const [storeChannelSettings, setStoreChannelSettings] = useState(
     () => buildInitialStoreChannelSettings(initialSettings, initialBusinesses, defaultStoreChannelConfig),
@@ -87,7 +88,7 @@ export function useOwnerSettingsState({
       ? initialAuthConfig.employeePins
       : {}),
   );
-  const [lastCloseoutDates, setLastCloseoutDates] = useState(() => readDemoLastCloseoutDates(bindsToServerAuth));
+  const [lastCloseoutDates, setLastCloseoutDates] = useState(() => readDemoLastCloseoutDates(skipDemoBootstrap));
 
   const currentOwnerActor = useMemo(
     () => ({ ...ownerActor, nameAr: ownerProfile.name, nameEn: ownerProfile.name }),
@@ -176,8 +177,8 @@ export function useOwnerSettingsState({
     [isEmployee, sessionOrganizationId, sessionUserId],
   );
 
-  const { error: orgConfigSyncError } = useOrgConfigRuntimeBridge({
-    enabled: orgConfigApiEnabled && usesRuntimeSettingsApi() && !isEmployee,
+  const { error: orgConfigSyncError, loading: orgConfigLoading, hydrated: orgConfigHydrated } = useOrgConfigRuntimeBridge({
+    enabled: orgConfigApiEnabled && loggedIn && !isEmployee,
     auth: ownerSettingsApiAuth,
     loggedIn,
     isEmployee,
@@ -290,6 +291,8 @@ export function useOwnerSettingsState({
     persistRuntimeSettingsNow,
     runtimeSettingsSyncError,
     orgConfigSyncError,
+    orgConfigLoading,
+    orgConfigHydrated,
     resolveStoreSalesChannels,
   };
 }
