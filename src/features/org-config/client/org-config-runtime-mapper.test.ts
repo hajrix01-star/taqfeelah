@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  assertCanonicalUuidId,
   mapApiChannelToUi,
   mapApiStoreToBusiness,
   mapOrgConfigBundleToRuntime,
@@ -63,6 +64,21 @@ describe("org config runtime mapper", () => {
     });
     expect(channel.custom).toBe(true);
     expect(channel.nameEn).toBe("Talabat");
+  });
+
+  it("rejects legacy ids as canonical DB ids", () => {
+    expect(() => assertCanonicalUuidId("store", "shami")).toThrow("store id must be a canonical UUID");
+    expect(() => mapApiStoreToBusiness({
+      id: "shami",
+      legacyId: "shami",
+      name: "Shami",
+    })).toThrow("store id must be a canonical UUID");
+    expect(() => mapApiChannelToUi({
+      id: "cash",
+      legacyId: "cash",
+      name: "Cash",
+      status: "active",
+    })).toThrow("sales channel id must be a canonical UUID");
   });
 
   it("maps archived stores into archived ids", () => {

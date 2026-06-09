@@ -4,6 +4,12 @@ import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
 
 const emptyStoreRecord = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0, pending: 0 };
 
+export function assertCanonicalUuidId(entityName, value) {
+  if (!isUuid(value)) {
+    throw new Error(`${entityName} id must be a canonical UUID in DB source mode.`);
+  }
+}
+
 const CHANNEL_TEMPLATES = {
   cash: { id: "cash", text: "cash", icon: Wallet },
   mada: { id: "mada", text: "mada", icon: CreditCard },
@@ -40,6 +46,7 @@ export function mapApiChannelToUi(channel) {
   const legacyId = resolveChannelLegacyId(channel);
   const template = CHANNEL_TEMPLATES[legacyId];
   const retired = channel?.status === "retired";
+  assertCanonicalUuidId("sales channel", channel?.id);
   if (template) {
     return {
       ...template,
@@ -66,6 +73,7 @@ export function mapApiStoreToBusiness(store) {
   const legacyId = store?.legacyId && !isUuid(store.legacyId) ? store.legacyId : "";
   const name = typeof store?.name === "string" ? store.name.trim() : "";
   const id = isUuid(store?.id) ? store.id : legacyId || store?.id;
+  assertCanonicalUuidId("store", id);
   return {
     id,
     dbStoreId: store.id,
@@ -85,6 +93,7 @@ export function mapApiMemberToStaff(member, { employeePins = {} } = {}) {
     .filter(Boolean);
   const memberId = member?.memberId || "";
   const userId = member?.userId || "";
+  assertCanonicalUuidId("staff", userId);
   const legacyStaffId = member?.legacyStaffId || userId || memberId;
   const pin = employeePins[legacyStaffId] || employeePins[userId] || employeePins[memberId] || "1234";
   return {
@@ -154,6 +163,13 @@ export function mapOrgConfigBundleToRuntime({
 }
 
 export function buildOrgConfigPersistBaseline(snapshot) {
+  (snapshot.configuredBusinesses || []).forEach((business) => {
+    assertCanonicalUuidId("store", business.id);
+  });
+  (snapshot.staff || []).forEach((person) => {
+    assertCanonicalUuidId("staff", person.id);
+    (person.storeIds || []).forEach((storeId) => assertCanonicalUuidId("staff store", storeId));
+  });
   return JSON.stringify({
     businesses: (snapshot.configuredBusinesses || []).map((business) => ({
       id: business.id,
