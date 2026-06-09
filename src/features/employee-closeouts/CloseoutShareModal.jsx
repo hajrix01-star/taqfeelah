@@ -170,14 +170,14 @@ export default function CloseoutShareModal({
       if (result.method === "clipboard") {
         setShareHint(
           lang === "ar"
-            ? "تم فتح واتساب بالنص، والصورة منسوخة — الصق الصورة في نفس المحادثة."
-            : "WhatsApp opened with text, and image copied — paste it in the same chat.",
+            ? "تم فتح واتساب بالمبالغ في النص، والصورة منسوخة — الصق الصورة في نفس المحادثة."
+            : "WhatsApp opened with amounts in the message, and image copied — paste the image in the same chat.",
         );
       } else if (result.method === "text-only") {
         setShareHint(
           lang === "ar"
-            ? "تم فتح واتساب بالنص، لكن تعذر نسخ الصورة — أرفقها يدويًا."
-            : "WhatsApp opened with text, but image copy failed — attach image manually.",
+            ? "تم فتح واتساب بالمبالغ في النص — أرفق الصورة يدويًا من المعرض إن رغبت."
+            : "WhatsApp opened with amounts in the message — attach the image manually from gallery if needed.",
         );
       } else if (result.method === "share") {
         setShareHint(
