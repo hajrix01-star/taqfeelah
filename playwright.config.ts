@@ -22,8 +22,16 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
     env: {
-      NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true",
+      // Prototype smoke runs without PostgreSQL — override .env.development DB-unification flags.
+      APP_MODE: "prototype",
       NEXT_PUBLIC_APP_MODE: "prototype",
+      NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true",
+      NEXT_PUBLIC_CLOSEOUTS_API_ENABLED: "false",
+      NEXT_PUBLIC_ENTRIES_API_ENABLED: "false",
+      NEXT_PUBLIC_ORG_CONFIG_API_ENABLED: "false",
+      NEXT_PUBLIC_PHASE9_API_ENABLED: "false",
+      NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED: "false",
+      NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE: "false",
     },
   },
 });
