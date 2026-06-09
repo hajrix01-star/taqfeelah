@@ -2225,11 +2225,21 @@ export default function TaqfeelahPrototypeRuntime() {
       },
     });
   };
-  const completeEmployeeLogin = (personId, apiUserId = "") => {
+  const completeEmployeeLogin = (personId, apiUserId = "", rosterPerson = null) => {
+    const loginStaff = rosterPerson && !staff.some((person) => person.id === rosterPerson.id)
+      ? [rosterPerson, ...staff]
+      : staff;
+    if (rosterPerson) {
+      setStaff((current) => (
+        current.some((person) => person.id === rosterPerson.id)
+          ? current
+          : [rosterPerson, ...current]
+      ));
+    }
     applyEmployeeLoginSuccess({
       personId,
       apiUserId,
-      staff,
+      staff: loginStaff,
       activeBusinesses,
       prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
       apply: {
