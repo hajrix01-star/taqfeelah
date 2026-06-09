@@ -20,7 +20,6 @@ describe("auth runtime orchestrator", () => {
     const apply = {
       setSessionOrganizationId: vi.fn(),
       setSessionUserId: vi.fn(),
-      setSessionOrganizationId: vi.fn(),
       setLoggedIn: vi.fn(),
       setEmployee: vi.fn(),
       setLoggedInEmployeeId: vi.fn(),
@@ -37,7 +36,6 @@ describe("auth runtime orchestrator", () => {
 
     expect(apply.setSessionOrganizationId).toHaveBeenCalledWith("org-uuid");
     expect(apply.setSessionUserId).toHaveBeenCalledWith("owner-uuid");
-    expect(apply.setSessionOrganizationId).toHaveBeenCalledWith("org-uuid");
     expect(apply.setLoggedIn).toHaveBeenCalledWith(true);
     expect(apply.setEmployee).toHaveBeenCalledWith(false);
     expect(apply.setLoggedInEmployeeId).toHaveBeenCalledWith(null);
@@ -78,7 +76,6 @@ describe("auth runtime orchestrator", () => {
     const apply = {
       setSessionOrganizationId: vi.fn(),
       setSessionUserId: vi.fn(),
-      setSessionOrganizationId: vi.fn(),
       setLoggedIn: vi.fn(),
       setEmployee: vi.fn(),
       setLoggedInEmployeeId: vi.fn(),
