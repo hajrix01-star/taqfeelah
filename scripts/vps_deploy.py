@@ -71,6 +71,8 @@ PRODUCTION_ENV_KEYS = [
 # or an existing VPS .env.production file.
 WAVE_1_ENV_OVERRIDES: dict[str, str] = {
     "DEPLOYMENT_WAVE": "1",
+    "APP_MODE": "production",
+    "NEXT_PUBLIC_APP_MODE": "production",
     "NEXT_PUBLIC_CLOSEOUTS_API_ENABLED": "true",
     "NEXT_PUBLIC_ENTRIES_API_ENABLED": "true",
     "ALLOW_HEADER_AUTH_CONTEXT": "true",

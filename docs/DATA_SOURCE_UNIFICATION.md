@@ -41,6 +41,9 @@ NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP=...
 NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP=...
 ```
 
+This means the runtime uses production DB/API behavior while the current open
+entry flow remains available through Prototype Access Mode until auth launch.
+
 Auth/SaaS activation is intentionally deferred until after full source
 unification and product approval. Only then should these auth-launch values be
 enabled together:
