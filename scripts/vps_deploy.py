@@ -833,6 +833,7 @@ def run_post_deploy_baseline(vps: VPS) -> None:
         set -a
         . ./.env.production
         set +a
+        node scripts/baseline-drizzle-migrations.mjs
         node scripts/verify-plan-table-db.mjs
         CHECK_BASE_URL="http://127.0.0.1:{TAQFEELAH_APP_PORT}" node scripts/db-source-unification-check.mjs
         """
@@ -1325,6 +1326,7 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             set +a
             node scripts/cleanup-orphan-entries.mjs --apply || true
             pnpm exec drizzle-kit migrate || pnpm exec drizzle-kit push --force
+            node scripts/baseline-drizzle-migrations.mjs
             """
         ).strip()
     )

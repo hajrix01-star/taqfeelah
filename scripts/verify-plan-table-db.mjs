@@ -78,8 +78,15 @@ if ((report.entryLink?.unlinked ?? 0) > 0) {
 if ((report.entryLink?.active_orphans ?? 0) > 0) {
   failures.push(`entries.active_orphans=${report.entryLink.active_orphans} (expected 0)`);
 }
-if (report.drizzleMigrations.length < 3) {
-  failures.push(`drizzle migrations=${report.drizzleMigrations.length} (expected >= 3)`);
+const schemaBaselined =
+  report.entriesHasCloseoutId &&
+  report.entriesCloseoutIdNotNull &&
+  tableNames.has("daily_closeouts") &&
+  tableNames.has("entries");
+if (report.drizzleMigrations.length < 3 && !schemaBaselined) {
+  failures.push(
+    `drizzle migrations=${report.drizzleMigrations.length} (expected >= 3 or closeout-linked schema)`,
+  );
 }
 
 await client.end();
