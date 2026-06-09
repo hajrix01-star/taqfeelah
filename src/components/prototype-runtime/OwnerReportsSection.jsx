@@ -8,7 +8,7 @@ import {
   aggregateChannels,
   buildBusinessesWithEntrySummaries,
   entriesInPeriod,
-  entryTotalsHaveActivity,
+  entryTotalsHaveFinancialActivity,
   newestEntries,
   resolveOwnerPeriodSummaryPreference,
   resolveOwnerSingleStoreTotals,
@@ -146,6 +146,7 @@ function ReportsScreen({ lang, operationalEntries = [], operationalEntriesLoadin
   const effectiveReviewEnabled = archivedReadOnlyBusiness ? reviewEnabledForBusiness(archivedReadOnlyBusiness.id) : reviewEnabled;
   const {
     loading: reportsApiLoading,
+    error: reportsApiError,
     hasData: reportsApiLoaded,
     combinedTotals: apiCombinedTotals,
     singleStoreTotals: apiSingleStoreTotals,
@@ -191,6 +192,12 @@ function ReportsScreen({ lang, operationalEntries = [], operationalEntriesLoadin
     apiTotals: apiCombinedTotals,
     entriesLoading: operationalEntriesLoading,
   });
+  const reportsLoadFailedWithoutFallback = reportsApiEnabled
+    && reportsApiError
+    && !entryTotalsHaveFinancialActivity(localTotals);
+  const reportsLoadErrorMessage = lang === "ar"
+    ? "تعذر تحميل التقرير المالي من الخادم. لم يتم عرض أرقام بديلة حتى لا تظهر أصفار غير صحيحة."
+    : "Failed to load the financial report from the server. No fallback figures are shown to avoid incorrect zero totals.";
   const comparisonBusinesses = preferEntrySummaries ? localComparisonBusinesses : businessesWithSummaries;
   const useApiDetailTabs = reportsApiEnabled && !reportsApiLoading && reportsApiLoaded && !isCombined && !preferEntrySummaries;
   const totals = isCombined
@@ -240,25 +247,37 @@ function ReportsScreen({ lang, operationalEntries = [], operationalEntriesLoadin
         <StoreScopeTabs lang={lang} businessesList={visibleReportBusinesses} selectedBusiness={safeSelectedBusiness} setSelectedBusiness={(id) => { if (!archivedReadOnlyBusiness) setSelectedBusiness(id); setShowSummaryDetails(false); }} />
         {isCombined ? (
           <div>
-            <StoreComparison lang={lang} monthly={monthly} reviewEnabled={effectiveReviewEnabled} businessesList={comparisonBusinesses} />
-            <NotebookRow lines={2}><p className="w-full text-taq-meta font-bold text-[#806528]">{text(lang, "chooseStoreForDetails")}</p></NotebookRow>
+            {reportsLoadFailedWithoutFallback ? (
+              <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{reportsLoadErrorMessage}</p></NotebookRow>
+            ) : (
+              <>
+                <StoreComparison lang={lang} monthly={monthly} reviewEnabled={effectiveReviewEnabled} businessesList={comparisonBusinesses} />
+                <NotebookRow lines={2}><p className="w-full text-taq-meta font-bold text-[#806528]">{text(lang, "chooseStoreForDetails")}</p></NotebookRow>
+              </>
+            )}
           </div>
         ) : (
           <div>
             <NotebookRow><div className="grid w-full grid-cols-5 items-end gap-1">{tabs.map((item) => <InkTab key={item.id} active={tab === item.id} onClick={() => changeReportTab(item.id)} titleUnderline className="min-w-0 text-taq-meta">{text(lang, item.key)}</InkTab>)}</div></NotebookRow>
             {tab === "summary" && <div>
-              <NotebookRow><NumberLine label={text(lang, "sales")} value={money(totals.sales, lang)} /></NotebookRow>
-              {showSummaryDetails && <SummaryReportDetails lang={lang} monthly={monthly} selectedBusiness={safeSelectedBusiness} selectedDate={selectedReportDate} selectedMonth={selectedReportMonth} reportChannels={configuredChannels} businessesList={visibleReportBusinesses} section="sales" operationalEntries={operationalEntries} apiChannelRows={useApiDetailTabs ? apiChannelRows : null} salesBaseOverride={totals.sales} />}
-              <NotebookRow><NumberLine label={text(lang, "purchasesExpenses")} value={money(totals.expense, lang)} valueClassName="text-[#B44747]" /></NotebookRow>
-              {showSummaryDetails && <SummaryReportDetails lang={lang} monthly={monthly} selectedBusiness={safeSelectedBusiness} selectedDate={selectedReportDate} selectedMonth={selectedReportMonth} reportChannels={configuredChannels} businessesList={visibleReportBusinesses} section="outflow" operationalEntries={operationalEntries} apiOutflowCategories={useApiDetailTabs ? apiOutflowCategories : null} salesBaseOverride={totals.sales} />}
-              <NotebookRow><div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "outflowRatio")}</span><strong className="text-[#B44747]">{totals.ratio}</strong></div></NotebookRow>
-              <NotebookRow strong lines={2}><div className="flex w-full items-end justify-between"><span className="text-sm font-extrabold">{monthly ? text(lang, "recordedMonthResult") : text(lang, "netMovement")}</span><strong className={`tabular-nums text-2xl font-extrabold ${totals.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(totals.net, lang)} /></strong></div></NotebookRow>
-              <NotebookRow className="justify-center"><InkTab active={showSummaryDetails} onClick={() => setShowSummaryDetails(!showSummaryDetails)} className="inline-flex items-center gap-1">{text(lang, showSummaryDetails ? "hideReportDetails" : "reportDetails")}{showSummaryDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</InkTab></NotebookRow>
+              {reportsLoadFailedWithoutFallback ? (
+                <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{reportsLoadErrorMessage}</p></NotebookRow>
+              ) : (
+                <>
+                  <NotebookRow><NumberLine label={text(lang, "sales")} value={money(totals.sales, lang)} /></NotebookRow>
+                  {showSummaryDetails && <SummaryReportDetails lang={lang} monthly={monthly} selectedBusiness={safeSelectedBusiness} selectedDate={selectedReportDate} selectedMonth={selectedReportMonth} reportChannels={configuredChannels} businessesList={visibleReportBusinesses} section="sales" operationalEntries={operationalEntries} apiChannelRows={useApiDetailTabs ? apiChannelRows : null} salesBaseOverride={totals.sales} />}
+                  <NotebookRow><NumberLine label={text(lang, "purchasesExpenses")} value={money(totals.expense, lang)} valueClassName="text-[#B44747]" /></NotebookRow>
+                  {showSummaryDetails && <SummaryReportDetails lang={lang} monthly={monthly} selectedBusiness={safeSelectedBusiness} selectedDate={selectedReportDate} selectedMonth={selectedReportMonth} reportChannels={configuredChannels} businessesList={visibleReportBusinesses} section="outflow" operationalEntries={operationalEntries} apiOutflowCategories={useApiDetailTabs ? apiOutflowCategories : null} salesBaseOverride={totals.sales} />}
+                  <NotebookRow><div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "outflowRatio")}</span><strong className="text-[#B44747]">{totals.ratio}</strong></div></NotebookRow>
+                  <NotebookRow strong lines={2}><div className="flex w-full items-end justify-between"><span className="text-sm font-extrabold">{monthly ? text(lang, "recordedMonthResult") : text(lang, "netMovement")}</span><strong className={`tabular-nums text-2xl font-extrabold ${totals.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(totals.net, lang)} /></strong></div></NotebookRow>
+                  <NotebookRow className="justify-center"><InkTab active={showSummaryDetails} onClick={() => setShowSummaryDetails(!showSummaryDetails)} className="inline-flex items-center gap-1">{text(lang, showSummaryDetails ? "hideReportDetails" : "reportDetails")}{showSummaryDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</InkTab></NotebookRow>
+                </>
+              )}
             </div>}
-            {tab === "days" && <div>{reportDays.length === 0 ? <NotebookRow lines={2}><p className="text-xs font-bold text-[#806528]">{text(lang, "noCloseoutsPeriod")}</p></NotebookRow> : reportDays.map((day) => <NotebookRow key={day.id}><div className="grid w-full grid-cols-3 text-xs font-bold"><span>{shortDate(day, lang)}</span><span className="tabular-nums font-bold"><MoneyValue value={money(day.sales, lang)} /></span><span className="tabular-nums font-bold text-[#B44747]"><MoneyValue value={money(day.expense, lang)} /></span></div></NotebookRow>)}</div>}
-            {tab === "channels" && <div>{visibleChannels.length === 0 ? <NotebookRow lines={2}><p className="text-xs font-bold text-[#806528]">{text(lang, "noSalesChannelsPeriod")}</p></NotebookRow> : visibleChannels.map((channel) => <NotebookRow key={channel.id}><div className="flex w-full items-end justify-between text-sm"><span className="font-bold">{channelName(channel, lang)}</span><strong className="tabular-nums font-bold"><MoneyValue value={money(channel.amount, lang)} /></strong></div></NotebookRow>)}</div>}
-            {tab === "expenses" && <OutflowAnalysis lang={lang} period={period} selectedBusiness={safeSelectedBusiness} selectedDay={selectedReportDay} selectedDate={selectedReportDate} selectedMonth={selectedReportMonth} selectedYear={selectedReportYear} customFrom={customFrom} customTo={customTo} businessesList={visibleReportBusinesses} operationalEntries={operationalEntries.filter((entry) => safeSelectedBusiness !== "all" || activeReportBusinesses.some((business) => business.id === entry.businessId))} category={outflowCategory} setCategory={(value) => { setOutflowCategory(value); setShowOutflowTransactions(false); }} showTransactions={showOutflowTransactions} setShowTransactions={setShowOutflowTransactions} apiTransactions={useApiDetailTabs ? apiOutflowTransactions : null} apiTotal={useApiDetailTabs ? apiOutflowTotal : null} apiCount={useApiDetailTabs ? apiOutflowTransactionCount : null} />}
-            {tab === "proofs" && <div><NotebookRow><NumberLine label={text(lang, "totalAttachments")} value={`${proofsTotals.proofs}`} /></NotebookRow>{effectiveReviewEnabled ? <NotebookRow><NumberLine label={text(lang, "notReviewedItems")} value={`${proofsTotals.pending}`} valueClassName="text-[#B96725]" /></NotebookRow> : <NotebookRow lines={2}><p className="text-taq-meta font-bold text-[#806528]">{text(lang, "reviewDisabled")}</p></NotebookRow>}</div>}
+            {tab === "days" && <div>{reportsLoadFailedWithoutFallback ? <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{reportsLoadErrorMessage}</p></NotebookRow> : reportDays.length === 0 ? <NotebookRow lines={2}><p className="text-xs font-bold text-[#806528]">{text(lang, "noCloseoutsPeriod")}</p></NotebookRow> : reportDays.map((day) => <NotebookRow key={day.id}><div className="grid w-full grid-cols-3 text-xs font-bold"><span>{shortDate(day, lang)}</span><span className="tabular-nums font-bold"><MoneyValue value={money(day.sales, lang)} /></span><span className="tabular-nums font-bold text-[#B44747]"><MoneyValue value={money(day.expense, lang)} /></span></div></NotebookRow>)}</div>}
+            {tab === "channels" && <div>{reportsLoadFailedWithoutFallback ? <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{reportsLoadErrorMessage}</p></NotebookRow> : visibleChannels.length === 0 ? <NotebookRow lines={2}><p className="text-xs font-bold text-[#806528]">{text(lang, "noSalesChannelsPeriod")}</p></NotebookRow> : visibleChannels.map((channel) => <NotebookRow key={channel.id}><div className="flex w-full items-end justify-between text-sm"><span className="font-bold">{channelName(channel, lang)}</span><strong className="tabular-nums font-bold"><MoneyValue value={money(channel.amount, lang)} /></strong></div></NotebookRow>)}</div>}
+            {tab === "expenses" && (reportsLoadFailedWithoutFallback ? <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{reportsLoadErrorMessage}</p></NotebookRow> : <OutflowAnalysis lang={lang} period={period} selectedBusiness={safeSelectedBusiness} selectedDay={selectedReportDay} selectedDate={selectedReportDate} selectedMonth={selectedReportMonth} selectedYear={selectedReportYear} customFrom={customFrom} customTo={customTo} businessesList={visibleReportBusinesses} operationalEntries={operationalEntries.filter((entry) => safeSelectedBusiness !== "all" || activeReportBusinesses.some((business) => business.id === entry.businessId))} category={outflowCategory} setCategory={(value) => { setOutflowCategory(value); setShowOutflowTransactions(false); }} showTransactions={showOutflowTransactions} setShowTransactions={setShowOutflowTransactions} apiTransactions={useApiDetailTabs ? apiOutflowTransactions : null} apiTotal={useApiDetailTabs ? apiOutflowTotal : null} apiCount={useApiDetailTabs ? apiOutflowTransactionCount : null} />)}
+            {tab === "proofs" && <div>{reportsLoadFailedWithoutFallback ? <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{reportsLoadErrorMessage}</p></NotebookRow> : <><NotebookRow><NumberLine label={text(lang, "totalAttachments")} value={`${proofsTotals.proofs}`} /></NotebookRow>{effectiveReviewEnabled ? <NotebookRow><NumberLine label={text(lang, "notReviewedItems")} value={`${proofsTotals.pending}`} valueClassName="text-[#B96725]" /></NotebookRow> : <NotebookRow lines={2}><p className="text-taq-meta font-bold text-[#806528]">{text(lang, "reviewDisabled")}</p></NotebookRow>}</>}</div>}
           </div>
         )}
       </Notebook>

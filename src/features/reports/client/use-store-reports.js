@@ -59,6 +59,7 @@ export function useStoreReports({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loaded, setLoaded] = useState(false);
   const [totalsByStoreId, setTotalsByStoreId] = useState({});
   const [daysRows, setDaysRows] = useState([]);
   const [channelRows, setChannelRows] = useState([]);
@@ -80,6 +81,7 @@ export function useStoreReports({
       setAttachmentProofs({ proofs: 0, pending: 0, items: [] });
       setLoading(false);
       setError("");
+      setLoaded(false);
       return undefined;
     }
 
@@ -91,6 +93,7 @@ export function useStoreReports({
     const load = async () => {
       setLoading(true);
       setError("");
+      setLoaded(false);
       try {
         const summaryResults = await Promise.all(
           storeIds.map((storeId) => fetchStorePeriodSummaryViaApi({
@@ -122,6 +125,7 @@ export function useStoreReports({
           setOutflowTransactionCount(0);
           setOutflowTotal(0);
           setAttachmentProofs({ proofs: 0, pending: 0, items: [] });
+          setLoaded(true);
           return;
         }
 
@@ -179,6 +183,7 @@ export function useStoreReports({
         setOutflowTransactionCount(Number(outflowReport?.transactionCount || 0));
         setOutflowTotal(Number(outflowReport?.totalOutflow?.amountHalalas || 0) / 100);
         setAttachmentProofs(mapAttachmentsReportToProofs(attachmentsReport));
+        setLoaded(true);
       } catch (loadError) {
         if (cancelled) return;
         console.warn("store reports API load failed", loadError);
@@ -191,6 +196,7 @@ export function useStoreReports({
         setOutflowTotal(0);
         setAttachmentProofs({ proofs: 0, pending: 0, items: [] });
         setError("failed");
+        setLoaded(false);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -242,6 +248,7 @@ export function useStoreReports({
   return {
     loading,
     error,
+    loaded,
     hasData,
     dateRange,
     combinedTotals,

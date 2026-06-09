@@ -192,21 +192,20 @@ describe("closeouts api client", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("returns empty list when fetch mapping is missing", async () => {
+  it("throws a diagnostic error when fetch mapping is missing", async () => {
     process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP = "{}";
     process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP = "{}";
     const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>();
     vi.stubGlobal("fetch", fetchMock);
 
     const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client.js");
-    const result = await fetchStoreCloseoutsViaApi({
+    await expect(fetchStoreCloseoutsViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       actorUserId: "unknown",
       actorRole: "employee",
       storeId: "shami",
-    });
+    })).rejects.toThrow("closeouts fetch API context missing/invalid");
 
-    expect(result).toEqual([]);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -261,5 +260,22 @@ describe("closeouts api client", () => {
       "x-organization-id": "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       "x-member-role": "owner",
     });
+  });
+
+  it("throws when closeouts payload is invalid instead of returning an empty list", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => new Response(JSON.stringify({ items: [] }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client.js");
+
+    await expect(fetchStoreCloseoutsViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      storeId: "shami",
+    })).rejects.toThrow("closeouts fetch API returned invalid payload");
   });
 });
