@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { patchEmployeeStaffStoreIdsFromHydration } from "@/features/employee-closeouts/employee-portal-session";
 import { buildEmployeePortalContext } from "./employee-portal-context";
 
 describe("employee portal context", () => {
@@ -53,5 +54,48 @@ describe("employee portal context", () => {
     });
 
     expect(context.currentEmployeeChannelConfig).toEqual(defaultStoreChannelConfig);
+  });
+
+  it("resolves linked store after prototype employee hydration backfills storeIds", () => {
+    const storeUuid = "11111111-1111-4111-8111-111111111111";
+    const employeeUuid = "22222222-2222-4222-8222-222222222222";
+    const fallbackStaff = [{
+      id: employeeUuid,
+      apiUserId: employeeUuid,
+      legacyId: "ahmed",
+      active: true,
+      removed: false,
+      storeIds: [] as string[],
+    }];
+    const configuredBusinesses = [{
+      id: storeUuid,
+      dbStoreId: storeUuid,
+      nameAr: "محل",
+      nameEn: "Store",
+      displayName: "Store",
+    }];
+
+    const hydrationPatch = patchEmployeeStaffStoreIdsFromHydration({
+      staff: fallbackStaff,
+      loggedInEmployeeId: employeeUuid,
+      sessionUserId: employeeUuid,
+      configuredBusinesses,
+      employeeBusinessId: "",
+    });
+
+    const context = buildEmployeePortalContext({
+      employee: true,
+      loggedInEmployeeId: employeeUuid,
+      staff: hydrationPatch.staff,
+      sessionUserId: employeeUuid,
+      activeBusinesses: configuredBusinesses,
+      employeeBusinessId: hydrationPatch.employeeBusinessId,
+      storeChannelSettings: {},
+      storeOperationalSettings: {},
+    });
+
+    expect(context.assignedEmployeeBusinesses.length).toBeGreaterThan(0);
+    expect(context.currentEmployeeBusiness).not.toBeNull();
+    expect(context.currentEmployeeBusiness?.id).toBe(storeUuid);
   });
 });

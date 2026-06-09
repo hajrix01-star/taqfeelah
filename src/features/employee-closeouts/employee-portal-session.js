@@ -124,3 +124,55 @@ export function filterActiveLoginStaff(loginStaff) {
     (person) => person.active && !person.removed,
   );
 }
+
+export function employeeMatchesSession(staffPerson, loggedInEmployeeId, sessionUserId = "") {
+  if (!staffPerson || !loggedInEmployeeId) return false;
+  return staffPerson.id === loggedInEmployeeId
+    || staffPerson.apiUserId === loggedInEmployeeId
+    || staffPerson.apiUserId === sessionUserId
+    || staffPerson.legacyId === loggedInEmployeeId;
+}
+
+/**
+ * After employee runtime hydration, backfill missing roster storeIds from API stores.
+ */
+export function patchEmployeeStaffStoreIdsFromHydration({
+  staff = [],
+  loggedInEmployeeId = "",
+  sessionUserId = "",
+  configuredBusinesses = [],
+  employeeBusinessId = "",
+}) {
+  const businesses = (Array.isArray(configuredBusinesses) ? configuredBusinesses : [])
+    .filter((business) => typeof business?.id === "string" && business.id.trim());
+  if (!businesses.length || !loggedInEmployeeId) {
+    return { staff, employeeBusinessId };
+  }
+
+  const storeIds = businesses.map((business) => business.id);
+  const currentStaff = Array.isArray(staff) ? staff : [];
+  const employeeRow = findActiveStaffMember(currentStaff, loggedInEmployeeId)
+    || currentStaff.find((person) => employeeMatchesSession(person, loggedInEmployeeId, sessionUserId));
+
+  if (!employeeRow) {
+    return { staff: currentStaff, employeeBusinessId };
+  }
+
+  const needsStoreIds = !employeeRow.storeIds?.length;
+  const nextStaff = needsStoreIds
+    ? currentStaff.map((person) => (
+      employeeMatchesSession(person, loggedInEmployeeId, sessionUserId)
+        ? { ...person, storeIds }
+        : person
+    ))
+    : currentStaff;
+
+  const effectiveEmployee = needsStoreIds ? { ...employeeRow, storeIds } : employeeRow;
+  const assigned = resolveAssignedEmployeeBusinesses(businesses, effectiveEmployee);
+  const nextBusinessId = resolveEmployeeBusinessId(assigned, employeeBusinessId);
+
+  return {
+    staff: nextStaff,
+    employeeBusinessId: nextBusinessId,
+  };
+}

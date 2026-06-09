@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
 import { isUuid, setRuntimeApiIdMaps } from "@/features/closeouts/client/closeouts-api-client";
 import {
+  patchEmployeeStaffStoreIdsFromHydration,
   patchRuntimeApiMapsForEmployeeSession,
   syncLoggedInEmployeeIdFromSession,
 } from "@/features/employee-closeouts/employee-portal-session";
@@ -71,6 +72,8 @@ export function usePrototypeRuntimeSessionSync({
   setArchivedBusinessIds,
   setStoreChannelSettings,
   setStoreOperationalSettings,
+  employeeBusinessId,
+  setEmployeeBusinessId,
   closeoutsApiEnabled,
   entriesApiEnabled,
   configuredBusinesses,
@@ -145,6 +148,25 @@ export function usePrototypeRuntimeSessionSync({
           setStaff,
           setStoreOperationalSettings,
         });
+
+        const businesses = Array.isArray(mapped.configuredBusinesses) ? mapped.configuredBusinesses : [];
+        if (!businesses.length) return;
+
+        let patchedBusinessId = employeeBusinessId;
+        setStaff((currentStaff) => {
+          const patch = patchEmployeeStaffStoreIdsFromHydration({
+            staff: currentStaff,
+            loggedInEmployeeId,
+            sessionUserId,
+            configuredBusinesses: businesses,
+            employeeBusinessId: patchedBusinessId,
+          });
+          patchedBusinessId = patch.employeeBusinessId;
+          return patch.staff;
+        });
+        if (patchedBusinessId !== employeeBusinessId) {
+          setEmployeeBusinessId(patchedBusinessId);
+        }
       })
       .catch((error) => {
         if (cancelled) return;
@@ -158,11 +180,14 @@ export function usePrototypeRuntimeSessionSync({
     };
   }, [
     employee,
+    employeeBusinessId,
     loggedIn,
+    loggedInEmployeeId,
     sessionOrganizationId,
     sessionUserId,
     setArchivedBusinessIds,
     setConfiguredBusinesses,
+    setEmployeeBusinessId,
     setEmployeeRuntimeReady,
     setStaff,
     setStoreChannelSettings,

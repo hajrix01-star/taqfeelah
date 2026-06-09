@@ -3,6 +3,7 @@ import {
   employeePinMatches,
   enrichActiveEmployeeWithSessionUserId,
   filterActiveLoginStaff,
+  patchEmployeeStaffStoreIdsFromHydration,
   patchRuntimeApiMapsForEmployeeSession,
   resolveActiveEmployee,
   resolveAssignedEmployeeBusinesses,
@@ -103,5 +104,59 @@ describe("employee-portal-session", () => {
     expect(loginStaff).toHaveLength(1);
     expect(loginStaff[0].id).toBe("api-1");
     expect(filterActiveLoginStaff(loginStaff)).toHaveLength(1);
+  });
+
+  it("backfills missing storeIds from hydrated configured businesses", () => {
+    const storeUuid = "11111111-1111-4111-8111-111111111111";
+    const employeeUuid = "22222222-2222-4222-8222-222222222222";
+    const staff = [{
+      id: employeeUuid,
+      apiUserId: employeeUuid,
+      legacyId: "ahmed",
+      active: true,
+      removed: false,
+      storeIds: [],
+    }];
+    const configuredBusinesses = [{
+      id: storeUuid,
+      dbStoreId: storeUuid,
+      nameAr: "محل",
+      nameEn: "Store",
+      displayName: "Store",
+    }];
+
+    const patch = patchEmployeeStaffStoreIdsFromHydration({
+      staff,
+      loggedInEmployeeId: employeeUuid,
+      sessionUserId: employeeUuid,
+      configuredBusinesses,
+      employeeBusinessId: "",
+    });
+
+    expect(patch.staff[0].storeIds).toEqual([storeUuid]);
+    expect(patch.employeeBusinessId).toBe(storeUuid);
+  });
+
+  it("keeps existing storeIds when roster already has store assignments", () => {
+    const storeUuid = "11111111-1111-4111-8111-111111111111";
+    const employeeUuid = "22222222-2222-4222-8222-222222222222";
+    const staff = [{
+      id: employeeUuid,
+      apiUserId: employeeUuid,
+      active: true,
+      removed: false,
+      storeIds: [storeUuid],
+    }];
+
+    const patch = patchEmployeeStaffStoreIdsFromHydration({
+      staff,
+      loggedInEmployeeId: employeeUuid,
+      sessionUserId: employeeUuid,
+      configuredBusinesses: [{ id: storeUuid }],
+      employeeBusinessId: storeUuid,
+    });
+
+    expect(patch.staff).toBe(staff);
+    expect(patch.employeeBusinessId).toBe(storeUuid);
   });
 });
