@@ -89,6 +89,33 @@ describe("prototype runtime module boundary smoke", () => {
     expect(ui.AttachmentCapture).toBeTypeOf("function");
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
+  it("loads owner home screen exports", async () => {
+    const home = await import("@/components/prototype-runtime/prototype-runtime-owner-home-screen");
+    expect(home.OwnerHomeConnected).toBeTypeOf("function");
+  }, SMOKE_IMPORT_TIMEOUT_MS);
+
+  it("loads owner register screen exports", async () => {
+    const register = await import("@/components/prototype-runtime/prototype-runtime-owner-register-screen");
+    expect(register.OwnerRegisterConnected).toBeTypeOf("function");
+  }, SMOKE_IMPORT_TIMEOUT_MS);
+
+  it("loads notebook share modal exports", async () => {
+    const share = await import("@/components/prototype-runtime/prototype-runtime-notebook-share-modal");
+    expect(share.NotebookShareModal).toBeTypeOf("function");
+  }, SMOKE_IMPORT_TIMEOUT_MS);
+
+  it("loads owner closeout modals exports", async () => {
+    const closeouts = await import("@/components/prototype-runtime/prototype-runtime-owner-closeout-modals");
+    expect(closeouts.OwnerCloseoutModals).toBeTypeOf("function");
+  }, SMOKE_IMPORT_TIMEOUT_MS);
+
+  it("loads demo operational entry helpers", async () => {
+    const demo = await import("@/components/prototype-runtime/prototype-runtime-demo-operational-entries");
+    expect(demo.readOperationalEntries).toBeTypeOf("function");
+    expect(demo.buildEntry).toBeTypeOf("function");
+    expect(demo.prototypeOwnerActor.userId).toBe("owner");
+  });
+
   it("loads runtime capability resolver", async () => {
     const { resolveRuntimeCapabilities } = await import("@/core/config/runtime-capabilities");
     const capabilities = resolveRuntimeCapabilities({
