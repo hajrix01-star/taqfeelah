@@ -116,6 +116,18 @@ describe("prototype runtime module boundary smoke", () => {
     expect(demo.prototypeOwnerActor.userId).toBe("owner");
   });
 
+  it("loads prototype runtime orchestration hooks", async () => {
+    const entries = await import("@/features/operations/client/use-prototype-runtime-operational-entries");
+    const session = await import("@/features/auth/client/use-prototype-runtime-session");
+    const closeouts = await import("@/features/closeouts/client/use-prototype-runtime-closeouts-api");
+    const auth = await import("@/features/auth/client/prototype-runtime-auth-handlers");
+    expect(entries.usePrototypeRuntimeOperationalEntries).toBeTypeOf("function");
+    expect(session.usePrototypeRuntimeSessionState).toBeTypeOf("function");
+    expect(session.usePrototypeRuntimeSessionSync).toBeTypeOf("function");
+    expect(closeouts.usePrototypeRuntimeCloseoutsApi).toBeTypeOf("function");
+    expect(auth.createPrototypeRuntimeAuthHandlers).toBeTypeOf("function");
+  }, SMOKE_IMPORT_TIMEOUT_MS);
+
   it("loads runtime capability resolver", async () => {
     const { resolveRuntimeCapabilities } = await import("@/core/config/runtime-capabilities");
     const capabilities = resolveRuntimeCapabilities({

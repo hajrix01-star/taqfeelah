@@ -1,38 +1,16 @@
 ﻿"use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { DailyCloseoutsProvider, useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
-import { buildOperationalEntriesFromCloseout, readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-demo-store";
+import { DailyCloseoutsProvider } from "@/features/daily-closeouts/DailyCloseoutsProvider";
+import { readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import {
   applyNotebookThemeCssVariables,
   isValidNotebookTheme,
-  notebookCardBackground,
-  notebookThemes,
 } from "@/features/daily-closeouts/notebook-themes";
-import { shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
 import EmployeeCloseoutsView from "@/features/employee-closeouts/EmployeeCloseoutsView";
-import DailyCloseoutEntryFlow from "@/features/employee-closeouts/DailyCloseoutEntryFlow";
-import { employeeDisplayName } from "@/features/employee-closeouts/employee-entries-display";
-import {
-  patchRuntimeApiMapsForEmployeeSession,
-  syncLoggedInEmployeeIdFromSession,
-} from "@/features/employee-closeouts/employee-portal-session";
 import { readEmployeeNotebookTheme, writeEmployeeNotebookTheme } from "@/features/employee-closeouts/employee-theme-storage";
-import PendingCloseoutsNotice from "@/features/owner-closeout-review/PendingCloseoutsNotice";
-import OwnerCloseoutReviewPanel from "@/features/owner-closeout-review/OwnerCloseoutReviewPanel";
-import ReturnCloseoutModal from "@/features/owner-closeout-review/ReturnCloseoutModal";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
-import { readLocalStorageJson, safeSetLocalStorageItem } from "@/features/demo/prototype-storage";
-import { createPrototypeMonthDemoOperationalEntries } from "@/features/demo/prototype-month-demo-seed";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  makeAttachment,
-  storeAttachmentPayload,
-  stripEmbeddedAttachmentImages,
-} from "@/features/attachments/client/prototype-attachment-storage";
-import { AttachmentPreview } from "./prototype-runtime/prototype-runtime-attachment-ui";
-import { toAmount } from "./prototype-runtime/prototype-runtime-entry-form-utils";
+import { storeAttachmentPayload } from "@/features/attachments/client/prototype-attachment-storage";
 import { EmployeeSettingsScreen } from "./prototype-runtime/prototype-runtime-employee-settings-screen";
 import {
   OwnerExpenseScreen,
@@ -46,54 +24,7 @@ import {
   SavedOutflowShareDialog,
   VoidOperationDialog,
 } from "./prototype-runtime/prototype-runtime-operation-dialogs";
-import {
-  Bell,
-  CalendarDays,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Download,
-  FileImage,
-  FileSpreadsheet,
-  FileText,
-  Send,
-  X,
-} from "lucide-react";
-import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
-import {
-  buildCloseoutSubmitFailureMessage,
-  diagnoseCloseoutSubmitFailure,
-  fetchStoreCloseoutsViaApi,
-  hasCloseoutApiActorMapping,
-  hasCloseoutApiStoreMapping,
-  isUuid,
-  reviewCloseoutViaApi,
-  setRuntimeApiIdMaps,
-  submitCloseoutViaApi,
-} from "@/features/closeouts/client/closeouts-api-client";
-import { formatCloseoutDayLabel } from "@/features/closeouts/client/closeout-day-label";
-import {
-  buildRegisterCloseoutDayContext,
-  summaryEntryDisplayAmount,
-} from "@/features/entries/client/register-operation-display";
-import {
-  createStoreEntryViaApi,
-  fetchStoreEntriesViaApi,
-} from "@/features/entries/client/store-entries-api-client";
-import { useNotebookExportShareData } from "@/features/phase9/client/use-notebook-export-share-data";
-import { resolvePayloadAttachmentForPhase9Api } from "@/features/phase9/client/inline-attachment-api-flow";
-import {
-  applyEmployeeLoginSuccess,
-  applyLogoutReset,
-  applyOwnerLoginSuccess,
-  applyServerSessionBootstrap,
-} from "@/features/auth/client/auth-runtime-orchestrator";
-import {
-  fetchServerSessionStatus,
-  logoutViaSessionBridge,
-} from "@/features/auth/client/session-bridge";
 import { resolveOwnerSettingsApiAuth } from "@/features/runtime-settings/client/runtime-settings-bridge";
-import { buildOperationalEntry } from "@/features/entries/client/build-operational-entry";
 import {
   findDuplicateSummaryEntries,
   isFutureOperationalEntryDate,
@@ -108,67 +39,33 @@ import {
   resolveSummaryLastCloseoutUpdate,
   shouldGateSummarySaveOnDuplicates,
 } from "@/features/operations/operational-entry-persist-helpers";
-import { resolveOperationalEntriesBulkLoadWindow } from "@/features/entries/client/register-entries-load-window";
 import { resolveRuntimeApiActorContext } from "@/core/config/runtime-capabilities";
 import { useEmployeeEntryActions } from "@/features/employee-shell/client/use-employee-entry-actions";
 import { useEmployeePortalState } from "@/features/employee-shell/client/use-employee-portal-state";
-import { applyOrgConfigMappedState } from "@/features/org-config/client/org-config-runtime-bridge";
-import { loadEmployeeRuntimeContextFromApi } from "@/features/org-config/client/employee-runtime-hydration";
 import { useOwnerSettingsState } from "@/features/org-config/client/use-owner-settings-state";
-import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
 import { useOwnerShellState } from "@/features/owner-shell/client/use-owner-shell-state";
 import { resolveSelectedOperationReviewEnabled } from "@/features/operations/client/register-operations-selection";
 import { useRegisterOperationsState } from "@/features/operations/client/use-register-operations-state";
 import { useRegisterSelectionState } from "@/features/operations/client/use-register-selection-state";
-import { useRegisterEntriesFromApi } from "@/features/entries/client/use-register-entries-from-api";
-import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
-import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
+import { usePrototypeRuntimeOperationalEntries } from "@/features/operations/client/use-prototype-runtime-operational-entries";
+import { usePrototypeRuntimeCloseoutsApi } from "@/features/closeouts/client/use-prototype-runtime-closeouts-api";
 import {
-  aggregateChannels,
-  buildBusinessesWithEntrySummaries,
-  entriesInPeriod,
-  entryTotalsHaveFinancialActivity,
-  newestEntries,
-  resolveOwnerPeriodSummaryPreference,
-  resolveOwnerSingleStoreTotals,
-  summarizeEntries,
-  summaryDayFromEntries,
-  summaryMonthFromEntries,
-} from "@/features/operations/operational-analytics";
-import { groupAttachmentsFromEntries } from "@/features/entries/client/attachments-from-entries";
-import {
-  DEFAULT_REGISTER_LOG_FILTERS,
-  buildRegisterCloseoutSummaries,
-  buildRegisterSalesChannelOptions,
-  filterRegisterLogEntries,
-  registerLogFilterCount,
-  summarizeRegisterPeriod,
-} from "@/features/entries/client/register-log-display";
-import {
-  formatCalendarDate,
-  formatSelectedMonth,
-  logPeriodScopeLabel,
-} from "@/features/reports/client/report-period-labels";
+  usePrototypeRuntimeSessionState,
+  usePrototypeRuntimeSessionSync,
+} from "@/features/auth/client/use-prototype-runtime-session";
+import { createPrototypeRuntimeAuthHandlers } from "@/features/auth/client/prototype-runtime-auth-handlers";
+import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import PrototypeAccessScreen from "@/features/demo/PrototypeAccessScreen";
-import { readPrototypeAccessAuthContext } from "@/core/client/prototype-access-auth-context";
 import { EMPTY_STORE_CHANNEL_CONFIG } from "@/features/org-config/client/store-channel-config";
 import {
-  channels,
   DEFAULT_STORE_CHANNEL_CONFIG,
   resolveStoreChannelConfig,
   channelName,
   expenseCategories,
-  outflowReportCategories,
   businesses,
-  businessName,
-  businessLocation,
   text,
-  money,
-  fullDate,
-  opTime,
 } from "./prototype-runtime/prototype-runtime-demo-data";
 import {
-  APP_IN_PRODUCTION_MODE,
   PROTOTYPE_ACCESS_MODE,
   BINDS_TO_SERVER_AUTH,
   ENTRIES_API_DB_SOURCE,
@@ -179,53 +76,26 @@ import {
   PROTOTYPE_OWNER_PASSWORD,
   migrateSavedSettings,
   readSavedSettings,
-  OPERATIONAL_ENTRIES_STORAGE_KEY,
   PROTOTYPE_DEFAULT_STAFF,
 } from "./prototype-runtime/prototype-runtime-boot";
-import { BottomNav, Logo, TopBar } from "./prototype-runtime/prototype-runtime-chrome";
+import { BottomNav, TopBar } from "./prototype-runtime/prototype-runtime-chrome";
 import {
   HelpCenterSheet,
   EmployeeLoginScreen,
   LoginScreen,
-  readPrototypeAuthBoot,
 } from "./prototype-runtime/AuthGateSection";
 import { openWhatsAppSupport } from "./prototype-runtime/prototype-runtime-support";
-
 import {
-  noteLabel,
-  entryCategory,
-  operationDisplayLabel,
-  expandRegisterCloseoutOperationRows,
-  signedEntryAmount,
-  entryDateMatches,
-  entryHasAttachment,
   entryIsActive,
   entryIsVoided,
-  entryIsOutflow,
 } from "./prototype-runtime/prototype-runtime-entry-helpers";
-import {
-  Notebook,
-  NotebookRow,
-  MoneyValue,
-  NumberLine,
-  FinancialRows,
-  isoCalendarDate,
-  todayIsoDate,
-  DateSelector,
-  StoreScopeTabs,
-  StoreComparison,
-  NotebookHeading,
-} from "./prototype-runtime/prototype-runtime-notebook";
+import { todayIsoDate } from "./prototype-runtime/prototype-runtime-notebook";
 import { OwnerSettingsScreen } from "./prototype-runtime/OwnerSettingsSection";
-import { RatioBadge, ReportsScreen } from "./prototype-runtime/OwnerReportsSection";
-import { Badge, InkTab } from "./prototype-runtime/prototype-runtime-shell-ui";
-
+import { ReportsScreen } from "./prototype-runtime/OwnerReportsSection";
 import { AppFontStyles } from "./prototype-runtime/prototype-runtime-app-font-styles";
 import {
   buildEntry,
-  isoDaysAgo,
   prototypeOwnerActor,
-  readOperationalEntries,
 } from "./prototype-runtime/prototype-runtime-demo-operational-entries";
 import { nextDayIso } from "./prototype-runtime/prototype-runtime-date-helpers";
 import { OwnerHomeConnected } from "./prototype-runtime/prototype-runtime-owner-home-screen";
@@ -235,23 +105,30 @@ import { OwnerCloseoutModals } from "./prototype-runtime/prototype-runtime-owner
 
 
 export default function TaqfeelahPrototypeRuntime() {
-  const [lang, setLang] = useState("ar");
-  const [sessionOrganizationId, setSessionOrganizationId] = useState("");
-  const [sessionUserId, setSessionUserId] = useState("");
-  const [loggedIn, setLoggedIn] = useState(() => readPrototypeAuthBoot().loggedIn);
-  const [authScreen, setAuthScreen] = useState("owner");
-  const [employee, setEmployee] = useState(() => readPrototypeAuthBoot().employee);
-  const [loggedInEmployeeId, setLoggedInEmployeeId] = useState(() => readPrototypeAuthBoot().loggedInEmployeeId);
-  const [employeeRuntimeReady, setEmployeeRuntimeReady] = useState(() => !readPrototypeAuthBoot().employee);
+  const session = usePrototypeRuntimeSessionState();
+  const {
+    prototypeAuthBoot,
+    lang,
+    setLang,
+    sessionOrganizationId,
+    setSessionOrganizationId,
+    sessionUserId,
+    setSessionUserId,
+    loggedIn,
+    setLoggedIn,
+    authScreen,
+    setAuthScreen,
+    employee,
+    setEmployee,
+    loggedInEmployeeId,
+    setLoggedInEmployeeId,
+    employeeRuntimeReady,
+    setEmployeeRuntimeReady,
+  } = session;
+
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [saved, setSaved] = useState(false);
-  const [operationalEntries, setOperationalEntries] = useState(() => readOperationalEntries());
-  const [operationalEntriesLoading, setOperationalEntriesLoading] = useState(false);
-  const [operationalEntriesSyncError, setOperationalEntriesSyncError] = useState("");
-  const [summaryRefreshKey, setSummaryRefreshKey] = useState(0);
-  const loadOperationalEntriesFromApiRef = useRef(async () => []);
-  const prototypeAuthBoot = readPrototypeAuthBoot();
 
   const {
     configuredBusinesses,
@@ -325,7 +202,6 @@ export default function TaqfeelahPrototypeRuntime() {
     employeePage,
     setEmployeePage,
     changeEmployeePage,
-    employeeBusinessId,
     setEmployeeBusinessId,
     employeeThemeOverride,
     setEmployeeThemeOverride,
@@ -338,9 +214,7 @@ export default function TaqfeelahPrototypeRuntime() {
     currentEmployeeBusiness,
     currentEmployeeChannelConfig,
     currentEmployeeOperationalConfig,
-    currentEmployeeCategories,
     employeeNotebookTheme,
-    suggestedEntryDate,
     assignedEmployeeBusinessIds,
   } = useEmployeePortalState({
     employee,
@@ -397,7 +271,6 @@ export default function TaqfeelahPrototypeRuntime() {
     entriesApiStrictMode,
     phase9ApiEnabled,
     organizationId: closeoutsApiOrganizationId,
-    ownerUserId: closeoutsApiOwnerUserId,
     ownerApiUserId,
     apiActorRole,
     apiActorUserId,
@@ -431,110 +304,46 @@ export default function TaqfeelahPrototypeRuntime() {
     [employee, sessionOrganizationId, sessionUserId],
   );
 
-  const createOperationalEntryInApi = useCallback(async ({ payload, actorUserId, actorRole }) => {
-    if (!entriesApiEnabled) {
-      if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
-      return null;
-    }
-    if (!isUuid(closeoutsApiOrganizationId)) {
-      if (entriesApiStrictMode) throw new Error("organization id is missing/invalid for entries API.");
-      return null;
-    }
-    const apiPayload = await resolvePayloadAttachmentForPhase9Api({
-      enabled: phase9ApiEnabled,
-      organizationId: closeoutsApiOrganizationId,
-      actorUserId,
-      actorRole,
-      storeId: payload?.businessId,
-      payload,
-    });
-    return createStoreEntryViaApi({
-      organizationId: closeoutsApiOrganizationId,
-      actorUserId,
-      actorRole,
-      payload: apiPayload,
-    });
-  }, [closeoutsApiOrganizationId, entriesApiEnabled, entriesApiStrictMode, phase9ApiEnabled]);
-
-  const loadOperationalEntriesFromApi = useCallback(async () => {
-    if (!entriesApiEnabled) {
-      if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
-      return [];
-    }
-    if (!isUuid(closeoutsApiOrganizationId)) {
-      const message = lang === "ar"
-        ? "تعذر تحميل العمليات: معرف المنظمة غير صالح لمسار API."
-        : "Failed to load operations: organization id is missing/invalid for entries API.";
-      setOperationalEntriesSyncError(message);
-      throw new Error(message);
-    }
-    if (!hasCloseoutApiActorMapping(apiActorUserId)) {
-      const message = lang === "ar"
-        ? "تعذر تحميل العمليات: معرف المستخدم غير مربوط بالخادم."
-        : "Failed to load operations: actor user id is missing/invalid for entries API.";
-      setOperationalEntriesSyncError(message);
-      throw new Error(message);
-    }
-
-    const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
-    setOperationalEntriesLoading(true);
-    if (!targetStoreIds.length) {
-      setOperationalEntries([]);
-      setOperationalEntriesLoading(false);
-      return [];
-    }
-
-    try {
-      const dateTo = todayIsoDate();
-      const { lookbackDays, limit: bulkLimit } = resolveOperationalEntriesBulkLoadWindow({
-        paginationEnabled: REGISTER_ENTRIES_PAGINATION_ENABLED,
-      });
-      const dateFrom = isoDaysAgo(lookbackDays);
-
-      const fetched = await Promise.all(
-        targetStoreIds.map((storeId) => fetchStoreEntriesViaApi({
-          organizationId: closeoutsApiOrganizationId,
-          actorUserId: apiActorUserId,
-          actorRole: apiActorRole,
-          storeId,
-          dateFrom,
-          dateTo,
-          status: "all",
-          limit: bulkLimit,
-        })),
-      );
-
-      const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
-      const seen = new Set();
-      const deduped = merged.filter((item) => {
-        const itemId = typeof item?.id === "string" ? item.id : "";
-        if (!itemId || seen.has(itemId)) return false;
-        seen.add(itemId);
-        return true;
-      });
-
-      setOperationalEntries(deduped);
-      setOperationalEntriesSyncError("");
-      setSummaryRefreshKey((current) => current + 1);
-      return deduped;
-    } finally {
-      setOperationalEntriesLoading(false);
-    }
-  }, [
-    apiActorRole,
-    apiActorUserId,
-    apiTargetStoreIdsKey,
-    closeoutsApiOrganizationId,
-    entriesApiEnabled,
-    entriesApiStrictMode,
-    lang,
-  ]);
-
-  loadOperationalEntriesFromApiRef.current = loadOperationalEntriesFromApi;
-
   const registerSelection = useRegisterSelectionState({
     reviewEnabledForBusiness,
     archivedBusinessIds,
+  });
+
+  const {
+    selected,
+    setSelected,
+    voidTarget,
+    setVoidTarget,
+    restoreTarget,
+    setRestoreTarget,
+    savedOutflowShareTarget,
+    setSavedOutflowShareTarget,
+    pendingDuplicateSummary,
+    setPendingDuplicateSummary,
+  } = registerSelection;
+
+  const {
+    operationalEntries,
+    setOperationalEntries,
+    operationalEntriesLoading,
+    summaryRefreshKey,
+    createOperationalEntryInApi,
+    loadOperationalEntriesFromApi,
+    syncCloseoutToOperationalEntries,
+    removeOperationalEntriesForCloseout,
+  } = usePrototypeRuntimeOperationalEntries({
+    lang,
+    loggedIn,
+    runtimeApiStoresReady,
+    employee,
+    entriesApiEnabled,
+    entriesApiStrictMode,
+    closeoutsApiOrganizationId,
+    apiActorUserId,
+    apiActorRole,
+    apiTargetStoreIdsKey,
+    phase9ApiEnabled,
+    setLastCloseoutDates,
   });
 
   const {
@@ -552,7 +361,6 @@ export default function TaqfeelahPrototypeRuntime() {
     setOwnerReviewCloseout,
     returnCloseoutTarget,
     setReturnCloseoutTarget,
-    closeoutAlerts,
     setCloseoutAlerts,
     duplicateReviewFocus,
     setDuplicateReviewFocus,
@@ -560,14 +368,12 @@ export default function TaqfeelahPrototypeRuntime() {
     setAttachmentReviewRequest,
     shareSnapshot,
     setShareSnapshot,
-    acknowledgedDuplicateSales,
     setAcknowledgedDuplicateSales,
     activeViewBusiness,
     activeOwnerStoreId,
     reportSettingsStoreId,
     ownerReviewEnabled,
     duplicateSalesAlerts,
-    firstPendingAttachmentReview,
     unseenCloseoutAlerts,
     ownerNotificationsVisible,
     ownerNotificationBadge,
@@ -592,6 +398,145 @@ export default function TaqfeelahPrototypeRuntime() {
     closeoutAlertEnabledForBusiness,
     setSelected: registerSelection.setSelected,
   });
+
+  const handleOwnerCloseoutUpdated = useCallback(async (closeout) => {
+    if (!closeout) return;
+    if (closeout.status === "reviewed") {
+      await syncCloseoutToOperationalEntries({ ...closeout, syncedToEntries: false }, { force: true });
+      return;
+    }
+    if (ENTRIES_API_DB_SOURCE) {
+      await loadOperationalEntriesFromApi();
+      return;
+    }
+    removeOperationalEntriesForCloseout(closeout.id, closeout.storeId);
+  }, [loadOperationalEntriesFromApi, removeOperationalEntriesForCloseout, syncCloseoutToOperationalEntries]);
+
+  const handleOwnerCloseoutDeleted = useCallback(async (closeout) => {
+    if (!closeout) return;
+    if (ENTRIES_API_DB_SOURCE) {
+      await loadOperationalEntriesFromApi();
+    } else {
+      removeOperationalEntriesForCloseout(closeout.id, closeout.storeId);
+    }
+    setCloseoutAlerts((current) => current.filter((item) => !(item.businessId === closeout.storeId && item.date === closeout.date)));
+    setOwnerReviewCloseout((current) => (current?.id === closeout.id ? null : current));
+    setReturnCloseoutTarget((current) => (current?.id === closeout.id ? null : current));
+  }, [
+    loadOperationalEntriesFromApi,
+    removeOperationalEntriesForCloseout,
+    setCloseoutAlerts,
+    setOwnerReviewCloseout,
+    setReturnCloseoutTarget,
+  ]);
+
+  usePrototypeRuntimeSessionSync({
+    loggedIn,
+    employee,
+    sessionOrganizationId,
+    sessionUserId,
+    loggedInEmployeeId,
+    setSessionOrganizationId,
+    setSessionUserId,
+    setLoggedIn,
+    setAuthScreen,
+    setEmployee,
+    setLoggedInEmployeeId,
+    setEmployeeRuntimeReady,
+    setOwnerPage,
+    setEmployeePage,
+    staff,
+    setStaff,
+    setConfiguredBusinesses,
+    setArchivedBusinessIds,
+    setStoreChannelSettings,
+    setStoreOperationalSettings,
+    closeoutsApiEnabled,
+    entriesApiEnabled,
+    configuredBusinesses,
+    storeChannelSettings,
+  });
+
+  const authHandlers = useMemo(
+    () => createPrototypeRuntimeAuthHandlers({
+      staff,
+      setStaff,
+      activeBusinesses,
+      setSessionOrganizationId,
+      setSessionUserId,
+      setLoggedIn,
+      setEmployee,
+      setLoggedInEmployeeId,
+      setAuthScreen,
+      setEmployeeBusinessId,
+      setEmployeeThemeOverride,
+      setEmployeePage,
+      setOwnerPage,
+      setOwnerReviewCloseout,
+      setReturnCloseoutTarget,
+      setSelected,
+      setVoidTarget,
+      setRestoreTarget,
+      setSavedOutflowShareTarget,
+      setPendingDuplicateSummary,
+      setDuplicateReviewFocus,
+      setAttachmentReviewRequest,
+      setShareSnapshot,
+      setQuickAddOpen,
+      setArchivedReadOnlyBusinessId,
+      setSelectedBusiness,
+      setOperationalEntries,
+      setConfiguredBusinesses,
+      setArchivedBusinessIds,
+      setAuthOwnerUsername,
+      setAuthOwnerPassword,
+      setAuthEmployeePins,
+      setOwnerProfile,
+    }),
+    [
+      activeBusinesses,
+      setArchivedBusinessIds,
+      setArchivedReadOnlyBusinessId,
+      setAttachmentReviewRequest,
+      setAuthEmployeePins,
+      setAuthOwnerPassword,
+      setAuthOwnerUsername,
+      setAuthScreen,
+      setConfiguredBusinesses,
+      setDuplicateReviewFocus,
+      setEmployee,
+      setEmployeeBusinessId,
+      setEmployeePage,
+      setEmployeeThemeOverride,
+      setLoggedIn,
+      setLoggedInEmployeeId,
+      setOperationalEntries,
+      setOwnerPage,
+      setOwnerProfile,
+      setOwnerReviewCloseout,
+      setPendingDuplicateSummary,
+      setQuickAddOpen,
+      setReturnCloseoutTarget,
+      setSavedOutflowShareTarget,
+      setSelected,
+      setSelectedBusiness,
+      setSessionOrganizationId,
+      setSessionUserId,
+      setShareSnapshot,
+      setStaff,
+      setVoidTarget,
+      setRestoreTarget,
+      staff,
+    ],
+  );
+
+  const {
+    completeOwnerLogin,
+    completeEmployeeLogin,
+    logout,
+    enterPrototypeAsEmployee,
+    enterPrototypeAsOwner,
+  } = authHandlers;
 
   const ownerAddHandlerRef = useRef(null);
   const [ownerEntryActive, setOwnerEntryActive] = useState(false);
@@ -664,18 +609,6 @@ export default function TaqfeelahPrototypeRuntime() {
     setQuickAddOpen(true);
   }, [setQuickAddOpen]);
 
-  const {
-    selected,
-    setSelected,
-    voidTarget,
-    setVoidTarget,
-    restoreTarget,
-    setRestoreTarget,
-    savedOutflowShareTarget,
-    setSavedOutflowShareTarget,
-    pendingDuplicateSummary,
-    setPendingDuplicateSummary,
-  } = registerSelection;
   const selectedOperationReviewEnabled = useMemo(
     () => resolveSelectedOperationReviewEnabled(
       selected,
@@ -686,56 +619,14 @@ export default function TaqfeelahPrototypeRuntime() {
     [archivedBusinessIds, ownerReviewEnabled, reviewEnabledForBusiness, selected],
   );
 
-  useEffect(() => {
-    if (!APP_IN_PRODUCTION_MODE) return;
-    let cancelled = false;
-    fetchServerSessionStatus()
-      .then((session) => {
-        if (cancelled) return;
-        applyServerSessionBootstrap(session, {
-          setSessionOrganizationId,
-          setSessionUserId,
-          setSessionOrganizationId,
-          setLoggedIn,
-          setAuthScreen,
-          setEmployee,
-          setLoggedInEmployeeId,
-          setEmployeePage,
-          setOwnerPage,
-        });
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        console.warn("session bootstrap failed", error);
-        setSessionOrganizationId("");
-        setSessionUserId("");
-        setSessionOrganizationId("");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  useEffect(() => {
-    if (!BINDS_TO_SERVER_AUTH || !employee || !sessionUserId) return;
-    const syncedEmployeeId = syncLoggedInEmployeeIdFromSession(staff, sessionUserId, loggedInEmployeeId);
-    if (syncedEmployeeId) {
-      setLoggedInEmployeeId(syncedEmployeeId);
-    }
-  }, [employee, loggedInEmployeeId, sessionUserId, staff]);
   const reportChannelConfig = resolveStoreChannelConfig(storeChannelSettings, reportSettingsStoreId);
   const activeBusinessIds = activeBusinesses.map((business) => business.id);
   const todayDate = todayIsoDate();
+
   useEffect(() => {
     applyNotebookThemeCssVariables(employee ? employeeNotebookTheme : notebookTheme);
   }, [employee, employeeNotebookTheme, notebookTheme]);
-  useEffect(() => {
-    if (BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE || typeof window === "undefined") return;
-    safeSetLocalStorageItem(
-      OPERATIONAL_ENTRIES_STORAGE_KEY,
-      JSON.stringify(stripEmbeddedAttachmentImages(operationalEntries)),
-      { scope: "operational-fallback" },
-    );
-  }, [operationalEntries]);
+
   const saveOwner = async (payload) => {
     if (ENTRIES_API_DB_SOURCE) {
       window.alert(text(lang, "closeoutRequiredForEntry"));
@@ -807,6 +698,7 @@ export default function TaqfeelahPrototypeRuntime() {
       window.alert(message);
     } finally { savingRef.current = false; setSaving(false); }
   };
+
   const saveOwnerSummary = async (payload) => {
     if (ENTRIES_API_DB_SOURCE) {
       window.alert(text(lang, "closeoutRequiredForEntry"));
@@ -823,7 +715,7 @@ export default function TaqfeelahPrototypeRuntime() {
     await saveOwner(payload);
   };
 
-  const { persistEmployeeEntry, saveEmployee } = useEmployeeEntryActions({
+  const { persistEmployeeEntry } = useEmployeeEntryActions({
     lang,
     text,
     savingRef,
@@ -896,498 +788,35 @@ export default function TaqfeelahPrototypeRuntime() {
     setSaving,
   });
 
-  const completeOwnerLogin = (apiUserId = "", organizationId = "") => {
-    applyOwnerLoginSuccess({
-      apiUserId,
-      organizationId,
-      prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
-      apply: {
-        setSessionOrganizationId,
-        setSessionUserId,
-        setSessionOrganizationId,
-        setLoggedIn,
-        setEmployee,
-        setLoggedInEmployeeId,
-        setAuthScreen,
-        setOwnerPage,
-      },
-    });
-  };
-  const completeEmployeeLogin = (personId, apiUserId = "", rosterPerson = null, organizationId = "") => {
-    const loginStaff = rosterPerson && !staff.some((person) => person.id === rosterPerson.id)
-      ? [rosterPerson, ...staff]
-      : staff;
-    if (rosterPerson) {
-      setStaff((current) => (
-        current.some((person) => person.id === rosterPerson.id)
-          ? current
-          : [rosterPerson, ...current]
-      ));
-    }
-    applyEmployeeLoginSuccess({
-      personId,
-      apiUserId,
-      organizationId,
-      staff: loginStaff,
-      activeBusinesses,
-      prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
-      apply: {
-        setSessionOrganizationId,
-        setSessionUserId,
-        setLoggedIn,
-        setEmployee,
-        setLoggedInEmployeeId,
-        setEmployeeBusinessId,
-        setEmployeeThemeOverride,
-        setEmployeePage,
-        setAuthScreen,
-      },
-    });
-  };
-  const removeOperationalEntriesForCloseout = useCallback((closeoutId, storeId = null) => {
-    if (!closeoutId) return;
-    setOperationalEntries((current) => {
-      const next = current.filter((entry) => entry.closeoutId !== closeoutId);
-      if (storeId) {
-        const latestActiveCloseoutDate = next
-          .filter((entry) => entry.businessId === storeId && entry.type === "summary" && entryIsActive(entry))
-          .map((entry) => entry.date)
-          .sort()
-          .pop();
-        setLastCloseoutDates((prev) => {
-          const updated = { ...prev };
-          if (latestActiveCloseoutDate) updated[storeId] = latestActiveCloseoutDate;
-          else delete updated[storeId];
-          return updated;
-        });
-      }
-      return next;
-    });
-  }, []);
-
-  const syncCloseoutToOperationalEntries = useCallback(async (closeout, { force = false } = {}) => {
-    if (ENTRIES_API_DB_SOURCE) {
-      if (typeof loadOperationalEntriesFromApiRef.current === "function") {
-        await loadOperationalEntriesFromApiRef.current();
-      }
-      return;
-    }
-    if (!closeout) return;
-    if (!force && closeout.syncedToEntries) return;
-    if (force) {
-      removeOperationalEntriesForCloseout(closeout.id, closeout.storeId);
-    }
-    const actor = {
-      role: "employee",
-      userId: closeout.submittedByUserId || closeout.openedByUserId,
-      nameAr: closeout.submittedByName || closeout.openedByName,
-      nameEn: closeout.submittedByName || closeout.openedByName,
-    };
-    const { entries } = buildOperationalEntriesFromCloseout(closeout, actor);
-    const created = [];
-    for (const item of entries) {
-      const entry = buildEntry(item.payload, actor);
-      if (item.payload.attachment || item.attachment) {
-        const attachmentPayload = item.payload.attachment || item.attachment;
-        try {
-          await storeAttachmentPayload(attachmentPayload);
-          entry.attachment = makeAttachment(entry.id, attachmentPayload);
-        } catch {
-          window.alert(text(lang, "attachmentSaveFailed"));
-        }
-      }
-      created.push(entry);
-    }
-    if (created.length) {
-      setOperationalEntries((current) => [...created, ...current]);
-      const summaryEntry = created.find((entry) => entry.type === "summary");
-      if (summaryEntry) {
-        setLastCloseoutDates((current) => mergeLastCloseoutDateForStore(current, summaryEntry.businessId, summaryEntry.date));
-      }
-    }
-  }, [lang, removeOperationalEntriesForCloseout]);
-
-  const handleOwnerCloseoutUpdated = useCallback(async (closeout) => {
-    if (!closeout) return;
-    if (closeout.status === "reviewed") {
-      await syncCloseoutToOperationalEntries({ ...closeout, syncedToEntries: false }, { force: true });
-      return;
-    }
-    if (ENTRIES_API_DB_SOURCE) {
-      if (typeof loadOperationalEntriesFromApiRef.current === "function") {
-        await loadOperationalEntriesFromApiRef.current();
-      }
-      return;
-    }
-    removeOperationalEntriesForCloseout(closeout.id, closeout.storeId);
-  }, [removeOperationalEntriesForCloseout, syncCloseoutToOperationalEntries]);
-
-  const handleOwnerCloseoutDeleted = useCallback(async (closeout) => {
-    if (!closeout) return;
-    if (ENTRIES_API_DB_SOURCE) {
-      if (typeof loadOperationalEntriesFromApiRef.current === "function") {
-        await loadOperationalEntriesFromApiRef.current();
-      }
-    } else {
-      removeOperationalEntriesForCloseout(closeout.id, closeout.storeId);
-    }
-    setCloseoutAlerts((current) => current.filter((item) => !(item.businessId === closeout.storeId && item.date === closeout.date)));
-    setOwnerReviewCloseout((current) => (current?.id === closeout.id ? null : current));
-    setReturnCloseoutTarget((current) => (current?.id === closeout.id ? null : current));
-  }, [removeOperationalEntriesForCloseout]);
-  const logout = async () => {
-    try {
-      await logoutViaSessionBridge({ useServerAuth: APP_IN_PRODUCTION_MODE });
-    } catch (error) {
-      console.warn("logout api failed", error);
-    }
-    applyLogoutReset({
-      bindsToServerAuth: BINDS_TO_SERVER_AUTH,
-      apply: {
-        setSessionOrganizationId,
-        setSessionUserId,
-        setSessionOrganizationId,
-        setLoggedIn,
-        setEmployee,
-        setLoggedInEmployeeId,
-        setAuthScreen,
-        setEmployeePage,
-        setOwnerPage,
-        setOwnerReviewCloseout,
-        setReturnCloseoutTarget,
-        setSelected,
-        setVoidTarget,
-        setRestoreTarget,
-        setSavedOutflowShareTarget,
-        setPendingDuplicateSummary,
-        setDuplicateReviewFocus,
-        setAttachmentReviewRequest,
-        setShareSnapshot,
-        setQuickAddOpen,
-        setArchivedReadOnlyBusinessId,
-        setSelectedBusiness,
-        setOperationalEntries,
-        setStaff,
-        setConfiguredBusinesses,
-        setArchivedBusinessIds,
-        setAuthOwnerUsername,
-        setAuthOwnerPassword,
-        setAuthEmployeePins,
-        setOwnerProfile,
-      },
-    });
-  };
-
-  const syncSubmitCloseoutToApi = useCallback(async ({ action, closeout, employee, reviewWorkflowEnabled }) => {
-    if (!closeoutsApiEnabled) {
-      throw new Error(lang === "ar"
-        ? "مسار API للتقفيلات غير مفعّل."
-        : "Closeouts API is disabled.");
-    }
-    const actorUserId = employee?.apiUserId || employee?.id;
-    const storeChannels = currentEmployeeChannelConfig?.channels || [];
-    const isOwnerSubmit = employee?.submitActorRole === "owner";
-    const ownerStoreChannels = isOwnerSubmit && ownerCloseoutBusiness?.id === closeout?.storeId
-      ? (ownerCloseoutChannelConfig?.channels || [])
-      : storeChannels;
-    const submitFailure = diagnoseCloseoutSubmitFailure({
-      organizationId: closeoutsApiOrganizationId,
-      actorUserId,
-      closeout,
-      storeChannels: isOwnerSubmit ? ownerStoreChannels : storeChannels,
-    });
-    if (submitFailure) {
-      throw new Error(buildCloseoutSubmitFailureMessage(submitFailure, lang));
-    }
-    if (
-      !isUuid(closeoutsApiOrganizationId)
-      || !hasCloseoutApiActorMapping(actorUserId)
-      || !hasCloseoutApiStoreMapping(closeout?.storeId)
-    ) {
-      throw new Error(lang === "ar"
-        ? "تعذر إرسال التقفيلة: سياق API غير مكتمل (منظمة/مستخدم/محل)."
-        : "Closeout submit blocked: API context is incomplete (organization/user/store).");
-    }
-    const result = await submitCloseoutViaApi({
-      organizationId: closeoutsApiOrganizationId,
-      actorUserId,
-      actorRole: isOwnerSubmit ? "owner" : "employee",
-      closeout,
-      storeChannels: isOwnerSubmit ? ownerStoreChannels : storeChannels,
-      mode: action === "resubmit" ? "resubmit" : "submit",
-      autoReview: isOwnerSubmit ? true : !reviewWorkflowEnabled,
-      requireReview: isOwnerSubmit ? false : reviewWorkflowEnabled === true,
-    });
-    if (!result) {
-      throw new Error(lang === "ar"
-        ? "تعذر إرسال التقفيلة: لم يُرجع الخادم تأكيدًا."
-        : "Closeout submit failed: server returned an empty response.");
-    }
-    if (entriesApiEnabled) {
-      await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
-    }
-    return result;
-  }, [
-    closeoutsApiEnabled,
-    closeoutsApiOrganizationId,
-    currentEmployeeChannelConfig?.channels,
-    entriesApiEnabled,
+  const {
+    syncSubmitCloseoutToApi,
+    syncReviewCloseoutToApi,
+    loadCloseoutsFromApi,
+  } = usePrototypeRuntimeCloseoutsApi({
     lang,
-    loadOperationalEntriesFromApi,
-    ownerCloseoutBusiness?.id,
-    ownerCloseoutChannelConfig?.channels,
-  ]);
-
-  const syncReviewCloseoutToApi = useCallback(async ({ action, closeout, reason = "" }) => {
-    if (!closeoutsApiEnabled) {
-      if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
-      return null;
-    }
-    if (
-      !isUuid(closeoutsApiOrganizationId)
-      || !hasCloseoutApiActorMapping(ownerApiUserId)
-      || !hasCloseoutApiStoreMapping(closeout?.storeId)
-    ) {
-      if (closeoutsApiStrictMode) throw new Error("closeouts API mapping is invalid for review.");
-      return null;
-    }
-    const result = await reviewCloseoutViaApi({
-      organizationId: closeoutsApiOrganizationId,
-      actorUserId: ownerApiUserId,
-      actorRole: "owner",
-      closeout,
-      action,
-      reason,
-    });
-    if (entriesApiEnabled) {
-      await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
-    }
-    return result;
-  }, [
     closeoutsApiEnabled,
+    closeoutsApiStrictMode,
     closeoutsApiOrganizationId,
     ownerApiUserId,
-    closeoutsApiStrictMode,
-    entriesApiEnabled,
-    loadOperationalEntriesFromApi,
-  ]);
-
-  loadOperationalEntriesFromApiRef.current = loadOperationalEntriesFromApi;
-
-  const loadCloseoutsFromApi = useCallback(async () => {
-    if (!closeoutsApiEnabled) {
-      if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
-      return [];
-    }
-    if (!isUuid(closeoutsApiOrganizationId)) {
-      throw new Error(
-        lang === "ar"
-          ? "تعذر تحميل التقفيلات: معرف المنظمة غير صالح لمسار API."
-          : "Failed to load closeouts: organization id is missing/invalid for closeouts API.",
-      );
-    }
-
-    if (!hasCloseoutApiActorMapping(apiActorUserId)) {
-      throw new Error(
-        lang === "ar"
-          ? "تعذر تحميل التقفيلات: معرف المستخدم غير مربوط بالخادم."
-          : "Failed to load closeouts: actor user id is missing/invalid for closeouts API.",
-      );
-    }
-
-    const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
-    if (!targetStoreIds.length) {
-      throw new Error(
-        lang === "ar"
-          ? "تعذر تحميل التقفيلات: لا يوجد محل مربوط بالخادم لهذا السياق."
-          : "Failed to load closeouts: no store id is mapped for this API context.",
-      );
-    }
-
-    const fetched = await Promise.all(
-      targetStoreIds.map((storeId) => fetchStoreCloseoutsViaApi({
-        organizationId: closeoutsApiOrganizationId,
-        actorUserId: apiActorUserId,
-        actorRole: apiActorRole,
-        storeId,
-      })),
-    );
-
-    const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
-    const seen = new Set();
-    return merged.filter((item) => {
-      const itemId = typeof item?.id === "string" ? item.id : "";
-      const itemDate = typeof item?.date === "string" ? item.date : "";
-      if (!itemId || !itemDate) return false;
-      const key = `${itemId}:${itemDate}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [
-    apiActorRole,
     apiActorUserId,
+    apiActorRole,
     apiTargetStoreIdsKey,
-    closeoutsApiEnabled,
-    closeoutsApiOrganizationId,
-    closeoutsApiStrictMode,
-    lang,
-  ]);
-
-  useEffect(() => {
-    if (!loggedIn) return;
-    if (!entriesApiEnabled) {
-      if (entriesApiStrictMode) {
-        setOperationalEntriesSyncError(
-          lang === "ar"
-            ? "مسار API للسجل التشغيلي غير مفعّل في وضع الإنتاج."
-            : "Operational entries API is disabled in production mode.",
-        );
-      }
-      return;
-    }
-    if (!runtimeApiStoresReady) {
-      return;
-    }
-    loadOperationalEntriesFromApi().catch((error) => {
-      console.warn("operational entries API load failed", error);
-      setOperationalEntriesSyncError(
-        lang === "ar"
-          ? "تعذر تحديث السجل التشغيلي من الخادم."
-          : "Failed to refresh operational register from server.",
-      );
-    });
-  }, [
-    employee,
     entriesApiEnabled,
-    entriesApiStrictMode,
-    lang,
     loadOperationalEntriesFromApi,
-    loggedIn,
-    runtimeApiStoresReady,
-  ]);
+    currentEmployeeChannelConfig,
+    ownerCloseoutBusiness,
+    ownerCloseoutChannelConfig,
+  });
 
-  useEffect(() => {
-    if (!operationalEntriesSyncError) return;
-    console.warn(operationalEntriesSyncError);
-  }, [operationalEntriesSyncError]);
   useEffect(() => {
     if (!runtimeSettingsSyncError) return;
     console.warn(runtimeSettingsSyncError);
   }, [runtimeSettingsSyncError]);
+
   useEffect(() => {
     if (!orgConfigSyncError) return;
     console.warn(orgConfigSyncError);
   }, [orgConfigSyncError]);
-
-  useEffect(() => {
-    if (!employee || !loggedIn) {
-      setEmployeeRuntimeReady(true);
-      return undefined;
-    }
-    if (!ORG_CONFIG_API_ENABLED || !sessionUserId || !sessionOrganizationId) {
-      setEmployeeRuntimeReady(true);
-      return undefined;
-    }
-    let cancelled = false;
-    setEmployeeRuntimeReady(false);
-    loadEmployeeRuntimeContextFromApi({
-      sessionUserId,
-      sessionOrganizationId,
-    })
-      .then((mapped) => {
-        if (cancelled || !mapped) return;
-        applyOrgConfigMappedState(mapped, {
-          setConfiguredBusinesses,
-          setArchivedBusinessIds,
-          setStoreChannelSettings,
-          setStaff,
-          setStoreOperationalSettings,
-        });
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        console.warn("employee runtime hydration failed", error);
-      })
-      .finally(() => {
-        if (!cancelled) setEmployeeRuntimeReady(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    employee,
-    loggedIn,
-    sessionOrganizationId,
-    sessionUserId,
-    setArchivedBusinessIds,
-    setConfiguredBusinesses,
-    setStaff,
-    setStoreChannelSettings,
-    setStoreOperationalSettings,
-  ]);
-
-  const enterPrototypeAsEmployee = () => {
-    const { organizationId, defaultEmployeeLegacyId, defaultEmployeeUserId } = readPrototypeAccessAuthContext();
-    const person = staff.find((item) => item.active && !item.removed)
-      || (defaultEmployeeUserId
-        ? {
-          id: defaultEmployeeUserId,
-          apiUserId: defaultEmployeeUserId,
-          legacyId: defaultEmployeeLegacyId,
-          active: true,
-          removed: false,
-          storeIds: [],
-        }
-        : null)
-      || PROTOTYPE_DEFAULT_STAFF[0];
-    if (!person?.id) return;
-    completeEmployeeLogin(
-      person.id,
-      person.apiUserId || defaultEmployeeUserId || "",
-      person,
-      organizationId,
-    );
-  };
-
-  const enterPrototypeAsOwner = () => {
-    const { organizationId, ownerUserId } = readPrototypeAccessAuthContext();
-    completeOwnerLogin(ownerUserId, organizationId);
-  };
-
-  useEffect(() => {
-    if (!closeoutsApiEnabled && !entriesApiEnabled) {
-      setRuntimeApiIdMaps(null);
-      return;
-    }
-    let envStoreIdMap = {};
-    let envUserIdMap = {};
-    let envSalesChannelIdMap = {};
-    try {
-      envStoreIdMap = JSON.parse(process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP || "{}");
-      envUserIdMap = JSON.parse(process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP || "{}");
-      envSalesChannelIdMap = JSON.parse(process.env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP || "{}");
-    } catch {
-      envStoreIdMap = {};
-      envUserIdMap = {};
-      envSalesChannelIdMap = {};
-    }
-    const maps = buildRuntimeApiIdMaps({
-      configuredBusinesses,
-      staff,
-      storeChannelSettings,
-      envStoreIdMap,
-      envUserIdMap,
-      envSalesChannelIdMap,
-      includeCatalogDefaults: !BINDS_TO_SERVER_AUTH,
-    });
-    setRuntimeApiIdMaps(patchRuntimeApiMapsForEmployeeSession(maps, {
-      employee,
-      loggedInEmployeeId,
-      sessionUserId,
-      uuidChecker: isUuid,
-    }));
-  }, [closeoutsApiEnabled, configuredBusinesses, employee, entriesApiEnabled, loggedInEmployeeId, sessionUserId, staff, storeChannelSettings]);
 
   if (!loggedIn) {
     return (
@@ -1490,4 +919,3 @@ export default function TaqfeelahPrototypeRuntime() {
     </DailyCloseoutsProvider>
   );
 }
-
