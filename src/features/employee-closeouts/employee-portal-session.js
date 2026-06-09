@@ -133,6 +133,24 @@ export function employeeMatchesSession(staffPerson, loggedInEmployeeId, sessionU
     || staffPerson.legacyId === loggedInEmployeeId;
 }
 
+function findStaffPersonForEmployeeSession(staff, loggedInEmployeeId, sessionUserId = "") {
+  const list = Array.isArray(staff) ? staff : [];
+  return findActiveStaffMember(list, loggedInEmployeeId)
+    || list.find((person) => employeeMatchesSession(person, loggedInEmployeeId, sessionUserId))
+    || null;
+}
+
+function rosterPersonMatchesEmployee(rosterPerson, loggedInEmployeeId, sessionUserId = "") {
+  if (!rosterPerson) return false;
+  return employeeMatchesSession(rosterPerson, loggedInEmployeeId, sessionUserId);
+}
+
+function employeeStoreIdsNeedHydration(employeeRow, businesses) {
+  if (!employeeRow) return false;
+  if (!employeeRow.storeIds?.length) return true;
+  return resolveAssignedEmployeeBusinesses(businesses, employeeRow).length === 0;
+}
+
 /**
  * After employee runtime hydration, backfill missing roster storeIds from API stores.
  * @param {Object} input
@@ -156,19 +174,31 @@ export function patchEmployeeStaffStoreIdsFromHydration({
   }
 
   const storeIds = businesses.map((business) => business.id);
-  const currentStaff = Array.isArray(staff) ? staff : [];
-  const employeeRow = findActiveStaffMember(currentStaff, loggedInEmployeeId)
-    || currentStaff.find((person) => employeeMatchesSession(person, loggedInEmployeeId, sessionUserId));
+  let currentStaff = Array.isArray(staff) ? staff : [];
+  let employeeRow = findStaffPersonForEmployeeSession(currentStaff, loggedInEmployeeId, sessionUserId);
 
   if (!employeeRow) {
-    return { staff: currentStaff, employeeBusinessId };
+    employeeRow = {
+      id: loggedInEmployeeId,
+      apiUserId: sessionUserId || loggedInEmployeeId,
+      legacyId: "",
+      active: true,
+      removed: false,
+      storeIds: [],
+    };
+    currentStaff = [employeeRow, ...currentStaff];
   }
 
-  const needsStoreIds = !employeeRow.storeIds?.length;
+  const needsStoreIds = employeeStoreIdsNeedHydration(employeeRow, businesses);
   const nextStaff = needsStoreIds
     ? currentStaff.map((person) => (
-      employeeMatchesSession(person, loggedInEmployeeId, sessionUserId)
-        ? { ...person, storeIds }
+      rosterPersonMatchesEmployee(person, loggedInEmployeeId, sessionUserId)
+        ? {
+          ...person,
+          active: true,
+          removed: false,
+          storeIds,
+        }
         : person
     ))
     : currentStaff;
@@ -181,4 +211,35 @@ export function patchEmployeeStaffStoreIdsFromHydration({
     staff: nextStaff,
     employeeBusinessId: nextBusinessId,
   };
+}
+
+/**
+ * Merge prototype employee roster row into staff before hydration completes.
+ * @param {Array<Record<string, unknown>>} staff
+ * @param {Record<string, unknown> | null | undefined} rosterPerson
+ */
+export function upsertPrototypeEmployeeRosterStaff(staff, rosterPerson) {
+  if (!rosterPerson?.id) return Array.isArray(staff) ? staff : [];
+
+  const currentStaff = Array.isArray(staff) ? staff : [];
+  const index = currentStaff.findIndex((person) => (
+    person.id === rosterPerson.id
+    || (rosterPerson.apiUserId && person.apiUserId === rosterPerson.apiUserId)
+    || (rosterPerson.legacyId && person.legacyId === rosterPerson.legacyId)
+  ));
+
+  if (index < 0) return [rosterPerson, ...currentStaff];
+
+  const existing = currentStaff[index];
+  const merged = {
+    ...existing,
+    ...rosterPerson,
+    active: true,
+    removed: false,
+    storeIds: rosterPerson.storeIds?.length ? rosterPerson.storeIds : (existing.storeIds || []),
+  };
+
+  return currentStaff.map((person, personIndex) => (
+    personIndex === index ? merged : person
+  ));
 }

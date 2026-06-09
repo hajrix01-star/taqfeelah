@@ -3,6 +3,7 @@ import {
   applyLogoutReset,
   applyOwnerLoginSuccess,
 } from "@/features/auth/client/auth-runtime-orchestrator";
+import { upsertPrototypeEmployeeRosterStaff } from "@/features/employee-closeouts/employee-portal-session";
 import { logoutViaSessionBridge } from "@/features/auth/client/session-bridge";
 import { readPrototypeAccessAuthContext } from "@/core/client/prototype-access-auth-context";
 import {
@@ -65,15 +66,11 @@ export function createPrototypeRuntimeAuthHandlers({
   };
 
   const completeEmployeeLogin = (personId, apiUserId = "", rosterPerson = null, organizationId = "") => {
-    const loginStaff = rosterPerson && !staff.some((person) => person.id === rosterPerson.id)
-      ? [rosterPerson, ...staff]
+    const loginStaff = rosterPerson
+      ? upsertPrototypeEmployeeRosterStaff(staff, rosterPerson)
       : staff;
     if (rosterPerson) {
-      setStaff((current) => (
-        current.some((person) => person.id === rosterPerson.id)
-          ? current
-          : [rosterPerson, ...current]
-      ));
+      setStaff((current) => upsertPrototypeEmployeeRosterStaff(current, rosterPerson));
     }
     applyEmployeeLoginSuccess({
       personId,

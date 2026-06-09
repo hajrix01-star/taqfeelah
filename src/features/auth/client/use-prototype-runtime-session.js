@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
+import { resolveClientOrganizationId } from "@/core/client/resolve-client-organization-id";
 import { isUuid, setRuntimeApiIdMaps } from "@/features/closeouts/client/closeouts-api-client";
 import {
   patchEmployeeStaffStoreIdsFromHydration,
@@ -79,6 +80,9 @@ export function usePrototypeRuntimeSessionSync({
   configuredBusinesses,
   storeChannelSettings,
 }) {
+  const employeeBusinessIdRef = useRef(employeeBusinessId);
+  employeeBusinessIdRef.current = employeeBusinessId;
+
   useEffect(() => {
     if (!APP_IN_PRODUCTION_MODE) return;
     let cancelled = false;
@@ -129,7 +133,8 @@ export function usePrototypeRuntimeSessionSync({
       setEmployeeRuntimeReady(true);
       return undefined;
     }
-    if (!ORG_CONFIG_API_ENABLED || !sessionUserId || !sessionOrganizationId) {
+    const resolvedOrganizationId = resolveClientOrganizationId({ sessionOrganizationId });
+    if (!ORG_CONFIG_API_ENABLED || !sessionUserId || !resolvedOrganizationId) {
       setEmployeeRuntimeReady(true);
       return undefined;
     }
@@ -141,6 +146,8 @@ export function usePrototypeRuntimeSessionSync({
     })
       .then((mapped) => {
         if (cancelled || !mapped) return;
+        const businesses = Array.isArray(mapped.configuredBusinesses) ? mapped.configuredBusinesses : [];
+
         applyOrgConfigMappedState(mapped, {
           setConfiguredBusinesses,
           setArchivedBusinessIds,
@@ -149,10 +156,9 @@ export function usePrototypeRuntimeSessionSync({
           setStoreOperationalSettings,
         });
 
-        const businesses = Array.isArray(mapped.configuredBusinesses) ? mapped.configuredBusinesses : [];
         if (!businesses.length) return;
 
-        let patchedBusinessId = employeeBusinessId;
+        let patchedBusinessId = employeeBusinessIdRef.current;
         setStaff((currentStaff) => {
           const patch = patchEmployeeStaffStoreIdsFromHydration({
             staff: currentStaff,
@@ -164,7 +170,7 @@ export function usePrototypeRuntimeSessionSync({
           patchedBusinessId = patch.employeeBusinessId;
           return patch.staff;
         });
-        if (patchedBusinessId !== employeeBusinessId) {
+        if (patchedBusinessId !== employeeBusinessIdRef.current) {
           setEmployeeBusinessId(patchedBusinessId);
         }
       })
@@ -180,7 +186,6 @@ export function usePrototypeRuntimeSessionSync({
     };
   }, [
     employee,
-    employeeBusinessId,
     loggedIn,
     loggedInEmployeeId,
     sessionOrganizationId,
