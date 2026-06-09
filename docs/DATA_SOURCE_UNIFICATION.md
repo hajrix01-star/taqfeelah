@@ -126,3 +126,24 @@ DB-backed runtime objects use database UUIDs as their canonical `id`.
   compatibility maps.
 
 This prevents UI/API comparisons between two identities for the same entity.
+
+## Modern foundation reset
+
+When all existing data is confirmed as non-production/demo data, reset through
+the guarded script:
+
+```bash
+RESET_FOUNDATION_CONFIRM=reset-modern-foundation pnpm db:reset:foundation
+```
+
+Production deploy can run the same reset exactly once when the pushed commit
+message includes `[reset-foundation]`. The script:
+
+- truncates the old demo data
+- seeds one canonical organization and store
+- seeds one owner and two employees
+- grants employee store access
+- seeds sales channels and outflow categories
+- writes canonical runtime settings using UUID `id` values and `legacyId` only
+  for temporary compatibility
+- verifies the resulting counts before committing the transaction
