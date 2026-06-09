@@ -69,6 +69,30 @@ describe("org config runtime mapper", () => {
     expect(channel.nameEn).toBe("Talabat");
   });
 
+  it("maps production sales channel API rows with RFC4122 UUID ids", () => {
+    const productionChannels = [
+      { id: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d", legacyId: "apple", name: "Apple Pay", status: "active" },
+      { id: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb", legacyId: "cash", name: "Cash", status: "active" },
+      { id: "9e5c3a4b-0d6f-4a1c-a3e4-5f6a7b8c9d0e", legacyId: "jahez", name: "Jahez", status: "active" },
+      { id: "af6d4b5c-1e7a-4b2d-a4f5-6a7b8c9d0e1f", legacyId: "hunger", name: "HungerStation", status: "active" },
+    ];
+
+    const mapped = mapOrgConfigBundleToRuntime({
+      stores: [{
+        id: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        legacyId: "shami",
+        name: "Shami",
+        status: "active",
+      }],
+      channelsByStoreId: {
+        "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c": productionChannels,
+      },
+      members: [],
+    } as Parameters<typeof mapOrgConfigBundleToRuntime>[0]);
+
+    expect(() => validateOrgConfigDbChannelMappings(mapped, { strict: true })).not.toThrow();
+  });
+
   it("rejects legacy ids as canonical DB ids", () => {
     expect(() => assertCanonicalUuidId("store", "shami")).toThrow("store id must be a canonical UUID");
     expect(() => mapApiStoreToBusiness({
