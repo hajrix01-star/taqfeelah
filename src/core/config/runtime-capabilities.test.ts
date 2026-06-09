@@ -43,6 +43,23 @@ describe("runtime capabilities", () => {
     expect(caps.registerEntriesPaginationEnabled).toBe(true);
   });
 
+  it("reads public DB flags when no env object is passed", () => {
+    process.env.NEXT_PUBLIC_CLOSEOUTS_API_ENABLED = "true";
+    process.env.NEXT_PUBLIC_ENTRIES_API_ENABLED = "true";
+    process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED = "true";
+    process.env.NEXT_PUBLIC_PHASE9_API_ENABLED = "true";
+    process.env.NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED = "true";
+
+    const caps = resolveRuntimeCapabilities();
+
+    expect(caps.closeoutsApiEnabled).toBe(true);
+    expect(caps.entriesApiEnabled).toBe(true);
+    expect(caps.orgConfigApiEnabled).toBe(true);
+    expect(caps.phase9ApiEnabled).toBe(true);
+    expect(caps.registerEntriesPaginationEnabled).toBe(true);
+    expect(caps.usesRuntimeSettingsApi).toBe(true);
+  });
+
   it("builds api actor context for owner and employee sessions", () => {
     process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID = "11111111-1111-4111-8111-111111111111";
     process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID = "22222222-2222-4222-8222-222222222222";

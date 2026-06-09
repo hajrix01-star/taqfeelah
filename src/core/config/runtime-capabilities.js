@@ -26,11 +26,25 @@ import { isRegisterEntriesPaginationEnabled } from "@/core/config/register-entri
  * @property {boolean} browserPersistentStorageAllowed
  */
 
+function readRuntimeCapabilitiesEnv() {
+  return {
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_APP_MODE: process.env.NEXT_PUBLIC_APP_MODE,
+    NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: process.env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE,
+    NEXT_PUBLIC_CLOSEOUTS_API_ENABLED: process.env.NEXT_PUBLIC_CLOSEOUTS_API_ENABLED,
+    NEXT_PUBLIC_ENTRIES_API_ENABLED: process.env.NEXT_PUBLIC_ENTRIES_API_ENABLED,
+    NEXT_PUBLIC_ORG_CONFIG_API_ENABLED: process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED,
+    NEXT_PUBLIC_PHASE9_API_ENABLED: process.env.NEXT_PUBLIC_PHASE9_API_ENABLED,
+    NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED: process.env.NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED,
+    NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE: process.env.NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE,
+  };
+}
+
 /**
  * @param {Record<string, string | undefined>} [env]
  * @returns {RuntimeCapabilities}
  */
-export function resolveRuntimeCapabilities(env = process.env) {
+export function resolveRuntimeCapabilities(env = readRuntimeCapabilitiesEnv()) {
   const appInProductionMode = isProductionAppMode();
   const prototypeAccessMode = isPrototypeAccessMode();
   const bindsToServerAuth = appInProductionMode && !prototypeAccessMode;
@@ -80,7 +94,7 @@ export function resolveRuntimeApiActorContext({
   activeEmployee = null,
   assignedEmployeeBusinesses = [],
   reportingBusinesses = [],
-  env = process.env,
+  env = readRuntimeCapabilitiesEnv(),
 } = {}) {
   const capabilities = resolveRuntimeCapabilities(env);
   const organizationId = env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
