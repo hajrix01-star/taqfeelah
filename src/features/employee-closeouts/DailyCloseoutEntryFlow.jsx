@@ -7,6 +7,10 @@ import { notebookLinesBackground } from "../daily-closeouts/notebook-themes";
 import { computeCloseoutTotals, salesRecordFromChannels } from "../daily-closeouts/closeout-calculations";
 import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-demo-store";
 import AttachmentLightbox from "../../components/AttachmentLightbox";
+import {
+  sanitizeAmountInput,
+  toAmount,
+} from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
 
 const EXPENSE_CATEGORIES = [
   { id: "electricity", ar: "كهرباء", en: "Electricity" },
@@ -85,7 +89,7 @@ export default function DailyCloseoutEntryFlow({
   const totals = useMemo(() => {
     const salesRecord = salesRecordFromChannels(
       salesChannels,
-      Object.fromEntries(salesChannels.map((ch) => [ch.id, salesValues[ch.id] || 0])),
+      Object.fromEntries(salesChannels.map((ch) => [ch.id, toAmount(salesValues[ch.id])])),
     );
     return computeCloseoutTotals(salesRecord, outflows);
   }, [outflows, salesChannels, salesValues]);
@@ -98,10 +102,10 @@ export default function DailyCloseoutEntryFlow({
     review: lang === "ar" ? "المراجعة" : "Review",
   };
 
-  const buildCloseout = useCallback(() => {
+  const buildCloseout = useCallback((outflowRows = outflows) => {
     const salesRecord = salesRecordFromChannels(
       salesChannels,
-      Object.fromEntries(salesChannels.map((ch) => [ch.id, salesValues[ch.id] || 0])),
+      Object.fromEntries(salesChannels.map((ch) => [ch.id, toAmount(salesValues[ch.id])])),
     );
     const base = {
       ...initialCloseout,
@@ -109,15 +113,15 @@ export default function DailyCloseoutEntryFlow({
       storeName,
       notebookTheme: initialCloseout?.notebookTheme || notebookTheme || "yellow",
       sales: salesRecord,
-      outflows,
+      outflows: outflowRows,
       attachments,
     };
     return withCloseoutTotals(base);
   }, [attachments, date, initialCloseout, notebookTheme, outflows, salesChannels, salesValues, storeName]);
 
-  const pushOutflow = () => {
-    const amount = Number(outAmount || 0);
-    if (!amount) return;
+  const buildOutflowRow = (amountValue, noteValue = outNote) => {
+    const amount = toAmount(amountValue);
+    if (!amount) return null;
     let category = null;
     let typeLabel = OUTFLOW_TYPES.find((item) => item.id === outType)?.[lang === "ar" ? "ar" : "en"] || outType;
     if (outType === "expense") {
@@ -125,19 +129,22 @@ export default function DailyCloseoutEntryFlow({
       category = lang === "ar" ? cat?.ar : cat?.en;
       typeLabel = lang === "ar" ? "مصروف" : "Expense";
     }
-    setOutflows((current) => [
-      ...current,
-      {
-        id: `out-${Date.now()}`,
-        type: outType,
-        typeLabel,
-        category,
-        categoryId: outType === "expense" ? expenseCategory : null,
-        note: outNote.trim(),
-        amount,
-        attachments: [],
-      },
-    ]);
+    return {
+      id: `out-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      type: outType,
+      typeLabel,
+      category,
+      categoryId: outType === "expense" ? expenseCategory : null,
+      note: String(noteValue || "").trim(),
+      amount,
+      attachments: [],
+    };
+  };
+
+  const pushOutflow = () => {
+    const row = buildOutflowRow(outAmount);
+    if (!row) return;
+    setOutflows((current) => [...current, row]);
     setOutAmount("");
     setOutNote("");
   };
@@ -174,11 +181,19 @@ export default function DailyCloseoutEntryFlow({
       window.alert(lang === "ar" ? "لا توجد قنوات بيع مفعّلة لهذا المحل." : "No active sales channels for this store.");
       return;
     }
-    if (totals.totalSales <= 0) {
+    const pendingOutflow = buildOutflowRow(outAmount);
+    const nextOutflows = pendingOutflow ? [...outflows, pendingOutflow] : outflows;
+    if (pendingOutflow) {
+      setOutflows(nextOutflows);
+      setOutAmount("");
+      setOutNote("");
+    }
+    const closeout = buildCloseout(nextOutflows);
+    if ((closeout.totals?.totalSales || 0) <= 0) {
       window.alert(lang === "ar" ? "أدخل مبلغ الداخل" : "Enter sales amount");
       return;
     }
-    await onSubmit(buildCloseout(), { isResubmit });
+    await onSubmit(closeout, { isResubmit });
   };
 
   return (
@@ -231,7 +246,10 @@ export default function DailyCloseoutEntryFlow({
                             inputMode="decimal"
                             dir="ltr"
                             value={salesValues[channel.id] || ""}
-                            onChange={(event) => setSalesValues((current) => ({ ...current, [channel.id]: event.target.value }))}
+                            onChange={(event) => setSalesValues((current) => ({
+                              ...current,
+                              [channel.id]: sanitizeAmountInput(event.target.value),
+                            }))}
                             className={moneyInputClass}
                             placeholder="0"
                           />
@@ -274,7 +292,7 @@ export default function DailyCloseoutEntryFlow({
                   <div className="flex items-stretch gap-2">
                     <input
                       value={outAmount}
-                      onChange={(event) => setOutAmount(event.target.value)}
+                      onChange={(event) => setOutAmount(sanitizeAmountInput(event.target.value))}
                       inputMode="decimal"
                       dir="ltr"
                       placeholder={lang === "ar" ? "المبلغ" : "Amount"}

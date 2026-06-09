@@ -46,8 +46,17 @@ export default function CloseoutShareModal({
   const totals = useMemo(() => (closeout ? closeoutShareTotals(closeout) : null), [closeout]);
   const operations = useMemo(() => (closeout ? buildCloseoutShareOperationRows(closeout, lang) : []), [closeout, lang]);
   const shareCaption = useMemo(
-    () => (closeout ? buildEmployeeShareCaption(lang, resolvedStoreName, resolvedEmployeeName, resolvedPeriodLabel, closeout.date) : ""),
-    [lang, closeout, resolvedStoreName, resolvedEmployeeName, resolvedPeriodLabel],
+    () => (closeout
+      ? buildEmployeeShareCaption(
+        lang,
+        resolvedStoreName,
+        resolvedEmployeeName,
+        resolvedPeriodLabel,
+        closeout.date,
+        totals,
+      )
+      : ""),
+    [lang, closeout, resolvedStoreName, resolvedEmployeeName, resolvedPeriodLabel, totals],
   );
   const selectedTheme = closeout?.notebookTheme || notebookTheme || "yellow";
   const paperColor = notebookThemes[selectedTheme]?.paper || notebookThemes.yellow?.paper || "#FFFDF7";
