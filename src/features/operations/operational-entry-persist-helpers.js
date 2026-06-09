@@ -1,3 +1,4 @@
+import { refreshOperationalEntriesBestEffort } from "./client/refresh-operational-entries-best-effort";
 import {
   resolveLatestActiveCloseoutDateFromEntries,
   resolveOperationalEntrySaveFailureMessage,
@@ -90,19 +91,27 @@ export async function persistOperationalEntryThroughApi({
   actorRole,
   lang = "ar",
 }) {
-  const created = await createOperationalEntryInApi({
-    payload,
-    actorUserId,
-    actorRole,
-  });
+  let created;
+  try {
+    created = await createOperationalEntryInApi({
+      payload,
+      actorUserId,
+      actorRole,
+    });
+  } catch (error) {
+    const message = error instanceof Error && error.message
+      ? error.message
+      : resolveOperationalEntrySaveFailureMessage(lang);
+    return { ok: false, failureMessage: message };
+  }
   if (!created) {
     return {
       ok: false,
       failureMessage: resolveOperationalEntrySaveFailureMessage(lang),
     };
   }
-  const refreshed = await loadOperationalEntriesFromApi();
-  return { ok: true, created, refreshed };
+  const { refreshed, refreshFailed } = await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
+  return { ok: true, created, refreshed, refreshFailed };
 }
 
 /**

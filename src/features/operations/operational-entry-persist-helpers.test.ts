@@ -85,6 +85,18 @@ describe("operational entry persist helpers", () => {
     });
     expect(apiResult.ok).toBe(true);
 
+    loadOperationalEntriesFromApi.mockRejectedValueOnce(new Error("entries fetch API returned invalid payload."));
+    const refreshFailed = await persistOperationalEntryThroughApi({
+      createOperationalEntryInApi,
+      loadOperationalEntriesFromApi,
+      payload: { businessId: "shami", type: "expense" },
+      actorUserId: "owner",
+      actorRole: "owner",
+      lang: "en",
+    });
+    expect(refreshFailed.ok).toBe(true);
+    expect(refreshFailed.refreshFailed).toBe(true);
+
     createOperationalEntryInApi.mockResolvedValueOnce(null);
     const failed = await persistOperationalEntryThroughApi({
       createOperationalEntryInApi,

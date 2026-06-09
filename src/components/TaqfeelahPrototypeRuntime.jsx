@@ -111,7 +111,10 @@ import { resolveOperationalEntriesBulkLoadWindow } from "@/features/entries/clie
 import { resolveRuntimeApiActorContext } from "@/core/config/runtime-capabilities";
 import { useEmployeeEntryActions } from "@/features/employee-shell/client/use-employee-entry-actions";
 import { useEmployeePortalState } from "@/features/employee-shell/client/use-employee-portal-state";
+import { applyOrgConfigMappedState } from "@/features/org-config/client/org-config-runtime-bridge";
+import { loadEmployeeRuntimeContextFromApi } from "@/features/org-config/client/employee-runtime-hydration";
 import { useOwnerSettingsState } from "@/features/org-config/client/use-owner-settings-state";
+import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
 import { useOwnerShellState } from "@/features/owner-shell/client/use-owner-shell-state";
 import { resolveSelectedOperationReviewEnabled } from "@/features/operations/client/register-operations-selection";
 import { useRegisterOperationsState } from "@/features/operations/client/use-register-operations-state";
@@ -2168,6 +2171,11 @@ export default function TaqfeelahPrototypeRuntime() {
       setOwnerPage("home");
       if (payload.type !== "summary") setSavedOutflowShareTarget(local.entry);
       else { setSaved(true); window.setTimeout(() => setSaved(false), 2200); }
+    } catch (error) {
+      const message = error instanceof Error && error.message
+        ? error.message
+        : (lang === "ar" ? "تعذر حفظ العملية على الخادم." : "Failed to save entry on server.");
+      window.alert(message);
     } finally { savingRef.current = false; setSaving(false); }
   };
   const saveOwnerSummary = async (payload) => {
@@ -2473,7 +2481,7 @@ export default function TaqfeelahPrototypeRuntime() {
       requireReview: reviewWorkflowEnabled === true,
     });
     if (entriesApiEnabled) {
-      await loadOperationalEntriesFromApi();
+      await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
     }
     return result;
   }, [
@@ -2507,7 +2515,7 @@ export default function TaqfeelahPrototypeRuntime() {
       reason,
     });
     if (entriesApiEnabled) {
-      await loadOperationalEntriesFromApi();
+      await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
     }
     return result;
   }, [
@@ -2615,6 +2623,42 @@ export default function TaqfeelahPrototypeRuntime() {
     if (!orgConfigSyncError) return;
     console.warn(orgConfigSyncError);
   }, [orgConfigSyncError]);
+
+  useEffect(() => {
+    if (!employee || !loggedIn || !ORG_CONFIG_API_ENABLED || !sessionUserId) return undefined;
+    let cancelled = false;
+    loadEmployeeRuntimeContextFromApi({
+      sessionUserId,
+      employeePins: authEmployeePins,
+    })
+      .then((mapped) => {
+        if (cancelled || !mapped) return;
+        applyOrgConfigMappedState(mapped, {
+          setConfiguredBusinesses,
+          setArchivedBusinessIds,
+          setStoreChannelSettings,
+          setStaff,
+          setStoreOperationalSettings,
+        });
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.warn("employee runtime hydration failed", error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    authEmployeePins,
+    employee,
+    loggedIn,
+    sessionUserId,
+    setArchivedBusinessIds,
+    setConfiguredBusinesses,
+    setStaff,
+    setStoreChannelSettings,
+    setStoreOperationalSettings,
+  ]);
 
   const enterPrototypeAsEmployee = () => {
     const person = staff.find((item) => item.active && !item.removed) || PROTOTYPE_DEFAULT_STAFF[0];

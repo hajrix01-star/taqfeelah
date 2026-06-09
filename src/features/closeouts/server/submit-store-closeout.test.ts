@@ -29,6 +29,14 @@ vi.mock("@/features/org-config/server/read-store-operational-settings", () => ({
 
 vi.mock("@/core/db/client", () => ({
   getDb: () => ({
+    select: () => ({
+      from: () => ({
+        where: async () => [{
+          id: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+          name: "Cash",
+        }],
+      }),
+    }),
     transaction: async (callback: (tx: ReturnType<typeof createTx>) => Promise<unknown>) =>
       callback(createTx()),
   }),

@@ -9,6 +9,7 @@ import { resolveCloseoutAutoReview } from "@/features/closeouts/server/closeout-
 import { resolveCloseoutDaySequence } from "@/features/closeouts/server/resolve-closeout-day-sequence";
 import { readStoreOperationalSettingsRecord } from "@/features/org-config/server/read-store-operational-settings";
 import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
+import { resolveStoreSalesChannelsForWrite } from "@/features/org-config/server/resolve-store-sales-channels-for-write";
 
 const salesChannelSchema = z.object({
   salesChannelId: z.string().uuid(),
@@ -58,14 +59,19 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
     minimumRole: "employee",
   });
 
-  const normalizedChannels = input.salesChannels.filter((row) => row.amountHalalas > 0);
+  const db = getDb();
+  const normalizedChannels = await resolveStoreSalesChannelsForWrite(
+    db,
+    input.organizationId,
+    input.storeId,
+    input.salesChannels.filter((row) => row.amountHalalas > 0),
+  );
   const totalSalesHalalas = normalizedChannels.reduce((sum, row) => sum + row.amountHalalas, 0);
   if (totalSalesHalalas <= 0) {
     throw new ValidationError("Closeout must include at least one positive sales channel amount.");
   }
 
   const totalOutflowHalalas = input.outflows.reduce((sum, row) => sum + row.amountHalalas, 0);
-  const db = getDb();
   const operationalSettings = await readStoreOperationalSettingsRecord(
     db,
     input.organizationId,

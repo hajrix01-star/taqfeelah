@@ -20,6 +20,12 @@ const CLOSEOUT_SEND_ERROR_AR = "تعذر الإرسال.";
 const CLOSEOUT_SEND_ERROR_EN = "Failed to send.";
 import { CLOSEOUT_STATUS } from "./closeout-status";
 
+function resolveCloseoutWorkflowErrorMessage(error, lang, phase) {
+  if (error instanceof Error && error.message.trim()) return error.message.trim();
+  if (phase === "save") return lang === "ar" ? CLOSEOUT_SAVE_ERROR_AR : CLOSEOUT_SAVE_ERROR_EN;
+  return lang === "ar" ? CLOSEOUT_SEND_ERROR_AR : CLOSEOUT_SEND_ERROR_EN;
+}
+
 const DailyCloseoutsContext = createContext(null);
 
 export function useDailyCloseouts() {
@@ -268,7 +274,7 @@ export function DailyCloseoutsProvider({
       return next;
     } catch (error) {
       console.warn("closeout submit send failed", error);
-      setSyncError(lang === "ar" ? CLOSEOUT_SEND_ERROR_AR : CLOSEOUT_SEND_ERROR_EN);
+      setSyncError(resolveCloseoutWorkflowErrorMessage(error, lang, "send"));
       return { ok: false, phase: "send" };
     }
   }, [
@@ -360,7 +366,7 @@ export function DailyCloseoutsProvider({
       return next;
     } catch (error) {
       console.warn("closeout resubmit send failed", error);
-      setSyncError(lang === "ar" ? CLOSEOUT_SEND_ERROR_AR : CLOSEOUT_SEND_ERROR_EN);
+      setSyncError(resolveCloseoutWorkflowErrorMessage(error, lang, "send"));
       return { ok: false, phase: "send" };
     }
   }, [
