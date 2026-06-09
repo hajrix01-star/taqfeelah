@@ -129,6 +129,15 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
           updatedAt: new Date(),
         })
         .where(eq(dailyCloseouts.id, closeoutRowId));
+      await tx
+        .delete(entries)
+        .where(
+          and(
+            eq(entries.organizationId, input.organizationId),
+            eq(entries.storeId, input.storeId),
+            eq(entries.closeoutId, closeoutRowId),
+          ),
+        );
     } else {
       const [insertedCloseout] = await tx
         .insert(dailyCloseouts)

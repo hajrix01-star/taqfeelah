@@ -1,4 +1,36 @@
+import { toRiyals } from "@/core/money/halalas";
 import { computeCloseoutTotals, salesArrayFromRecord } from "./closeout-calculations";
+
+function readShareAmount(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/** Accept UI totals, API ack payloads, and persisted closeout totals. */
+export function normalizeCloseoutShareTotals(totals) {
+  if (!totals || typeof totals !== "object") return null;
+  const sales = readShareAmount(
+    totals.sales
+    ?? totals.totalSales
+    ?? (totals.totalSalesHalalas != null ? toRiyals(totals.totalSalesHalalas) : 0),
+  );
+  const expense = readShareAmount(
+    totals.expense
+    ?? totals.totalOutflow
+    ?? (totals.totalOutflowHalalas != null ? toRiyals(totals.totalOutflowHalalas) : 0),
+  );
+  const netFromFields = totals.net ?? totals.netMovement;
+  const net = netFromFields != null && netFromFields !== ""
+    ? readShareAmount(netFromFields)
+    : totals.netMovementHalalas != null
+      ? toRiyals(totals.netMovementHalalas)
+      : sales - expense;
+  const ratio = typeof totals.ratio === "string"
+    ? totals.ratio
+    : (typeof totals.outflowRatio === "string" ? totals.outflowRatio : null);
+  if (sales <= 0 && expense <= 0 && net === 0 && !ratio) return null;
+  return { sales, expense, net, ratio };
+}
 
 function outflowRowLabel(item, lang) {
   const typeMap = {
@@ -61,9 +93,16 @@ export function buildCloseoutShareOperationRows(closeout, lang) {
 }
 
 export function closeoutShareTotals(closeout) {
-  const totals = closeout.totals || computeCloseoutTotals(closeout.sales, closeout.outflows);
-  const sales = totals.totalSales || 0;
-  const expense = totals.totalOutflow || 0;
+  const normalized = normalizeCloseoutShareTotals(closeout?.totals);
+  if (normalized) {
+    const { sales, expense, net } = normalized;
+    const ratio = normalized.ratio
+      || (sales > 0 ? `${((expense / sales) * 100).toFixed(1)}%` : expense > 0 ? "—" : "0.0%");
+    return { sales, expense, net, ratio };
+  }
+  const computed = computeCloseoutTotals(closeout?.sales, closeout?.outflows);
+  const sales = computed.totalSales || 0;
+  const expense = computed.totalOutflow || 0;
   const ratio = sales > 0 ? `${((expense / sales) * 100).toFixed(1)}%` : expense > 0 ? "—" : "0.0%";
-  return { sales, expense, net: totals.netMovement ?? sales - expense, ratio };
+  return { sales, expense, net: computed.netMovement ?? sales - expense, ratio };
 }

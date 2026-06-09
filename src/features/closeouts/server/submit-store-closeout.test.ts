@@ -1,11 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { auditEvents, dailyCloseouts, entries } from "@/core/db/schema";
 
 type InsertCall = { table: unknown; values: unknown };
 type UpdateCall = { table: unknown; set: unknown };
+type DeleteCall = { table: unknown };
 
 const insertCalls: InsertCall[] = [];
 const updateCalls: UpdateCall[] = [];
+const deleteCalls: DeleteCall[] = [];
+let txExistingCloseout = false;
 
 vi.mock("@/core/auth/assert-store-access", () => ({
   assertStoreAccess: vi.fn(async () => undefined),
@@ -40,16 +43,16 @@ vi.mock("@/core/db/client", () => ({
       }),
     }),
     transaction: async (callback: (tx: ReturnType<typeof createTx>) => Promise<unknown>) =>
-      callback(createTx()),
+      callback(createTx({ existingCloseout: txExistingCloseout })),
   }),
 }));
 
-function createTx() {
+function createTx({ existingCloseout = false } = {}) {
   return {
     select: () => ({
       from: () => ({
         where: () => ({
-          limit: async () => [],
+          limit: async () => (existingCloseout ? [{ id: "daily-closeout-1" }] : []),
         }),
       }),
     }),
@@ -61,6 +64,12 @@ function createTx() {
         };
       },
     }),
+    delete: (table: unknown) => {
+      deleteCalls.push({ table });
+      return {
+        where: async () => undefined,
+      };
+    },
     insert: (table: unknown) => ({
       values: (values: unknown) => {
         insertCalls.push({ table, values });
@@ -111,9 +120,14 @@ function auditInserts() {
 }
 
 describe("submitStoreCloseout", () => {
-  it("auto-approves employee closeout when autoReview is true", async () => {
+  beforeEach(() => {
+    txExistingCloseout = false;
     insertCalls.length = 0;
     updateCalls.length = 0;
+    deleteCalls.length = 0;
+  });
+
+  it("auto-approves employee closeout when autoReview is true", async () => {
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 
     const result = await submitStoreCloseout({
@@ -232,5 +246,29 @@ describe("submitStoreCloseout", () => {
 
     expect((entryInserts()[0]?.values as { status: string }).status).toBe("active");
     expect(auditInserts()).toHaveLength(2);
+  });
+
+  it("replaces prior entries when resubmitting a closeout", async () => {
+    txExistingCloseout = true;
+    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
+
+    await submitStoreCloseout({
+      ...baseInput,
+      mode: "resubmit",
+      autoReview: false,
+      outflows: [
+        {
+          type: "expense",
+          amountHalalas: 2500,
+          categoryName: "كهرباء",
+          typeLabel: "مصروف",
+          note: "",
+        },
+      ],
+    });
+
+    expect(deleteCalls.some((call) => call.table === entries)).toBe(true);
+    expect(closeoutInserts()).toHaveLength(0);
+    expect(entryInserts().length).toBeGreaterThanOrEqual(2);
   });
 });

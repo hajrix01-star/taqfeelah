@@ -38,29 +38,45 @@ export async function shareImageThroughSystem({ file, caption = "", title = "", 
   return { ok: false, method: "unsupported" };
 }
 
+/**
+ * WhatsApp often drops `text` when `files` are attached via Web Share.
+ * Open wa.me with the caption first, then copy the image when possible.
+ */
 export async function shareImageThroughWhatsApp({
   file,
   caption = "",
   title = "",
 }) {
-  if (!file) return { ok: false, method: "none" };
+  if (!caption && !file) return { ok: false, method: "none" };
 
-  const systemShare = await shareImageThroughSystem({ file, caption, title, allowFileOnlyFallback: false });
-  if (systemShare.method === "share" || systemShare.method === "abort") {
-    return systemShare;
+  const textCopied = await copyShareCaptionText(caption);
+  if (caption) {
+    openWhatsAppWithText(caption);
+  }
+
+  if (!file) {
+    return { ok: Boolean(caption), method: "text-only", copied: textCopied };
   }
 
   if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
     try {
       const type = file.type || "image/png";
       await navigator.clipboard.write([new ClipboardItem({ [type]: file })]);
-      openWhatsAppWithText(caption);
-      return { ok: true, method: "clipboard", copied: false };
+      return { ok: true, method: "clipboard", copied: textCopied };
     } catch {
-      // fall through to text-only fallback
+      // fall through to native share sheet for the image only
     }
   }
 
-  openWhatsAppWithText(caption);
-  return { ok: false, method: "text-only", copied: false };
+  const systemShare = await shareImageThroughSystem({
+    file,
+    caption: "",
+    title,
+    allowFileOnlyFallback: true,
+  });
+  if (systemShare.method === "share" || systemShare.method === "abort") {
+    return { ok: true, method: systemShare.method, copied: textCopied };
+  }
+
+  return { ok: Boolean(caption), method: "text-only", copied: textCopied };
 }

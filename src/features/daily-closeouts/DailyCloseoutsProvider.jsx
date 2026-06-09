@@ -241,7 +241,7 @@ export function DailyCloseoutsProvider({
           if (dbSourceMode) {
             await reloadCloseoutsAndPreserveSubmitted(next);
             if (autoReview) await onSyncToOperationalEntries(next);
-            return result;
+            return next;
           }
         } else {
           await onSubmitCloseoutToApi({ action: apiSubmitAction, closeout: next, employee, reviewWorkflowEnabled });
@@ -333,7 +333,7 @@ export function DailyCloseoutsProvider({
           if (dbSourceMode) {
             await reloadCloseoutsAndPreserveSubmitted(next);
             if (autoReview) await onSyncToOperationalEntries(next);
-            return result;
+            return next;
           }
         } else {
           await onSubmitCloseoutToApi({ action: apiSubmitAction, closeout: next, employee, reviewWorkflowEnabled });
