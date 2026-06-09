@@ -135,6 +135,12 @@ export function employeeMatchesSession(staffPerson, loggedInEmployeeId, sessionU
 
 /**
  * After employee runtime hydration, backfill missing roster storeIds from API stores.
+ * @param {Object} input
+ * @param {Array<Record<string, unknown>>} [input.staff]
+ * @param {string} [input.loggedInEmployeeId]
+ * @param {string} [input.sessionUserId]
+ * @param {Array<{ id?: string }>} [input.configuredBusinesses]
+ * @param {string} [input.employeeBusinessId]
  */
 export function patchEmployeeStaffStoreIdsFromHydration({
   staff = [],
