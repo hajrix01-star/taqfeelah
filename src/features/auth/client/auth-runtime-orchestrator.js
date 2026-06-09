@@ -7,6 +7,7 @@ import {
 /**
  * @typedef {Object} AuthRuntimeApply
  * @property {(value: string) => void} [setSessionUserId]
+ * @property {(value: string) => void} [setSessionOrganizationId]
  * @property {(value: boolean) => void} [setLoggedIn]
  * @property {(value: boolean) => void} [setEmployee]
  * @property {(value: string | null) => void} [setLoggedInEmployeeId]
@@ -38,10 +39,17 @@ import {
  * @property {(value: string) => void} [setSelectedBusiness]
  */
 
-export function applyOwnerLoginSuccess({ apiUserId = "", prototypeAccessMode, apply = {} }) {
+export function applyOwnerLoginSuccess({
+  apiUserId = "",
+  organizationId = "",
+  prototypeAccessMode,
+  apply = {},
+}) {
   persistLocalOwnerSession(prototypeAccessMode);
   const userId = typeof apiUserId === "string" ? apiUserId : "";
+  const orgId = typeof organizationId === "string" ? organizationId : "";
   apply.setSessionUserId?.(userId);
+  apply.setSessionOrganizationId?.(orgId);
   apply.setLoggedIn?.(true);
   apply.setEmployee?.(false);
   apply.setLoggedInEmployeeId?.(null);
@@ -53,6 +61,7 @@ export function applyOwnerLoginSuccess({ apiUserId = "", prototypeAccessMode, ap
  * @param {Object} input
  * @param {string} input.personId
  * @param {string} [input.apiUserId]
+ * @param {string} [input.organizationId]
  * @param {Array<{ id?: string, active?: boolean, removed?: boolean, storeIds?: string[] }>} [input.staff]
  * @param {Array<{ id?: string }>} [input.activeBusinesses]
  * @param {boolean} input.prototypeAccessMode
@@ -61,6 +70,7 @@ export function applyOwnerLoginSuccess({ apiUserId = "", prototypeAccessMode, ap
 export function applyEmployeeLoginSuccess({
   personId,
   apiUserId = "",
+  organizationId = "",
   staff = [],
   activeBusinesses = [],
   prototypeAccessMode,
@@ -72,7 +82,9 @@ export function applyEmployeeLoginSuccess({
 
   persistLocalEmployeeSession({ prototypeAccessMode, employeeId: resolvedEmployeeId });
   const userId = typeof apiUserId === "string" ? apiUserId : "";
+  const orgId = typeof organizationId === "string" ? organizationId : "";
   apply.setSessionUserId?.(userId);
+  apply.setSessionOrganizationId?.(orgId);
   apply.setLoggedIn?.(true);
   apply.setEmployee?.(true);
   apply.setLoggedInEmployeeId?.(resolvedEmployeeId);
@@ -87,6 +99,7 @@ export function applyServerSessionBootstrap(session, apply = {}) {
   if (!session?.authenticated) return false;
 
   apply.setSessionUserId?.(typeof session.userId === "string" ? session.userId : "");
+  apply.setSessionOrganizationId?.(typeof session.organizationId === "string" ? session.organizationId : "");
   apply.setLoggedIn?.(true);
   apply.setAuthScreen?.("owner");
 
@@ -105,6 +118,7 @@ export function applyServerSessionBootstrap(session, apply = {}) {
 
 export function applyLogoutReset({ bindsToServerAuth, apply = {} }) {
   apply.setSessionUserId?.("");
+  apply.setSessionOrganizationId?.("");
   apply.setLoggedIn?.(false);
   apply.setEmployee?.(false);
   apply.setLoggedInEmployeeId?.(null);

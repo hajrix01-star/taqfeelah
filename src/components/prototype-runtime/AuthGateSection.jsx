@@ -76,7 +76,10 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
           password,
           useServerAuth: APP_IN_PRODUCTION_MODE,
         });
-        onOwnerLogin(typeof session?.userId === "string" ? session.userId : "");
+        onOwnerLogin(
+          typeof session?.userId === "string" ? session.userId : "",
+          typeof session?.organizationId === "string" ? session.organizationId : "",
+        );
       } catch (failure) {
         const message = failure instanceof Error && failure.message
           ? failure.message
@@ -256,7 +259,12 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
           pin: pin.trim(),
           useServerAuth: APP_IN_PRODUCTION_MODE,
         });
-        onLogin(person?.id || employeeIdentifier, typeof session?.userId === "string" ? session.userId : "", person || null);
+        onLogin(
+          person?.id || employeeIdentifier,
+          typeof session?.userId === "string" ? session.userId : "",
+          person || null,
+          typeof session?.organizationId === "string" ? session.organizationId : "",
+        );
       } catch (failure) {
         const message = failure instanceof Error && failure.message
           ? failure.message

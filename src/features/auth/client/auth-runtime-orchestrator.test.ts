@@ -19,6 +19,7 @@ describe("auth runtime orchestrator", () => {
   it("applies owner login success state", () => {
     const apply = {
       setSessionUserId: vi.fn(),
+      setSessionOrganizationId: vi.fn(),
       setLoggedIn: vi.fn(),
       setEmployee: vi.fn(),
       setLoggedInEmployeeId: vi.fn(),
@@ -28,11 +29,13 @@ describe("auth runtime orchestrator", () => {
 
     applyOwnerLoginSuccess({
       apiUserId: "owner-uuid",
+      organizationId: "org-uuid",
       prototypeAccessMode: false,
       apply,
     });
 
     expect(apply.setSessionUserId).toHaveBeenCalledWith("owner-uuid");
+    expect(apply.setSessionOrganizationId).toHaveBeenCalledWith("org-uuid");
     expect(apply.setLoggedIn).toHaveBeenCalledWith(true);
     expect(apply.setEmployee).toHaveBeenCalledWith(false);
     expect(apply.setLoggedInEmployeeId).toHaveBeenCalledWith(null);
@@ -42,6 +45,7 @@ describe("auth runtime orchestrator", () => {
   it("applies employee login success state from staff roster", () => {
     const apply = {
       setSessionUserId: vi.fn(),
+      setSessionOrganizationId: vi.fn(),
       setLoggedIn: vi.fn(),
       setEmployee: vi.fn(),
       setLoggedInEmployeeId: vi.fn(),
@@ -54,6 +58,7 @@ describe("auth runtime orchestrator", () => {
     const ok = applyEmployeeLoginSuccess({
       personId: "ahmed",
       apiUserId: "employee-uuid",
+      organizationId: "org-uuid",
       staff: [{ id: "ahmed", active: true, storeIds: ["shami"] }],
       activeBusinesses: [{ id: "arz" }],
       prototypeAccessMode: false,
@@ -61,6 +66,7 @@ describe("auth runtime orchestrator", () => {
     });
 
     expect(ok).toBe(true);
+    expect(apply.setSessionOrganizationId).toHaveBeenCalledWith("org-uuid");
     expect(apply.setLoggedInEmployeeId).toHaveBeenCalledWith("ahmed");
     expect(apply.setEmployeeBusinessId).toHaveBeenCalledWith("shami");
     expect(apply.setEmployeePage).toHaveBeenCalledWith("closeouts");
@@ -69,6 +75,7 @@ describe("auth runtime orchestrator", () => {
   it("bootstraps authenticated employee session from server", () => {
     const apply = {
       setSessionUserId: vi.fn(),
+      setSessionOrganizationId: vi.fn(),
       setLoggedIn: vi.fn(),
       setEmployee: vi.fn(),
       setLoggedInEmployeeId: vi.fn(),
@@ -81,7 +88,9 @@ describe("auth runtime orchestrator", () => {
       authenticated: true,
       role: "employee",
       userId: "employee-uuid",
+      organizationId: "org-uuid",
     }, apply)).toBe(true);
+    expect(apply.setSessionOrganizationId).toHaveBeenCalledWith("org-uuid");
     expect(apply.setEmployee).toHaveBeenCalledWith(true);
     expect(apply.setLoggedInEmployeeId).toHaveBeenCalledWith("employee-uuid");
   });

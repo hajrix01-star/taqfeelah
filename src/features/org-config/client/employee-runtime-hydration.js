@@ -1,9 +1,10 @@
+import { resolveClientOrganizationId } from "@/core/client/resolve-client-organization-id";
 import { fetchEmployeeRuntimeBundleViaApi } from "./org-config-api-client.js";
 import { mapEmployeeStoresBundleToRuntime } from "./org-config-runtime-mapper.js";
 
-export function readEmployeeRuntimeApiAuth(sessionUserId = "") {
+export function readEmployeeRuntimeApiAuth(sessionUserId = "", sessionOrganizationId = "") {
   return {
-    organizationId: process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "",
+    organizationId: resolveClientOrganizationId({ sessionOrganizationId }),
     actorUserId: sessionUserId,
     actorRole: "employee",
   };
@@ -15,9 +16,10 @@ export function readEmployeeRuntimeApiAuth(sessionUserId = "") {
  */
 export async function loadEmployeeRuntimeContextFromApi({
   sessionUserId,
+  sessionOrganizationId = "",
 }) {
   if (!sessionUserId) return null;
-  const auth = readEmployeeRuntimeApiAuth(sessionUserId);
+  const auth = readEmployeeRuntimeApiAuth(sessionUserId, sessionOrganizationId);
   const bundle = await fetchEmployeeRuntimeBundleViaApi(auth);
   return mapEmployeeStoresBundleToRuntime(bundle);
 }

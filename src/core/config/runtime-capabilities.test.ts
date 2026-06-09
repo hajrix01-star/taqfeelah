@@ -86,6 +86,19 @@ describe("runtime capabilities", () => {
     expect(employee.apiTargetStoreIdsKey).toBe("shami");
   });
 
+  it("prefers session organization id over missing public env", () => {
+    delete process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID;
+
+    const context = resolveRuntimeApiActorContext({
+      employee: true,
+      sessionUserId: "44444444-4444-4444-8444-444444444444",
+      sessionOrganizationId: "66666666-6666-4666-8666-666666666666",
+      env: process.env,
+    });
+
+    expect(context.organizationId).toBe("66666666-6666-4666-8666-666666666666");
+  });
+
   it("falls back to active employee store ids when assigned businesses are empty", () => {
     process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID = "11111111-1111-4111-8111-111111111111";
 
