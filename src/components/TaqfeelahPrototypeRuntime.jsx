@@ -1725,6 +1725,7 @@ export default function TaqfeelahPrototypeRuntime() {
   const [authScreen, setAuthScreen] = useState("owner");
   const [employee, setEmployee] = useState(() => readPrototypeAuthBoot().employee);
   const [loggedInEmployeeId, setLoggedInEmployeeId] = useState(() => readPrototypeAuthBoot().loggedInEmployeeId);
+  const [employeeRuntimeReady, setEmployeeRuntimeReady] = useState(() => !readPrototypeAuthBoot().employee);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [saved, setSaved] = useState(false);
@@ -2625,12 +2626,17 @@ export default function TaqfeelahPrototypeRuntime() {
   }, [orgConfigSyncError]);
 
   useEffect(() => {
-    if (!employee || !loggedIn || !ORG_CONFIG_API_ENABLED || !sessionUserId) return undefined;
+    if (!employee || !loggedIn) {
+      setEmployeeRuntimeReady(true);
+      return undefined;
+    }
+    if (!ORG_CONFIG_API_ENABLED || !sessionUserId) {
+      setEmployeeRuntimeReady(true);
+      return undefined;
+    }
     let cancelled = false;
-    loadEmployeeRuntimeContextFromApi({
-      sessionUserId,
-      employeePins: authEmployeePins,
-    })
+    setEmployeeRuntimeReady(false);
+    loadEmployeeRuntimeContextFromApi({ sessionUserId })
       .then((mapped) => {
         if (cancelled || !mapped) return;
         applyOrgConfigMappedState(mapped, {
@@ -2644,12 +2650,14 @@ export default function TaqfeelahPrototypeRuntime() {
       .catch((error) => {
         if (cancelled) return;
         console.warn("employee runtime hydration failed", error);
+      })
+      .finally(() => {
+        if (!cancelled) setEmployeeRuntimeReady(true);
       });
     return () => {
       cancelled = true;
     };
   }, [
-    authEmployeePins,
     employee,
     loggedIn,
     sessionUserId,
@@ -2725,7 +2733,7 @@ export default function TaqfeelahPrototypeRuntime() {
       onSyncToOperationalEntries={syncCloseoutToOperationalEntries}
       onSubmitCloseoutToApi={syncSubmitCloseoutToApi}
       onReviewCloseoutInApi={syncReviewCloseoutToApi}
-      loadCloseoutsFromApi={closeoutsApiEnabled ? loadCloseoutsFromApi : null}
+      loadCloseoutsFromApi={closeoutsApiEnabled && (!employee || employeeRuntimeReady) ? loadCloseoutsFromApi : null}
       closeoutReviewRequiredForStore={closeoutReviewEnabledForBusiness}
       apiStrictMode={closeoutsApiStrictMode}
       dbSourceMode={CLOSEOUTS_API_DB_SOURCE}

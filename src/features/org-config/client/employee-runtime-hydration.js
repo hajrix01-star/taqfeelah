@@ -1,5 +1,5 @@
-import { fetchOrgConfigBundleViaApi } from "./org-config-api-client.js";
-import { mapOrgConfigBundleToRuntime } from "./org-config-runtime-mapper.js";
+import { fetchEmployeeRuntimeBundleViaApi } from "./org-config-api-client.js";
+import { mapEmployeeStoresBundleToRuntime } from "./org-config-runtime-mapper.js";
 
 export function readEmployeeRuntimeApiAuth(sessionUserId = "") {
   return {
@@ -10,17 +10,14 @@ export function readEmployeeRuntimeApiAuth(sessionUserId = "") {
 }
 
 /**
- * Load stores/channels/staff from the server for employee sessions that do not run owner org-config hydration.
+ * Load stores/channels/operational settings for employee sessions.
+ * Does not call the members API (manager-only) and does not replace roster staff.
  */
 export async function loadEmployeeRuntimeContextFromApi({
   sessionUserId,
-  employeePins = {},
 }) {
   if (!sessionUserId) return null;
   const auth = readEmployeeRuntimeApiAuth(sessionUserId);
-  const bundle = await fetchOrgConfigBundleViaApi(auth);
-  return mapOrgConfigBundleToRuntime({
-    ...bundle,
-    employeePins,
-  });
+  const bundle = await fetchEmployeeRuntimeBundleViaApi(auth);
+  return mapEmployeeStoresBundleToRuntime(bundle);
 }

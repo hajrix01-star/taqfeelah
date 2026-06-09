@@ -172,7 +172,11 @@ export function DailyCloseoutsProvider({
     if (typeof loadCloseoutsFromApi !== "function") return;
     reloadCloseoutsFromApi().catch((error) => {
       console.warn("closeouts initial API load failed", error);
-      setSyncError(lang === "ar" ? "تعذر تحديث التقفيلات من الخادم." : "Failed to refresh closeouts from server.");
+      const fallback = lang === "ar"
+        ? "تعذر تحديث التقفيلات من الخادم."
+        : "Failed to refresh closeouts from server.";
+      const detail = error instanceof Error && error.message.trim() ? error.message.trim() : "";
+      setSyncError(detail || fallback);
     });
   }, [lang, loadCloseoutsFromApi, reloadCloseoutsFromApi]);
 

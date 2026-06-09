@@ -85,4 +85,26 @@ describe("runtime capabilities", () => {
     expect(employee.apiActorUserId).toBe("44444444-4444-4444-8444-444444444444");
     expect(employee.apiTargetStoreIdsKey).toBe("shami");
   });
+
+  it("falls back to active employee store ids when assigned businesses are empty", () => {
+    process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID = "11111111-1111-4111-8111-111111111111";
+
+    const employee = resolveRuntimeApiActorContext({
+      employee: true,
+      sessionUserId: "44444444-4444-4444-8444-444444444444",
+      activeEmployee: {
+        id: "ahmed",
+        storeIds: [
+          "22222222-2222-4222-8222-222222222222",
+          "33333333-3333-4333-8333-333333333333",
+        ],
+      },
+      assignedEmployeeBusinesses: [],
+      env: process.env,
+    });
+
+    expect(employee.apiTargetStoreIdsKey).toBe(
+      "22222222-2222-4222-8222-222222222222|33333333-3333-4333-8333-333333333333",
+    );
+  });
 });

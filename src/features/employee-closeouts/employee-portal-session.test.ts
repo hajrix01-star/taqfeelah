@@ -9,6 +9,7 @@ import {
   resolveCurrentEmployeeBusiness,
   resolveEmployeeBusinessId,
   resolveEmployeeLoginStaff,
+  synthesizeEmployeeBusinessesFromStoreIds,
   syncLoggedInEmployeeIdFromSession,
 } from "./employee-portal-session";
 
@@ -50,6 +51,24 @@ describe("employee-portal-session", () => {
     expect(assigned).toHaveLength(1);
     expect(resolveCurrentEmployeeBusiness(assigned, "missing")?.id).toBe("b2");
     expect(resolveEmployeeBusinessId(assigned, "missing")).toBe("b2");
+  });
+
+  it("matches assigned businesses by db store id and legacy id", () => {
+    const businesses = [
+      { id: "shami", dbStoreId: "store-uuid-1", nameAr: "A" },
+      { id: "arz", legacyId: "store-uuid-2", nameAr: "B" },
+    ];
+    const employee = { storeIds: ["store-uuid-1", "store-uuid-2"] };
+    const assigned = resolveAssignedEmployeeBusinesses(businesses, employee);
+    expect(assigned.map((business) => business.id)).toEqual(["shami", "arz"]);
+  });
+
+  it("synthesizes placeholder businesses from roster store ids", () => {
+    const placeholders = synthesizeEmployeeBusinessesFromStoreIds([
+      "11111111-1111-4111-8111-111111111111",
+    ]);
+    expect(placeholders).toHaveLength(1);
+    expect(placeholders[0].id).toBe("11111111-1111-4111-8111-111111111111");
   });
 
   it("syncs logged in employee id from session staff match", () => {

@@ -38,11 +38,31 @@ export function resolveActiveEmployee({
   return enrichActiveEmployeeWithSessionUserId(raw, sessionUserId, uuidChecker);
 }
 
+function businessMatchesEmployeeStoreId(business, storeId) {
+  if (!storeId || !business) return false;
+  return business.id === storeId
+    || business.dbStoreId === storeId
+    || business.legacyId === storeId;
+}
+
 export function resolveAssignedEmployeeBusinesses(activeBusinesses, activeEmployee) {
   const storeIds = activeEmployee?.storeIds || [];
+  if (!storeIds.length) return [];
   return (Array.isArray(activeBusinesses) ? activeBusinesses : []).filter(
-    (business) => storeIds.includes(business.id),
+    (business) => storeIds.some((storeId) => businessMatchesEmployeeStoreId(business, storeId)),
   );
+}
+
+export function synthesizeEmployeeBusinessesFromStoreIds(storeIds = []) {
+  return storeIds
+    .filter((storeId) => typeof storeId === "string" && storeId.trim())
+    .map((storeId) => ({
+      id: storeId,
+      dbStoreId: storeId,
+      nameAr: "",
+      nameEn: "",
+      displayName: "",
+    }));
 }
 
 export function resolveCurrentEmployeeBusiness(assignedBusinesses, employeeBusinessId) {
