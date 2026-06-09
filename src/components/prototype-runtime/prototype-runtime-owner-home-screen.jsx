@@ -20,6 +20,7 @@ import { formatCalendarDate } from "@/features/reports/client/report-period-labe
 import { businesses, businessName, money, text, fullDate, opTime } from "./prototype-runtime-demo-data";
 import { AttachmentPreview } from "./prototype-runtime-attachment-ui";
 import {
+  entryDateMatches,
   entryHasAttachment,
   entryIsVoided,
   operationDisplayLabel,
@@ -183,6 +184,35 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
   );
 }
 
+function DayAttachments({ lang, group, reviewEnabled = false, onOpenOperation = () => {} }) {
+  if (!group?.items?.length) {
+    return (
+      <NotebookRow>
+        <p className="text-xs font-bold text-[#806528]">{text(lang, "noAttachmentsDay")}</p>
+      </NotebookRow>
+    );
+  }
+  return (
+    <div className="py-3">
+      <div className="flex gap-3 overflow-x-auto pb-1">
+        {group.items.map((item) => (
+          <button key={item.id} onClick={() => onOpenOperation(item.entry)} className="min-w-[78px] text-center">
+            <div className="mb-1 flex h-14 justify-center overflow-hidden rounded-xl">
+              <AttachmentPreview attachment={item.attachment} className="h-14 w-14 rounded-xl" />
+            </div>
+            <p className="truncate text-taq-meta font-bold">{lang === "ar" ? item.title : item.titleEn}</p>
+            <p className={`mt-0.5 text-taq-meta font-black ${item.entry.type === "summary" ? "text-[#257844]" : "text-[#B44747]"}`}>
+              <MoneyValue value={money(signedEntryAmount(item.entry), lang)} />
+            </p>
+            {reviewEnabled && !entryIsVoided(item.entry) && !item.reviewed && (
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#B96725]" />
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function OwnerHomeConnected(props) {
   const { pendingSubmittedCloseouts } = useDailyCloseouts();
