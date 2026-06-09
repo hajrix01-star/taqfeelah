@@ -1724,7 +1724,6 @@ export default function TaqfeelahPrototypeRuntime() {
   const [lang, setLang] = useState("ar");
   const [sessionOrganizationId, setSessionOrganizationId] = useState("");
   const [sessionUserId, setSessionUserId] = useState("");
-  const [sessionOrganizationId, setSessionOrganizationId] = useState("");
   const [loggedIn, setLoggedIn] = useState(() => readPrototypeAuthBoot().loggedIn);
   const [authScreen, setAuthScreen] = useState("owner");
   const [employee, setEmployee] = useState(() => readPrototypeAuthBoot().employee);
@@ -1882,7 +1881,6 @@ export default function TaqfeelahPrototypeRuntime() {
     employee,
     sessionOrganizationId,
     sessionUserId,
-    sessionOrganizationId,
     activeEmployee,
     assignedEmployeeBusinesses,
     reportingBusinesses,
