@@ -108,6 +108,9 @@ export function buildSalesChannelIdMap({
       if (legacyId && isUuid(apiChannelId)) {
         map[legacyId] = apiChannelId;
       }
+      if (isUuid(apiChannelId)) {
+        map[apiChannelId] = apiChannelId;
+      }
     }
   }
 

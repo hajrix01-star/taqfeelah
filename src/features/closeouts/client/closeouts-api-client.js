@@ -12,6 +12,10 @@ import {
   hasCloseoutApiStoreMapping,
   setRuntimeApiIdMaps,
 } from "@/core/client/runtime-api-maps-state";
+import {
+  diagnoseCloseoutSalesChannelGaps,
+  extractCloseoutSalesChannels,
+} from "./resolve-closeout-sales-channels.js";
 
 export {
   getCloseoutApiMaps,
@@ -34,53 +38,65 @@ function buildCloseoutFetchContextError({ organizationId, mappedActorUserId, map
   return new Error(`closeouts fetch API context missing/invalid: ${missing.join(", ")}.`);
 }
 
-function listCloseoutSalesRows(closeout) {
-  return Array.isArray(closeout?.sales) ? closeout.sales : Object.values(closeout?.sales || {});
+export function buildCloseoutSubmitFailureMessage(submitFailure, lang = "ar") {
+  if (!submitFailure) return "";
+  const channelNames = (submitFailure.unmappedChannels || [])
+    .map((row) => row.name || row.channelId)
+    .filter(Boolean)
+    .join(", ");
+
+  switch (submitFailure.code) {
+    case "invalid_organization":
+      return lang === "ar"
+        ? "تعذر إرسال التقفيلة: معرف المنظمة غير صالح لمسار API."
+        : "Closeout submit blocked: organization id is missing/invalid for API.";
+    case "unmapped_actor":
+      return lang === "ar"
+        ? "تعذر إرسال التقفيلة: معرف المستخدم غير مربوط بالخادم."
+        : "Closeout submit blocked: user id is not mapped to the server.";
+    case "unmapped_store":
+      return lang === "ar"
+        ? "تعذر إرسال التقفيلة: معرف المحل غير مربوط بالخادم."
+        : "Closeout submit blocked: store id is not mapped to the server.";
+    case "unmapped_sales_channels":
+      return lang === "ar"
+        ? `تعذر إرسال التقفيلة: قنوات البيع غير مربوطة بالخادم (${channelNames || "غير معروف"}). انتظر تحميل إعدادات المحل ثم أعد المحاولة.`
+        : `Closeout submit blocked: sales channels are not mapped to the server (${channelNames || "unknown"}). Wait for store settings to load, then retry.`;
+    case "empty_sales":
+      return lang === "ar"
+        ? "تعذر إرسال التقفيلة: أدخل مبلغ الداخل في قناة بيع واحدة على الأقل."
+        : "Closeout submit blocked: enter at least one positive sales amount.";
+    default:
+      return lang === "ar" ? "تعذر الإرسال." : "Failed to send.";
+  }
 }
 
-function extractSalesChannels(closeout) {
-  const { salesChannelIdMap } = getMaps();
-  return listCloseoutSalesRows(closeout)
-    .map((row) => ({
-      salesChannelId: mapToUuid(row?.channelId || row?.id, salesChannelIdMap),
-      channelName: row?.name || row?.channelName || row?.channelLabel || row?.channelId || row?.id,
-      amountHalalas: toMoneyHalalas(row?.amount),
-      legacyChannelId: row?.channelId || row?.id || "",
-    }))
-    .filter((row) => isUuid(row.salesChannelId) && row.amountHalalas > 0);
-}
-
-/** Explain why submitCloseoutViaApi would return null (mapping / channel gaps). */
+/**
+ * Explain why submitCloseoutViaApi would return null (mapping / channel gaps).
+ * @param {{ organizationId?: string, actorUserId?: string, closeout?: object, storeChannels?: Array<Record<string, unknown>> }} input
+ */
 export function diagnoseCloseoutSubmitFailure({
   organizationId,
   actorUserId,
   closeout,
+  storeChannels = [],
 }) {
   const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
   if (!mappedOrganizationId) return { code: "invalid_organization", unmappedChannels: [] };
 
-  const { userIdMap, storeIdMap, salesChannelIdMap } = getMaps();
+  const { userIdMap, storeIdMap } = getMaps();
   const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
   if (!mappedActorUserId) return { code: "unmapped_actor", unmappedChannels: [] };
 
   const mappedStoreId = mapToUuid(closeout?.storeId, storeIdMap);
   if (!mappedStoreId) return { code: "unmapped_store", unmappedChannels: [] };
 
-  const unmappedChannels = listCloseoutSalesRows(closeout)
-    .filter((row) => toMoneyHalalas(row?.amount) > 0)
-    .map((row) => ({
-      channelId: row?.channelId || row?.id || "",
-      name: row?.name || row?.channelName || "",
-      amount: Number(row?.amount || 0),
-      mapped: isUuid(mapToUuid(row?.channelId || row?.id, salesChannelIdMap)),
-    }))
-    .filter((row) => !row.mapped);
-
+  const unmappedChannels = diagnoseCloseoutSalesChannelGaps(closeout, { storeChannels });
   if (unmappedChannels.length > 0) {
     return { code: "unmapped_sales_channels", unmappedChannels };
   }
 
-  const salesChannels = extractSalesChannels(closeout);
+  const salesChannels = extractCloseoutSalesChannels(closeout, { storeChannels });
   if (!salesChannels.length) return { code: "empty_sales", unmappedChannels: [] };
 
   return null;
@@ -101,11 +117,15 @@ function extractOutflows(closeout) {
     .filter((row) => (row.type === "purchases" || row.type === "expense" || row.type === "withdrawal") && row.amountHalalas > 0);
 }
 
+/**
+ * @param {{ organizationId?: string, actorUserId?: string, actorRole?: string, closeout?: object, storeChannels?: Array<Record<string, unknown>>, mode?: string, autoReview?: boolean, requireReview?: boolean }} input
+ */
 export async function submitCloseoutViaApi({
   organizationId,
   actorUserId,
   actorRole,
   closeout,
+  storeChannels = [],
   mode = "submit",
   autoReview = false,
   requireReview = false,
@@ -114,7 +134,7 @@ export async function submitCloseoutViaApi({
   const mappedStoreId = mapToUuid(closeout?.storeId, storeIdMap);
   if (!mappedStoreId) return null;
 
-  const salesChannels = extractSalesChannels(closeout);
+  const salesChannels = extractCloseoutSalesChannels(closeout, { storeChannels });
   if (!salesChannels.length) return null;
 
   return fetchApiJsonWithPrototypeContext(`/api/v1/stores/${mappedStoreId}/closeouts`, {

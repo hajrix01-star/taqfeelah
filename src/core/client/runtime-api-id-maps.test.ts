@@ -60,6 +60,16 @@ describe("buildRuntimeApiIdMaps", () => {
     expect(maps.salesChannelIdMap.mada).toBe("7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c");
   });
 
+  it("keeps canonical store uuid ids addressable in storeIdMap", () => {
+    const storeUuid = "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c";
+    const maps = buildRuntimeApiIdMaps({
+      configuredBusinesses: [{ id: storeUuid, legacyId: "shami" }],
+      envStoreIdMap,
+      envUserIdMap,
+    });
+    expect(maps.storeIdMap[storeUuid]).toBe(storeUuid);
+  });
+
   it("prefers runtime apiChannelId from store channel settings", () => {
     const maps = buildRuntimeApiIdMaps({
       envStoreIdMap,
