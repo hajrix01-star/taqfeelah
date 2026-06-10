@@ -42,6 +42,7 @@ import {
   partitionConfiguredBusinesses,
   toggleArchivedBusinessId,
 } from "@/features/org-config/client/owner-settings-store-actions";
+import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { resolveStorePanelOpenDrafts } from "@/features/org-config/client/owner-settings-store-panel-actions";
 import {
   addCustomSalesChannel,
@@ -304,6 +305,7 @@ function OwnerSettingsScreen({ lang, notebookTheme, setNotebookTheme, employeePr
           authOwnerUsername,
           authOwnerPassword,
           authEmployeePins: nextPins,
+          omitStaff: isOrgConfigApiEnabled(),
         }));
         showSettingsSaved();
       } catch (failure) {

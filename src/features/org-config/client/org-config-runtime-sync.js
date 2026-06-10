@@ -8,11 +8,11 @@ import {
   updateStoreOperationalSettingsViaApi,
   updateStoreSalesChannelViaApi,
 } from "./org-config-api-client.js";
-import { mapApiStoreToBusiness, mapApiMemberToStaff } from "./org-config-runtime-mapper.js";
-
-function isClientGeneratedId(id) {
-  return typeof id === "string" && (id.startsWith("custom-") || id.startsWith("staff-") || id.startsWith("channel-"));
-}
+import {
+  isClientGeneratedId,
+  mapApiStoreToBusiness,
+  mapApiMemberToStaff,
+} from "./org-config-runtime-mapper.js";
 
 function resolveStoreUuid(business) {
   if (isUuid(business?.dbStoreId)) return business.dbStoreId;

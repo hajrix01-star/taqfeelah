@@ -10,6 +10,15 @@ import {
 } from "./org-config-runtime-mapper.js";
 import { persistOrgConfigSnapshot } from "./org-config-runtime-sync.js";
 
+function tryBuildOrgConfigPersistBaseline(snapshot) {
+  try {
+    return buildOrgConfigPersistBaseline(snapshot);
+  } catch (failure) {
+    console.warn("org config baseline build failed", failure);
+    return "";
+  }
+}
+
 export function useOrgConfigFromApi({
   enabled = false,
   auth = {},
@@ -47,7 +56,7 @@ export function useOrgConfigFromApi({
       validateOrgConfigDbChannelMappings(mapped, { strict: bindsToServerAuth() });
       applyingRef.current = true;
       onHydrate(mapped);
-      baselineRef.current = buildOrgConfigPersistBaseline(mapped);
+      baselineRef.current = tryBuildOrgConfigPersistBaseline(mapped);
       hydratedRef.current = true;
       setHydrated(true);
     } catch (failure) {
@@ -79,8 +88,8 @@ export function useOrgConfigFromApi({
   useEffect(() => {
     if (!enabled || !loggedIn || isEmployee || !hydratedRef.current || applyingRef.current) return;
 
-    const signature = buildOrgConfigPersistBaseline(snapshot);
-    if (!baselineRef.current || baselineRef.current === signature) return;
+    const signature = tryBuildOrgConfigPersistBaseline(snapshot);
+    if (!signature || !baselineRef.current || baselineRef.current === signature) return;
 
     if (persistTimerRef.current) {
       window.clearTimeout(persistTimerRef.current);
@@ -109,7 +118,7 @@ export function useOrgConfigFromApi({
       })
         .then((applied) => {
           onPersistApplied(applied);
-          baselineRef.current = buildOrgConfigPersistBaseline(applied);
+          baselineRef.current = tryBuildOrgConfigPersistBaseline(applied);
           setError("");
         })
         .catch((failure) => {
