@@ -1,6 +1,11 @@
 /** Pure helpers for operational entry filtering and totals (prototype + tests). */
 
 import { countProofsFromUiEntries } from "@/domain/attachment-review/stats";
+import {
+  calculateDaySummary,
+  daySummaryToUiTotals,
+  rowsFromUiEntries,
+} from "@/domain/cash-movement/calculations";
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 
 export const OUTFLOW_ENTRY_TYPES = new Set(["purchases", "expense", "withdrawal"]);
@@ -51,12 +56,13 @@ export function entriesInPeriod(
 }
 
 export function summarizeEntries(entries) {
-  const activeEntries = entries.filter(entryIsActive);
-  const sales = activeEntries.filter((entry) => entry.type === "summary").reduce((sum, entry) => sum + entry.amount, 0);
-  const expense = activeEntries.filter(entryIsOutflow).reduce((sum, entry) => sum + entry.amount, 0);
-  const proofs = countProofsFromUiEntries(activeEntries);
-  const ratio = sales > 0 ? `${((expense / sales) * 100).toFixed(1)}%` : expense > 0 ? "—" : "0.0%";
-  return { sales, expense, net: sales - expense, ratio, proofs, pending: 0 };
+  const list = Array.isArray(entries) ? entries : [];
+  const activeEntries = list.filter(entryIsActive);
+  const summary = calculateDaySummary(rowsFromUiEntries(list));
+  return daySummaryToUiTotals(summary, {
+    proofs: countProofsFromUiEntries(activeEntries),
+    pending: 0,
+  });
 }
 
 export function summaryMonthFromEntries(entries, businessId, month) {
