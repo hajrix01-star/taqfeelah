@@ -77,7 +77,7 @@ const opTime = (item, lang) => item.createdAt ? new Intl.DateTimeFormat(lang ===
 const auditDateTime = (timestamp, lang) => {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return "-";
-  return `${formatCalendarDate(timestamp.slice(0, 10), lang)} آ· ${opTime({ createdAt: timestamp }, lang)}`;
+  return `${formatCalendarDate(timestamp.slice(0, 10), lang)} ${opTime({ createdAt: timestamp }, lang)}`;
 };
 
 export {
