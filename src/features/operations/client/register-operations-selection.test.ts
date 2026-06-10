@@ -13,7 +13,7 @@ describe("register operations selection", () => {
     expect(resolveVoidOperationTarget(entries, "e1", ["shami"], entryIsVoided)).toBeNull();
   });
 
-  it("opens closeout review for local demo summary entries", () => {
+  it("opens closeout detail for local demo summary entries", () => {
     const action = resolveOwnerOperationOpenAction(
       { type: "summary", closeoutId: "c1" },
       {

@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import { mapCloseoutStatus } from "./list-store-closeouts";
 
 describe("mapCloseoutStatus", () => {
-  it.each(["approved", "submitted", "returned", "legacy"])("maps %s to reviewed", (status) => {
-    expect(mapCloseoutStatus(status)).toBe("reviewed");
-  });
+  it.each(["approved", "submitted", "returned", "legacy"])(
+    "maps legacy persisted status %s to UI sent (reviewed)",
+    (status) => {
+      expect(mapCloseoutStatus(status)).toBe("reviewed");
+    },
+  );
 });
 
 describe("listStoreCloseouts metadata parsing", () => {

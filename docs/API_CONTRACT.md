@@ -1,6 +1,6 @@
 # تقفيلة — API Contract (planned + partial implementation)
 
-> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day|month|period`, `GET /reports/days|channels|outflow|attachments` (wired to owner reports when entries API is enabled), snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, `POST /stores/:storeId/closeouts/:closeoutId/review`, `GET /stores/:storeId/entries`, Phase 8 org config routes, and Phase 9 duplicate-summary / notebook export / inline attachments are implemented; remaining endpoints are planned.  
+> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day|month|period`, `GET /reports/days|channels|outflow|attachments` (wired to owner reports when entries API is enabled), snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, `GET /stores/:storeId/entries`, Phase 8 org config routes, and Phase 9 duplicate-summary / notebook export / inline attachments are implemented; remaining endpoints are planned. Closeout owner-review (`POST .../closeouts/:closeoutId/review`) was removed under zero-review policy.  
 > **Auth:** Session rollout in progress. Preferred source is signed session cookie (`AUTH_SESSION_COOKIE_NAME`), with optional temporary header fallback controlled by `ALLOW_HEADER_AUTH_CONTEXT`.  
 > **Source-unification period:** Until auth launch, Prototype Access Mode remains ON and server APIs may accept `x-organization-id` / `x-user-id` / `x-member-role` when `ALLOW_HEADER_AUTH_CONTEXT=true`. Signed session cookies become required only in the explicit auth launch phase.  
 > **UI:** Must not require design changes — responses feed existing approved screens.
@@ -169,28 +169,9 @@ Behavior:
 - Reads closeout timeline from `audit_events`.
 - Returns normalized closeouts list (status, totals, sales/outflows, `daySequence`) for runtime hydration.
 
-### `POST /stores/:storeId/closeouts/:closeoutId/review` (implemented)
+### `POST /stores/:storeId/closeouts/:closeoutId/review` (removed)
 
-Headers:
-
-- `x-organization-id: <uuid>`
-- `x-user-id: <uuid>`
-- `x-member-role: owner|manager|employee`
-
-Body:
-
-```json
-{
-  "action": "approve",
-  "date": "2026-06-05",
-  "reason": "optional when return"
-}
-```
-
-Behavior:
-
-- Role-gated review flow (`manager` and above).
-- Appends review audit (`closeout_approved` or `closeout_returned`).
+Legacy owner approve/return endpoint. **Not implemented** — every submit auto-approves in `POST /stores/:storeId/closeouts` (zero-review policy). Historical audit actions `closeout_approved` / `closeout_returned` may still appear in old demo data only.
 
 ---
 

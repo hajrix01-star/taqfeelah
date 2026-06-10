@@ -20,7 +20,7 @@ import {
   isCloseoutWithinEmployeeHistory,
 } from "./employee-closeout-history";
 import { resolveCloseoutStoreName, resolveEmployeeStoreName } from "./store-name-resolver";
-import { countSubmittedCloseoutsByDate } from "../closeouts/client/closeout-day-label";
+import { countSentCloseoutsByDate } from "../closeouts/client/closeout-day-label";
 import { resolveEmployeeCloseoutsViewGate } from "./employee-closeouts-view-gate";
 
 function resolveScrollContainer(node) {
@@ -134,7 +134,7 @@ export default function EmployeeCloseoutsView({
   const historyScopeLabel = employeeHistoryVisibilityLabel(employeeHistoryVisibility, lang);
 
   const sameDayCloseoutCountByDate = useMemo(
-    () => countSubmittedCloseoutsByDate(myStoreCloseouts),
+    () => countSentCloseoutsByDate(myStoreCloseouts),
     [myStoreCloseouts],
   );
 

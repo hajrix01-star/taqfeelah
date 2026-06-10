@@ -56,9 +56,9 @@ migration rules.
 When `NEXT_PUBLIC_ENTRIES_API_ENABLED=true` (or inherited from closeouts API flag):
 
 - Operational register loads from `/api/v1/stores/:storeId/entries` on login
-- Owner/employee saves, review, void, and restore go through the entries API
+- Owner/employee saves, void, and restore go through the entries API (entry attachment review remains a separate entries concern)
 - `localStorage` is not used as the entries source (DB wins)
-- Closeout submit/review refreshes entries from the server instead of building local rows
+- Closeout submit/resubmit refreshes entries from the server instead of building local rows
 
 Local demo seed data is still used when the entries API flag is off.
 
@@ -73,7 +73,7 @@ Seed/bootstrap still provides the first `runtime_settings_saved` row via `script
 When `NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true`:
 
 - Daily closeouts load from `/api/v1/stores/:storeId/closeouts` on mount
-- Submit/resubmit/approve/return go through the closeouts API, then refresh from server
+- Submit/resubmit go through the closeouts API (auto-approved on submit), then refresh from server
 - In-progress drafts stay in memory only until submitted
 - `taqfeelah_daily_closeouts_v1` in `localStorage` is skipped as the closeouts source
 

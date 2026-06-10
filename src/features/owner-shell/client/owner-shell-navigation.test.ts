@@ -16,7 +16,7 @@ describe("owner shell navigation", () => {
     expect(setOwnerPage).toHaveBeenCalledWith("add-summary");
   });
 
-  it("reviews closeout alert and selects linked entry", () => {
+  it("opens closeout alert in register and selects linked entry", () => {
     const apply = {
       setArchivedReadOnlyBusinessId: vi.fn(),
       setSelectedBusiness: vi.fn(),
@@ -35,7 +35,7 @@ describe("owner shell navigation", () => {
     expect(apply.setSelected).toHaveBeenCalledWith({ id: "entry-1", businessId: "shami" });
   });
 
-  it("routes notifications to duplicate review first", () => {
+  it("routes notifications to duplicate summary alert first", () => {
     const setOwnerPage = vi.fn();
 
     handleOwnerNotificationsClick({

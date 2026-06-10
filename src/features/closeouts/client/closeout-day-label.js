@@ -29,7 +29,8 @@ export function formatCloseoutDayLabel({
   return letter ? `${formattedDate} · ${letter}` : formattedDate;
 }
 
-export function countSubmittedCloseoutsByDate(closeouts = []) {
+/** Counts sent closeouts per date (any non-draft status). */
+export function countSentCloseoutsByDate(closeouts = []) {
   const counts = new Map();
   (Array.isArray(closeouts) ? closeouts : []).forEach((item) => {
     if (!item?.date || item?.status === "draft") return;
@@ -37,3 +38,6 @@ export function countSubmittedCloseoutsByDate(closeouts = []) {
   });
   return counts;
 }
+
+/** @deprecated Use countSentCloseoutsByDate — legacy name kept for import stability. */
+export const countSubmittedCloseoutsByDate = countSentCloseoutsByDate;

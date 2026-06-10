@@ -36,7 +36,7 @@ type CloseoutOutflowRow = {
   attachments: string[];
 };
 
-/** Persisted closeouts are always treated as sent/approved (zero-review policy). */
+/** Maps any persisted DB status to UI `reviewed` (= sent/approved; zero-review policy). */
 export function mapCloseoutStatus(status: string): "reviewed" {
   void status;
   return "reviewed";
