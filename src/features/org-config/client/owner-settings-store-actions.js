@@ -5,7 +5,6 @@
  * @property {string} ratio
  * @property {number} net
  * @property {number} proofs
- * @property {number} pending
  */
 
 /**

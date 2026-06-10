@@ -55,7 +55,6 @@ describe("golden accounting parity", () => {
       const combinedClient = combineUiTotals(fixture.combineParts.map((part) => ({
         ...part,
         proofs: 0,
-        pending: 0,
       })));
       const mergedSummary = combineDaySummaries(partSummaries);
       const mergedUi = daySummaryToUiTotals(mergedSummary);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   countProofsFromUiEntries,
-  normalizeAttachmentStats,
+  normalizeAttachmentCount,
 } from "./stats";
 
 describe("attachment stats", () => {
@@ -17,10 +17,9 @@ describe("attachment stats", () => {
     expect(countProofsFromUiEntries(entries)).toBe(3);
   });
 
-  it("normalizes attachment count and zeros legacy pending field", () => {
-    expect(normalizeAttachmentStats({ attachmentCount: 5 })).toEqual({
+  it("normalizes attachment count", () => {
+    expect(normalizeAttachmentCount({ attachmentCount: 5 })).toEqual({
       attachmentCount: 5,
-      pendingReviewCount: 0,
     });
   });
 });

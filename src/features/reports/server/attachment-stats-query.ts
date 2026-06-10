@@ -1,7 +1,7 @@
 import { eq, sql, type SQL } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { attachments, entries } from "@/core/db/schema";
-import { normalizeAttachmentStats } from "@/domain/attachment-stats/stats";
+import { normalizeAttachmentCount } from "@/domain/attachment-stats/stats";
 
 type DbClient = Pick<NodePgDatabase<Record<string, never>>, "select">;
 
@@ -19,7 +19,7 @@ export async function queryAttachmentStatsForScope(
     .leftJoin(attachments, eq(attachments.entryId, entries.id))
     .where(entryScope);
 
-  return normalizeAttachmentStats({
+  return normalizeAttachmentCount({
     attachmentCount: stats?.attachmentCount ?? 0,
   });
 }

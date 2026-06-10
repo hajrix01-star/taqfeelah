@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   countProofsFromUiEntries,
-  normalizeAttachmentStats,
+  normalizeAttachmentCount,
 } from "@/domain/attachment-stats/stats";
 import { summarizeEntries } from "@/features/operations/operational-analytics";
 
@@ -13,19 +13,16 @@ describe("attachment stats parity", () => {
     { businessId: "shami", type: "expense", amount: 5, status: "active" },
   ];
 
-  it("keeps summarizeEntries proofs aligned with domain counters and zero pending", () => {
+  it("keeps summarizeEntries proofs aligned with domain counters", () => {
     const totals = summarizeEntries(entries);
 
     expect(totals.proofs).toBe(countProofsFromUiEntries(entries));
-    expect(totals.pending).toBe(0);
   });
 
-  it("keeps server attachment stats aligned with zero pending reviews", () => {
+  it("keeps server attachment stats aligned with entry proof counts", () => {
     const totals = summarizeEntries(entries);
-    const serverStats = normalizeAttachmentStats({ attachmentCount: 2 });
+    const serverStats = normalizeAttachmentCount({ attachmentCount: 2 });
 
-    expect(totals.pending).toBe(0);
-    expect(serverStats.pendingReviewCount).toBe(0);
     expect(totals.proofs).toBe(serverStats.attachmentCount);
   });
 });

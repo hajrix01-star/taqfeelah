@@ -128,7 +128,6 @@ export async function getNotebookExport(rawInput: z.infer<typeof inputSchema>) {
       net: toRiyals(summary.netMovement.amountHalalas),
       ratio: summary.outflowRatio,
       proofs: summary.attachmentCount,
-      pending: summary.pendingReviewCount,
     },
     channels: [...channelTotals.values()].map((row) => ({
       channelId: row.channelId,

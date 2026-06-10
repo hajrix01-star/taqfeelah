@@ -21,7 +21,7 @@ vi.mock("@/core/db/client", () => ({
 }));
 
 describe("getStoreDaySummary", () => {
-  it("returns SQL totals with attachment counts and zero legacy pending field", async () => {
+  it("returns SQL totals with attachment counts", async () => {
     const { getStoreDaySummary } = await import("./get-store-day-summary");
     const summary = await getStoreDaySummary({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -35,6 +35,6 @@ describe("getStoreDaySummary", () => {
     expect(summary.totalOutflow.amountHalalas).toBe(25000);
     expect(summary.netMovement.amountHalalas).toBe(95000);
     expect(summary.attachmentCount).toBe(2);
-    expect(summary.pendingReviewCount).toBe(0);
+    expect(summary).not.toHaveProperty("pendingReviewCount");
   });
 });

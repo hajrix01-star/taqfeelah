@@ -128,8 +128,8 @@ describe("operational analytics (add / subtract / filters)", () => {
     expect(channelTotal).toBe(summary.sales);
   });
 
-  it("always reports zero pending attachment reviews in May", () => {
+  it("includes attachment proof counts in May summaries", () => {
     const may = entriesInPeriod(entries, "arz", "month", "", "2026-05");
-    expect(summarizeEntries(may).pending).toBe(0);
+    expect(summarizeEntries(may).proofs).toBeGreaterThanOrEqual(0);
   });
 });

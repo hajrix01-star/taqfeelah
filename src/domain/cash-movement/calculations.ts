@@ -74,22 +74,20 @@ export function rowsFromUiEntries(entries: UiEntryLike[]): MovementRow[] {
 
 export function daySummaryToUiTotals(
   summary: DaySummary,
-  meta: { proofs?: number; pending?: number } = {},
-): UiTotals & { proofs: number; pending: number } {
+  meta: { proofs?: number } = {},
+): UiTotals & { proofs: number } {
   return {
     sales: toRiyals(summary.totalSalesHalalas),
     expense: toRiyals(summary.totalOutflowHalalas),
     net: toRiyals(summary.netMovementHalalas),
     ratio: summary.outflowRatio,
     proofs: meta.proofs ?? 0,
-    pending: meta.pending ?? 0,
   };
 }
 
 export function combineUiTotalsFromSummaries(summaries: DaySummary[]): UiTotals {
   const combined = combineDaySummaries(summaries);
-  const { proofs, pending, ...totals } = daySummaryToUiTotals(combined);
+  const { proofs, ...totals } = daySummaryToUiTotals(combined);
   void proofs;
-  void pending;
   return totals;
 }

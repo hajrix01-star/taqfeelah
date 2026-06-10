@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { combineUiTotals, mapDaySummaryToUiTotals } from "./map-day-summary-to-ui";
 import { fetchStoreDaySummaryViaApi, fetchStoreMonthSummaryViaApi } from "./store-summary-api-client";
 
-const emptyStoreRecord = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0, pending: 0 };
+const emptyStoreRecord = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0 };
 
 async function fetchStoreSummaryForPeriod({
   period,

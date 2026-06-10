@@ -98,6 +98,5 @@ export async function getStoreDaySummary(rawInput: SummaryInput) {
     outflowRatio: result.outflowRatio,
     outflowRatioStatus: result.outflowRatioStatus,
     attachmentCount: attachmentStats.attachmentCount,
-    pendingReviewCount: attachmentStats.pendingReviewCount,
   };
 }

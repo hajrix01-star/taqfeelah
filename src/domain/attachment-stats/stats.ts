@@ -17,12 +17,10 @@ export function countProofsFromUiEntries(entries: AttachmentEntryLike[]): number
   ).length;
 }
 
-/** Zero-review policy: pending attachment counts are always 0 (legacy API field). */
-export function normalizeAttachmentStats(
+export function normalizeAttachmentCount(
   stats: { attachmentCount?: number | null },
-): { attachmentCount: number; pendingReviewCount: 0 } {
+): { attachmentCount: number } {
   return {
     attachmentCount: Math.max(0, Number(stats.attachmentCount) || 0),
-    pendingReviewCount: 0,
   };
 }

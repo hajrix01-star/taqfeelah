@@ -39,7 +39,6 @@ vi.mock("@/features/reports/server/get-store-period-summary", () => ({
     netMovement: { amountHalalas: 125000, currency: "SAR" },
     outflowRatio: "16.7%",
     attachmentCount: 1,
-    pendingReviewCount: 0,
   })),
 }));
 

@@ -75,6 +75,5 @@ export function useNotebookExportShareData({
     apiChannelRows: shareData?.shareChannelRows || null,
     apiDayRows: shareData?.shareDayRows || null,
     apiProofs: shareData?.proofs,
-    apiPendingProofs: shareData?.pendingProofs,
   };
 }

@@ -2,7 +2,7 @@ import { CreditCard, ShoppingBag, Smartphone, Wallet } from "lucide-react";
 import { normalizeStoreOperationalSettings } from "@/domain/store-operational-settings/normalize";
 import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
 
-const emptyStoreRecord = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0, pending: 0 };
+const emptyStoreRecord = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0 };
 
 export function assertCanonicalUuidId(entityName, value) {
   if (!isUuid(value)) {

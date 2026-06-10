@@ -10,7 +10,6 @@ describe("mapDaySummaryToUiTotals", () => {
       outflowRatio: "20.8%",
       outflowRatioStatus: "calculable",
       attachmentCount: 2,
-      pendingReviewCount: 1,
     });
 
     expect(mapped).toEqual({
@@ -19,7 +18,6 @@ describe("mapDaySummaryToUiTotals", () => {
       net: 950,
       ratio: "20.8%",
       proofs: 2,
-      pending: 1,
     });
   });
 
@@ -31,7 +29,6 @@ describe("mapDaySummaryToUiTotals", () => {
       outflowRatio: "—",
       outflowRatioStatus: "notCalculable",
       attachmentCount: 0,
-      pendingReviewCount: 0,
     });
 
     expect(mapped.ratio).toBe("—");
@@ -42,15 +39,15 @@ describe("mapDaySummaryToUiTotals", () => {
 describe("combineUiTotals", () => {
   it("aggregates per-store totals for combined home view", () => {
     const combined = combineUiTotals([
-      { sales: 1000, expense: 200, net: 800, proofs: 1, pending: 0 },
-      { sales: 500, expense: 100, net: 400, proofs: 0, pending: 1 },
+      { sales: 1000, expense: 200, net: 800, proofs: 1 },
+      { sales: 500, expense: 100, net: 400, proofs: 0 },
     ]);
 
     expect(combined.sales).toBe(1500);
     expect(combined.expense).toBe(300);
     expect(combined.net).toBe(1200);
     expect(combined.proofs).toBe(1);
-    expect(combined.pending).toBe(1);
     expect(combined.ratio).toBe("20.0%");
+    expect(combined).not.toHaveProperty("pending");
   });
 });

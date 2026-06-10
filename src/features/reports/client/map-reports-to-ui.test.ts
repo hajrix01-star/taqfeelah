@@ -18,14 +18,13 @@ describe("mapPeriodSummaryToTotals", () => {
       outflowRatio: "30.0%",
       outflowRatioStatus: "calculable",
       attachmentCount: 4,
-      pendingReviewCount: 2,
     });
 
     expect(mapped.sales).toBe(1000);
     expect(mapped.expense).toBe(300);
     expect(mapped.net).toBe(700);
     expect(mapped.proofs).toBe(4);
-    expect(mapped.pending).toBe(2);
+    expect(mapped).not.toHaveProperty("pending");
   });
 });
 
@@ -51,7 +50,6 @@ describe("mapDaysReportToUiRows", () => {
       net: 400,
       ratio: "20.0%",
       proofs: 0,
-      pending: 0,
     }]);
   });
 });
@@ -108,13 +106,11 @@ describe("mapAttachmentsReportToProofs", () => {
   it("maps attachment stats for proofs tab", () => {
     const mapped = mapAttachmentsReportToProofs({
       attachmentCount: 3,
-      pendingReviewCount: 1,
       items: [{ entryId: "e1" }],
     });
 
     expect(mapped).toEqual({
       proofs: 3,
-      pending: 1,
       items: [{ entryId: "e1" }],
     });
   });
@@ -123,15 +119,15 @@ describe("mapAttachmentsReportToProofs", () => {
 describe("combineUiTotalsList", () => {
   it("aggregates combined report totals across stores", () => {
     const combined = combineUiTotalsList([
-      { sales: 1000, expense: 200, net: 800, proofs: 1, pending: 0 },
-      { sales: 500, expense: 100, net: 400, proofs: 2, pending: 1 },
+      { sales: 1000, expense: 200, net: 800, proofs: 1 },
+      { sales: 500, expense: 100, net: 400, proofs: 2 },
     ]);
 
     expect(combined.sales).toBe(1500);
     expect(combined.expense).toBe(300);
     expect(combined.net).toBe(1200);
     expect(combined.proofs).toBe(3);
-    expect(combined.pending).toBe(1);
     expect(combined.ratio).toBe("20.0%");
+    expect(combined).not.toHaveProperty("pending");
   });
 });

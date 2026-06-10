@@ -56,7 +56,7 @@ export function summarizeEntries(entries) {
   const expense = activeEntries.filter(entryIsOutflow).reduce((sum, entry) => sum + entry.amount, 0);
   const proofs = countProofsFromUiEntries(activeEntries);
   const ratio = sales > 0 ? `${((expense / sales) * 100).toFixed(1)}%` : expense > 0 ? "—" : "0.0%";
-  return { sales, expense, net: sales - expense, ratio, proofs, pending: 0 };
+  return { sales, expense, net: sales - expense, ratio, proofs };
 }
 
 export function summaryMonthFromEntries(entries, businessId, month) {
@@ -127,8 +127,7 @@ export function entryTotalsHaveFinancialActivity(totals) {
 export function entryTotalsHaveActivity(totals) {
   if (!totals || typeof totals !== "object") return false;
   return entryTotalsHaveFinancialActivity(totals)
-    || (Number(totals.proofs) || 0) > 0
-    || (Number(totals.pending) || 0) > 0;
+    || (Number(totals.proofs) || 0) > 0;
 }
 
 export function preferLocalTotalsOverEmptyApi(localTotals, apiTotals) {
@@ -202,7 +201,6 @@ export function buildBusinessesWithEntrySummaries({
         net: record.net,
         ratio: record.ratio,
         proofs: record.proofs,
-        pending: record.pending,
       },
     };
   });

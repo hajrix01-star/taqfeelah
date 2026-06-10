@@ -15,7 +15,6 @@ const emptyStoreRecord = {
   ratio: "0.0%",
   net: 0,
   proofs: 0,
-  pending: 0,
 };
 
 describe("owner settings store actions", () => {

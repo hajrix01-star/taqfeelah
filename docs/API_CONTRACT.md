@@ -51,12 +51,9 @@ Response:
   "netMovement": { "amountHalalas": 0, "currency": "SAR" },
   "outflowRatio": "0.0%",
   "outflowRatioStatus": "calculable",
-  "attachmentCount": 0,
-  "pendingReviewCount": 0
+  "attachmentCount": 0
 }
 ```
-
-`pendingReviewCount` is a **legacy field** — always `0` under the zero-review policy (attachment review workflow removed). Clients may ignore it; removal planned in a future API wave.
 
 `outflowRatioStatus`: `calculable` | `notCalculable` (sales zero, outflow > 0 → ratio `—` in UI).
 

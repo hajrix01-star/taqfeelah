@@ -407,7 +407,7 @@ pnpm build
 |-------|--------|
 | إرسال الموظف | اعتماد فوري: DB `approved`، واجهة `reviewed`، السجل التشغيلي `active` |
 | تعديل بعد الإرسال | **المالك/المدير فقط** عبر `resubmit` |
-| مرفقات بانتظار المراجعة | **لا يوجد** — `pendingReviewCount` دائمًا `0` (حقل legacy في API) |
+| مرفقات بانتظار المراجعة | **لا يوجد** — لا حقل pending في API أو التقارير |
 
 إعدادات المحل المحذوفة (`reviewEnabled`، `closeoutReviewEnabled`، `attachmentAlert`) تُشطَب عند التطبيع ولا تُعاد.
 

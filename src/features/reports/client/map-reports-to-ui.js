@@ -24,7 +24,6 @@ export function mapDaysReportToUiRows(days = []) {
       net: Number(row?.netMovement?.amountHalalas || 0) / 100,
       ratio,
       proofs: 0,
-      pending: 0,
     };
   });
 }
@@ -87,7 +86,6 @@ export function mapOutflowTransactionsToUi(transactions = [], storeId = "") {
 export function mapAttachmentsReportToProofs(report) {
   return {
     proofs: Number(report?.attachmentCount || report?.entriesWithAttachments || 0),
-    pending: Number(report?.pendingReviewCount || 0),
     items: Array.isArray(report?.items) ? report.items : [],
   };
 }
@@ -99,8 +97,7 @@ export function combineUiTotalsList(records) {
     expense: total.expense + Number(record?.expense || 0),
     net: total.net + Number(record?.net || 0),
     proofs: total.proofs + Number(record?.proofs || 0),
-    pending: total.pending + Number(record?.pending || 0),
-  }), { sales: 0, expense: 0, net: 0, proofs: 0, pending: 0 });
+  }), { sales: 0, expense: 0, net: 0, proofs: 0 });
   const ratio = combined.sales > 0
     ? `${((combined.expense / combined.sales) * 100).toFixed(1)}%`
     : combined.expense > 0
