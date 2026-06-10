@@ -1,71 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CreditCard } from "lucide-react";
-import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  buildOwnerSettingsLocalStoragePayload,
+  persistOwnerSettingsToLocalStorage,
+} from "@/features/org-config/client/owner-settings-local-persistence";
 import { resolveStoreChannelConfig } from "@/features/org-config/client/store-channel-config";
 import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
 import {
-  buildOwnerProfileUpdate,
   isOwnerAuthDirty,
   isOwnerProfileDirty,
-  validateOwnerAuthCredentials,
 } from "@/features/org-config/client/owner-settings-account-actions";
-import {
-  buildOwnerSettingsLocalStoragePayload,
-  buildOwnerSettingsTeamPersistPayload,
-  persistOwnerSettingsToLocalStorage,
-} from "@/features/org-config/client/owner-settings-local-persistence";
-import {
-  applyPersistedStoreChannelSettings,
-  applyPersistedStoreOperationalSettings,
-  applyStoreProfileUpdate,
-  buildArchiveStoreDeleteTarget,
-  buildNewConfiguredBusiness,
-  buildRemoveStoreDeleteTarget,
-  partitionConfiguredBusinesses,
-  toggleArchivedBusinessId,
-} from "@/features/org-config/client/owner-settings-store-actions";
-import { resolveStorePanelOpenDrafts } from "@/features/org-config/client/owner-settings-store-panel-actions";
-import {
-  addCustomSalesChannel,
-  canRequestRetireSalesChannel,
-  restoreRetiredSalesChannel,
-  retireSalesChannelInDraft,
-  toggleSalesChannelActive,
-} from "@/features/org-config/client/owner-settings-channel-actions";
-import {
-  mergeOperationalDraft,
-  toggleOperationalCategory,
-} from "@/features/org-config/client/owner-settings-operational-actions";
-import {
-  buildNewStaffMember,
-  canAddStaffMember,
-  cloneStaffDraft,
-  prepareSavedTeamDraft,
-  resolveTeamSaveFailureMessage,
-  toggleEmployeeActiveInDraft,
-  toggleEmployeeStoreInDraft,
-  toggleStoreSelection,
-} from "@/features/org-config/client/owner-settings-team-actions";
-import {
-  applyOwnerSettingsDeleteTarget,
-  listStaffWithoutActiveStoreAfterArchive,
-  removeEmployeePinForPerson,
-  storeHasOperationalRecords,
-} from "@/features/org-config/client/owner-settings-delete-actions";
+import { partitionConfiguredBusinesses } from "@/features/org-config/client/owner-settings-store-actions";
 import {
   businessName,
   businessLocation,
-  emptyStoreRecord,
   text,
   DEFAULT_STORE_CHANNEL_CONFIG,
 } from "./prototype-runtime-demo-data";
 import {
   APP_IN_PRODUCTION_MODE,
-  PROTOTYPE_EMPLOYEE_PIN_DEFAULT,
   RUNTIME_SETTINGS_DB_SOURCE,
 } from "./prototype-runtime-boot";
+import { createOwnerSettingsScreenHandlers } from "./owner-settings-screen-action-handlers";
 
 export function useOwnerSettingsScreenState({
   lang,
@@ -136,8 +93,8 @@ export function useOwnerSettingsScreenState({
   const staffWorkingSet = managingTeam && draftStaff ? draftStaff : staff;
   const visibleStaff = staffWorkingSet.filter((person) => !person.removed);
   const employeeStoreIds = (person) => person.storeIds || ["shami"];
-  const displayBusinessName = (business) => businessName(business, lang);
-  const displayLocation = (business) => businessLocation(business, lang);
+  const displayBusinessName = useCallback((business) => businessName(business, lang), [lang]);
+  const displayLocation = useCallback((business) => businessLocation(business, lang), [lang]);
   const savedChannelConfig = resolveStoreChannelConfig(
     storeChannelSettings,
     settingsStoreId,
@@ -178,240 +135,136 @@ export function useOwnerSettingsScreenState({
   useEffect(() => { setDraftAuthEmployeePins({ ...(authEmployeePins || {}) }); }, [authEmployeePins]);
 
   const showSettingsSaved = () => { setSettingsSuccess(true); window.setTimeout(() => setSettingsSuccess(false), 2200); };
-  const saveOwnerProfile = () => {
-    const nextProfile = buildOwnerProfileUpdate(ownerProfile, draftOwnerName);
-    if (!nextProfile) return;
-    setOwnerProfile(nextProfile);
-    showSettingsSaved();
-  };
-  const saveAuthCredentials = () => {
-    const credentials = validateOwnerAuthCredentials(draftAuthOwnerUsername, draftAuthOwnerPassword);
-    if (!credentials.valid) {
-      setSettingsNotice(lang === "ar" ? "اسم المستخدم وكلمة المرور للمالك مطلوبان." : "Owner username and password are required.");
-      return;
-    }
-    setAuthOwnerUsername(credentials.username);
-    setAuthOwnerPassword(credentials.password);
-    setAuthEmployeePins(draftAuthEmployeePins || {});
-    setSettingsNotice("");
-    showSettingsSaved();
-  };
-  const resetStoreDrafts = () => { setDraftStoreName(""); setDraftStoreLocation(""); setDraftStoreChannelConfig(null); setDraftStoreOperationalConfig(null); setNewChannelName(""); setSettingsNotice(""); };
-  const openStore = (id) => { resetStoreDrafts(); setSettingsStoreId(id); setStorePanel("overview"); };
-  const closeStore = () => { resetStoreDrafts(); setSettingsStoreId(null); setStorePanel("overview"); };
-  const openStorePanel = (panel) => {
-    setSettingsNotice("");
-    setStorePanel(panel);
-    const drafts = resolveStorePanelOpenDrafts(panel, {
-      selectedStore,
-      displayBusinessName,
-      displayLocation,
-      savedChannelConfig,
-      savedOperationalConfig,
-    });
-    if (drafts.profile) {
-      setDraftStoreName(drafts.profile.name);
-      setDraftStoreLocation(drafts.profile.location);
-    }
-    if (drafts.channelConfig) setDraftStoreChannelConfig(drafts.channelConfig);
-    if (drafts.operationalConfig) setDraftStoreOperationalConfig(drafts.operationalConfig);
-  };
-  const backFromStorePanel = () => { resetStoreDrafts(); setStorePanel("overview"); };
-  const saveStoreProfile = () => {
-    if (!settingsStoreId || !draftStoreName.trim()) return;
-    setConfiguredBusinesses((current) => applyStoreProfileUpdate(current, settingsStoreId, {
-      name: draftStoreName,
-      location: draftStoreLocation,
-    }));
-    showSettingsSaved(); backFromStorePanel();
-  };
-  const saveChannelSettings = () => {
-    if (!settingsStoreId || !draftStoreChannelConfig) return;
-    setStoreChannelSettings((current) => applyPersistedStoreChannelSettings(current, settingsStoreId, draftStoreChannelConfig));
-    showSettingsSaved(); backFromStorePanel();
-  };
-  const saveOperationalSettings = () => {
-    if (!settingsStoreId || !draftStoreOperationalConfig) return;
-    setStoreOperationalSettings((current) => applyPersistedStoreOperationalSettings(current, settingsStoreId, draftStoreOperationalConfig));
-    showSettingsSaved(); backFromStorePanel();
-  };
-  const updateOperationalDraft = (updates) => setDraftStoreOperationalConfig((current) => mergeOperationalDraft(current || savedOperationalConfig, updates));
-  const updateChannelDraft = (updater) => setDraftStoreChannelConfig((current) => updater(current || savedChannelConfig));
-  const toggleChannel = (id) => {
-    const result = toggleSalesChannelActive(channelConfig, id);
-    if (result.blocked) { setSettingsNotice(text(lang, "atLeastOneChannel")); return; }
-    setSettingsNotice("");
-    updateChannelDraft(() => result.config);
-  };
-  const requestRetireChannel = (channel) => {
-    if (!canRequestRetireSalesChannel(channelConfig, channel)) { setSettingsNotice(text(lang, "atLeastOneChannel")); return; }
-    setDeleteTarget({ type: "channel", item: channel });
-  };
-  const restoreSalesChannel = (channel) => updateChannelDraft((config) => restoreRetiredSalesChannel(config, channel));
-  const addSalesChannel = () => {
-    const result = addCustomSalesChannel(channelConfig, newChannelName, { icon: CreditCard });
-    if (!result.added) return;
-    setDraftStoreChannelConfig(result.config);
-    setNewChannelName("");
-  };
-  const toggleCategory = (id) => {
-    const result = toggleOperationalCategory(operationalConfig, id);
-    if (result.blocked) { setSettingsNotice(text(lang, "atLeastOneCategory")); return; }
-    setSettingsNotice("");
-    setDraftStoreOperationalConfig(result.config);
-  };
-  const toggleArchive = (id) => setArchivedBusinessIds((current) => toggleArchivedBusinessId(current, id));
-  const storeHasRecords = (business) => storeHasOperationalRecords(operationalEntries, business.id);
-  const staffWithoutActiveStoreAfterArchive = (businessId) => listStaffWithoutActiveStoreAfterArchive({
-    staff: visibleStaff,
-    businessId,
-    activeBusinessIds: activeStoredBusinesses.map((business) => business.id),
-  });
-  const requestArchiveStore = (business) => setDeleteTarget(
-    buildArchiveStoreDeleteTarget(business, staffWithoutActiveStoreAfterArchive(business.id)),
-  );
-  const openStoreDelete = (business) => {
-    const hasRecords = storeHasRecords(business);
-    setDeleteTarget(buildRemoveStoreDeleteTarget(business, {
-      hasRecords,
-      affectedStaff: hasRecords ? staffWithoutActiveStoreAfterArchive(business.id) : [],
-    }));
-  };
-  const addStore = () => {
-    const business = buildNewConfiguredBusiness({
-      name: newStoreName,
-      location: newStoreLocation,
-      emptyStoreRecord,
-    });
-    if (!business) return;
-    setConfiguredBusinesses((current) => [...current, business]);
-    setNewStoreName(""); setNewStoreLocation(""); setShowAddStore(false); showSettingsSaved();
-  };
-  const startManagingTeam = () => { setDraftStaff(cloneStaffDraft(staff)); setManagingTeam(true); };
-  const cancelManagingTeam = () => { setDraftStaff(null); setManagingTeam(false); setNewEmployeeName(""); setNewEmployeeMobile(""); setNewEmployeeStoreIds([]); };
-  const saveManagingTeam = async () => {
-    if (!draftStaff || teamSaving) return;
-    const { staff: nextStaff, employeePins: nextPins } = prepareSavedTeamDraft(draftStaff, {
-      draftAuthEmployeePins,
-      authEmployeePins,
-      defaultPin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT || "1234",
-    });
-    setStaff(nextStaff);
-    setAuthEmployeePins(nextPins);
-    cancelManagingTeam();
-    if (APP_IN_PRODUCTION_MODE && typeof onPersistSettingsNow === "function") {
-      setTeamSaving(true);
-      setSettingsNotice("");
-      try {
-        await onPersistSettingsNow(buildOwnerSettingsTeamPersistPayload({
-          staff: nextStaff,
-          authOwnerUsername,
-          authOwnerPassword,
-          authEmployeePins: nextPins,
-          omitStaff: isOrgConfigApiEnabled(),
-        }));
-        showSettingsSaved();
-      } catch (failure) {
-        setSettingsNotice(resolveTeamSaveFailureMessage(failure, lang));
-      } finally {
-        setTeamSaving(false);
-      }
-      return;
-    }
-    showSettingsSaved();
-  };
-  const addStaff = () => {
-    if (!canAddStaffMember({ name: newEmployeeName, storeIds: newEmployeeStoreIds, managingTeam })) return;
-    const created = buildNewStaffMember({
-      name: newEmployeeName,
-      mobile: newEmployeeMobile,
-      storeIds: newEmployeeStoreIds,
-      defaultPin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT,
-    });
-    setDraftStaff((current) => [...(current || staff), created.member]);
-    setDraftAuthEmployeePins((current) => ({ ...(current || {}), ...created.employeePinsPatch }));
-    setNewEmployeeName(""); setNewEmployeeMobile(""); setNewEmployeeStoreIds([]);
-  };
-  const updateDraftEmployeePin = (personId, value) => {
-    setDraftAuthEmployeePins((current) => ({ ...(current || {}), [personId]: value }));
-  };
-  const toggleEmployeeActive = (personId) => {
-    if (!managingTeam) return;
-    setDraftStaff((current) => toggleEmployeeActiveInDraft(current || staff, personId));
-  };
-  const toggleEmployeeStore = (personId, storeId) => {
-    if (!managingTeam) return;
-    setDraftStaff((current) => toggleEmployeeStoreInDraft(current || staff, personId, storeId));
-  };
-  const toggleNewEmployeeStore = (storeId) => setNewEmployeeStoreIds((current) => toggleStoreSelection(current, storeId));
-  const confirmDelete = () => {
-    applyOwnerSettingsDeleteTarget({
-      deleteTarget,
-      selectedBusiness,
-      apply: {
-        appendArchivedBusinessId: (businessId) => {
-          setArchivedBusinessIds((current) => (current.includes(businessId) ? current : [...current, businessId]));
-        },
-        removeConfiguredBusiness: (businessId) => {
-          setConfiguredBusinesses((current) => current.filter((business) => business.id !== businessId));
-        },
-        removeArchivedBusinessId: (businessId) => {
-          setArchivedBusinessIds((current) => current.filter((id) => id !== businessId));
-        },
-        removeStaffStoreId: (businessId) => {
-          setStaff((current) => current.map((person) => ({
-            ...person,
-            storeIds: (person.storeIds || []).filter((id) => id !== businessId),
-          })));
-        },
-        removeLastCloseoutDate: (businessId) => {
-          setLastCloseoutDates((current) => {
-            const next = { ...current };
-            delete next[businessId];
-            return next;
-          });
-        },
-        setSelectedBusiness,
-        clearArchivedReadOnlyBusinessId: () => setArchivedReadOnlyBusinessId(null),
-        removeStoreChannelSettings: (businessId) => {
-          setStoreChannelSettings((current) => {
-            const next = { ...current };
-            delete next[businessId];
-            return next;
-          });
-        },
-        removeStoreOperationalSettings: (businessId) => {
-          setStoreOperationalSettings((current) => {
-            const next = { ...current };
-            delete next[businessId];
-            return next;
-          });
-        },
-        closeStore,
-        retireChannel: (channel) => {
-          updateChannelDraft((config) => retireSalesChannelInDraft(config, channel));
-        },
-        removeStaffMember: (personId) => {
-          const removePerson = (current) => current.map((person) => (
-            person.id === personId ? { ...person, active: false, removed: true } : person
-          ));
-          if (managingTeam) setDraftStaff((current) => removePerson(current || staff));
-          else setStaff(removePerson);
-        },
-        removeEmployeePin: (personId) => {
-          setDraftAuthEmployeePins((current) => removeEmployeePinForPerson(current, personId));
-          setAuthEmployeePins((current) => removeEmployeePinForPerson(current, personId));
-        },
-      },
-    });
-    setDeleteTarget(null);
-  };
+
+  const handlers = useMemo(() => createOwnerSettingsScreenHandlers({
+    lang,
+    settingsStoreId,
+    selectedStore,
+    selectedBusiness,
+    displayBusinessName,
+    displayLocation,
+    savedChannelConfig,
+    savedOperationalConfig,
+    channelConfig,
+    operationalConfig,
+    draftStaff,
+    staff,
+    managingTeam,
+    teamSaving,
+    newEmployeeName,
+    newEmployeeMobile,
+    newEmployeeStoreIds,
+    draftOwnerName,
+    draftAuthOwnerUsername,
+    draftAuthOwnerPassword,
+    draftAuthEmployeePins,
+    authOwnerUsername,
+    authOwnerPassword,
+    authEmployeePins,
+    ownerProfile,
+    newStoreName,
+    newStoreLocation,
+    newChannelName,
+    draftStoreName,
+    draftStoreLocation,
+    draftStoreChannelConfig,
+    draftStoreOperationalConfig,
+    operationalEntries,
+    activeStoredBusinesses,
+    visibleStaff,
+    deleteTarget,
+    onPersistSettingsNow,
+    showSettingsSaved,
+    setters: {
+      setOwnerProfile,
+      setSettingsNotice,
+      setDraftStoreName,
+      setDraftStoreLocation,
+      setDraftStoreChannelConfig,
+      setDraftStoreOperationalConfig,
+      setNewChannelName,
+      setSettingsStoreId,
+      setStorePanel,
+      setConfiguredBusinesses,
+      setStoreChannelSettings,
+      setStoreOperationalSettings,
+      setArchivedBusinessIds,
+      setDeleteTarget,
+      setNewStoreName,
+      setNewStoreLocation,
+      setShowAddStore,
+      setDraftStaff,
+      setManagingTeam,
+      setNewEmployeeName,
+      setNewEmployeeMobile,
+      setNewEmployeeStoreIds,
+      setStaff,
+      setAuthOwnerUsername,
+      setAuthOwnerPassword,
+      setAuthEmployeePins,
+      setDraftAuthEmployeePins,
+      setTeamSaving,
+      setSelectedBusiness,
+      setArchivedReadOnlyBusinessId,
+      setLastCloseoutDates,
+    },
+  }), [
+    lang,
+    settingsStoreId,
+    selectedStore,
+    selectedBusiness,
+    savedChannelConfig,
+    savedOperationalConfig,
+    channelConfig,
+    operationalConfig,
+    draftStaff,
+    staff,
+    managingTeam,
+    teamSaving,
+    newEmployeeName,
+    newEmployeeMobile,
+    newEmployeeStoreIds,
+    draftOwnerName,
+    draftAuthOwnerUsername,
+    draftAuthOwnerPassword,
+    draftAuthEmployeePins,
+    authOwnerUsername,
+    authOwnerPassword,
+    authEmployeePins,
+    ownerProfile,
+    newStoreName,
+    newStoreLocation,
+    newChannelName,
+    draftStoreName,
+    draftStoreLocation,
+    draftStoreChannelConfig,
+    draftStoreOperationalConfig,
+    operationalEntries,
+    activeStoredBusinesses,
+    visibleStaff,
+    deleteTarget,
+    onPersistSettingsNow,
+    displayBusinessName,
+    displayLocation,
+    setOwnerProfile,
+    setStoreChannelSettings,
+    setStoreOperationalSettings,
+    setConfiguredBusinesses,
+    setArchivedBusinessIds,
+    setStaff,
+    setAuthOwnerUsername,
+    setAuthOwnerPassword,
+    setAuthEmployeePins,
+    setSelectedBusiness,
+    setArchivedReadOnlyBusinessId,
+    setLastCloseoutDates,
+  ]);
 
   const deleteDialogProps = {
     lang,
     deleteTarget,
     onCancel: () => setDeleteTarget(null),
-    onConfirm: confirmDelete,
+    onConfirm: handlers.confirmDelete,
     translate: (key) => text(lang, key),
   };
 
@@ -481,33 +334,7 @@ export function useOwnerSettingsScreenState({
     ownerProfileDirty,
     authDirty,
     setDeleteTarget,
-    openStore,
-    closeStore,
-    openStorePanel,
-    backFromStorePanel,
-    saveStoreProfile,
-    saveChannelSettings,
-    saveOperationalSettings,
-    updateOperationalDraft,
-    toggleChannel,
-    requestRetireChannel,
-    restoreSalesChannel,
-    addSalesChannel,
-    toggleCategory,
-    toggleArchive,
-    requestArchiveStore,
-    openStoreDelete,
-    addStore,
-    startManagingTeam,
-    cancelManagingTeam,
-    saveManagingTeam,
-    addStaff,
-    updateDraftEmployeePin,
-    toggleEmployeeActive,
-    toggleEmployeeStore,
-    toggleNewEmployeeStore,
-    saveOwnerProfile,
-    saveAuthCredentials,
+    ...handlers,
     showSettingsSaved,
     setNotebookTheme,
     notebookTheme,
