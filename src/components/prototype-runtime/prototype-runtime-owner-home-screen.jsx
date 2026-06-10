@@ -34,9 +34,11 @@ import {
   StoreScopeTabs,
   StoreComparison,
   NotebookHeading,
+  SummaryLoadingRow,
   todayIsoDate,
 } from "./prototype-runtime-notebook";
 import { Badge, InkTab } from "./prototype-runtime-shell-ui";
+import { isOwnerApiSummaryPending } from "@/features/reports/client/owner-summary-loading";
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 import { useHomeDayAttachments } from "@/features/entries/client/use-home-day-attachments";
 
@@ -57,6 +59,9 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     businessesWithDaySummaries,
     combinedResult: apiCombinedResult,
     getStoreResult,
+    loading: summaryApiLoading,
+    loaded: summaryApiLoaded,
+    hasData: summaryApiHasData,
     error: summaryApiError,
   } = useStoreDaySummaries({
     enabled: summaryApiActive,
@@ -86,7 +91,18 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     entriesLoading: operationalEntriesLoading,
   });
   const localSummaryHasFinancialActivity = entryTotalsHaveFinancialActivity(localCombinedResult);
-  const summaryLoadFailedWithoutFallback = summaryApiActive && summaryApiError && !localSummaryHasFinancialActivity;
+  const summaryLoadFailedWithoutFallback = summaryApiActive
+    && summaryApiError
+    && !localSummaryHasFinancialActivity
+    && !summaryApiHasData;
+  const summaryPending = isOwnerApiSummaryPending({
+    apiEnabled: summaryApiActive,
+    preferEntrySummaries,
+    loading: summaryApiLoading,
+    loaded: summaryApiLoaded,
+    hasData: summaryApiHasData,
+    loadFailed: summaryLoadFailedWithoutFallback,
+  });
   const summaryLoadErrorMessage = lang === "ar"
     ? "تعذر تحميل الملخص المالي من الخادم. لم يتم عرض أرقام بديلة حتى لا تظهر أصفار غير صحيحة."
     : "Failed to load the financial summary from the server. No fallback figures are shown to avoid incorrect zero totals.";
@@ -134,6 +150,8 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
           <div>
             {summaryLoadFailedWithoutFallback ? (
               <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{summaryLoadErrorMessage}</p></NotebookRow>
+            ) : summaryPending ? (
+              <SummaryLoadingRow lang={lang} />
             ) : (
               <>
                 <StoreComparison lang={lang} monthly={monthly} businessesList={comparisonBusinesses} />
@@ -145,6 +163,8 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
           <div>
             {summaryLoadFailedWithoutFallback ? (
               <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{summaryLoadErrorMessage}</p></NotebookRow>
+            ) : summaryPending ? (
+              <SummaryLoadingRow lang={lang} />
             ) : (
               <>
                 <NotebookRow><NumberLine lang={lang} handwritten label={text(lang, "sales")} value={money(result.sales, lang)} /></NotebookRow>

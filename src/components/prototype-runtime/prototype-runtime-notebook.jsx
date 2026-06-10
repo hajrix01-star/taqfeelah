@@ -348,6 +348,16 @@ function NotebookDateBar({ dateSelector }) {
   return <NotebookRow className="justify-end">{dateSelector}</NotebookRow>;
 }
 
+function SummaryLoadingRow({ lang, lines = 3 }) {
+  return (
+    <NotebookRow lines={lines}>
+      <p className="w-full text-taq-meta font-bold text-[#806528]">
+        {lang === "ar" ? "جاري تحميل الملخص…" : "Loading summary…"}
+      </p>
+    </NotebookRow>
+  );
+}
+
 export {
   Notebook,
   ThemePicker,
@@ -367,4 +377,5 @@ export {
   NotebookHeading,
   NotebookMarginTools,
   NotebookDateBar,
+  SummaryLoadingRow,
 };
