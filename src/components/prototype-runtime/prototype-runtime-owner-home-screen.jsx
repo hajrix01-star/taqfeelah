@@ -194,7 +194,7 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
         )}
       </Notebook>
       {!isCombined && expanded && !monthly && (
-        <div className={`mt-1 pb-3 ${lang === "ar" ? "pr-11 pl-6" : "pl-11 pr-6"}`}>
+        <div className="mt-1 px-6 pb-3">
           <div className="flex h-[44px] items-end pb-[8px]">
             <h3 className="text-taq-body-sm font-black text-[#112A46]">
               {text(lang, "operations")} {fullDate(daySummary, lang)}

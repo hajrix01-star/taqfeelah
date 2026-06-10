@@ -57,11 +57,7 @@ export default function NotebookDaySharePreview({
       style={{ backgroundColor: activeTheme.paper, fontFamily }}
     >
       <div className="relative px-5 pb-4 pt-3" style={lines}>
-        <div
-          className={`absolute bottom-0 top-0 w-[1.25px] ${lang === "ar" ? "right-8" : "left-8"}`}
-          style={{ backgroundColor: activeTheme.margin }}
-        />
-        <div className={lang === "ar" ? "pr-6 pl-1" : "pl-6 pr-1"}>
+        <div>
           <div className="flex min-h-[54px] items-center justify-center">
             <img src={TAQFEELAH_LOGO_SRC} alt="" draggable={false} className="h-[44px] w-[132px] select-none object-contain" />
           </div>

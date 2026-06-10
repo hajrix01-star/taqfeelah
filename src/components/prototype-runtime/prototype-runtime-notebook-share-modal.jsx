@@ -400,8 +400,7 @@ export function NotebookShareModal({ lang, snapshot, onClose, businessesList = b
           <>
             <div ref={previewRef} className="mb-4 overflow-hidden rounded-[24px] p-0 shadow-lg" style={{ backgroundColor: activeTheme.paper }}>
               <div className="relative px-5 pb-4 pt-3" style={{ ...lines, fontFamily: lang === "ar" ? "'Noto Sans Arabic', sans-serif" : "'Noto Sans', sans-serif" }}>
-                <div className={`absolute bottom-0 top-0 w-[1.25px] ${lang === "ar" ? "right-8" : "left-8"}`} style={{ backgroundColor: activeTheme.margin }} />
-                <div className={lang === "ar" ? "pr-6 pl-1" : "pl-6 pr-1"}>
+                <div>
                   <div className="flex h-[54px] items-center justify-center">
                     <Logo compact centered />
                   </div>

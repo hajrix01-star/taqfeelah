@@ -10,8 +10,7 @@ export function AppFontStyles() {
       .taq-owner-nav { position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; transform: none !important; width: 100% !important; max-width: none !important; border-radius: 0 !important; box-shadow: none !important; }
       .taq-notebook-surface .taq-notebook-content {
         box-sizing: border-box;
-        padding-inline-start: calc(2rem + 1.25px + 14px);
-        padding-inline-end: 14px;
+        padding-inline: 14px;
         max-width: 100%;
       }
       .taq-notebook-surface .taq-owner-page.taq-notebook-body {
@@ -24,13 +23,11 @@ export function AppFontStyles() {
         .taq-topbar { max-width: 540px; margin-inline: auto; }
         .taq-owner-page { max-width: 530px; margin-inline: auto; padding-inline: 0 !important; }
         .taq-scroll > section:not(.taq-owner-page) { max-width: 560px; margin-inline: auto; }
-        .taq-notebook-margin { inset-inline-start: calc((100% - 530px) / 2 + 32px) !important; }
       }
       @media (min-width: 1024px) {
         .taq-topbar { max-width: 560px; margin-inline: auto; }
         .taq-owner-page { max-width: 540px; margin-inline: auto; padding-inline: 0 !important; }
         .taq-scroll > section:not(.taq-owner-page) { max-width: 560px; margin-inline: auto; }
-        .taq-notebook-margin { inset-inline-start: calc((100% - 540px) / 2 + 32px) !important; }
       }
     `}</style>
   );

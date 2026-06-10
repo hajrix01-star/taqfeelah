@@ -23,7 +23,7 @@ import {
 } from "./prototype-runtime-demo-data";
 import { InkTab } from "./prototype-runtime-shell-ui";
 
-function Notebook({ children, theme = "yellow", lang = "ar", marginContent = null, fullPage = false }) {
+function Notebook({ children, theme = "yellow", lang = "ar", fullPage = false }) {
   const isArabic = lang === "ar";
   const activeTheme = notebookThemes[theme] || notebookThemes.yellow;
   const lines = {
@@ -41,18 +41,7 @@ function Notebook({ children, theme = "yellow", lang = "ar", marginContent = nul
       }}
     >
       {!fullPage && <div className="pointer-events-none absolute inset-0 opacity-70" style={lines} />}
-      {!fullPage && (
-        <div
-          className={`pointer-events-none absolute bottom-0 top-0 w-[1.25px] ${isArabic ? "right-8" : "left-8"}`}
-          style={{ backgroundColor: activeTheme.margin }}
-        />
-      )}
-      {marginContent && (
-        <div className={`absolute top-[18px] z-20 flex w-[29px] flex-col items-center ${isArabic ? "right-[1px]" : "left-[1px]"}`}>
-          {marginContent}
-        </div>
-      )}
-      <div className={`relative ${isArabic ? "pr-6 pl-1" : "pl-6 pr-1"}`}>{children}</div>
+      <div className="relative">{children}</div>
     </div>
   );
 }
@@ -329,21 +318,6 @@ function NotebookHeading({ lang, label = null, dateSelector = null, onShare = nu
   );
 }
 
-function NotebookMarginTools({ lang, onShare }) {
-  return (
-    <div className="flex w-[29px] flex-col items-center pt-1">
-      <button
-        onClick={onShare}
-        title={text(lang, "shareNotebook")}
-        aria-label={text(lang, "shareNotebook")}
-        className="flex h-[42px] w-[29px] items-center justify-center text-[#112A46]"
-      >
-        <Share2 className="h-[18px] w-[18px]" strokeWidth={2} />
-      </button>
-    </div>
-  );
-}
-
 function NotebookDateBar({ dateSelector }) {
   return <NotebookRow className="justify-end">{dateSelector}</NotebookRow>;
 }
@@ -375,7 +349,6 @@ export {
   StoreScopeTabs,
   StoreComparison,
   NotebookHeading,
-  NotebookMarginTools,
   NotebookDateBar,
   SummaryLoadingRow,
 };

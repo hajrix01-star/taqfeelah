@@ -455,7 +455,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
           )}
         />
 
-        <div className={`${lang === "ar" ? "pr-11 pl-6" : "pl-11 pr-6"}`}>
+        <div className="px-6">
           <LogStoreFilter lang={lang} businessesList={availableBusinesses} selectedBusiness={safeBusinessId} setSelectedBusiness={setSelectedBusiness} locked={Boolean(archivedReadOnlyBusiness)} />
           <NotebookRow className="mb-1">
             <div className="flex w-full items-end justify-between gap-3">
