@@ -40,3 +40,23 @@ export function resolvePullToRefreshTarget({
   if (ownerPage === "closeouts") return "closeouts";
   return "operational-entries";
 }
+
+/**
+ * Notebook pages should reveal matching paper/lines while pulling — not shell gray.
+ *
+ * @param {{
+ *   employee: boolean;
+ *   ownerPage: string;
+ *   employeePage: string;
+ * }} input
+ */
+export function resolvePullToRefreshUsesNotebookSurface({
+  employee,
+  ownerPage,
+  employeePage,
+}) {
+  if (employee) {
+    return employeePage === "closeouts";
+  }
+  return ownerPage === "home" || ownerPage === "reports" || ownerPage === "closeouts";
+}

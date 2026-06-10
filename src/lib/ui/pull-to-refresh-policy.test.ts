@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolvePullToRefreshTarget } from "./pull-to-refresh-policy";
+import {
+  resolvePullToRefreshTarget,
+  resolvePullToRefreshUsesNotebookSurface,
+} from "./pull-to-refresh-policy";
 
 describe("resolvePullToRefreshTarget", () => {
   it("enables closeouts refresh for employee main page", () => {
@@ -70,5 +73,33 @@ describe("resolvePullToRefreshTarget", () => {
       ownerEntryActive: true,
       hasActiveEmployee: false,
     })).toBeNull();
+  });
+});
+
+describe("resolvePullToRefreshUsesNotebookSurface", () => {
+  it("uses notebook surface on owner home, reports, and closeouts", () => {
+    for (const ownerPage of ["home", "reports", "closeouts"]) {
+      expect(resolvePullToRefreshUsesNotebookSurface({
+        employee: false,
+        ownerPage,
+        employeePage: "closeouts",
+      })).toBe(true);
+    }
+  });
+
+  it("uses shell surface on owner register", () => {
+    expect(resolvePullToRefreshUsesNotebookSurface({
+      employee: false,
+      ownerPage: "register",
+      employeePage: "closeouts",
+    })).toBe(false);
+  });
+
+  it("uses notebook surface on employee closeouts page", () => {
+    expect(resolvePullToRefreshUsesNotebookSurface({
+      employee: true,
+      ownerPage: "home",
+      employeePage: "closeouts",
+    })).toBe(true);
   });
 });

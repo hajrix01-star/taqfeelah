@@ -3,7 +3,11 @@
 import React, { useCallback, useMemo } from "react";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
 import { pullToRefreshStatusLabel } from "@/lib/ui/pull-to-refresh-copy";
-import { resolvePullToRefreshTarget } from "@/lib/ui/pull-to-refresh-policy";
+import {
+  resolvePullToRefreshTarget,
+  resolvePullToRefreshUsesNotebookSurface,
+} from "@/lib/ui/pull-to-refresh-policy";
+import { resolvePullToRefreshSurfaceStyle } from "@/lib/ui/pull-to-refresh-surface";
 import { usePullToRefresh } from "@/lib/ui/use-pull-to-refresh";
 
 function PullToRefreshSpinner({ progress, spinning, releaseReady }) {
@@ -54,6 +58,7 @@ export function PrototypeRuntimePullScroll({
   employeeEntryActive,
   ownerEntryActive,
   hasActiveEmployee,
+  notebookTheme = "yellow",
   onRefreshOperationalEntries,
   children,
 }) {
@@ -76,6 +81,15 @@ export function PrototypeRuntimePullScroll({
       ownerEntryActive,
       hasActiveEmployee,
     ],
+  );
+
+  const usesNotebookSurface = useMemo(
+    () => resolvePullToRefreshUsesNotebookSurface({
+      employee,
+      ownerPage,
+      employeePage,
+    }),
+    [employee, ownerPage, employeePage],
   );
 
   const enabled = refreshTarget !== null;
@@ -102,35 +116,47 @@ export function PrototypeRuntimePullScroll({
   });
 
   const statusLabel = pullToRefreshStatusLabel(lang, refreshing, releaseReady);
+  const surfaceStyle = enabled
+    ? resolvePullToRefreshSurfaceStyle(usesNotebookSurface, notebookTheme)
+    : undefined;
+  const contentOffset = enabled ? slotHeight : 0;
+  const contentTransition = enabled && !isActive
+    ? "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)"
+    : "none";
 
   return (
     <div
       ref={scrollRef}
       className={`taq-scroll relative min-h-0 overflow-y-auto ${enabled ? "touch-pan-y" : "overscroll-y-contain"}`}
+      style={surfaceStyle}
       aria-busy={refreshing || undefined}
     >
-      {enabled && (
+      {enabled && (isActive || refreshing) && (
         <div
           aria-live="polite"
-          className="flex items-end justify-center overflow-hidden"
-          style={{
-            height: slotHeight,
-            transition: slotHeight === 0 ? "height 240ms cubic-bezier(0.22, 1, 0.36, 1)" : "none",
-          }}
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-end justify-center"
+          style={{ height: contentOffset }}
         >
           <span className="sr-only">{statusLabel}</span>
-          {(isActive || refreshing) && (
-            <div className="pb-1.5">
-              <PullToRefreshSpinner
-                progress={pullProgress}
-                spinning={refreshing}
-                releaseReady={releaseReady}
-              />
-            </div>
-          )}
+          <div className="pb-1.5">
+            <PullToRefreshSpinner
+              progress={pullProgress}
+              spinning={refreshing}
+              releaseReady={releaseReady}
+            />
+          </div>
         </div>
       )}
-      {children}
+      {enabled ? (
+        <div
+          style={{
+            transform: `translateY(${contentOffset}px)`,
+            transition: contentTransition,
+          }}
+        >
+          {children}
+        </div>
+      ) : children}
     </div>
   );
 }
