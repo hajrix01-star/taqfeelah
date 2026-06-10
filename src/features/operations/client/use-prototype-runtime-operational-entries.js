@@ -13,6 +13,10 @@ import {
   fetchStoreEntriesViaApi,
 } from "@/features/entries/client/store-entries-api-client";
 import { resolveOperationalEntriesBulkLoadWindow } from "@/features/entries/client/register-entries-load-window";
+import {
+  filterOwnerDuplicateWatchEntries,
+  resolveOwnerDuplicateWatchWindow,
+} from "@/features/operations/client/owner-duplicate-watch";
 import { mergeLastCloseoutDateForStore } from "@/features/operations/operational-entry-save-helpers";
 import { resolvePayloadAttachmentForPhase9Api } from "@/features/phase9/client/inline-attachment-api-flow";
 import { safeSetLocalStorageItem } from "@/features/demo/prototype-storage";
@@ -76,7 +80,74 @@ export function usePrototypeRuntimeOperationalEntries({
     });
   }, [closeoutsApiOrganizationId, entriesApiEnabled, entriesApiStrictMode, phase9ApiEnabled]);
 
+  const shouldDeferOwnerBulkEntriesLoad = !employee
+    && REGISTER_ENTRIES_PAGINATION_ENABLED
+    && ENTRIES_API_DB_SOURCE;
+
+  const loadOwnerDuplicateWatchFromApi = useCallback(async () => {
+    if (!entriesApiEnabled) {
+      if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
+      return [];
+    }
+    if (!isUuid(closeoutsApiOrganizationId)) {
+      const message = lang === "ar"
+        ? "تعذر تحميل تنبيهات التكرار: معرف المنظمة غير صالح لمسار API."
+        : "Failed to load duplicate alerts: organization id is missing/invalid for entries API.";
+      setOperationalEntriesSyncError(message);
+      throw new Error(message);
+    }
+    if (!hasCloseoutApiActorMapping(apiActorUserId)) {
+      const message = lang === "ar"
+        ? "تعذر تحميل تنبيهات التكرار: معرف المستخدم غير مربوط بالخادم."
+        : "Failed to load duplicate alerts: actor user id is missing/invalid for entries API.";
+      setOperationalEntriesSyncError(message);
+      throw new Error(message);
+    }
+
+    const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
+    if (!targetStoreIds.length) {
+      setOperationalEntries([]);
+      return [];
+    }
+
+    const { dateFrom, dateTo, limit } = resolveOwnerDuplicateWatchWindow();
+    setOperationalEntriesLoading(true);
+    try {
+      const fetched = await Promise.all(
+        targetStoreIds.map((storeId) => fetchStoreEntriesViaApi({
+          organizationId: closeoutsApiOrganizationId,
+          actorUserId: apiActorUserId,
+          actorRole: apiActorRole,
+          storeId,
+          dateFrom,
+          dateTo,
+          status: "active",
+          limit,
+        })),
+      );
+      const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
+      const summaries = filterOwnerDuplicateWatchEntries(merged);
+      setOperationalEntries(summaries);
+      setOperationalEntriesSyncError("");
+      return summaries;
+    } finally {
+      setOperationalEntriesLoading(false);
+    }
+  }, [
+    apiActorRole,
+    apiActorUserId,
+    apiTargetStoreIdsKey,
+    closeoutsApiOrganizationId,
+    entriesApiEnabled,
+    entriesApiStrictMode,
+    lang,
+  ]);
+
   const loadOperationalEntriesFromApi = useCallback(async () => {
+    if (shouldDeferOwnerBulkEntriesLoad) {
+      setSummaryRefreshKey((current) => current + 1);
+      return [];
+    }
     if (!entriesApiEnabled) {
       if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
       return [];
@@ -148,6 +219,7 @@ export function usePrototypeRuntimeOperationalEntries({
     entriesApiEnabled,
     entriesApiStrictMode,
     lang,
+    shouldDeferOwnerBulkEntriesLoad,
   ]);
 
   loadOperationalEntriesFromApiRef.current = loadOperationalEntriesFromApi;
@@ -231,7 +303,10 @@ export function usePrototypeRuntimeOperationalEntries({
     if (!runtimeApiStoresReady) {
       return;
     }
-    loadOperationalEntriesFromApi().catch((error) => {
+    const load = shouldDeferOwnerBulkEntriesLoad
+      ? loadOwnerDuplicateWatchFromApi
+      : loadOperationalEntriesFromApi;
+    load().catch((error) => {
       console.warn("operational entries API load failed", error);
       setOperationalEntriesSyncError(
         lang === "ar"
@@ -245,8 +320,10 @@ export function usePrototypeRuntimeOperationalEntries({
     entriesApiStrictMode,
     lang,
     loadOperationalEntriesFromApi,
+    loadOwnerDuplicateWatchFromApi,
     loggedIn,
     runtimeApiStoresReady,
+    shouldDeferOwnerBulkEntriesLoad,
   ]);
 
   useEffect(() => {

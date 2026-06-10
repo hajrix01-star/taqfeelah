@@ -59,6 +59,10 @@ export default function EmployeeCloseoutsView({
   entryPhaseRef = null,
   pageTitle = "",
   showStorePicker = true,
+  attachmentsApiEnabled = false,
+  attachmentsApiOrganizationId = "",
+  attachmentsApiActorUserId = "",
+  attachmentsApiActorRole = "employee",
 }) {
   const {
     closeouts,
@@ -402,6 +406,10 @@ export default function EmployeeCloseoutsView({
                       setShareNewlySubmitted(false);
                       setShareTarget(day);
                     }}
+                    attachmentsApiEnabled={attachmentsApiEnabled}
+                    attachmentsApiOrganizationId={attachmentsApiOrganizationId}
+                    attachmentsApiActorUserId={attachmentsApiActorUserId}
+                    attachmentsApiActorRole={attachmentsApiActorRole}
                   />
                 </div>
               )) : (

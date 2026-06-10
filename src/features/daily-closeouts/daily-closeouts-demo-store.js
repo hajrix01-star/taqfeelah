@@ -259,10 +259,18 @@ export function buildOperationalEntriesFromCloseout(closeout, actor) {
     });
   });
   if ((closeout.attachments || []).length && entries.length && entries[0].kind === "summary") {
-    const dataUrl = closeout.attachments[0];
-    entries[0].payload.attachment = typeof dataUrl === "string"
-      ? { id: `attachment-${baseId}`, kind: "image", name: "closeout-proof.jpg", mimeType: "image/jpeg", dataUrl }
-      : dataUrl;
+    const firstAttachment = closeout.attachments[0];
+    if (typeof firstAttachment === "string") {
+      entries[0].payload.attachment = {
+        id: `attachment-${baseId}`,
+        kind: "image",
+        name: "closeout-proof.jpg",
+        mimeType: "image/jpeg",
+        dataUrl: firstAttachment,
+      };
+    } else if (firstAttachment && typeof firstAttachment === "object" && firstAttachment.dataUrl) {
+      entries[0].payload.attachment = firstAttachment;
+    }
   }
   return { entries, actor };
 }

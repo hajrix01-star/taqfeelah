@@ -6,7 +6,8 @@ import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { toRiyals } from "@/core/money/halalas";
 import { dailyCloseouts, entries, entrySalesChannels, stores, users } from "@/core/db/schema";
-import { loadEntryAttachmentUrlsByEntryId } from "@/features/closeouts/server/load-entry-attachment-urls";
+import type { CloseoutAttachmentRef } from "@/features/closeouts/server/closeout-attachment-ref";
+import { loadEntryAttachmentMetadataByEntryId } from "@/features/closeouts/server/load-entry-attachment-metadata";
 import {
   closeoutTotalsFromHalalas,
   closeoutTotalsFromRiyalRows,
@@ -33,7 +34,7 @@ type CloseoutOutflowRow = {
   category: string;
   note: string;
   amount: number;
-  attachments: string[];
+  attachments: CloseoutAttachmentRef[];
 };
 
 /** Maps any persisted DB status to UI `reviewed` (= sent/approved; zero-review policy). */
@@ -162,7 +163,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
     entriesByCloseoutId.set(row.closeoutId, current);
   });
 
-  const attachmentUrlsByEntryId = await loadEntryAttachmentUrlsByEntryId(
+  const attachmentMetadataByEntryId = await loadEntryAttachmentMetadataByEntryId(
     db,
     input.organizationId,
     input.storeId,
@@ -199,7 +200,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
           entry.type === "purchases" || entry.type === "expense" || entry.type === "withdrawal"
             ? entry.type
             : "expense";
-        const entryAttachments = attachmentUrlsByEntryId.get(entry.id) || [];
+        const entryAttachments = attachmentMetadataByEntryId.get(entry.id) || [];
         return {
           id: `${row.clientCloseoutId}-out-${index + 1}`,
           type: entryType,
@@ -212,8 +213,8 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
         };
       });
 
-    const closeoutAttachmentUrls = summaryEntry
-      ? (attachmentUrlsByEntryId.get(summaryEntry.id) || [])
+    const closeoutAttachments = summaryEntry
+      ? (attachmentMetadataByEntryId.get(summaryEntry.id) || [])
       : [];
 
     const totalSalesHalalas = linkedEntries
@@ -252,7 +253,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
       note: row.note || "",
       sales: salesRows,
       outflows: outflowRows,
-      attachments: closeoutAttachmentUrls,
+      attachments: closeoutAttachments,
       syncedToEntries: true,
       totals,
     };
