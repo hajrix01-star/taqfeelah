@@ -91,3 +91,13 @@ export function combineUiTotalsFromSummaries(summaries: DaySummary[]): UiTotals 
   void proofs;
   return totals;
 }
+
+export function addUiAmounts(leftRiyals: number, rightRiyals: number): number {
+  return toRiyals(toHalalas(leftRiyals) + toHalalas(rightRiyals));
+}
+
+export function sumUiAmounts(amounts: number[]): number {
+  return toRiyals(
+    amounts.reduce((sum, amount) => sum + toHalalas(amount), 0),
+  );
+}

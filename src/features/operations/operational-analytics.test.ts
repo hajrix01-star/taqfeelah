@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  aggregateSalesChannelsFromGroupEntries,
   buildBusinessesWithEntrySummaries,
   entryTotalsHaveActivity,
   entryTotalsHaveFinancialActivity,
@@ -85,6 +86,20 @@ describe("operational analytics summary helpers", () => {
       entriesDbSource: true,
     })).toBe(false);
     expect(resolveOwnerSingleStoreTotals(local, api, false, { entriesDbSource: true })).toEqual(api);
+  });
+
+  it("aggregates sales channels with halala math", () => {
+    const channels = aggregateSalesChannelsFromGroupEntries([
+      {
+        type: "summary",
+        status: "active",
+        salesChannels: [
+          { channelId: "cash", amount: 0.1 },
+          { channelId: "cash", amount: 0.2 },
+        ],
+      },
+    ]);
+    expect(channels).toEqual([{ channelId: "cash", name: "cash", amount: 0.3 }]);
   });
 
   it("uses halala domain math instead of float drift for fractional riyals", () => {

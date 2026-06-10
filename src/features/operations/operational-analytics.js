@@ -2,6 +2,7 @@
 
 import { countProofsFromUiEntries } from "@/domain/attachment-stats/stats";
 import {
+  addUiAmounts,
   calculateDaySummary,
   daySummaryToUiTotals,
   rowsFromUiEntries,
@@ -103,7 +104,10 @@ export function aggregateSalesChannelsFromGroupEntries(entries, channelFilter = 
       if (!row?.channelId || Number(row.amount) <= 0) return;
       const name = resolveChannelName(row);
       const current = map.get(row.channelId) || { channelId: row.channelId, name, amount: 0 };
-      map.set(row.channelId, { ...current, amount: current.amount + Number(row.amount) });
+      map.set(row.channelId, {
+        ...current,
+        amount: addUiAmounts(current.amount, Number(row.amount)),
+      });
     });
   });
   let result = [...map.values()].sort((a, b) => b.amount - a.amount);
@@ -126,7 +130,10 @@ export function aggregateChannels(entries, businessId, period, selectedDate, sel
       nameEn: row.name || row.channelId,
       amount: 0,
     };
-    mapped.set(row.channelId, { ...current, amount: current.amount + row.amount });
+    mapped.set(row.channelId, {
+      ...current,
+      amount: addUiAmounts(current.amount, row.amount),
+    });
   }));
   return [...mapped.values()].filter((channel) => channel.amount > 0);
 }

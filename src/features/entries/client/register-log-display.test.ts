@@ -23,6 +23,22 @@ describe("register-log-display", () => {
     expect(filtered[0].id).toBe("1");
   });
 
+  it("summarizes register period channel filter with halala math", () => {
+    const summary = summarizeRegisterPeriod([
+      {
+        id: "1",
+        type: "summary",
+        status: "active",
+        amount: 0.3,
+        salesChannels: [
+          { channelId: "cash", amount: 0.1 },
+          { channelId: "cash", amount: 0.2 },
+        ],
+      },
+    ], "cash", [{ id: "cash", label: "Cash" }]);
+    expect(summary).toEqual({ mode: "channel", label: "Cash", amount: 0.3 });
+  });
+
   it("summarizes register period totals", () => {
     const summary = summarizeRegisterPeriod([
       { id: "1", type: "summary", status: "active", amount: 100, salesChannels: [] },
