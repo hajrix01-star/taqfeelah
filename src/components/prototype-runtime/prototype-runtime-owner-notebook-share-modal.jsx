@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Download, Send, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { captureNotebookShareBlob } from "@/features/daily-closeouts/notebook-share-capture";
 import { notebookThemePaperColor } from "@/features/daily-closeouts/notebook-themes";
 import OwnerNotebookNoteSharePreview from "@/features/owner-notebook/OwnerNotebookNoteSharePreview";
@@ -155,23 +156,24 @@ export function OwnerNotebookShareModal({ lang, note, onClose }) {
 
   if (!open) return null;
 
-  return (
+  const modal = (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[220] flex flex-col justify-end bg-[#112A46]/45 sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0"
+        className="fixed inset-0 z-[220] flex items-center justify-center bg-[#112A46]/45 p-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]"
         onClick={onClose}
       >
         <motion.div
           dir={lang === "ar" ? "rtl" : "ltr"}
-          initial={{ y: 18, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 18, opacity: 0 }}
-          className="relative z-10 max-h-[92%] w-full overflow-y-auto rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[700px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"
+          initial={{ scale: 0.97, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.97, opacity: 0 }}
+          className="relative z-10 flex max-h-[min(88dvh,640px)] w-full max-w-[400px] flex-col overflow-hidden rounded-[24px] bg-[#F8F6F0] shadow-[0_18px_48px_rgba(17,42,70,0.22)] sm:max-w-[700px] sm:rounded-[30px]"
           onClick={(event) => event.stopPropagation()}
         >
+          <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div className="min-w-0 text-start">
               <p className="text-taq-meta font-bold text-[#827762]">{text(lang, "shareOptions")}</p>
@@ -207,21 +209,28 @@ export function OwnerNotebookShareModal({ lang, note, onClose }) {
             <p className="mb-3 rounded-xl bg-[#FFF1EE] px-3 py-2 text-center text-taq-meta font-bold text-[#B44747]">{imageError}</p>
           ) : null}
 
-          <div className="grid grid-cols-3 gap-2">
-            <button type="button" onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">
-              {text(lang, "close")}
-            </button>
-            <button type="button" onClick={downloadImage} disabled={imageBusy || !previewData} className="flex items-center justify-center gap-1.5 rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-50">
-              <Download className="h-3.5 w-3.5" />
-              {text(lang, "downloadNotebookImage")}
-            </button>
-            <button type="button" onClick={shareImage} disabled={imageBusy || !previewData} className="flex items-center justify-center gap-1.5 rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-50">
-              <Send className="h-3.5 w-3.5" />
-              {imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…") : text(lang, "shareViaWhatsApp")}
-            </button>
+          </div>
+
+          <div className="shrink-0 border-t border-[#ECE6DA] p-4 sm:p-5">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <button type="button" onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">
+                {text(lang, "close")}
+              </button>
+              <button type="button" onClick={downloadImage} disabled={imageBusy || !previewData} className="flex items-center justify-center gap-1.5 rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-50">
+                <Download className="h-3.5 w-3.5" />
+                {text(lang, "downloadNotebookImage")}
+              </button>
+              <button type="button" onClick={shareImage} disabled={imageBusy || !previewData} className="flex items-center justify-center gap-1.5 rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-50">
+                <Send className="h-3.5 w-3.5" />
+                {imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…") : text(lang, "shareViaWhatsApp")}
+              </button>
+            </div>
           </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
 }

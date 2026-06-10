@@ -5,10 +5,9 @@ import { motion } from "framer-motion";
 import { BookMarked, Check, Lock, Pencil, Plus, Send, Trash2 } from "lucide-react";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
 import { notebookCardBackground, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
-import { getOwnerNotebookColorOptions } from "@/features/owner-notebook/owner-notebook-storage";
 import { useOwnerNotebookNotes } from "@/features/owner-notebook/client/use-owner-notebook-notes";
 import { text } from "./prototype-runtime-demo-data";
-import { NotebookHeading } from "./prototype-runtime-notebook";
+import { NotebookHeading, ThemePicker } from "./prototype-runtime-notebook";
 import { Badge } from "./prototype-runtime-shell-ui";
 import { OwnerNotebookShareModal } from "./prototype-runtime-owner-notebook-share-modal";
 
@@ -91,39 +90,6 @@ function KindSegment({ lang, value, onChange }) {
   );
 }
 
-function NotebookColorPicker({ lang, value, onChange }) {
-  const options = useMemo(() => getOwnerNotebookColorOptions(), []);
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-0.5">
-      {options.map((option) => {
-        const active = value === option.id;
-        return (
-          <button
-            key={option.id}
-            type="button"
-            title={text(lang, option.id)}
-            aria-label={text(lang, option.id)}
-            onClick={() => onChange(option.id)}
-            className={`flex shrink-0 flex-col items-center gap-1 ${active ? "opacity-100" : "opacity-80"}`}
-          >
-            <span
-              className={`relative flex h-7 w-7 items-center justify-center rounded-full border transition-colors duration-150 ${
-                active ? "border-[#112A46] ring-2 ring-[#112A46]/15" : "border-[#D9D1C1]"
-              }`}
-              style={{ backgroundColor: option.paper, boxShadow: notebookThemes[option.id]?.shadow || "none" }}
-            >
-              {active ? <Check className="h-3.5 w-3.5 text-[#112A46]" strokeWidth={3} /> : null}
-            </span>
-            <span className={`max-w-[52px] truncate text-center text-[10px] font-bold leading-3 ${active ? "text-[#112A46]" : "text-[#827762]"}`}>
-              {text(lang, option.id)}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function NoteComposerPanel({
   lang,
   notebookTheme,
@@ -131,6 +97,7 @@ function NoteComposerPanel({
   onCancel,
   autoFocus = false,
 }) {
+  const panelRef = useRef(null);
   const inputRef = useRef(null);
   const [draft, setDraft] = useState("");
   const [kind, setKind] = useState("note");
@@ -142,7 +109,8 @@ function NoteComposerPanel({
 
   useEffect(() => {
     if (!autoFocus) return;
-    inputRef.current?.focus();
+    panelRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    inputRef.current?.focus({ preventScroll: true });
   }, [autoFocus]);
 
   const submit = () => {
@@ -172,6 +140,7 @@ function NoteComposerPanel({
 
   return (
     <article
+      ref={panelRef}
       className="overflow-hidden rounded-[22px] border border-[#E8E1D4] px-3.5 py-3.5 shadow-[0_8px_18px_rgba(17,42,70,0.06)]"
       style={cardStyle}
     >
@@ -186,12 +155,12 @@ function NoteComposerPanel({
       />
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <KindSegment lang={lang} value={kind} onChange={setKind} />
-        <span className="text-[10px] font-bold text-[#A99D87]">
+        <span className="hidden text-[10px] font-bold text-[#A99D87] sm:inline">
           {lang === "ar" ? "⌘/Ctrl + Enter للحفظ" : "⌘/Ctrl + Enter to save"}
         </span>
       </div>
       <div className="mt-3">
-        <NotebookColorPicker lang={lang} value={color} onChange={setColor} />
+        <ThemePicker lang={lang} theme={color} onChange={setColor} />
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <button
@@ -244,9 +213,9 @@ function NoteEditPanel({ lang, note, onSave, onCancel, onDelete }) {
         <KindSegment lang={lang} value={kind} onChange={setKind} />
       </div>
       <div className="mt-3">
-        <NotebookColorPicker lang={lang} value={color} onChange={setColor} />
+        <ThemePicker lang={lang} theme={color} onChange={setColor} />
       </div>
-      <div className="mt-3 grid grid-cols-[1fr_auto_auto] gap-2">
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_auto]">
         <button
           type="button"
           onClick={() => onSave({ text: draft, kind, color })}
@@ -255,21 +224,23 @@ function NoteEditPanel({ lang, note, onSave, onCancel, onDelete }) {
         >
           {text(lang, "save")}
         </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-2xl bg-white px-3 py-2.5 text-taq-meta font-black text-[#827762] ring-1 ring-[#E8E1D4]"
-        >
-          {text(lang, "cancel")}
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label={text(lang, "delete")}
-          className="rounded-2xl bg-[#FFF1EE] px-3 py-2.5 text-taq-meta font-black text-[#B44747] ring-1 ring-[#B44747]/10"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <div className="grid grid-cols-2 gap-2 sm:contents">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-2xl bg-white px-3 py-2.5 text-taq-meta font-black text-[#827762] ring-1 ring-[#E8E1D4]"
+          >
+            {text(lang, "cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label={text(lang, "delete")}
+            className="rounded-2xl bg-[#FFF1EE] px-3 py-2.5 text-taq-meta font-black text-[#B44747] ring-1 ring-[#B44747]/10"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
