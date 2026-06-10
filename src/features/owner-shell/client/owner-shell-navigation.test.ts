@@ -44,7 +44,7 @@ describe("owner shell navigation", () => {
       apply: {
         setArchivedReadOnlyBusinessId: vi.fn(),
         setSelectedBusiness: vi.fn(),
-        setDuplicateReviewFocus: vi.fn(),
+        setDuplicateSummaryFocus: vi.fn(),
         setOwnerPage,
       },
     });

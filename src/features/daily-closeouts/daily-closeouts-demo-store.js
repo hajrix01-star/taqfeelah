@@ -187,11 +187,12 @@ export function pendingOwnerCloseoutQueue() {
   return [];
 }
 
-/** Legacy boot hook — returns local closeouts unchanged (review workflow removed). */
-export function autoResolveSubmittedCloseoutsWithoutReview() {
+/** Demo boot hook — returns local closeouts unchanged (no owner approval queue). */
+export function loadLocalCloseoutsOnBoot() {
   return readDailyCloseouts();
 }
 
+/** Demo timeline labels. `approved` / `returned` are legacy event types from removed owner-review flow. */
 export function closeoutEventMessage(event, lang = "ar") {
   const name = event.actorName || (lang === "ar" ? "مستخدم" : "User");
   const store = event.storeName || "";

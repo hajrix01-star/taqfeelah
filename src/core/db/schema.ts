@@ -157,12 +157,15 @@ export const dailyCloseouts = pgTable(
     date: date("date").notNull(),
     daySequence: integer("day_sequence").notNull(),
     clientCloseoutId: text("client_closeout_id").notNull(),
-    status: text("status").notNull().default("submitted"),
+    /** Zero-review: always `approved` on submit (migration 0003). */
+    status: text("status").notNull().default("approved"),
     submittedByUserId: uuid("submitted_by_user_id")
       .notNull()
       .references(() => users.id),
+    /** Set on auto-approve at submit (legacy column name from removed owner-review flow). */
     reviewedByUserId: uuid("reviewed_by_user_id").references(() => users.id),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    /** Legacy owner-return reason; unused under zero-review policy. */
     returnReason: text("return_reason"),
     note: text("note"),
     createdAt,

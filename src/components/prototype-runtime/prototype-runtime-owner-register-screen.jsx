@@ -227,7 +227,7 @@ function LogStoreFilter({ lang, businessesList = businesses, selectedBusiness, s
   );
 }
 
-export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, reviewFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesRefreshKey = 0, registerEntriesSyncError = "", closeoutsSyncError = "" }) {
+export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesRefreshKey = 0, registerEntriesSyncError = "", closeoutsSyncError = "" }) {
   const [period, setPeriod] = useState("day");
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
@@ -253,12 +253,12 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
   };
 
   useEffect(() => {
-    if (!reviewFocus?.businessId || !reviewFocus?.date || archivedReadOnlyBusinessId) return;
-    setSelectedBusiness(reviewFocus.businessId);
+    if (!duplicateSummaryFocus?.businessId || !duplicateSummaryFocus?.date || archivedReadOnlyBusinessId) return;
+    setSelectedBusiness(duplicateSummaryFocus.businessId);
     setPeriod("day");
-    setSelectedDate(reviewFocus.date);
+    setSelectedDate(duplicateSummaryFocus.date);
     setLogFilters({ ...DEFAULT_REGISTER_LOG_FILTERS, status: "active", type: "summary" });
-  }, [reviewFocus, archivedReadOnlyBusinessId, setSelectedBusiness]);
+  }, [duplicateSummaryFocus, archivedReadOnlyBusinessId, setSelectedBusiness]);
 
   const activeBusinesses = businessesList.filter((business) => !archivedBusinessIds.includes(business.id));
   const archivedReadOnlyBusiness = archivedReadOnlyBusinessId && archivedBusinessIds.includes(archivedReadOnlyBusinessId) ? businessesList.find((business) => business.id === archivedReadOnlyBusinessId) : null;

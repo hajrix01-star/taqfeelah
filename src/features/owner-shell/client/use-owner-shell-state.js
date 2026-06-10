@@ -16,7 +16,7 @@ import {
   openOwnerQuickSummary,
   resetOwnerNavContext,
   openCloseoutAlertInRegister,
-  reviewDuplicateSalesAlert,
+  openDuplicateSummaryInRegister,
 } from "./owner-shell-navigation.js";
 import {
   readAcknowledgedDuplicateSales,
@@ -66,7 +66,7 @@ export function useOwnerShellState({
   const [closeoutAlerts, setCloseoutAlerts] = useState(
     () => resolveStoredCloseoutAlerts(ownerShellPreferences, bindsToServerAuth),
   );
-  const [duplicateReviewFocus, setDuplicateReviewFocus] = useState(null);
+  const [duplicateSummaryFocus, setDuplicateSummaryFocus] = useState(null);
   const [shareSnapshot, setShareSnapshot] = useState(null);
   const [acknowledgedDuplicateSales, setAcknowledgedDuplicateSales] = useState(
     () => resolveStoredAcknowledgedDuplicateSales(ownerShellPreferences, bindsToServerAuth),
@@ -76,7 +76,7 @@ export function useOwnerShellState({
     setOwnerPage,
     setSelectedBusiness,
     setArchivedReadOnlyBusinessId,
-    setDuplicateReviewFocus,
+    setDuplicateSummaryFocus,
     setQuickAddOpen,
     setSelected,
     setCloseoutAlerts,
@@ -183,8 +183,8 @@ export function useOwnerShellState({
     dismissCloseoutAlertRecord(alertId, navApply);
   }, [navApply]);
 
-  const reviewDuplicateSales = useCallback((alert) => {
-    reviewDuplicateSalesAlert(alert, navApply);
+  const openDuplicateSummaryInRegisterHandler = useCallback((alert) => {
+    openDuplicateSummaryInRegister(alert, navApply);
   }, [navApply]);
 
   const changeOwnerPage = useCallback((page) => {
@@ -227,8 +227,8 @@ export function useOwnerShellState({
     setOwnerManageCloseout,
     closeoutAlerts,
     setCloseoutAlerts,
-    duplicateReviewFocus,
-    setDuplicateReviewFocus,
+    duplicateSummaryFocus,
+    setDuplicateSummaryFocus,
     shareSnapshot,
     setShareSnapshot,
     acknowledgedDuplicateSales,
@@ -243,7 +243,7 @@ export function useOwnerShellState({
     pushCloseoutAlert,
     openCloseoutAlertInRegister: openCloseoutAlertInRegisterHandler,
     dismissCloseoutAlert,
-    reviewDuplicateSales,
+    openDuplicateSummaryInRegister: openDuplicateSummaryInRegisterHandler,
     changeOwnerPage,
     openQuickAddSummary,
     openQuickAddExpense,

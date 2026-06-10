@@ -129,6 +129,29 @@
 
 ---
 
+## daily_closeouts
+
+| Column | Type | Notes |
+|--------|------|--------|
+| `id` | uuid PK | |
+| `organization_id` | uuid FK | |
+| `store_id` | uuid FK | |
+| `date` | date | business day |
+| `day_sequence` | integer | 1, 2, 3… per `store_id + date` |
+| `client_closeout_id` | text | client-generated id for idempotent submit |
+| `status` | text | **`approved`** on submit (zero-review). Default `approved` since migration `0003`. Legacy rows with `submitted` backfilled. |
+| `submitted_by_user_id` | uuid FK → users | actor who sent the closeout |
+| `reviewed_by_user_id` | uuid nullable FK → users | **Legacy name:** set to submitter on auto-approve (not a pending owner review). |
+| `reviewed_at` | timestamptz nullable | auto-approve timestamp at submit |
+| `return_reason` | text nullable | **Legacy:** owner-return flow removed; column retained, unused |
+| `note` | text nullable | |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | |
+
+**Indexes:** `(store_id, date, day_sequence)` unique; `(organization_id, store_id, date, status)`
+
+---
+
 ## entries
 
 | Column | Type | Notes |
