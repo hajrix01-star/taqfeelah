@@ -12,7 +12,6 @@ export const DEFAULT_REGISTER_LOG_FILTERS = {
   type: "all",
   expenseCategory: "all",
   attachmentOnly: false,
-  pendingReviewOnly: false,
   actor: "all",
   salesChannel: "all",
 };
@@ -23,7 +22,6 @@ export function registerLogFilterCount(filters) {
     + Number(filters.expenseCategory !== "all")
     + Number(filters.salesChannel !== "all")
     + Number(filters.attachmentOnly)
-    + Number(filters.pendingReviewOnly)
     + Number(filters.actor !== "all");
 }
 
@@ -49,16 +47,13 @@ export function entryMatchesRegisterLogFilters(entry, filters, resolveExpenseCat
         (row) => row.channelId === filters.salesChannel && Number(row.amount) > 0,
       ));
   const matchesAttachment = !filters.attachmentOnly || entryHasAttachment(entry);
-  const matchesPendingReview = !filters.pendingReviewOnly
-    || (entryIsActive(entry) && entryHasAttachment(entry) && !entry.reviewed);
 
   return matchesStatus
     && matchesType
     && matchesExpenseCategory
     && matchesActor
     && matchesSalesChannel
-    && matchesAttachment
-    && matchesPendingReview;
+    && matchesAttachment;
 }
 
 export function filterRegisterLogEntries(entries, filters, resolveExpenseCategory = entryCategoryForLogFilter) {

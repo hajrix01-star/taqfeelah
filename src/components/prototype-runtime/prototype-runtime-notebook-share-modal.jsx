@@ -86,7 +86,6 @@ export function NotebookShareModal({ lang, snapshot, onClose, businessesList = b
     apiRecord,
     apiChannelRows,
     apiDayRows,
-    apiPendingProofs,
   } = useNotebookExportShareData({
     enabled: notebookExportApiEnabled,
     auth: notebookExportAuth,
@@ -159,7 +158,6 @@ export function NotebookShareModal({ lang, snapshot, onClose, businessesList = b
   const shareChannelRows = apiChannelRows || [...shareChannelMap.values()].filter((row) => row.amount > 0);
   const shareDayRows = apiDayRows || [...new Set(scopedShareEntries.filter(entryIsActive).map((entry) => entry.date))].sort().reverse().map((date) => ({ date, ...summarizeEntries(scopedShareEntries.filter((entry) => entry.date === date)) }));
   const shareProofEntries = scopedShareEntries.filter((entry) => entryIsActive(entry) && entryHasAttachment(entry));
-  const sharePendingProofs = typeof apiPendingProofs === "number" ? apiPendingProofs : shareProofEntries.filter((entry) => !entry.reviewed).length;
   const shareBusinessRows = includedBusinessIds.map((businessId) => { const item = businessesList.find((business) => business.id === businessId); return { business: item, ...summarizeEntries(scopedShareEntries.filter((entry) => entry.businessId === businessId)) }; }).filter((row) => row.business);
   const outflowTotal = filteredOutflowEntries.reduce((sum, entry) => sum + entry.amount, 0);
   const outflowAverage = filteredOutflowEntries.length ? outflowTotal / filteredOutflowEntries.length : 0;
@@ -294,7 +292,7 @@ export function NotebookShareModal({ lang, snapshot, onClose, businessesList = b
         : isDaysReport
           ? { headers: [text(lang, "day"), text(lang, "sales"), text(lang, "purchasesExpenses")], rows: shareDayRows.map((row) => [formatCalendarDate(row.date, lang), money(row.sales, lang), money(row.expense, lang)]) }
           : isProofsReport
-            ? { headers: [text(lang, "reportType"), valueHeader], rows: [[text(lang, "totalAttachments"), String(shareProofEntries.length)], ...(snapshot.reviewEnabled !== false ? [[text(lang, "notReviewedItems"), String(sharePendingProofs)]] : [])] }
+            ? { headers: [text(lang, "reportType"), valueHeader], rows: [[text(lang, "totalAttachments"), String(shareProofEntries.length)]] }
             : detailedSummary
               ? { headers: [text(lang, "reportType"), lang === "ar" ? "النسبة" : "Ratio", valueHeader], rows: tableRows.map((row) => [row.label, row.ratio || "", row.value]) }
               : { headers: [text(lang, "reportType"), valueHeader, detailsHeader], rows: tableRows.map((row) => [row.label, row.value, ""]) };
@@ -462,8 +460,6 @@ export function NotebookShareModal({ lang, snapshot, onClose, businessesList = b
                   </> : isProofsReport ? <>
                     <div className="flex h-[44px] items-end pb-2 text-taq-meta font-bold text-[#806528]">{text(lang, "attachmentsReport")}</div>
                     <div className="flex h-[44px] items-end justify-between pb-2 text-sm"><span>{text(lang, "totalAttachments")}</span><strong className="tabular-nums">{shareProofEntries.length}</strong></div>
-                    {snapshot.reviewEnabled !== false && <div className="flex h-[44px] items-end justify-between pb-2 text-sm text-[#B96725]"><span>{text(lang, "notReviewedItems")}</span><strong className="tabular-nums">{sharePendingProofs}</strong></div>}
-                    {snapshot.reviewEnabled === false && <div className="flex h-[44px] items-end pb-2 text-taq-meta font-bold text-[#806528]">{text(lang, "reviewDisabled")}</div>}
                   </> : <>
                     <div className="flex h-[44px] items-end justify-between pb-2 text-sm"><span>{text(lang, "sales")}</span><strong className="tabular-nums"><MoneyValue value={money(record.sales, lang)} /></strong></div>
                     {detailedSummary && salesDetailRows.map((row) => (

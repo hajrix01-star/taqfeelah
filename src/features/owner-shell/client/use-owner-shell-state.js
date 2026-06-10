@@ -67,7 +67,6 @@ export function useOwnerShellState({
     () => resolveStoredCloseoutAlerts(ownerShellPreferences, bindsToServerAuth),
   );
   const [duplicateReviewFocus, setDuplicateReviewFocus] = useState(null);
-  const [attachmentReviewRequest, setAttachmentReviewRequest] = useState(null);
   const [shareSnapshot, setShareSnapshot] = useState(null);
   const [acknowledgedDuplicateSales, setAcknowledgedDuplicateSales] = useState(
     () => resolveStoredAcknowledgedDuplicateSales(ownerShellPreferences, bindsToServerAuth),
@@ -78,7 +77,6 @@ export function useOwnerShellState({
     setSelectedBusiness,
     setArchivedReadOnlyBusinessId,
     setDuplicateReviewFocus,
-    setAttachmentReviewRequest,
     setQuickAddOpen,
     setSelected,
     setCloseoutAlerts,
@@ -231,8 +229,6 @@ export function useOwnerShellState({
     setCloseoutAlerts,
     duplicateReviewFocus,
     setDuplicateReviewFocus,
-    attachmentReviewRequest,
-    setAttachmentReviewRequest,
     shareSnapshot,
     setShareSnapshot,
     acknowledgedDuplicateSales,

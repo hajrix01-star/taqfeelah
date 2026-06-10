@@ -10,12 +10,12 @@ describe("org config runtime bridge", () => {
       configuredBusinesses: [{ id: "shami" }],
       archivedBusinessIds: [],
       storeChannelSettings: { shami: { channels: [], activeIds: [] } },
-      storeOperationalSettings: { shami: { reviewEnabled: true } },
+      storeOperationalSettings: { shami: { closeoutAlert: true } },
       staff: [{ id: "ahmed" }],
     });
 
     expect(snapshot.configuredBusinesses).toHaveLength(1);
-    expect(snapshot.storeOperationalSettings.shami.reviewEnabled).toBe(true);
+    expect(snapshot.storeOperationalSettings.shami.closeoutAlert).toBe(true);
   });
 
   it("applies hydrated org-config payload to runtime setters", () => {
@@ -29,7 +29,7 @@ describe("org config runtime bridge", () => {
       configuredBusinesses: [{ id: "arz" }],
       archivedBusinessIds: ["old-store"],
       storeChannelSettings: { arz: { channels: [], activeIds: ["cash"] } },
-      storeOperationalSettings: { arz: { closeoutReviewEnabled: true } },
+      storeOperationalSettings: { arz: { employeeHistoryVisibility: "month" } },
       staff: [{ id: "sara" }],
     }, {
       setConfiguredBusinesses,
@@ -42,7 +42,7 @@ describe("org config runtime bridge", () => {
     expect(setConfiguredBusinesses).toHaveBeenCalledWith([{ id: "arz" }]);
     expect(setArchivedBusinessIds).toHaveBeenCalledWith(["old-store"]);
     expect(setStoreChannelSettings).toHaveBeenCalledWith({ arz: { channels: [], activeIds: ["cash"] } });
-    expect(setStoreOperationalSettings).toHaveBeenCalledWith({ arz: { closeoutReviewEnabled: true } });
+    expect(setStoreOperationalSettings).toHaveBeenCalledWith({ arz: { employeeHistoryVisibility: "month" } });
     expect(setStaff).toHaveBeenCalledWith([{ id: "sara" }]);
   });
 });

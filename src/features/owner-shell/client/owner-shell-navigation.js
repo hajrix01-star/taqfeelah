@@ -1,7 +1,6 @@
 export function resetOwnerNavContext(apply) {
   apply.setArchivedReadOnlyBusinessId?.(null);
   apply.setDuplicateReviewFocus?.(null);
-  apply.setAttachmentReviewRequest?.(null);
   apply.setSelectedBusiness?.("all");
 }
 
@@ -58,7 +57,6 @@ export function handleOwnerNotificationsClick({
 }) {
   apply.setArchivedReadOnlyBusinessId?.(null);
   if (duplicateSalesAlerts.length > 0) {
-    apply.setAttachmentReviewRequest?.(null);
     reviewDuplicateSalesAlert(duplicateSalesAlerts[0], apply);
     return;
   }
