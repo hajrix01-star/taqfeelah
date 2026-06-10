@@ -48,6 +48,14 @@ describe("operational-reports-display", () => {
     expect(metrics.average).toBe(15);
   });
 
+  it("uses halala math for fractional outflow totals", () => {
+    const metrics = computeOutflowAnalysisMetrics([
+      { amount: 0.1 },
+      { amount: 0.2 },
+    ]);
+    expect(metrics.total).toBe(0.3);
+  });
+
   it("builds outflow categories from period entries", () => {
     const categories = buildOutflowByCategoryFromEntries(
       [{ id: "1", type: "expense", status: "active", amount: 12, categoryId: "other" }],

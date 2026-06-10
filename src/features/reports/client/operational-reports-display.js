@@ -1,3 +1,4 @@
+import { sumUiAmounts } from "@/domain/cash-movement/calculations";
 import {
   entryDateMatches,
   entryIsActive,
@@ -63,7 +64,7 @@ export function computeOutflowAnalysisMetrics(records = [], apiTotal = null, api
   const visibleRecords = Array.isArray(records) ? records : [];
   const total = typeof apiTotal === "number"
     ? apiTotal
-    : visibleRecords.reduce((sum, record) => sum + record.amount, 0);
+    : sumUiAmounts(visibleRecords.map((record) => record.amount));
   const count = typeof apiCount === "number" ? apiCount : visibleRecords.length;
   const average = count > 0 ? total / count : 0;
   return { visibleRecords, total, count, average };
@@ -74,9 +75,11 @@ export function buildOutflowByCategoryFromEntries(periodEntries, categoryDefinit
     .filter((item) => item.id !== "all")
     .map((item) => ({
       ...item,
-      amount: (Array.isArray(periodEntries) ? periodEntries : [])
-        .filter((entry) => entryIsActive(entry) && entryIsOutflow(entry) && resolveCategory(entry) === item.id)
-        .reduce((sum, entry) => sum + entry.amount, 0),
+      amount: sumUiAmounts(
+        (Array.isArray(periodEntries) ? periodEntries : [])
+          .filter((entry) => entryIsActive(entry) && entryIsOutflow(entry) && resolveCategory(entry) === item.id)
+          .map((entry) => entry.amount),
+      ),
     }))
     .filter((item) => item.amount > 0);
 }

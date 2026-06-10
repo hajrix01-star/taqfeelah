@@ -1,3 +1,4 @@
+import { sumUiAmounts } from "@/domain/cash-movement/calculations";
 import {
   aggregateSalesChannelsFromGroupEntries,
   entryHasAttachment,
@@ -66,17 +67,19 @@ export function summarizeRegisterPeriod(entries, salesChannelFilter, channelOpti
   const activeEntries = (Array.isArray(entries) ? entries : []).filter(entryIsActive);
   if (salesChannelFilter !== "all") {
     const option = channelOptions.find((item) => item.id === salesChannelFilter);
-    let amount = 0;
+    const channelAmounts = [];
     activeEntries.forEach((entry) => {
       if (entry.type !== "summary") return;
       (entry.salesChannels || []).forEach((row) => {
-        if (row.channelId === salesChannelFilter) amount += Number(row.amount) || 0;
+        if (row.channelId === salesChannelFilter) {
+          channelAmounts.push(Number(row.amount) || 0);
+        }
       });
     });
     return {
       mode: "channel",
       label: option?.label || channelLabelFallback,
-      amount,
+      amount: sumUiAmounts(channelAmounts),
     };
   }
   const totals = summarizeEntries(entries);
@@ -133,7 +136,7 @@ export function buildRegisterCloseoutSummaries({
       salesChannelFilter,
       resolveChannelName,
     );
-    const channelSalesTotal = salesChannels.reduce((sum, row) => sum + row.amount, 0);
+    const channelSalesTotal = sumUiAmounts(salesChannels.map((row) => row.amount));
     const daySequence = group.entries.find((entry) => Number.isInteger(entry.daySequence))?.daySequence ?? null;
     return {
       ...group,

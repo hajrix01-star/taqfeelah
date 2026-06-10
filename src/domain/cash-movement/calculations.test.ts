@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  addUiAmounts,
   calculateDaySummary,
   combineDaySummaries,
   combineUiTotalsFromSummaries,
   daySummaryToUiTotals,
   rowsFromUiEntries,
+  sumUiAmounts,
 } from "./calculations";
 
 describe("calculateDaySummary", () => {
@@ -48,6 +50,13 @@ describe("rowsFromUiEntries", () => {
       net: 40,
       ratio: "20.0%",
     });
+  });
+});
+
+describe("addUiAmounts / sumUiAmounts", () => {
+  it("avoids float drift when combining fractional riyals", () => {
+    expect(addUiAmounts(0.1, 0.2)).toBe(0.3);
+    expect(sumUiAmounts([0.1, 0.2, 0.01])).toBe(0.31);
   });
 });
 
