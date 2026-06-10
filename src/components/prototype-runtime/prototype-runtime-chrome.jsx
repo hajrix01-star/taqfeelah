@@ -4,9 +4,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
+  BookMarked,
   ChevronLeft,
   ChevronRight,
-  FileText,
   Home,
   Plus,
   ReceiptText,
@@ -144,7 +144,7 @@ function BottomNav({ lang, employee, active, onChange, onAdd = () => {} }) {
   const NavButton = ({ item }) => {
     const Icon = item.icon;
     return (
-      <button onClick={() => onChange(item.id)} className={`flex min-w-[60px] flex-col items-center gap-0.5 text-taq-nav font-bold ${active === item.id ? "text-[#112A46]" : "text-[#A99D87]"}`}>
+      <button onClick={() => onChange(item.id)} className={`flex min-w-[52px] flex-col items-center gap-0.5 px-0.5 text-taq-nav font-bold ${active === item.id ? "text-[#112A46]" : "text-[#A99D87]"}`}>
         <Icon className="h-4.5 w-4.5" />
         {text(lang, item.key)}
       </button>
@@ -153,14 +153,19 @@ function BottomNav({ lang, employee, active, onChange, onAdd = () => {} }) {
   if (employee) {
     return <EmployeeFooterNav lang={lang} onAdd={onAdd} />;
   }
-  const leftItems = [{ id: "home", key: "home", icon: Home }, { id: "reports", key: "reports", icon: FileText }];
-  const rightItems = [{ id: "register", key: "register", icon: ReceiptText }, { id: "settings", key: "settings", icon: Settings }];
+  const leftItems = [
+    { id: "home", key: "home", icon: Home },
+    { id: "register", key: "register", icon: ReceiptText },
+  ];
+  const rightItems = [
+    { id: "notebook", key: "ownerNotebook", icon: BookMarked },
+    { id: "settings", key: "settings", icon: Settings },
+  ];
   return (
-    <nav className="taq-owner-nav relative z-30 flex h-[64px] w-full shrink-0 items-center justify-between border-t border-[#ECE6DA] bg-white/95 px-4 pb-[env(safe-area-inset-bottom,0px)]">
-      <div className="flex w-[122px] items-center justify-between">{leftItems.map((item) => <NavButton key={item.id} item={item} />)}</div>
+    <nav className="taq-owner-nav relative z-30 flex h-[64px] w-full shrink-0 items-center border-t border-[#ECE6DA] bg-white/95 px-2 pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="flex min-w-0 flex-1 items-center justify-evenly pe-8">{leftItems.map((item) => <NavButton key={item.id} item={item} />)}</div>
       <button onClick={onAdd} aria-label={lang === "ar" ? "إضافة عملية" : "Add entry"} className="absolute left-1/2 top-0.5 flex h-[56px] w-[56px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[4px] border-[#F8F6F0] bg-[#E4B84A] text-[#112A46] shadow-sm"><Plus className="h-7 w-7" strokeWidth={2.4} /></button>
-      <div className="w-[52px]" />
-      <div className="flex w-[122px] items-center justify-between">{rightItems.map((item) => <NavButton key={item.id} item={item} />)}</div>
+      <div className="flex min-w-0 flex-1 items-center justify-evenly ps-8">{rightItems.map((item) => <NavButton key={item.id} item={item} />)}</div>
     </nav>
   );
 }

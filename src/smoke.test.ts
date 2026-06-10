@@ -30,11 +30,10 @@ describe("prototype runtime module boundary smoke", () => {
     expect(settings.ActionRow).toBeTypeOf("function");
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
-  it("loads owner reports section exports", async () => {
-    const reports = await import("@/components/prototype-runtime/OwnerReportsSection");
-    expect(reports.ReportsScreen).toBeTypeOf("function");
-    expect(reports.RatioBadge).toBeTypeOf("function");
-    expect(reports.OutflowAnalysis).toBeTypeOf("function");
+  it("loads owner summary details exports", async () => {
+    const details = await import("@/components/prototype-runtime/owner-summary-details");
+    expect(details.SummaryReportDetails).toBeTypeOf("function");
+    expect(details.RatioBadge).toBeTypeOf("function");
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
   it("loads prototype-runtime entry helper exports", async () => {
@@ -97,6 +96,11 @@ describe("prototype runtime module boundary smoke", () => {
   it("loads owner register screen exports", async () => {
     const register = await import("@/components/prototype-runtime/prototype-runtime-owner-register-screen");
     expect(register.OwnerRegisterConnected).toBeTypeOf("function");
+  }, SMOKE_IMPORT_TIMEOUT_MS);
+
+  it("loads owner notebook screen exports", async () => {
+    const notebook = await import("@/components/prototype-runtime/prototype-runtime-owner-notebook-screen");
+    expect(notebook.OwnerNotebookScreen).toBeTypeOf("function");
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
   it("loads notebook share modal exports", async () => {

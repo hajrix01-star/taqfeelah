@@ -5,23 +5,19 @@ import { motion } from "framer-motion";
 import { Bell, ChevronDown, ChevronUp } from "lucide-react";
 import {
   buildBusinessesWithEntrySummaries,
-  entriesInPeriod,
   entryTotalsHaveFinancialActivity,
-  newestEntries,
   resolveOwnerPeriodSummaryPreference,
   resolveOwnerSingleStoreTotals,
   summarizeEntries,
   summaryMonthFromEntries,
 } from "@/features/operations/operational-analytics";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
-import { businesses, businessName, money, text, fullDate, opTime } from "./prototype-runtime-demo-data";
+import { businesses, businessName, channels, money, text } from "./prototype-runtime-demo-data";
 import AttachmentLightbox from "../AttachmentLightbox";
 import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
 import {
   entryDateMatches,
   entryHasAttachment,
-  entryIsVoided,
-  operationDisplayLabel,
   signedEntryAmount,
 } from "./prototype-runtime-entry-helpers";
 import { summaryDayFromEntriesWithLabels } from "./prototype-runtime-demo-operational-entries";
@@ -37,17 +33,19 @@ import {
   SummaryLoadingRow,
   todayIsoDate,
 } from "./prototype-runtime-notebook";
-import { Badge, InkTab } from "./prototype-runtime-shell-ui";
+import { InkTab } from "./prototype-runtime-shell-ui";
 import { isOwnerApiSummaryPending } from "@/features/reports/client/owner-summary-loading";
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
+import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { useHomeDayAttachments } from "@/features/entries/client/use-home-day-attachments";
+import { SummaryReportDetails } from "./owner-summary-details";
 
-export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], onOpenCloseoutAlertInRegister = () => {}, onDismissCloseout = () => {}, onOpenDuplicateSummaryInRegister = () => {}, onAcknowledgeDuplicate = () => {}, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", summaryRefreshKey = 0, entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
+export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], onOpenCloseoutAlertInRegister = () => {}, onDismissCloseout = () => {}, onOpenDuplicateSummaryInRegister = () => {}, onAcknowledgeDuplicate = () => {}, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, configuredChannels = channels, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", summaryRefreshKey = 0, entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
   const [period, setPeriod] = useState("day");
   const [selectedDay, setSelectedDay] = useState(() => todayIsoDate());
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
-  const [expanded, setExpanded] = useState(false);
+  const [showReportDetails, setShowReportDetails] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
   const [homeAttachmentPreview, setHomeAttachmentPreview] = useState("");
   const monthly = period === "month";
@@ -72,6 +70,25 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     businesses: businessesList,
     date: selectedDate,
     month: selectedMonth,
+    refreshKey: summaryRefreshKey,
+  });
+  const {
+    channelRows: apiChannelRows,
+    outflowCategories: apiOutflowCategories,
+    loading: summaryDetailsApiLoading,
+    loaded: summaryDetailsApiLoaded,
+    hasData: summaryDetailsApiHasData,
+  } = useStoreReports({
+    enabled: summaryApiActive && !isCombined && showReportDetails,
+    organizationId: summaryApiOrganizationId,
+    actorUserId: summaryApiActorUserId,
+    actorRole: summaryApiActorRole,
+    businesses: businessesList,
+    selectedStoreId: selectedBusiness,
+    period: monthly ? "month" : "day",
+    selectedDate,
+    selectedMonth,
+    configuredChannels,
     refreshKey: summaryRefreshKey,
   });
   const localComparisonBusinesses = buildBusinessesWithEntrySummaries({
@@ -112,8 +129,15 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     : monthly
       ? resolveOwnerSingleStoreTotals(localMonthResult, apiStoreResult, preferEntrySummaries)
       : resolveOwnerSingleStoreTotals(daySummary, apiStoreResult, preferEntrySummaries);
-  const selectedBusinessEntries = currentBusiness ? entriesInPeriod(operationalEntries, currentBusiness.id, "day", selectedDate, selectedMonth) : [];
-  const visibleDayOperations = newestEntries(selectedBusinessEntries);
+  const selectedBusinessEntries = currentBusiness ? operationalEntries.filter((entry) => entry.businessId === currentBusiness.id && entryDateMatches(entry, "day", selectedDate, selectedMonth, "2026", "2026-01-01", "2026-12-31")) : [];
+  const useApiDetailRows = summaryApiActive
+    && showReportDetails
+    && !summaryDetailsApiLoading
+    && summaryDetailsApiLoaded
+    && summaryDetailsApiHasData
+    && !isCombined
+    && !preferEntrySummaries;
+  const detailsLoading = showReportDetails && summaryApiActive && !isCombined && !preferEntrySummaries && summaryDetailsApiLoading;
   const {
     group: attachmentGroup,
     loading: attachmentsLoading,
@@ -136,7 +160,7 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     : (Number(result.proofs) || 0);
   const changePeriod = (nextPeriod) => {
     setPeriod(nextPeriod);
-    setExpanded(false);
+    setShowReportDetails(false);
     setShowAttachments(false);
   };
   return (
@@ -144,8 +168,8 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
       {closeoutAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#E6F5E9] p-3 ring-1 ring-[#39A160]/15"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#257844]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#257844]">{text(lang, "closeoutInAppAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === closeoutAlerts[0].businessId), lang)} · {formatCalendarDate(closeoutAlerts[0].date, lang)} · {lang === "ar" ? closeoutAlerts[0].employeeNameAr : closeoutAlerts[0].employeeNameEn}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "closeoutInAppHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onOpenCloseoutAlertInRegister(closeoutAlerts[0])} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#257844] ring-1 ring-[#39A160]/15">{text(lang, "openCloseoutInRegister")}</button><button type="button" onClick={() => onDismissCloseout(closeoutAlerts[0].id)} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "dismissAlert")}</button></div></div>}
       {duplicateSalesAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#FFF1EE] p-3 ring-1 ring-[#B44747]/10"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#B44747]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#B44747]">{text(lang, "duplicateSalesOwnerAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === duplicateSalesAlerts[0].businessId), lang)} · {formatCalendarDate(duplicateSalesAlerts[0].date, lang)} · {duplicateSalesAlerts[0].entries.length} {text(lang, "summary")}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "duplicateSalesOwnerHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onOpenDuplicateSummaryInRegister(duplicateSalesAlerts[0])} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#B44747] ring-1 ring-[#B44747]/10">{text(lang, "openInLog")}</button><button type="button" onClick={() => onAcknowledgeDuplicate(duplicateSalesAlerts[0])} title={text(lang, "approveMultipleSalesHint")} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "approveMultipleSales")}</button></div></div>}
       <Notebook fullPage theme={notebookTheme} lang={lang}>
-        <NotebookHeading lang={lang} label={monthly ? text(lang, "monthlySummary") : text(lang, "dailySummary")} onShare={() => onShareNotebook({ theme: notebookTheme, period, selectedBusiness, includedBusinessIds: businessesList.map((business) => business.id), selectedDay: daySummary.id, selectedDate, selectedMonth, screen: "home", showDetails: expanded && !monthly && !isCombined })} dateSelector={<DateSelector compact lang={lang} period={period} setPeriod={changePeriod} selectedDay={selectedDay} setSelectedDay={(id) => { setSelectedDay(id); setShowAttachments(false); }} selectedDate={selectedDate} setSelectedDate={(date) => { setSelectedDate(date); setShowAttachments(false); }} fullCalendar selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />} />
-        <StoreScopeTabs lang={lang} businessesList={businessesList} selectedBusiness={selectedBusiness} setSelectedBusiness={(id) => { setSelectedBusiness(id); setExpanded(false); setShowAttachments(false); }} />
+        <NotebookHeading lang={lang} label={monthly ? text(lang, "monthlySummary") : text(lang, "dailySummary")} onShare={() => onShareNotebook({ theme: notebookTheme, period, selectedBusiness, includedBusinessIds: businessesList.map((business) => business.id), selectedDay: daySummary.id, selectedDate, selectedMonth, screen: "home", showDetails: showReportDetails && !isCombined, reportChannels: configuredChannels })} dateSelector={<DateSelector compact lang={lang} period={period} setPeriod={changePeriod} selectedDay={selectedDay} setSelectedDay={(id) => { setSelectedDay(id); setShowAttachments(false); }} selectedDate={selectedDate} setSelectedDate={(date) => { setSelectedDate(date); setShowAttachments(false); }} fullCalendar selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />} />
+        <StoreScopeTabs lang={lang} businessesList={businessesList} selectedBusiness={selectedBusiness} setSelectedBusiness={(id) => { setSelectedBusiness(id); setShowReportDetails(false); setShowAttachments(false); }} />
         {isCombined ? (
           <div>
             {summaryLoadFailedWithoutFallback ? (
@@ -168,10 +192,57 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
             ) : (
               <>
                 <NotebookRow><NumberLine lang={lang} handwritten label={text(lang, "sales")} value={money(result.sales, lang)} /></NotebookRow>
+                {showReportDetails && !detailsLoading && (
+                  <SummaryReportDetails
+                    lang={lang}
+                    monthly={monthly}
+                    selectedBusiness={selectedBusiness}
+                    selectedDate={selectedDate}
+                    selectedMonth={selectedMonth}
+                    reportChannels={configuredChannels}
+                    businessesList={businessesList}
+                    section="sales"
+                    operationalEntries={operationalEntries}
+                    apiChannelRows={useApiDetailRows ? apiChannelRows : null}
+                    salesBaseOverride={result.sales}
+                  />
+                )}
                 <NotebookRow><NumberLine lang={lang} handwritten label={text(lang, "purchasesExpenses")} value={money(result.expense, lang)} valueClassName="text-[#B44747]" /></NotebookRow>
+                {showReportDetails && !detailsLoading && (
+                  <SummaryReportDetails
+                    lang={lang}
+                    monthly={monthly}
+                    selectedBusiness={selectedBusiness}
+                    selectedDate={selectedDate}
+                    selectedMonth={selectedMonth}
+                    reportChannels={configuredChannels}
+                    businessesList={businessesList}
+                    section="outflow"
+                    operationalEntries={operationalEntries}
+                    apiOutflowCategories={useApiDetailRows ? apiOutflowCategories : null}
+                    salesBaseOverride={result.sales}
+                  />
+                )}
+                {detailsLoading && (
+                  <NotebookRow lines={2}>
+                    <p className="w-full text-taq-meta font-bold text-[#806528]">
+                      {lang === "ar" ? "جاري تحميل تفاصيل التقرير…" : "Loading report details…"}
+                    </p>
+                  </NotebookRow>
+                )}
                 <NotebookRow><div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "outflowRatio")}</span><strong className="text-[#B44747]">{result.ratio}</strong></div></NotebookRow>
                 <NotebookRow strong lines={2}><div className="flex w-full items-end justify-between"><span className="text-sm font-extrabold">{monthly ? text(lang, "recordedMonthResult") : text(lang, "netMovement")}</span><strong className={`tabular-nums text-2xl font-extrabold ${result.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(result.net, lang)} /></strong></div></NotebookRow>
-                <NotebookRow>{monthly ? <div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "attachments")}</span><span>{result.proofs}</span></div> : <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span className="relative pb-1">{text(lang, "attachments")}{showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span><span>{displayedProofCount}</span></button>}</NotebookRow>
+                {!monthly && (
+                  <NotebookRow>
+                    <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]">
+                      <span className="relative pb-1">
+                        {text(lang, "attachments")}
+                        {showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}
+                      </span>
+                      <span>{displayedProofCount}</span>
+                    </button>
+                  </NotebookRow>
+                )}
                 {!monthly && showAttachments && (
                   <DayAttachments
                     lang={lang}
@@ -187,51 +258,22 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
                     entryAttachmentsApiActorRole={entryAttachmentsApiActorRole}
                   />
                 )}
-                <NotebookRow className="justify-center"><InkTab active={expanded} showActiveUnderline={false} onClick={() => setExpanded(!expanded)} className="inline-flex items-center gap-1">{expanded ? text(lang, "hideDetails") : text(lang, "showMore")}{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</InkTab></NotebookRow>
+                <NotebookRow className="justify-center">
+                  <InkTab
+                    active={showReportDetails}
+                    showActiveUnderline={false}
+                    onClick={() => setShowReportDetails(!showReportDetails)}
+                    className="inline-flex items-center gap-1"
+                  >
+                    {text(lang, showReportDetails ? "hideReportDetails" : "reportDetails")}
+                    {showReportDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </InkTab>
+                </NotebookRow>
               </>
             )}
           </div>
         )}
       </Notebook>
-      {!isCombined && expanded && !monthly && (
-        <div className="mt-1 px-6 pb-3">
-          <div className="flex h-[44px] items-end pb-[8px]">
-            <h3 className="text-taq-body-sm font-black text-[#112A46]">
-              {text(lang, "operations")} {fullDate(daySummary, lang)}
-            </h3>
-          </div>
-          {visibleDayOperations.length ? (
-            <div>
-              {visibleDayOperations.map((item) => {
-                const isSale = item.type === "summary";
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => onOpenOperation(item)}
-                    className="grid w-full grid-cols-[max-content_minmax(0,1fr)] items-center gap-4 py-3 text-start transition hover:bg-[#FFF4D2]/30"
-                  >
-                    <strong dir="ltr" className={`min-w-[74px] whitespace-nowrap text-start tabular-nums text-taq-body-sm font-black ${entryIsVoided(item) ? "text-[#A99D87] line-through" : isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
-                      <MoneyValue value={money(signedEntryAmount(item), lang)} />
-                    </strong>
-                    <span className="min-w-0 text-end">
-                      <span className="flex items-center justify-end gap-2 text-taq-body-sm font-bold text-[#112A46]">
-                        {operationDisplayLabel(item, lang)}
-                        {entryIsVoided(item) && <Badge tone="warning">{text(lang, "voided")}</Badge>}
-                      </span>
-                      <small className="mt-1 block truncate text-taq-meta font-bold text-[#8A816F]">
-                        {opTime(item, lang)} · {entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}
-                      </small>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="flex h-[44px] items-end pb-[8px] text-xs font-bold text-[#827762]">{text(lang, "noEntriesDay")}</p>
-          )}
-        </div>
-      )}
       <AttachmentLightbox
         open={Boolean(homeAttachmentPreview)}
         src={homeAttachmentPreview}

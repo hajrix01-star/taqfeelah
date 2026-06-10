@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   handleOwnerNotificationsClick,
+  navigateOwnerPage,
   openOwnerQuickSummary,
   openCloseoutAlertInRegister,
 } from "./owner-shell-navigation";
@@ -33,6 +34,14 @@ describe("owner shell navigation", () => {
 
     expect(apply.setOwnerPage).toHaveBeenCalledWith("register");
     expect(apply.setSelected).toHaveBeenCalledWith({ id: "entry-1", businessId: "shami" });
+  });
+
+  it("routes legacy reports page to home", () => {
+    const setOwnerPage = vi.fn();
+
+    navigateOwnerPage("reports", { setOwnerPage });
+
+    expect(setOwnerPage).toHaveBeenCalledWith("home");
   });
 
   it("routes notifications to duplicate summary alert first", () => {

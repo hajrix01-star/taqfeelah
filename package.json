@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "next dev --hostname 0.0.0.0 --port 3000",
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
-    "dev:clean": "pnpm clean && next dev --hostname 0.0.0.0 --port 3000",
+    "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev --hostname 0.0.0.0 --port 3000",
     "mobile:sync": "pnpm clean && node scripts/print-lan-url.mjs && next dev --hostname 0.0.0.0 --port 3000",
     "predev": "node scripts/print-lan-url.mjs",
     "lan": "node scripts/print-lan-url.mjs",

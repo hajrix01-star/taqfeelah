@@ -46,7 +46,7 @@ import {
 import { summaryDayFromEntriesWithLabels } from "./prototype-runtime-demo-operational-entries";
 import { MoneyValue, FinancialRows, todayIsoDate } from "./prototype-runtime-notebook";
 import { Logo } from "./prototype-runtime-chrome";
-import { RatioBadge } from "./OwnerReportsSection";
+import { RatioBadge } from "./owner-summary-details";
 
 function downloadBlobFile(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -234,9 +234,10 @@ export function NotebookShareModal({ lang, snapshot, onClose, businessesList = b
     { id: "excel", label: "excelFormat", icon: FileSpreadsheet },
   ];
 
-  const detailedSummary = snapshot.screen === "reports" && snapshot.tab === "summary" && snapshot.showSummaryDetails && !combined;
-  const showHomeOperations = snapshot.screen === "home" && snapshot.showDetails && !combined && !monthly;
-  const shareOperations = showHomeOperations ? newestEntries(scopedShareEntries.filter(entryIsActive)) : [];
+  const detailedSummary = !combined && (
+    (snapshot.screen === "reports" && snapshot.tab === "summary" && snapshot.showSummaryDetails)
+    || (snapshot.screen === "home" && snapshot.showDetails)
+  );
   const showOutflowOperations = isOutflowReport && snapshot.showOutflowTransactions && !combined;
   const shareOutflowOperations = showOutflowOperations ? newestEntries(filteredOutflowEntries) : [];
   const shareChannels = snapshot.reportChannels || channels;
@@ -296,10 +297,6 @@ export function NotebookShareModal({ lang, snapshot, onClose, businessesList = b
             : detailedSummary
               ? { headers: [text(lang, "reportType"), lang === "ar" ? "النسبة" : "Ratio", valueHeader], rows: tableRows.map((row) => [row.label, row.ratio || "", row.value]) }
               : { headers: [text(lang, "reportType"), valueHeader, detailsHeader], rows: tableRows.map((row) => [row.label, row.value, ""]) };
-  if (showHomeOperations) {
-    exportTable.rows.push([text(lang, "operations"), "", formatCalendarDate(shareDate, lang)]);
-    shareOperations.forEach((item) => exportTable.rows.push([operationDisplayLabel(item, lang), money(signedEntryAmount(item), lang), `${opTime(item, lang)} ${entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}`]));
-  }
   if (showOutflowOperations) {
     exportTable.rows.push([text(lang, "operations"), "", periodLabel]);
     shareOutflowOperations.forEach((item) => exportTable.rows.push([operationDisplayLabel(item, lang), money(signedEntryAmount(item), lang), `${formatCalendarDate(item.date, lang)} ${opTime(item, lang)} ${entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}`]));
@@ -476,32 +473,6 @@ export function NotebookShareModal({ lang, snapshot, onClose, businessesList = b
                     ))}
                     <div className="flex h-[44px] items-end justify-between pb-2 text-xs text-[#806528]"><span>{text(lang, "outflowRatio")}</span><strong className="text-[#B44747]">{ratio}</strong></div>
                     <div className="mt-1 flex h-[55px] items-end justify-between border-t-2 border-[#112A46]/55 pb-2"><span className="text-sm font-bold">{snapshot.screen === "home" ? (monthly ? text(lang, "recordedMonthResult") : text(lang, "netMovement")) : text(lang, "result")}</span><strong className={`tabular-nums text-xl font-extrabold ${record.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(record.net, lang)} /></strong></div>
-                    {showHomeOperations && (
-                      <div className="pt-1">
-                        <div className="flex h-[44px] items-end pb-[8px]">
-                          <p className="inline-flex flex-col text-taq-meta font-black text-[#112A46]">
-                            <span>{text(lang, "operations")} {formatCalendarDate(shareDate, lang)}</span>
-                            <span className="mt-1.5 h-[2px] w-full rounded-full bg-[#C28A30]" />
-                          </p>
-                        </div>
-                        {shareOperations.length ? shareOperations.map((item, index) => {
-                          const isSale = item.type === "summary";
-                          return (
-                            <div key={`share-operation-${item.id}`} className={`grid min-h-[44px] w-full grid-cols-[max-content_minmax(0,1fr)] items-center gap-3 py-2 ${index < shareOperations.length - 1 ? "border-b border-[#D9DFE3]/70" : ""}`}>
-                              <strong dir="ltr" className={`min-w-[68px] whitespace-nowrap text-start tabular-nums text-taq-meta font-black ${isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
-                                <MoneyValue value={money(signedEntryAmount(item), lang)} />
-                              </strong>
-                              <span className="min-w-0 text-end">
-                                <span className="block truncate text-taq-meta font-bold text-[#112A46]">{operationDisplayLabel(item, lang)}</span>
-                                <small className="mt-0.5 block truncate text-taq-nav font-bold text-[#8A816F]">{opTime(item, lang)} {entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}</small>
-                              </span>
-                            </div>
-                          );
-                        }) : (
-                          <div className="flex h-[44px] items-end pb-2 text-taq-meta font-bold text-[#806528]">{text(lang, "noEntriesDay")}</div>
-                        )}
-                      </div>
-                    )}
                   </>}
                 </div>
               </div>

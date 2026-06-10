@@ -1,5 +1,5 @@
 /** Owner main pages that support pull-to-refresh. */
-export const OWNER_PULL_TO_REFRESH_PAGES = new Set(["home", "reports", "register", "closeouts"]);
+export const OWNER_PULL_TO_REFRESH_PAGES = new Set(["home", "notebook", "register", "closeouts"]);
 
 /** Employee main pages that support pull-to-refresh. */
 export const EMPLOYEE_PULL_TO_REFRESH_PAGES = new Set(["closeouts"]);
@@ -58,5 +58,5 @@ export function resolvePullToRefreshUsesNotebookSurface({
   if (employee) {
     return employeePage === "closeouts";
   }
-  return ownerPage === "home" || ownerPage === "reports" || ownerPage === "closeouts";
+  return ownerPage === "home" || ownerPage === "notebook" || ownerPage === "closeouts";
 }

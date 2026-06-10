@@ -27,8 +27,8 @@ describe("resolvePullToRefreshTarget", () => {
     })).toBeNull();
   });
 
-  it("enables operational refresh on owner home, reports, and register", () => {
-    for (const ownerPage of ["home", "reports", "register"]) {
+  it("enables operational refresh on owner home, notebook, and register", () => {
+    for (const ownerPage of ["home", "notebook", "register"]) {
       expect(resolvePullToRefreshTarget({
         employee: false,
         ownerPage,
@@ -77,8 +77,8 @@ describe("resolvePullToRefreshTarget", () => {
 });
 
 describe("resolvePullToRefreshUsesNotebookSurface", () => {
-  it("uses notebook surface on owner home, reports, and closeouts", () => {
-    for (const ownerPage of ["home", "reports", "closeouts"]) {
+  it("uses notebook surface on owner home, notebook, and closeouts", () => {
+    for (const ownerPage of ["home", "notebook", "closeouts"]) {
       expect(resolvePullToRefreshUsesNotebookSurface({
         employee: false,
         ownerPage,

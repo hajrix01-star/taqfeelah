@@ -6,7 +6,7 @@ export function resetOwnerNavContext(apply) {
 
 export function navigateOwnerPage(page, apply) {
   resetOwnerNavContext(apply);
-  apply.setOwnerPage?.(page);
+  apply.setOwnerPage?.(page === "reports" ? "home" : page);
 }
 
 export function openOwnerQuickSummary(apply) {

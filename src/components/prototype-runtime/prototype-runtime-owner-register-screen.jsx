@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown, X } from "lucide-react";
+import { Check, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
 import { notebookCardBackground } from "@/features/daily-closeouts/notebook-themes";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
@@ -69,6 +69,203 @@ function LogFilterChip({ active, children, onClick, tone = "default" }) {
     navy: active ? "bg-[#214B7B] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
   }[tone];
   return <button type="button" onClick={onClick} className={`rounded-full px-2.5 py-1 text-taq-meta font-black ${toneClass}`}>{children}</button>;
+}
+
+function RegisterStoreChips({ lang, businessesList, selectedBusiness, setSelectedBusiness, locked = false }) {
+  if (businessesList.length <= 1) {
+    if (!businessesList[0]) return null;
+    return (
+      <div className="mb-2 flex justify-center">
+        <span className="rounded-full bg-[#112A46]/[0.06] px-3 py-1 text-[11px] font-black text-[#112A46]">
+          {businessName(businessesList[0], lang, true) || businessName(businessesList[0], lang)}
+        </span>
+      </div>
+    );
+  }
+
+  const stores = locked
+    ? businessesList.map((business) => ({ id: business.id, label: businessName(business, lang, true) || businessName(business, lang) }))
+    : [{ id: "all", label: text(lang, "allStores") }, ...businessesList.map((business) => ({ id: business.id, label: businessName(business, lang, true) || businessName(business, lang) }))];
+
+  if (locked || businessesList.length <= 3) {
+    return (
+      <div className="mb-2 flex flex-wrap justify-center gap-1.5">
+        {stores.map((store) => {
+          const active = selectedBusiness === store.id;
+          return (
+            <button
+              key={store.id}
+              type="button"
+              disabled={locked}
+              onClick={() => setSelectedBusiness(store.id)}
+              className={`rounded-full px-3 py-1.5 text-[11px] font-black transition-colors duration-150 ${
+                active
+                  ? "bg-[#112A46] text-white shadow-[0_2px_8px_rgba(17,42,70,0.18)]"
+                  : "bg-white text-[#716753] ring-1 ring-[#E8E1D4]"
+              } ${locked ? "cursor-default" : ""}`}
+            >
+              {store.label}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <LogStoreFilter
+      lang={lang}
+      businessesList={businessesList}
+      selectedBusiness={selectedBusiness}
+      setSelectedBusiness={setSelectedBusiness}
+      locked={locked}
+    />
+  );
+}
+
+function RegisterViewSwitch({ lang, value, onChange, counts }) {
+  const items = [
+    { id: "closeouts", label: lang === "ar" ? "التقفيلات" : "Closeouts", count: counts.closeouts ?? 0 },
+    { id: "operations", label: lang === "ar" ? "العمليات" : "Operations", count: counts.operations ?? 0 },
+  ];
+
+  return (
+    <div className="flex rounded-lg bg-[#F3F0E8] p-0.5" role="tablist" aria-label={text(lang, "operationsLog")}>
+      {items.map((item) => {
+        const active = value === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(item.id)}
+            className={`flex min-w-0 flex-1 items-center justify-center gap-1 rounded-[9px] px-1.5 py-1.5 text-[10px] font-black transition-all duration-200 ${
+              active ? "bg-white text-[#112A46] shadow-[0_1px_6px_rgba(17,42,70,0.07)]" : "text-[#8A8070]"
+            }`}
+          >
+            <span className="truncate">{item.label}</span>
+            <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+              active ? "bg-[#112A46] text-white" : "bg-[#112A46]/[0.07] text-[#827762]"
+            }`}
+            >
+              {item.count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function RegisterFilterButton({ lang, activeCount, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={text(lang, "logFilters")}
+      className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-150 ${
+        activeCount > 0
+          ? "bg-[#112A46] text-white shadow-[0_1px_6px_rgba(17,42,70,0.18)]"
+          : "bg-white text-[#112A46] ring-1 ring-[#E8E1D4]"
+      }`}
+    >
+      <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={2.25} />
+      {activeCount > 0 ? (
+        <span className="absolute -end-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-[#E4B84A] px-0.5 text-[8px] font-black text-[#112A46] ring-1 ring-white">
+          {activeCount}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function RegisterMetricTile({ label, value, tone = "neutral", emphasize = false }) {
+  const tones = {
+    neutral: "bg-[#F6F8FB] text-[#112A46]",
+    in: "bg-[#EDF7F1] text-[#257844]",
+    out: "bg-[#FDF3F1] text-[#B44747]",
+  };
+  return (
+    <div className={`rounded-lg px-2 py-1.5 ${tones[tone] || tones.neutral}`}>
+      <p className="text-[9px] font-bold opacity-55">{label}</p>
+      <p className={`mt-0.5 tabular-nums font-extrabold leading-none ${emphasize ? "text-sm" : "text-xs"}`}>
+        <MoneyValue value={value} />
+      </p>
+    </div>
+  );
+}
+
+function RegisterDashboardCard({
+  lang,
+  logView,
+  setLogView,
+  tabCounts,
+  activeFilterCount,
+  onOpenFilters,
+  periodLabel,
+  summary,
+}) {
+  const netPositive = summary.mode !== "channel" && Number(summary.net) >= 0;
+
+  return (
+    <article className="mb-3 overflow-hidden rounded-[16px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
+      <div className="border-b border-[#F0EBE0] px-3 py-2">
+        <div className="flex items-center gap-1.5">
+          <div className="min-w-0 flex-1">
+            <RegisterViewSwitch lang={lang} value={logView} onChange={setLogView} counts={tabCounts} />
+          </div>
+          <RegisterFilterButton lang={lang} activeCount={activeFilterCount} onClick={onOpenFilters} />
+        </div>
+      </div>
+
+      <div className="px-3 py-2">
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <p className="min-w-0 truncate text-[10px] font-bold text-[#827762]">
+            <span className="font-black text-[#957D43]">{text(lang, "registerPeriodSummary")}</span>
+            {" · "}
+            {periodLabel}
+          </p>
+          {summary.mode !== "channel" ? (
+            <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-black ${
+              netPositive ? "bg-[#E6F5E9] text-[#257844]" : "bg-[#FDF0ED] text-[#B44747]"
+            }`}
+            >
+              {netPositive ? (lang === "ar" ? "ربح" : "Profit") : (lang === "ar" ? "خسارة" : "Loss")}
+            </span>
+          ) : null}
+        </div>
+
+        {summary.mode === "channel" ? (
+          <div className="flex items-end justify-between gap-2 rounded-lg bg-[#F6F8FB] px-2 py-1.5">
+            <p className="truncate text-[10px] font-bold text-[#716753]">{summary.label}</p>
+            <p className="shrink-0 tabular-nums text-sm font-extrabold leading-none text-[#257844]">
+              <MoneyValue value={money(summary.amount, lang)} />
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-1.5">
+            <RegisterMetricTile
+              label={lang === "ar" ? "الداخل" : "In"}
+              value={money(summary.sales, lang)}
+              tone="in"
+            />
+            <RegisterMetricTile
+              label={lang === "ar" ? "الخارج" : "Out"}
+              value={money(summary.expense, lang)}
+              tone="out"
+            />
+            <RegisterMetricTile
+              label={lang === "ar" ? "الناتج" : "Net"}
+              value={money(summary.net, lang)}
+              tone={netPositive ? "in" : "out"}
+              emphasize
+            />
+          </div>
+        )}
+      </div>
+    </article>
+  );
 }
 
 function RegisterFiltersSheet({ lang, open, onClose, onApply, draft, setDraft, typeItems, expenseCategoryItems, actorOptions, salesChannelOptions }) {
@@ -411,7 +608,6 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
   const typeItems = [{ id: "all", label: "allTypes" }, { id: "summary", label: "summary" }, { id: "purchases", label: "purchases" }, { id: "expense", label: "expense" }, { id: "withdrawal", label: "withdrawal" }];
   const expenseCategoryItems = [{ id: "all", label: "allCategories" }, ...expenseCategories];
   const activeFilterCount = registerLogFilterCount(logFilters);
-  const registerCardStyle = useMemo(() => ({ backgroundColor: notebookCardBackground(notebookTheme) }), [notebookTheme]);
   const registerCardInsetStyle = useMemo(() => ({ backgroundColor: notebookCardBackground(notebookTheme, "inset") }), [notebookTheme]);
   const registerPeriodSummary = useMemo(
     () => summarizeRegisterPeriod(
@@ -455,24 +651,28 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
           )}
         />
 
-        <div className="px-6">
-          <LogStoreFilter lang={lang} businessesList={availableBusinesses} selectedBusiness={safeBusinessId} setSelectedBusiness={setSelectedBusiness} locked={Boolean(archivedReadOnlyBusiness)} />
-          <NotebookRow className="mb-1">
-            <div className="flex w-full items-end justify-between gap-3">
-              <div className="flex min-w-0 flex-1 items-end gap-4">
-                <InkTab active={logView === "closeouts"} onClick={() => setLogView("closeouts")} className="text-taq-meta pb-1.5">
-                  {lang === "ar" ? "التقفيلات" : "Closeouts"}
-                </InkTab>
-                <InkTab active={logView === "operations"} onClick={() => setLogView("operations")} className="text-taq-meta pb-1.5">
-                  {lang === "ar" ? "العمليات" : "Operations"}
-                </InkTab>
-              </div>
-              <InkTab active={activeFilterCount > 0} onClick={openFiltersSheet} className="inline-flex shrink-0 items-center gap-1 pb-1.5 text-taq-meta">
-                {text(lang, "logFilters")}
-                {activeFilterCount > 0 ? <span className="tabular-nums">({activeFilterCount})</span> : null}
-              </InkTab>
-            </div>
-          </NotebookRow>
+        <div className="px-5">
+          <RegisterStoreChips
+            lang={lang}
+            businessesList={availableBusinesses}
+            selectedBusiness={safeBusinessId}
+            setSelectedBusiness={setSelectedBusiness}
+            locked={Boolean(archivedReadOnlyBusiness)}
+          />
+
+          <RegisterDashboardCard
+            lang={lang}
+            logView={logView}
+            setLogView={setLogView}
+            tabCounts={{
+              closeouts: closeoutSummaries.length,
+              operations: visibleEntries.length,
+            }}
+            activeFilterCount={activeFilterCount}
+            onOpenFilters={openFiltersSheet}
+            periodLabel={registerPeriodLabel}
+            summary={registerPeriodSummary}
+          />
         </div>
 
         <RegisterFiltersSheet
@@ -488,48 +688,21 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
           salesChannelOptions={salesChannelOptions}
         />
 
-        <article className="mb-3 overflow-hidden rounded-[19px] border border-[#E8E1D4] px-3.5 py-3 shadow-[0_8px_18px_rgba(17,42,70,0.06)]" style={registerCardStyle}>
-          <p className="text-taq-meta font-black text-[#112A46]">{text(lang, "registerPeriodSummary")}</p>
-          <p className="mt-0.5 text-taq-nav font-bold text-[#827762]">{registerPeriodLabel}</p>
-          {registerPeriodSummary.mode === "channel" ? (
-            <div className="mt-3 flex items-end justify-between gap-3 border-t border-dashed border-[#DDD3C0] pt-2.5">
-              <span className="text-taq-meta font-black text-[#716753]">{registerPeriodSummary.label}</span>
-              <strong className="tabular-nums text-taq-body-sm font-extrabold text-[#257844]">
-                <MoneyValue value={money(registerPeriodSummary.amount, lang)} />
-              </strong>
-            </div>
-          ) : (
-            <div className="mt-2.5 grid grid-cols-3 gap-2 border-t border-dashed border-[#DDD3C0] pt-2.5">
-              <p className="text-taq-meta font-black text-[#112A46]">
-                {lang === "ar" ? "الداخل" : "In"}
-                {" "}
-                <span className="tabular-nums"><MoneyValue value={money(registerPeriodSummary.sales, lang)} /></span>
-              </p>
-              <p className="text-taq-meta font-black text-[#B44747]">
-                {lang === "ar" ? "الخارج" : "Out"}
-                {" "}
-                <span className="tabular-nums"><MoneyValue value={money(registerPeriodSummary.expense, lang)} /></span>
-              </p>
-              <p className={`text-taq-meta font-black ${registerPeriodSummary.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}>
-                {lang === "ar" ? "الناتج" : "Net"}
-                {" "}
-                <span className="tabular-nums"><MoneyValue value={money(registerPeriodSummary.net, lang)} /></span>
-              </p>
-            </div>
-          )}
-        </article>
-
-        <div className="mb-3 flex items-center justify-between px-1 text-taq-meta font-black text-[#8B8274]">
-          <span>{text(lang, "logResults")}</span>
-          <span>{logView === "operations" ? `${visibleEntries.length} ${text(lang, "operations")}` : `${closeoutSummaries.length} ${lang === "ar" ? "تقفيلات" : "Closeouts"}`}</span>
+        <div className="mb-3 flex items-center justify-between px-5">
+          <span className="text-taq-meta font-black text-[#112A46]">{text(lang, "logResults")}</span>
+          <span className="rounded-lg bg-white px-2.5 py-1 text-[10px] font-black tabular-nums text-[#827762] ring-1 ring-[#E8E1D4]">
+            {logView === "operations"
+              ? `${visibleEntries.length} ${text(lang, "operations")}`
+              : `${closeoutSummaries.length} ${lang === "ar" ? "تقفيلات" : "Closeouts"}`}
+          </span>
         </div>
 
         {logView === "operations" && (registerEntriesLoadError ? (
-          <div className="rounded-2xl px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10" style={registerCardStyle}>{registerEntriesLoadErrorMessage}</div>
+          <div className="mx-5 rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10">{registerEntriesLoadErrorMessage}</div>
         ) : visibleEntries.length === 0 ? (
-          <div className="rounded-2xl px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]" style={registerCardStyle}>{text(lang, "noOperationsMatch")}</div>
+          <div className="mx-5 rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">{text(lang, "noOperationsMatch")}</div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 px-5">
             {visibleEntries.map((entry) => {
               const store = businessesList.find((business) => business.id === entry.businessId);
               const isSale = entry.type === "summary";
@@ -550,7 +723,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
                 sameDayCloseoutCount: registerSameDayCloseoutCount,
               });
               return (
-                <article id={`register-entry-${entry.id}`} key={entry.id} className="overflow-hidden rounded-[19px] border border-[#E8E1D4] shadow-[0_8px_18px_rgba(17,42,70,0.06)]" style={registerCardStyle}>
+                <article id={`register-entry-${entry.id}`} key={entry.id} className="overflow-hidden rounded-[18px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
                   <button type="button" onClick={() => setExpandedEntryId((current) => (current === entry.id ? null : entry.id))} className="flex w-full items-start gap-2.5 px-3.5 py-3 text-start">
                     <span className={`mt-0.5 h-8 w-1 shrink-0 rounded-full ${isSale ? "bg-[#39A160]" : "bg-[#E4B84A]"}`} />
                     <div className="min-w-0 flex-1">
@@ -579,8 +752,8 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
                         </div>
                       ) : null}
                       <div className="grid grid-cols-2 gap-2 text-taq-meta font-bold text-[#716753]">
-                        <div className="rounded-xl px-2.5 py-2 ring-1 ring-[#E8E1D4]" style={registerCardStyle}>{lang === "ar" ? "المدخل" : "Entered by"}: {actorLabel}</div>
-                        <div className="rounded-xl px-2.5 py-2 ring-1 ring-[#E8E1D4]" style={registerCardStyle}>{lang === "ar" ? "المحل" : "Store"}: {businessName(store, lang, true) || businessName(store, lang)}</div>
+                        <div className="rounded-xl bg-[#F7F5EF] px-2.5 py-2 ring-1 ring-[#E8E1D4]">{lang === "ar" ? "المدخل" : "Entered by"}: {actorLabel}</div>
+                        <div className="rounded-xl bg-[#F7F5EF] px-2.5 py-2 ring-1 ring-[#E8E1D4]">{lang === "ar" ? "المحل" : "Store"}: {businessName(store, lang, true) || businessName(store, lang)}</div>
                       </div>
                       <button type="button" onClick={() => onOpenOperation(entry)} className="mt-2.5 w-full rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{lang === "ar" ? "عرض العملية" : "Open operation"}</button>
                     </div>
@@ -595,16 +768,16 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
         ))}
 
         {logView === "closeouts" && (closeoutsLoadError ? (
-          <div className="rounded-2xl px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10" style={registerCardStyle}>{closeoutsLoadErrorMessage}</div>
+          <div className="mx-5 rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10">{closeoutsLoadErrorMessage}</div>
         ) : closeoutSummaries.length === 0 ? (
-          <div className="rounded-2xl px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]" style={registerCardStyle}>{text(lang, "noCloseoutsPeriod")}</div>
+          <div className="mx-5 rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">{text(lang, "noCloseoutsPeriod")}</div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 px-5">
             {closeoutSummaries.map((summary) => {
               const isExpanded = expandedCloseoutKey === summary.key;
               const storeLabel = businessName(summary.store, lang, true) || businessName(summary.store, lang);
               return (
-                <article id={`register-closeout-${registerScrollId(summary.key)}`} key={summary.key} className="overflow-hidden rounded-[19px] border border-[#E8E1D4] shadow-[0_8px_18px_rgba(17,42,70,0.06)]" style={registerCardStyle}>
+                <article id={`register-closeout-${registerScrollId(summary.key)}`} key={summary.key} className="overflow-hidden rounded-[18px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
                   <button type="button" onClick={() => setExpandedCloseoutKey((current) => (current === summary.key ? null : summary.key))} className="flex w-full items-start gap-2.5 px-3.5 py-3 text-start">
                     <ChevronDown className={`mt-0.5 h-5 w-5 shrink-0 text-[#112A46] transition ${isExpanded ? "rotate-180" : ""}`} />
                     <div className="min-w-0 flex-1">
