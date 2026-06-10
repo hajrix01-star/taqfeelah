@@ -182,10 +182,12 @@ export function sortCloseoutsNewestFirst(closeouts) {
   });
 }
 
+/** Legacy zero-review stub — no pending owner queue. Rename candidate: `pendingOwnerCloseoutQueue`. */
 export function pendingSubmittedCloseouts() {
   return [];
 }
 
+/** Legacy boot hook — returns local closeouts unchanged (review workflow removed). */
 export function autoResolveSubmittedCloseoutsWithoutReview() {
   return readDailyCloseouts();
 }

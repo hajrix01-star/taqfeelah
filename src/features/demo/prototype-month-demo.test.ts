@@ -64,7 +64,7 @@ describe("prototype month demo dataset", () => {
     });
   });
 
-  it("maps reviewed closeouts to operational rows that reconcile", () => {
+  it("maps sent closeouts to operational rows that reconcile", () => {
     const reviewed = closeouts.filter((c) => c.status === CLOSEOUT_STATUS.REVIEWED);
     reviewed.slice(0, 12).forEach((closeout) => {
       const { entries: built } = buildOperationalEntriesFromCloseout(closeout, { userId: "test" });

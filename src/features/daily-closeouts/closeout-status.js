@@ -1,7 +1,15 @@
+/**
+ * Demo/local closeout status vocabulary.
+ * Zero-review policy: sent closeouts surface as `reviewed` in UI; `submitted` and
+ * `returned` are legacy localStorage/demo inputs normalized upstream to `reviewed`.
+ */
 export const CLOSEOUT_STATUS = {
   DRAFT: "draft",
+  /** Legacy demo seed value — normalized to REVIEWED on read. */
   SUBMITTED: "submitted",
+  /** UI label for a sent/approved closeout (not an owner-review queue). */
   REVIEWED: "reviewed",
+  /** Legacy demo seed value — normalized to REVIEWED on read. */
   RETURNED: "returned",
 };
 

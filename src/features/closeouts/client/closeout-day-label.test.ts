@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   closeoutSequenceLetter,
-  countSubmittedCloseoutsByDate,
+  countSentCloseoutsByDate,
   formatCloseoutDayLabel,
 } from "./closeout-day-label";
 
@@ -32,9 +32,9 @@ describe("formatCloseoutDayLabel", () => {
   });
 });
 
-describe("countSubmittedCloseoutsByDate", () => {
-  it("counts only submitted closeouts per date", () => {
-    const counts = countSubmittedCloseoutsByDate([
+describe("countSentCloseoutsByDate", () => {
+  it("counts sent closeouts per date (excludes draft)", () => {
+    const counts = countSentCloseoutsByDate([
       { date: "2026-06-06", status: "reviewed" },
       { date: "2026-06-06", status: "submitted" },
       { date: "2026-06-06", status: "draft" },
