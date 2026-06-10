@@ -549,7 +549,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
                         {entryIsVoided(entry) && <Badge tone="warning">{text(lang, "voided")}</Badge>}
                         {entryHasAttachment(entry) && <Badge tone="navy">{text(lang, "attachmentExists")}</Badge>}
                       </div>
-                      <p className="mt-1 truncate text-taq-nav font-bold text-[#827762]">{registerDateLabel} آ· {opTime(entry, lang)} آ· {businessName(store, lang, true) || businessName(store, lang)} آ· {actorLabel}</p>
+                      <p className="mt-1 truncate text-taq-nav font-bold text-[#827762]">{registerDateLabel} {opTime(entry, lang)} {businessName(store, lang, true) || businessName(store, lang)} {actorLabel}</p>
                     </div>
                     <div className="shrink-0 text-end">
                       <strong className={`block tabular-nums text-taq-meta font-black ${entryIsVoided(entry) ? "text-[#A99D87] line-through" : isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
@@ -602,7 +602,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
                         <p className="text-taq-meta font-black text-[#112A46]">{formatCloseoutDayLabel({ formattedDate: formatCalendarDate(summary.date, lang), daySequence: summary.daySequence, sameDayCloseoutCount: summary.sameDayCloseoutCount })}</p>
                         <p className="rounded-full border border-[#8EA1C4] px-2.5 py-1 text-taq-meta font-black text-[#214B7B]">{lang === "ar" ? `أدخلها ${summary.actorLabel}` : `Entered by ${summary.actorLabel}`}</p>
                       </div>
-                      <p className="mt-1 text-taq-meta font-bold text-[#716753]">{lang === "ar" ? "تقفيلة يوم" : "Daily closeout"} آ· {storeLabel}</p>
+                      <p className="mt-1 text-taq-meta font-bold text-[#716753]">{lang === "ar" ? "تقفيلة يوم" : "Daily closeout"} {storeLabel}</p>
                       <div className="mt-2 grid grid-cols-3 gap-2 border-t border-dashed border-[#DDD3C0] pt-2">
                         <p className="text-taq-meta font-black text-[#112A46]">{lang === "ar" ? "الدخل" : "In"} <span className="tabular-nums"><MoneyValue value={money(summary.displaySales, lang)} /></span></p>
                         <p className="text-taq-meta font-black text-[#B44747]">{lang === "ar" ? "الخارج" : "Out"} <span className="tabular-nums"><MoneyValue value={money(-summary.totals.expense, lang)} /></span></p>
@@ -613,7 +613,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {summary.salesChannels.map((channel) => (
                               <span key={channel.channelId} className="rounded-full bg-[#E6F5E9] px-2 py-0.5 text-taq-nav font-bold text-[#257844]">
-                                {channel.name} آ· <span className="tabular-nums"><MoneyValue value={money(channel.amount, lang)} /></span>
+                                {channel.name} <span className="tabular-nums"><MoneyValue value={money(channel.amount, lang)} /></span>
                               </span>
                             ))}
                           </div>
