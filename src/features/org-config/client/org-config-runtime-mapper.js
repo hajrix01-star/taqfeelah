@@ -196,13 +196,30 @@ export function validateOrgConfigDbChannelMappings(mapped, { strict = false } = 
   }
 }
 
+/** Pending UI ids before org-config API create calls resolve them to UUIDs. */
+export function isClientGeneratedId(id) {
+  return typeof id === "string" && (
+    id.startsWith("custom-")
+    || id.startsWith("staff-")
+    || id.startsWith("channel-")
+  );
+}
+
 export function buildOrgConfigPersistBaseline(snapshot) {
   (snapshot.configuredBusinesses || []).forEach((business) => {
-    assertCanonicalUuidId("store", business.id);
+    if (!isClientGeneratedId(business.id)) {
+      assertCanonicalUuidId("store", business.id);
+    }
   });
   (snapshot.staff || []).forEach((person) => {
-    assertCanonicalUuidId("staff", person.id);
-    (person.storeIds || []).forEach((storeId) => assertCanonicalUuidId("staff store", storeId));
+    if (!isClientGeneratedId(person.id)) {
+      assertCanonicalUuidId("staff", person.id);
+    }
+    (person.storeIds || []).forEach((storeId) => {
+      if (!isClientGeneratedId(storeId)) {
+        assertCanonicalUuidId("staff store", storeId);
+      }
+    });
   });
   return JSON.stringify({
     businesses: (snapshot.configuredBusinesses || []).map((business) => ({

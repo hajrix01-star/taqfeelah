@@ -82,6 +82,7 @@ export function normalizeTeamEmployeePins({
  * @property {string} authOwnerPassword
  * @property {Record<string, string>} [authEmployeePins]
  * @property {Record<string, string>} [draftAuthEmployeePins]
+ * @property {boolean} [omitStaff]
  */
 
 /**
@@ -93,9 +94,10 @@ export function buildOwnerSettingsTeamPersistPayload({
   authOwnerPassword,
   authEmployeePins,
   draftAuthEmployeePins,
+  omitStaff = false,
 }) {
   return {
-    staff,
+    ...(omitStaff ? {} : { staff }),
     authConfig: {
       ownerUsername: authOwnerUsername,
       ownerPassword: authOwnerPassword,

@@ -80,6 +80,65 @@ describe("org config runtime sync", () => {
     });
   });
 
+  it("creates pending staff members through members api", async () => {
+    const fetchMock = vi.fn(async (url, init) => {
+      if (String(url).endsWith("/api/v1/members") && init?.method === "POST") {
+        return new Response(JSON.stringify({
+          member: {
+            memberId: "11111111-1111-4111-8111-111111111111",
+            userId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+            name: "Sara",
+            role: "employee",
+            status: "active",
+            storeIds: ["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"],
+          },
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync.js");
+    const applied = await persistOrgConfigSnapshot({
+      auth: {
+        organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+        actorUserId: "owner",
+        actorRole: "owner",
+      },
+      baseline: {
+        configuredBusinesses: [],
+        archivedBusinessIds: [],
+        storeChannelSettings: {},
+        staff: [],
+      },
+      next: {
+        configuredBusinesses: [],
+        archivedBusinessIds: [],
+        storeChannelSettings: {},
+        staff: [{
+          id: "staff-1718040000000",
+          nameAr: "Sara",
+          nameEn: "Sara",
+          mobile: "0500000000",
+          active: true,
+          storeIds: ["shami"],
+        }],
+      },
+      employeePins: { "staff-1718040000000": "4321" },
+    });
+
+    expect(fetchMock).toHaveBeenCalled();
+    const createCall = fetchMock.mock.calls.find(([url, init]) => (
+      String(url).endsWith("/api/v1/members") && init?.method === "POST"
+    ));
+    expect(createCall).toBeTruthy();
+    expect(JSON.parse(String(createCall?.[1]?.body))).toMatchObject({
+      name: "Sara",
+      credentials: { type: "employee_pin", pin: "4321" },
+    });
+    expect(applied.staff[0]?.id).toBe("4cf1450d-08d8-4ca1-b180-1c2642174a79");
+  });
+
   it("persists store operational settings through dedicated patch api", async () => {
     const fetchMock = vi.fn(async (url, init) => {
       if (String(url).includes("/operational-settings") && init?.method === "PATCH") {

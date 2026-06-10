@@ -84,4 +84,17 @@ describe("owner settings local persistence", () => {
     expect(payload.staff).toHaveLength(1);
     expect(payload.authConfig.employeePins).toEqual({ ahmed: "9999" });
   });
+
+  it("omits staff from team persist payload when org config API owns members", () => {
+    const payload = buildOwnerSettingsTeamPersistPayload({
+      staff: [{ id: "staff-1718040000000", pin: "1234" }],
+      authOwnerUsername: "owner",
+      authOwnerPassword: "demo",
+      authEmployeePins: { "staff-1718040000000": "1234" },
+      omitStaff: true,
+    });
+
+    expect(payload.staff).toBeUndefined();
+    expect(payload.authConfig.employeePins).toEqual({ "staff-1718040000000": "1234" });
+  });
 });

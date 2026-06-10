@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CreditCard } from "lucide-react";
+import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { resolveStoreChannelConfig } from "@/features/org-config/client/store-channel-config";
 import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
 import {
@@ -307,6 +308,7 @@ export function useOwnerSettingsScreenState({
           authOwnerUsername,
           authOwnerPassword,
           authEmployeePins: nextPins,
+          omitStaff: isOrgConfigApiEnabled(),
         }));
         showSettingsSaved();
       } catch (failure) {
