@@ -8,6 +8,21 @@ export function formatCalendarDate(dateString, lang) {
   ).format(date);
 }
 
+export function formatCalendarWeekday(dateString, lang) {
+  const date = new Date(`${dateString}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(
+    lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-US",
+    { weekday: "long" },
+  ).format(date);
+}
+
+export function formatRegisterCloseoutTypeLabel(dateString, lang) {
+  const weekday = formatCalendarWeekday(dateString, lang);
+  if (!weekday) return lang === "ar" ? "تقفيلة يوم" : "Daily closeout";
+  return lang === "ar" ? `تقفيلة يوم ${weekday}` : `Daily closeout ${weekday}`;
+}
+
 function formatCalendarMonth(year, month, lang) {
   return new Intl.DateTimeFormat(
     lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-US",
