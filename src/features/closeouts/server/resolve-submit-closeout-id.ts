@@ -1,5 +1,5 @@
 /**
- * Server-owned closeout identity for submit/resubmit.
+ * Server-owned closeout identity for submit/ownerEdit.
  * Never derive from storeId+date — multiple closeouts can share the same day.
  */
 export function resolveSubmitCloseoutId(

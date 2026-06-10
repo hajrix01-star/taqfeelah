@@ -69,13 +69,13 @@ export default function EmployeeCloseoutsView({
     upsertCloseout,
     deleteCloseout,
     submitCloseout,
-    resubmitCloseout,
+    ownerEditCloseout,
     findForStoreDate,
     syncError,
   } = useDailyCloseouts();
 
   const [entryCloseout, setEntryCloseout] = useState(null);
-  const [entryResubmit, setEntryResubmit] = useState(false);
+  const [entryOwnerEdit, setEntryOwnerEdit] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [shareTarget, setShareTarget] = useState(null);
   const [shareNewlySubmitted, setShareNewlySubmitted] = useState(false);
@@ -199,7 +199,7 @@ export default function EmployeeCloseoutsView({
     if (!currentStoreId) return;
     const today = new Date();
     const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    setEntryResubmit(false);
+    setEntryOwnerEdit(false);
     const draft = createDraftCloseout({
       storeId: currentStoreId,
       storeName: storeLabel,
@@ -233,8 +233,8 @@ export default function EmployeeCloseoutsView({
     return (findForStoreDateProp || findForStoreDate)(currentStoreId, date);
   };
 
-  const handleSubmit = async (closeout, { isResubmit }) => {
-    const fn = isResubmit ? resubmitCloseout : submitCloseout;
+  const handleSubmit = async (closeout, { isOwnerEdit }) => {
+    const fn = isOwnerEdit ? ownerEditCloseout : submitCloseout;
     const next = await fn({ closeout, employee });
     if (isCloseoutWorkflowFailure(next)) {
       const fallback = next.phase === "save"
@@ -248,7 +248,7 @@ export default function EmployeeCloseoutsView({
       return;
     }
     setEntryCloseout(null);
-    setEntryResubmit(false);
+    setEntryOwnerEdit(false);
     setExpandedId(null);
     setShareTarget(next);
     setShareNewlySubmitted(true);
@@ -260,7 +260,7 @@ export default function EmployeeCloseoutsView({
       deleteCloseout(closeout.id);
     }
     setEntryCloseout(null);
-    setEntryResubmit(false);
+    setEntryOwnerEdit(false);
   };
 
   const viewGate = resolveEmployeeCloseoutsViewGate({ employeeRuntimeReady, currentStore });
@@ -292,7 +292,7 @@ export default function EmployeeCloseoutsView({
         closeout={entryCloseout}
         salesChannels={salesChannels}
         storeName={storeLabel}
-        isResubmit={entryResubmit}
+        isOwnerEdit={entryOwnerEdit}
         saving={saving}
         channelLabel={channelLabel}
         onCancel={() => handleCancelEntry(entryCloseout)}

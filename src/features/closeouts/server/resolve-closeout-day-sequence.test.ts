@@ -46,7 +46,7 @@ describe("resolveCloseoutDaySequence", () => {
     expect(sequence).toBe(2);
   });
 
-  it("reuses the same sequence on resubmit", async () => {
+  it("reuses the same sequence on owner edit", async () => {
     const sequence = await resolveCloseoutDaySequence(
       createSequenceTx({ existingDaySequence: 2 }) as Parameters<typeof resolveCloseoutDaySequence>[0],
       {
@@ -54,7 +54,7 @@ describe("resolveCloseoutDaySequence", () => {
         storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
         date: "2026-06-06",
         closeoutId: "closeout-2",
-        mode: "resubmit",
+        mode: "ownerEdit",
       },
     );
 

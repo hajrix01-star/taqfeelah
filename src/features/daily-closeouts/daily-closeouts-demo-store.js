@@ -25,7 +25,7 @@ export function writeDailyCloseouts(closeouts) {
   return safeSetLocalStorageItem(DAILY_CLOSEOUTS_STORAGE_KEY, JSON.stringify(closeouts));
 }
 
-/** Failed submit/resubmit result from DailyCloseoutsProvider ({ ok: false, phase }). */
+/** Failed submit/owner-edit result from DailyCloseoutsProvider ({ ok: false, phase }). */
 export function isCloseoutWorkflowFailure(result) {
   return Boolean(
     result
@@ -79,7 +79,7 @@ function buildCloseoutWorkflowHints(events) {
     if (!event || typeof event.closeoutId !== "string" || !event.closeoutId) return;
     const hint = hintsByCloseoutId.get(event.closeoutId) || {};
     const at = typeof event.at === "string" && event.at ? event.at : null;
-    if (event.type === "submitted" || event.type === "resubmitted") {
+    if (event.type === "submitted" || event.type === "resubmitted" || event.type === "ownerEdit") {
       if (!hint.submittedAt || (at && at > hint.submittedAt)) hint.submittedAt = at;
     }
     if (event.type === "approved") {
@@ -203,6 +203,7 @@ export function closeoutEventMessage(event, lang = "ar") {
     approved: `${lang === "ar" ? "المالك اعتمد" : "Owner approved"} تقفيلة يوم ${dateLabel} ${lang === "ar" ? "المرسلة من" : "from"} ${event.employeeName || name}`,
     returned: `${lang === "ar" ? "المالك" : "Owner"} أعاد تقفيلة يوم ${dateLabel} للتعديل`,
     resubmitted: `${name} أعاد إرسال تقفيلة يوم ${dateLabel} — ${store}`,
+    ownerEdit: `${name} أعاد إرسال تقفيلة يوم ${dateLabel} — ${store}`,
   };
   const en = {
     opened: `${name} opened closeout for ${dateLabel} — ${store}`,
@@ -210,6 +211,7 @@ export function closeoutEventMessage(event, lang = "ar") {
     approved: `Owner approved closeout for ${dateLabel} from ${event.employeeName || name}`,
     returned: `Owner returned closeout for ${dateLabel} for edits`,
     resubmitted: `${name} resubmitted closeout for ${dateLabel} — ${store}`,
+    ownerEdit: `${name} resubmitted closeout for ${dateLabel} — ${store}`,
   };
   return (lang === "ar" ? ar : en)[event.type] || event.message || "";
 }

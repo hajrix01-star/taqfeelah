@@ -16,7 +16,7 @@ export function OwnerCloseoutEditFlow({
   onCloseoutUpdated = async () => {},
   onClose,
 }) {
-  const { upsertCloseout, resubmitCloseout } = useDailyCloseouts();
+  const { upsertCloseout, ownerEditCloseout } = useDailyCloseouts();
 
   if (!editCloseout) return null;
 
@@ -27,13 +27,13 @@ export function OwnerCloseoutEditFlow({
       closeout={editCloseout}
       salesChannels={resolveSalesChannels(editCloseout.storeId)}
       storeName={editCloseout.storeName}
-      isResubmit
+      isOwnerEdit
       saving={false}
       channelLabel={channelLabel}
       onCancel={onClose}
       onSaveDraft={(draft) => upsertCloseout(draft)}
       onSubmit={async (nextCloseout) => {
-        const updated = await resubmitCloseout({ closeout: nextCloseout, employee: ownerActor });
+        const updated = await ownerEditCloseout({ closeout: nextCloseout, employee: ownerActor });
         if (!updated || updated.ok === false) return;
         await onCloseoutUpdated(updated);
         onClose();

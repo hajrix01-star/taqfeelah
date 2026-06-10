@@ -263,7 +263,7 @@ export function DailyCloseoutsProvider({
     useApiWrites,
   ]);
 
-  const resubmitCloseout = useCallback(async ({ closeout, employee }) => {
+  const ownerEditCloseout = useCallback(async ({ closeout, employee }) => {
     const saved = saveCloseoutRecord(closeout);
     if (!saved.ok) {
       setSyncError(lang === "ar" ? CLOSEOUT_SAVE_ERROR_AR : CLOSEOUT_SAVE_ERROR_EN);
@@ -284,7 +284,7 @@ export function DailyCloseoutsProvider({
       reviewedAt: now,
       reviewedByName: null,
     });
-    const apiSubmitAction = "resubmit";
+    const apiSubmitAction = "ownerEdit";
 
     try {
       if (typeof onSubmitCloseoutToApi === "function") {
@@ -319,7 +319,7 @@ export function DailyCloseoutsProvider({
       }
 
       logEvent({
-        type: "resubmitted",
+        type: "ownerEdit",
         closeoutId: next.id,
         storeId: next.storeId,
         storeName: next.storeName,
@@ -336,7 +336,7 @@ export function DailyCloseoutsProvider({
       }
       return next;
     } catch (error) {
-      console.warn("closeout resubmit send failed", error);
+      console.warn("closeout owner edit send failed", error);
       setSyncError(resolveCloseoutWorkflowErrorMessage(error, lang, "send"));
       return { ok: false, phase: "send" };
     }
@@ -359,12 +359,12 @@ export function DailyCloseoutsProvider({
     upsertCloseout,
     openOrResumeDraft,
     submitCloseout,
-    resubmitCloseout,
+    ownerEditCloseout,
     findForStoreDate: (storeId, date) => findCloseoutForStoreDate(closeouts, storeId, date),
     findAllForStoreDate: (storeId, date) => findCloseoutsForStoreDate(closeouts, storeId, date),
     syncError,
     reloadCloseoutsFromApi,
-  }), [closeouts, deleteCloseout, events, openOrResumeDraft, reloadCloseoutsFromApi, resubmitCloseout, submitCloseout, syncError, upsertCloseout]);
+  }), [closeouts, deleteCloseout, events, openOrResumeDraft, reloadCloseoutsFromApi, ownerEditCloseout, submitCloseout, syncError, upsertCloseout]);
 
   return <DailyCloseoutsContext.Provider value={value}>{children}</DailyCloseoutsContext.Provider>;
 }

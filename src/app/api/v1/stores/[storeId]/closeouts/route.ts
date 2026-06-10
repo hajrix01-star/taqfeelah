@@ -4,6 +4,7 @@ import { readEnv } from "@/core/config/env";
 import { resolveRequestContext } from "@/core/auth/request-context";
 import { listStoreCloseouts } from "@/features/closeouts/server/list-store-closeouts";
 import { resolveSubmitCloseoutId } from "@/features/closeouts/server/resolve-submit-closeout-id";
+import { normalizeCloseoutSubmitMode } from "@/features/closeouts/closeout-submit-mode";
 import { submitStoreCloseout } from "@/features/closeouts/server/submit-store-closeout";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export async function POST(request: Request, context: RouteContext) {
     const params = await context.params;
     const requestContext = resolveRequestContext(request, { requireUser: true });
     const body = await request.json();
-    const mode = body?.mode === "resubmit" ? "resubmit" : "submit";
+    const mode = normalizeCloseoutSubmitMode(body?.mode);
     const closeoutId = resolveSubmitCloseoutId(body?.closeoutId);
 
     if (typeof body?.date !== "string" || !body.date) {

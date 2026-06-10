@@ -1,5 +1,9 @@
 import { and, eq, sql } from "drizzle-orm";
 import { dailyCloseouts } from "@/core/db/schema";
+import {
+  isOwnerEditCloseoutMode,
+  type CloseoutSubmitMode,
+} from "@/features/closeouts/closeout-submit-mode";
 
 type SequenceTx = {
   select: (fields: unknown) => {
@@ -18,10 +22,10 @@ export async function resolveCloseoutDaySequence(
     storeId: string;
     date: string;
     closeoutId: string;
-    mode: "submit" | "resubmit";
+    mode: CloseoutSubmitMode;
   },
 ): Promise<number> {
-  if (input.mode === "resubmit") {
+  if (isOwnerEditCloseoutMode(input.mode)) {
     const existingQuery = tx
       .select({ daySequence: dailyCloseouts.daySequence })
       .from(dailyCloseouts)

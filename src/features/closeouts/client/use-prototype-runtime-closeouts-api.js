@@ -12,6 +12,7 @@ import {
 } from "@/features/closeouts/client/closeouts-api-client";
 import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
 import { resolveEmployeeCloseoutsFetchWindow } from "@/features/employee-closeouts/employee-closeout-history";
+import { normalizeCloseoutSubmitMode } from "@/features/closeouts/closeout-submit-mode";
 import { resolveOwnerCloseoutsFetchWindow } from "@/features/closeouts/client/owner-closeouts-fetch-window";
 import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
 
@@ -67,7 +68,7 @@ export function usePrototypeRuntimeCloseoutsApi({
       actorRole: isOwnerSubmit ? "owner" : "employee",
       closeout,
       storeChannels: isOwnerSubmit ? ownerStoreChannels : storeChannels,
-      mode: action === "resubmit" ? "resubmit" : "submit",
+      mode: normalizeCloseoutSubmitMode(action === "submit" ? "submit" : action),
     });
     if (!result) {
       throw new Error(lang === "ar"

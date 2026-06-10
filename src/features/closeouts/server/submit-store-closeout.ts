@@ -15,6 +15,11 @@ import {
   normalizeOutflowAttachments,
   persistCloseoutEntryAttachments,
 } from "@/features/closeouts/server/persist-closeout-entry-attachments";
+import {
+  isOwnerEditCloseoutMode,
+  normalizeCloseoutSubmitMode,
+  type CloseoutSubmitModeInput,
+} from "@/features/closeouts/closeout-submit-mode";
 
 const salesChannelSchema = z.object({
   salesChannelId: z.string().uuid(),
@@ -43,10 +48,15 @@ const closeoutSubmitSchema = z.object({
   outflows: z.array(outflowSchema).default([]),
   attachments: z.array(z.union([z.string(), closeoutAttachmentSchema])).optional().default([]),
   note: z.string().trim().max(500).optional(),
-  mode: z.enum(["submit", "resubmit"]).default("submit"),
+  mode: z.preprocess(
+    (value) => normalizeCloseoutSubmitMode(value),
+    z.enum(["submit", "ownerEdit"]),
+  ).default("submit"),
 });
 
-type CloseoutSubmitInput = z.infer<typeof closeoutSubmitSchema>;
+type CloseoutSubmitInput = Omit<z.infer<typeof closeoutSubmitSchema>, "mode"> & {
+  mode?: CloseoutSubmitModeInput;
+};
 
 export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
   const parsed = closeoutSubmitSchema.safeParse(rawInput);
@@ -55,7 +65,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
   }
 
   const input = parsed.data;
-  if (input.mode === "resubmit" && input.actorRole === "employee") {
+  if (isOwnerEditCloseoutMode(input.mode) && input.actorRole === "employee") {
     throw new ForbiddenError("Only owner or manager can edit a submitted closeout.");
   }
 
@@ -93,7 +103,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
 
     let closeoutRowId: string;
 
-    if (input.mode === "resubmit") {
+    if (isOwnerEditCloseoutMode(input.mode)) {
       const [existingCloseout] = await tx
         .select({ id: dailyCloseouts.id })
         .from(dailyCloseouts)
@@ -107,7 +117,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
         .limit(1);
 
       if (!existingCloseout) {
-        throw new ValidationError("Closeout not found for resubmit.");
+        throw new ValidationError("Closeout not found for owner edit.");
       }
 
       closeoutRowId = existingCloseout.id;
@@ -232,7 +242,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
       storeId: input.storeId,
       actorUserId: input.actorUserId,
       entryId: summaryEntry.id,
-      action: input.mode === "resubmit" ? "closeout_resubmitted" : "closeout_submitted",
+      action: isOwnerEditCloseoutMode(input.mode) ? "closeout_resubmitted" : "closeout_submitted",
       reason: input.note || null,
       metadata: {
         closeoutId: input.closeoutId,

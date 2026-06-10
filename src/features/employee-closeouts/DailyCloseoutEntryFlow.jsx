@@ -59,7 +59,7 @@ export default function DailyCloseoutEntryFlow({
   closeout: initialCloseout,
   salesChannels,
   storeName,
-  isResubmit = false,
+  isOwnerEdit = false,
   onCancel,
   onSubmit,
   findForStoreDate,
@@ -67,7 +67,7 @@ export default function DailyCloseoutEntryFlow({
   saving = false,
 }) {
   const labelChannel = channelLabel || ((channel) => (lang === "ar" ? channel.nameAr || channel.nameEn : channel.nameEn || channel.nameAr) || channel.id);
-  const [phase, setPhase] = useState(isResubmit ? "form" : "date");
+  const [phase, setPhase] = useState(isOwnerEdit ? "form" : "date");
   const [date, setDate] = useState(initialCloseout?.date || todayIso());
   const [salesValues, setSalesValues] = useState(() => {
     const record = initialCloseout?.sales || {};
@@ -193,7 +193,7 @@ export default function DailyCloseoutEntryFlow({
       window.alert(lang === "ar" ? "أدخل مبلغ الداخل" : "Enter sales amount");
       return;
     }
-    await onSubmit(closeout, { isResubmit });
+    await onSubmit(closeout, { isOwnerEdit });
   };
 
   return (
@@ -205,7 +205,7 @@ export default function DailyCloseoutEntryFlow({
         <button type="button" onClick={onCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]">
           <X className="h-4 w-4" />
         </button>
-        <p className="text-sm font-black">{lang === "ar" ? (isResubmit ? "تعديل التقفيلة" : "تقفيلة يوم جديد") : (isResubmit ? "Edit closeout" : "New closeout")}</p>
+        <p className="text-sm font-black">{lang === "ar" ? (isOwnerEdit ? "تعديل التقفيلة" : "تقفيلة يوم جديد") : (isOwnerEdit ? "Edit closeout" : "New closeout")}</p>
         <span className="w-9" />
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">

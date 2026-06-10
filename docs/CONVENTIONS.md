@@ -415,11 +415,12 @@ pnpm build
 | `pendingOwnerCloseoutQueue` | طابور مالك فارغ (stub) | سابقًا `pendingSubmittedCloseouts` |
 | `openDuplicateSummaryInRegister` | فتح تنبيه ملخص مكرر في السجل | سابقًا `reviewDuplicateSalesAlert` |
 | `loadLocalCloseoutsOnBoot` | boot demo للتقفيلات المحلية | سابقًا `autoResolveSubmittedCloseoutsWithoutReview` |
+| `ownerEdit` / `ownerEditCloseout` | تعديل تقفيلة مرسلة (مالك/مدير) | سابقًا `resubmit` / `resubmitCloseout`؛ alias `resubmit` مقبول في API |
 
 | الحدث | السلوك |
 |-------|--------|
 | إرسال الموظف | اعتماد فوري: DB `approved`، واجهة `reviewed`، السجل التشغيلي `active` |
-| تعديل بعد الإرسال | **المالك/المدير فقط** عبر `resubmit` (اسم لاحق مقترح: `ownerEdit`) |
+| تعديل بعد الإرسال | **المالك/المدير فقط** عبر `mode: "ownerEdit"` (alias قديم: `resubmit`) |
 | مرفقات بانتظار المراجعة (تقفيلة) | **لا يوجد** — لا حقل pending في API أو التقارير |
 
 إعدادات المحل المحذوفة (`reviewEnabled`، `closeoutReviewEnabled`، `attachmentAlert`) تُشطَب عند التطبيع ولا تُعاد.
