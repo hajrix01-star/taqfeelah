@@ -1,12 +1,11 @@
 import { eq, sql, type SQL } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { attachments, entries } from "@/core/db/schema";
-import { applyReviewEnabledToAttachmentStats } from "@/domain/attachment-review/stats";
+import { normalizeAttachmentStats } from "@/domain/attachment-stats/stats";
 
 type DbClient = Pick<NodePgDatabase<Record<string, never>>, "select">;
 
 export const entriesWithAttachmentsCountSql = sql<number>`count(distinct case when ${attachments.id} is not null then ${entries.id} end)::int`;
-export const pendingAttachmentReviewsCountSql = sql<number>`count(distinct case when ${attachments.id} is not null and ${entries.reviewedAt} is null then ${entries.id} end)::int`;
 
 export async function queryAttachmentStatsForScope(
   db: DbClient,
@@ -15,16 +14,14 @@ export async function queryAttachmentStatsForScope(
   const [stats] = await db
     .select({
       attachmentCount: entriesWithAttachmentsCountSql,
-      pendingReviewCount: pendingAttachmentReviewsCountSql,
     })
     .from(entries)
     .leftJoin(attachments, eq(attachments.entryId, entries.id))
     .where(entryScope);
 
-  return {
+  return normalizeAttachmentStats({
     attachmentCount: stats?.attachmentCount ?? 0,
-    pendingReviewCount: stats?.pendingReviewCount ?? 0,
-  };
+  });
 }
 
 export async function queryAttachmentStatsForStoreScope(
@@ -33,8 +30,7 @@ export async function queryAttachmentStatsForStoreScope(
   storeId: string,
   entryScope: SQL | undefined,
 ) {
-  const rawStats = await queryAttachmentStatsForScope(db, entryScope);
   void organizationId;
   void storeId;
-  return applyReviewEnabledToAttachmentStats(rawStats);
+  return queryAttachmentStatsForScope(db, entryScope);
 }

@@ -95,11 +95,8 @@ async function seedCore(client) {
       "",
       JSON.stringify({
         activeCategories: OUTFLOW_CATEGORIES.map(([id]) => id),
-        reviewEnabled: false,
-        closeoutReviewEnabled: false,
         employeeHistoryVisibility: "all",
         closeoutAlert: false,
-        attachmentAlert: false,
         notebookTheme: null,
       }),
     ],
@@ -191,11 +188,8 @@ async function seedRuntimeSettings(client) {
     storeOperationalSettings: {
       [IDS.store]: {
         activeCategories: OUTFLOW_CATEGORIES.map(([id]) => id),
-        reviewEnabled: false,
-        closeoutReviewEnabled: false,
         employeeHistoryVisibility: "all",
         closeoutAlert: false,
-        attachmentAlert: false,
         notebookTheme: null,
       },
     },

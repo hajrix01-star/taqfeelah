@@ -7,7 +7,7 @@ import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persist
  * @param {string} deps.storageKey
  * @param {string} deps.closeoutAlertsKey
  * @param {(raw: unknown, options: Record<string, unknown>) => unknown} deps.applyMigration
- * @param {(reviewEnabled: () => boolean) => void} deps.autoResolveCloseouts
+ * @param {(resolveCloseouts: () => void) => void} deps.autoResolveCloseouts
  */
 export function createMigrateSavedSettings({
   bindsToServerAuth,

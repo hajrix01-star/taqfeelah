@@ -71,7 +71,7 @@ function createQueryChain(call: number) {
     then: (resolve: (value: unknown) => void, reject?: (reason: unknown) => void) =>
       run().then(resolve, reject),
     leftJoin: () => ({
-      where: async () => [{ attachmentCount: 0, pendingReviewCount: 0 }],
+      where: async () => [{ attachmentCount: 0 }],
     }),
   };
   return chain;
@@ -85,7 +85,7 @@ vi.mock("@/core/db/client", () => ({
       return {
         from: () => createQueryChain(call),
         leftJoin: () => ({
-          where: async () => [{ attachmentCount: 0, pendingReviewCount: 0 }],
+          where: async () => [{ attachmentCount: 0 }],
         }),
       };
     },

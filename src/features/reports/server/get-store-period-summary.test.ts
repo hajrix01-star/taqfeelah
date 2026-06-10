@@ -4,24 +4,12 @@ vi.mock("@/core/auth/assert-store-access", () => ({
   assertStoreAccess: vi.fn(async () => undefined),
 }));
 
-vi.mock("@/features/org-config/server/read-store-operational-settings", () => ({
-  readStoreOperationalSettingsRecord: vi.fn(async () => ({
-    activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
-    reviewEnabled: true,
-    closeoutReviewEnabled: false,
-    employeeHistoryVisibility: "all" as const,
-    closeoutAlert: false,
-    attachmentAlert: false,
-    notebookTheme: null,
-  })),
-}));
-
 const movementRows = [
   { type: "summary", amountHalalas: 200000 },
   { type: "purchases", amountHalalas: 15000 },
   { type: "expense", amountHalalas: 10000 },
 ];
-const attachmentStats = [{ attachmentCount: 3, pendingReviewCount: 1 }];
+const attachmentStats = [{ attachmentCount: 3 }];
 
 vi.mock("@/core/db/client", () => ({
   getDb: () => ({
@@ -37,7 +25,7 @@ vi.mock("@/core/db/client", () => ({
 }));
 
 describe("getStorePeriodSummary", () => {
-  it("returns SQL period totals with attachment counts", async () => {
+  it("returns SQL period totals with attachment counts and zero legacy pending field", async () => {
     const { getStorePeriodSummary } = await import("./get-store-period-summary");
     const summary = await getStorePeriodSummary({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",

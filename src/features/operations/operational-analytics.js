@@ -1,6 +1,6 @@
 /** Pure helpers for operational entry filtering and totals (prototype + tests). */
 
-import { countProofsFromUiEntries } from "@/domain/attachment-review/stats";
+import { countProofsFromUiEntries } from "@/domain/attachment-stats/stats";
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 
 export const OUTFLOW_ENTRY_TYPES = new Set(["purchases", "expense", "withdrawal"]);
