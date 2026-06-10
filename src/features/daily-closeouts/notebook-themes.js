@@ -34,7 +34,31 @@ export const notebookThemes = {
     shadow: "0 12px 24px rgba(64,88,70,0.09)",
     ring: true,
   },
+  pinkTint: {
+    paper: "#FBE8EF",
+    line: "rgba(118,78,96,0.13)",
+    margin: "rgba(204,105,96,0.42)",
+    shadow: "0 12px 24px rgba(176,96,120,0.09)",
+    ring: true,
+  },
+  blueTint: {
+    paper: "#E8F1FA",
+    line: "rgba(66,96,130,0.13)",
+    margin: "rgba(204,105,96,0.42)",
+    shadow: "0 12px 24px rgba(64,100,140,0.09)",
+    ring: true,
+  },
 };
+
+export const NOTEBOOK_THEME_IDS = Object.freeze([
+  "yellow",
+  "softYellow",
+  "ivory",
+  "white",
+  "greenTint",
+  "pinkTint",
+  "blueTint",
+]);
 
 function blendHex(hex, targetHex, ratio) {
   const parse = (value) => {

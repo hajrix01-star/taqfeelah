@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  isValidNotebookTheme,
+  NOTEBOOK_THEME_IDS,
   notebookThemePaperColor,
   notebookThemes,
   resolveShareNotebookTheme,
@@ -29,5 +31,16 @@ describe("notebookThemePaperColor", () => {
 
   it("falls back to yellow paper for unknown themes", () => {
     expect(notebookThemePaperColor("unknown")).toBe(notebookThemes.yellow.paper);
+  });
+});
+
+describe("notebookThemes", () => {
+  it("includes pink and blue tint themes with required fields", () => {
+    expect(NOTEBOOK_THEME_IDS).toContain("pinkTint");
+    expect(NOTEBOOK_THEME_IDS).toContain("blueTint");
+    expect(isValidNotebookTheme("pinkTint")).toBe(true);
+    expect(isValidNotebookTheme("blueTint")).toBe(true);
+    expect(notebookThemes.pinkTint.paper).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    expect(notebookThemes.blueTint.paper).toMatch(/^#[0-9A-Fa-f]{6}$/);
   });
 });
