@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { computeCloseoutTotals } from "../daily-closeouts/closeout-calculations";
 import { CLOSEOUT_STATUS } from "../daily-closeouts/closeout-status";
-import { buildOperationalEntriesFromCloseout, pendingSubmittedCloseouts } from "../daily-closeouts/daily-closeouts-demo-store";
+import { buildOperationalEntriesFromCloseout, pendingOwnerCloseoutQueue } from "../daily-closeouts/daily-closeouts-demo-store";
 import {
   aggregateChannels,
   duplicateSalesSignature,
@@ -82,7 +82,7 @@ describe("prototype month demo dataset", () => {
   it("includes workflow edge cases", () => {
     expect(closeouts.find((c) => c.storeId === "shami" && c.date === "2026-06-02")?.status).toBe(CLOSEOUT_STATUS.DRAFT);
     expect(closeouts.find((c) => c.storeId === "arz" && c.date === "2026-05-12")?.status).toBe(CLOSEOUT_STATUS.REVIEWED);
-    expect(pendingSubmittedCloseouts()).toEqual([]);
+    expect(pendingOwnerCloseoutQueue()).toEqual([]);
     const voided = entries.find((e) => e.id === "demo-shami-voided-2026-05-10");
     expect(voided && entryIsVoided(voided)).toBe(true);
     const dupes = entries.filter((e) => e.businessId === "shami" && e.date === "2026-05-15" && e.type === "summary" && entryIsActive(e));

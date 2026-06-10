@@ -410,6 +410,8 @@ pnpm build
 | `reviewed` | تسمية UI للتقفيلة المرسلة/المعتمدة | ليست «بانتظار مراجعة» |
 | `returned` | حالة demo/localStorage قديمة | تُطبَّع إلى `reviewed` عند القراءة |
 | `waitingReview` | نصوص قديمة | حُذفت من `prototype-runtime-copy` |
+| `openCloseoutAlertInRegister` | فتح تنبيه التقفيلة في السجل | سابقًا `reviewCloseoutAlertRecord` |
+| `pendingOwnerCloseoutQueue` | طابور مالك فارغ (stub) | سابقًا `pendingSubmittedCloseouts` |
 
 | الحدث | السلوك |
 |-------|--------|

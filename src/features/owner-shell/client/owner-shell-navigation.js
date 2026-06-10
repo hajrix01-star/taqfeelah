@@ -31,7 +31,7 @@ export function reviewDuplicateSalesAlert(alert, apply) {
   apply.setOwnerPage?.("register");
 }
 
-export function reviewCloseoutAlertRecord(alert, apply, operationalEntries = []) {
+export function openCloseoutAlertInRegister(alert, apply, operationalEntries = []) {
   if (!alert?.businessId || !alert?.date) return;
   apply.setArchivedReadOnlyBusinessId?.(null);
   apply.setSelectedBusiness?.(alert.businessId);
@@ -61,6 +61,6 @@ export function handleOwnerNotificationsClick({
     return;
   }
   if (unseenCloseoutAlerts[0]) {
-    reviewCloseoutAlertRecord(unseenCloseoutAlerts[0], apply);
+    openCloseoutAlertInRegister(unseenCloseoutAlerts[0], apply);
   }
 }

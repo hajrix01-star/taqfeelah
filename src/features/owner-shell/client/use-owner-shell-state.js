@@ -15,7 +15,7 @@ import {
   openOwnerQuickExpense,
   openOwnerQuickSummary,
   resetOwnerNavContext,
-  reviewCloseoutAlertRecord,
+  openCloseoutAlertInRegister,
   reviewDuplicateSalesAlert,
 } from "./owner-shell-navigation.js";
 import {
@@ -175,8 +175,8 @@ export function useOwnerShellState({
     ));
   }, [closeoutAlertEnabledForBusiness]);
 
-  const reviewCloseoutAlert = useCallback((alert) => {
-    reviewCloseoutAlertRecord(alert, navApply, operationalEntries);
+  const openCloseoutAlertInRegisterHandler = useCallback((alert) => {
+    openCloseoutAlertInRegister(alert, navApply, operationalEntries);
   }, [navApply, operationalEntries]);
 
   const dismissCloseoutAlert = useCallback((alertId) => {
@@ -241,7 +241,7 @@ export function useOwnerShellState({
     ownerNotificationsVisible,
     ownerNotificationBadge,
     pushCloseoutAlert,
-    reviewCloseoutAlert,
+    openCloseoutAlertInRegister: openCloseoutAlertInRegisterHandler,
     dismissCloseoutAlert,
     reviewDuplicateSales,
     changeOwnerPage,

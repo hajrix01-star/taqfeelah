@@ -349,7 +349,7 @@ export function DailyCloseoutsProvider({
   const value = useMemo(() => ({
     closeouts: sortCloseoutsNewestFirst(closeouts),
     events,
-    pendingSubmittedCloseouts: () => [],
+    pendingOwnerCloseoutQueue: () => [],
     deleteCloseout,
     upsertCloseout,
     openOrResumeDraft,
