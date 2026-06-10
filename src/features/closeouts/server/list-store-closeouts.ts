@@ -34,10 +34,10 @@ type CloseoutOutflowRow = {
   amount: number;
 };
 
-function mapCloseoutStatus(status: string): "submitted" | "reviewed" | "returned" {
-  if (status === "approved") return "reviewed";
-  if (status === "returned") return "returned";
-  return "submitted";
+/** Persisted closeouts are always treated as sent/approved (zero-review policy). */
+export function mapCloseoutStatus(status: string): "reviewed" {
+  void status;
+  return "reviewed";
 }
 
 export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
@@ -229,16 +229,16 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
       submittedByUserId: row.submittedByUserId,
       submittedByName,
       submittedAt: row.createdAt.toISOString(),
-      reviewedAt: status === "reviewed" && row.reviewedAt ? row.reviewedAt.toISOString() : null,
-      reviewedByName: status === "reviewed" ? reviewedByName : null,
-      returnedAt: status === "returned" && row.reviewedAt ? row.reviewedAt.toISOString() : null,
-      returnedByName: status === "returned" ? reviewedByName : null,
-      returnReason: status === "returned" ? row.returnReason || null : null,
+      reviewedAt: row.reviewedAt ? row.reviewedAt.toISOString() : null,
+      reviewedByName,
+      returnedAt: null,
+      returnedByName: null,
+      returnReason: null,
       note: row.note || "",
       sales: salesRows,
       outflows: outflowRows,
       attachments: [],
-      syncedToEntries: status === "reviewed",
+      syncedToEntries: true,
       totals,
     };
   });

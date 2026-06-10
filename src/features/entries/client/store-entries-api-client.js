@@ -208,33 +208,6 @@ export async function createStoreEntryViaApi({
   });
 }
 
-export async function reviewStoreEntryViaApi({
-  organizationId,
-  actorUserId,
-  actorRole,
-  entry,
-}) {
-  const context = resolvePrototypeApiContext({
-    organizationId,
-    actorUserId,
-    actorRole,
-    storeId: entry?.businessId,
-  });
-  if (!context || !isUuid(entry?.id)) return null;
-
-  return fetchApiJsonWithPrototypeContext(
-    `/api/v1/stores/${context.storeId}/entries/${encodeURIComponent(entry.id)}/review`,
-    {
-      organizationId,
-      actorUserId,
-      actorRole,
-      method: "POST",
-      errorMessage: "entry review api failed",
-      errorStyle: "status",
-    },
-  );
-}
-
 export async function voidStoreEntryViaApi({
   organizationId,
   actorUserId,

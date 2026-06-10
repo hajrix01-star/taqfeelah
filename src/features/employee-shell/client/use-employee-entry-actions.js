@@ -6,6 +6,7 @@ import {
   findDuplicateSummaryEntries,
   isFutureOperationalEntryDate,
   mergeLastCloseoutDateForStore,
+  resolveOperationalEntriesRefreshWarningMessage,
   upsertCloseoutAlert,
 } from "@/features/operations/operational-entry-save-helpers";
 import {
@@ -75,6 +76,9 @@ export function useEmployeeEntryActions({
         if (!result.ok) {
           window.alert(result.failureMessage);
           return;
+        }
+        if (result.refreshFailed) {
+          window.alert(resolveOperationalEntriesRefreshWarningMessage(lang));
         }
         if (payload.type === "summary") {
           const summaryUpdate = resolveSummaryLastCloseoutUpdate(

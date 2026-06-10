@@ -5,6 +5,7 @@ import {
   isFutureOperationalEntryDate,
   mergeLastCloseoutDateForStore,
   resolveLatestActiveCloseoutDateFromEntries,
+  resolveOperationalEntriesRefreshWarningMessage,
   resolveSuggestedEntryDate,
   upsertCloseoutAlert,
 } from "./operational-entry-save-helpers";
@@ -63,5 +64,10 @@ describe("operational entry save helpers", () => {
     })).toBe("2026-06-05");
 
     expect(isFutureOperationalEntryDate("2026-06-06", "2026-06-05")).toBe(true);
+  });
+
+  it("returns bilingual refresh warning after successful write with failed reload", () => {
+    expect(resolveOperationalEntriesRefreshWarningMessage("ar")).toContain("تم الحفظ");
+    expect(resolveOperationalEntriesRefreshWarningMessage("en")).toContain("Saved");
   });
 });
