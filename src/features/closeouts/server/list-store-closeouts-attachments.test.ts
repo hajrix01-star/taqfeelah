@@ -5,8 +5,7 @@ const STORE_ID = "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c";
 const ACTOR_ID = "e8f3e35b-6051-4da3-8b10-979700c2f00f";
 const CLOSEOUT_ID = "11111111-1111-4111-8111-111111111111";
 const SUMMARY_ENTRY_ID = "entry-summary-active";
-const tinyPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
-
+const ATTACHMENT_ID = "22222222-2222-4222-8222-222222222222";
 let selectCall = 0;
 
 vi.mock("@/core/auth/assert-store-access", () => ({
@@ -45,8 +44,11 @@ function createQueryChain(call: number) {
     if (call === 3) return Promise.resolve([]);
     if (call === 4) {
       return Promise.resolve([{
+        id: ATTACHMENT_ID,
         entryId: SUMMARY_ENTRY_ID,
-        storageKey: `inline:v1:abc123:${tinyPng}`,
+        originalFileName: "proof.png",
+        mimeType: "image/png",
+        sizeBytes: 95,
         createdAt: new Date("2026-06-07T10:00:00.000Z"),
       }]);
     }
@@ -92,7 +94,12 @@ describe("listStoreCloseouts attachments", () => {
     });
 
     expect(closeouts).toHaveLength(1);
-    expect(closeouts[0]?.attachments).toEqual([tinyPng]);
+    expect(closeouts[0]?.attachments).toEqual([{
+      id: ATTACHMENT_ID,
+      mimeType: "image/png",
+      sizeBytes: 95,
+      name: "proof.png",
+    }]);
     expect(closeouts[0]?.totals.totalSales).toBe(1200);
   });
 });

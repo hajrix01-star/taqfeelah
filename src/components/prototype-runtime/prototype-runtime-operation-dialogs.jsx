@@ -43,8 +43,26 @@ ${text(lang, "note")}: ${item.note || "-"}`;
   return <AnimatePresence><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[60] flex items-end bg-[#112A46]/50 sm:items-center sm:justify-center sm:p-6 lg:items-end lg:justify-start lg:p-0"><motion.div initial={{ y: 18 }} animate={{ y: 0 }} exit={{ y: 18 }} className="relative z-10 w-full rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[560px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"><div className="mb-4 flex items-start justify-between"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E6F5E9] text-[#257844]"><Check className="h-5 w-5" /></div><button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]"><X className="h-4 w-4" /></button></div><h3 className="text-base font-black">{text(lang, "outflowSavedTitle")}</h3><p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">{text(lang, "outflowSavedDesc")}</p><div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-black/[0.045]"><div className="flex items-center justify-between gap-2"><div><p className="text-xs font-black text-[#112A46]">{categoryLabel}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{businessName(store, lang)} {formatCalendarDate(item.date, lang)}</p></div><strong className="tabular-nums text-sm font-black text-[#B44747]">{money(signedEntryAmount(item), lang)}</strong></div></div><p className="mt-4 text-xs font-bold text-[#716753]">{text(lang, "sendOutflowQuestion")}</p><div className="mt-5 grid grid-cols-[1fr_1.15fr] gap-3"><button onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">{text(lang, "keepWithoutSending")}</button><button onClick={sendWhatsApp} className="flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white"><Send className="h-4 w-4" />{text(lang, "saveShareWhatsApp")}</button></div></motion.div></motion.div></AnimatePresence>;
 }
 
-export function OperationModal({ lang, item, onClose, onVoid, onRestore, canVoid = true, canRestore = true }) {
-  const attachmentSource = useAttachmentSource(item?.attachment);
+export function OperationModal({
+  lang,
+  item,
+  onClose,
+  onVoid,
+  onRestore,
+  canVoid = true,
+  canRestore = true,
+  entryAttachmentsApiEnabled = false,
+  entryAttachmentsApiOrganizationId = "",
+  entryAttachmentsApiActorUserId = "",
+  entryAttachmentsApiActorRole = "owner",
+}) {
+  const attachmentSource = useAttachmentSource(item?.attachment, {
+    storeId: item?.businessId,
+    attachmentsApiEnabled: entryAttachmentsApiEnabled,
+    organizationId: entryAttachmentsApiOrganizationId,
+    actorUserId: entryAttachmentsApiActorUserId,
+    actorRole: entryAttachmentsApiActorRole,
+  });
   const [attachmentOpen, setAttachmentOpen] = useState(false);
 
   useEffect(() => {
@@ -119,7 +137,17 @@ export function OperationModal({ lang, item, onClose, onVoid, onRestore, canVoid
                     if (attachmentSource) setAttachmentOpen(true);
                   }}
                 >
-                  <AttachmentPreview attachment={item.attachment} className="h-52 w-full" />
+                  <AttachmentPreview
+                    attachment={item.attachment}
+                    className="h-52 w-full"
+                    attachmentApiContext={{
+                      storeId: item.businessId,
+                      attachmentsApiEnabled: entryAttachmentsApiEnabled,
+                      organizationId: entryAttachmentsApiOrganizationId,
+                      actorUserId: entryAttachmentsApiActorUserId,
+                      actorRole: entryAttachmentsApiActorRole,
+                    }}
+                  />
                 </button>
                 <p className="border-t border-[#D9CEBA] px-3 py-2 text-center text-taq-meta font-bold text-[#716753]">
                   {text(lang, "openAttachment")}

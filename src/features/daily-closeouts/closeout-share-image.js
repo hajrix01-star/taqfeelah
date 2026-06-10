@@ -1,3 +1,4 @@
+import { countCloseoutAttachments } from "@/features/closeouts/client/closeout-attachment-utils";
 import { closeoutStatusLabel } from "./closeout-status";
 import { computeCloseoutTotals, salesArrayFromRecord } from "./closeout-calculations";
 
@@ -33,7 +34,7 @@ export async function createCloseoutShareImage(closeout, options = {}) {
   const salesRows = salesArrayFromRecord(closeout.sales);
   const totals = closeout.totals || computeCloseoutTotals(closeout.sales, closeout.outflows);
   const outflows = closeout.outflows || [];
-  const attachmentCount = (closeout.attachments || []).length;
+  const attachmentCount = countCloseoutAttachments(closeout.attachments);
   const statusText = closeoutStatusLabel(closeout.status, lang, {
     autoRecorded: !closeout.reviewedByName && closeout.status === "reviewed",
   });

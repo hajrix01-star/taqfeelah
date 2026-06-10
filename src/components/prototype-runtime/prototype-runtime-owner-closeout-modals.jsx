@@ -54,6 +54,10 @@ export function OwnerCloseoutModals({
   onCloseoutDeleted = async () => {},
   onClose,
   onOwnerEditCloseout,
+  attachmentsApiEnabled = false,
+  attachmentsApiOrganizationId = "",
+  attachmentsApiActorUserId = "",
+  attachmentsApiActorRole = "owner",
 }) {
   const { deleteCloseout } = useDailyCloseouts();
 
@@ -65,6 +69,10 @@ export function OwnerCloseoutModals({
       closeout={ownerManageCloseout}
       formatCalendarDate={formatCalendarDate}
       formatDateTime={formatDateTimeLabel}
+      attachmentsApiEnabled={attachmentsApiEnabled}
+      attachmentsApiOrganizationId={attachmentsApiOrganizationId}
+      attachmentsApiActorUserId={attachmentsApiActorUserId}
+      attachmentsApiActorRole={attachmentsApiActorRole}
       onClose={onClose}
       onEdit={() => onOwnerEditCloseout?.(ownerManageCloseout)}
       onDelete={async () => {

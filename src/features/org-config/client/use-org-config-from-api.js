@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchOrgConfigBundleViaApi } from "./org-config-api-client.js";
 import { bindsToServerAuth } from "@/core/config/runtime-capabilities";
 import {
@@ -27,6 +27,12 @@ export function useOrgConfigFromApi({
   const applyingRef = useRef(false);
   const baselineRef = useRef("");
   const persistTimerRef = useRef(null);
+  const loadedAuthKeyRef = useRef("");
+
+  const authKey = useMemo(
+    () => `${auth?.organizationId || ""}|${auth?.actorUserId || ""}|${auth?.actorRole || ""}`,
+    [auth?.actorRole, auth?.actorUserId, auth?.organizationId],
+  );
 
   const loadOrgConfig = useCallback(async () => {
     if (!enabled || !loggedIn) return;
@@ -58,12 +64,17 @@ export function useOrgConfigFromApi({
       hydratedRef.current = false;
       setHydrated(false);
       baselineRef.current = "";
+      loadedAuthKeyRef.current = "";
       return;
     }
+    if (hydratedRef.current && loadedAuthKeyRef.current === authKey) {
+      return;
+    }
+    loadedAuthKeyRef.current = authKey;
     hydratedRef.current = false;
     setHydrated(false);
     loadOrgConfig();
-  }, [enabled, loadOrgConfig, loggedIn]);
+  }, [authKey, enabled, loadOrgConfig, loggedIn]);
 
   useEffect(() => {
     if (!enabled || !loggedIn || isEmployee || !hydratedRef.current || applyingRef.current) return;

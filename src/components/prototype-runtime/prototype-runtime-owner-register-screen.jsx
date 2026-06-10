@@ -227,7 +227,7 @@ function LogStoreFilter({ lang, businessesList = businesses, selectedBusiness, s
   );
 }
 
-export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesRefreshKey = 0, registerEntriesSyncError = "", closeoutsSyncError = "" }) {
+export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesRefreshKey = 0, registerEntriesSyncError = "", closeoutsSyncError = "", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
   const [period, setPeriod] = useState("day");
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
@@ -241,6 +241,12 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
   const [expandedEntryId, setExpandedEntryId] = useState(null);
   const [expandedCloseoutKey, setExpandedCloseoutKey] = useState(null);
   const [registerAttachmentPreview, setRegisterAttachmentPreview] = useState("");
+  const entryAttachmentApiContext = {
+    attachmentsApiEnabled: entryAttachmentsApiEnabled,
+    organizationId: entryAttachmentsApiOrganizationId,
+    actorUserId: entryAttachmentsApiActorUserId,
+    actorRole: entryAttachmentsApiActorRole,
+  };
 
   const openFiltersSheet = () => {
     setDraftLogFilters(logFilters);
@@ -569,7 +575,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
                       {entryHasAttachment(entry) ? (
                         <div className="mb-3">
                           <p className="mb-2 text-taq-nav font-black text-[#806528]">{text(lang, "attachmentExists")}</p>
-                          <AttachmentThumbButton attachment={entry.attachment} onOpen={setRegisterAttachmentPreview} />
+                          <AttachmentThumbButton attachment={entry.attachment} storeId={entry.businessId} attachmentApiContext={entryAttachmentApiContext} onOpen={setRegisterAttachmentPreview} />
                         </div>
                       ) : null}
                       <div className="grid grid-cols-2 gap-2 text-taq-meta font-bold text-[#716753]">
@@ -634,7 +640,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
                         {summary.operations.flatMap((item) => expandRegisterCloseoutOperationRows(item, lang, logFilters.salesChannel).map((row) => (
                           <div key={row.key} className="flex w-full items-center gap-3 rounded-xl px-2 py-2 hover:bg-[#FFF4D2]/35">
                             {entryHasAttachment(row.item) ? (
-                              <AttachmentThumbButton attachment={row.item.attachment} onOpen={setRegisterAttachmentPreview} />
+                              <AttachmentThumbButton attachment={row.item.attachment} storeId={row.item.businessId} attachmentApiContext={entryAttachmentApiContext} onOpen={setRegisterAttachmentPreview} />
                             ) : null}
                             <button type="button" onClick={() => onOpenOperation(row.item)} className="flex min-w-0 flex-1 items-center gap-3 text-start">
                               <strong dir="ltr" className={`min-w-[70px] shrink-0 whitespace-nowrap text-start tabular-nums text-taq-meta font-black ${entryIsVoided(row.item) ? "text-[#A99D87] line-through" : row.isSale ? "text-[#257844]" : "text-[#B44747]"}`}>

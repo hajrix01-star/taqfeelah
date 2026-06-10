@@ -1,4 +1,5 @@
 import { toRiyals } from "@/core/money/halalas";
+import { countCloseoutAttachments } from "@/features/closeouts/client/closeout-attachment-utils";
 import { computeCloseoutTotals, salesArrayFromRecord } from "./closeout-calculations";
 
 function readShareAmount(value) {
@@ -64,7 +65,7 @@ export function buildCloseoutShareOperationRows(closeout, lang) {
       : (lang === "ar" ? "بدون مرفق" : "No attachment");
     return time ? `${time} · ${att}` : att;
   };
-  const summaryAttachment = Boolean((closeout.attachments || []).length);
+  const summaryAttachment = countCloseoutAttachments(closeout.attachments) > 0;
 
   salesRows
     .filter((row) => Number(row.amount) > 0)
@@ -79,7 +80,7 @@ export function buildCloseoutShareOperationRows(closeout, lang) {
     });
 
   (closeout.outflows || []).forEach((item, index) => {
-    const hasAtt = Boolean((item.attachments || []).length);
+    const hasAtt = countCloseoutAttachments(item.attachments) > 0;
     rows.push({
       id: `${closeout.id}-out-${item.id || index}`,
       label: outflowRowLabel(item, lang),

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { computeCloseoutTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
 import { closeoutStatusLabel, closeoutStatusTone } from "../daily-closeouts/closeout-status";
-import AttachmentLightbox from "../../components/AttachmentLightbox";
+import CloseoutAttachmentThumbs from "../closeouts/client/CloseoutAttachmentThumbs";
+import { countCloseoutAttachments } from "../closeouts/client/closeout-attachment-utils";
 import { formatCloseoutDayLabel } from "../closeouts/client/closeout-day-label";
 
 function money(value, lang) {
@@ -27,6 +27,10 @@ export default function DailyCloseoutCard({
   onToggle,
   onShare,
   formatDate,
+  attachmentsApiEnabled = false,
+  attachmentsApiOrganizationId = "",
+  attachmentsApiActorUserId = "",
+  attachmentsApiActorRole = "employee",
 }) {
   const totals = closeout.totals || computeCloseoutTotals(closeout.sales, closeout.outflows);
   const salesRows = salesArrayFromRecord(closeout.sales);
@@ -34,8 +38,7 @@ export default function DailyCloseoutCard({
     autoRecorded: !closeout.reviewedByName && closeout.status === "reviewed",
   });
   const tone = closeoutStatusTone(closeout.status);
-  const attachmentCount = (closeout.attachments || []).length;
-  const [selectedAttachment, setSelectedAttachment] = useState("");
+  const attachmentCount = countCloseoutAttachments(closeout.attachments);
   const closeoutDateLabel = formatCloseoutDayLabel({
     formattedDate: formatDate(closeout.date),
     daySequence,
@@ -121,32 +124,21 @@ export default function DailyCloseoutCard({
               )) : <p className="text-xs font-bold text-[#827762]">{lang === "ar" ? "لا يوجد" : "None"}</p>}
             </div>
             {attachmentCount > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {(closeout.attachments || []).filter(Boolean).map((src, index) => (
-                  <button
-                    key={`${closeout.id}-att-${index}`}
-                    type="button"
-                    className="rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setSelectedAttachment(src);
-                    }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={src} alt="" className="h-14 w-14 rounded-xl object-cover ring-1 ring-black/[0.06]" />
-                  </button>
-                ))}
-              </div>
+              <CloseoutAttachmentThumbs
+                lang={lang}
+                closeoutId={closeout.id}
+                storeId={closeout.storeId}
+                attachments={closeout.attachments}
+                enabled={expanded}
+                attachmentsApiEnabled={attachmentsApiEnabled}
+                organizationId={attachmentsApiOrganizationId}
+                actorUserId={attachmentsApiActorUserId}
+                actorRole={attachmentsApiActorRole}
+              />
             )}
           </div>
         )}
       </div>
-      <AttachmentLightbox
-        open={Boolean(selectedAttachment)}
-        src={selectedAttachment}
-        lang={lang}
-        onClose={() => setSelectedAttachment("")}
-      />
     </article>
   );
 }

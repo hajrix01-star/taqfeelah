@@ -4,7 +4,6 @@ import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { getDb } from "@/core/db/client";
 import { attachments, auditEvents, dailyCloseouts, entries, entrySalesChannels, users } from "@/core/db/schema";
-import { resolveInlineAttachmentDataUrl } from "@/features/entries/server/inline-attachment";
 import { ValidationError } from "@/core/errors/app-error";
 import { decodeEntryListCursor, encodeEntryListCursor } from "./entry-list-cursor";
 import {
@@ -188,7 +187,6 @@ export async function listStoreEntries(rawInput: Input) {
     .select({
       id: attachments.id,
       entryId: attachments.entryId,
-      storageKey: attachments.storageKey,
       originalFileName: attachments.originalFileName,
       mimeType: attachments.mimeType,
       sizeBytes: attachments.sizeBytes,
@@ -207,7 +205,6 @@ export async function listStoreEntries(rawInput: Input) {
     string,
     {
       id: string;
-      dataUrl: string;
       name: string;
       mimeType: string;
       sizeBytes: number;
@@ -219,7 +216,6 @@ export async function listStoreEntries(rawInput: Input) {
     if (!current || row.createdAt > current.createdAt) {
       attachmentByEntryId.set(row.entryId, {
         id: row.id,
-        dataUrl: resolveInlineAttachmentDataUrl(row.storageKey),
         name: row.originalFileName || "attachment.jpg",
         mimeType: row.mimeType,
         sizeBytes: row.sizeBytes,
@@ -369,7 +365,6 @@ export async function listStoreEntries(rawInput: Input) {
           name: attachment.name,
           mimeType: attachment.mimeType,
           sizeBytes: attachment.sizeBytes,
-          dataUrl: attachment.dataUrl,
         }
         : null,
       reviewed: Boolean(reviewedAt),
