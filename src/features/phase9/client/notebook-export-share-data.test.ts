@@ -29,7 +29,7 @@ describe("notebook export share data", () => {
   it("maps notebook export payload into share modal metrics", () => {
     const mapped = mapNotebookExportToShareData({
       storeId: "shami",
-      totals: { sales: 100, expense: 20, net: 80, ratio: "20.0%", proofs: 1, pending: 0 },
+      totals: { sales: 100, expense: 20, net: 80, ratio: "20.0%", proofs: 1 },
       channels: [{ channelId: "cash", name: "Cash", amount: 100 }],
       operations: [{
         id: "entry-1",

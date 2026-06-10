@@ -15,7 +15,6 @@ const getStoreDaySummary = vi.fn(async () => ({
   outflowRatio: "20.8%",
   outflowRatioStatus: "calculable" as const,
   attachmentCount: 0,
-  pendingReviewCount: 0,
 }));
 
 vi.mock("@/features/reports/server/get-store-day-summary", () => ({

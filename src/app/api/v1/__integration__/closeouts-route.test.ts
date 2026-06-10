@@ -65,7 +65,7 @@ describe("closeouts route integration", () => {
     expect(submitStoreCloseout).not.toHaveBeenCalled();
   });
 
-  it("POST submits closeout with autoReview flag", async () => {
+  it("POST submits closeout and auto-approves on server", async () => {
     submitStoreCloseout.mockResolvedValueOnce({
       summaryEntryId: "entry-1",
       closeoutId: "closeout-1",

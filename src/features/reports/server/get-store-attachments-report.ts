@@ -76,7 +76,6 @@ export async function getStoreAttachmentsReport(rawInput: z.infer<typeof inputSc
     from: range.from,
     to: range.to,
     attachmentCount: stats.attachmentCount,
-    pendingReviewCount: stats.pendingReviewCount,
     entriesWithAttachments: stats.attachmentCount,
     items: items.map((row) => ({
       entryId: row.entryId,

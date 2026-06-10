@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  applyReviewEnabledToAttachmentStats,
   countProofsFromUiEntries,
+  normalizeAttachmentCount,
 } from "./stats";
 
-describe("attachment review stats", () => {
+describe("attachment stats", () => {
   const entries = [
     { businessId: "shami", attachment: { id: "a1" }, reviewed: false, status: "active" },
     { businessId: "shami", attachment: { id: "a2" }, reviewed: true, status: "active" },
@@ -17,10 +17,9 @@ describe("attachment review stats", () => {
     expect(countProofsFromUiEntries(entries)).toBe(3);
   });
 
-  it("always zeros pending review count in display stats", () => {
-    expect(applyReviewEnabledToAttachmentStats({ attachmentCount: 5, pendingReviewCount: 2 })).toEqual({
+  it("normalizes attachment count", () => {
+    expect(normalizeAttachmentCount({ attachmentCount: 5 })).toEqual({
       attachmentCount: 5,
-      pendingReviewCount: 0,
     });
   });
 });

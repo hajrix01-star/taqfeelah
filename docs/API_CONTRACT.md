@@ -51,8 +51,7 @@ Response:
   "netMovement": { "amountHalalas": 0, "currency": "SAR" },
   "outflowRatio": "0.0%",
   "outflowRatioStatus": "calculable",
-  "attachmentCount": 0,
-  "pendingReviewCount": 0
+  "attachmentCount": 0
 }
 ```
 
@@ -120,8 +119,6 @@ Body:
 ```json
 {
   "mode": "submit",
-  "autoReview": true,
-  "requireReview": false,
   "closeoutId": "client-closeout-id",
   "date": "2026-06-05",
   "daySequence": 1,
@@ -150,9 +147,8 @@ Behavior:
 - Creates operational `entries` + channel rows in one transaction.
 - Writes closeout audit trail (`closeout_submitted` / `closeout_resubmitted`).
 - Assigns `daySequence` server-side per `storeId + date` (1, 2, 3…). UI maps this to English letters (`A`, `B`, `C`) beside the date when multiple closeouts exist on the same day. Resubmits keep the same `daySequence`.
-- **Employee auto-approve (product default):** when `x-member-role` is `employee` and `requireReview` is not `true`, the server auto-approves in the same transaction (`closeout_approved` + `entries.status=active`). This matches review **off** by default even if a legacy API layer dropped `autoReview`.
-- When `requireReview=true`, employee closeout stays `submitted` and entries are `voided` until owner review.
-- Owner/manager may still pass `autoReview=true` explicitly for immediate approval.
+- **Zero-review policy:** every submit (employee, owner, or manager) auto-approves in the same transaction (`status=approved`, `entries.status=active`). Legacy body flags `autoReview` / `requireReview` are **ignored** if sent.
+- `resubmit` is forbidden for `employee` role; only owner/manager may edit a sent closeout.
 - See `.cursor/rules/closeout-review-defaults.mdc`.
 
 ### `GET /stores/:storeId/closeouts` (implemented)

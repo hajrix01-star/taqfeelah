@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  applyReviewEnabledToAttachmentStats,
   countProofsFromUiEntries,
-} from "@/domain/attachment-review/stats";
+  normalizeAttachmentCount,
+} from "@/domain/attachment-stats/stats";
 import { summarizeEntries } from "@/features/operations/operational-analytics";
 
-describe("attachment review parity", () => {
+describe("attachment stats parity", () => {
   const entries = [
     { businessId: "shami", type: "summary", amount: 100, attachment: { id: "a1" }, reviewed: false, status: "active" },
     { businessId: "shami", type: "expense", amount: 20, attachment: { id: "a2" }, reviewed: true, status: "active" },
@@ -13,21 +13,16 @@ describe("attachment review parity", () => {
     { businessId: "shami", type: "expense", amount: 5, status: "active" },
   ];
 
-  it("keeps summarizeEntries proofs aligned with domain counters and zero pending", () => {
+  it("keeps summarizeEntries proofs aligned with domain counters", () => {
     const totals = summarizeEntries(entries);
 
     expect(totals.proofs).toBe(countProofsFromUiEntries(entries));
-    expect(totals.pending).toBe(0);
   });
 
-  it("keeps server display gate aligned with zero pending reviews", () => {
+  it("keeps server attachment stats aligned with entry proof counts", () => {
     const totals = summarizeEntries(entries);
-    const serverStats = applyReviewEnabledToAttachmentStats(
-      { attachmentCount: 2, pendingReviewCount: 1 },
-    );
+    const serverStats = normalizeAttachmentCount({ attachmentCount: 2 });
 
-    expect(totals.pending).toBe(0);
-    expect(serverStats.pendingReviewCount).toBe(0);
     expect(totals.proofs).toBe(serverStats.attachmentCount);
   });
 });

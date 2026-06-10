@@ -52,7 +52,6 @@ describe("summary day route integration", () => {
       outflowRatio: "20.8%",
       outflowRatioStatus: "calculable",
       attachmentCount: 1,
-      pendingReviewCount: 0,
     });
 
     const { GET } = await import("../stores/[storeId]/summary/day/route");
@@ -94,7 +93,6 @@ describe("summary day route integration", () => {
       outflowRatio: "20.8%",
       outflowRatioStatus: "calculable",
       attachmentCount: 0,
-      pendingReviewCount: 0,
     });
 
     const { POST } = await import("../stores/[storeId]/summary/day/route");

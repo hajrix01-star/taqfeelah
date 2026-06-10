@@ -83,6 +83,5 @@ export async function getStorePeriodSummary(rawInput: z.infer<typeof inputSchema
     outflowRatio: result.outflowRatio,
     outflowRatioStatus: result.outflowRatioStatus,
     attachmentCount: attachmentStats.attachmentCount,
-    pendingReviewCount: attachmentStats.pendingReviewCount,
   };
 }

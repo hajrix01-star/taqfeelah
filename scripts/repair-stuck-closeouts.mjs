@@ -105,7 +105,6 @@ async function main() {
               closeoutId,
               date,
               sourceSubmissionAuditId: submit.id,
-              autoReview: true,
               repaired: true,
             }),
           ],

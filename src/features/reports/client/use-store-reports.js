@@ -20,7 +20,7 @@ import {
   getReportsApiMaps,
 } from "./store-reports-api-client";
 
-const emptyTotals = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0, pending: 0 };
+const emptyTotals = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0 };
 
 export function useStoreReports({
   enabled = false,
@@ -67,7 +67,7 @@ export function useStoreReports({
   const [outflowTransactions, setOutflowTransactions] = useState([]);
   const [outflowTransactionCount, setOutflowTransactionCount] = useState(0);
   const [outflowTotal, setOutflowTotal] = useState(0);
-  const [attachmentProofs, setAttachmentProofs] = useState({ proofs: 0, pending: 0, items: [] });
+  const [attachmentProofs, setAttachmentProofs] = useState({ proofs: 0, items: [] });
 
   useEffect(() => {
     if (!enabled || !organizationId || !actorUserId || !storeIdsKey) {
@@ -78,7 +78,7 @@ export function useStoreReports({
       setOutflowTransactions([]);
       setOutflowTransactionCount(0);
       setOutflowTotal(0);
-      setAttachmentProofs({ proofs: 0, pending: 0, items: [] });
+      setAttachmentProofs({ proofs: 0, items: [] });
       setLoading(false);
       setError("");
       setLoaded(false);
@@ -124,7 +124,7 @@ export function useStoreReports({
           setOutflowTransactions([]);
           setOutflowTransactionCount(0);
           setOutflowTotal(0);
-          setAttachmentProofs({ proofs: 0, pending: 0, items: [] });
+          setAttachmentProofs({ proofs: 0, items: [] });
           setLoaded(true);
           return;
         }
@@ -194,7 +194,7 @@ export function useStoreReports({
         setOutflowTransactions([]);
         setOutflowTransactionCount(0);
         setOutflowTotal(0);
-        setAttachmentProofs({ proofs: 0, pending: 0, items: [] });
+        setAttachmentProofs({ proofs: 0, items: [] });
         setError("failed");
         setLoaded(false);
       } finally {

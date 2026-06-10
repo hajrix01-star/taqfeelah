@@ -34,7 +34,6 @@ describe("store summary api client", () => {
         outflowRatio: "20.8%",
         outflowRatioStatus: "calculable",
         attachmentCount: 2,
-        pendingReviewCount: 1,
       }), { status: 200 }),
     );
     vi.stubGlobal("fetch", fetchMock);
@@ -72,7 +71,6 @@ describe("store summary api client", () => {
         outflowRatio: "21.4%",
         outflowRatioStatus: "calculable",
         attachmentCount: 5,
-        pendingReviewCount: 2,
       }), { status: 200 }),
     );
     vi.stubGlobal("fetch", fetchMock);

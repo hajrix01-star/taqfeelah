@@ -173,7 +173,7 @@ When `NEXT_PUBLIC_PHASE9_API_ENABLED=true` (or inherited from entries API flag):
 - Notebook share/export modal loads single-store totals/channels/operations from `GET /api/v1/exports/notebook` when Phase 9 flag is on (combined/all-stores share keeps in-memory aggregation)
 - Client helpers live in `phase9-api-client.js`, `notebook-export-share-data.js`, and `use-notebook-export-share-data.js`
 
-**Review default:** employee closeout review is **off** per store; submits are **auto-approved** on the server when `autoReview=true` (no owner pending queue). See `.cursor/rules/closeout-review-defaults.mdc`.
+**Zero-review policy:** employee closeout submits are **always auto-approved** on the server in the same transaction (no owner pending queue, no attachment review workflow). See `.cursor/rules/closeout-review-defaults.mdc`.
 
 ## Important
 

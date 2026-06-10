@@ -30,7 +30,7 @@ const expenseCategories = [
 ];
 
 const outflowReportCategories = [{ id: "all", label: "allCategories" }, { id: "purchases", label: "purchases" }, { id: "withdrawal", label: "withdrawal" }, ...expenseCategories];
-const emptyStoreRecord = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0, pending: 0 };
+const emptyStoreRecord = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0 };
 const businesses = [
   {
     id: "shami",
@@ -61,8 +61,8 @@ const businessLocation = (business, lang) => business?.locationKey ? text(lang, 
 const businessRecord = (business, monthly) => (monthly ? business?.month : business?.day) || emptyStoreRecord;
 const combinedTotals = (monthly, storeList = businesses) => storeList.reduce((total, business) => {
   const record = businessRecord(business, monthly);
-  return { sales: total.sales + record.sales, expense: total.expense + record.expense, net: total.net + record.net, pending: total.pending + record.pending, proofs: total.proofs + record.proofs };
-}, { sales: 0, expense: 0, net: 0, pending: 0, proofs: 0 });
+  return { sales: total.sales + record.sales, expense: total.expense + record.expense, net: total.net + record.net, proofs: total.proofs + record.proofs };
+}, { sales: 0, expense: 0, net: 0, proofs: 0 });
 const text = (lang, key) => copy[lang][key] || key;
 const money = (value, lang) => {
   const numericValue = Number(value) || 0;

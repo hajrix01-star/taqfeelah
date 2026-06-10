@@ -4,24 +4,12 @@ vi.mock("@/core/auth/assert-store-access", () => ({
   assertStoreAccess: vi.fn(async () => undefined),
 }));
 
-vi.mock("@/features/org-config/server/read-store-operational-settings", () => ({
-  readStoreOperationalSettingsRecord: vi.fn(async () => ({
-    activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
-    reviewEnabled: true,
-    closeoutReviewEnabled: false,
-    employeeHistoryVisibility: "all" as const,
-    closeoutAlert: false,
-    attachmentAlert: false,
-    notebookTheme: null,
-  })),
-}));
-
 const movementRows = [
   { type: "summary", amountHalalas: 200000 },
   { type: "purchases", amountHalalas: 15000 },
   { type: "expense", amountHalalas: 10000 },
 ];
-const attachmentStats = [{ attachmentCount: 3, pendingReviewCount: 1 }];
+const attachmentStats = [{ attachmentCount: 3 }];
 
 vi.mock("@/core/db/client", () => ({
   getDb: () => ({
@@ -52,6 +40,6 @@ describe("getStorePeriodSummary", () => {
     expect(summary.totalOutflow.amountHalalas).toBe(25000);
     expect(summary.netMovement.amountHalalas).toBe(175000);
     expect(summary.attachmentCount).toBe(3);
-    expect(summary.pendingReviewCount).toBe(0);
+    expect(summary).not.toHaveProperty("pendingReviewCount");
   });
 });

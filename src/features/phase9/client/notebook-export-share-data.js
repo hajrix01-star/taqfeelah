@@ -65,7 +65,6 @@ export function mapNotebookExportToShareData(payload, snapshot) {
     net: Number(totals.net) || 0,
     ratio: typeof totals.ratio === "string" ? totals.ratio : "0.0%",
     proofs: Number(totals.proofs) || 0,
-    pending: Number(totals.pending) || 0,
   };
 
   const entries = (Array.isArray(payload.operations) ? payload.operations : [])
@@ -103,6 +102,5 @@ export function mapNotebookExportToShareData(payload, snapshot) {
     shareChannelRows,
     shareDayRows,
     proofs: record.proofs,
-    pendingProofs: record.pending,
   };
 }

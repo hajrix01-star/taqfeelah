@@ -10,28 +10,27 @@ import {
 
 describe("operational analytics summary helpers", () => {
   it("detects activity in totals", () => {
-    expect(entryTotalsHaveActivity({ sales: 0, expense: 0, proofs: 0, pending: 0 })).toBe(false);
-    expect(entryTotalsHaveActivity({ sales: 100, expense: 0, proofs: 0, pending: 0 })).toBe(true);
+    expect(entryTotalsHaveActivity({ sales: 0, expense: 0, proofs: 0 })).toBe(false);
+    expect(entryTotalsHaveActivity({ sales: 100, expense: 0, proofs: 0 })).toBe(true);
   });
 
   it("prefers local totals when API totals are empty but local has activity", () => {
-    const local = { sales: 500, expense: 50, net: 450, ratio: "10.0%", proofs: 1, pending: 0 };
-    const api = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0, pending: 0 };
+    const local = { sales: 500, expense: 50, net: 450, ratio: "10.0%", proofs: 1 };
+    const api = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0 };
     expect(preferLocalTotalsOverEmptyApi(local, api)).toEqual(local);
     expect(preferLocalTotalsOverEmptyApi(local, null)).toEqual(local);
-    expect(preferLocalTotalsOverEmptyApi(local, { sales: 100, expense: 0, net: 100, ratio: "0.0%", proofs: 0, pending: 0 })).toEqual({
+    expect(preferLocalTotalsOverEmptyApi(local, { sales: 100, expense: 0, net: 100, ratio: "0.0%", proofs: 0 })).toEqual({
       sales: 100,
       expense: 0,
       net: 100,
       ratio: "0.0%",
       proofs: 0,
-      pending: 0,
     });
   });
 
   it("treats API totals with only zero financials as empty for local preference", () => {
-    const local = { sales: 500, expense: 50, net: 450, ratio: "10.0%", proofs: 0, pending: 0 };
-    const api = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 2, pending: 1 };
+    const local = { sales: 500, expense: 50, net: 450, ratio: "10.0%", proofs: 0 };
+    const api = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 2 };
     expect(entryTotalsHaveActivity(api)).toBe(true);
     expect(entryTotalsHaveFinancialActivity(api)).toBe(false);
     expect(resolveOwnerPeriodSummaryPreference({ localTotals: local, apiTotals: api })).toBe(true);
@@ -39,13 +38,13 @@ describe("operational analytics summary helpers", () => {
   });
 
   it("always prefers entry-derived totals when local has financial activity", () => {
-    const local = { sales: 200, expense: 0, net: 200, ratio: "0.0%", proofs: 0, pending: 0 };
-    const api = { sales: 150, expense: 0, net: 150, ratio: "0.0%", proofs: 0, pending: 0 };
+    const local = { sales: 200, expense: 0, net: 200, ratio: "0.0%", proofs: 0 };
+    const api = { sales: 150, expense: 0, net: 150, ratio: "0.0%", proofs: 0 };
     expect(resolveOwnerPeriodSummaryPreference({ localTotals: local, apiTotals: api })).toBe(true);
   });
 
   it("avoids locking onto empty API totals while entries are still loading", () => {
-    const empty = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0, pending: 0 };
+    const empty = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0 };
     expect(resolveOwnerPeriodSummaryPreference({
       localTotals: empty,
       apiTotals: empty,
@@ -54,8 +53,8 @@ describe("operational analytics summary helpers", () => {
   });
 
   it("falls back to API totals only after entries settle without financial activity", () => {
-    const empty = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0, pending: 0 };
-    const api = { sales: 400, expense: 20, net: 380, ratio: "5.0%", proofs: 0, pending: 0 };
+    const empty = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0 };
+    const api = { sales: 400, expense: 20, net: 380, ratio: "5.0%", proofs: 0 };
     expect(resolveOwnerPeriodSummaryPreference({
       localTotals: empty,
       apiTotals: api,
@@ -65,8 +64,8 @@ describe("operational analytics summary helpers", () => {
   });
 
   it("prefers API totals in DB source mode while entries are loading", () => {
-    const empty = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0, pending: 0 };
-    const demo = { sales: 900, expense: 50, net: 850, ratio: "5.6%", proofs: 0, pending: 0 };
+    const empty = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0 };
+    const demo = { sales: 900, expense: 50, net: 850, ratio: "5.6%", proofs: 0 };
     expect(resolveOwnerPeriodSummaryPreference({
       localTotals: demo,
       apiTotals: empty,
@@ -76,8 +75,8 @@ describe("operational analytics summary helpers", () => {
   });
 
   it("always prefers API totals in DB source mode even when local entries have activity", () => {
-    const local = { sales: 900, expense: 50, net: 850, ratio: "5.6%", proofs: 0, pending: 0 };
-    const api = { sales: 400, expense: 20, net: 380, ratio: "5.0%", proofs: 0, pending: 0 };
+    const local = { sales: 900, expense: 50, net: 850, ratio: "5.6%", proofs: 0 };
+    const api = { sales: 400, expense: 20, net: 380, ratio: "5.0%", proofs: 0 };
     expect(resolveOwnerPeriodSummaryPreference({
       localTotals: local,
       apiTotals: api,
