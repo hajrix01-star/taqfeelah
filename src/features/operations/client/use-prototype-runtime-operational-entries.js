@@ -217,6 +217,7 @@ export function usePrototypeRuntimeOperationalEntries({
 
   useEffect(() => {
     if (!loggedIn) return;
+    if (employee) return;
     if (!entriesApiEnabled) {
       if (entriesApiStrictMode) {
         setOperationalEntriesSyncError(

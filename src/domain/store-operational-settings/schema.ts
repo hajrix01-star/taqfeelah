@@ -10,7 +10,7 @@ const storeOperationalSettingsFieldSchemas = {
 
 export const storeOperationalSettingsSchema = z.object({
   activeCategories: storeOperationalSettingsFieldSchemas.activeCategories.default([...DEFAULT_EXPENSE_CATEGORY_IDS]),
-  employeeHistoryVisibility: storeOperationalSettingsFieldSchemas.employeeHistoryVisibility.default("all"),
+  employeeHistoryVisibility: storeOperationalSettingsFieldSchemas.employeeHistoryVisibility.default("month"),
   closeoutAlert: storeOperationalSettingsFieldSchemas.closeoutAlert.default(false),
   notebookTheme: storeOperationalSettingsFieldSchemas.notebookTheme.default(null),
 });

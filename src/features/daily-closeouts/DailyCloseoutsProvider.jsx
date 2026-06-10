@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   appendCloseoutEvent,
   createDraftCloseout,
@@ -40,6 +40,7 @@ export function DailyCloseoutsProvider({
   onSyncToOperationalEntries = async () => {},
   onSubmitCloseoutToApi = null,
   loadCloseoutsFromApi = null,
+  closeoutsAutoLoadQueryKey = "",
   apiStrictMode = false,
   dbSourceMode = false,
 }) {
@@ -49,6 +50,7 @@ export function DailyCloseoutsProvider({
   const [closeouts, setCloseouts] = useState(() => (skipLocalPersistence ? [] : readDailyCloseouts()));
   const [events, setEvents] = useState(() => (skipLocalPersistence ? [] : readCloseoutEvents()));
   const [syncError, setSyncError] = useState("");
+  const lastAutoLoadQueryKeyRef = useRef("");
 
   const persistCloseouts = useCallback((next) => {
     let storageResult = { ok: true };
@@ -140,6 +142,9 @@ export function DailyCloseoutsProvider({
 
   useEffect(() => {
     if (typeof loadCloseoutsFromApi !== "function") return;
+    const queryKey = closeoutsAutoLoadQueryKey || "default";
+    if (lastAutoLoadQueryKeyRef.current === queryKey) return;
+    lastAutoLoadQueryKeyRef.current = queryKey;
     reloadCloseoutsFromApi().catch((error) => {
       console.warn("closeouts initial API load failed", error);
       const fallback = lang === "ar"
@@ -148,7 +153,7 @@ export function DailyCloseoutsProvider({
       const detail = error instanceof Error && error.message.trim() ? error.message.trim() : "";
       setSyncError(detail || fallback);
     });
-  }, [lang, loadCloseoutsFromApi, reloadCloseoutsFromApi]);
+  }, [closeoutsAutoLoadQueryKey, lang, loadCloseoutsFromApi, reloadCloseoutsFromApi]);
 
   const openOrResumeDraft = useCallback(({ store, date, employee }) => {
     const draft = createDraftCloseout({

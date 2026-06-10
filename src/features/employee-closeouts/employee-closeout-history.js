@@ -25,6 +25,9 @@ export const EMPLOYEE_HISTORY_VISIBILITY = {
   all: "all",
 };
 
+/** Server fetch cap when owner selects «الكل» — avoids unbounded closeout list payloads. */
+export const EMPLOYEE_CLOSEOUTS_ALL_CAP_DAYS = 90;
+
 export function todayIsoDate() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -36,24 +39,47 @@ function addDaysIso(isoDate, deltaDays) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+export function firstDayOfCalendarMonthIso(isoDate = todayIsoDate()) {
+  const [year, month] = isoDate.split("-");
+  return `${year}-${month}-01`;
+}
+
+/**
+ * Inclusive API date window for employee closeout list loads.
+ * Aligns with owner employeeHistoryVisibility per store.
+ */
+export function resolveEmployeeCloseoutsFetchWindow(visibility, todayIso = todayIsoDate()) {
+  const normalized = visibility || EMPLOYEE_HISTORY_VISIBILITY.month;
+  if (normalized === EMPLOYEE_HISTORY_VISIBILITY.week) {
+    return { dateFrom: addDaysIso(todayIso, -6), dateTo: todayIso };
+  }
+  if (normalized === EMPLOYEE_HISTORY_VISIBILITY.month) {
+    return { dateFrom: firstDayOfCalendarMonthIso(todayIso), dateTo: todayIso };
+  }
+  if (normalized === EMPLOYEE_HISTORY_VISIBILITY.all) {
+    return {
+      dateFrom: addDaysIso(todayIso, -(EMPLOYEE_CLOSEOUTS_ALL_CAP_DAYS - 1)),
+      dateTo: todayIso,
+    };
+  }
+  return { dateFrom: firstDayOfCalendarMonthIso(todayIso), dateTo: todayIso };
+}
+
 /** Inclusive cutoff date (YYYY-MM-DD): closeouts on or after this date are visible. */
 export function employeeHistoryCutoffDate(visibility, todayIso = todayIsoDate()) {
-  if (visibility === EMPLOYEE_HISTORY_VISIBILITY.week) return addDaysIso(todayIso, -6);
-  if (visibility === EMPLOYEE_HISTORY_VISIBILITY.month) return addDaysIso(todayIso, -29);
-  return null;
+  const { dateFrom } = resolveEmployeeCloseoutsFetchWindow(visibility, todayIso);
+  return dateFrom;
 }
 
 export function isCloseoutWithinEmployeeHistory(closeout, visibility, todayIso = todayIsoDate()) {
-  if (!closeout?.date || visibility === EMPLOYEE_HISTORY_VISIBILITY.all || !visibility) return true;
+  if (!closeout?.date || !visibility) return true;
   const cutoff = employeeHistoryCutoffDate(visibility, todayIso);
-  if (!cutoff) return true;
   return closeout.date >= cutoff;
 }
 
 export function isEntryDateWithinEmployeeHistory(entryDate, visibility, todayIso = todayIsoDate()) {
-  if (!entryDate || visibility === EMPLOYEE_HISTORY_VISIBILITY.all || !visibility) return true;
+  if (!entryDate || !visibility) return true;
   const cutoff = employeeHistoryCutoffDate(visibility, todayIso);
-  if (!cutoff) return true;
   return entryDate >= cutoff;
 }
 

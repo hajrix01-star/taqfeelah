@@ -10,7 +10,7 @@ describe("store operational config helpers", () => {
   it("returns normalized defaults for unknown store", () => {
     expect(getStoreOperationalConfig({}, "shami")).toMatchObject({
       closeoutAlert: false,
-      employeeHistoryVisibility: "all",
+      employeeHistoryVisibility: "month",
     });
   });
 

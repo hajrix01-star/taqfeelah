@@ -10,6 +10,8 @@ import {
   isUuid,
   submitCloseoutViaApi,
 } from "@/features/closeouts/client/closeouts-api-client";
+import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
+import { resolveEmployeeCloseoutsFetchWindow } from "@/features/employee-closeouts/employee-closeout-history";
 import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
 
 export function usePrototypeRuntimeCloseoutsApi({
@@ -20,6 +22,8 @@ export function usePrototypeRuntimeCloseoutsApi({
   apiActorUserId,
   apiActorRole,
   apiTargetStoreIdsKey,
+  employee = false,
+  storeOperationalSettings = {},
   entriesApiEnabled,
   loadOperationalEntriesFromApi,
   currentEmployeeChannelConfig,
@@ -115,12 +119,21 @@ export function usePrototypeRuntimeCloseoutsApi({
     }
 
     const fetched = await Promise.all(
-      targetStoreIds.map((storeId) => fetchStoreCloseoutsViaApi({
-        organizationId: closeoutsApiOrganizationId,
-        actorUserId: apiActorUserId,
-        actorRole: apiActorRole,
-        storeId,
-      })),
+      targetStoreIds.map((storeId) => {
+        const dateWindow = employee
+          ? resolveEmployeeCloseoutsFetchWindow(
+            getStoreOperationalConfig(storeOperationalSettings, storeId).employeeHistoryVisibility,
+          )
+          : { dateFrom: "", dateTo: "" };
+        return fetchStoreCloseoutsViaApi({
+          organizationId: closeoutsApiOrganizationId,
+          actorUserId: apiActorUserId,
+          actorRole: apiActorRole,
+          storeId,
+          dateFrom: dateWindow.dateFrom,
+          dateTo: dateWindow.dateTo,
+        });
+      }),
     );
 
     const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
@@ -141,7 +154,9 @@ export function usePrototypeRuntimeCloseoutsApi({
     closeoutsApiEnabled,
     closeoutsApiOrganizationId,
     closeoutsApiStrictMode,
+    employee,
     lang,
+    storeOperationalSettings,
   ]);
 
   return {

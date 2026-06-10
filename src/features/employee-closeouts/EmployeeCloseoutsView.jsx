@@ -18,6 +18,7 @@ import {
   closeoutMatchesStore,
   employeeHistoryVisibilityLabel,
   isCloseoutWithinEmployeeHistory,
+  todayIsoDate,
 } from "./employee-closeout-history";
 import { resolveCloseoutStoreName, resolveEmployeeStoreName } from "./store-name-resolver";
 import { countSentCloseoutsByDate } from "../closeouts/client/closeout-day-label";
@@ -43,7 +44,7 @@ export default function EmployeeCloseoutsView({
   onSelectStore,
   salesChannels,
   notebookTheme,
-  employeeHistoryVisibility = "all",
+  employeeHistoryVisibility = "month",
   formatCalendarDate,
   channelLabel,
   settingsPanel,
@@ -75,6 +76,7 @@ export default function EmployeeCloseoutsView({
   const [shareTarget, setShareTarget] = useState(null);
   const [shareNewlySubmitted, setShareNewlySubmitted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [listScope, setListScope] = useState("month");
   const cardRefs = useRef(new Map());
   const pendingToggleAnchorRef = useRef(null);
 
@@ -120,10 +122,17 @@ export default function EmployeeCloseoutsView({
     [closeouts, currentStore, employee],
   );
 
-  const storeCloseouts = useMemo(
-    () => sortCloseoutsNewestFirst(myStoreCloseouts.filter((item) => isCloseoutWithinEmployeeHistory(item, employeeHistoryVisibility))),
+  const historyScopedCloseouts = useMemo(
+    () => myStoreCloseouts.filter((item) => isCloseoutWithinEmployeeHistory(item, employeeHistoryVisibility)),
     [myStoreCloseouts, employeeHistoryVisibility],
   );
+
+  const storeCloseouts = useMemo(() => {
+    const scoped = listScope === "day"
+      ? historyScopedCloseouts.filter((item) => item.date === todayIsoDate())
+      : historyScopedCloseouts;
+    return sortCloseoutsNewestFirst(scoped);
+  }, [historyScopedCloseouts, listScope]);
 
   const hiddenCloseoutCount = useMemo(
     () => myStoreCloseouts.filter((item) => !isCloseoutWithinEmployeeHistory(item, employeeHistoryVisibility)).length,
@@ -298,9 +307,25 @@ export default function EmployeeCloseoutsView({
           settingsPanel({ onBack: () => setShowSettings(false) })
         ) : (
           <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-28 pt-1">
-            <h1 className="relative mx-auto mb-6 w-fit pb-3 text-center text-taq-hero font-extrabold tracking-tight text-[#112A46] after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-[68px] after:-translate-x-1/2 after:bg-[#D69C2F]">
+            <h1 className="relative mx-auto mb-4 w-fit pb-3 text-center text-taq-hero font-extrabold tracking-tight text-[#112A46] after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-[68px] after:-translate-x-1/2 after:bg-[#D69C2F]">
               {pageTitle || (lang === "ar" ? "تقفيلاتي اليومية" : "My daily closeouts")}
             </h1>
+            <div className="mx-auto mb-6 grid w-full max-w-xs grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setListScope("month")}
+                className={`rounded-xl py-2.5 text-taq-meta font-black transition ${listScope === "month" ? "bg-[#112A46] text-white" : "bg-white/90 text-[#716753] ring-1 ring-[#E8E1D4]"}`}
+              >
+                {lang === "ar" ? "الشهر" : "Month"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setListScope("day")}
+                className={`rounded-xl py-2.5 text-taq-meta font-black transition ${listScope === "day" ? "bg-[#112A46] text-white" : "bg-white/90 text-[#716753] ring-1 ring-[#E8E1D4]"}`}
+              >
+                {lang === "ar" ? "اليوم" : "Today"}
+              </button>
+            </div>
             {!employeeRuntimeReady && (
               <div className="mb-4 rounded-2xl bg-[#FFF4D2]/95 p-3 text-taq-meta font-bold text-[#806528] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
                 {lang === "ar" ? "جاري تحميل إعدادات المحل وقنوات البيع من الخادم…" : "Loading store settings and sales channels from the server…"}
@@ -316,26 +341,26 @@ export default function EmployeeCloseoutsView({
                 {syncError}
               </div>
             ) : null}
-            {hasOlderHiddenCloseouts && employeeHistoryVisibility !== "all" && (
+            {hasOlderHiddenCloseouts && (
               <div className="mb-4 rounded-2xl bg-[#FFF4D2]/95 p-3 text-taq-meta font-bold leading-5 text-[#806528] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
                 {lang === "ar" ? (
                   <>
                     <p>
-                      يعرض المالك للموظف تقفيلات آخر <strong className="text-[#112A46]">{historyScopeLabel}</strong> فقط (
+                      يعرض المالك للموظف تقفيلات <strong className="text-[#112A46]">{historyScopeLabel}</strong> فقط (
                       {hiddenCloseoutCount} تقفيلة أقدم مخفية).
                     </p>
                     <p className="mt-2 text-taq-nav">
-                      لتظهر كل التقفيلات السابقة: الإعدادات → المحل → مراجعة الصور والتنبيهات → اختر «الكل» ثم احفظ.
+                      لتوسيع العرض: الإعدادات → المحل → التنبيهات والتفضيلات → «عرض التقفيلات السابقة للموظف» → اختر «الكل» ثم احفظ.
                     </p>
                   </>
                 ) : (
                   <>
                     <p>
-                      Owner limits history to the last <strong className="text-[#112A46]">{historyScopeLabel}</strong> (
+                      Owner limits visible history to <strong className="text-[#112A46]">{historyScopeLabel}</strong> (
                       {hiddenCloseoutCount} older closeout(s) hidden).
                     </p>
                     <p className="mt-2 text-taq-nav">
-                      For full history: Settings → Shop → Photo review & notifications → choose All → Save.
+                      To expand: Settings → Shop → Alerts & preferences → Employee past closeouts → All → Save.
                     </p>
                   </>
                 )}
