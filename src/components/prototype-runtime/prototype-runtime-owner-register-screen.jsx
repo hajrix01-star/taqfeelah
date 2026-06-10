@@ -1,17 +1,13 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { motion } from "framer-motion";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
 import { notebookCardBackground } from "@/features/daily-closeouts/notebook-themes";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
 import { employeeDisplayName } from "@/features/employee-closeouts/employee-entries-display";
-import { formatCloseoutDayLabel } from "@/features/closeouts/client/closeout-day-label";
 import {
   buildRegisterCloseoutDayContext,
-  summaryEntryDisplayAmount,
 } from "@/features/entries/client/register-operation-display";
 import { useRegisterEntriesFromApi } from "@/features/entries/client/use-register-entries-from-api";
 import { newestEntries } from "@/features/operations/operational-analytics";
@@ -24,405 +20,33 @@ import {
   summarizeRegisterPeriod,
 } from "@/features/entries/client/register-log-display";
 import {
-  formatCalendarDate,
-  formatRegisterCloseoutTypeLabel,
   logPeriodScopeLabel,
 } from "@/features/reports/client/report-period-labels";
 import { ENTRIES_API_DB_SOURCE } from "./prototype-runtime-boot";
 import {
   channels,
   businesses,
-  businessName,
-  businessLocation,
   channelName,
   expenseCategories,
-  money,
-  opTime,
   text,
 } from "./prototype-runtime-demo-data";
 import { prototypeOwnerActor } from "./prototype-runtime-demo-operational-entries";
 import {
   entryCategory,
   entryDateMatches,
-  entryHasAttachment,
-  entryIsVoided,
-  expandRegisterCloseoutOperationRows,
-  operationDisplayLabel,
 } from "./prototype-runtime-entry-helpers";
 import {
-  NotebookRow,
-  MoneyValue,
   DateSelector,
   NotebookHeading,
   todayIsoDate,
 } from "./prototype-runtime-notebook";
-import { Badge, InkTab } from "./prototype-runtime-shell-ui";
+import { Badge } from "./prototype-runtime-shell-ui";
 import AttachmentLightbox from "../AttachmentLightbox";
-import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
-
-function LogFilterChip({ active, children, onClick, tone = "default" }) {
-  const toneClass = {
-    default: active ? "bg-[#112A46] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
-    accent: active ? "bg-[#E4B84A] text-[#112A46]" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
-    warn: active ? "bg-[#B96725] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
-    danger: active ? "bg-[#B44747] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
-    navy: active ? "bg-[#214B7B] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
-  }[tone];
-  return <button type="button" onClick={onClick} className={`rounded-full px-2.5 py-1 text-taq-meta font-black ${toneClass}`}>{children}</button>;
-}
-
-function RegisterStoreChips({ lang, businessesList, selectedBusiness, setSelectedBusiness, locked = false }) {
-  if (businessesList.length <= 1) {
-    if (!businessesList[0]) return null;
-    return (
-      <div className="mb-2 flex justify-center">
-        <span className="rounded-full bg-[#112A46]/[0.06] px-3 py-1 text-[11px] font-black text-[#112A46]">
-          {businessName(businessesList[0], lang, true) || businessName(businessesList[0], lang)}
-        </span>
-      </div>
-    );
-  }
-
-  const stores = locked
-    ? businessesList.map((business) => ({ id: business.id, label: businessName(business, lang, true) || businessName(business, lang) }))
-    : [{ id: "all", label: text(lang, "allStores") }, ...businessesList.map((business) => ({ id: business.id, label: businessName(business, lang, true) || businessName(business, lang) }))];
-
-  if (locked || businessesList.length <= 3) {
-    return (
-      <div className="mb-2 flex flex-wrap justify-center gap-1.5">
-        {stores.map((store) => {
-          const active = selectedBusiness === store.id;
-          return (
-            <button
-              key={store.id}
-              type="button"
-              disabled={locked}
-              onClick={() => setSelectedBusiness(store.id)}
-              className={`rounded-full px-3 py-1.5 text-[11px] font-black transition-colors duration-150 ${
-                active
-                  ? "bg-[#112A46] text-white shadow-[0_2px_8px_rgba(17,42,70,0.18)]"
-                  : "bg-white text-[#716753] ring-1 ring-[#E8E1D4]"
-              } ${locked ? "cursor-default" : ""}`}
-            >
-              {store.label}
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
-
-  return (
-    <LogStoreFilter
-      lang={lang}
-      businessesList={businessesList}
-      selectedBusiness={selectedBusiness}
-      setSelectedBusiness={setSelectedBusiness}
-      locked={locked}
-    />
-  );
-}
-
-function RegisterViewSwitch({ lang, value, onChange, counts }) {
-  const items = [
-    { id: "closeouts", label: lang === "ar" ? "التقفيلات" : "Closeouts", count: counts.closeouts ?? 0 },
-    { id: "operations", label: lang === "ar" ? "العمليات" : "Operations", count: counts.operations ?? 0 },
-  ];
-
-  return (
-    <div className="flex rounded-lg bg-[#F3F0E8] p-0.5" role="tablist" aria-label={text(lang, "operationsLog")}>
-      {items.map((item) => {
-        const active = value === item.id;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={() => onChange(item.id)}
-            className={`flex min-w-0 flex-1 items-center justify-center gap-1 rounded-[9px] px-1.5 py-1.5 text-[10px] font-black transition-all duration-200 ${
-              active ? "bg-white text-[#112A46] shadow-[0_1px_6px_rgba(17,42,70,0.07)]" : "text-[#8A8070]"
-            }`}
-          >
-            <span className="truncate">{item.label}</span>
-            <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-              active ? "bg-[#112A46] text-white" : "bg-[#112A46]/[0.07] text-[#827762]"
-            }`}
-            >
-              {item.count}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function RegisterFilterButton({ lang, activeCount, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={text(lang, "logFilters")}
-      className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-150 ${
-        activeCount > 0
-          ? "bg-[#112A46] text-white shadow-[0_1px_6px_rgba(17,42,70,0.18)]"
-          : "bg-white text-[#112A46] ring-1 ring-[#E8E1D4]"
-      }`}
-    >
-      <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={2.25} />
-      {activeCount > 0 ? (
-        <span className="absolute -end-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-[#E4B84A] px-0.5 text-[8px] font-black text-[#112A46] ring-1 ring-white">
-          {activeCount}
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
-function RegisterMetricTile({ label, value, tone = "neutral", emphasize = false }) {
-  const tones = {
-    neutral: "bg-[#F6F8FB] text-[#112A46]",
-    in: "bg-[#EDF7F1] text-[#257844]",
-    out: "bg-[#FDF3F1] text-[#B44747]",
-  };
-  return (
-    <div className={`rounded-lg px-2 py-1.5 ${tones[tone] || tones.neutral}`}>
-      <p className="text-[9px] font-bold opacity-55">{label}</p>
-      <p className={`mt-0.5 tabular-nums font-extrabold leading-none ${emphasize ? "text-sm" : "text-xs"}`}>
-        <MoneyValue value={value} />
-      </p>
-    </div>
-  );
-}
-
-function RegisterDashboardCard({
-  lang,
-  logView,
-  setLogView,
-  tabCounts,
-  activeFilterCount,
-  onOpenFilters,
-  periodLabel,
-  summary,
-}) {
-  const netPositive = summary.mode !== "channel" && Number(summary.net) >= 0;
-
-  return (
-    <article className="mb-3 overflow-hidden rounded-[16px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
-      <div className="border-b border-[#F0EBE0] px-3 py-2">
-        <div className="flex items-center gap-1.5">
-          <div className="min-w-0 flex-1">
-            <RegisterViewSwitch lang={lang} value={logView} onChange={setLogView} counts={tabCounts} />
-          </div>
-          <RegisterFilterButton lang={lang} activeCount={activeFilterCount} onClick={onOpenFilters} />
-        </div>
-      </div>
-
-      <div className="px-3 py-2">
-        <div className="mb-1.5 flex items-center justify-between gap-2">
-          <p className="min-w-0 truncate text-[10px] font-bold text-[#827762]">
-            <span className="font-black text-[#957D43]">{text(lang, "registerPeriodSummary")}</span>
-            {" · "}
-            {periodLabel}
-          </p>
-          {summary.mode !== "channel" ? (
-            <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-black ${
-              netPositive ? "bg-[#E6F5E9] text-[#257844]" : "bg-[#FDF0ED] text-[#B44747]"
-            }`}
-            >
-              {netPositive ? (lang === "ar" ? "ربح" : "Profit") : (lang === "ar" ? "خسارة" : "Loss")}
-            </span>
-          ) : null}
-        </div>
-
-        {summary.mode === "channel" ? (
-          <div className="flex items-end justify-between gap-2 rounded-lg bg-[#F6F8FB] px-2 py-1.5">
-            <p className="truncate text-[10px] font-bold text-[#716753]">{summary.label}</p>
-            <p className="shrink-0 tabular-nums text-sm font-extrabold leading-none text-[#257844]">
-              <MoneyValue value={money(summary.amount, lang)} />
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-1.5">
-            <RegisterMetricTile
-              label={lang === "ar" ? "الداخل" : "In"}
-              value={money(summary.sales, lang)}
-              tone="in"
-            />
-            <RegisterMetricTile
-              label={lang === "ar" ? "الخارج" : "Out"}
-              value={money(summary.expense, lang)}
-              tone="out"
-            />
-            <RegisterMetricTile
-              label={lang === "ar" ? "الناتج" : "Net"}
-              value={money(summary.net, lang)}
-              tone={netPositive ? "in" : "out"}
-              emphasize
-            />
-          </div>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function RegisterFiltersSheet({ lang, open, onClose, onApply, draft, setDraft, typeItems, expenseCategoryItems, actorOptions, salesChannelOptions }) {
-  if (!open) return null;
-  const selectDraftType = (nextType) => {
-    setDraft((current) => ({
-      ...current,
-      type: nextType,
-      expenseCategory: nextType !== "expense" ? "all" : current.expenseCategory,
-    }));
-  };
-  const activeDraftCount = registerLogFilterCount(draft);
-
-  const sheet = (
-    <AnimatePresence>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[220] flex items-center justify-center bg-[#112A46]/45 p-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <button type="button" onClick={onClose} className="absolute inset-0" aria-label={text(lang, "close")} />
-        <motion.div dir={lang === "ar" ? "rtl" : "ltr"} initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.97, opacity: 0 }} className="relative z-10 flex max-h-[min(72dvh,520px)] w-full max-w-[400px] flex-col overflow-hidden rounded-[24px] bg-[#F8F6F0] shadow-[0_18px_48px_rgba(17,42,70,0.22)]">
-          <div className="flex shrink-0 items-center justify-between border-b border-[#ECE6DA] px-5 py-4 text-start">
-            <div>
-              <p className="text-taq-meta font-bold text-[#827762]">{lang === "ar" ? "تصفية السجل" : "Log filters"}</p>
-              <h3 className="text-base font-black text-[#112A46]">{lang === "ar" ? "الفلاتر" : "Filters"}</h3>
-            </div>
-            <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]" aria-label={text(lang, "close")}>
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-            <div className="mb-4">
-              <p className="mb-1.5 text-taq-nav font-bold text-[#957D43]">{text(lang, "logStatus")}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {[{ id: "all", label: "all", tone: "default" }, { id: "active", label: "activeEntries", tone: "default" }, { id: "voided", label: "voided", tone: "danger" }].map((item) => (
-                  <LogFilterChip key={item.id} active={draft.status === item.id} tone={item.tone} onClick={() => setDraft((current) => ({ ...current, status: item.id }))}>{text(lang, item.label)}</LogFilterChip>
-                ))}
-                <LogFilterChip active={draft.attachmentOnly} tone="accent" onClick={() => setDraft((current) => ({ ...current, attachmentOnly: !current.attachmentOnly }))}>{text(lang, "withAttachment")}</LogFilterChip>
-              </div>
-            </div>
-            <div className="mb-4">
-              <p className="mb-1.5 text-taq-nav font-bold text-[#957D43]">{text(lang, "logType")}</p>
-              <div className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-0.5">{typeItems.map((item) => <InkTab key={item.id} className="text-taq-meta pb-1.5" active={draft.type === item.id} onClick={() => selectDraftType(item.id)}>{text(lang, item.label)}</InkTab>)}</div>
-            </div>
-            <div className="mb-4">
-              <p className="mb-1.5 text-taq-nav font-bold text-[#957D43]">{lang === "ar" ? "قناة البيع" : "Sales channel"}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {salesChannelOptions.map((item) => (
-                  <LogFilterChip key={item.id} active={draft.salesChannel === item.id} tone={draft.salesChannel === item.id ? "navy" : "default"} onClick={() => setDraft((current) => ({ ...current, salesChannel: item.id }))}>
-                    {item.label}
-                  </LogFilterChip>
-                ))}
-              </div>
-            </div>
-            {draft.type === "expense" && (
-              <div className="mb-4">
-                <p className="mb-1.5 text-taq-nav font-bold text-[#957D43]">{text(lang, "filterByCategory")}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {expenseCategoryItems.map((item) => (
-                    <LogFilterChip key={item.id} active={draft.expenseCategory === item.id} tone={draft.expenseCategory === item.id ? "danger" : "default"} onClick={() => setDraft((current) => ({ ...current, expenseCategory: item.id }))}>{text(lang, item.label)}</LogFilterChip>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div>
-              <p className="mb-1.5 text-taq-nav font-bold text-[#957D43]">{lang === "ar" ? "من قام بالإدخال" : "Entered by"}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {actorOptions.map((item) => (
-                  <LogFilterChip key={item.id} active={draft.actor === item.id} tone={draft.actor === item.id ? "navy" : "default"} onClick={() => setDraft((current) => ({ ...current, actor: item.id }))}>
-                    {item.label}
-                  </LogFilterChip>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="shrink-0 border-t border-[#ECE6DA] px-5 py-4">
-            <div className="mb-2 flex items-center justify-between text-taq-meta font-bold text-[#827762]">
-              <span>{lang === "ar" ? "فلاتر مفعّلة" : "Active filters"}</span>
-              <span className="rounded-full bg-[#112A46] px-2 py-0.5 text-taq-meta font-black text-white">{activeDraftCount}</span>
-            </div>
-            <div className={`grid gap-3 ${lang === "ar" ? "grid-cols-[1.35fr_0.95fr]" : "grid-cols-[0.95fr_1.35fr]"}`}>
-              {lang === "ar" ? (
-                <>
-                  <button type="button" onClick={onApply} className="rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">{text(lang, "applyFilters")}</button>
-                  <button type="button" onClick={() => setDraft({ ...DEFAULT_REGISTER_LOG_FILTERS })} className="rounded-2xl bg-white py-3 text-xs font-black ring-1 ring-black/[0.06]">{text(lang, "resetFilters")}</button>
-                </>
-              ) : (
-                <>
-                  <button type="button" onClick={() => setDraft({ ...DEFAULT_REGISTER_LOG_FILTERS })} className="rounded-2xl bg-white py-3 text-xs font-black ring-1 ring-black/[0.06]">{text(lang, "resetFilters")}</button>
-                  <button type="button" onClick={onApply} className="rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">{text(lang, "applyFilters")}</button>
-                </>
-              )}
-            </div>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
-  if (typeof document === "undefined") return null;
-  return createPortal(sheet, document.body);
-}
-
-function LogStoreFilter({ lang, businessesList = businesses, selectedBusiness, setSelectedBusiness, locked = false }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const filterRef = useRef(null);
-  const selectedStore = businessesList.find((business) => business.id === selectedBusiness) || null;
-  useEffect(() => {
-    if (!locked && businessesList.length === 1 && selectedBusiness !== businessesList[0].id) setSelectedBusiness(businessesList[0].id);
-  }, [locked, businessesList, selectedBusiness, setSelectedBusiness]);
-  useEffect(() => {
-    if (!open) return undefined;
-    const closeOutside = (event) => { if (filterRef.current && !filterRef.current.contains(event.target)) setOpen(false); };
-    document.addEventListener("pointerdown", closeOutside);
-    return () => document.removeEventListener("pointerdown", closeOutside);
-  }, [open]);
-  if (businessesList.length <= 1) {
-    if (!businessesList[0]) return null;
-    return (
-      <NotebookRow className="justify-center">
-        <p className="text-xs font-black text-[#806528]">{businessName(businessesList[0], lang, true) || businessName(businessesList[0], lang)}</p>
-      </NotebookRow>
-    );
-  }
-  const stores = locked
-    ? businessesList.map((business) => ({ id: business.id, label: businessName(business, lang, true) || businessName(business, lang) }))
-    : [{ id: "all", label: text(lang, "allStores") }, ...businessesList.map((business) => ({ id: business.id, label: businessName(business, lang, true) || businessName(business, lang) }))];
-  if (locked || businessesList.length <= 2) {
-    return (
-      <NotebookRow>
-        <div className={`grid w-full items-end gap-2 ${stores.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
-          {stores.map((store) => {
-            const active = selectedBusiness === store.id;
-            return (
-              <button key={store.id} type="button" disabled={locked} onClick={() => setSelectedBusiness(store.id)} className={`relative min-w-0 pb-2 text-center text-xs font-black transition ${active ? "text-[#B44747]" : "text-[#957D43]"} ${locked ? "cursor-default" : ""}`}>
-                <span className="relative inline-flex whitespace-nowrap">{store.label}{active && <span className="absolute -bottom-[9px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span>
-              </button>
-            );
-          })}
-        </div>
-      </NotebookRow>
-    );
-  }
-  const filtered = businessesList.filter((business) => `${businessName(business, lang)} ${businessLocation(business, lang)}`.toLowerCase().includes(query.toLowerCase()));
-  return (
-    <NotebookRow className="justify-center">
-      <div ref={filterRef} className="relative pb-[8px]">
-        <button type="button" onClick={() => setOpen(!open)} className={`inline-flex max-w-[238px] items-center justify-center gap-1.5 rounded-full px-3 py-1 text-taq-meta font-bold transition ${open ? "text-[#B44747]" : "text-[#806528]"}`}>
-          <span className="truncate">{selectedBusiness === "all" ? text(lang, "allStores") : businessName(selectedStore, lang)}</span>
-          <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition ${open ? "rotate-180 text-[#B44747]" : "text-[#806528]"}`} />
-        </button>
-        <AnimatePresence>{open && <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute left-1/2 top-[38px] z-40 w-[270px] -translate-x-1/2 rounded-2xl bg-[#FFFDF7] p-3 shadow-xl ring-1 ring-[#D8CCA8]">
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text(lang, "searchStore")} className="mb-2 w-full rounded-xl bg-[#F7F5EF] px-3 py-2.5 text-taq-meta font-bold outline-none" />
-          <button type="button" onClick={() => { setSelectedBusiness("all"); setOpen(false); setQuery(""); }} className={`mb-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold ${selectedBusiness === "all" ? "bg-[#FFF0CB] text-[#B44747]" : "text-[#112A46]"}`}><span>{text(lang, "allStores")}</span>{selectedBusiness === "all" && <Check className="h-4 w-4" />}</button>
-          <div className="max-h-48 overflow-y-auto">{filtered.map((business) => <button key={business.id} type="button" onClick={() => { setSelectedBusiness(business.id); setOpen(false); setQuery(""); }} className={`mb-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-start ${selectedBusiness === business.id ? "bg-[#FFF0CB]" : ""}`}><div><p className="text-taq-meta font-black text-[#112A46]">{businessName(business, lang)}</p><p className="text-taq-nav font-bold text-[#827762]">{businessLocation(business, lang)}</p></div>{selectedBusiness === business.id && <Check className="h-4 w-4 text-[#B44747]" />}</button>)}</div>
-        </motion.div>}</AnimatePresence>
-      </div>
-    </NotebookRow>
-  );
-}
+import { RegisterFiltersSheet } from "./owner-register-filters-sheet";
+import { OwnerRegisterCloseoutsList } from "./owner-register-closeouts-list";
+import { OwnerRegisterOperationsList } from "./owner-register-operations-list";
+import { RegisterStoreChips } from "./owner-register-store-filter";
+import { RegisterDashboardCard } from "./owner-register-ui-primitives";
 
 export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesRefreshKey = 0, registerEntriesSyncError = "", closeoutsSyncError = "", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
   const [period, setPeriod] = useState("day");
@@ -697,143 +321,44 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
           </span>
         </div>
 
-        {logView === "operations" && (registerEntriesLoadError ? (
-          <div className="mx-5 rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10">{registerEntriesLoadErrorMessage}</div>
-        ) : visibleEntries.length === 0 ? (
-          <div className="mx-5 rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">{text(lang, "noOperationsMatch")}</div>
-        ) : (
-          <div className="space-y-2.5 px-5">
-            {visibleEntries.map((entry) => {
-              const store = businessesList.find((business) => business.id === entry.businessId);
-              const isSale = entry.type === "summary";
-              const signedAmount = isSale
-                ? summaryEntryDisplayAmount(entry, logFilters.salesChannel)
-                : -entry.amount;
-              const isExpanded = expandedEntryId === entry.id;
-              const actorLabel = employeeDisplayName(entry, lang) || (lang === "ar" ? "مستخدم" : "User");
-              const registerDaySequence = entry.closeoutId
-                ? (Number.isInteger(entry.daySequence) ? entry.daySequence : daySequenceByCloseoutId.get(entry.closeoutId) ?? null)
-                : null;
-              const registerSameDayCloseoutCount = entry.closeoutId
-                ? sameDayCloseoutCountByStoreDate.get(`${entry.businessId}|${entry.date}`) || 1
-                : 1;
-              const registerDateLabel = formatCloseoutDayLabel({
-                formattedDate: formatCalendarDate(entry.date, lang),
-                daySequence: registerDaySequence,
-                sameDayCloseoutCount: registerSameDayCloseoutCount,
-              });
-              return (
-                <article id={`register-entry-${entry.id}`} key={entry.id} className="overflow-hidden rounded-[18px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
-                  <button type="button" onClick={() => setExpandedEntryId((current) => (current === entry.id ? null : entry.id))} className="flex w-full items-start gap-2.5 px-3.5 py-3 text-start">
-                    <span className={`mt-0.5 h-8 w-1 shrink-0 rounded-full ${isSale ? "bg-[#39A160]" : "bg-[#E4B84A]"}`} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <p className="truncate text-taq-meta font-black text-[#112A46]">{operationDisplayLabel(entry, lang, logFilters.salesChannel)}</p>
-                        {entryIsVoided(entry) && <Badge tone="warning">{text(lang, "voided")}</Badge>}
-                        {entryHasAttachment(entry) && <Badge tone="navy">{text(lang, "attachmentExists")}</Badge>}
-                      </div>
-                      <p className="mt-1 truncate text-taq-nav font-bold text-[#827762]">{registerDateLabel} {opTime(entry, lang)} {businessName(store, lang, true) || businessName(store, lang)} {actorLabel}</p>
-                    </div>
-                    <div className="shrink-0 text-end">
-                      <strong className={`block tabular-nums text-taq-meta font-black ${entryIsVoided(entry) ? "text-[#A99D87] line-through" : isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
-                        <MoneyValue value={money(signedAmount, lang)} />
-                      </strong>
-                      <span className="mt-1 block text-taq-meta font-black text-[#806528]">{isExpanded ? (lang === "ar" ? "إخفاء" : "Hide") : (lang === "ar" ? "تفاصيل" : "Details")}</span>
-                    </div>
-                  </button>
-                  {isExpanded && (
-                    <div className="border-t border-[#E8E1D4] px-3.5 py-3" style={registerCardInsetStyle}>
-                      {entry.note ? <p className="mb-2 text-taq-meta font-bold text-[#716753]">{entry.note}</p> : null}
-                      {entryIsVoided(entry) && entry.voidReason ? <p className="mb-2 text-taq-meta font-bold text-[#B44747]">{text(lang, "voidReason")}: {entry.voidReason}</p> : null}
-                      {entryHasAttachment(entry) ? (
-                        <div className="mb-3">
-                          <p className="mb-2 text-taq-nav font-black text-[#806528]">{text(lang, "attachmentExists")}</p>
-                          <AttachmentThumbButton attachment={entry.attachment} storeId={entry.businessId} attachmentApiContext={entryAttachmentApiContext} onOpen={setRegisterAttachmentPreview} />
-                        </div>
-                      ) : null}
-                      <div className="grid grid-cols-2 gap-2 text-taq-meta font-bold text-[#716753]">
-                        <div className="rounded-xl bg-[#F7F5EF] px-2.5 py-2 ring-1 ring-[#E8E1D4]">{lang === "ar" ? "المدخل" : "Entered by"}: {actorLabel}</div>
-                        <div className="rounded-xl bg-[#F7F5EF] px-2.5 py-2 ring-1 ring-[#E8E1D4]">{lang === "ar" ? "المحل" : "Store"}: {businessName(store, lang, true) || businessName(store, lang)}</div>
-                      </div>
-                      <button type="button" onClick={() => onOpenOperation(entry)} className="mt-2.5 w-full rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{lang === "ar" ? "عرض العملية" : "Open operation"}</button>
-                    </div>
-                  )}
-                </article>
-              );
-            })}
-            {registerEntriesApiEnabled && logView === "operations" && apiRegisterEntriesHasMore ? (
-              <div ref={registerLoadMoreRef} className="h-px w-full shrink-0" aria-hidden="true" />
-            ) : null}
-          </div>
-        ))}
+        {logView === "operations" && (
+          <OwnerRegisterOperationsList
+            lang={lang}
+            businessesList={businessesList}
+            visibleEntries={visibleEntries}
+            logFilters={logFilters}
+            daySequenceByCloseoutId={daySequenceByCloseoutId}
+            sameDayCloseoutCountByStoreDate={sameDayCloseoutCountByStoreDate}
+            registerCardInsetStyle={registerCardInsetStyle}
+            entryAttachmentApiContext={entryAttachmentApiContext}
+            expandedEntryId={expandedEntryId}
+            setExpandedEntryId={setExpandedEntryId}
+            onOpenOperation={onOpenOperation}
+            setRegisterAttachmentPreview={setRegisterAttachmentPreview}
+            registerEntriesApiEnabled={registerEntriesApiEnabled}
+            apiRegisterEntriesHasMore={apiRegisterEntriesHasMore}
+            registerLoadMoreRef={registerLoadMoreRef}
+            loadError={registerEntriesLoadError}
+            loadErrorMessage={registerEntriesLoadErrorMessage}
+          />
+        )}
 
-        {logView === "closeouts" && (closeoutsLoadError ? (
-          <div className="mx-5 rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10">{closeoutsLoadErrorMessage}</div>
-        ) : closeoutSummaries.length === 0 ? (
-          <div className="mx-5 rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">{text(lang, "noCloseoutsPeriod")}</div>
-        ) : (
-          <div className="space-y-2.5 px-5">
-            {closeoutSummaries.map((summary) => {
-              const isExpanded = expandedCloseoutKey === summary.key;
-              const storeLabel = businessName(summary.store, lang, true) || businessName(summary.store, lang);
-              return (
-                <article id={`register-closeout-${registerScrollId(summary.key)}`} key={summary.key} className="overflow-hidden rounded-[18px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
-                  <button type="button" onClick={() => setExpandedCloseoutKey((current) => (current === summary.key ? null : summary.key))} className="flex w-full items-start gap-2.5 px-3.5 py-3 text-start">
-                    <ChevronDown className={`mt-0.5 h-5 w-5 shrink-0 text-[#112A46] transition ${isExpanded ? "rotate-180" : ""}`} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                        <p className="text-taq-meta font-black text-[#112A46]">{formatCloseoutDayLabel({ formattedDate: formatCalendarDate(summary.date, lang), daySequence: summary.daySequence, sameDayCloseoutCount: summary.sameDayCloseoutCount })}</p>
-                        <p className="rounded-full border border-[#8EA1C4] px-2.5 py-1 text-taq-meta font-black text-[#214B7B]">{lang === "ar" ? `أدخلها ${summary.actorLabel}` : `Entered by ${summary.actorLabel}`}</p>
-                      </div>
-                      <p className="mt-1 text-taq-meta font-bold text-[#716753]">{formatRegisterCloseoutTypeLabel(summary.date, lang)} {storeLabel}</p>
-                      <div className="mt-2 grid grid-cols-3 gap-2 border-t border-dashed border-[#DDD3C0] pt-2">
-                        <p className="text-taq-meta font-black text-[#112A46]">{lang === "ar" ? "الدخل" : "In"} <span className="tabular-nums"><MoneyValue value={money(summary.displaySales, lang)} /></span></p>
-                        <p className="text-taq-meta font-black text-[#B44747]">{lang === "ar" ? "الخارج" : "Out"} <span className="tabular-nums"><MoneyValue value={money(-summary.totals.expense, lang)} /></span></p>
-                        <p className={`text-taq-meta font-black ${summary.totals.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}>{lang === "ar" ? "الناتج" : "Net"} <span className="tabular-nums"><MoneyValue value={money(summary.totals.net, lang)} /></span></p>
-                      </div>
-                      {isExpanded && (
-                        summary.salesChannels.length > 0 ? (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            {summary.salesChannels.map((channel) => (
-                              <span key={channel.channelId} className="rounded-full bg-[#E6F5E9] px-2 py-0.5 text-taq-nav font-bold text-[#257844]">
-                                {channel.name} <span className="tabular-nums"><MoneyValue value={money(channel.amount, lang)} /></span>
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="mt-2 text-taq-nav font-bold text-[#8B8274]">{lang === "ar" ? "لا توجد قنوات مبيعات" : "No sales channels"}</p>
-                        )
-                      )}
-                      <p className="mt-2 text-taq-meta font-black text-[#806528]">{isExpanded ? (lang === "ar" ? "إخفاء" : "Hide") : (lang === "ar" ? "عرض" : "Show")}</p>
-                    </div>
-                  </button>
-                  {isExpanded && (
-                    <div className="border-t border-[#E8E1D4] px-3.5 py-2.5" style={registerCardInsetStyle}>
-                      <div className="space-y-2">
-                        {summary.operations.flatMap((item) => expandRegisterCloseoutOperationRows(item, lang, logFilters.salesChannel).map((row) => (
-                          <div key={row.key} className="flex w-full items-center gap-3 rounded-xl px-2 py-2 hover:bg-[#FFF4D2]/35">
-                            {entryHasAttachment(row.item) ? (
-                              <AttachmentThumbButton attachment={row.item.attachment} storeId={row.item.businessId} attachmentApiContext={entryAttachmentApiContext} onOpen={setRegisterAttachmentPreview} />
-                            ) : null}
-                            <button type="button" onClick={() => onOpenOperation(row.item)} className="flex min-w-0 flex-1 items-center gap-3 text-start">
-                              <strong dir="ltr" className={`min-w-[70px] shrink-0 whitespace-nowrap text-start tabular-nums text-taq-meta font-black ${entryIsVoided(row.item) ? "text-[#A99D87] line-through" : row.isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
-                                <MoneyValue value={money(row.amount, lang)} />
-                              </strong>
-                              <span className="min-w-0 flex-1 text-end">
-                                <span className="truncate text-taq-meta font-bold text-[#112A46]">{row.label}</span>
-                                <small className="mt-0.5 block truncate text-taq-nav font-bold text-[#8A816F]">{opTime(row.item, lang)}</small>
-                              </span>
-                            </button>
-                          </div>
-                        )))}
-                      </div>
-                    </div>
-                  )}
-                </article>
-              );
-            })}
-          </div>
-        ))}
+        {logView === "closeouts" && (
+          <OwnerRegisterCloseoutsList
+            lang={lang}
+            closeoutSummaries={closeoutSummaries}
+            logFilters={logFilters}
+            registerCardInsetStyle={registerCardInsetStyle}
+            entryAttachmentApiContext={entryAttachmentApiContext}
+            expandedCloseoutKey={expandedCloseoutKey}
+            setExpandedCloseoutKey={setExpandedCloseoutKey}
+            onOpenOperation={onOpenOperation}
+            setRegisterAttachmentPreview={setRegisterAttachmentPreview}
+            registerScrollId={registerScrollId}
+            loadError={closeoutsLoadError}
+            loadErrorMessage={closeoutsLoadErrorMessage}
+          />
+        )}
       </motion.section>
       <AttachmentLightbox
         open={Boolean(registerAttachmentPreview)}
