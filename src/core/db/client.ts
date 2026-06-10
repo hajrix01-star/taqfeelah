@@ -12,7 +12,9 @@ export function getDb() {
 
   const pool = new Pool({
     connectionString: requireDatabaseUrl(),
-    max: 10,
+    max: 20,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 2_000,
   });
 
   const db = drizzle(pool);

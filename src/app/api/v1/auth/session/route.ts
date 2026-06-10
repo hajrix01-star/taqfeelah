@@ -1,4 +1,4 @@
-import { fail, ok } from "@/core/http/api-response";
+import { failRequest, ok } from "@/core/http/api-response";
 import { readEnv, assertProductionRuntimeEnv, isServerProductionMode } from "@/core/config/env";
 import {
   buildClearAuthSessionCookieHeader,
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
       role: session.role,
     });
   } catch (error) {
-    return fail(error);
+    return failRequest(error, request);
   }
 }
 
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
     const payload = (await request.json()) as Record<string, unknown>;
     rateKey = buildLoginRateLimitKey(resolveClientIp(request), resolveLoginIdentifier(payload));
-    const rateCheck = checkLoginRateLimit(rateKey);
+    const rateCheck = await checkLoginRateLimit(rateKey);
     if (!rateCheck.allowed) {
       throw new AppError(
         "RATE_LIMITED",
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     const sessionClaims = await createAuthSession(
       payload as Parameters<typeof createAuthSession>[0],
     );
-    clearLoginAttempts(rateKey);
+    await clearLoginAttempts(rateKey);
     if (!env.AUTH_SESSION_SECRET || env.AUTH_SESSION_SECRET.length < 16) {
       throw new ServiceUnavailableError("AUTH_SESSION_SECRET is not configured.");
     }
@@ -124,13 +124,13 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     if (error instanceof UnauthorizedError && rateKey) {
-      recordLoginFailure(rateKey);
+      await recordLoginFailure(rateKey);
     }
-    return fail(error);
+    return failRequest(error, request);
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
     const env = readEnv();
     const secureCookie = env.NODE_ENV === "production" || env.APP_MODE === "production";
@@ -143,6 +143,6 @@ export async function DELETE() {
       },
     );
   } catch (error) {
-    return fail(error);
+    return failRequest(error, request);
   }
 }

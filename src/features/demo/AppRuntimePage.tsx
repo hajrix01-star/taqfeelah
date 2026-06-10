@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import PrototypeClientGate from "@/features/demo/PrototypeClientGate";
 
 const TaqfeelahPrototypeRuntime = dynamic(
@@ -21,8 +22,10 @@ const TaqfeelahPrototypeRuntime = dynamic(
 
 export default function AppRuntimePage() {
   return (
-    <PrototypeClientGate>
-      <TaqfeelahPrototypeRuntime />
-    </PrototypeClientGate>
+    <ErrorBoundary>
+      <PrototypeClientGate>
+        <TaqfeelahPrototypeRuntime />
+      </PrototypeClientGate>
+    </ErrorBoundary>
   );
 }

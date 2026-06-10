@@ -32,6 +32,9 @@ const envSchema = z.object({
   SAAS_PLATFORM_ADMIN_USER_IDS: z.string().optional(),
   SAAS_ADMIN_API_ENABLED: z.enum(["true", "false"]).optional(),
   USAGE_TRACKING_ENABLED: z.enum(["true", "false"]).optional(),
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+  LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).optional(),
 });
 
 type AppEnv = z.infer<typeof envSchema>;

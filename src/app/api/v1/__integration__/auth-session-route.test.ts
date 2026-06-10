@@ -111,7 +111,7 @@ describe("auth session route integration", () => {
 
   it("DELETE clears auth session cookie", async () => {
     const { DELETE } = await import("../auth/session/route");
-    const response = await DELETE();
+    const response = await DELETE(new Request("http://localhost/api/v1/auth/session", { method: "DELETE" }));
 
     expect(response.status).toBe(200);
     const body = await readJsonBody<{ success: boolean }>(response);
