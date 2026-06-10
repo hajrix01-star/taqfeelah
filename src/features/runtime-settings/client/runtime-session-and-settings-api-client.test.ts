@@ -39,4 +39,30 @@ describe("runtime settings api client", () => {
       },
     });
   });
+
+  it("dedupes concurrent runtime settings reads for the same auth context", async () => {
+    let resolveFetch: ((value: Response) => void) | undefined;
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      () => new Promise((resolve) => {
+        resolveFetch = resolve;
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchRuntimeSettingsViaApi } = await import("./runtime-session-and-settings-api-client.js");
+    const auth = {
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+    };
+    const first = fetchRuntimeSettingsViaApi(auth);
+    const second = fetchRuntimeSettingsViaApi(auth);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    resolveFetch?.(new Response(JSON.stringify({ settings: { staff: [] } }), { status: 200 }));
+
+    const [firstPayload, secondPayload] = await Promise.all([first, second]);
+    expect(firstPayload).toEqual(secondPayload);
+  });
 });

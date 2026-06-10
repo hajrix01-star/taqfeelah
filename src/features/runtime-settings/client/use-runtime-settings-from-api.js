@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildRuntimeSettingsPersistPayload,
   serializeRuntimeSettingsSignature,
@@ -35,11 +35,18 @@ export function useRuntimeSettingsFromApi({
   const hydratedRef = useRef(!enabled);
   const persistTimerRef = useRef(null);
   const lastSavedSignatureRef = useRef("");
+  const loadedAuthKeyRef = useRef("");
   const [syncError, setSyncError] = useState("");
+
+  const authKey = useMemo(
+    () => `${auth?.organizationId || ""}|${auth?.actorUserId || ""}|${auth?.actorRole || ""}`,
+    [auth?.actorRole, auth?.actorUserId, auth?.organizationId],
+  );
 
   const resetSyncState = useCallback(() => {
     hydratedRef.current = !enabled;
     lastSavedSignatureRef.current = "";
+    loadedAuthKeyRef.current = "";
     if (persistTimerRef.current) {
       window.clearTimeout(persistTimerRef.current);
       persistTimerRef.current = null;
@@ -67,6 +74,10 @@ export function useRuntimeSettingsFromApi({
       setSyncError("");
       return undefined;
     }
+    if (hydratedRef.current && loadedAuthKeyRef.current === authKey) {
+      return undefined;
+    }
+    loadedAuthKeyRef.current = authKey;
 
     let cancelled = false;
     fetchRuntimeSettingsViaApi(auth)
@@ -88,7 +99,7 @@ export function useRuntimeSettingsFromApi({
     return () => {
       cancelled = true;
     };
-  }, [auth, enabled, isEmployee, lang, loggedIn, onHydrate, resetSyncState]);
+  }, [auth, authKey, enabled, isEmployee, lang, loggedIn, onHydrate, resetSyncState]);
 
   useEffect(() => {
     if (!enabled || !loggedIn || isEmployee) return undefined;
