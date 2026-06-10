@@ -46,11 +46,17 @@ export function DailyCloseoutsProvider({
 }) {
   const skipLocalPersistence = apiStrictMode || dbSourceMode;
   const useApiWrites = apiStrictMode || dbSourceMode;
+  const usesCloseoutsApi = typeof loadCloseoutsFromApi === "function";
 
   const [closeouts, setCloseouts] = useState(() => (skipLocalPersistence ? [] : readDailyCloseouts()));
   const [events, setEvents] = useState(() => (skipLocalPersistence ? [] : readCloseoutEvents()));
   const [syncError, setSyncError] = useState("");
+  const [closeoutsLoading, setCloseoutsLoading] = useState(
+    () => usesCloseoutsApi && Boolean(closeoutsAutoLoadQueryKey),
+  );
+  const [closeoutsLoaded, setCloseoutsLoaded] = useState(() => !usesCloseoutsApi);
   const lastAutoLoadQueryKeyRef = useRef("");
+  const loadedContextRef = useRef("");
 
   const persistCloseouts = useCallback((next) => {
     let storageResult = { ok: true };
@@ -109,25 +115,51 @@ export function DailyCloseoutsProvider({
 
   const reloadCloseoutsFromApi = useCallback(async () => {
     if (typeof loadCloseoutsFromApi !== "function") return [];
-    const remote = await loadCloseoutsFromApi();
-    const remoteList = Array.isArray(remote) ? remote.map((item) => withCloseoutTotals(item)) : [];
-    setCloseouts((current) => {
-      const localDrafts = dbSourceMode || (apiStrictMode && !dbSourceMode)
-        ? []
-        : current.filter((item) => item.status === CLOSEOUT_STATUS.DRAFT && !item.submittedAt);
-      const remoteKeys = new Set(remoteList.map((item) => item.id));
-      const merged = [
-        ...remoteList,
-        ...localDrafts.filter((item) => !remoteKeys.has(item.id)),
-      ];
-      if (!skipLocalPersistence) {
-        writeDailyCloseouts(merged);
+    const contextKey = closeoutsAutoLoadQueryKey || "default";
+    const contextChanged = loadedContextRef.current !== "" && loadedContextRef.current !== contextKey;
+
+    setCloseoutsLoading(true);
+    if (contextChanged) {
+      setCloseouts([]);
+      setCloseoutsLoaded(false);
+    }
+
+    try {
+      const remote = await loadCloseoutsFromApi();
+      const remoteList = Array.isArray(remote) ? remote.map((item) => withCloseoutTotals(item)) : [];
+      setCloseouts((current) => {
+        const localDrafts = dbSourceMode || (apiStrictMode && !dbSourceMode)
+          ? []
+          : current.filter((item) => item.status === CLOSEOUT_STATUS.DRAFT && !item.submittedAt);
+        const remoteKeys = new Set(remoteList.map((item) => item.id));
+        const merged = [
+          ...remoteList,
+          ...localDrafts.filter((item) => !remoteKeys.has(item.id)),
+        ];
+        if (!skipLocalPersistence) {
+          writeDailyCloseouts(merged);
+        }
+        return merged;
+      });
+      setCloseoutsLoaded(true);
+      loadedContextRef.current = contextKey;
+      setSyncError("");
+      return remoteList;
+    } catch (error) {
+      if (loadedContextRef.current !== contextKey) {
+        setCloseoutsLoaded(false);
       }
-      return merged;
-    });
-    setSyncError("");
-    return remoteList;
-  }, [apiStrictMode, dbSourceMode, loadCloseoutsFromApi, skipLocalPersistence]);
+      throw error;
+    } finally {
+      setCloseoutsLoading(false);
+    }
+  }, [
+    apiStrictMode,
+    closeoutsAutoLoadQueryKey,
+    dbSourceMode,
+    loadCloseoutsFromApi,
+    skipLocalPersistence,
+  ]);
 
   const reloadCloseoutsAndPreserveSubmitted = useCallback(async (submittedCloseout) => {
     const remoteList = await reloadCloseoutsFromApi();
@@ -143,8 +175,10 @@ export function DailyCloseoutsProvider({
   useEffect(() => {
     if (typeof loadCloseoutsFromApi !== "function") return;
     const queryKey = closeoutsAutoLoadQueryKey || "default";
+    if (!queryKey || queryKey === "default") return;
     if (lastAutoLoadQueryKeyRef.current === queryKey) return;
     lastAutoLoadQueryKeyRef.current = queryKey;
+    setCloseoutsLoading(true);
     reloadCloseoutsFromApi().catch((error) => {
       console.warn("closeouts initial API load failed", error);
       const fallback = lang === "ar"
@@ -351,6 +385,8 @@ export function DailyCloseoutsProvider({
     useApiWrites,
   ]);
 
+  const closeoutsHasData = closeouts.length > 0;
+
   const value = useMemo(() => ({
     closeouts: sortCloseoutsNewestFirst(closeouts),
     events,
@@ -364,7 +400,25 @@ export function DailyCloseoutsProvider({
     findAllForStoreDate: (storeId, date) => findCloseoutsForStoreDate(closeouts, storeId, date),
     syncError,
     reloadCloseoutsFromApi,
-  }), [closeouts, deleteCloseout, events, openOrResumeDraft, reloadCloseoutsFromApi, ownerEditCloseout, submitCloseout, syncError, upsertCloseout]);
+    usesCloseoutsApi,
+    closeoutsLoading,
+    closeoutsLoaded,
+    closeoutsHasData,
+  }), [
+    closeouts,
+    closeoutsHasData,
+    closeoutsLoaded,
+    closeoutsLoading,
+    deleteCloseout,
+    events,
+    openOrResumeDraft,
+    reloadCloseoutsFromApi,
+    ownerEditCloseout,
+    submitCloseout,
+    syncError,
+    upsertCloseout,
+    usesCloseoutsApi,
+  ]);
 
   return <DailyCloseoutsContext.Provider value={value}>{children}</DailyCloseoutsContext.Provider>;
 }

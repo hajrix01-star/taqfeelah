@@ -22,6 +22,11 @@ import {
 } from "./employee-closeout-history";
 import { resolveCloseoutStoreName, resolveEmployeeStoreName } from "./store-name-resolver";
 import { countSentCloseoutsByDate } from "../closeouts/client/closeout-day-label";
+import CloseoutsListLoading from "./CloseoutsListLoading";
+import {
+  isEmployeeCloseoutsListPending,
+  isEmployeeCloseoutsRefreshing,
+} from "./employee-closeouts-loading";
 import { resolveEmployeeCloseoutsViewGate } from "./employee-closeouts-view-gate";
 
 function resolveScrollContainer(node) {
@@ -72,6 +77,10 @@ export default function EmployeeCloseoutsView({
     ownerEditCloseout,
     findForStoreDate,
     syncError,
+    usesCloseoutsApi,
+    closeoutsLoading,
+    closeoutsLoaded,
+    closeoutsHasData,
   } = useDailyCloseouts();
 
   const [entryCloseout, setEntryCloseout] = useState(null);
@@ -303,6 +312,19 @@ export default function EmployeeCloseoutsView({
   }
 
   const channelsReady = salesChannels.length > 0;
+  const closeoutsLoadFailed = usesCloseoutsApi && Boolean(syncError) && !closeoutsLoaded && !closeoutsHasData;
+  const closeoutsListPending = isEmployeeCloseoutsListPending({
+    apiEnabled: usesCloseoutsApi,
+    loading: closeoutsLoading,
+    loaded: closeoutsLoaded,
+    hasCachedCloseouts: closeoutsHasData,
+    loadFailed: closeoutsLoadFailed,
+  });
+  const closeoutsRefreshing = isEmployeeCloseoutsRefreshing({
+    apiEnabled: usesCloseoutsApi,
+    loading: closeoutsLoading,
+    hasCachedCloseouts: closeoutsHasData,
+  });
 
   return (
     <>
@@ -345,6 +367,11 @@ export default function EmployeeCloseoutsView({
                 {syncError}
               </div>
             ) : null}
+            {closeoutsRefreshing ? (
+              <div className="mb-4 rounded-2xl bg-[#FFF4D2]/95 p-3 text-center text-taq-meta font-bold text-[#806528] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
+                {lang === "ar" ? "جاري تحديث التقفيلات…" : "Refreshing closeouts…"}
+              </div>
+            ) : null}
             {hasOlderHiddenCloseouts && (
               <div className="mb-4 rounded-2xl bg-[#FFF4D2]/95 p-3 text-taq-meta font-bold leading-5 text-[#806528] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
                 {lang === "ar" ? (
@@ -385,7 +412,9 @@ export default function EmployeeCloseoutsView({
               </div>
             )}
             <div className="flex flex-col gap-3.5">
-              {displayCloseouts.length ? displayCloseouts.map((day, index) => (
+              {closeoutsListPending ? (
+                <CloseoutsListLoading lang={lang} />
+              ) : displayCloseouts.length ? displayCloseouts.map((day, index) => (
                 <div key={day.id} ref={(node) => setCardRef(day.id, node)}>
                   {day.isPrevious && index === 1 && (
                     <p className="mb-3 flex items-center gap-2 text-center text-xs font-extrabold text-[#82745A]">
