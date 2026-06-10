@@ -23,7 +23,11 @@ import {
   registerLogFilterCount,
   summarizeRegisterPeriod,
 } from "@/features/entries/client/register-log-display";
-import { formatCalendarDate, logPeriodScopeLabel } from "@/features/reports/client/report-period-labels";
+import {
+  formatCalendarDate,
+  formatRegisterCloseoutTypeLabel,
+  logPeriodScopeLabel,
+} from "@/features/reports/client/report-period-labels";
 import { ENTRIES_API_DB_SOURCE } from "./prototype-runtime-boot";
 import {
   channels,
@@ -602,7 +606,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
                         <p className="text-taq-meta font-black text-[#112A46]">{formatCloseoutDayLabel({ formattedDate: formatCalendarDate(summary.date, lang), daySequence: summary.daySequence, sameDayCloseoutCount: summary.sameDayCloseoutCount })}</p>
                         <p className="rounded-full border border-[#8EA1C4] px-2.5 py-1 text-taq-meta font-black text-[#214B7B]">{lang === "ar" ? `أدخلها ${summary.actorLabel}` : `Entered by ${summary.actorLabel}`}</p>
                       </div>
-                      <p className="mt-1 text-taq-meta font-bold text-[#716753]">{lang === "ar" ? "تقفيلة يوم" : "Daily closeout"} {storeLabel}</p>
+                      <p className="mt-1 text-taq-meta font-bold text-[#716753]">{formatRegisterCloseoutTypeLabel(summary.date, lang)} {storeLabel}</p>
                       <div className="mt-2 grid grid-cols-3 gap-2 border-t border-dashed border-[#DDD3C0] pt-2">
                         <p className="text-taq-meta font-black text-[#112A46]">{lang === "ar" ? "الدخل" : "In"} <span className="tabular-nums"><MoneyValue value={money(summary.displaySales, lang)} /></span></p>
                         <p className="text-taq-meta font-black text-[#B44747]">{lang === "ar" ? "الخارج" : "Out"} <span className="tabular-nums"><MoneyValue value={money(-summary.totals.expense, lang)} /></span></p>
