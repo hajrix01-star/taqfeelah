@@ -2,6 +2,8 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
+import { useState } from "react";
+import AttachmentLightbox from "../../components/AttachmentLightbox";
 import { computeCloseoutTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
 import { closeoutStatusLabel } from "../daily-closeouts/closeout-status";
 
@@ -18,6 +20,7 @@ export default function OwnerCloseoutManagePanel({
   onEdit,
   onDelete,
 }) {
+  const [selectedAttachment, setSelectedAttachment] = useState("");
   if (!closeout) return null;
   const totals = closeout.totals || computeCloseoutTotals(closeout.sales, closeout.outflows);
   const salesRows = salesArrayFromRecord(closeout.sales);
@@ -64,11 +67,23 @@ export default function OwnerCloseoutManagePanel({
             <p className="text-2xl font-black tabular-nums">{money(totals.netMovement, lang)} ر.س</p>
           </div>
           {(closeout.attachments || []).length > 0 && (
-            <div className="mb-4 flex flex-wrap gap-2">
-              {(closeout.attachments || []).map((src, index) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={`${closeout.id}-manage-${index}`} src={src} alt="" className="h-16 w-16 rounded-xl object-cover" />
-              ))}
+            <div className="mb-4">
+              <p className="mb-2 text-xs font-black text-[#806528]">
+                {lang === "ar" ? "مرفقات التقفيلة" : "Closeout attachments"}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(closeout.attachments || []).filter(Boolean).map((src, index) => (
+                  <button
+                    key={`${closeout.id}-manage-${index}`}
+                    type="button"
+                    className="rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50"
+                    onClick={() => setSelectedAttachment(src)}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={src} alt="" className="h-16 w-16 rounded-xl object-cover ring-1 ring-black/[0.06]" />
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
@@ -81,6 +96,12 @@ export default function OwnerCloseoutManagePanel({
           </div>
         </motion.div>
       </motion.div>
+      <AttachmentLightbox
+        open={Boolean(selectedAttachment)}
+        src={selectedAttachment}
+        lang={lang}
+        onClose={() => setSelectedAttachment("")}
+      />
     </AnimatePresence>
   );
 }
