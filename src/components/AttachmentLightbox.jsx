@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Minus, Plus, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
@@ -134,7 +135,7 @@ export default function AttachmentLightbox({
 
   if (!open || !src) return null;
 
-  return (
+  const lightbox = (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
@@ -143,11 +144,19 @@ export default function AttachmentLightbox({
         className="fixed inset-0 z-[260] bg-black/75"
         onClick={onClose}
       >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute end-3 top-[max(0.75rem,env(safe-area-inset-top,0px))] z-30 flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#112A46] shadow-[0_4px_18px_rgba(0,0,0,0.28)]"
+          aria-label={lang === "ar" ? "إغلاق" : "Close"}
+        >
+          <X className="h-5 w-5" />
+        </button>
         <motion.div
           initial={{ scale: 0.98, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.98, opacity: 0 }}
-          className="flex h-full w-full flex-col p-3 sm:p-6"
+          className="flex h-full w-full flex-col p-3 pt-[max(3.5rem,calc(0.75rem+env(safe-area-inset-top,0px)))] sm:p-6 sm:pt-[max(3.5rem,calc(1.5rem+env(safe-area-inset-top,0px)))]"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="flex items-center justify-between rounded-t-2xl bg-[#112A46] px-3 py-2 text-white">
@@ -220,4 +229,7 @@ export default function AttachmentLightbox({
       </motion.div>
     </AnimatePresence>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(lightbox, document.body);
 }
