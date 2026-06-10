@@ -3,9 +3,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Bell, ChevronDown, ChevronUp } from "lucide-react";
-import PendingCloseoutsNotice from "@/features/owner-closeout-review/PendingCloseoutsNotice";
-import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
-import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 import {
   buildBusinessesWithEntrySummaries,
   entriesInPeriod,
@@ -39,8 +36,9 @@ import {
   todayIsoDate,
 } from "./prototype-runtime-notebook";
 import { Badge, InkTab } from "./prototype-runtime-shell-ui";
+import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 
-export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], pendingEmployeeCloseouts = [], onViewPendingCloseouts = () => {}, onReviewCloseout = () => {}, onDismissCloseout = () => {}, onReviewDuplicate = () => {}, onAcknowledgeDuplicate = () => {}, reviewEnabledForBusiness = () => false, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, reviewEnabled = false, businessesList = businesses, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", summaryRefreshKey = 0 }) {
+export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], onReviewCloseout = () => {}, onDismissCloseout = () => {}, onReviewDuplicate = () => {}, onAcknowledgeDuplicate = () => {}, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", summaryRefreshKey = 0 }) {
   const [period, setPeriod] = useState("day");
   const [selectedDay, setSelectedDay] = useState(() => todayIsoDate());
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
@@ -74,12 +72,11 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     monthly,
     selectedDate,
     selectedMonth,
-    reviewEnabledForBusiness,
   });
-  const daySummary = summaryDayFromEntriesWithLabels(operationalEntries, currentBusiness?.id, selectedDate, reviewEnabledForBusiness);
-  const localCombinedResult = summarizeEntries(operationalEntries.filter((entry) => businessesList.some((business) => business.id === entry.businessId) && entryDateMatches(entry, period, selectedDate, selectedMonth, "2026", "2026-01-01", "2026-12-31")), reviewEnabledForBusiness);
+  const daySummary = summaryDayFromEntriesWithLabels(operationalEntries, currentBusiness?.id, selectedDate);
+  const localCombinedResult = summarizeEntries(operationalEntries.filter((entry) => businessesList.some((business) => business.id === entry.businessId) && entryDateMatches(entry, period, selectedDate, selectedMonth, "2026", "2026-01-01", "2026-12-31")));
   const apiStoreResult = currentBusiness?.id ? getStoreResult(currentBusiness.id) : null;
-  const localMonthResult = summaryMonthFromEntries(operationalEntries, currentBusiness?.id, selectedMonth, reviewEnabledForBusiness);
+  const localMonthResult = summaryMonthFromEntries(operationalEntries, currentBusiness?.id, selectedMonth);
   const preferEntrySummaries = resolveOwnerPeriodSummaryPreference({
     localTotals: localCombinedResult,
     apiTotals: apiCombinedResult,
@@ -106,9 +103,8 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
   };
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-6 pt-1">
-      {pendingEmployeeCloseouts.length > 0 && <PendingCloseoutsNotice lang={lang} pending={pendingEmployeeCloseouts} onView={onViewPendingCloseouts} />}
-      {closeoutAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#E6F5E9] p-3 ring-1 ring-[#39A160]/15"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#257844]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#257844]">{text(lang, "closeoutInAppAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === closeoutAlerts[0].businessId), lang)} آ· {formatCalendarDate(closeoutAlerts[0].date, lang)} آ· {lang === "ar" ? closeoutAlerts[0].employeeNameAr : closeoutAlerts[0].employeeNameEn}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "closeoutInAppHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onReviewCloseout(closeoutAlerts[0])} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#257844] ring-1 ring-[#39A160]/15">{text(lang, "reviewCloseout")}</button><button type="button" onClick={() => onDismissCloseout(closeoutAlerts[0].id)} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "dismissAlert")}</button></div></div>}
-      {duplicateSalesAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#FFF1EE] p-3 ring-1 ring-[#B44747]/10"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#B44747]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#B44747]">{text(lang, "duplicateSalesOwnerAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === duplicateSalesAlerts[0].businessId), lang)} آ· {formatCalendarDate(duplicateSalesAlerts[0].date, lang)} آ· {duplicateSalesAlerts[0].entries.length} {text(lang, "summary")}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "duplicateSalesOwnerHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onReviewDuplicate(duplicateSalesAlerts[0])} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#B44747] ring-1 ring-[#B44747]/10">{text(lang, "reviewInLog")}</button><button type="button" onClick={() => onAcknowledgeDuplicate(duplicateSalesAlerts[0])} title={text(lang, "approveMultipleSalesHint")} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "approveMultipleSales")}</button></div></div>}
+      {closeoutAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#E6F5E9] p-3 ring-1 ring-[#39A160]/15"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#257844]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#257844]">{text(lang, "closeoutInAppAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === closeoutAlerts[0].businessId), lang)} · {formatCalendarDate(closeoutAlerts[0].date, lang)} · {lang === "ar" ? closeoutAlerts[0].employeeNameAr : closeoutAlerts[0].employeeNameEn}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "closeoutInAppHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onReviewCloseout(closeoutAlerts[0])} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#257844] ring-1 ring-[#39A160]/15">{text(lang, "reviewCloseout")}</button><button type="button" onClick={() => onDismissCloseout(closeoutAlerts[0].id)} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "dismissAlert")}</button></div></div>}
+      {duplicateSalesAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#FFF1EE] p-3 ring-1 ring-[#B44747]/10"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#B44747]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#B44747]">{text(lang, "duplicateSalesOwnerAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === duplicateSalesAlerts[0].businessId), lang)} · {formatCalendarDate(duplicateSalesAlerts[0].date, lang)} · {duplicateSalesAlerts[0].entries.length} {text(lang, "summary")}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "duplicateSalesOwnerHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onReviewDuplicate(duplicateSalesAlerts[0])} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#B44747] ring-1 ring-[#B44747]/10">{text(lang, "reviewInLog")}</button><button type="button" onClick={() => onAcknowledgeDuplicate(duplicateSalesAlerts[0])} title={text(lang, "approveMultipleSalesHint")} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "approveMultipleSales")}</button></div></div>}
       <Notebook fullPage theme={notebookTheme} lang={lang}>
         <NotebookHeading lang={lang} label={monthly ? text(lang, "monthlySummary") : text(lang, "dailySummary")} onShare={() => onShareNotebook({ theme: notebookTheme, period, selectedBusiness, includedBusinessIds: businessesList.map((business) => business.id), selectedDay: daySummary.id, selectedDate, selectedMonth, screen: "home", showDetails: expanded && !monthly && !isCombined })} dateSelector={<DateSelector compact lang={lang} period={period} setPeriod={changePeriod} selectedDay={selectedDay} setSelectedDay={(id) => { setSelectedDay(id); setShowAttachments(false); }} selectedDate={selectedDate} setSelectedDate={(date) => { setSelectedDate(date); setShowAttachments(false); }} fullCalendar selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />} />
         <StoreScopeTabs lang={lang} businessesList={businessesList} selectedBusiness={selectedBusiness} setSelectedBusiness={(id) => { setSelectedBusiness(id); setExpanded(false); setShowAttachments(false); }} />
@@ -118,7 +114,7 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
               <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{summaryLoadErrorMessage}</p></NotebookRow>
             ) : (
               <>
-                <StoreComparison lang={lang} monthly={monthly} reviewEnabled={reviewEnabled} businessesList={comparisonBusinesses} />
+                <StoreComparison lang={lang} monthly={monthly} businessesList={comparisonBusinesses} />
                 <NotebookRow lines={2}><p className="w-full text-taq-meta font-bold text-[#806528]">{text(lang, "chooseStoreForDetails")}</p></NotebookRow>
               </>
             )}
@@ -133,8 +129,8 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
                 <NotebookRow><NumberLine lang={lang} handwritten label={text(lang, "purchasesExpenses")} value={money(result.expense, lang)} valueClassName="text-[#B44747]" /></NotebookRow>
                 <NotebookRow><div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "outflowRatio")}</span><strong className="text-[#B44747]">{result.ratio}</strong></div></NotebookRow>
                 <NotebookRow strong lines={2}><div className="flex w-full items-end justify-between"><span className="text-sm font-extrabold">{monthly ? text(lang, "recordedMonthResult") : text(lang, "netMovement")}</span><strong className={`tabular-nums text-2xl font-extrabold ${result.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(result.net, lang)} /></strong></div></NotebookRow>
-                <NotebookRow>{monthly ? <div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "attachments")}</span><span>{result.proofs}{reviewEnabled && <> آ· <span className="text-[#B96725]">{result.pending} {text(lang, "notReviewed")}</span></>}</span></div> : <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span className="relative pb-1">{text(lang, "attachments")}{showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span><span>{result.proofs}{reviewEnabled && <> آ· <span className="text-[#B96725]">{result.pending} {text(lang, "notReviewed")}</span></>}</span></button>}</NotebookRow>
-                {!monthly && showAttachments && <DayAttachments lang={lang} group={attachmentGroup} reviewEnabled={reviewEnabledForBusiness(currentBusiness.id)} onOpenOperation={onOpenOperation} />}
+                <NotebookRow>{monthly ? <div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "attachments")}</span><span>{result.proofs}</span></div> : <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span className="relative pb-1">{text(lang, "attachments")}{showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span><span>{result.proofs}</span></button>}</NotebookRow>
+                {!monthly && showAttachments && <DayAttachments lang={lang} group={attachmentGroup} onOpenOperation={onOpenOperation} />}
                 <NotebookRow className="justify-center"><InkTab active={expanded} showActiveUnderline={false} onClick={() => setExpanded(!expanded)} className="inline-flex items-center gap-1">{expanded ? text(lang, "hideDetails") : text(lang, "showMore")}{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</InkTab></NotebookRow>
               </>
             )}
@@ -150,7 +146,7 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
           </div>
           {visibleDayOperations.length ? (
             <div>
-              {visibleDayOperations.map((item, index) => {
+              {visibleDayOperations.map((item) => {
                 const isSale = item.type === "summary";
                 return (
                   <button
@@ -168,7 +164,7 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
                         {entryIsVoided(item) && <Badge tone="warning">{text(lang, "voided")}</Badge>}
                       </span>
                       <small className="mt-1 block truncate text-taq-meta font-bold text-[#8A816F]">
-                        {opTime(item, lang)} آ· {entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}
+                        {opTime(item, lang)} · {entryHasAttachment(item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}
                       </small>
                     </span>
                   </button>
@@ -184,7 +180,7 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
   );
 }
 
-function DayAttachments({ lang, group, reviewEnabled = false, onOpenOperation = () => {} }) {
+function DayAttachments({ lang, group, onOpenOperation = () => {} }) {
   if (!group?.items?.length) {
     return (
       <NotebookRow>
@@ -204,9 +200,6 @@ function DayAttachments({ lang, group, reviewEnabled = false, onOpenOperation = 
             <p className={`mt-0.5 text-taq-meta font-black ${item.entry.type === "summary" ? "text-[#257844]" : "text-[#B44747]"}`}>
               <MoneyValue value={money(signedEntryAmount(item.entry), lang)} />
             </p>
-            {reviewEnabled && !entryIsVoided(item.entry) && !item.reviewed && (
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#B96725]" />
-            )}
           </button>
         ))}
       </div>
@@ -215,17 +208,5 @@ function DayAttachments({ lang, group, reviewEnabled = false, onOpenOperation = 
 }
 
 export function OwnerHomeConnected(props) {
-  const { pendingSubmittedCloseouts } = useDailyCloseouts();
-  const storeIds = props.businessesList?.map((business) => business.id) || [];
-  const pending = pendingSubmittedCloseouts(storeIds, props.closeoutReviewEnabledForBusiness);
-  return (
-    <OwnerHome
-      {...props}
-      pendingEmployeeCloseouts={pending}
-      onViewPendingCloseouts={() => {
-        const first = pending[0];
-        if (first) props.onViewPendingCloseouts?.(first);
-      }}
-    />
-  );
+  return <OwnerHome {...props} />;
 }

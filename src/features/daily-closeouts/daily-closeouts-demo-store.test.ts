@@ -8,7 +8,7 @@ import {
 } from "./daily-closeouts-demo-store";
 
 describe("withCloseoutTotals status normalization", () => {
-  it("promotes inconsistent draft records with submitted metadata to submitted", () => {
+  it("promotes inconsistent draft records with submitted metadata to reviewed", () => {
     const closeout = withCloseoutTotals({
       id: "c-1",
       status: CLOSEOUT_STATUS.DRAFT,
@@ -19,7 +19,7 @@ describe("withCloseoutTotals status normalization", () => {
       submittedByName: "Ahmed",
     });
 
-    expect(closeout.status).toBe(CLOSEOUT_STATUS.SUBMITTED);
+    expect(closeout.status).toBe(CLOSEOUT_STATUS.REVIEWED);
   });
 
   it("keeps reviewed status when reviewed metadata exists", () => {
@@ -36,7 +36,7 @@ describe("withCloseoutTotals status normalization", () => {
     expect(closeout.status).toBe(CLOSEOUT_STATUS.REVIEWED);
   });
 
-  it("keeps returned status when returned metadata exists", () => {
+  it("maps legacy returned metadata to reviewed", () => {
     const closeout = withCloseoutTotals({
       id: "c-3",
       status: CLOSEOUT_STATUS.SUBMITTED,
@@ -47,7 +47,7 @@ describe("withCloseoutTotals status normalization", () => {
       returnReason: "Need edit",
     });
 
-    expect(closeout.status).toBe(CLOSEOUT_STATUS.RETURNED);
+    expect(closeout.status).toBe(CLOSEOUT_STATUS.REVIEWED);
   });
 
   it("treats synced closeouts as reviewed when legacy status is stale", () => {

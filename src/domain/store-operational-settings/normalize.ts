@@ -52,20 +52,11 @@ export function diffStoreOperationalSettingsPatch(
   if (!valuesEqual(previous.activeCategories, next.activeCategories)) {
     patch.activeCategories = next.activeCategories;
   }
-  if (previous.reviewEnabled !== next.reviewEnabled) {
-    patch.reviewEnabled = next.reviewEnabled;
-  }
-  if (previous.closeoutReviewEnabled !== next.closeoutReviewEnabled) {
-    patch.closeoutReviewEnabled = next.closeoutReviewEnabled;
-  }
   if (previous.employeeHistoryVisibility !== next.employeeHistoryVisibility) {
     patch.employeeHistoryVisibility = next.employeeHistoryVisibility;
   }
   if (previous.closeoutAlert !== next.closeoutAlert) {
     patch.closeoutAlert = next.closeoutAlert;
-  }
-  if (previous.attachmentAlert !== next.attachmentAlert) {
-    patch.attachmentAlert = next.attachmentAlert;
   }
   if (!valuesEqual(previous.notebookTheme, next.notebookTheme)) {
     patch.notebookTheme = next.notebookTheme;

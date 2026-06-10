@@ -2,20 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   resolveOwnerOperationOpenAction,
   resolveRestoreOperationTarget,
-  resolveSelectedOperationReviewEnabled,
   resolveVoidOperationTarget,
 } from "./register-operations-selection";
 
 describe("register operations selection", () => {
-  it("resolves review enabled for selected operation", () => {
-    expect(resolveSelectedOperationReviewEnabled(
-      { businessId: "shami" },
-      (id) => id === "shami",
-      [],
-      false,
-    )).toBe(true);
-  });
-
   it("resolves void target only for active non-archived entries", () => {
     const entries = [{ id: "e1", businessId: "shami", status: "active" }] as Array<{ id: string; businessId: string; status: string }>;
     const entryIsVoided = (entry: object) => (entry as { status: string }).status === "voided";

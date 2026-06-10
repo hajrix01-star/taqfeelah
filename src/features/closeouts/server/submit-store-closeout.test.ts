@@ -18,20 +18,6 @@ vi.mock("@/features/closeouts/server/resolve-closeout-day-sequence", () => ({
   resolveCloseoutDaySequence: vi.fn(async () => 1),
 }));
 
-const readStoreOperationalSettingsRecord = vi.fn(async () => ({
-  activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
-  reviewEnabled: false,
-  closeoutReviewEnabled: false,
-  employeeHistoryVisibility: "all" as const,
-  closeoutAlert: false,
-  attachmentAlert: false,
-  notebookTheme: null,
-}));
-
-vi.mock("@/features/org-config/server/read-store-operational-settings", () => ({
-  readStoreOperationalSettingsRecord,
-}));
-
 vi.mock("@/core/db/client", () => ({
   getDb: () => ({
     select: () => ({
@@ -127,13 +113,10 @@ describe("submitStoreCloseout", () => {
     deleteCalls.length = 0;
   });
 
-  it("auto-approves employee closeout when autoReview is true", async () => {
+  it("approves employee closeout immediately on submit", async () => {
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 
-    const result = await submitStoreCloseout({
-      ...baseInput,
-      autoReview: true,
-    });
+    const result = await submitStoreCloseout(baseInput);
 
     expect(result.summaryEntryId).toBeTruthy();
     expect(result.dailyCloseoutId).toBe("daily-closeout-1");
@@ -146,42 +129,15 @@ describe("submitStoreCloseout", () => {
     expect((summaryInsert?.values as { closeoutId: string }).closeoutId).toBe("daily-closeout-1");
 
     const audits = auditInserts();
-    expect(audits).toHaveLength(2);
+    expect(audits).toHaveLength(1);
     expect((audits[0]?.values as { action: string }).action).toBe("closeout_submitted");
-    expect((audits[1]?.values as { action: string }).action).toBe("closeout_approved");
-  });
-
-  it("leaves employee closeout pending when persisted store settings require review", async () => {
-    insertCalls.length = 0;
-    readStoreOperationalSettingsRecord.mockResolvedValueOnce({
-      activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
-      reviewEnabled: false,
-      closeoutReviewEnabled: true,
-      employeeHistoryVisibility: "all",
-      closeoutAlert: false,
-      attachmentAlert: false,
-      notebookTheme: null,
-    });
-    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
-
-    await submitStoreCloseout({
-      ...baseInput,
-      autoReview: true,
-      requireReview: false,
-    });
-
-    expect((closeoutInserts()[0]?.values as { status: string }).status).toBe("submitted");
-    expect((entryInserts()[0]?.values as { status: string }).status).toBe("voided");
-    expect(auditInserts()).toHaveLength(1);
   });
 
   it("persists outflow entries linked to the closeout row", async () => {
-    insertCalls.length = 0;
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 
     await submitStoreCloseout({
       ...baseInput,
-      autoReview: false,
       outflows: [
         {
           type: "purchases",
@@ -212,50 +168,14 @@ describe("submitStoreCloseout", () => {
     expect(metadata?.dailyCloseoutId).toBe("daily-closeout-1");
   });
 
-  it("enforces employee review from persisted store settings even when client omits requireReview", async () => {
-    insertCalls.length = 0;
-    readStoreOperationalSettingsRecord.mockResolvedValueOnce({
-      activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
-      reviewEnabled: false,
-      closeoutReviewEnabled: true,
-      employeeHistoryVisibility: "all",
-      closeoutAlert: false,
-      attachmentAlert: false,
-      notebookTheme: null,
-    });
-    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
-
-    await submitStoreCloseout({
-      ...baseInput,
-      autoReview: true,
-      requireReview: false,
-    });
-
-    expect((entryInserts()[0]?.values as { status: string }).status).toBe("voided");
-    expect(auditInserts()).toHaveLength(1);
-  });
-
-  it("auto-approves employee closeout by default when requireReview is omitted", async () => {
-    insertCalls.length = 0;
-    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
-
-    await submitStoreCloseout({
-      ...baseInput,
-      autoReview: false,
-    });
-
-    expect((entryInserts()[0]?.values as { status: string }).status).toBe("active");
-    expect(auditInserts()).toHaveLength(2);
-  });
-
   it("replaces prior entries when resubmitting a closeout", async () => {
     txExistingCloseout = true;
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 
     await submitStoreCloseout({
       ...baseInput,
+      actorRole: "owner",
       mode: "resubmit",
-      autoReview: false,
       outflows: [
         {
           type: "expense",
@@ -268,7 +188,7 @@ describe("submitStoreCloseout", () => {
     });
 
     expect(deleteCalls.some((call) => call.table === entries)).toBe(true);
-    expect(closeoutInserts()).toHaveLength(0);
-    expect(entryInserts().length).toBeGreaterThanOrEqual(2);
+    expect(updateCalls.some((call) => call.table === dailyCloseouts)).toBe(true);
+    expect((auditInserts()[0]?.values as { action: string }).action).toBe("closeout_resubmitted");
   });
 });

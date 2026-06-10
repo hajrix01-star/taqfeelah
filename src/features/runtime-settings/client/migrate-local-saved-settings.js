@@ -1,31 +1,24 @@
+import { normalizeStoreOperationalSettings } from "@/domain/store-operational-settings/normalize";
+
 export const DISABLE_REVIEW_ALERTS_MIGRATION_KEY = "disableReviewAlertsV1";
 export const OWNER_SETTINGS_STORAGE_KEY = "taqfeelah_owner_settings";
 
 export function migrateSavedSettingsBlob(raw) {
-  if (!raw || raw[DISABLE_REVIEW_ALERTS_MIGRATION_KEY]) return raw;
+  if (!raw || typeof raw !== "object") return raw;
 
-  const migrated = { ...raw, [DISABLE_REVIEW_ALERTS_MIGRATION_KEY]: true };
-  if (migrated.storeOperationalSettings) {
-    migrated.storeOperationalSettings = Object.fromEntries(
-      Object.entries(migrated.storeOperationalSettings).map(([id, cfg]) => [
-        id,
-        {
-          ...cfg,
-          reviewEnabled: false,
-          attachmentAlert: false,
-          closeoutAlert: false,
-          closeoutReviewEnabled: false,
-        },
-      ]),
-    );
-  } else {
-    migrated.reviewEnabled = false;
-    migrated.closeoutAlert = false;
-    migrated.attachmentAlert = false;
-    migrated.closeoutReviewEnabled = false;
+  if (raw.storeOperationalSettings && typeof raw.storeOperationalSettings === "object") {
+    return {
+      ...raw,
+      storeOperationalSettings: Object.fromEntries(
+        Object.entries(raw.storeOperationalSettings).map(([id, cfg]) => [
+          id,
+          normalizeStoreOperationalSettings(cfg),
+        ]),
+      ),
+    };
   }
 
-  return migrated;
+  return raw;
 }
 
 /**

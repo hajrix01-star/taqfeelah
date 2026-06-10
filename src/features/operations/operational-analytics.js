@@ -1,9 +1,6 @@
 /** Pure helpers for operational entry filtering and totals (prototype + tests). */
 
-import {
-  countPendingReviewsFromUiEntries,
-  countProofsFromUiEntries,
-} from "@/domain/attachment-review/stats";
+import { countProofsFromUiEntries } from "@/domain/attachment-review/stats";
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 
 export const OUTFLOW_ENTRY_TYPES = new Set(["purchases", "expense", "withdrawal"]);
@@ -53,21 +50,20 @@ export function entriesInPeriod(
   );
 }
 
-export function summarizeEntries(entries, reviewEnabledForBusiness = () => false) {
+export function summarizeEntries(entries) {
   const activeEntries = entries.filter(entryIsActive);
   const sales = activeEntries.filter((entry) => entry.type === "summary").reduce((sum, entry) => sum + entry.amount, 0);
   const expense = activeEntries.filter(entryIsOutflow).reduce((sum, entry) => sum + entry.amount, 0);
   const proofs = countProofsFromUiEntries(activeEntries);
-  const pending = countPendingReviewsFromUiEntries(activeEntries, reviewEnabledForBusiness);
   const ratio = sales > 0 ? `${((expense / sales) * 100).toFixed(1)}%` : expense > 0 ? "—" : "0.0%";
-  return { sales, expense, net: sales - expense, ratio, proofs, pending };
+  return { sales, expense, net: sales - expense, ratio, proofs, pending: 0 };
 }
 
-export function summaryMonthFromEntries(entries, businessId, month, reviewEnabledForBusiness = () => false) {
-  return summarizeEntries(entriesInPeriod(entries, businessId, "month", "", month), reviewEnabledForBusiness);
+export function summaryMonthFromEntries(entries, businessId, month) {
+  return summarizeEntries(entriesInPeriod(entries, businessId, "month", "", month));
 }
 
-export function summaryDayFromEntries(entries, businessId, date, reviewEnabledForBusiness = () => false, formatDayLabel) {
+export function summaryDayFromEntries(entries, businessId, date, formatDayLabel) {
   const format = typeof formatDayLabel === "function"
     ? formatDayLabel
     : (value) => value;
@@ -77,7 +73,7 @@ export function summaryDayFromEntries(entries, businessId, date, reviewEnabledFo
     dayEn: format(date, "en"),
     fullAr: format(date, "ar"),
     fullEn: format(date, "en"),
-    ...summarizeEntries(entriesInPeriod(entries, businessId, "day", date, "2026-05"), reviewEnabledForBusiness),
+    ...summarizeEntries(entriesInPeriod(entries, businessId, "day", date, "2026-05")),
   };
 }
 
@@ -183,7 +179,6 @@ export function resolveOwnerSingleStoreTotals(
  * @param {boolean} [input.monthly]
  * @param {string} [input.selectedDate]
  * @param {string} [input.selectedMonth]
- * @param {(businessId: string) => boolean} [input.reviewEnabledForBusiness]
  */
 export function buildBusinessesWithEntrySummaries({
   businesses = [],
@@ -191,15 +186,13 @@ export function buildBusinessesWithEntrySummaries({
   monthly = false,
   selectedDate = "",
   selectedMonth = "",
-  reviewEnabledForBusiness = () => false,
 }) {
   const periodKey = monthly ? "month" : "day";
   return businesses.map((business) => {
     const record = monthly
-      ? summaryMonthFromEntries(operationalEntries, business.id, selectedMonth, reviewEnabledForBusiness)
+      ? summaryMonthFromEntries(operationalEntries, business.id, selectedMonth)
       : summarizeEntries(
         entriesInPeriod(operationalEntries, business.id, "day", selectedDate, selectedMonth),
-        reviewEnabledForBusiness,
       );
     return {
       ...business,

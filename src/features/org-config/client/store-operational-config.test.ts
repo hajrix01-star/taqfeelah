@@ -9,37 +9,35 @@ import {
 describe("store operational config helpers", () => {
   it("returns normalized defaults for unknown store", () => {
     expect(getStoreOperationalConfig({}, "shami")).toMatchObject({
-      reviewEnabled: false,
-      closeoutReviewEnabled: false,
+      closeoutAlert: false,
       employeeHistoryVisibility: "all",
     });
   });
 
   it("builds per-store settings from legacy saved settings blob", () => {
     const settings = buildInitialStoreOperationalSettings({
-      reviewEnabled: true,
-      closeoutReviewEnabled: true,
+      closeoutAlert: true,
+      employeeHistoryVisibility: "week",
     }, [{ id: "shami" }, { id: "arz" }]);
 
-    expect(settings.shami.reviewEnabled).toBe(true);
-    expect(settings.shami.closeoutReviewEnabled).toBe(true);
+    expect(settings.shami.closeoutAlert).toBe(true);
+    expect(settings.shami.employeeHistoryVisibility).toBe("week");
     expect(settings.arz.activeCategories).toContain("rent");
   });
 
   it("ensures operational settings exist for each configured business", () => {
     const next = ensureStoreOperationalSettingsForBusinesses({}, ["shami"]);
-    expect(next.shami).toMatchObject({ reviewEnabled: false });
+    expect(next.shami).toMatchObject({ closeoutAlert: false });
     expect(ensureStoreOperationalSettingsForBusinesses(next, ["shami"])).toBe(next);
   });
 
-  it("exposes store policy helpers from normalized settings", () => {
+  it("exposes closeout alert policy helper from normalized settings", () => {
     const policy = buildStoreOperationalPolicy({
-      shami: { reviewEnabled: true, attachmentAlert: true, closeoutReviewEnabled: true },
+      shami: { closeoutAlert: true },
+      arz: { closeoutAlert: false },
     });
 
-    expect(policy.reviewEnabledForBusiness("shami")).toBe(true);
-    expect(policy.closeoutReviewEnabledForBusiness("shami")).toBe(true);
-    expect(policy.attachmentAlertEnabledForBusiness("shami")).toBe(true);
-    expect(policy.attachmentAlertEnabledForBusiness("arz")).toBe(false);
+    expect(policy.closeoutAlertEnabledForBusiness("shami")).toBe(true);
+    expect(policy.closeoutAlertEnabledForBusiness("arz")).toBe(false);
   });
 });

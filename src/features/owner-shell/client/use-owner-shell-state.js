@@ -6,7 +6,6 @@ import { upsertCloseoutAlert, buildCloseoutAlertRecord } from "@/features/operat
 import {
   buildDuplicateSalesAlerts,
   buildOwnerNotificationState,
-  buildPendingAttachmentReviews,
   resolveActiveViewBusiness,
 } from "./owner-shell-notifications.js";
 import {
@@ -55,8 +54,6 @@ export function useOwnerShellState({
   activeBusinesses = [],
   configuredBusinesses = [],
   storeOperationalSettings = {},
-  reviewEnabledForBusiness = () => false,
-  attachmentAlertEnabledForBusiness = () => false,
   closeoutAlertEnabledForBusiness = () => false,
   setSelected = () => {},
 }) {
@@ -65,13 +62,11 @@ export function useOwnerShellState({
   const [archivedReadOnlyBusinessId, setArchivedReadOnlyBusinessId] = useState(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [ownerReviewCloseout, setOwnerReviewCloseout] = useState(null);
-  const [returnCloseoutTarget, setReturnCloseoutTarget] = useState(null);
+  const [ownerManageCloseout, setOwnerManageCloseout] = useState(null);
   const [closeoutAlerts, setCloseoutAlerts] = useState(
     () => resolveStoredCloseoutAlerts(ownerShellPreferences, bindsToServerAuth),
   );
   const [duplicateReviewFocus, setDuplicateReviewFocus] = useState(null);
-  const [attachmentReviewRequest, setAttachmentReviewRequest] = useState(null);
   const [shareSnapshot, setShareSnapshot] = useState(null);
   const [acknowledgedDuplicateSales, setAcknowledgedDuplicateSales] = useState(
     () => resolveStoredAcknowledgedDuplicateSales(ownerShellPreferences, bindsToServerAuth),
@@ -82,7 +77,6 @@ export function useOwnerShellState({
     setSelectedBusiness,
     setArchivedReadOnlyBusinessId,
     setDuplicateReviewFocus,
-    setAttachmentReviewRequest,
     setQuickAddOpen,
     setSelected,
     setCloseoutAlerts,
@@ -94,9 +88,6 @@ export function useOwnerShellState({
   );
   const activeOwnerStoreId = activeViewBusiness === "all" ? activeBusinesses[0]?.id : activeViewBusiness;
   const reportSettingsStoreId = archivedReadOnlyBusinessId || activeOwnerStoreId;
-  const ownerReviewEnabled = activeViewBusiness === "all"
-    ? activeBusinesses.some((business) => reviewEnabledForBusiness(business.id))
-    : reviewEnabledForBusiness(activeOwnerStoreId);
 
   const duplicateSalesAlerts = useMemo(
     () => buildDuplicateSalesAlerts({
@@ -107,31 +98,18 @@ export function useOwnerShellState({
     [operationalEntries, activeBusinesses, acknowledgedDuplicateSales],
   );
 
-  const pendingAttachmentReviews = useMemo(
-    () => buildPendingAttachmentReviews({
-      operationalEntries,
-      activeBusinesses,
-      attachmentAlertEnabledForBusiness,
-    }),
-    [operationalEntries, activeBusinesses, attachmentAlertEnabledForBusiness],
-  );
-
   const {
     unseenCloseoutAlerts,
-    firstPendingAttachmentReview,
-    ownerHasPendingReview,
     ownerNotificationsVisible,
     ownerNotificationBadge,
   } = useMemo(
     () => buildOwnerNotificationState({
       duplicateSalesAlerts,
-      pendingAttachmentReviews,
       closeoutAlerts,
       closeoutAlertEnabledForBusiness,
     }),
     [
       duplicateSalesAlerts,
-      pendingAttachmentReviews,
       closeoutAlerts,
       closeoutAlertEnabledForBusiness,
     ],
@@ -225,11 +203,10 @@ export function useOwnerShellState({
   const openNotifications = useCallback(() => {
     handleOwnerNotificationsClick({
       duplicateSalesAlerts,
-      firstPendingAttachmentReview,
       unseenCloseoutAlerts,
       apply: navApply,
     });
-  }, [duplicateSalesAlerts, firstPendingAttachmentReview, navApply, unseenCloseoutAlerts]);
+  }, [duplicateSalesAlerts, navApply, unseenCloseoutAlerts]);
 
   const resetOwnerShellNav = useCallback(() => {
     resetOwnerNavContext(navApply);
@@ -246,16 +223,12 @@ export function useOwnerShellState({
     setQuickAddOpen,
     helpOpen,
     setHelpOpen,
-    ownerReviewCloseout,
-    setOwnerReviewCloseout,
-    returnCloseoutTarget,
-    setReturnCloseoutTarget,
+    ownerManageCloseout,
+    setOwnerManageCloseout,
     closeoutAlerts,
     setCloseoutAlerts,
     duplicateReviewFocus,
     setDuplicateReviewFocus,
-    attachmentReviewRequest,
-    setAttachmentReviewRequest,
     shareSnapshot,
     setShareSnapshot,
     acknowledgedDuplicateSales,
@@ -263,12 +236,8 @@ export function useOwnerShellState({
     activeViewBusiness,
     activeOwnerStoreId,
     reportSettingsStoreId,
-    ownerReviewEnabled,
     duplicateSalesAlerts,
-    pendingAttachmentReviews,
-    firstPendingAttachmentReview,
     unseenCloseoutAlerts,
-    ownerHasPendingReview,
     ownerNotificationsVisible,
     ownerNotificationBadge,
     pushCloseoutAlert,

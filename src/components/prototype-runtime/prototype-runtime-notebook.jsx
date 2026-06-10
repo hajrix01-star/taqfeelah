@@ -274,7 +274,7 @@ function StoreScopeTabs({ lang, selectedBusiness, setSelectedBusiness, businesse
   );
 }
 
-function StoreComparison({ lang, monthly, reviewEnabled = false, businessesList = businesses }) {
+function StoreComparison({ lang, monthly, businessesList = businesses }) {
   const [showStores, setShowStores] = useState(false);
   const total = combinedTotals(monthly, businessesList);
   if (businessesList.length > 2) {
@@ -284,7 +284,6 @@ function StoreComparison({ lang, monthly, reviewEnabled = false, businessesList 
         <NotebookRow><NumberLine label={text(lang, "sales")} value={money(total.sales, lang)} /></NotebookRow>
         <NotebookRow><NumberLine label={text(lang, "outflow")} value={money(total.expense, lang)} valueClassName="text-[#B44747]" /></NotebookRow>
         <NotebookRow strong lines={2}><NumberLine label={text(lang, "result")} value={money(total.net, lang)} valueClassName={total.net < 0 ? "text-[#B44747]" : "text-[#257844]"} /></NotebookRow>
-        {reviewEnabled && <NotebookRow><NumberLine label={text(lang, "unreviewedShort")} value={`${total.pending}`} valueClassName="text-[#B96725]" /></NotebookRow>}
         <NotebookRow className="justify-center"><InkTab active={showStores} onClick={() => setShowStores(!showStores)} className="inline-flex items-center gap-1">{text(lang, showStores ? "hideStores" : "viewStores")}{showStores ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</InkTab></NotebookRow>
         {showStores && <div><NotebookRow><p className="text-taq-meta font-bold text-[#806528]">{text(lang, "storeResults")}</p></NotebookRow>{ranked.map((business) => { const record = businessRecord(business, monthly); return <NotebookRow key={business.id}><div className="flex w-full items-end justify-between text-xs"><span className="font-medium">{businessName(business, lang)}</span><strong className={`tabular-nums font-bold ${record.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(record.net, lang)} /></strong></div></NotebookRow>; })}</div>}
       </div>
@@ -296,7 +295,6 @@ function StoreComparison({ lang, monthly, reviewEnabled = false, businessesList 
       <NotebookRow><div className="grid w-full grid-cols-[1.05fr_1fr_1fr] gap-1 text-xs font-medium"><span>{text(lang, "sales")}</span>{businessesList.map((business) => <span key={business.id} className="text-center font-bold tabular-nums"><MoneyValue value={money(businessRecord(business, monthly).sales, lang)} /></span>)}</div></NotebookRow>
       <NotebookRow><div className="grid w-full grid-cols-[1.05fr_1fr_1fr] gap-1 text-xs font-medium"><span className="text-[#B44747]">{text(lang, "outflow")}</span>{businessesList.map((business) => <span key={business.id} className="text-center font-bold tabular-nums text-[#B44747]"><MoneyValue value={money(businessRecord(business, monthly).expense, lang)} /></span>)}</div></NotebookRow>
       <NotebookRow><div className="grid w-full grid-cols-[1.05fr_1fr_1fr] gap-1 text-xs font-medium"><span>{text(lang, "result")}</span>{businessesList.map((business) => { const value = businessRecord(business, monthly).net; return <span key={business.id} className={`text-center font-bold tabular-nums ${value < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(value, lang)} /></span>; })}</div></NotebookRow>
-      {reviewEnabled && <NotebookRow><div className="grid w-full grid-cols-[1.05fr_1fr_1fr] gap-1 text-taq-meta font-bold"><span className="font-medium text-[#806528]">{text(lang, "unreviewedShort")}</span>{businessesList.map((business) => <span key={business.id} className="text-center font-black text-[#B96725]">{businessRecord(business, monthly).pending}</span>)}</div></NotebookRow>}
       <NotebookRow strong><NumberLine label={text(lang, "combinedTotal")} value={money(total.net, lang)} valueClassName={total.net < 0 ? "text-[#B44747]" : "text-[#257844]"} /></NotebookRow>
     </div>
   );

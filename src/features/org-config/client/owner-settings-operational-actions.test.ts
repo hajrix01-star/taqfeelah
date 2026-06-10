@@ -7,7 +7,7 @@ import {
 
 const baseConfig = {
   activeCategories: ["rent", "salary"],
-  reviewEnabled: true,
+  closeoutAlert: false,
 };
 
 describe("owner settings operational actions", () => {
@@ -28,12 +28,10 @@ describe("owner settings operational actions", () => {
     expect(toggled.blocked).toBe(false);
     expect(toggled.config.activeCategories).toEqual(["rent"]);
 
-    const merged = mergeOperationalDraft(baseConfig, { reviewEnabled: false, closeoutAlert: true }) as {
+    const merged = mergeOperationalDraft(baseConfig, { closeoutAlert: true }) as {
       activeCategories: string[];
-      reviewEnabled: boolean;
       closeoutAlert: boolean;
     };
-    expect(merged.reviewEnabled).toBe(false);
     expect(merged.closeoutAlert).toBe(true);
     expect(merged.activeCategories).toEqual(["rent", "salary"]);
   });

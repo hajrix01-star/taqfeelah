@@ -52,6 +52,6 @@ describe("getStorePeriodSummary", () => {
     expect(summary.totalOutflow.amountHalalas).toBe(25000);
     expect(summary.netMovement.amountHalalas).toBe(175000);
     expect(summary.attachmentCount).toBe(3);
-    expect(summary.pendingReviewCount).toBe(1);
+    expect(summary.pendingReviewCount).toBe(0);
   });
 });

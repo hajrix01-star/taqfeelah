@@ -4,23 +4,6 @@ import {
 } from "@/features/operations/operational-entry-mutation-helpers";
 
 /**
- * @param {Object | null | undefined} selected
- * @param {(businessId: string) => boolean} reviewEnabledForBusiness
- * @param {string[]} archivedBusinessIds
- * @param {boolean} ownerReviewEnabled
- */
-export function resolveSelectedOperationReviewEnabled(
-  selected,
-  reviewEnabledForBusiness,
-  archivedBusinessIds,
-  ownerReviewEnabled,
-) {
-  return selected
-    ? reviewEnabledForBusiness(selected.businessId) && !archivedBusinessIds.includes(selected.businessId)
-    : ownerReviewEnabled;
-}
-
-/**
  * @param {Array<{ id?: string }>} operationalEntries
  * @param {string} entryId
  * @param {string[]} archivedBusinessIds

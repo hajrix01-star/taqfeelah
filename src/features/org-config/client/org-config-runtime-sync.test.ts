@@ -115,7 +115,7 @@ describe("org config runtime sync", () => {
         archivedBusinessIds: [],
         storeChannelSettings: {},
         storeOperationalSettings: {
-          shami: { closeoutReviewEnabled: false },
+          shami: { closeoutAlert: false },
         },
         staff: [],
       },
@@ -127,7 +127,7 @@ describe("org config runtime sync", () => {
         archivedBusinessIds: [],
         storeChannelSettings: {},
         storeOperationalSettings: {
-          shami: { closeoutReviewEnabled: true },
+          shami: { closeoutAlert: true },
         },
         staff: [],
       },
@@ -138,7 +138,7 @@ describe("org config runtime sync", () => {
     ));
     expect(patchCall).toBeTruthy();
     expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({
-      closeoutReviewEnabled: true,
+      closeoutAlert: true,
     });
   });
 });

@@ -118,7 +118,7 @@ function extractOutflows(closeout) {
 }
 
 /**
- * @param {{ organizationId?: string, actorUserId?: string, actorRole?: string, closeout?: object, storeChannels?: Array<Record<string, unknown>>, mode?: string, autoReview?: boolean, requireReview?: boolean }} input
+ * @param {{ organizationId?: string, actorUserId?: string, actorRole?: string, closeout?: object, storeChannels?: Array<Record<string, unknown>>, mode?: string }} input
  */
 export async function submitCloseoutViaApi({
   organizationId,
@@ -127,8 +127,6 @@ export async function submitCloseoutViaApi({
   closeout,
   storeChannels = [],
   mode = "submit",
-  autoReview = false,
-  requireReview = false,
 }) {
   const { storeIdMap } = getMaps();
   const mappedStoreId = mapToUuid(closeout?.storeId, storeIdMap);
@@ -144,8 +142,6 @@ export async function submitCloseoutViaApi({
     method: "POST",
     body: {
       mode,
-      autoReview: autoReview === true,
-      requireReview: requireReview === true,
       closeoutId: closeout.id,
       date: closeout.date,
       salesChannels,
@@ -212,31 +208,3 @@ export async function fetchStoreCloseoutsViaApi({
   });
 }
 
-export async function reviewCloseoutViaApi({
-  organizationId,
-  actorUserId,
-  actorRole,
-  closeout,
-  action,
-  reason = "",
-}) {
-  const { storeIdMap } = getMaps();
-  const mappedStoreId = mapToUuid(closeout?.storeId, storeIdMap);
-  if (!mappedStoreId || !closeout?.id) return null;
-
-  return fetchApiJsonWithPrototypeContext(
-    `/api/v1/stores/${mappedStoreId}/closeouts/${encodeURIComponent(closeout.id)}/review`,
-    {
-      organizationId,
-      actorUserId,
-      actorRole,
-      method: "POST",
-      body: {
-        action,
-        date: closeout.date,
-        reason,
-      },
-      errorMessage: "closeout review api failed.",
-    },
-  );
-}

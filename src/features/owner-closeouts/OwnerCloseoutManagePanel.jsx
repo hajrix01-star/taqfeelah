@@ -9,22 +9,19 @@ function money(value, lang) {
   return Number(value || 0).toLocaleString(lang === "ar" ? "en-US" : "en-US");
 }
 
-export default function OwnerCloseoutReviewPanel({
+export default function OwnerCloseoutManagePanel({
   lang,
   closeout,
   formatCalendarDate,
   formatDateTime,
-  reviewWorkflowEnabled,
   onClose,
-  onApprove,
-  onReturn,
   onEdit,
   onDelete,
 }) {
   if (!closeout) return null;
   const totals = closeout.totals || computeCloseoutTotals(closeout.sales, closeout.outflows);
   const salesRows = salesArrayFromRecord(closeout.sales);
-  const statusText = closeoutStatusLabel(closeout.status, lang, { reviewWorkflowEnabled });
+  const statusText = closeoutStatusLabel(closeout.status, lang);
 
   return (
     <AnimatePresence>
@@ -70,11 +67,11 @@ export default function OwnerCloseoutReviewPanel({
             <div className="mb-4 flex flex-wrap gap-2">
               {(closeout.attachments || []).map((src, index) => (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img key={`${closeout.id}-rev-${index}`} src={src} alt="" className="h-16 w-16 rounded-xl object-cover" />
+                <img key={`${closeout.id}-manage-${index}`} src={src} alt="" className="h-16 w-16 rounded-xl object-cover" />
               ))}
             </div>
           )}
-          <div className="mb-3 grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <button type="button" onClick={onEdit} className="rounded-2xl bg-white py-3.5 text-xs font-black text-[#112A46] ring-1 ring-black/[0.08]">
               {lang === "ar" ? "تعديل التقفيلة" : "Edit closeout"}
             </button>
@@ -82,12 +79,6 @@ export default function OwnerCloseoutReviewPanel({
               {lang === "ar" ? "حذف التقفيلة" : "Delete closeout"}
             </button>
           </div>
-          {closeout.status === "submitted" && reviewWorkflowEnabled && (
-            <div className="grid grid-cols-2 gap-3">
-              <button type="button" onClick={onApprove} className="rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white">{lang === "ar" ? "اعتماد التقفيلة" : "Approve"}</button>
-              <button type="button" onClick={onReturn} className="rounded-2xl bg-white py-3.5 text-xs font-black text-[#B44747] ring-1 ring-[#B44747]/15">{lang === "ar" ? "إرجاع للتعديل" : "Return"}</button>
-            </div>
-          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>

@@ -36,23 +36,19 @@ describe("owner shell navigation", () => {
   });
 
   it("routes notifications to duplicate review first", () => {
-    const setAttachmentReviewRequest = vi.fn();
     const setOwnerPage = vi.fn();
 
     handleOwnerNotificationsClick({
-      duplicateSalesAlerts: [{ businessId: "shami", date: "2026-06-01" }],
-      firstPendingAttachmentReview: null,
+      duplicateSalesAlerts: [{ businessId: "shami", date: "2026-06-06" }],
       unseenCloseoutAlerts: [],
       apply: {
         setArchivedReadOnlyBusinessId: vi.fn(),
         setSelectedBusiness: vi.fn(),
         setDuplicateReviewFocus: vi.fn(),
         setOwnerPage,
-        setAttachmentReviewRequest,
       },
     });
 
-    expect(setAttachmentReviewRequest).toHaveBeenCalledWith(null);
     expect(setOwnerPage).toHaveBeenCalledWith("register");
   });
 });

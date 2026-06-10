@@ -44,7 +44,6 @@ import { useEmployeeEntryActions } from "@/features/employee-shell/client/use-em
 import { useEmployeePortalState } from "@/features/employee-shell/client/use-employee-portal-state";
 import { useOwnerSettingsState } from "@/features/org-config/client/use-owner-settings-state";
 import { useOwnerShellState } from "@/features/owner-shell/client/use-owner-shell-state";
-import { resolveSelectedOperationReviewEnabled } from "@/features/operations/client/register-operations-selection";
 import { useRegisterOperationsState } from "@/features/operations/client/use-register-operations-state";
 import { useRegisterSelectionState } from "@/features/operations/client/use-register-selection-state";
 import { usePrototypeRuntimeOperationalEntries } from "@/features/operations/client/use-prototype-runtime-operational-entries";
@@ -102,7 +101,7 @@ import { nextDayIso } from "./prototype-runtime/prototype-runtime-date-helpers";
 import { OwnerHomeConnected } from "./prototype-runtime/prototype-runtime-owner-home-screen";
 import { OwnerRegisterConnected } from "./prototype-runtime/prototype-runtime-owner-register-screen";
 import { NotebookShareModal } from "./prototype-runtime/prototype-runtime-notebook-share-modal";
-import { OwnerCloseoutModals } from "./prototype-runtime/prototype-runtime-owner-closeout-modals";
+import { OwnerCloseoutEditFlow, OwnerCloseoutModals } from "./prototype-runtime/prototype-runtime-owner-closeout-modals";
 
 
 export default function TaqfeelahPrototypeRuntime() {
@@ -162,9 +161,6 @@ export default function TaqfeelahPrototypeRuntime() {
     ownerDisplayName,
     activeBusinesses,
     reportingBusinesses,
-    reviewEnabledForBusiness,
-    closeoutReviewEnabledForBusiness,
-    attachmentAlertEnabledForBusiness,
     closeoutAlertEnabledForBusiness,
     persistRuntimeSettingsNow,
     runtimeSettingsSyncError,
@@ -336,7 +332,6 @@ export default function TaqfeelahPrototypeRuntime() {
   );
 
   const registerSelection = useRegisterSelectionState({
-    reviewEnabledForBusiness,
     archivedBusinessIds,
   });
 
@@ -388,22 +383,17 @@ export default function TaqfeelahPrototypeRuntime() {
     setQuickAddOpen,
     helpOpen,
     setHelpOpen,
-    ownerReviewCloseout,
-    setOwnerReviewCloseout,
-    returnCloseoutTarget,
-    setReturnCloseoutTarget,
+    ownerManageCloseout,
+    setOwnerManageCloseout,
     setCloseoutAlerts,
     duplicateReviewFocus,
     setDuplicateReviewFocus,
-    attachmentReviewRequest,
-    setAttachmentReviewRequest,
     shareSnapshot,
     setShareSnapshot,
     setAcknowledgedDuplicateSales,
     activeViewBusiness,
     activeOwnerStoreId,
     reportSettingsStoreId,
-    ownerReviewEnabled,
     duplicateSalesAlerts,
     unseenCloseoutAlerts,
     ownerNotificationsVisible,
@@ -424,8 +414,6 @@ export default function TaqfeelahPrototypeRuntime() {
     activeBusinesses,
     configuredBusinesses,
     storeOperationalSettings,
-    reviewEnabledForBusiness,
-    attachmentAlertEnabledForBusiness,
     closeoutAlertEnabledForBusiness,
     setSelected: registerSelection.setSelected,
   });
@@ -451,14 +439,12 @@ export default function TaqfeelahPrototypeRuntime() {
       removeOperationalEntriesForCloseout(closeout.id, closeout.storeId);
     }
     setCloseoutAlerts((current) => current.filter((item) => !(item.businessId === closeout.storeId && item.date === closeout.date)));
-    setOwnerReviewCloseout((current) => (current?.id === closeout.id ? null : current));
-    setReturnCloseoutTarget((current) => (current?.id === closeout.id ? null : current));
+    setOwnerManageCloseout((current) => (current?.id === closeout.id ? null : current));
   }, [
     loadOperationalEntriesFromApi,
     removeOperationalEntriesForCloseout,
     setCloseoutAlerts,
-    setOwnerReviewCloseout,
-    setReturnCloseoutTarget,
+    setOwnerManageCloseout,
   ]);
 
   usePrototypeRuntimeSessionSync({
@@ -505,15 +491,13 @@ export default function TaqfeelahPrototypeRuntime() {
       setEmployeeThemeOverride,
       setEmployeePage,
       setOwnerPage,
-      setOwnerReviewCloseout,
-      setReturnCloseoutTarget,
+      setOwnerManageCloseout,
       setSelected,
       setVoidTarget,
       setRestoreTarget,
       setSavedOutflowShareTarget,
       setPendingDuplicateSummary,
       setDuplicateReviewFocus,
-      setAttachmentReviewRequest,
       setShareSnapshot,
       setQuickAddOpen,
       setArchivedReadOnlyBusinessId,
@@ -530,7 +514,6 @@ export default function TaqfeelahPrototypeRuntime() {
       activeBusinesses,
       setArchivedBusinessIds,
       setArchivedReadOnlyBusinessId,
-      setAttachmentReviewRequest,
       setAuthEmployeePins,
       setAuthOwnerPassword,
       setAuthOwnerUsername,
@@ -546,10 +529,9 @@ export default function TaqfeelahPrototypeRuntime() {
       setOperationalEntries,
       setOwnerPage,
       setOwnerProfile,
-      setOwnerReviewCloseout,
+      setOwnerManageCloseout,
       setPendingDuplicateSummary,
       setQuickAddOpen,
-      setReturnCloseoutTarget,
       setSavedOutflowShareTarget,
       setSelected,
       setSelectedBusiness,
@@ -589,6 +571,7 @@ export default function TaqfeelahPrototypeRuntime() {
 
   const ownerAddHandlerRef = useRef(null);
   const [ownerEntryActive, setOwnerEntryActive] = useState(false);
+  const [ownerEditCloseout, setOwnerEditCloseout] = useState(null);
 
   const ownerCloseoutActor = useMemo(() => ({
     id: ownerApiUserId || currentOwnerActor?.userId || "owner",
@@ -657,16 +640,6 @@ export default function TaqfeelahPrototypeRuntime() {
   const handleOwnerQuickAddOpen = useCallback(() => {
     setQuickAddOpen(true);
   }, [setQuickAddOpen]);
-
-  const selectedOperationReviewEnabled = useMemo(
-    () => resolveSelectedOperationReviewEnabled(
-      selected,
-      reviewEnabledForBusiness,
-      archivedBusinessIds,
-      ownerReviewEnabled,
-    ),
-    [archivedBusinessIds, ownerReviewEnabled, reviewEnabledForBusiness, selected],
-  );
 
   const reportChannelConfig = resolveStoreChannelConfig(storeChannelSettings, reportSettingsStoreId);
   const activeBusinessIds = activeBusinesses.map((business) => business.id);
@@ -793,7 +766,6 @@ export default function TaqfeelahPrototypeRuntime() {
     handleOpenOwnerOperation,
     requestVoidOperation,
     requestRestoreOperation,
-    confirmReview,
     confirmVoidOperation,
     confirmRestoreOperation,
     confirmDuplicateSummary,
@@ -828,8 +800,7 @@ export default function TaqfeelahPrototypeRuntime() {
     setOwnerPage,
     setEmployeePage,
     setSaved,
-    setReturnCloseoutTarget,
-    setOwnerReviewCloseout,
+    setOwnerManageCloseout,
     pushCloseoutAlert,
     saveOwner,
     persistEmployeeEntry,
@@ -839,7 +810,6 @@ export default function TaqfeelahPrototypeRuntime() {
 
   const {
     syncSubmitCloseoutToApi,
-    syncReviewCloseoutToApi,
     loadCloseoutsFromApi,
   } = usePrototypeRuntimeCloseoutsApi({
     lang,
@@ -920,7 +890,6 @@ export default function TaqfeelahPrototypeRuntime() {
       ownerName={ownerDisplayName}
       onSyncToOperationalEntries={syncCloseoutToOperationalEntries}
       onSubmitCloseoutToApi={syncSubmitCloseoutToApi}
-      onReviewCloseoutInApi={syncReviewCloseoutToApi}
       loadCloseoutsFromApi={
         closeoutsApiEnabled
         && closeoutsApiOrganizationId
@@ -928,7 +897,6 @@ export default function TaqfeelahPrototypeRuntime() {
           ? loadCloseoutsFromApi
           : null
       }
-      closeoutReviewRequiredForStore={closeoutReviewEnabledForBusiness}
       apiStrictMode={closeoutsApiStrictMode}
       dbSourceMode={CLOSEOUTS_API_DB_SOURCE}
     >
@@ -949,22 +917,33 @@ export default function TaqfeelahPrototypeRuntime() {
             showNotifications={ownerNotificationsVisible}
             hasNotificationBadge={ownerNotificationBadge}
           />
-          <div className="taq-scroll relative min-h-0 overflow-y-auto overscroll-y-contain">{employee && !activeEmployee && <section className="px-5 pb-24"><div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">{text(lang, "noActiveEmployee")}</div></section>}{employee && activeEmployee && employeePage === "closeouts" && <EmployeeCloseoutsView lang={lang} employee={activeEmployee} employeeRuntimeReady={employeeRuntimeReady} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} salesChannels={currentEmployeeChannelConfig.channels.filter((channel) => currentEmployeeChannelConfig.activeIds.includes(channel.id) && !channel.retired).map((channel) => ({ ...channel, displayName: channelName(channel, lang) }))} notebookTheme={employeeNotebookTheme} reviewWorkflowEnabled={closeoutReviewEnabledForBusiness(currentEmployeeBusiness?.id)} employeeHistoryVisibility={currentEmployeeOperationalConfig.employeeHistoryVisibility || "all"} formatCalendarDate={formatCalendarDate} channelLabel={(channel) => channel.displayName || channelName(channel, lang)} settingsPanel={({ onBack }) => <EmployeeSettingsScreen lang={lang} onBack={onBack} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} employeeNotebookTheme={employeeThemeOverride || employeeNotebookTheme} setEmployeeNotebookTheme={handleEmployeeNotebookThemeSave} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />} onEntryActiveChange={setEmployeeEntryActive} onRegisterAdd={(handler) => { employeeAddHandlerRef.current = handler || (() => {}); }} onRegisterSettingsOpener={(handler) => { employeeSettingsOpenerRef.current = handler || (() => {}); }} saving={saving} trustServerDaySequenceOnly={CLOSEOUTS_API_DB_SOURCE} />}{!employee && ownerPage === "closeouts" && <EmployeeCloseoutsView lang={lang} employee={ownerCloseoutActor} employeeRuntimeReady={runtimeApiStoresReady} currentStore={ownerCloseoutBusiness} assignedStores={activeBusinesses} onSelectStore={setSelectedBusiness} salesChannels={ownerCloseoutChannelConfig.channels.filter((channel) => ownerCloseoutChannelConfig.activeIds.includes(channel.id) && !channel.retired).map((channel) => ({ ...channel, displayName: channelName(channel, lang) }))} notebookTheme={notebookTheme} reviewWorkflowEnabled={closeoutReviewEnabledForBusiness(ownerCloseoutBusiness?.id)} employeeHistoryVisibility="all" formatCalendarDate={formatCalendarDate} channelLabel={(channel) => channel.displayName || channelName(channel, lang)} onRegisterAdd={(handler) => { ownerAddHandlerRef.current = handler || (() => {}); }} onEntryActiveChange={setOwnerEntryActive} saving={saving} trustServerDaySequenceOnly={CLOSEOUTS_API_DB_SOURCE} pageTitle={lang === "ar" ? "تسجيل تقفيلة" : "Record closeout"} onCloseoutSubmitted={() => setOwnerPage("home")} />}{!employee && ownerPage === "home" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><OwnerHomeConnected lang={lang} operationalEntries={operationalEntries} operationalEntriesLoading={operationalEntriesLoading} duplicateSalesAlerts={duplicateSalesAlerts} closeoutAlerts={unseenCloseoutAlerts} closeoutReviewEnabledForBusiness={closeoutReviewEnabledForBusiness} onViewPendingCloseouts={(closeout) => { setOwnerReviewCloseout(closeout); setSelectedBusiness(closeout.storeId); }} onReviewCloseout={reviewCloseoutAlert} onDismissCloseout={dismissCloseoutAlert} onReviewDuplicate={reviewDuplicateSales} onAcknowledgeDuplicate={acknowledgeDuplicateSales} reviewEnabledForBusiness={reviewEnabledForBusiness} onOpenOperation={handleOpenOwnerOperation} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} selectedBusiness={activeViewBusiness} setSelectedBusiness={setSelectedBusiness} reviewEnabled={ownerReviewEnabled} businessesList={activeBusinesses} summaryApiEnabled={entriesApiEnabled} summaryApiOrganizationId={closeoutsApiOrganizationId} summaryApiActorUserId={ownerApiUserId} summaryApiActorRole="owner" summaryRefreshKey={summaryRefreshKey} /></NotebookScrollSurface>}{!employee && ownerPage === "add-summary" && !ENTRIES_API_DB_SOURCE && <OwnerSummaryScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeChannelSettings={storeChannelSettings} onBack={() => setOwnerPage("home")} onSave={saveOwnerSummary} />}{!employee && ownerPage === "add-expense" && !ENTRIES_API_DB_SOURCE && <OwnerExpenseScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeOperationalSettings={storeOperationalSettings} onBack={() => setOwnerPage("home")} onSave={saveOwner} />}{!employee && ownerPage === "reports" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><ReportsScreen lang={lang} operationalEntries={operationalEntries} operationalEntriesLoading={operationalEntriesLoading} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} reviewEnabledForBusiness={reviewEnabledForBusiness} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} configuredChannels={reportChannelConfig.channels} reviewEnabled={ownerReviewEnabled} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} reportsApiEnabled={entriesApiEnabled} reportsApiOrganizationId={closeoutsApiOrganizationId} reportsApiActorUserId={ownerApiUserId} reportsApiActorRole="owner" summaryRefreshKey={summaryRefreshKey} /></NotebookScrollSurface>}{!employee && ownerPage === "register" && <OwnerRegisterConnected lang={lang} onOpenOperation={handleOpenOwnerOperation} reviewFocus={duplicateReviewFocus} attachmentReviewRequest={attachmentReviewRequest} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} notebookTheme={notebookTheme} registerEntriesApiEnabled={entriesApiEnabled && REGISTER_ENTRIES_PAGINATION_ENABLED} registerEntriesApiOrganizationId={closeoutsApiOrganizationId} registerEntriesApiActorUserId={ownerApiUserId} registerEntriesApiActorRole="owner" registerEntriesRefreshKey={summaryRefreshKey} />}{!employee && ownerPage === "settings" && <OwnerSettingsScreen lang={lang} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} setOwnerPage={setOwnerPage} setArchivedReadOnlyBusinessId={setArchivedReadOnlyBusinessId} setLastCloseoutDates={setLastCloseoutDates} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} employeePreferences={employeePreferences} ownerShellPreferences={ownerShellPreferences} storeChannelSettings={storeChannelSettings} setStoreChannelSettings={setStoreChannelSettings} storeOperationalSettings={storeOperationalSettings} setStoreOperationalSettings={setStoreOperationalSettings} configuredBusinesses={configuredBusinesses} setConfiguredBusinesses={setConfiguredBusinesses} archivedBusinessIds={archivedBusinessIds} setArchivedBusinessIds={setArchivedBusinessIds} staff={staff} setStaff={setStaff} ownerProfile={ownerProfile} setOwnerProfile={setOwnerProfile} authOwnerUsername={authOwnerUsername} setAuthOwnerUsername={setAuthOwnerUsername} authOwnerPassword={authOwnerPassword} setAuthOwnerPassword={setAuthOwnerPassword} authEmployeePins={authEmployeePins} setAuthEmployeePins={setAuthEmployeePins} onPersistSettingsNow={persistRuntimeSettingsNow} onLogout={logout} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />}{saved && <div className="sticky bottom-4 left-4 right-4 z-30 mx-auto max-w-md rounded-2xl bg-[#112A46] p-4 text-xs font-bold text-white">{text(lang, "savedNotice")}</div>}
+          <div className="taq-scroll relative min-h-0 overflow-y-auto overscroll-y-contain">{employee && !activeEmployee && <section className="px-5 pb-24"><div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">{text(lang, "noActiveEmployee")}</div></section>}{employee && activeEmployee && employeePage === "closeouts" && <EmployeeCloseoutsView lang={lang} employee={activeEmployee} employeeRuntimeReady={employeeRuntimeReady} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} salesChannels={currentEmployeeChannelConfig.channels.filter((channel) => currentEmployeeChannelConfig.activeIds.includes(channel.id) && !channel.retired).map((channel) => ({ ...channel, displayName: channelName(channel, lang) }))} notebookTheme={employeeNotebookTheme} employeeHistoryVisibility={currentEmployeeOperationalConfig.employeeHistoryVisibility || "all"} formatCalendarDate={formatCalendarDate} channelLabel={(channel) => channel.displayName || channelName(channel, lang)} settingsPanel={({ onBack }) => <EmployeeSettingsScreen lang={lang} onBack={onBack} currentStore={currentEmployeeBusiness} assignedStores={assignedEmployeeBusinesses} onSelectStore={setEmployeeBusinessId} employeeNotebookTheme={employeeThemeOverride || employeeNotebookTheme} setEmployeeNotebookTheme={handleEmployeeNotebookThemeSave} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />} onEntryActiveChange={setEmployeeEntryActive} onRegisterAdd={(handler) => { employeeAddHandlerRef.current = handler || (() => {}); }} onRegisterSettingsOpener={(handler) => { employeeSettingsOpenerRef.current = handler || (() => {}); }} saving={saving} trustServerDaySequenceOnly={CLOSEOUTS_API_DB_SOURCE} />}{!employee && ownerPage === "closeouts" && <EmployeeCloseoutsView lang={lang} employee={ownerCloseoutActor} employeeRuntimeReady={runtimeApiStoresReady} currentStore={ownerCloseoutBusiness} assignedStores={activeBusinesses} onSelectStore={setSelectedBusiness} salesChannels={ownerCloseoutChannelConfig.channels.filter((channel) => ownerCloseoutChannelConfig.activeIds.includes(channel.id) && !channel.retired).map((channel) => ({ ...channel, displayName: channelName(channel, lang) }))} notebookTheme={notebookTheme} employeeHistoryVisibility="all" formatCalendarDate={formatCalendarDate} channelLabel={(channel) => channel.displayName || channelName(channel, lang)} onRegisterAdd={(handler) => { ownerAddHandlerRef.current = handler || (() => {}); }} onEntryActiveChange={setOwnerEntryActive} saving={saving} trustServerDaySequenceOnly={CLOSEOUTS_API_DB_SOURCE} pageTitle={lang === "ar" ? "تسجيل تقفيلة" : "Record closeout"} onCloseoutSubmitted={() => setOwnerPage("home")} />}{!employee && ownerPage === "home" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><OwnerHomeConnected lang={lang} operationalEntries={operationalEntries} operationalEntriesLoading={operationalEntriesLoading} duplicateSalesAlerts={duplicateSalesAlerts} closeoutAlerts={unseenCloseoutAlerts} onReviewCloseout={reviewCloseoutAlert} onDismissCloseout={dismissCloseoutAlert} onReviewDuplicate={reviewDuplicateSales} onAcknowledgeDuplicate={acknowledgeDuplicateSales} onOpenOperation={handleOpenOwnerOperation} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} selectedBusiness={activeViewBusiness} setSelectedBusiness={setSelectedBusiness} businessesList={activeBusinesses} summaryApiEnabled={entriesApiEnabled} summaryApiOrganizationId={closeoutsApiOrganizationId} summaryApiActorUserId={ownerApiUserId} summaryApiActorRole="owner" summaryRefreshKey={summaryRefreshKey} /></NotebookScrollSurface>}{!employee && ownerPage === "add-summary" && !ENTRIES_API_DB_SOURCE && <OwnerSummaryScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeChannelSettings={storeChannelSettings} onBack={() => setOwnerPage("home")} onSave={saveOwnerSummary} />}{!employee && ownerPage === "add-expense" && !ENTRIES_API_DB_SOURCE && <OwnerExpenseScreen lang={lang} saving={saving} selectedBusiness={activeViewBusiness} businessesList={activeBusinesses} storeOperationalSettings={storeOperationalSettings} onBack={() => setOwnerPage("home")} onSave={saveOwner} />}{!employee && ownerPage === "reports" && <NotebookScrollSurface theme={notebookTheme} lang={lang}><ReportsScreen lang={lang} operationalEntries={operationalEntries} operationalEntriesLoading={operationalEntriesLoading} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} onShareNotebook={setShareSnapshot} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} configuredChannels={reportChannelConfig.channels} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} reportsApiEnabled={entriesApiEnabled} reportsApiOrganizationId={closeoutsApiOrganizationId} reportsApiActorUserId={ownerApiUserId} reportsApiActorRole="owner" summaryRefreshKey={summaryRefreshKey} /></NotebookScrollSurface>}{!employee && ownerPage === "register" && <OwnerRegisterConnected lang={lang} onOpenOperation={handleOpenOwnerOperation} reviewFocus={duplicateReviewFocus} archivedReadOnlyBusinessId={archivedReadOnlyBusinessId} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} businessesList={reportingBusinesses} archivedBusinessIds={archivedBusinessIds} notebookTheme={notebookTheme} registerEntriesApiEnabled={entriesApiEnabled && REGISTER_ENTRIES_PAGINATION_ENABLED} registerEntriesApiOrganizationId={closeoutsApiOrganizationId} registerEntriesApiActorUserId={ownerApiUserId} registerEntriesApiActorRole="owner" registerEntriesRefreshKey={summaryRefreshKey} />}{!employee && ownerPage === "settings" && <OwnerSettingsScreen lang={lang} operationalEntries={operationalEntries} selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} setOwnerPage={setOwnerPage} setArchivedReadOnlyBusinessId={setArchivedReadOnlyBusinessId} setLastCloseoutDates={setLastCloseoutDates} notebookTheme={notebookTheme} setNotebookTheme={setNotebookTheme} employeePreferences={employeePreferences} ownerShellPreferences={ownerShellPreferences} storeChannelSettings={storeChannelSettings} setStoreChannelSettings={setStoreChannelSettings} storeOperationalSettings={storeOperationalSettings} setStoreOperationalSettings={setStoreOperationalSettings} configuredBusinesses={configuredBusinesses} setConfiguredBusinesses={setConfiguredBusinesses} archivedBusinessIds={archivedBusinessIds} setArchivedBusinessIds={setArchivedBusinessIds} staff={staff} setStaff={setStaff} ownerProfile={ownerProfile} setOwnerProfile={setOwnerProfile} authOwnerUsername={authOwnerUsername} setAuthOwnerUsername={setAuthOwnerUsername} authOwnerPassword={authOwnerPassword} setAuthOwnerPassword={setAuthOwnerPassword} authEmployeePins={authEmployeePins} setAuthEmployeePins={setAuthEmployeePins} onPersistSettingsNow={persistRuntimeSettingsNow} onLogout={logout} onOpenSupport={() => openWhatsAppSupport(lang)} onOpenHelp={() => setHelpOpen(true)} />}{saved && <div className="sticky bottom-4 left-4 right-4 z-30 mx-auto max-w-md rounded-2xl bg-[#112A46] p-4 text-xs font-bold text-white">{text(lang, "savedNotice")}</div>}
           </div>
-          {!(employee && employeeEntryActive) && !(!employee && ownerEntryActive) && <BottomNav lang={lang} employee={employee} active={employee ? employeePage : ownerPage} onAdd={() => { if (employee) employeeAddHandlerRef.current?.(); else handleOwnerQuickAddOpen(); }} onChange={(page) => { setQuickAddOpen(false); if (employee) changeEmployeePage(page); else changeOwnerPage(page); }} />}{!employee && <QuickAddSheet lang={lang} employee={false} open={quickAddOpen} onClose={() => setQuickAddOpen(false)} onSummary={handleOpenQuickAddSummary} onExpense={handleOpenQuickAddExpense} />}<OperationModal lang={lang} item={selected} onClose={() => setSelected(null)} onReview={confirmReview} onVoid={requestVoidOperation} onRestore={requestRestoreOperation} reviewEnabled={selectedOperationReviewEnabled} canVoid={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} canRestore={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} /><DuplicateSalesDialog lang={lang} draft={pendingDuplicateSummary?.payload || null} previousEntries={pendingDuplicateSummary?.previousEntries || []} businessesList={activeBusinesses} onCancel={() => setPendingDuplicateSummary(null)} onConfirm={confirmDuplicateSummary} /><VoidOperationDialog lang={lang} item={voidTarget} onCancel={() => setVoidTarget(null)} onConfirm={confirmVoidOperation} /><RestoreOperationDialog lang={lang} item={restoreTarget} onCancel={() => setRestoreTarget(null)} onConfirm={confirmRestoreOperation} /><SavedOutflowShareDialog lang={lang} item={savedOutflowShareTarget} businessesList={activeBusinesses} onClose={() => setSavedOutflowShareTarget(null)} /><NotebookShareModal lang={lang} snapshot={shareSnapshot} onClose={() => setShareSnapshot(null)} businessesList={reportingBusinesses} operationalEntries={operationalEntries} archivedBusinessIds={archivedBusinessIds} notebookExportApiEnabled={phase9ApiEnabled && entriesApiEnabled} notebookExportAuth={runtimeApiAuth} />
+          {!(employee && employeeEntryActive) && !(!employee && ownerEntryActive) && <BottomNav lang={lang} employee={employee} active={employee ? employeePage : ownerPage} onAdd={() => { if (employee) employeeAddHandlerRef.current?.(); else handleOwnerQuickAddOpen(); }} onChange={(page) => { setQuickAddOpen(false); if (employee) changeEmployeePage(page); else changeOwnerPage(page); }} />}{!employee && <QuickAddSheet lang={lang} employee={false} open={quickAddOpen} onClose={() => setQuickAddOpen(false)} onSummary={handleOpenQuickAddSummary} onExpense={handleOpenQuickAddExpense} />}<OperationModal lang={lang} item={selected} onClose={() => setSelected(null)} onVoid={requestVoidOperation} onRestore={requestRestoreOperation} canVoid={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} canRestore={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)} /><DuplicateSalesDialog lang={lang} draft={pendingDuplicateSummary?.payload || null} previousEntries={pendingDuplicateSummary?.previousEntries || []} businessesList={activeBusinesses} onCancel={() => setPendingDuplicateSummary(null)} onConfirm={confirmDuplicateSummary} /><VoidOperationDialog lang={lang} item={voidTarget} onCancel={() => setVoidTarget(null)} onConfirm={confirmVoidOperation} /><RestoreOperationDialog lang={lang} item={restoreTarget} onCancel={() => setRestoreTarget(null)} onConfirm={confirmRestoreOperation} /><SavedOutflowShareDialog lang={lang} item={savedOutflowShareTarget} businessesList={activeBusinesses} onClose={() => setSavedOutflowShareTarget(null)} /><NotebookShareModal lang={lang} snapshot={shareSnapshot} onClose={() => setShareSnapshot(null)} businessesList={reportingBusinesses} operationalEntries={operationalEntries} archivedBusinessIds={archivedBusinessIds} notebookExportApiEnabled={phase9ApiEnabled && entriesApiEnabled} notebookExportAuth={runtimeApiAuth} />
           <OwnerCloseoutModals
             lang={lang}
-            ownerReviewCloseout={ownerReviewCloseout}
-            returnCloseoutTarget={returnCloseoutTarget}
+            ownerManageCloseout={ownerManageCloseout}
             ownerDisplayName={ownerDisplayName}
-            reviewWorkflowEnabled={ownerReviewCloseout ? closeoutReviewEnabledForBusiness(ownerReviewCloseout.storeId) : false}
             ownerNotebookTheme={notebookTheme}
             resolveSalesChannels={resolveStoreSalesChannels}
             channelLabel={(channel) => channel.displayName || channelName(channel, lang)}
             onCloseoutUpdated={handleOwnerCloseoutUpdated}
             onCloseoutDeleted={handleOwnerCloseoutDeleted}
-            onCloseReview={() => { setOwnerReviewCloseout(null); setReturnCloseoutTarget(null); }}
-            onRequestReturn={(closeout) => { setReturnCloseoutTarget(closeout); setOwnerReviewCloseout(null); }}
+            onClose={() => setOwnerManageCloseout(null)}
+            onOwnerEditCloseout={(closeout) => {
+              setOwnerManageCloseout(null);
+              setOwnerEditCloseout(closeout);
+            }}
+          />
+          <OwnerCloseoutEditFlow
+            lang={lang}
+            editCloseout={ownerEditCloseout}
+            ownerActor={ownerCloseoutActor}
+            ownerNotebookTheme={notebookTheme}
+            resolveSalesChannels={resolveStoreSalesChannels}
+            channelLabel={(channel) => channel.displayName || channelName(channel, lang)}
+            onCloseoutUpdated={handleOwnerCloseoutUpdated}
+            onClose={() => setOwnerEditCloseout(null)}
           />
           <HelpCenterSheet lang={lang} open={helpOpen} onClose={() => setHelpOpen(false)} />
         </div>

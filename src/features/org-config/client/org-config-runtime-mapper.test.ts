@@ -55,8 +55,8 @@ describe("org config runtime mapper", () => {
     expect(mapped.staff[0].id).toBe("4cf1450d-08d8-4ca1-b180-1c2642174a79");
     expect(mapped.staff[0].legacyId).toBe("ahmed");
     expect(mapped.staff[0].storeIds).toEqual(["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"]);
-    const operationalSettings = mapped.storeOperationalSettings as Record<string, { closeoutReviewEnabled?: boolean }>;
-    expect(operationalSettings["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"]?.closeoutReviewEnabled).toBe(true);
+    const operationalSettings = mapped.storeOperationalSettings as Record<string, { closeoutAlert?: boolean }>;
+    expect(operationalSettings["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"]?.closeoutAlert).toBe(false);
   });
 
   it("maps unknown channels as custom entries", () => {

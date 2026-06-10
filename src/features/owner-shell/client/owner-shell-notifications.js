@@ -2,10 +2,8 @@ import {
   duplicateSalesGroupKey,
   duplicateSalesSignature,
 } from "@/features/operations/operational-entry-mutation-helpers";
-import { newestEntries } from "@/features/operations/operational-analytics";
 
 const entryIsActive = (entry) => entry?.status !== "voided";
-const entryHasAttachment = (entry) => Boolean(entry?.attachment);
 
 /**
  * @param {Object} input
@@ -39,52 +37,25 @@ export function buildDuplicateSalesAlerts({
 
 /**
  * @param {Object} input
- * @param {Array<{ id?: string, status?: string, businessId?: string, attachment?: unknown, reviewed?: boolean }>} [input.operationalEntries]
- * @param {Array<{ id?: string }>} [input.activeBusinesses]
- * @param {(businessId: string) => boolean} [input.attachmentAlertEnabledForBusiness]
- */
-export function buildPendingAttachmentReviews({
-  operationalEntries = [],
-  activeBusinesses = [],
-  attachmentAlertEnabledForBusiness = () => false,
-}) {
-  return newestEntries(
-    operationalEntries.filter((entry) => activeBusinesses.some((business) => business.id === entry.businessId)
-      && entryIsActive(entry)
-      && entryHasAttachment(entry)
-      && !entry.reviewed
-      && attachmentAlertEnabledForBusiness(entry.businessId)),
-  );
-}
-
-/**
- * @param {Object} input
  * @param {Array<{ businessId?: string, date?: string, entries?: unknown[] }>} [input.duplicateSalesAlerts]
- * @param {Array<{ id?: string, businessId?: string, date?: string }>} [input.pendingAttachmentReviews]
  * @param {Array<{ id?: string, businessId?: string, seen?: boolean }>} [input.closeoutAlerts]
  * @param {(businessId: string) => boolean} [input.closeoutAlertEnabledForBusiness]
  */
 export function buildOwnerNotificationState({
   duplicateSalesAlerts = [],
-  pendingAttachmentReviews = [],
   closeoutAlerts = [],
   closeoutAlertEnabledForBusiness = () => false,
 }) {
   const unseenCloseoutAlerts = closeoutAlerts.filter(
     (alert) => !alert.seen && closeoutAlertEnabledForBusiness(alert.businessId),
   );
-  const ownerHasPendingReview = pendingAttachmentReviews.length > 0;
   const ownerNotificationsVisible = duplicateSalesAlerts.length > 0
-    || ownerHasPendingReview
     || unseenCloseoutAlerts.length > 0;
-  const ownerNotificationBadge = ownerHasPendingReview
-    || duplicateSalesAlerts.length > 0
+  const ownerNotificationBadge = duplicateSalesAlerts.length > 0
     || unseenCloseoutAlerts.length > 0;
 
   return {
     unseenCloseoutAlerts,
-    firstPendingAttachmentReview: pendingAttachmentReviews[0] || null,
-    ownerHasPendingReview,
     ownerNotificationsVisible,
     ownerNotificationBadge,
   };

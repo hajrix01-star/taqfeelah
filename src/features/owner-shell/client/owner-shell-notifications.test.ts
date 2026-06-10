@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   buildDuplicateSalesAlerts,
   buildOwnerNotificationState,
-  buildPendingAttachmentReviews,
   resolveActiveViewBusiness,
 } from "./owner-shell-notifications";
 
@@ -31,7 +30,6 @@ describe("owner shell notifications", () => {
   it("builds owner notification visibility state", () => {
     const state = buildOwnerNotificationState({
       duplicateSalesAlerts: [{ businessId: "shami", date: "2026-06-01", entries: [] }] as Array<{ businessId: string; date: string; entries: unknown[] }>,
-      pendingAttachmentReviews: [] as Array<{ id: string }>,
       closeoutAlerts: [{ id: "c1", businessId: "shami", seen: false }] as Array<{ id: string; businessId: string; seen: boolean }>,
       closeoutAlertEnabledForBusiness: () => true,
     });
@@ -39,18 +37,5 @@ describe("owner shell notifications", () => {
     expect(state.ownerNotificationsVisible).toBe(true);
     expect(state.ownerNotificationBadge).toBe(true);
     expect(state.unseenCloseoutAlerts).toHaveLength(1);
-  });
-
-  it("collects pending attachment reviews", () => {
-    const pending = buildPendingAttachmentReviews({
-      operationalEntries: [
-        { id: "e1", status: "active", businessId: "shami", attachment: { id: "a1" }, reviewed: false },
-      ],
-      activeBusinesses: [{ id: "shami" }],
-      attachmentAlertEnabledForBusiness: () => true,
-    });
-
-    expect(pending).toHaveLength(1);
-    expect(pending[0]?.id).toBe("e1");
   });
 });

@@ -4,11 +4,9 @@ import { getDb } from "@/core/db/client";
 import { auditEvents, dailyCloseouts, entries, entrySalesChannels } from "@/core/db/schema";
 import { calculateDaySummary } from "@/domain/cash-movement/calculations";
 import { type MemberRole } from "@/core/auth/roles";
-import { ValidationError } from "@/core/errors/app-error";
+import { ForbiddenError, ValidationError } from "@/core/errors/app-error";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
-import { resolveCloseoutAutoReview } from "@/features/closeouts/server/closeout-review-policy";
 import { resolveCloseoutDaySequence } from "@/features/closeouts/server/resolve-closeout-day-sequence";
-import { readStoreOperationalSettingsRecord } from "@/features/org-config/server/read-store-operational-settings";
 import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
 import { resolveStoreSalesChannelsForWrite } from "@/features/org-config/server/resolve-store-sales-channels-for-write";
 
@@ -38,8 +36,6 @@ const closeoutSubmitSchema = z.object({
   outflows: z.array(outflowSchema).default([]),
   note: z.string().trim().max(500).optional(),
   mode: z.enum(["submit", "resubmit"]).default("submit"),
-  autoReview: z.boolean().default(false),
-  requireReview: z.boolean().optional(),
 });
 
 type CloseoutSubmitInput = z.infer<typeof closeoutSubmitSchema>;
@@ -51,6 +47,10 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
   }
 
   const input = parsed.data;
+  if (input.mode === "resubmit" && input.actorRole === "employee") {
+    throw new ForbiddenError("Only owner or manager can edit a submitted closeout.");
+  }
+
   await assertStoreAccess({
     organizationId: input.organizationId,
     storeId: input.storeId,
@@ -72,21 +72,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
   }
 
   const totalOutflowHalalas = input.outflows.reduce((sum, row) => sum + row.amountHalalas, 0);
-  const operationalSettings = await readStoreOperationalSettingsRecord(
-    db,
-    input.organizationId,
-    input.storeId,
-  );
-  const canAutoReview = resolveCloseoutAutoReview({
-    actorRole: input.actorRole as MemberRole,
-    closeoutReviewEnabled: operationalSettings.closeoutReviewEnabled,
-    autoReview: input.autoReview,
-  });
-  const initialEntryStatus = canAutoReview ? "active" : "voided";
-  const initialReviewedAt = canAutoReview ? new Date() : null;
-  const closeoutStatus = canAutoReview ? "approved" : "submitted";
-  const reviewedAt = canAutoReview ? new Date() : null;
-  const reviewedByUserId = canAutoReview ? input.actorUserId : null;
+  const reviewedAt = new Date();
 
   const txResult = await db.transaction(async (tx) => {
     const daySequence = await resolveCloseoutDaySequence(tx as Parameters<typeof resolveCloseoutDaySequence>[0], {
@@ -120,9 +106,9 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
       await tx
         .update(dailyCloseouts)
         .set({
-          status: closeoutStatus,
+          status: "approved",
           submittedByUserId: input.actorUserId,
-          reviewedByUserId,
+          reviewedByUserId: input.actorUserId,
           reviewedAt,
           returnReason: null,
           note: input.note || null,
@@ -147,9 +133,9 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
           date: input.date,
           daySequence,
           clientCloseoutId: input.closeoutId,
-          status: closeoutStatus,
+          status: "approved",
           submittedByUserId: input.actorUserId,
-          reviewedByUserId,
+          reviewedByUserId: input.actorUserId,
           reviewedAt,
           note: input.note || null,
         })
@@ -170,8 +156,8 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
         currency: "SAR",
         note: input.note || null,
         enteredByUserId: input.actorUserId,
-        status: initialEntryStatus,
-        reviewedAt: initialReviewedAt,
+        status: "active",
+        reviewedAt,
       })
       .returning({ id: entries.id });
 
@@ -201,8 +187,8 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
             categoryId: row.categoryId || null,
             note: row.note || null,
             enteredByUserId: input.actorUserId,
-            status: initialEntryStatus,
-            reviewedAt: initialReviewedAt,
+            status: "active",
+            reviewedAt,
           })),
         )
         .returning({ id: entries.id, type: entries.type, amountHalalas: entries.amountHalalas })
@@ -226,22 +212,6 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
         totalOutflowHalalas,
       },
     });
-
-    if (canAutoReview) {
-      await tx.insert(auditEvents).values({
-        organizationId: input.organizationId,
-        storeId: input.storeId,
-        actorUserId: input.actorUserId,
-        action: "closeout_approved",
-        reason: null,
-        metadata: {
-          closeoutId: input.closeoutId,
-          dailyCloseoutId: closeoutRowId,
-          date: input.date,
-          autoReview: true,
-        },
-      });
-    }
 
     return {
       summaryEntryId: summaryEntry.id,

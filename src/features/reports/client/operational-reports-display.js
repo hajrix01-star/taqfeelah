@@ -16,7 +16,7 @@ export function entryCategoryForReports(entry) {
       : (entry.categoryId || "other");
 }
 
-export function buildLocalReportDaysFromEntries(entries, selectedMonth, reviewEnabledForBusiness = () => false) {
+export function buildLocalReportDaysFromEntries(entries, selectedMonth) {
   const scopedEntries = Array.isArray(entries) ? entries : [];
   const monthPrefix = monthSelectionValue(selectedMonth);
   const dates = [...new Set(
@@ -29,10 +29,7 @@ export function buildLocalReportDaysFromEntries(entries, selectedMonth, reviewEn
     id: date,
     dayAr: formatCalendarDate(date, "ar"),
     dayEn: formatCalendarDate(date, "en"),
-    ...summarizeEntries(
-      scopedEntries.filter((entry) => entry.date === date),
-      reviewEnabledForBusiness,
-    ),
+    ...summarizeEntries(scopedEntries.filter((entry) => entry.date === date)),
   }));
 }
 

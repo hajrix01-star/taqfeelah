@@ -8,7 +8,6 @@ import {
   hasCloseoutApiActorMapping,
   hasCloseoutApiStoreMapping,
   isUuid,
-  reviewCloseoutViaApi,
   submitCloseoutViaApi,
 } from "@/features/closeouts/client/closeouts-api-client";
 import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
@@ -18,7 +17,6 @@ export function usePrototypeRuntimeCloseoutsApi({
   closeoutsApiEnabled,
   closeoutsApiStrictMode,
   closeoutsApiOrganizationId,
-  ownerApiUserId,
   apiActorUserId,
   apiActorRole,
   apiTargetStoreIdsKey,
@@ -28,7 +26,7 @@ export function usePrototypeRuntimeCloseoutsApi({
   ownerCloseoutBusiness,
   ownerCloseoutChannelConfig,
 }) {
-  const syncSubmitCloseoutToApi = useCallback(async ({ action, closeout, employee, reviewWorkflowEnabled }) => {
+  const syncSubmitCloseoutToApi = useCallback(async ({ action, closeout, employee }) => {
     if (!closeoutsApiEnabled) {
       throw new Error(lang === "ar"
         ? "مسار API للتقفيلات غير مفعّل."
@@ -65,8 +63,6 @@ export function usePrototypeRuntimeCloseoutsApi({
       closeout,
       storeChannels: isOwnerSubmit ? ownerStoreChannels : storeChannels,
       mode: action === "resubmit" ? "resubmit" : "submit",
-      autoReview: isOwnerSubmit ? true : !reviewWorkflowEnabled,
-      requireReview: isOwnerSubmit ? false : reviewWorkflowEnabled === true,
     });
     if (!result) {
       throw new Error(lang === "ar"
@@ -86,40 +82,6 @@ export function usePrototypeRuntimeCloseoutsApi({
     loadOperationalEntriesFromApi,
     ownerCloseoutBusiness?.id,
     ownerCloseoutChannelConfig?.channels,
-  ]);
-
-  const syncReviewCloseoutToApi = useCallback(async ({ action, closeout, reason = "" }) => {
-    if (!closeoutsApiEnabled) {
-      if (closeoutsApiStrictMode) throw new Error("closeouts API is disabled in production mode.");
-      return null;
-    }
-    if (
-      !isUuid(closeoutsApiOrganizationId)
-      || !hasCloseoutApiActorMapping(ownerApiUserId)
-      || !hasCloseoutApiStoreMapping(closeout?.storeId)
-    ) {
-      if (closeoutsApiStrictMode) throw new Error("closeouts API mapping is invalid for review.");
-      return null;
-    }
-    const result = await reviewCloseoutViaApi({
-      organizationId: closeoutsApiOrganizationId,
-      actorUserId: ownerApiUserId,
-      actorRole: "owner",
-      closeout,
-      action,
-      reason,
-    });
-    if (entriesApiEnabled) {
-      await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
-    }
-    return result;
-  }, [
-    closeoutsApiEnabled,
-    closeoutsApiOrganizationId,
-    ownerApiUserId,
-    closeoutsApiStrictMode,
-    entriesApiEnabled,
-    loadOperationalEntriesFromApi,
   ]);
 
   const loadCloseoutsFromApi = useCallback(async () => {
@@ -184,7 +146,6 @@ export function usePrototypeRuntimeCloseoutsApi({
 
   return {
     syncSubmitCloseoutToApi,
-    syncReviewCloseoutToApi,
     loadCloseoutsFromApi,
   };
 }

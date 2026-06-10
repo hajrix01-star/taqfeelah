@@ -31,12 +31,9 @@ describe("operational settings route integration", () => {
     getStoreOperationalSettings.mockResolvedValueOnce({
       storeId: TEST_STORE_ID,
       operationalSettings: {
-        reviewEnabled: true,
-        closeoutReviewEnabled: false,
         activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
         employeeHistoryVisibility: "all",
-        closeoutAlert: false,
-        attachmentAlert: false,
+        closeoutAlert: true,
         notebookTheme: null,
       },
     });
@@ -48,8 +45,8 @@ describe("operational settings route integration", () => {
     );
 
     expect(response.status).toBe(200);
-    const body = await readJsonBody<{ operationalSettings: { reviewEnabled: boolean } }>(response);
-    expect(body.operationalSettings.reviewEnabled).toBe(true);
+    const body = await readJsonBody<{ operationalSettings: { closeoutAlert: boolean } }>(response);
+    expect(body.operationalSettings.closeoutAlert).toBe(true);
     expect(getStoreOperationalSettings).toHaveBeenCalledOnce();
   });
 
@@ -72,7 +69,7 @@ describe("operational settings route integration", () => {
   it("PATCH persists valid operational settings patch", async () => {
     updateStoreOperationalSettings.mockResolvedValueOnce({
       storeId: TEST_STORE_ID,
-      operationalSettings: { closeoutReviewEnabled: true },
+      operationalSettings: { closeoutAlert: true },
       updatedAt: "2026-06-05T10:00:00.000Z",
     });
 
@@ -80,14 +77,14 @@ describe("operational settings route integration", () => {
     const response = await PATCH(
       ownerRequest(`http://localhost/api/v1/stores/${TEST_STORE_ID}/operational-settings`, {
         method: "PATCH",
-        body: JSON.stringify({ closeoutReviewEnabled: true }),
+        body: JSON.stringify({ closeoutAlert: true }),
       }),
       routeStoreContext(),
     );
 
     expect(response.status).toBe(200);
     expect(updateStoreOperationalSettings).toHaveBeenCalledWith(expect.objectContaining({
-      patch: { closeoutReviewEnabled: true },
+      patch: { closeoutAlert: true },
       actorRole: "owner",
     }));
   });

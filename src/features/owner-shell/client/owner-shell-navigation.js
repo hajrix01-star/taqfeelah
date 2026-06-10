@@ -1,7 +1,6 @@
 export function resetOwnerNavContext(apply) {
   apply.setArchivedReadOnlyBusinessId?.(null);
   apply.setDuplicateReviewFocus?.(null);
-  apply.setAttachmentReviewRequest?.(null);
   apply.setSelectedBusiness?.("all");
 }
 
@@ -53,25 +52,12 @@ export function dismissCloseoutAlertRecord(alertId, apply) {
 
 export function handleOwnerNotificationsClick({
   duplicateSalesAlerts,
-  firstPendingAttachmentReview,
   unseenCloseoutAlerts,
   apply,
 }) {
   apply.setArchivedReadOnlyBusinessId?.(null);
   if (duplicateSalesAlerts.length > 0) {
-    apply.setAttachmentReviewRequest?.(null);
     reviewDuplicateSalesAlert(duplicateSalesAlerts[0], apply);
-    return;
-  }
-  if (firstPendingAttachmentReview) {
-    apply.setDuplicateReviewFocus?.(null);
-    apply.setAttachmentReviewRequest?.({
-      businessId: firstPendingAttachmentReview.businessId,
-      date: firstPendingAttachmentReview.date,
-      entryId: firstPendingAttachmentReview.id,
-      openedAt: Date.now(),
-    });
-    apply.setOwnerPage?.("register");
     return;
   }
   if (unseenCloseoutAlerts[0]) {

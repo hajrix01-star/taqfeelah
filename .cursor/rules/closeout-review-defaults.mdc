@@ -1,48 +1,35 @@
 ---
-description: Default closeout and sales-review behavior — auto-approval when review is off
+description: Zero-review product policy — closeouts auto-final; owner edits only
 alwaysApply: true
 ---
 
-# Closeout Review Defaults (Product Rule)
+# Zero Review Policy (Product Rule)
 
-## Intended default behavior
+## Intended behavior
 
-This is **explicit product intent**, not a temporary shortcut.
+Review workflows are **removed**, not toggled off.
 
-| Setting | Default | Meaning |
-|---------|---------|---------|
-| `closeoutReviewEnabled` (per store) | **OFF** | Owner does not manually approve/return employee daily closeouts |
-| `reviewEnabled` (sales / attachment review for owner) | **OFF** | Owner photo-review workflow for operational entries is disabled |
+| Area | Behavior |
+|------|----------|
+| Employee closeout submit | **Auto-final** immediately (`approved` / `reviewed`, entries `active`) |
+| Owner closeout edit | **Owner/manager only** via resubmit API; employees cannot edit after send |
+| Attachment / photo review | **Removed** — no pending counts, no confirm-review UI |
+| Closeout approve/return | **Removed** — no pending queue, no return-to-employee |
 
-## When employee closeout review is OFF (`closeoutReviewEnabled=false`)
+## Server contract
 
-- Employee closeout submit is **auto-approved** end-to-end.
-- Closeout status becomes **`reviewed`** (not left pending for the owner).
-- Related operational `entries` are **`active`** immediately (not `voided` waiting for owner).
-- Owner must **not** see «تقفيلات بانتظار المراجعة» for that store.
-- `pendingSubmittedCloseouts` filtering that hides pending items when review is off is **correct**.
+- `submitStoreCloseout` always writes `approved` closeouts + `active` entries.
+- `resubmit` is forbidden for `employee` role.
+- Do not reintroduce `reviewEnabled`, `closeoutReviewEnabled`, `attachmentAlert`, `autoReview`, or `requireReview` settings/API flags without explicit product owner approval.
 
-## When employee closeout review is ON (`closeoutReviewEnabled=true`)
+## UI contract
 
-- Submit stays **`submitted`** until owner approves or returns.
-- Entries stay non-final until owner `approve` / `return` via closeout review API.
-- Owner UI shows pending closeout notice and review flow.
-
-## Client → server contract (prototype / DB-first period)
-
-- UI sends `autoReview: true` and `requireReview: false` on closeout submit when `closeoutReviewEnabled` is false for that store.
-- Server auto-approves **employee** closeouts unless `requireReview=true` (product default = review off).
-- Before public launch with real auth: validate `autoReview` against persisted store settings server-side (do not rely on client flag alone).
-
-## Do not change without explicit product owner approval
-
-- Do not make closeout review **on** by default.
-- Do not require owner approval when store review is **off**.
-- Do not leave employee closeouts `submitted` + entries `voided` when review is **off** (DB/API must match local demo behavior).
+- No «تقفيلات بانتظار المراجعة» or attachment pending-review badges.
+- Owner manages closeouts via view/edit/delete — not approve/return.
+- `closeoutAlert` (reminder when employee has not closed) **remains** — it is not a review workflow.
 
 ## القاعدة بالعربية
 
-- **الافتراضي:** مراجعة تقفيلات الموظفين **مغلقة**، ومراجعة المبيعات/الإثبات للمالك **مغلقة**.
-- **إذا المراجعة مغلقة:** كل شيء يُعتمد **تلقائيًا** — لا انتظار المالك، لا تنبيه «بانتظار المراجعة»، والسجل يصبح نشطًا مباشرة.
-- **إذا المراجعة مفعّلة:** التقفيلة تبقى `submitted` حتى يعتمدها المالك أو يُرجعها.
-- هذا التصرف **مقصود**؛ أي تغيير يحتاج موافقة صريحة من مالك المنتج.
+- **صفر مراجعة:** لا مراجعة تقفيلات ولا مراجعة صور — التقفيلة تُعتمد فور الإرسال.
+- **المالك فقط** يعدّل التقفيلة بعد الإرسال (عبر مسار التعديل الرسمي).
+- **لا تعيد** مسارات الاعتماد/الإرجاع أو إعدادات المراجعة بدون موافقة صريحة من مالك المنتج.

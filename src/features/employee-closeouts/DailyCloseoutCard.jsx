@@ -28,12 +28,10 @@ export default function DailyCloseoutCard({
   onShare,
   onEditResubmit,
   formatDate,
-  reviewWorkflowEnabled,
 }) {
   const totals = closeout.totals || computeCloseoutTotals(closeout.sales, closeout.outflows);
   const salesRows = salesArrayFromRecord(closeout.sales);
   const statusText = closeoutStatusLabel(closeout.status, lang, {
-    reviewWorkflowEnabled,
     autoRecorded: !closeout.reviewedByName && closeout.status === "reviewed",
   });
   const tone = closeoutStatusTone(closeout.status);
@@ -109,19 +107,9 @@ export default function DailyCloseoutCard({
         {expanded && (
           <div className="space-y-3 border-t border-[#F0ECE2] px-4 py-4">
             <div className={`flex items-center justify-center gap-2 border-y border-[#E8E1D4] py-3 text-xs font-bold text-[#82745A] ${closeout.status === "reviewed" ? "text-[#257844]" : ""}`}>
-              <span className={`h-2 w-2 rounded-full ${closeout.status === "reviewed" ? "bg-[#257844]" : closeout.status === "returned" ? "bg-[#B44747]" : "bg-[#D69C2F]"}`} />
+              <span className={`h-2 w-2 rounded-full ${closeout.status === "reviewed" ? "bg-[#257844]" : "bg-[#D69C2F]"}`} />
               {statusText}
             </div>
-            {closeout.status === "returned" && closeout.returnReason && (
-              <div className="rounded-2xl bg-[#FFF1EE] p-3 text-taq-meta font-bold text-[#B44747]">
-                {lang === "ar" ? "سبب الإرجاع:" : "Return reason:"} {closeout.returnReason}
-                {onEditResubmit && (
-                  <button type="button" onClick={onEditResubmit} className="mt-3 w-full rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">
-                    {lang === "ar" ? "تعديل وإعادة إرسال" : "Edit and resend"}
-                  </button>
-                )}
-              </div>
-            )}
             <div>
               <p className="mb-2 text-xs font-black text-[#806528]">{lang === "ar" ? "تفاصيل الداخل" : "Sales"}</p>
               {salesRows.length ? salesRows.map((row) => (
