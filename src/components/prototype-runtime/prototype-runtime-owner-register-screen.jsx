@@ -54,29 +54,7 @@ import {
 } from "./prototype-runtime-notebook";
 import { Badge, InkTab } from "./prototype-runtime-shell-ui";
 import AttachmentLightbox from "../AttachmentLightbox";
-import { ProofThumb, useAttachmentSource } from "./prototype-runtime-attachment-ui";
-
-function RegisterAttachmentThumb({ attachment, onOpen, className = "h-14 w-14" }) {
-  const source = useAttachmentSource(attachment);
-  return (
-    <button
-      type="button"
-      onClick={(event) => {
-        event.stopPropagation();
-        if (source) onOpen(source);
-      }}
-      disabled={!source}
-      className="shrink-0 overflow-hidden rounded-xl ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50 disabled:opacity-70"
-    >
-      {source ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={source} alt="" className={`${className} object-cover`} />
-      ) : (
-        <ProofThumb />
-      )}
-    </button>
-  );
-}
+import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
 
 function LogFilterChip({ active, children, onClick, tone = "default" }) {
   const toneClass = {
@@ -587,7 +565,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
                       {entryHasAttachment(entry) ? (
                         <div className="mb-3">
                           <p className="mb-2 text-taq-nav font-black text-[#806528]">{text(lang, "attachmentExists")}</p>
-                          <RegisterAttachmentThumb attachment={entry.attachment} onOpen={setRegisterAttachmentPreview} />
+                          <AttachmentThumbButton attachment={entry.attachment} onOpen={setRegisterAttachmentPreview} />
                         </div>
                       ) : null}
                       <div className="grid grid-cols-2 gap-2 text-taq-meta font-bold text-[#716753]">
@@ -652,7 +630,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
                         {summary.operations.flatMap((item) => expandRegisterCloseoutOperationRows(item, lang, logFilters.salesChannel).map((row) => (
                           <div key={row.key} className="flex w-full items-center gap-3 rounded-xl px-2 py-2 hover:bg-[#FFF4D2]/35">
                             {entryHasAttachment(row.item) ? (
-                              <RegisterAttachmentThumb attachment={row.item.attachment} onOpen={setRegisterAttachmentPreview} />
+                              <AttachmentThumbButton attachment={row.item.attachment} onOpen={setRegisterAttachmentPreview} />
                             ) : null}
                             <button type="button" onClick={() => onOpenOperation(row.item)} className="flex min-w-0 flex-1 items-center gap-3 text-start">
                               <strong dir="ltr" className={`min-w-[70px] shrink-0 whitespace-nowrap text-start tabular-nums text-taq-meta font-black ${entryIsVoided(row.item) ? "text-[#A99D87] line-through" : row.isSale ? "text-[#257844]" : "text-[#B44747]"}`}>

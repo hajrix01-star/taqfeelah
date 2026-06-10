@@ -15,7 +15,8 @@ import {
 } from "@/features/operations/operational-analytics";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import { businesses, businessName, money, text, fullDate, opTime } from "./prototype-runtime-demo-data";
-import { AttachmentPreview } from "./prototype-runtime-attachment-ui";
+import AttachmentLightbox from "../AttachmentLightbox";
+import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
 import {
   entryDateMatches,
   entryHasAttachment,
@@ -45,6 +46,7 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
   const [expanded, setExpanded] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
+  const [homeAttachmentPreview, setHomeAttachmentPreview] = useState("");
   const monthly = period === "month";
   const isCombined = selectedBusiness === "all";
   const currentBusiness = businessesList.find((business) => business.id === selectedBusiness) || businessesList[0] || null;
@@ -130,7 +132,14 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
                 <NotebookRow><div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "outflowRatio")}</span><strong className="text-[#B44747]">{result.ratio}</strong></div></NotebookRow>
                 <NotebookRow strong lines={2}><div className="flex w-full items-end justify-between"><span className="text-sm font-extrabold">{monthly ? text(lang, "recordedMonthResult") : text(lang, "netMovement")}</span><strong className={`tabular-nums text-2xl font-extrabold ${result.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(result.net, lang)} /></strong></div></NotebookRow>
                 <NotebookRow>{monthly ? <div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "attachments")}</span><span>{result.proofs}</span></div> : <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span className="relative pb-1">{text(lang, "attachments")}{showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span><span>{result.proofs}</span></button>}</NotebookRow>
-                {!monthly && showAttachments && <DayAttachments lang={lang} group={attachmentGroup} onOpenOperation={onOpenOperation} />}
+                {!monthly && showAttachments && (
+                  <DayAttachments
+                    lang={lang}
+                    group={attachmentGroup}
+                    onOpenOperation={onOpenOperation}
+                    onPreviewAttachment={setHomeAttachmentPreview}
+                  />
+                )}
                 <NotebookRow className="justify-center"><InkTab active={expanded} showActiveUnderline={false} onClick={() => setExpanded(!expanded)} className="inline-flex items-center gap-1">{expanded ? text(lang, "hideDetails") : text(lang, "showMore")}{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</InkTab></NotebookRow>
               </>
             )}
@@ -176,11 +185,17 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
           )}
         </div>
       )}
+      <AttachmentLightbox
+        open={Boolean(homeAttachmentPreview)}
+        src={homeAttachmentPreview}
+        lang={lang}
+        onClose={() => setHomeAttachmentPreview("")}
+      />
     </motion.section>
   );
 }
 
-function DayAttachments({ lang, group, onOpenOperation = () => {} }) {
+function DayAttachments({ lang, group, onOpenOperation = () => {}, onPreviewAttachment = () => {} }) {
   if (!group?.items?.length) {
     return (
       <NotebookRow>
@@ -192,15 +207,21 @@ function DayAttachments({ lang, group, onOpenOperation = () => {} }) {
     <div className="py-3">
       <div className="flex gap-3 overflow-x-auto pb-1">
         {group.items.map((item) => (
-          <button key={item.id} onClick={() => onOpenOperation(item.entry)} className="min-w-[78px] text-center">
-            <div className="mb-1 flex h-14 justify-center overflow-hidden rounded-xl">
-              <AttachmentPreview attachment={item.attachment} className="h-14 w-14 rounded-xl" />
+          <div key={item.id} className="min-w-[78px] text-center">
+            <div className="mb-1 flex h-14 justify-center">
+              <AttachmentThumbButton
+                attachment={item.attachment}
+                onOpen={onPreviewAttachment}
+                className="h-14 w-14 rounded-xl"
+              />
             </div>
-            <p className="truncate text-taq-meta font-bold">{lang === "ar" ? item.title : item.titleEn}</p>
-            <p className={`mt-0.5 text-taq-meta font-black ${item.entry.type === "summary" ? "text-[#257844]" : "text-[#B44747]"}`}>
-              <MoneyValue value={money(signedEntryAmount(item.entry), lang)} />
-            </p>
-          </button>
+            <button type="button" onClick={() => onOpenOperation(item.entry)} className="w-full text-center">
+              <p className="truncate text-taq-meta font-bold">{lang === "ar" ? item.title : item.titleEn}</p>
+              <p className={`mt-0.5 text-taq-meta font-black ${item.entry.type === "summary" ? "text-[#257844]" : "text-[#B44747]"}`}>
+                <MoneyValue value={money(signedEntryAmount(item.entry), lang)} />
+              </p>
+            </button>
+          </div>
         ))}
       </div>
     </div>

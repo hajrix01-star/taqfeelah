@@ -68,6 +68,33 @@ export function AttachmentPreview({ attachment, className = "" }) {
   return <img src={source} alt="" className={`object-cover ${className}`} />;
 }
 
+export function AttachmentThumbButton({
+  attachment,
+  onOpen,
+  className = "h-14 w-14",
+  buttonClassName = "shrink-0 overflow-hidden rounded-xl ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50 disabled:opacity-70",
+}) {
+  const source = useAttachmentSource(attachment);
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        if (source) onOpen(source);
+      }}
+      disabled={!source}
+      className={buttonClassName}
+    >
+      {source ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={source} alt="" className={`${className} object-cover`} />
+      ) : (
+        <ProofThumb />
+      )}
+    </button>
+  );
+}
+
 export function AttachmentCapture({
   lang,
   attachment,
