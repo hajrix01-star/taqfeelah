@@ -56,8 +56,9 @@ function resolveSelectResult(call: number) {
   if (call === 1) return closeoutRows;
   if (call === 2) return entryRows.filter((row) => row.status === "active");
   if (call === 3) return salesChannelRows;
-  if (call === 4) return [{ id: ACTOR_ID, name: "Actor" }];
-  if (call === 5) return daySummaryMovementRows;
+  if (call === 4) return [];
+  if (call === 5) return [{ id: ACTOR_ID, name: "Actor" }];
+  if (call === 6) return daySummaryMovementRows;
   return [];
 }
 

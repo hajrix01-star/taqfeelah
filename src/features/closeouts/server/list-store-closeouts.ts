@@ -6,6 +6,7 @@ import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { toRiyals } from "@/core/money/halalas";
 import { dailyCloseouts, entries, entrySalesChannels, stores, users } from "@/core/db/schema";
+import { loadEntryAttachmentUrlsByEntryId } from "@/features/closeouts/server/load-entry-attachment-urls";
 import {
   closeoutTotalsFromHalalas,
   closeoutTotalsFromRiyalRows,
@@ -32,6 +33,7 @@ type CloseoutOutflowRow = {
   category: string;
   note: string;
   amount: number;
+  attachments: string[];
 };
 
 /** Persisted closeouts are always treated as sent/approved (zero-review policy). */
@@ -160,6 +162,13 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
     entriesByCloseoutId.set(row.closeoutId, current);
   });
 
+  const attachmentUrlsByEntryId = await loadEntryAttachmentUrlsByEntryId(
+    db,
+    input.organizationId,
+    input.storeId,
+    entryRows.map((row) => row.id),
+  );
+
   const actorIds = [...new Set(
     closeoutRows.flatMap((row) => [
       row.submittedByUserId,
@@ -190,6 +199,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
           entry.type === "purchases" || entry.type === "expense" || entry.type === "withdrawal"
             ? entry.type
             : "expense";
+        const entryAttachments = attachmentUrlsByEntryId.get(entry.id) || [];
         return {
           id: `${row.clientCloseoutId}-out-${index + 1}`,
           type: entryType,
@@ -198,8 +208,13 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
           category: "",
           note: entry.note || "",
           amount: toRiyals(entry.amountHalalas),
+          attachments: entryAttachments,
         };
       });
+
+    const closeoutAttachmentUrls = summaryEntry
+      ? (attachmentUrlsByEntryId.get(summaryEntry.id) || [])
+      : [];
 
     const totalSalesHalalas = linkedEntries
       .filter((entry) => entry.type === "summary")
@@ -237,7 +252,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
       note: row.note || "",
       sales: salesRows,
       outflows: outflowRows,
-      attachments: [],
+      attachments: closeoutAttachmentUrls,
       syncedToEntries: true,
       totals,
     };

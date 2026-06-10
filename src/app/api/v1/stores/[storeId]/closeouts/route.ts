@@ -39,6 +39,7 @@ export async function POST(request: Request, context: RouteContext) {
       mode,
       salesChannels: Array.isArray(body?.salesChannels) ? body.salesChannels : [],
       outflows: Array.isArray(body?.outflows) ? body.outflows : [],
+      attachments: Array.isArray(body?.attachments) ? body.attachments : [],
       note: typeof body?.note === "string" ? body.note : undefined,
     });
 

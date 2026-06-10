@@ -1,13 +1,17 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import {
+  INLINE_ATTACHMENT_MAX_BYTES,
+  INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH,
+} from "@/core/attachments/inline-attachment-limits";
 import { ValidationError } from "@/core/errors/app-error";
 
 const inlineAttachmentSchema = z.object({
   kind: z.literal("image").default("image"),
   name: z.string().trim().min(1).max(220).optional(),
   mimeType: z.string().trim().min(1).max(120).default("image/jpeg"),
-  sizeBytes: z.number().int().positive().max(350 * 1024),
-  dataUrl: z.string().trim().min(32).max(500_000),
+  sizeBytes: z.number().int().positive().max(INLINE_ATTACHMENT_MAX_BYTES),
+  dataUrl: z.string().trim().min(32).max(INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH),
 });
 
 const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);

@@ -6,6 +6,10 @@ import { ValidationError } from "@/core/errors/app-error";
 import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
 import { attachments, auditEvents, entries, entrySalesChannels } from "@/core/db/schema";
 import { assertCloseoutLinkedEntry, CLOSEOUT_REQUIRED_FOR_ENTRY_MESSAGE } from "@/features/entries/server/assert-closeout-linked-entry";
+import {
+  INLINE_ATTACHMENT_MAX_BYTES,
+  INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH,
+} from "@/core/attachments/inline-attachment-limits";
 import { registerInlineAttachment } from "@/features/entries/server/inline-attachment";
 import { resolveStoreSalesChannelsForWrite } from "@/features/org-config/server/resolve-store-sales-channels-for-write";
 
@@ -32,9 +36,9 @@ const createEntryInputSchema = z.object({
       kind: z.literal("image"),
       name: z.string().trim().min(1).max(220).optional(),
       mimeType: z.string().trim().min(1).max(120).default("image/jpeg"),
-      sizeBytes: z.number().int().positive().max(350 * 1024),
-      dataUrl: z.string().trim().min(32).max(500_000).optional(),
-      storageKey: z.string().trim().min(8).max(500_000).optional(),
+      sizeBytes: z.number().int().positive().max(INLINE_ATTACHMENT_MAX_BYTES),
+      dataUrl: z.string().trim().min(32).max(INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH).optional(),
+      storageKey: z.string().trim().min(8).max(INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH).optional(),
     })
     .refine((value) => Boolean(value.dataUrl || value.storageKey), {
       message: "Attachment requires dataUrl or storageKey.",

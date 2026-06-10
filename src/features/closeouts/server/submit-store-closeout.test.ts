@@ -90,6 +90,7 @@ const baseInput = {
     },
   ],
   outflows: [],
+  attachments: [],
   mode: "submit" as const,
 };
 
