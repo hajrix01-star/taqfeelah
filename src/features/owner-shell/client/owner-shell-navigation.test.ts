@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   handleOwnerNotificationsClick,
   openOwnerQuickSummary,
-  reviewCloseoutAlertRecord,
+  openCloseoutAlertInRegister,
 } from "./owner-shell-navigation";
 
 describe("owner shell navigation", () => {
@@ -25,7 +25,7 @@ describe("owner shell navigation", () => {
       setCloseoutAlerts: vi.fn((updater) => updater([{ id: "alert-1", seen: false }])),
     };
 
-    reviewCloseoutAlertRecord(
+    openCloseoutAlertInRegister(
       { id: "alert-1", businessId: "shami", date: "2026-06-01", entryId: "entry-1" },
       apply,
       [{ id: "entry-1", businessId: "shami" }],

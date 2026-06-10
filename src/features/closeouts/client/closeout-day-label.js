@@ -38,6 +38,3 @@ export function countSentCloseoutsByDate(closeouts = []) {
   });
   return counts;
 }
-
-/** @deprecated Use countSentCloseoutsByDate — legacy name kept for import stability. */
-export const countSubmittedCloseoutsByDate = countSentCloseoutsByDate;

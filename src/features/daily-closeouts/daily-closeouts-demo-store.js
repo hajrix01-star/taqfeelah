@@ -182,8 +182,8 @@ export function sortCloseoutsNewestFirst(closeouts) {
   });
 }
 
-/** Legacy zero-review stub — no pending owner queue. Rename candidate: `pendingOwnerCloseoutQueue`. */
-export function pendingSubmittedCloseouts() {
+/** Zero-review stub — owner closeout queue removed; always empty. */
+export function pendingOwnerCloseoutQueue() {
   return [];
 }
 
