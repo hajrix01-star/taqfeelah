@@ -29,6 +29,7 @@ import {
   findDuplicateSummaryEntries,
   isFutureOperationalEntryDate,
   mergeLastCloseoutDateForStore,
+  resolveOperationalEntriesRefreshWarningMessage,
 } from "@/features/operations/operational-entry-save-helpers";
 import {
   buildPendingDuplicateSummaryState,
@@ -675,6 +676,9 @@ export default function TaqfeelahPrototypeRuntime() {
         if (!result.ok) {
           window.alert(result.failureMessage);
           return;
+        }
+        if (result.refreshFailed) {
+          window.alert(resolveOperationalEntriesRefreshWarningMessage(lang));
         }
         if (payload.type === "summary") {
           const summaryUpdate = resolveSummaryLastCloseoutUpdate(

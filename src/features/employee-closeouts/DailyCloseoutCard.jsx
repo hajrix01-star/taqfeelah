@@ -26,7 +26,6 @@ export default function DailyCloseoutCard({
   expanded,
   onToggle,
   onShare,
-  onEditResubmit,
   formatDate,
 }) {
   const totals = closeout.totals || computeCloseoutTotals(closeout.sales, closeout.outflows);

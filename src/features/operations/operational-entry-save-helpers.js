@@ -97,3 +97,13 @@ export function isFutureOperationalEntryDate(entryDate, todayDate) {
 export function resolveOperationalEntrySaveFailureMessage(lang = "ar") {
   return lang === "ar" ? "تعذر حفظ العملية على الخادم." : "Failed to save entry on server.";
 }
+
+/**
+ * Shown when a write succeeded but post-save register refresh failed.
+ * @param {"ar" | "en"} [lang]
+ */
+export function resolveOperationalEntriesRefreshWarningMessage(lang = "ar") {
+  return lang === "ar"
+    ? "تم الحفظ، لكن تعذر تحديث السجل من الخادم. أعد فتح الصفحة أو حدّث البيانات."
+    : "Saved, but the register could not be refreshed from the server. Reopen the page or refresh data.";
+}

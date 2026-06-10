@@ -365,10 +365,6 @@ export default function EmployeeCloseoutsView({
                       setShareNewlySubmitted(false);
                       setShareTarget(day);
                     }}
-                    onEditResubmit={day.status === CLOSEOUT_STATUS.RETURNED ? () => {
-                      setEntryResubmit(true);
-                      setEntryCloseout(day);
-                    } : undefined}
                   />
                 </div>
               )) : (
