@@ -24,7 +24,7 @@ import {
   operationDisplayLabel,
   signedEntryAmount,
 } from "./prototype-runtime-entry-helpers";
-import { summaryDayFromEntriesWithLabels, attachmentsFromEntries } from "./prototype-runtime-demo-operational-entries";
+import { summaryDayFromEntriesWithLabels } from "./prototype-runtime-demo-operational-entries";
 import {
   Notebook,
   NotebookRow,
@@ -38,6 +38,7 @@ import {
 } from "./prototype-runtime-notebook";
 import { Badge, InkTab } from "./prototype-runtime-shell-ui";
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
+import { useHomeDayAttachments } from "@/features/entries/client/use-home-day-attachments";
 
 export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], onReviewCloseout = () => {}, onDismissCloseout = () => {}, onReviewDuplicate = () => {}, onAcknowledgeDuplicate = () => {}, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", summaryRefreshKey = 0 }) {
   const [period, setPeriod] = useState("day");
@@ -97,7 +98,26 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
       : resolveOwnerSingleStoreTotals(daySummary, apiStoreResult, preferEntrySummaries);
   const selectedBusinessEntries = currentBusiness ? entriesInPeriod(operationalEntries, currentBusiness.id, "day", selectedDate, selectedMonth) : [];
   const visibleDayOperations = newestEntries(selectedBusinessEntries);
-  const attachmentGroup = attachmentsFromEntries(selectedBusinessEntries)[0] || null;
+  const {
+    group: attachmentGroup,
+    loading: attachmentsLoading,
+    fetchError: attachmentsFetchError,
+    itemCount: attachmentItemCount,
+  } = useHomeDayAttachments({
+    enabled: showAttachments && !monthly && !isCombined,
+    localDayEntries: selectedBusinessEntries,
+    selectedDate,
+    proofsCount: Number(result.proofs) || 0,
+    entriesApiEnabled: summaryApiEnabled,
+    organizationId: summaryApiOrganizationId,
+    actorUserId: summaryApiActorUserId,
+    actorRole: summaryApiActorRole,
+    storeId: currentBusiness?.id || "",
+    refreshKey: summaryRefreshKey,
+  });
+  const displayedProofCount = attachmentItemCount > 0
+    ? attachmentItemCount
+    : (Number(result.proofs) || 0);
   const changePeriod = (nextPeriod) => {
     setPeriod(nextPeriod);
     setExpanded(false);
@@ -131,11 +151,14 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
                 <NotebookRow><NumberLine lang={lang} handwritten label={text(lang, "purchasesExpenses")} value={money(result.expense, lang)} valueClassName="text-[#B44747]" /></NotebookRow>
                 <NotebookRow><div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "outflowRatio")}</span><strong className="text-[#B44747]">{result.ratio}</strong></div></NotebookRow>
                 <NotebookRow strong lines={2}><div className="flex w-full items-end justify-between"><span className="text-sm font-extrabold">{monthly ? text(lang, "recordedMonthResult") : text(lang, "netMovement")}</span><strong className={`tabular-nums text-2xl font-extrabold ${result.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(result.net, lang)} /></strong></div></NotebookRow>
-                <NotebookRow>{monthly ? <div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "attachments")}</span><span>{result.proofs}</span></div> : <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span className="relative pb-1">{text(lang, "attachments")}{showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span><span>{result.proofs}</span></button>}</NotebookRow>
+                <NotebookRow>{monthly ? <div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "attachments")}</span><span>{result.proofs}</span></div> : <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span className="relative pb-1">{text(lang, "attachments")}{showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}</span><span>{displayedProofCount}</span></button>}</NotebookRow>
                 {!monthly && showAttachments && (
                   <DayAttachments
                     lang={lang}
                     group={attachmentGroup}
+                    loading={attachmentsLoading}
+                    loadFailed={attachmentsFetchError}
+                    proofsCount={Number(result.proofs) || 0}
                     onOpenOperation={onOpenOperation}
                     onPreviewAttachment={setHomeAttachmentPreview}
                   />
@@ -195,11 +218,32 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
   );
 }
 
-function DayAttachments({ lang, group, onOpenOperation = () => {}, onPreviewAttachment = () => {} }) {
+function DayAttachments({
+  lang,
+  group,
+  loading = false,
+  loadFailed = false,
+  proofsCount = 0,
+  onOpenOperation = () => {},
+  onPreviewAttachment = () => {},
+}) {
+  if (loading) {
+    return (
+      <NotebookRow>
+        <p className="text-xs font-bold text-[#806528]">
+          {lang === "ar" ? "جاري تحميل المرفقات…" : "Loading attachments…"}
+        </p>
+      </NotebookRow>
+    );
+  }
   if (!group?.items?.length) {
     return (
       <NotebookRow>
-        <p className="text-xs font-bold text-[#806528]">{text(lang, "noAttachmentsDay")}</p>
+        <p className="text-xs font-bold text-[#806528]">
+          {loadFailed && proofsCount > 0
+            ? (lang === "ar" ? "تعذر تحميل المرفقات من الخادم." : "Failed to load attachments from the server.")
+            : text(lang, "noAttachmentsDay")}
+        </p>
       </NotebookRow>
     );
   }

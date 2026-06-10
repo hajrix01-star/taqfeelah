@@ -18,3 +18,9 @@ export function groupAttachmentsFromEntries(entries, resolveNoteLabel) {
   });
   return [...grouped.entries()].map(([date, items]) => ({ dayId: date, date, items }));
 }
+
+export function resolveAttachmentGroupForDate(groups, selectedDate) {
+  const list = Array.isArray(groups) ? groups : [];
+  if (!selectedDate) return list[0] || null;
+  return list.find((group) => group.date === selectedDate) || list[0] || null;
+}
