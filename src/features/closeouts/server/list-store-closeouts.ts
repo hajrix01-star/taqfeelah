@@ -104,6 +104,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
       id: entries.id,
       closeoutId: entries.closeoutId,
       type: entries.type,
+      status: entries.status,
       categoryId: entries.categoryId,
       note: entries.note,
       amountHalalas: entries.amountHalalas,
@@ -113,6 +114,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
       and(
         eq(entries.organizationId, input.organizationId),
         eq(entries.storeId, input.storeId),
+        eq(entries.status, "active"),
         inArray(entries.closeoutId, closeoutIds),
       ),
     );
@@ -175,7 +177,9 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
   }
 
   return closeoutRows.map((row) => {
-    const linkedEntries = entriesByCloseoutId.get(row.id) || [];
+    const linkedEntries = (entriesByCloseoutId.get(row.id) || []).filter(
+      (entry) => entry.status === "active",
+    );
     const summaryEntry = linkedEntries.find((entry) => entry.type === "summary");
     const salesRows = summaryEntry ? salesByEntryId.get(summaryEntry.id) || [] : [];
 
