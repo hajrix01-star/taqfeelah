@@ -6,6 +6,7 @@ import {
   preferLocalTotalsOverEmptyApi,
   resolveOwnerPeriodSummaryPreference,
   resolveOwnerSingleStoreTotals,
+  summarizeEntries,
 } from "./operational-analytics";
 
 describe("operational analytics summary helpers", () => {
@@ -84,6 +85,19 @@ describe("operational analytics summary helpers", () => {
       entriesDbSource: true,
     })).toBe(false);
     expect(resolveOwnerSingleStoreTotals(local, api, false, { entriesDbSource: true })).toEqual(api);
+  });
+
+  it("uses halala domain math instead of float drift for fractional riyals", () => {
+    const entries = [
+      { type: "summary", amount: 0.1, status: "active" },
+      { type: "summary", amount: 0.2, status: "active" },
+    ];
+    expect(summarizeEntries(entries)).toMatchObject({
+      sales: 0.3,
+      expense: 0,
+      net: 0.3,
+      ratio: "0.0%",
+    });
   });
 
   it("builds per-store day summaries from operational entries", () => {

@@ -1,3 +1,23 @@
+import { toHalalas } from "@/core/money/halalas";
+import {
+  calculateDaySummary,
+  combineDaySummaries,
+  daySummaryToUiTotals,
+} from "@/domain/cash-movement/calculations";
+
+function daySummaryFromUiTotalsRecord(record) {
+  const salesHalalas = toHalalas(Number(record?.sales || 0));
+  const outflowHalalas = toHalalas(Number(record?.expense || 0));
+  const rows = [];
+  if (salesHalalas > 0) {
+    rows.push({ type: "summary", amountHalalas: salesHalalas });
+  }
+  if (outflowHalalas > 0) {
+    rows.push({ type: "expense", amountHalalas: outflowHalalas });
+  }
+  return calculateDaySummary(rows);
+}
+
 export function mapDaySummaryToUiTotals(apiSummary) {
   const salesHalalas = Number(apiSummary?.totalSales?.amountHalalas || 0);
   const outflowHalalas = Number(apiSummary?.totalOutflow?.amountHalalas || 0);
@@ -17,18 +37,14 @@ export function mapDaySummaryToUiTotals(apiSummary) {
 
 export function combineUiTotals(records) {
   const list = Array.isArray(records) ? records : [];
-  const combined = list.reduce((total, record) => ({
-    sales: total.sales + Number(record?.sales || 0),
-    expense: total.expense + Number(record?.expense || 0),
-    net: total.net + Number(record?.net || 0),
-    proofs: total.proofs + Number(record?.proofs || 0),
-  }), { sales: 0, expense: 0, net: 0, proofs: 0 });
-
-  const ratio = combined.sales > 0
-    ? `${((combined.expense / combined.sales) * 100).toFixed(1)}%`
-    : combined.expense > 0
-      ? "—"
-      : "0.0%";
-
-  return { ...combined, ratio };
+  const combined = combineDaySummaries(list.map(daySummaryFromUiTotalsRecord));
+  const proofs = list.reduce((sum, record) => sum + Number(record?.proofs || 0), 0);
+  const totals = daySummaryToUiTotals(combined, { proofs });
+  return {
+    sales: totals.sales,
+    expense: totals.expense,
+    net: totals.net,
+    ratio: totals.ratio,
+    proofs: totals.proofs,
+  };
 }

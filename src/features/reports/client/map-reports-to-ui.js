@@ -90,18 +90,4 @@ export function mapAttachmentsReportToProofs(report) {
   };
 }
 
-export function combineUiTotalsList(records) {
-  const list = Array.isArray(records) ? records : [];
-  const combined = list.reduce((total, record) => ({
-    sales: total.sales + Number(record?.sales || 0),
-    expense: total.expense + Number(record?.expense || 0),
-    net: total.net + Number(record?.net || 0),
-    proofs: total.proofs + Number(record?.proofs || 0),
-  }), { sales: 0, expense: 0, net: 0, proofs: 0 });
-  const ratio = combined.sales > 0
-    ? `${((combined.expense / combined.sales) * 100).toFixed(1)}%`
-    : combined.expense > 0
-      ? "—"
-      : "0.0%";
-  return { ...combined, ratio };
-}
+export { combineUiTotals as combineUiTotalsList } from "./map-day-summary-to-ui";

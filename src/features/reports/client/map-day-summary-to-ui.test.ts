@@ -50,4 +50,18 @@ describe("combineUiTotals", () => {
     expect(combined.ratio).toBe("20.0%");
     expect(combined).not.toHaveProperty("pending");
   });
+
+  it("uses halala domain math instead of float drift for fractional riyals", () => {
+    const combined = combineUiTotals([
+      { sales: 0.1, expense: 0, net: 0.1, proofs: 0, pending: 0 },
+      { sales: 0.2, expense: 0, net: 0.2, proofs: 0, pending: 0 },
+    ]);
+
+    expect(combined).toMatchObject({
+      sales: 0.3,
+      expense: 0,
+      net: 0.3,
+      ratio: "0.0%",
+    });
+  });
 });
