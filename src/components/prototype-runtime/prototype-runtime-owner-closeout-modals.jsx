@@ -23,7 +23,7 @@ export function OwnerCloseoutEditFlow({
   return (
     <DailyCloseoutEntryFlow
       lang={lang}
-      notebookTheme={editCloseout.notebookTheme || ownerNotebookTheme}
+      notebookTheme={ownerNotebookTheme || editCloseout.notebookTheme}
       closeout={editCloseout}
       salesChannels={resolveSalesChannels(editCloseout.storeId)}
       storeName={editCloseout.storeName}

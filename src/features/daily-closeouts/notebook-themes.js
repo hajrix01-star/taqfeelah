@@ -84,3 +84,14 @@ export function resolveNotebookTheme({ storeOperationalSettings, storeId, global
   if (storeTheme) return storeTheme;
   return globalTheme || "yellow";
 }
+
+/** Share preview/capture uses the sender's active notebook theme, not a stale closeout snapshot. */
+export function resolveShareNotebookTheme(senderTheme, closeoutTheme) {
+  if (isValidNotebookTheme(senderTheme)) return senderTheme;
+  if (isValidNotebookTheme(closeoutTheme)) return closeoutTheme;
+  return "yellow";
+}
+
+export function notebookThemePaperColor(themeKey) {
+  return (notebookThemes[themeKey] || notebookThemes.yellow).paper;
+}

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { buildCloseoutShareOperationRows, closeoutShareTotals } from "../daily-closeouts/closeout-share-operations";
 import NotebookDaySharePreview from "../daily-closeouts/NotebookDaySharePreview";
 import { captureNotebookShareBlob } from "../daily-closeouts/notebook-share-capture";
-import { notebookThemes } from "../daily-closeouts/notebook-themes";
+import { notebookThemePaperColor, resolveShareNotebookTheme } from "../daily-closeouts/notebook-themes";
 import { buildEmployeeShareCaption, shareEmployeeCloseoutImage } from "./employee-closeout-share";
 import { resolveCloseoutStoreName } from "./store-name-resolver";
 
@@ -57,8 +57,8 @@ export default function CloseoutShareModal({
       : ""),
     [lang, closeout, resolvedStoreName, resolvedEmployeeName, resolvedPeriodLabel, totals],
   );
-  const selectedTheme = closeout?.notebookTheme || notebookTheme || "yellow";
-  const paperColor = notebookThemes[selectedTheme]?.paper || notebookThemes.yellow?.paper || "#FFFDF7";
+  const selectedTheme = resolveShareNotebookTheme(notebookTheme, closeout?.notebookTheme);
+  const paperColor = notebookThemePaperColor(selectedTheme);
 
   const previewData = useMemo(() => {
     if (!totals || !closeout) return null;
