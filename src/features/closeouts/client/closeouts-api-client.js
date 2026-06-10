@@ -5,6 +5,7 @@ import {
   toMoneyHalalas,
 } from "@/core/client/api-id-utils";
 import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+import { normalizeCloseoutSubmitMode } from "@/features/closeouts/closeout-submit-mode";
 import {
   getCloseoutApiMaps,
   getRuntimeApiMaps,
@@ -147,7 +148,7 @@ export async function submitCloseoutViaApi({
     actorRole,
     method: "POST",
     body: {
-      mode,
+      mode: normalizeCloseoutSubmitMode(mode),
       closeoutId: closeout.id,
       date: closeout.date,
       salesChannels,

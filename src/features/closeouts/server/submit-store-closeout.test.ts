@@ -169,14 +169,14 @@ describe("submitStoreCloseout", () => {
     expect(metadata?.dailyCloseoutId).toBe("daily-closeout-1");
   });
 
-  it("replaces prior entries when resubmitting a closeout", async () => {
+  it("replaces prior entries when owner edits a closeout", async () => {
     txExistingCloseout = true;
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 
     await submitStoreCloseout({
       ...baseInput,
       actorRole: "owner",
-      mode: "resubmit",
+      mode: "ownerEdit",
       outflows: [
         {
           type: "expense",
@@ -190,6 +190,20 @@ describe("submitStoreCloseout", () => {
 
     expect(deleteCalls.some((call) => call.table === entries)).toBe(true);
     expect(updateCalls.some((call) => call.table === dailyCloseouts)).toBe(true);
+    expect((auditInserts()[0]?.values as { action: string }).action).toBe("closeout_resubmitted");
+  });
+
+  it("accepts legacy resubmit mode alias for owner edit", async () => {
+    txExistingCloseout = true;
+    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
+
+    await submitStoreCloseout({
+      ...baseInput,
+      actorRole: "owner",
+      mode: "resubmit",
+      outflows: [],
+    });
+
     expect((auditInserts()[0]?.values as { action: string }).action).toBe("closeout_resubmitted");
   });
 });

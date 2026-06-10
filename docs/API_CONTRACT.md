@@ -146,9 +146,10 @@ Behavior:
 - Validates organization/store/user authorization.
 - Creates operational `entries` + channel rows in one transaction.
 - Writes closeout audit trail (`closeout_submitted` / `closeout_resubmitted`).
-- Assigns `daySequence` server-side per `storeId + date` (1, 2, 3…). UI maps this to English letters (`A`, `B`, `C`) beside the date when multiple closeouts exist on the same day. Resubmits keep the same `daySequence`.
+- `mode`: `"submit"` (default) or `"ownerEdit"` to replace entries for an existing closeout. Legacy alias `"resubmit"` is normalized to `"ownerEdit"`.
+- Assigns `daySequence` server-side per `storeId + date` (1, 2, 3…). UI maps this to English letters (`A`, `B`, `C`) beside the date when multiple closeouts exist on the same day. Owner edits keep the same `daySequence`.
 - **Zero-review policy:** every submit (employee, owner, or manager) auto-approves in the same transaction (`status=approved`, `entries.status=active`). Legacy body flags `autoReview` / `requireReview` are **ignored** if sent.
-- `resubmit` is forbidden for `employee` role; only owner/manager may edit a sent closeout.
+- `ownerEdit` is forbidden for `employee` role; only owner/manager may edit a sent closeout. Audit action remains `closeout_resubmitted` for owner edits.
 - See `.cursor/rules/closeout-review-defaults.mdc`.
 
 ### `GET /stores/:storeId/closeouts` (implemented)
