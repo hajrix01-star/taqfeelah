@@ -53,6 +53,30 @@ import {
   todayIsoDate,
 } from "./prototype-runtime-notebook";
 import { Badge, InkTab } from "./prototype-runtime-shell-ui";
+import AttachmentLightbox from "../AttachmentLightbox";
+import { ProofThumb, useAttachmentSource } from "./prototype-runtime-attachment-ui";
+
+function RegisterAttachmentThumb({ attachment, onOpen, className = "h-14 w-14" }) {
+  const source = useAttachmentSource(attachment);
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        if (source) onOpen(source);
+      }}
+      disabled={!source}
+      className="shrink-0 overflow-hidden rounded-xl ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50 disabled:opacity-70"
+    >
+      {source ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={source} alt="" className={`${className} object-cover`} />
+      ) : (
+        <ProofThumb />
+      )}
+    </button>
+  );
+}
 
 function LogFilterChip({ active, children, onClick, tone = "default" }) {
   const toneClass = {
@@ -234,6 +258,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
   const [logView, setLogView] = useState("closeouts");
   const [expandedEntryId, setExpandedEntryId] = useState(null);
   const [expandedCloseoutKey, setExpandedCloseoutKey] = useState(null);
+  const [registerAttachmentPreview, setRegisterAttachmentPreview] = useState("");
 
   const openFiltersSheet = () => {
     setDraftLogFilters(logFilters);
@@ -559,6 +584,12 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
                     <div className="border-t border-[#E8E1D4] px-3.5 py-3" style={registerCardInsetStyle}>
                       {entry.note ? <p className="mb-2 text-taq-meta font-bold text-[#716753]">{entry.note}</p> : null}
                       {entryIsVoided(entry) && entry.voidReason ? <p className="mb-2 text-taq-meta font-bold text-[#B44747]">{text(lang, "voidReason")}: {entry.voidReason}</p> : null}
+                      {entryHasAttachment(entry) ? (
+                        <div className="mb-3">
+                          <p className="mb-2 text-taq-nav font-black text-[#806528]">{text(lang, "attachmentExists")}</p>
+                          <RegisterAttachmentThumb attachment={entry.attachment} onOpen={setRegisterAttachmentPreview} />
+                        </div>
+                      ) : null}
                       <div className="grid grid-cols-2 gap-2 text-taq-meta font-bold text-[#716753]">
                         <div className="rounded-xl px-2.5 py-2 ring-1 ring-[#E8E1D4]" style={registerCardStyle}>{lang === "ar" ? "المدخل" : "Entered by"}: {actorLabel}</div>
                         <div className="rounded-xl px-2.5 py-2 ring-1 ring-[#E8E1D4]" style={registerCardStyle}>{lang === "ar" ? "المحل" : "Store"}: {businessName(store, lang, true) || businessName(store, lang)}</div>
@@ -619,15 +650,20 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
                     <div className="border-t border-[#E8E1D4] px-3.5 py-2.5" style={registerCardInsetStyle}>
                       <div className="space-y-2">
                         {summary.operations.flatMap((item) => expandRegisterCloseoutOperationRows(item, lang, logFilters.salesChannel).map((row) => (
-                          <button key={row.key} type="button" onClick={() => onOpenOperation(row.item)} className="grid w-full grid-cols-[max-content_minmax(0,1fr)] items-center gap-3 rounded-xl px-2 py-2 text-start hover:bg-[#FFF4D2]/35">
-                            <strong dir="ltr" className={`min-w-[70px] whitespace-nowrap text-start tabular-nums text-taq-meta font-black ${entryIsVoided(row.item) ? "text-[#A99D87] line-through" : row.isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
-                              <MoneyValue value={money(row.amount, lang)} />
-                            </strong>
-                            <span className="min-w-0 text-end">
-                              <span className="truncate text-taq-meta font-bold text-[#112A46]">{row.label}</span>
-                              <small className="mt-0.5 block truncate text-taq-nav font-bold text-[#8A816F]">{opTime(row.item, lang)} آ· {entryHasAttachment(row.item) ? text(lang, "attachmentExists") : text(lang, "noAttachment")}</small>
-                            </span>
-                          </button>
+                          <div key={row.key} className="flex w-full items-center gap-3 rounded-xl px-2 py-2 hover:bg-[#FFF4D2]/35">
+                            {entryHasAttachment(row.item) ? (
+                              <RegisterAttachmentThumb attachment={row.item.attachment} onOpen={setRegisterAttachmentPreview} />
+                            ) : null}
+                            <button type="button" onClick={() => onOpenOperation(row.item)} className="flex min-w-0 flex-1 items-center gap-3 text-start">
+                              <strong dir="ltr" className={`min-w-[70px] shrink-0 whitespace-nowrap text-start tabular-nums text-taq-meta font-black ${entryIsVoided(row.item) ? "text-[#A99D87] line-through" : row.isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
+                                <MoneyValue value={money(row.amount, lang)} />
+                              </strong>
+                              <span className="min-w-0 flex-1 text-end">
+                                <span className="truncate text-taq-meta font-bold text-[#112A46]">{row.label}</span>
+                                <small className="mt-0.5 block truncate text-taq-nav font-bold text-[#8A816F]">{opTime(row.item, lang)}</small>
+                              </span>
+                            </button>
+                          </div>
                         )))}
                       </div>
                     </div>
@@ -638,6 +674,12 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
           </div>
         ))}
       </motion.section>
+      <AttachmentLightbox
+        open={Boolean(registerAttachmentPreview)}
+        src={registerAttachmentPreview}
+        lang={lang}
+        onClose={() => setRegisterAttachmentPreview("")}
+      />
     </NotebookScrollSurface>
   );
 }
