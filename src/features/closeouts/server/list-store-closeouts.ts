@@ -219,7 +219,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
       date: row.date,
       daySequence: row.daySequence,
       status,
-      notebookTheme: "yellow",
+      notebookTheme: null,
       openedByUserId: row.submittedByUserId,
       openedByName: submittedByName,
       submittedByUserId: row.submittedByUserId,
