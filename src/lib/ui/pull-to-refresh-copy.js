@@ -1,12 +1,14 @@
 /**
+ * Screen-reader only status for pull-to-refresh.
  * @param {"ar" | "en"} lang
- * @param {"pull" | "release" | "refreshing"} phase
+ * @param {boolean} refreshing
+ * @param {boolean} releaseReady
  */
-export function pullToRefreshLabel(lang, phase) {
-  if (phase === "refreshing") {
-    return lang === "ar" ? "جاري التحديث..." : "Refreshing...";
+export function pullToRefreshStatusLabel(lang, refreshing, releaseReady) {
+  if (refreshing) {
+    return lang === "ar" ? "جاري التحديث" : "Refreshing";
   }
-  if (phase === "release") {
+  if (releaseReady) {
     return lang === "ar" ? "أفلت للتحديث" : "Release to refresh";
   }
   return lang === "ar" ? "اسحب للتحديث" : "Pull to refresh";

@@ -2,10 +2,21 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export const PULL_TO_REFRESH_THRESHOLD = 64;
-export const PULL_TO_REFRESH_MAX_DISTANCE = 96;
-const PULL_TO_REFRESH_RESISTANCE = 0.45;
-const PULL_TO_REFRESH_LOCKED_OFFSET = 52;
+export const PULL_TO_REFRESH_THRESHOLD = 56;
+export const PULL_TO_REFRESH_MAX_DISTANCE = 112;
+export const PULL_TO_REFRESH_REFRESH_SLOT = 44;
+const PULL_TO_REFRESH_MIN_REFRESH_MS = 420;
+
+/**
+ * Rubber-band curve similar to native mobile pull gestures.
+ * @param {number} delta
+ */
+export function resolvePullToRefreshDistance(delta) {
+  if (delta <= 0) return 0;
+  const linear = delta * 0.5;
+  const resisted = linear - Math.max(0, linear - 72) * 0.35;
+  return Math.min(resisted, PULL_TO_REFRESH_MAX_DISTANCE);
+}
 
 /**
  * @param {{
@@ -51,12 +62,19 @@ export function usePullToRefresh({ enabled = true, onRefresh }) {
       const distance = pullDistanceRef.current;
       if (distance >= PULL_TO_REFRESH_THRESHOLD && !refreshingRef.current) {
         setRefreshing(true);
-        setPullDistance(PULL_TO_REFRESH_LOCKED_OFFSET);
+        setPullDistance(PULL_TO_REFRESH_REFRESH_SLOT);
+        const startedAt = Date.now();
         try {
           await onRefreshRef.current();
         } catch (error) {
           console.warn("pull to refresh failed", error);
         } finally {
+          const elapsed = Date.now() - startedAt;
+          if (elapsed < PULL_TO_REFRESH_MIN_REFRESH_MS) {
+            await new Promise((resolve) => {
+              window.setTimeout(resolve, PULL_TO_REFRESH_MIN_REFRESH_MS - elapsed);
+            });
+          }
           setRefreshing(false);
           setPullDistance(0);
         }
@@ -85,8 +103,7 @@ export function usePullToRefresh({ enabled = true, onRefresh }) {
       }
 
       event.preventDefault();
-      const resisted = Math.min(delta * PULL_TO_REFRESH_RESISTANCE, PULL_TO_REFRESH_MAX_DISTANCE);
-      setPullDistance(resisted);
+      setPullDistance(resolvePullToRefreshDistance(delta));
     };
 
     const onTouchEnd = () => {
@@ -106,18 +123,18 @@ export function usePullToRefresh({ enabled = true, onRefresh }) {
     };
   }, [enabled]);
 
-  const indicatorOffset = refreshing
-    ? PULL_TO_REFRESH_LOCKED_OFFSET
-    : pullDistance;
-  const indicatorVisible = enabled && (refreshing || pullDistance > 0);
+  const slotHeight = refreshing ? PULL_TO_REFRESH_REFRESH_SLOT : pullDistance;
+  const pullProgress = Math.min(1, pullDistance / PULL_TO_REFRESH_THRESHOLD);
   const releaseReady = !refreshing && pullDistance >= PULL_TO_REFRESH_THRESHOLD;
+  const isActive = enabled && (refreshing || pullDistance > 0);
 
   return {
     scrollRef,
     pullDistance,
+    pullProgress,
     refreshing,
-    indicatorOffset,
-    indicatorVisible,
     releaseReady,
+    slotHeight,
+    isActive,
   };
 }
