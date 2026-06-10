@@ -1,0 +1,74 @@
+import { describe, expect, it } from "vitest";
+import { resolvePullToRefreshTarget } from "./pull-to-refresh-policy";
+
+describe("resolvePullToRefreshTarget", () => {
+  it("enables closeouts refresh for employee main page", () => {
+    expect(resolvePullToRefreshTarget({
+      employee: true,
+      ownerPage: "home",
+      employeePage: "closeouts",
+      employeeEntryActive: false,
+      ownerEntryActive: false,
+      hasActiveEmployee: true,
+    })).toBe("closeouts");
+  });
+
+  it("disables employee refresh while entry flow is active", () => {
+    expect(resolvePullToRefreshTarget({
+      employee: true,
+      ownerPage: "home",
+      employeePage: "closeouts",
+      employeeEntryActive: true,
+      ownerEntryActive: false,
+      hasActiveEmployee: true,
+    })).toBeNull();
+  });
+
+  it("enables operational refresh on owner home, reports, and register", () => {
+    for (const ownerPage of ["home", "reports", "register"]) {
+      expect(resolvePullToRefreshTarget({
+        employee: false,
+        ownerPage,
+        employeePage: "closeouts",
+        employeeEntryActive: false,
+        ownerEntryActive: false,
+        hasActiveEmployee: false,
+      })).toBe("operational-entries");
+    }
+  });
+
+  it("enables closeouts refresh on owner closeouts page", () => {
+    expect(resolvePullToRefreshTarget({
+      employee: false,
+      ownerPage: "closeouts",
+      employeePage: "closeouts",
+      employeeEntryActive: false,
+      ownerEntryActive: false,
+      hasActiveEmployee: false,
+    })).toBe("closeouts");
+  });
+
+  it("disables refresh on owner settings and entry screens", () => {
+    for (const ownerPage of ["settings", "add-summary", "add-expense"]) {
+      expect(resolvePullToRefreshTarget({
+        employee: false,
+        ownerPage,
+        employeePage: "closeouts",
+        employeeEntryActive: false,
+        ownerEntryActive: false,
+        hasActiveEmployee: false,
+      })).toBeNull();
+    }
+  });
+
+  it("disables owner closeouts refresh while entry flow is active", () => {
+    expect(resolvePullToRefreshTarget({
+      employee: false,
+      ownerPage: "closeouts",
+      employeePage: "closeouts",
+      employeeEntryActive: false,
+      ownerEntryActive: true,
+      hasActiveEmployee: false,
+    })).toBeNull();
+  });
+});
