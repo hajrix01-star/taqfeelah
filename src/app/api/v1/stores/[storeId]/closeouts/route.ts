@@ -40,8 +40,6 @@ export async function POST(request: Request, context: RouteContext) {
       salesChannels: Array.isArray(body?.salesChannels) ? body.salesChannels : [],
       outflows: Array.isArray(body?.outflows) ? body.outflows : [],
       note: typeof body?.note === "string" ? body.note : undefined,
-      autoReview: body?.autoReview === true,
-      requireReview: body?.requireReview === true,
     });
 
     return ok(result, { status: 201 });

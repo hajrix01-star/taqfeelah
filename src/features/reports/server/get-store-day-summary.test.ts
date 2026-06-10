@@ -49,10 +49,10 @@ describe("getStoreDaySummary", () => {
     expect(summary.totalOutflow.amountHalalas).toBe(25000);
     expect(summary.netMovement.amountHalalas).toBe(95000);
     expect(summary.attachmentCount).toBe(2);
-    expect(summary.pendingReviewCount).toBe(1);
+    expect(summary.pendingReviewCount).toBe(0);
   });
 
-  it("zeros pending review count when store review workflow is disabled", async () => {
+  it("always zeros pending review count", async () => {
     readStoreOperationalSettingsRecord.mockResolvedValueOnce({
       activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
       reviewEnabled: false,

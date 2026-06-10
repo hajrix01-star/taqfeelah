@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
-import { autoResolveSubmittedCloseoutsWithoutReview } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import { isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
 import { useOrgConfigRuntimeBridge } from "./org-config-runtime-bridge.js";
 import {
@@ -16,7 +15,6 @@ import {
   buildInitialStoreOperationalSettings,
   buildStoreOperationalPolicy,
   ensureStoreOperationalSettingsForBusinesses,
-  getStoreOperationalConfig,
 } from "./store-operational-config.js";
 import {
   buildInitialStoreChannelSettings,
@@ -102,12 +100,7 @@ export function useOwnerSettingsState({
   );
   const reportingBusinesses = configuredBusinesses;
 
-  const {
-    reviewEnabledForBusiness,
-    closeoutReviewEnabledForBusiness,
-    attachmentAlertEnabledForBusiness,
-    closeoutAlertEnabledForBusiness,
-  } = useMemo(
+  const { closeoutAlertEnabledForBusiness } = useMemo(
     () => buildStoreOperationalPolicy(storeOperationalSettings),
     [storeOperationalSettings],
   );
@@ -236,13 +229,6 @@ export function useOwnerSettingsState({
   }, [closeoutsApiDbSource, configuredBusinesses, defaultStoreChannelConfig, orgConfigApiEnabled]);
 
   useEffect(() => {
-    if (bindsToServerAuth || closeoutsApiDbSource) return;
-    autoResolveSubmittedCloseoutsWithoutReview(
-      (storeId) => Boolean(getStoreOperationalConfig(storeOperationalSettings, storeId).closeoutReviewEnabled),
-    );
-  }, [bindsToServerAuth, closeoutsApiDbSource, storeOperationalSettings]);
-
-  useEffect(() => {
     if (
       bindsToServerAuth
       || typeof window === "undefined"
@@ -282,9 +268,6 @@ export function useOwnerSettingsState({
     ownerDisplayName,
     activeBusinesses,
     reportingBusinesses,
-    reviewEnabledForBusiness,
-    closeoutReviewEnabledForBusiness,
-    attachmentAlertEnabledForBusiness,
     closeoutAlertEnabledForBusiness,
     runtimeSettingsSnapshot,
     applyRuntimeSettingsSnapshot,

@@ -2,7 +2,6 @@
 
 import { useCallback } from "react";
 import {
-  reviewStoreEntryViaApi,
   restoreStoreEntryViaApi,
   voidStoreEntryViaApi,
 } from "@/features/entries/client/store-entries-api-client";
@@ -15,7 +14,6 @@ import { resolveLatestActiveCloseoutDateFromEntries } from "@/features/operation
 import {
   applyDuplicateApprovedAudit,
   applyRestoreToEntry,
-  applyReviewToEntry,
   applyVoidToEntry,
   canRestoreOperationalEntry,
   canVoidOperationalEntry,
@@ -27,7 +25,6 @@ import {
   resolveDuplicateSummaryAcknowledgeFailureMessage,
   resolveDuplicateSummaryApproveFailureMessage,
   resolveOperationalEntryRestoreFailureMessage,
-  resolveOperationalEntryReviewFailureMessage,
   resolveOperationalEntryVoidFailureMessage,
 } from "@/features/operations/operational-entry-mutation-helpers";
 import { duplicateSummaryBlockedInDbSourceMessage } from "@/features/operations/client/closeout-required-entry-message";
@@ -67,8 +64,7 @@ export function useRegisterOperationsState({
   setOwnerPage = () => {},
   setEmployeePage = () => {},
   setSaved = () => {},
-  setReturnCloseoutTarget = () => {},
-  setOwnerReviewCloseout = () => {},
+  setOwnerManageCloseout = () => {},
   pushCloseoutAlert = () => {},
   saveOwner = async () => {},
   persistEmployeeEntry = async () => {},
@@ -82,8 +78,7 @@ export function useRegisterOperationsState({
       readDailyCloseouts,
     });
     if (action.kind === "closeout" && action.closeout) {
-      setReturnCloseoutTarget(null);
-      setOwnerReviewCloseout(action.closeout);
+      setOwnerManageCloseout(action.closeout);
       return;
     }
     setSelected(action.entry);
@@ -91,8 +86,7 @@ export function useRegisterOperationsState({
     bindsToServerAuth,
     closeoutsApiDbSource,
     readDailyCloseouts,
-    setOwnerReviewCloseout,
-    setReturnCloseoutTarget,
+    setOwnerManageCloseout,
     setSelected,
   ]);
 
@@ -115,49 +109,6 @@ export function useRegisterOperationsState({
     );
     if (target) setRestoreTarget(target);
   }, [archivedBusinessIds, entryIsVoided, operationalEntries, setRestoreTarget]);
-
-  const confirmReview = useCallback(async (entryId) => {
-    if (entriesApiEnabled) {
-      const target = operationalEntries.find((entry) => entry.id === entryId);
-      if (!target) return;
-      try {
-        const reviewed = await reviewStoreEntryViaApi({
-          organizationId: closeoutsApiOrganizationId,
-          actorUserId: ownerApiUserId,
-          actorRole: "owner",
-          entry: target,
-        });
-        if (!reviewed) {
-          window.alert(resolveOperationalEntryReviewFailureMessage(lang));
-          return;
-        }
-        await loadOperationalEntriesFromApi();
-        setSelected(null);
-      } catch (error) {
-        console.warn("entry review api failed", error);
-        window.alert(resolveOperationalEntryReviewFailureMessage(lang));
-      }
-      return;
-    }
-    const actionAt = new Date().toISOString();
-    setOperationalEntries((current) => mapOperationalEntryMutation(
-      current,
-      entryId,
-      (entry) => (entryIsActive(entry) ? applyReviewToEntry(entry, currentOwnerActor, actionAt) : entry),
-    ));
-    setSelected(null);
-  }, [
-    closeoutsApiOrganizationId,
-    currentOwnerActor,
-    entriesApiEnabled,
-    entryIsActive,
-    lang,
-    loadOperationalEntriesFromApi,
-    operationalEntries,
-    ownerApiUserId,
-    setOperationalEntries,
-    setSelected,
-  ]);
 
   const confirmVoidOperation = useCallback(async (reason = "") => {
     if (entriesApiEnabled) {
@@ -468,7 +419,6 @@ export function useRegisterOperationsState({
     handleOpenOwnerOperation,
     requestVoidOperation,
     requestRestoreOperation,
-    confirmReview,
     confirmVoidOperation,
     confirmRestoreOperation,
     confirmDuplicateSummary,

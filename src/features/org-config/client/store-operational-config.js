@@ -19,11 +19,8 @@ export function buildInitialStoreOperationalSettings(savedSettings, storeList) {
 
   const legacy = normalizeStoreOperationalSettings({
     activeCategories: savedSettings?.activeCategories || [...DEFAULT_EXPENSE_CATEGORY_IDS],
-    reviewEnabled: savedSettings?.reviewEnabled,
-    closeoutReviewEnabled: savedSettings?.closeoutReviewEnabled,
     employeeHistoryVisibility: savedSettings?.employeeHistoryVisibility,
     closeoutAlert: savedSettings?.closeoutAlert,
-    attachmentAlert: savedSettings?.attachmentAlert,
     notebookTheme: savedSettings?.notebookTheme,
   });
 
@@ -58,14 +55,6 @@ export function ensureStoreOperationalSettingsForBusinesses(current, businessIds
 
 export function buildStoreOperationalPolicy(settings) {
   return {
-    reviewEnabledForBusiness: (businessId) => getStoreOperationalConfig(settings, businessId).reviewEnabled,
-    closeoutReviewEnabledForBusiness: (businessId) => (
-      Boolean(getStoreOperationalConfig(settings, businessId).closeoutReviewEnabled)
-    ),
-    attachmentAlertEnabledForBusiness: (businessId) => {
-      const config = getStoreOperationalConfig(settings, businessId);
-      return config.reviewEnabled && config.attachmentAlert;
-    },
     closeoutAlertEnabledForBusiness: (businessId) => (
       getStoreOperationalConfig(settings, businessId).closeoutAlert
     ),

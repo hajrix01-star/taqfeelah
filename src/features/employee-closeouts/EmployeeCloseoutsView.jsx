@@ -42,7 +42,6 @@ export default function EmployeeCloseoutsView({
   onSelectStore,
   salesChannels,
   notebookTheme,
-  reviewWorkflowEnabled,
   employeeHistoryVisibility = "all",
   formatCalendarDate,
   channelLabel,
@@ -222,7 +221,7 @@ export default function EmployeeCloseoutsView({
 
   const handleSubmit = async (closeout, { isResubmit }) => {
     const fn = isResubmit ? resubmitCloseout : submitCloseout;
-    const next = await fn({ closeout, employee, reviewWorkflowEnabled });
+    const next = await fn({ closeout, employee });
     if (isCloseoutWorkflowFailure(next)) {
       const fallback = next.phase === "save"
         ? (lang === "ar" ? "تعذر الحفظ." : "Failed to save.")
@@ -358,7 +357,6 @@ export default function EmployeeCloseoutsView({
                     lang={lang}
                     closeout={day}
                     expanded={day.uiExpanded}
-                    reviewWorkflowEnabled={reviewWorkflowEnabled}
                     daySequence={day.dailySequence ?? null}
                     sameDayCloseoutCount={sameDayCloseoutCountByDate.get(day.date) || 1}
                     formatDate={(date) => formatCalendarDate(date, lang)}
@@ -396,7 +394,6 @@ export default function EmployeeCloseoutsView({
         employeeName={lang === "ar" ? employee.nameAr : employee.nameEn}
         notebookTheme={notebookTheme}
         formatCalendarDate={formatCalendarDate}
-        reviewWorkflowEnabled={reviewWorkflowEnabled}
         newlySubmitted={shareNewlySubmitted}
         onClose={() => {
           setShareTarget(null);

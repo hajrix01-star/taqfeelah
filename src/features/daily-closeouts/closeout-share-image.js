@@ -25,18 +25,16 @@ function outflowLineLabel(item, lang) {
 
 /**
  * @param {object} closeout
- * @param {{ lang?: string, storeName?: string, reviewWorkflowEnabled?: boolean }} options
+ * @param {{ lang?: string, storeName?: string }} options
  */
 export async function createCloseoutShareImage(closeout, options = {}) {
   const lang = options.lang || "ar";
   const storeName = options.storeName || closeout.storeName || "";
-  const reviewWorkflowEnabled = options.reviewWorkflowEnabled ?? true;
   const salesRows = salesArrayFromRecord(closeout.sales);
   const totals = closeout.totals || computeCloseoutTotals(closeout.sales, closeout.outflows);
   const outflows = closeout.outflows || [];
   const attachmentCount = (closeout.attachments || []).length;
   const statusText = closeoutStatusLabel(closeout.status, lang, {
-    reviewWorkflowEnabled,
     autoRecorded: !closeout.reviewedByName && closeout.status === "reviewed",
   });
 

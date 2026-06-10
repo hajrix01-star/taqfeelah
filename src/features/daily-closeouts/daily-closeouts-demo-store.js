@@ -67,9 +67,9 @@ function normalizeCloseoutStatus(closeout) {
   const hasReviewed = Boolean(closeout.reviewedAt || closeout.reviewedByName);
   const hasSubmitted = Boolean(closeout.submittedAt || closeout.submittedByUserId || closeout.submittedByName);
   const hasSyncedToOperationalEntries = closeout.syncedToEntries === true;
-  if (raw === CLOSEOUT_STATUS.RETURNED || hasReturned) return CLOSEOUT_STATUS.RETURNED;
+  if (raw === CLOSEOUT_STATUS.RETURNED || hasReturned) return CLOSEOUT_STATUS.REVIEWED;
   if (raw === CLOSEOUT_STATUS.REVIEWED || hasReviewed || hasSyncedToOperationalEntries) return CLOSEOUT_STATUS.REVIEWED;
-  if (raw === CLOSEOUT_STATUS.SUBMITTED || hasSubmitted) return CLOSEOUT_STATUS.SUBMITTED;
+  if (raw === CLOSEOUT_STATUS.SUBMITTED || hasSubmitted) return CLOSEOUT_STATUS.REVIEWED;
   return CLOSEOUT_STATUS.DRAFT;
 }
 
@@ -182,29 +182,12 @@ export function sortCloseoutsNewestFirst(closeouts) {
   });
 }
 
-export function pendingSubmittedCloseouts(closeouts, storeIds = null, reviewEnabledForStore = null) {
-  return closeouts.filter((item) => {
-    if (item.status !== CLOSEOUT_STATUS.SUBMITTED) return false;
-    if (typeof reviewEnabledForStore === "function" && !reviewEnabledForStore(item.storeId)) return false;
-    if (!storeIds) return true;
-    return storeIds.includes(item.storeId);
-  });
+export function pendingSubmittedCloseouts() {
+  return [];
 }
 
-export function autoResolveSubmittedCloseoutsWithoutReview(reviewEnabledForStore = () => false) {
-  const closeouts = readDailyCloseouts();
-  let changed = false;
-  const next = closeouts.map((item) => {
-    if (item.status !== CLOSEOUT_STATUS.SUBMITTED || reviewEnabledForStore(item.storeId)) return item;
-    changed = true;
-    return {
-      ...item,
-      status: CLOSEOUT_STATUS.REVIEWED,
-      reviewedAt: item.reviewedAt || new Date().toISOString(),
-    };
-  });
-  if (changed) writeDailyCloseouts(next);
-  return next;
+export function autoResolveSubmittedCloseoutsWithoutReview() {
+  return readDailyCloseouts();
 }
 
 export function closeoutEventMessage(event, lang = "ar") {

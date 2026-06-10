@@ -9,32 +9,50 @@ import {
 describe("normalizeStoreOperationalSettings", () => {
   it("returns product defaults for empty input", () => {
     expect(defaultStoreOperationalSettings()).toMatchObject({
-      reviewEnabled: false,
-      closeoutReviewEnabled: false,
+      closeoutAlert: false,
       employeeHistoryVisibility: "all",
     });
   });
 
   it("merges partial patches without dropping existing fields", () => {
     const merged = mergeStoreOperationalSettings(
-      { reviewEnabled: true, closeoutReviewEnabled: false },
-      { closeoutReviewEnabled: true },
+      { closeoutAlert: false, employeeHistoryVisibility: "all" },
+      { closeoutAlert: true },
     );
-    expect(merged.reviewEnabled).toBe(true);
-    expect(merged.closeoutReviewEnabled).toBe(true);
+    expect(merged.closeoutAlert).toBe(true);
+    expect(merged.employeeHistoryVisibility).toBe("all");
   });
 
   it("builds a minimal patch with only changed operational settings fields", () => {
     expect(diffStoreOperationalSettingsPatch(
-      { reviewEnabled: false, closeoutReviewEnabled: false },
-      { reviewEnabled: false, closeoutReviewEnabled: true },
-    )).toEqual({ closeoutReviewEnabled: true });
+      { closeoutAlert: false, employeeHistoryVisibility: "all" },
+      { closeoutAlert: true, employeeHistoryVisibility: "all" },
+    )).toEqual({ closeoutAlert: true });
   });
 
   it("falls back to defaults for invalid stored payloads", () => {
     expect(normalizeStoreOperationalSettings({ employeeHistoryVisibility: "invalid" })).toMatchObject({
-      closeoutReviewEnabled: false,
+      closeoutAlert: false,
       employeeHistoryVisibility: "all",
     });
+  });
+
+  it("strips removed legacy review fields from stored payloads", () => {
+    const normalized = normalizeStoreOperationalSettings({
+      reviewEnabled: true,
+      closeoutReviewEnabled: true,
+      attachmentAlert: true,
+      closeoutAlert: true,
+      employeeHistoryVisibility: "week",
+    });
+    expect(normalized).toEqual({
+      activeCategories: expect.any(Array),
+      closeoutAlert: true,
+      employeeHistoryVisibility: "week",
+      notebookTheme: null,
+    });
+    expect(normalized).not.toHaveProperty("reviewEnabled");
+    expect(normalized).not.toHaveProperty("closeoutReviewEnabled");
+    expect(normalized).not.toHaveProperty("attachmentAlert");
   });
 });

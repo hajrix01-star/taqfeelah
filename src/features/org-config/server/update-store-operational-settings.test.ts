@@ -3,7 +3,7 @@ import { auditEvents } from "@/core/db/schema";
 
 const selectResult = [{
   id: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
-  operationalSettings: { closeoutReviewEnabled: false, reviewEnabled: false },
+  operationalSettings: { closeoutAlert: false },
 }];
 
 vi.mock("@/core/auth/assert-organization-access", () => ({
@@ -39,12 +39,9 @@ function createTx() {
           returning: async () => [{
             id: selectResult[0].id,
             operationalSettings: {
-              closeoutReviewEnabled: true,
-              reviewEnabled: false,
               activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
               employeeHistoryVisibility: "all",
-              closeoutAlert: false,
-              attachmentAlert: false,
+              closeoutAlert: true,
               notebookTheme: null,
             },
             updatedAt: new Date("2026-06-06T12:00:00.000Z"),
@@ -64,17 +61,17 @@ function createTx() {
 }
 
 describe("updateStoreOperationalSettings", () => {
-  it("persists closeout review flag and writes audit trail", async () => {
+  it("persists closeout alert flag and writes audit trail", async () => {
     const { updateStoreOperationalSettings } = await import("./update-store-operational-settings");
     const result = await updateStoreOperationalSettings({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
       actorUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
       actorRole: "owner",
-      patch: { closeoutReviewEnabled: true },
+      patch: { closeoutAlert: true },
     });
 
-    expect(result.operationalSettings.closeoutReviewEnabled).toBe(true);
+    expect(result.operationalSettings.closeoutAlert).toBe(true);
     expect(result.storeId).toBe("302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c");
   });
 });

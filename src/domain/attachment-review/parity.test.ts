@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   applyReviewEnabledToAttachmentStats,
-  countPendingReviewsFromUiEntries,
   countProofsFromUiEntries,
 } from "@/domain/attachment-review/stats";
 import { summarizeEntries } from "@/features/operations/operational-analytics";
@@ -14,20 +13,17 @@ describe("attachment review parity", () => {
     { businessId: "shami", type: "expense", amount: 5, status: "active" },
   ];
 
-  it("keeps summarizeEntries proofs/pending aligned with domain counters", () => {
-    const reviewEnabledForBusiness = () => true;
-    const totals = summarizeEntries(entries, reviewEnabledForBusiness);
+  it("keeps summarizeEntries proofs aligned with domain counters and zero pending", () => {
+    const totals = summarizeEntries(entries);
 
     expect(totals.proofs).toBe(countProofsFromUiEntries(entries));
-    expect(totals.pending).toBe(countPendingReviewsFromUiEntries(entries, reviewEnabledForBusiness));
+    expect(totals.pending).toBe(0);
   });
 
-  it("keeps server display gate aligned with client summarizeEntries when review is disabled", () => {
-    const reviewEnabledForBusiness = () => false;
-    const totals = summarizeEntries(entries, reviewEnabledForBusiness);
+  it("keeps server display gate aligned with zero pending reviews", () => {
+    const totals = summarizeEntries(entries);
     const serverStats = applyReviewEnabledToAttachmentStats(
       { attachmentCount: 2, pendingReviewCount: 1 },
-      false,
     );
 
     expect(totals.pending).toBe(0);

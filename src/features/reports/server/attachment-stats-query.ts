@@ -2,7 +2,6 @@ import { eq, sql, type SQL } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { attachments, entries } from "@/core/db/schema";
 import { applyReviewEnabledToAttachmentStats } from "@/domain/attachment-review/stats";
-import { readStoreOperationalSettingsRecord } from "@/features/org-config/server/read-store-operational-settings";
 
 type DbClient = Pick<NodePgDatabase<Record<string, never>>, "select">;
 
@@ -35,6 +34,7 @@ export async function queryAttachmentStatsForStoreScope(
   entryScope: SQL | undefined,
 ) {
   const rawStats = await queryAttachmentStatsForScope(db, entryScope);
-  const operationalSettings = await readStoreOperationalSettingsRecord(db, organizationId, storeId);
-  return applyReviewEnabledToAttachmentStats(rawStats, operationalSettings.reviewEnabled);
+  void organizationId;
+  void storeId;
+  return applyReviewEnabledToAttachmentStats(rawStats);
 }

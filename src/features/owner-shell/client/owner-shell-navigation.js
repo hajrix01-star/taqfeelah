@@ -53,7 +53,6 @@ export function dismissCloseoutAlertRecord(alertId, apply) {
 
 export function handleOwnerNotificationsClick({
   duplicateSalesAlerts,
-  firstPendingAttachmentReview,
   unseenCloseoutAlerts,
   apply,
 }) {
@@ -61,17 +60,6 @@ export function handleOwnerNotificationsClick({
   if (duplicateSalesAlerts.length > 0) {
     apply.setAttachmentReviewRequest?.(null);
     reviewDuplicateSalesAlert(duplicateSalesAlerts[0], apply);
-    return;
-  }
-  if (firstPendingAttachmentReview) {
-    apply.setDuplicateReviewFocus?.(null);
-    apply.setAttachmentReviewRequest?.({
-      businessId: firstPendingAttachmentReview.businessId,
-      date: firstPendingAttachmentReview.date,
-      entryId: firstPendingAttachmentReview.id,
-      openedAt: Date.now(),
-    });
-    apply.setOwnerPage?.("register");
     return;
   }
   if (unseenCloseoutAlerts[0]) {

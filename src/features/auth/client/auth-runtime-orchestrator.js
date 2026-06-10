@@ -25,8 +25,7 @@ import {
  * @property {(value: string) => void} [setAuthOwnerPassword]
  * @property {(value: Record<string, string>) => void} [setAuthEmployeePins]
  * @property {(value: { name: string }) => void} [setOwnerProfile]
- * @property {(value: unknown) => void} [setOwnerReviewCloseout]
- * @property {(value: unknown) => void} [setReturnCloseoutTarget]
+ * @property {(value: unknown) => void} [setOwnerManageCloseout]
  * @property {(value: unknown) => void} [setSelected]
  * @property {(value: unknown) => void} [setVoidTarget]
  * @property {(value: unknown) => void} [setRestoreTarget]
@@ -128,8 +127,7 @@ export function applyLogoutReset({ bindsToServerAuth, apply = {} }) {
   apply.setAuthScreen?.("owner");
   apply.setEmployeePage?.("closeouts");
   apply.setOwnerPage?.("home");
-  apply.setOwnerReviewCloseout?.(null);
-  apply.setReturnCloseoutTarget?.(null);
+  apply.setOwnerManageCloseout?.(null);
   apply.setSelected?.(null);
   apply.setVoidTarget?.(null);
   apply.setRestoreTarget?.(null);

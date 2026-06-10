@@ -54,22 +54,16 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const {
       activeCategories,
-      reviewEnabled,
-      closeoutReviewEnabled,
       employeeHistoryVisibility,
       closeoutAlert,
-      attachmentAlert,
       notebookTheme,
       reason,
     } = body as Record<string, unknown>;
 
     const patchCandidate = {
       ...(activeCategories !== undefined ? { activeCategories } : {}),
-      ...(reviewEnabled !== undefined ? { reviewEnabled } : {}),
-      ...(closeoutReviewEnabled !== undefined ? { closeoutReviewEnabled } : {}),
       ...(employeeHistoryVisibility !== undefined ? { employeeHistoryVisibility } : {}),
       ...(closeoutAlert !== undefined ? { closeoutAlert } : {}),
-      ...(attachmentAlert !== undefined ? { attachmentAlert } : {}),
       ...(notebookTheme !== undefined ? { notebookTheme } : {}),
     };
     const parsedPatch = storeOperationalSettingsPatchSchema.safeParse(patchCandidate);

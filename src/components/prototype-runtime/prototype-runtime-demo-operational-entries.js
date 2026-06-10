@@ -75,8 +75,8 @@ export function readOperationalEntries() {
       : [{ action: "created", at: entry.createdAt || new Date().toISOString(), by: entry.enteredBy || prototypeOwnerActor, reason: "" }],
   }));
 }
-export function summaryDayFromEntriesWithLabels(entries, businessId, date, reviewEnabledForBusiness = () => false) {
-  return summaryDayFromEntries(entries, businessId, date, reviewEnabledForBusiness, formatCalendarDate);
+export function summaryDayFromEntriesWithLabels(entries, businessId, date) {
+  return summaryDayFromEntries(entries, businessId, date, formatCalendarDate);
 }
 export function operationTime(item, lang) {
   if (!item.createdAt) return opTime(item, lang);

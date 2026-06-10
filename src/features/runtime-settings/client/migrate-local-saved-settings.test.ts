@@ -1,27 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  DISABLE_REVIEW_ALERTS_MIGRATION_KEY,
   migrateSavedSettings,
   migrateSavedSettingsBlob,
 } from "./migrate-local-saved-settings";
 
 describe("migrate local saved settings", () => {
-  it("disables legacy review flags on first migration", () => {
-    const migrated = migrateSavedSettingsBlob({
-      reviewEnabled: true,
-      closeoutAlert: true,
-      attachmentAlert: true,
-      closeoutReviewEnabled: true,
-    });
-
-    expect(migrated[DISABLE_REVIEW_ALERTS_MIGRATION_KEY]).toBe(true);
-    expect(migrated.reviewEnabled).toBe(false);
-    expect(migrated.closeoutAlert).toBe(false);
-    expect(migrated.attachmentAlert).toBe(false);
-    expect(migrated.closeoutReviewEnabled).toBe(false);
-  });
-
-  it("disables per-store review flags on first migration", () => {
+  it("normalizes per-store operational settings and strips legacy review keys", () => {
     const migrated = migrateSavedSettingsBlob({
       storeOperationalSettings: {
         shami: {
@@ -29,21 +13,32 @@ describe("migrate local saved settings", () => {
           attachmentAlert: true,
           closeoutAlert: true,
           closeoutReviewEnabled: true,
+          employeeHistoryVisibility: "week",
         },
       },
     });
 
     expect(migrated.storeOperationalSettings.shami).toMatchObject({
-      reviewEnabled: false,
-      attachmentAlert: false,
-      closeoutAlert: false,
-      closeoutReviewEnabled: false,
+      closeoutAlert: true,
+      employeeHistoryVisibility: "week",
     });
+    expect(migrated.storeOperationalSettings.shami).not.toHaveProperty("reviewEnabled");
+    expect(migrated.storeOperationalSettings.shami).not.toHaveProperty("attachmentAlert");
+    expect(migrated.storeOperationalSettings.shami).not.toHaveProperty("closeoutReviewEnabled");
   });
 
-  it("returns raw settings when migration already applied", () => {
-    const raw = { [DISABLE_REVIEW_ALERTS_MIGRATION_KEY]: true, reviewEnabled: true };
-    expect(migrateSavedSettingsBlob(raw)).toBe(raw);
+  it("returns raw settings when store operational settings are already normalized", () => {
+    const raw = {
+      storeOperationalSettings: {
+        shami: {
+          closeoutAlert: false,
+          employeeHistoryVisibility: "all",
+          activeCategories: ["fuel", "maintenance", "supplies", "other"],
+          notebookTheme: null,
+        },
+      },
+    };
+    expect(migrateSavedSettingsBlob(raw)).toEqual(raw);
   });
 
   it("runs side effects only when migration changes settings", () => {
@@ -52,7 +47,11 @@ describe("migrate local saved settings", () => {
     const resolveCloseouts = vi.fn();
 
     migrateSavedSettings(
-      { reviewEnabled: true },
+      {
+        storeOperationalSettings: {
+          shami: { reviewEnabled: true, closeoutAlert: true },
+        },
+      },
       { persistMigrated, clearCloseoutAlerts, resolveCloseouts },
     );
 
@@ -64,11 +63,11 @@ describe("migrate local saved settings", () => {
   it("skips migration when skip flag is set", () => {
     const persistMigrated = vi.fn();
     const migrated = migrateSavedSettings(
-      { reviewEnabled: true },
+      { storeOperationalSettings: { shami: { reviewEnabled: true } } },
       { skip: true, persistMigrated },
     );
 
-    expect(migrated.reviewEnabled).toBe(true);
+    expect(migrated.storeOperationalSettings.shami).toMatchObject({ reviewEnabled: true });
     expect(persistMigrated).not.toHaveBeenCalled();
   });
 });

@@ -81,8 +81,8 @@ describe("prototype month demo dataset", () => {
 
   it("includes workflow edge cases", () => {
     expect(closeouts.find((c) => c.storeId === "shami" && c.date === "2026-06-02")?.status).toBe(CLOSEOUT_STATUS.DRAFT);
-    expect(closeouts.find((c) => c.storeId === "arz" && c.date === "2026-05-12")?.status).toBe(CLOSEOUT_STATUS.RETURNED);
-    expect(pendingSubmittedCloseouts(closeouts, ["shami"] as never).length).toBeGreaterThanOrEqual(3);
+    expect(closeouts.find((c) => c.storeId === "arz" && c.date === "2026-05-12")?.status).toBe(CLOSEOUT_STATUS.REVIEWED);
+    expect(pendingSubmittedCloseouts()).toEqual([]);
     const voided = entries.find((e) => e.id === "demo-shami-voided-2026-05-10");
     expect(voided && entryIsVoided(voided)).toBe(true);
     const dupes = entries.filter((e) => e.businessId === "shami" && e.date === "2026-05-15" && e.type === "summary" && entryIsActive(e));
@@ -128,9 +128,8 @@ describe("operational analytics (add / subtract / filters)", () => {
     expect(channelTotal).toBe(summary.sales);
   });
 
-  it("counts pending attachment reviews in May", () => {
+  it("always reports zero pending attachment reviews in May", () => {
     const may = entriesInPeriod(entries, "arz", "month", "", "2026-05");
-    const pending = summarizeEntries(may, () => true).pending;
-    expect(pending).toBeGreaterThanOrEqual(1);
+    expect(summarizeEntries(may).pending).toBe(0);
   });
 });

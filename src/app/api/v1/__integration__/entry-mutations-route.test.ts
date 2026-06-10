@@ -10,15 +10,10 @@ import {
 } from "./helpers";
 
 const voidStoreEntry = vi.fn();
-const reviewStoreEntry = vi.fn();
 const restoreStoreEntry = vi.fn();
 
 vi.mock("@/features/entries/server/void-store-entry", () => ({
   voidStoreEntry,
-}));
-
-vi.mock("@/features/entries/server/review-store-entry", () => ({
-  reviewStoreEntry,
 }));
 
 vi.mock("@/features/entries/server/restore-store-entry", () => ({
@@ -29,7 +24,6 @@ describe("entry mutation route integration", () => {
   beforeEach(() => {
     setupRouteIntegrationEnv();
     voidStoreEntry.mockReset();
-    reviewStoreEntry.mockReset();
     restoreStoreEntry.mockReset();
   });
 
@@ -58,27 +52,6 @@ describe("entry mutation route integration", () => {
     expect(voidStoreEntry).toHaveBeenCalledWith(expect.objectContaining({
       entryId: TEST_ENTRY_ID,
       reason: "duplicate entry",
-      actorRole: "owner",
-    }));
-  });
-
-  it("POST review marks attachment reviewed", async () => {
-    reviewStoreEntry.mockResolvedValueOnce({
-      id: TEST_ENTRY_ID,
-      reviewedAt: "2026-06-05T10:00:00.000Z",
-    });
-
-    const { POST } = await import("../stores/[storeId]/entries/[entryId]/review/route");
-    const response = await POST(
-      ownerRequest(`http://localhost/api/v1/stores/${TEST_STORE_ID}/entries/${TEST_ENTRY_ID}/review`, {
-        method: "POST",
-      }),
-      routeEntryContext(),
-    );
-
-    expect(response.status).toBe(200);
-    expect(reviewStoreEntry).toHaveBeenCalledWith(expect.objectContaining({
-      entryId: TEST_ENTRY_ID,
       actorRole: "owner",
     }));
   });

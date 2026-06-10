@@ -80,8 +80,6 @@ describe("closeouts route integration", () => {
           date: "2026-06-05",
           salesChannels: [{ channelId: "cash", amount: 100 }],
           outflows: [],
-          autoReview: true,
-          requireReview: false,
         }),
       }),
       routeStoreContext(),
@@ -90,9 +88,8 @@ describe("closeouts route integration", () => {
     expect(response.status).toBe(201);
     expect(submitStoreCloseout).toHaveBeenCalledWith(expect.objectContaining({
       date: "2026-06-05",
-      autoReview: true,
-      requireReview: false,
       actorRole: "owner",
+      mode: "submit",
     }));
   });
 

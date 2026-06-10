@@ -13,7 +13,7 @@ const storeRows = [
     name: "Shami",
     location: "Riyadh",
     status: "active",
-    operationalSettings: { closeoutReviewEnabled: true },
+    operationalSettings: { closeoutAlert: true },
     createdAt: new Date("2026-06-01T08:00:00Z"),
     updatedAt: new Date("2026-06-01T08:00:00Z"),
   },
@@ -44,6 +44,6 @@ describe("listOrganizationStores", () => {
     expect(result.stores).toHaveLength(1);
     expect(result.stores[0].name).toBe("Shami");
     expect(result.stores[0].location).toBe("Riyadh");
-    expect(result.stores[0].operationalSettings.closeoutReviewEnabled).toBe(true);
+    expect(result.stores[0].operationalSettings.closeoutAlert).toBe(true);
   });
 });

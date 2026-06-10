@@ -41,7 +41,6 @@ describe("owner shell navigation", () => {
 
     handleOwnerNotificationsClick({
       duplicateSalesAlerts: [{ businessId: "shami", date: "2026-06-01" }],
-      firstPendingAttachmentReview: null,
       unseenCloseoutAlerts: [],
       apply: {
         setArchivedReadOnlyBusinessId: vi.fn(),
