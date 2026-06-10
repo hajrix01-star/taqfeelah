@@ -3,7 +3,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Share2 } from "lucide-react";
-import { notebookCardBackground, notebookLinesBackground, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
+import {
+  NOTEBOOK_THEME_IDS,
+  notebookCardBackground,
+  notebookLinesBackground,
+  notebookThemes,
+} from "@/features/daily-closeouts/notebook-themes";
 import { formatCalendarDate, formatSelectedMonth } from "@/features/reports/client/report-period-labels";
 import {
   businessLocation,
@@ -52,23 +57,16 @@ function Notebook({ children, theme = "yellow", lang = "ar", marginContent = nul
   );
 }
 function ThemePicker({ lang, theme, onChange }) {
-  const themes = [
-    { id: "yellow", label: "yellow" },
-    { id: "softYellow", label: "softYellow" },
-    { id: "ivory", label: "ivory" },
-    { id: "white", label: "white" },
-    { id: "greenTint", label: "greenTint" },
-  ];
   return (
-    <div className="grid grid-cols-5 gap-2">
-      {themes.map((item) => {
-        const active = theme === item.id;
+    <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+      {NOTEBOOK_THEME_IDS.map((id) => {
+        const active = theme === id;
         return (
-          <button key={item.id} onClick={() => onChange(item.id)} className="flex flex-col items-center gap-1.5" title={text(lang, item.label)}>
-            <span className={`relative block h-7 w-7 rounded-full border ${active ? "border-[#112A46] ring-2 ring-[#112A46]/15" : "border-[#D9D1C1]"}`} style={{ backgroundColor: notebookThemes[item.id].paper }}>
+          <button key={id} onClick={() => onChange(id)} className="flex flex-col items-center gap-1.5" title={text(lang, id)}>
+            <span className={`relative block h-7 w-7 rounded-full border ${active ? "border-[#112A46] ring-2 ring-[#112A46]/15" : "border-[#D9D1C1]"}`} style={{ backgroundColor: notebookThemes[id].paper }}>
               {active && <Check className="absolute inset-0 m-auto h-4 w-4 text-[#112A46]" strokeWidth={3} />}
             </span>
-            <span className={`max-w-[50px] text-center text-taq-nav font-bold leading-3 ${active ? "text-[#112A46]" : "text-[#827762]"}`}>{text(lang, item.label)}</span>
+            <span className={`max-w-[50px] text-center text-taq-nav font-bold leading-3 ${active ? "text-[#112A46]" : "text-[#827762]"}`}>{text(lang, id)}</span>
           </button>
         );
       })}

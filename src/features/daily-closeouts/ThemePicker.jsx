@@ -1,19 +1,34 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { notebookThemes } from "./notebook-themes";
+import { NOTEBOOK_THEME_IDS, notebookThemes } from "./notebook-themes";
 
 const themeLabels = {
-  ar: { yellow: "أصفر", softYellow: "أصفر فاتح", ivory: "عاجي", white: "أبيض", greenTint: "أخضر فاتح" },
-  en: { yellow: "Yellow", softYellow: "Soft yellow", ivory: "Ivory", white: "White", greenTint: "Green tint" },
+  ar: {
+    yellow: "أصفر",
+    softYellow: "أصفر فاتح",
+    ivory: "عاجي",
+    white: "أبيض",
+    greenTint: "أخضر فاتح",
+    pinkTint: "وردي فاتح",
+    blueTint: "أزرق فاتح",
+  },
+  en: {
+    yellow: "Yellow",
+    softYellow: "Soft yellow",
+    ivory: "Ivory",
+    white: "White",
+    greenTint: "Green tint",
+    pinkTint: "Light pink",
+    blueTint: "Light blue",
+  },
 };
 
 export default function ThemePicker({ lang = "ar", theme, onChange }) {
-  const themes = ["yellow", "softYellow", "ivory", "white", "greenTint"];
   const labels = themeLabels[lang] || themeLabels.ar;
   return (
-    <div className="grid grid-cols-5 gap-2">
-      {themes.map((id) => {
+    <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+      {NOTEBOOK_THEME_IDS.map((id) => {
         const active = theme === id;
         return (
           <button key={id} type="button" onClick={() => onChange(id)} className="flex flex-col items-center gap-1.5" title={labels[id]}>
