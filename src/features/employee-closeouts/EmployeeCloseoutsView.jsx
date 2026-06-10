@@ -21,6 +21,7 @@ import {
 } from "./employee-closeout-history";
 import { resolveCloseoutStoreName, resolveEmployeeStoreName } from "./store-name-resolver";
 import { countSubmittedCloseoutsByDate } from "../closeouts/client/closeout-day-label";
+import { resolveEmployeeCloseoutsViewGate } from "./employee-closeouts-view-gate";
 
 function resolveScrollContainer(node) {
   if (typeof window === "undefined" || !node) return null;
@@ -249,7 +250,18 @@ export default function EmployeeCloseoutsView({
     setEntryResubmit(false);
   };
 
-  if (!currentStore) {
+  const viewGate = resolveEmployeeCloseoutsViewGate({ employeeRuntimeReady, currentStore });
+  if (viewGate === "loading") {
+    return (
+      <section className="px-5 pb-28">
+        <div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">
+          {lang === "ar" ? "جاري تحميل إعدادات المحل وقنوات البيع من الخادم…" : "Loading store settings and sales channels from the server…"}
+        </div>
+      </section>
+    );
+  }
+
+  if (viewGate === "no-store") {
     return (
       <section className="px-5 pb-28">
         <div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">

@@ -102,6 +102,11 @@ export function diagnoseCloseoutSubmitFailure({
   return null;
 }
 
+function extractAttachmentPayloads(rawList) {
+  if (!Array.isArray(rawList)) return [];
+  return rawList.filter((item) => typeof item === "string" && item.startsWith("data:"));
+}
+
 function extractOutflows(closeout) {
   return (closeout?.outflows || [])
     .map((row) => ({
@@ -113,6 +118,7 @@ function extractOutflows(closeout) {
         : (typeof row?.categoryName === "string" ? row.categoryName : ""),
       typeLabel: typeof row?.typeLabel === "string" ? row.typeLabel : "",
       note: typeof row?.note === "string" ? row.note : "",
+      attachments: extractAttachmentPayloads(row?.attachments),
     }))
     .filter((row) => (row.type === "purchases" || row.type === "expense" || row.type === "withdrawal") && row.amountHalalas > 0);
 }
@@ -146,6 +152,7 @@ export async function submitCloseoutViaApi({
       date: closeout.date,
       salesChannels,
       outflows: extractOutflows(closeout),
+      attachments: extractAttachmentPayloads(closeout?.attachments),
       note: closeout?.note || "",
     },
     errorMessage: "closeout submit api failed.",

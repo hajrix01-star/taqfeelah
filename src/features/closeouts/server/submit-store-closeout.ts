@@ -9,6 +9,12 @@ import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { resolveCloseoutDaySequence } from "@/features/closeouts/server/resolve-closeout-day-sequence";
 import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
 import { resolveStoreSalesChannelsForWrite } from "@/features/org-config/server/resolve-store-sales-channels-for-write";
+import { closeoutAttachmentSchema } from "@/features/closeouts/server/closeout-attachment-input";
+import {
+  normalizeCloseoutLevelAttachments,
+  normalizeOutflowAttachments,
+  persistCloseoutEntryAttachments,
+} from "@/features/closeouts/server/persist-closeout-entry-attachments";
 
 const salesChannelSchema = z.object({
   salesChannelId: z.string().uuid(),
@@ -23,6 +29,7 @@ const outflowSchema = z.object({
   categoryName: z.string().trim().max(120).optional(),
   typeLabel: z.string().trim().max(120).optional(),
   note: z.string().trim().max(500).optional(),
+  attachments: z.array(z.union([z.string(), closeoutAttachmentSchema])).optional(),
 });
 
 const closeoutSubmitSchema = z.object({
@@ -34,6 +41,7 @@ const closeoutSubmitSchema = z.object({
   closeoutId: z.string().trim().min(1).max(120),
   salesChannels: z.array(salesChannelSchema).default([]),
   outflows: z.array(outflowSchema).default([]),
+  attachments: z.array(z.union([z.string(), closeoutAttachmentSchema])).optional().default([]),
   note: z.string().trim().max(500).optional(),
   mode: z.enum(["submit", "resubmit"]).default("submit"),
 });
@@ -172,6 +180,16 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
       })),
     );
 
+    const closeoutLevelAttachments = normalizeCloseoutLevelAttachments(input.attachments);
+    if (closeoutLevelAttachments.length > 0) {
+      await persistCloseoutEntryAttachments(tx as Parameters<typeof persistCloseoutEntryAttachments>[0], {
+        organizationId: input.organizationId,
+        storeId: input.storeId,
+        entryId: summaryEntry.id,
+        attachments: closeoutLevelAttachments,
+      });
+    }
+
     const outflowEntries = input.outflows.length
       ? await tx
         .insert(entries)
@@ -193,6 +211,21 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
         )
         .returning({ id: entries.id, type: entries.type, amountHalalas: entries.amountHalalas })
       : [];
+
+    if (outflowEntries.length > 0) {
+      await Promise.all(
+        outflowEntries.map((entryRow, index) => {
+          const outflowAttachments = normalizeOutflowAttachments(input.outflows[index]?.attachments);
+          if (!outflowAttachments.length) return Promise.resolve();
+          return persistCloseoutEntryAttachments(tx as Parameters<typeof persistCloseoutEntryAttachments>[0], {
+            organizationId: input.organizationId,
+            storeId: input.storeId,
+            entryId: entryRow.id,
+            attachments: outflowAttachments,
+          });
+        }),
+      );
+    }
 
     await tx.insert(auditEvents).values({
       organizationId: input.organizationId,

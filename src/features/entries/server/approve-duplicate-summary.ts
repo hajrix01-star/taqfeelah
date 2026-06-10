@@ -7,6 +7,10 @@ import { auditEvents, entries } from "@/core/db/schema";
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 import { ValidationError } from "@/core/errors/app-error";
 import { DUPLICATE_SUMMARY_BLOCKED_IN_DB_SOURCE_MESSAGE } from "@/features/entries/server/assert-closeout-linked-entry";
+import {
+  INLINE_ATTACHMENT_MAX_BYTES,
+  INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH,
+} from "@/core/attachments/inline-attachment-limits";
 import { createStoreEntry } from "@/features/entries/server/create-store-entry";
 
 const salesChannelSchema = z.object({
@@ -25,9 +29,9 @@ const payloadSchema = z.object({
       kind: z.literal("image").default("image"),
       name: z.string().trim().min(1).max(220).optional(),
       mimeType: z.string().trim().min(1).max(120).default("image/jpeg"),
-      sizeBytes: z.number().int().positive().max(350 * 1024),
-      dataUrl: z.string().trim().min(32).max(500_000).optional(),
-      storageKey: z.string().trim().min(8).max(500_000).optional(),
+      sizeBytes: z.number().int().positive().max(INLINE_ATTACHMENT_MAX_BYTES),
+      dataUrl: z.string().trim().min(32).max(INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH).optional(),
+      storageKey: z.string().trim().min(8).max(INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH).optional(),
     })
     .optional(),
 });

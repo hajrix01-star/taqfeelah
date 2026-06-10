@@ -26,6 +26,33 @@ describe("closeouts api client", () => {
     vi.unstubAllGlobals();
   });
 
+  it("submits closeout proof attachments with the payload", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => new Response(JSON.stringify({ ok: true }), { status: 201 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const proof = "data:image/jpeg;base64,/9j/4AAQ";
+    const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
+
+    await submitCloseoutViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "ahmed",
+      actorRole: "employee",
+      closeout: {
+        id: "closeout-1",
+        storeId: "shami",
+        date: "2026-06-04",
+        sales: [{ id: "cash", name: "Cash", amount: 100 }],
+        attachments: [proof],
+      },
+    });
+
+    const payload = JSON.parse(String(fetchMock.mock.lastCall?.[1]?.body ?? "{}"));
+    expect(payload.attachments).toEqual([proof]);
+  });
+
   it("submits mapped payload using legacy IDs", async () => {
     setMapsEnv();
     const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
