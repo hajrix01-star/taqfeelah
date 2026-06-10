@@ -406,12 +406,15 @@ pnpm build
 | المصطلح | المعنى الحالي | ملاحظة |
 |---------|---------------|--------|
 | `draft` | مسودة محلية غير مرسلة | يبقى |
-| `submitted` | قيمة DB افتراضية قديمة + مدخلات demo | **لا تغيير schema** بدون migration؛ تُعرَض كـ sent |
+| `submitted` | مدخلات demo/localStorage قديمة فقط | DB default أصبح `approved` (migration `0003`) |
+| `approved` | حالة DB للتقفيلة المرسلة | تُعرَض في UI كـ `reviewed` |
 | `reviewed` | تسمية UI للتقفيلة المرسلة/المعتمدة | ليست «بانتظار مراجعة» |
 | `returned` | حالة demo/localStorage قديمة | تُطبَّع إلى `reviewed` عند القراءة |
 | `waitingReview` | نصوص قديمة | حُذفت من `prototype-runtime-copy` |
 | `openCloseoutAlertInRegister` | فتح تنبيه التقفيلة في السجل | سابقًا `reviewCloseoutAlertRecord` |
 | `pendingOwnerCloseoutQueue` | طابور مالك فارغ (stub) | سابقًا `pendingSubmittedCloseouts` |
+| `openDuplicateSummaryInRegister` | فتح تنبيه ملخص مكرر في السجل | سابقًا `reviewDuplicateSalesAlert` |
+| `loadLocalCloseoutsOnBoot` | boot demo للتقفيلات المحلية | سابقًا `autoResolveSubmittedCloseoutsWithoutReview` |
 
 | الحدث | السلوك |
 |-------|--------|

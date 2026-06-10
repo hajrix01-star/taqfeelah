@@ -31,7 +31,7 @@ import {
  * @property {(value: unknown) => void} [setRestoreTarget]
  * @property {(value: unknown) => void} [setSavedOutflowShareTarget]
  * @property {(value: unknown) => void} [setPendingDuplicateSummary]
- * @property {(value: unknown) => void} [setDuplicateReviewFocus]
+ * @property {(value: unknown) => void} [setDuplicateSummaryFocus]
  * @property {(value: unknown) => void} [setAttachmentReviewRequest]
  * @property {(value: unknown) => void} [setShareSnapshot]
  * @property {(value: boolean) => void} [setQuickAddOpen]
@@ -133,7 +133,7 @@ export function applyLogoutReset({ bindsToServerAuth, apply = {} }) {
   apply.setRestoreTarget?.(null);
   apply.setSavedOutflowShareTarget?.(null);
   apply.setPendingDuplicateSummary?.(null);
-  apply.setDuplicateReviewFocus?.(null);
+  apply.setDuplicateSummaryFocus?.(null);
   apply.setAttachmentReviewRequest?.(null);
   apply.setShareSnapshot?.(null);
   apply.setQuickAddOpen?.(false);

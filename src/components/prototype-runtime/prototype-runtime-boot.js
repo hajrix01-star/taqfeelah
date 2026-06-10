@@ -3,7 +3,7 @@ import { createMigrateSavedSettings, createReadSavedSettings } from "@/features/
 import { OWNER_SETTINGS_STORAGE_KEY } from "@/features/runtime-settings/client/migrate-local-saved-settings";
 import { CLOSEOUT_ALERTS_STORAGE_KEY } from "@/features/owner-shell/client/owner-shell-storage";
 import { migrateSavedSettings as applyLocalSavedSettingsMigration } from "@/features/runtime-settings/client/migrate-local-saved-settings";
-import { autoResolveSubmittedCloseoutsWithoutReview } from "@/features/daily-closeouts/daily-closeouts-demo-store";
+import { loadLocalCloseoutsOnBoot } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import { PROTOTYPE_DEMO_OPERATIONAL_ENTRIES_KEY } from "@/features/demo/prototype-month-demo-seed";
 import { buildPrototypeDefaultStaff } from "@/features/demo/prototype-auth-boot";
 
@@ -30,7 +30,7 @@ const migrateSavedSettings = createMigrateSavedSettings({
   storageKey: OWNER_SETTINGS_STORAGE_KEY,
   closeoutAlertsKey: CLOSEOUT_ALERTS_STORAGE_KEY,
   applyMigration: applyLocalSavedSettingsMigration,
-  autoResolveCloseouts: autoResolveSubmittedCloseoutsWithoutReview,
+  autoResolveCloseouts: loadLocalCloseoutsOnBoot,
 });
 const readSavedSettings = createReadSavedSettings({
   enabled: !BINDS_TO_SERVER_AUTH && !RUNTIME_SETTINGS_DB_SOURCE,
