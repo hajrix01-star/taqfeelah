@@ -8,8 +8,8 @@ const OPTIONS = [
   { id: EMPLOYEE_HISTORY_VISIBILITY.all, labelAr: "الكل", labelEn: "All" },
 ];
 
-export default function EmployeeHistoryVisibilityPicker({ lang, value = EMPLOYEE_HISTORY_VISIBILITY.all, onChange }) {
-  const active = value || EMPLOYEE_HISTORY_VISIBILITY.all;
+export default function EmployeeHistoryVisibilityPicker({ lang, value = EMPLOYEE_HISTORY_VISIBILITY.month, onChange }) {
+  const active = value || EMPLOYEE_HISTORY_VISIBILITY.month;
   return (
     <div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
       <p className="mb-1 text-xs font-black text-[#112A46]">
