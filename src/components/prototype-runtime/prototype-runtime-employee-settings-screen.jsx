@@ -11,7 +11,7 @@ import {
   text,
 } from "./prototype-runtime-demo-data";
 import { ThemePicker } from "./prototype-runtime-notebook";
-import { ActionRow } from "./OwnerSettingsSection";
+import { ActionRow, SettingToggle } from "./owner-settings-ui-primitives";
 
 function EmployeeStoreContext({ lang, currentStore, assignedStores, onSelect, dark = false }) {
   const [open, setOpen] = useState(false);
