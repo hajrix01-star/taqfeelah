@@ -40,7 +40,7 @@ import { Badge, InkTab } from "./prototype-runtime-shell-ui";
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 import { useHomeDayAttachments } from "@/features/entries/client/use-home-day-attachments";
 
-export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], onOpenCloseoutAlertInRegister = () => {}, onDismissCloseout = () => {}, onOpenDuplicateSummaryInRegister = () => {}, onAcknowledgeDuplicate = () => {}, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", summaryRefreshKey = 0 }) {
+export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], onOpenCloseoutAlertInRegister = () => {}, onDismissCloseout = () => {}, onOpenDuplicateSummaryInRegister = () => {}, onAcknowledgeDuplicate = () => {}, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", summaryRefreshKey = 0, entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
   const [period, setPeriod] = useState("day");
   const [selectedDay, setSelectedDay] = useState(() => todayIsoDate());
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
@@ -161,6 +161,10 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
                     proofsCount={Number(result.proofs) || 0}
                     onOpenOperation={onOpenOperation}
                     onPreviewAttachment={setHomeAttachmentPreview}
+                    entryAttachmentsApiEnabled={entryAttachmentsApiEnabled}
+                    entryAttachmentsApiOrganizationId={entryAttachmentsApiOrganizationId}
+                    entryAttachmentsApiActorUserId={entryAttachmentsApiActorUserId}
+                    entryAttachmentsApiActorRole={entryAttachmentsApiActorRole}
                   />
                 )}
                 <NotebookRow className="justify-center"><InkTab active={expanded} showActiveUnderline={false} onClick={() => setExpanded(!expanded)} className="inline-flex items-center gap-1">{expanded ? text(lang, "hideDetails") : text(lang, "showMore")}{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</InkTab></NotebookRow>
@@ -226,6 +230,10 @@ function DayAttachments({
   proofsCount = 0,
   onOpenOperation = () => {},
   onPreviewAttachment = () => {},
+  entryAttachmentsApiEnabled = false,
+  entryAttachmentsApiOrganizationId = "",
+  entryAttachmentsApiActorUserId = "",
+  entryAttachmentsApiActorRole = "owner",
 }) {
   if (loading) {
     return (
@@ -257,6 +265,13 @@ function DayAttachments({
                 attachment={item.attachment}
                 onOpen={onPreviewAttachment}
                 className="h-14 w-14 rounded-xl"
+                attachmentApiContext={{
+                  storeId: item.businessId,
+                  attachmentsApiEnabled: entryAttachmentsApiEnabled,
+                  organizationId: entryAttachmentsApiOrganizationId,
+                  actorUserId: entryAttachmentsApiActorUserId,
+                  actorRole: entryAttachmentsApiActorRole,
+                }}
               />
             </div>
             <button type="button" onClick={() => onOpenOperation(item.entry)} className="w-full text-center">

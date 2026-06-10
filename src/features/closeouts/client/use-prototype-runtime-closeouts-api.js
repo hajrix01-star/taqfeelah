@@ -12,6 +12,7 @@ import {
 } from "@/features/closeouts/client/closeouts-api-client";
 import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
 import { resolveEmployeeCloseoutsFetchWindow } from "@/features/employee-closeouts/employee-closeout-history";
+import { resolveOwnerCloseoutsFetchWindow } from "@/features/closeouts/client/owner-closeouts-fetch-window";
 import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
 
 export function usePrototypeRuntimeCloseoutsApi({
@@ -124,7 +125,7 @@ export function usePrototypeRuntimeCloseoutsApi({
           ? resolveEmployeeCloseoutsFetchWindow(
             getStoreOperationalConfig(storeOperationalSettings, storeId).employeeHistoryVisibility,
           )
-          : { dateFrom: "", dateTo: "" };
+          : resolveOwnerCloseoutsFetchWindow();
         return fetchStoreCloseoutsViaApi({
           organizationId: closeoutsApiOrganizationId,
           actorUserId: apiActorUserId,

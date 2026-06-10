@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { Camera, Check } from "lucide-react";
 import {
   prepareAttachment,
-  readAttachmentPayload,
 } from "@/features/attachments/client/prototype-attachment-storage";
+import { useEntryAttachmentSource } from "@/features/entries/client/use-entry-attachment-source";
 import { text } from "./prototype-runtime-demo-data";
 
 export function useAttachmentCapture(lang) {
@@ -33,21 +33,8 @@ export function useAttachmentCapture(lang) {
   return { attachment, processing, error, selectAttachment, clearAttachment };
 }
 
-export function useAttachmentSource(attachment) {
-  const [source, setSource] = useState(attachment?.dataUrl || null);
-  useEffect(() => {
-    let mounted = true;
-    setSource(attachment?.dataUrl || null);
-    if (!attachment?.dataUrl && attachment?.id) {
-      readAttachmentPayload(attachment.id).then((saved) => {
-        if (mounted) setSource(saved);
-      });
-    }
-    return () => {
-      mounted = false;
-    };
-  }, [attachment?.id, attachment?.dataUrl]);
-  return source;
+export function useAttachmentSource(attachment, attachmentApiContext = null) {
+  return useEntryAttachmentSource(attachment, attachmentApiContext || {});
 }
 
 export function ProofThumb({ paper = false }) {
@@ -62,8 +49,8 @@ export function ProofThumb({ paper = false }) {
   );
 }
 
-export function AttachmentPreview({ attachment, className = "" }) {
-  const source = useAttachmentSource(attachment);
+export function AttachmentPreview({ attachment, className = "", attachmentApiContext = null }) {
+  const source = useAttachmentSource(attachment, attachmentApiContext);
   if (!source) return <ProofThumb />;
   return <img src={source} alt="" className={`object-cover ${className}`} />;
 }
@@ -73,8 +60,11 @@ export function AttachmentThumbButton({
   onOpen,
   className = "h-14 w-14",
   buttonClassName = "shrink-0 overflow-hidden rounded-xl ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50 disabled:opacity-70",
+  storeId = "",
+  attachmentApiContext = null,
 }) {
-  const source = useAttachmentSource(attachment);
+  const resolvedApiContext = attachmentApiContext || (storeId ? { storeId } : {});
+  const source = useAttachmentSource(attachment, resolvedApiContext);
   return (
     <button
       type="button"

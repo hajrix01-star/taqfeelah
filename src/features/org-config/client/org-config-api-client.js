@@ -331,7 +331,17 @@ export async function fetchEmployeeRuntimeBundleViaApi(auth) {
   return fetchStoresAndChannelsBundleViaApi(auth);
 }
 
-export async function fetchOrgConfigBundleViaApi({
+const orgConfigBundleInflight = new Map();
+
+function buildOrgConfigBundleAuthKey({
+  organizationId = "",
+  actorUserId = "",
+  actorRole = "",
+} = {}) {
+  return `${organizationId}|${actorUserId}|${actorRole}`;
+}
+
+async function fetchOrgConfigBundleViaApiImpl({
   organizationId,
   actorUserId,
   actorRole,
@@ -365,4 +375,26 @@ export async function fetchOrgConfigBundleViaApi({
   }
 
   return { stores, channelsByStoreId, members };
+}
+
+export async function fetchOrgConfigBundleViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+}) {
+  const authKey = buildOrgConfigBundleAuthKey({ organizationId, actorUserId, actorRole });
+  const inflight = orgConfigBundleInflight.get(authKey);
+  if (inflight) return inflight;
+
+  const promise = fetchOrgConfigBundleViaApiImpl({
+    organizationId,
+    actorUserId,
+    actorRole,
+  });
+  orgConfigBundleInflight.set(authKey, promise);
+  try {
+    return await promise;
+  } finally {
+    orgConfigBundleInflight.delete(authKey);
+  }
 }
