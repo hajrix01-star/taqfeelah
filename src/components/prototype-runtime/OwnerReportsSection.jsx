@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { isOwnerApiSummaryPending } from "@/features/reports/client/owner-summary-loading";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import {
   aggregateChannels,
@@ -53,6 +54,7 @@ import {
   DateSelector,
   StoreScopeTabs,
   StoreComparison,
+  SummaryLoadingRow,
   todayIsoDate,
   monthSelectionValue,
 } from "./prototype-runtime-notebook";
@@ -146,7 +148,8 @@ function ReportsScreen({ lang, operationalEntries = [], operationalEntriesLoadin
   const {
     loading: reportsApiLoading,
     error: reportsApiError,
-    hasData: reportsApiLoaded,
+    loaded: reportsApiFetchLoaded,
+    hasData: reportsApiHasData,
     combinedTotals: apiCombinedTotals,
     singleStoreTotals: apiSingleStoreTotals,
     businessesWithSummaries,
@@ -192,12 +195,21 @@ function ReportsScreen({ lang, operationalEntries = [], operationalEntriesLoadin
   });
   const reportsLoadFailedWithoutFallback = reportsApiEnabled
     && reportsApiError
-    && !entryTotalsHaveFinancialActivity(localTotals);
+    && !entryTotalsHaveFinancialActivity(localTotals)
+    && !reportsApiHasData;
+  const reportsSummaryPending = isOwnerApiSummaryPending({
+    apiEnabled: reportsApiEnabled,
+    preferEntrySummaries,
+    loading: reportsApiLoading,
+    loaded: reportsApiFetchLoaded,
+    hasData: reportsApiHasData,
+    loadFailed: reportsLoadFailedWithoutFallback,
+  });
   const reportsLoadErrorMessage = lang === "ar"
     ? "تعذر تحميل التقرير المالي من الخادم. لم يتم عرض أرقام بديلة حتى لا تظهر أصفار غير صحيحة."
     : "Failed to load the financial report from the server. No fallback figures are shown to avoid incorrect zero totals.";
   const comparisonBusinesses = preferEntrySummaries ? localComparisonBusinesses : businessesWithSummaries;
-  const useApiDetailTabs = reportsApiEnabled && !reportsApiLoading && reportsApiLoaded && !isCombined && !preferEntrySummaries;
+  const useApiDetailTabs = reportsApiEnabled && !reportsApiLoading && reportsApiFetchLoaded && reportsApiHasData && !isCombined && !preferEntrySummaries;
   const totals = isCombined
     ? preferEntrySummaries ? localTotals : apiCombinedTotals
     : resolveOwnerSingleStoreTotals(localTotals, apiSingleStoreTotals, preferEntrySummaries);
@@ -247,6 +259,8 @@ function ReportsScreen({ lang, operationalEntries = [], operationalEntriesLoadin
           <div>
             {reportsLoadFailedWithoutFallback ? (
               <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{reportsLoadErrorMessage}</p></NotebookRow>
+            ) : reportsSummaryPending ? (
+              <SummaryLoadingRow lang={lang} />
             ) : (
               <>
                 <StoreComparison lang={lang} monthly={monthly} businessesList={comparisonBusinesses} />
@@ -260,6 +274,8 @@ function ReportsScreen({ lang, operationalEntries = [], operationalEntriesLoadin
             {tab === "summary" && <div>
               {reportsLoadFailedWithoutFallback ? (
                 <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{reportsLoadErrorMessage}</p></NotebookRow>
+              ) : reportsSummaryPending ? (
+                <SummaryLoadingRow lang={lang} />
               ) : (
                 <>
                   <NotebookRow><NumberLine label={text(lang, "sales")} value={money(totals.sales, lang)} /></NotebookRow>

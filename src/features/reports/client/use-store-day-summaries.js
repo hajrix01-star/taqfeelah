@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { combineUiTotals, mapDaySummaryToUiTotals } from "./map-day-summary-to-ui";
 import { fetchStoreDaySummaryViaApi, fetchStoreMonthSummaryViaApi } from "./store-summary-api-client";
 
@@ -54,6 +54,8 @@ export function useStoreDaySummaries({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const loadedContextRef = useRef("");
+  const loadContextKey = `${period}|${periodKey}|${storeIdsKey}`;
 
   useEffect(() => {
     if (!enabled || !periodKey || !organizationId || !actorUserId || !storeIdsKey) {
@@ -61,6 +63,7 @@ export function useStoreDaySummaries({
       setLoading(false);
       setError("");
       setLoaded(false);
+      loadedContextRef.current = "";
       return undefined;
     }
 
@@ -69,7 +72,11 @@ export function useStoreDaySummaries({
     const load = async () => {
       setLoading(true);
       setError("");
-      setLoaded(false);
+      const contextChanged = loadedContextRef.current !== loadContextKey;
+      if (contextChanged) {
+        setSummariesByStoreId({});
+        setLoaded(false);
+      }
       try {
         const storeIds = storeIdsKey.split("|").filter(Boolean);
         const fetched = await Promise.all(
@@ -96,12 +103,15 @@ export function useStoreDaySummaries({
         });
         setSummariesByStoreId(next);
         setLoaded(true);
+        loadedContextRef.current = loadContextKey;
       } catch (loadError) {
         if (cancelled) return;
         console.warn(`${period} summary API load failed`, loadError);
-        setSummariesByStoreId({});
         setError("failed");
-        setLoaded(false);
+        if (loadedContextRef.current !== loadContextKey) {
+          setSummariesByStoreId({});
+          setLoaded(false);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -112,7 +122,7 @@ export function useStoreDaySummaries({
     return () => {
       cancelled = true;
     };
-  }, [actorRole, actorUserId, date, enabled, month, organizationId, period, periodKey, refreshKey, storeIdsKey]);
+  }, [actorRole, actorUserId, date, enabled, loadContextKey, month, organizationId, period, periodKey, refreshKey, storeIdsKey]);
 
   const businessesWithDaySummaries = useMemo(
     () => businesses.map((business) => ({
@@ -133,6 +143,7 @@ export function useStoreDaySummaries({
   );
 
   const getStoreResult = (storeId) => summariesByStoreId[storeId] || null;
+  const hasData = Object.keys(summariesByStoreId).length > 0;
 
   return {
     summariesByStoreId,
@@ -142,6 +153,7 @@ export function useStoreDaySummaries({
     loading,
     error,
     loaded,
+    hasData,
     enabled,
     period,
   };

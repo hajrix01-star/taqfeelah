@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { resolveReportDateRange } from "./report-period-range";
 import {
   combineUiTotalsList,
@@ -60,6 +60,8 @@ export function useStoreReports({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const loadedContextRef = useRef("");
+  const loadContextKey = `${storeIdsKey}|${period}|${dateRange.from}|${dateRange.to}|${outflowCategory}|${includeOutflowTransactions}`;
   const [totalsByStoreId, setTotalsByStoreId] = useState({});
   const [daysRows, setDaysRows] = useState([]);
   const [channelRows, setChannelRows] = useState([]);
@@ -82,6 +84,7 @@ export function useStoreReports({
       setLoading(false);
       setError("");
       setLoaded(false);
+      loadedContextRef.current = "";
       return undefined;
     }
 
@@ -93,7 +96,18 @@ export function useStoreReports({
     const load = async () => {
       setLoading(true);
       setError("");
-      setLoaded(false);
+      const contextChanged = loadedContextRef.current !== loadContextKey;
+      if (contextChanged) {
+        setTotalsByStoreId({});
+        setDaysRows([]);
+        setChannelRows([]);
+        setOutflowCategories([]);
+        setOutflowTransactions([]);
+        setOutflowTransactionCount(0);
+        setOutflowTotal(0);
+        setAttachmentProofs({ proofs: 0, items: [] });
+        setLoaded(false);
+      }
       try {
         const summaryResults = await Promise.all(
           storeIds.map((storeId) => fetchStorePeriodSummaryViaApi({
@@ -118,14 +132,17 @@ export function useStoreReports({
         setTotalsByStoreId(nextTotalsByStoreId);
 
         if (!isSingleStore) {
-          setDaysRows([]);
-          setChannelRows([]);
-          setOutflowCategories([]);
-          setOutflowTransactions([]);
-          setOutflowTransactionCount(0);
-          setOutflowTotal(0);
-          setAttachmentProofs({ proofs: 0, items: [] });
+          if (contextChanged) {
+            setDaysRows([]);
+            setChannelRows([]);
+            setOutflowCategories([]);
+            setOutflowTransactions([]);
+            setOutflowTransactionCount(0);
+            setOutflowTotal(0);
+            setAttachmentProofs({ proofs: 0, items: [] });
+          }
           setLoaded(true);
+          loadedContextRef.current = loadContextKey;
           return;
         }
 
@@ -184,19 +201,22 @@ export function useStoreReports({
         setOutflowTotal(Number(outflowReport?.totalOutflow?.amountHalalas || 0) / 100);
         setAttachmentProofs(mapAttachmentsReportToProofs(attachmentsReport));
         setLoaded(true);
+        loadedContextRef.current = loadContextKey;
       } catch (loadError) {
         if (cancelled) return;
         console.warn("store reports API load failed", loadError);
-        setTotalsByStoreId({});
-        setDaysRows([]);
-        setChannelRows([]);
-        setOutflowCategories([]);
-        setOutflowTransactions([]);
-        setOutflowTransactionCount(0);
-        setOutflowTotal(0);
-        setAttachmentProofs({ proofs: 0, items: [] });
         setError("failed");
-        setLoaded(false);
+        if (loadedContextRef.current !== loadContextKey) {
+          setTotalsByStoreId({});
+          setDaysRows([]);
+          setChannelRows([]);
+          setOutflowCategories([]);
+          setOutflowTransactions([]);
+          setOutflowTransactionCount(0);
+          setOutflowTotal(0);
+          setAttachmentProofs({ proofs: 0, items: [] });
+          setLoaded(false);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -219,6 +239,7 @@ export function useStoreReports({
     organizationId,
     outflowCategory,
     period,
+    loadContextKey,
     refreshKey,
     selectedDate,
     selectedMonth,
