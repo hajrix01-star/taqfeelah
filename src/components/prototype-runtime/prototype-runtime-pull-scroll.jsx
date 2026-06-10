@@ -2,54 +2,39 @@
 
 import React, { useCallback, useMemo } from "react";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
-import { pullToRefreshStatusLabel } from "@/lib/ui/pull-to-refresh-copy";
+import { pullToRefreshLabel } from "@/lib/ui/pull-to-refresh-copy";
 import {
   resolvePullToRefreshTarget,
   resolvePullToRefreshUsesNotebookSurface,
 } from "@/lib/ui/pull-to-refresh-policy";
 import { resolvePullToRefreshSurfaceStyle } from "@/lib/ui/pull-to-refresh-surface";
-import {
-  PULL_TO_REFRESH_REFRESH_SLOT,
-  usePullToRefresh,
-} from "@/lib/ui/use-pull-to-refresh";
+import { usePullToRefresh } from "@/lib/ui/use-pull-to-refresh";
 
-function PullToRefreshSpinner({ progress, spinning, releaseReady }) {
-  const strokeDashoffset = 62 - (spinning ? 62 : progress * 62);
-  const opacity = spinning ? 1 : Math.min(1, 0.35 + progress * 0.65);
-  const scale = spinning ? 1 : 0.72 + progress * 0.28;
+function PullToRefreshIndicator({ lang, offset, visible, refreshing, releaseReady }) {
+  const phase = refreshing ? "refreshing" : releaseReady ? "release" : "pull";
+  const opacity = visible ? Math.min(1, offset / 40) : 0;
+  const indicatorTransition = visible && offset === 0
+    ? "transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms cubic-bezier(0.22, 1, 0.36, 1)"
+    : "none";
 
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className={`h-6 w-6 ${spinning ? "animate-spin" : ""}`}
+    <div
+      aria-hidden={!visible}
+      className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center"
       style={{
+        transform: `translateY(${Math.max(0, offset - 36)}px)`,
         opacity,
-        transform: `scale(${scale})`,
-        transition: spinning ? "opacity 150ms ease" : "none",
+        transition: refreshing ? "opacity 150ms ease" : indicatorTransition,
       }}
     >
-      <circle
-        cx="12"
-        cy="12"
-        r="9.8"
-        fill="none"
-        stroke="#E8E1D4"
-        strokeWidth="2.2"
-      />
-      <circle
-        cx="12"
-        cy="12"
-        r="9.8"
-        fill="none"
-        stroke={releaseReady || spinning ? "#B44747" : "#806528"}
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeDasharray="62"
-        strokeDashoffset={strokeDashoffset}
-        transform="rotate(-90 12 12)"
-      />
-    </svg>
+      <div className="flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-taq-meta font-bold text-[#827762] shadow-sm ring-1 ring-black/[0.06]">
+        <span
+          className={`inline-block h-3.5 w-3.5 rounded-full border-2 border-[#D8CCA8] border-t-[#112A46] ${refreshing ? "animate-spin" : ""}`}
+          style={!refreshing ? { transform: `rotate(${Math.min(320, offset * 4)}deg)` } : undefined}
+        />
+        <span>{pullToRefreshLabel(lang, phase)}</span>
+      </div>
+    </div>
   );
 }
 
@@ -108,7 +93,6 @@ export function PrototypeRuntimePullScroll({
 
   const {
     scrollRef,
-    pullProgress,
     refreshing,
     releaseReady,
     slotHeight,
@@ -118,16 +102,10 @@ export function PrototypeRuntimePullScroll({
     onRefresh: handleRefresh,
   });
 
-  const statusLabel = pullToRefreshStatusLabel(lang, refreshing, releaseReady);
   const surfaceStyle = enabled
     ? resolvePullToRefreshSurfaceStyle(usesNotebookSurface, notebookTheme)
     : undefined;
-  const indicatorOffset = refreshing
-    ? Math.max(0, PULL_TO_REFRESH_REFRESH_SLOT - 28)
-    : Math.max(0, slotHeight - 28);
-  const indicatorTransition = enabled && !isActive && slotHeight === 0
-    ? "transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms cubic-bezier(0.22, 1, 0.36, 1)"
-    : "none";
+  const indicatorVisible = isActive || refreshing;
 
   return (
     <div
@@ -136,25 +114,14 @@ export function PrototypeRuntimePullScroll({
       style={surfaceStyle}
       aria-busy={refreshing || undefined}
     >
-      {enabled && (isActive || refreshing) && (
-        <div
-          aria-live="polite"
-          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center"
-          style={{
-            transform: `translateY(${indicatorOffset}px)`,
-            opacity: refreshing ? 1 : Math.min(1, 0.35 + pullProgress * 0.65),
-            transition: indicatorTransition,
-          }}
-        >
-          <span className="sr-only">{statusLabel}</span>
-          <div className="pt-1">
-            <PullToRefreshSpinner
-              progress={pullProgress}
-              spinning={refreshing}
-              releaseReady={releaseReady}
-            />
-          </div>
-        </div>
+      {enabled && (
+        <PullToRefreshIndicator
+          lang={lang}
+          offset={slotHeight}
+          visible={indicatorVisible}
+          refreshing={refreshing}
+          releaseReady={releaseReady}
+        />
       )}
       {children}
     </div>
