@@ -41,10 +41,10 @@ function headers(role, userId) {
   };
 }
 
-async function submitCloseout({ closeoutId, date, amountHalalas = 30000, mode = "submit" }) {
+async function submitCloseout({ closeoutId, date, amountHalalas = 30000, mode = "submit", role = "employee", userId = employeeUserId }) {
   return callJson(`${baseUrl}/api/v1/stores/${storeId}/closeouts`, {
     method: "POST",
-    headers: headers("employee", employeeUserId),
+    headers: headers(role, userId),
     body: JSON.stringify({
       mode,
       closeoutId,
@@ -64,12 +64,8 @@ async function listCloseouts(role, userId) {
   return Array.isArray(payload?.closeouts) ? payload.closeouts : (Array.isArray(payload) ? payload : []);
 }
 
-async function reviewCloseout({ closeoutId, date, action, reason = "" }) {
-  return callJson(`${baseUrl}/api/v1/stores/${storeId}/closeouts/${encodeURIComponent(closeoutId)}/review`, {
-    method: "POST",
-    headers: headers("owner", ownerUserId),
-    body: JSON.stringify({ action, date, reason }),
-  });
+function findCloseout(list, closeoutId) {
+  return list.find((item) => item.id === closeoutId || item.clientCloseoutId === closeoutId);
 }
 
 function assert(condition, message) {
@@ -80,7 +76,7 @@ async function main() {
   const date = process.env.CHECK_DATE || isoDateNow();
   const closeoutA = `check-a-${randomUUID().slice(0, 8)}`;
   const closeoutB = `check-b-${randomUUID().slice(0, 8)}`;
-  const closeoutReturn = `check-r-${randomUUID().slice(0, 8)}`;
+  const closeoutEdit = `check-e-${randomUUID().slice(0, 8)}`;
 
   console.log(`Target: ${baseUrl}`);
   console.log(`Date: ${date}\n`);
@@ -103,23 +99,41 @@ async function main() {
   const employeeList = await listCloseouts("employee", employeeUserId);
   assert(employeeList.length > 0, "employee closeouts list empty");
 
-  console.log("5) Return for edit flow…");
-  await submitCloseout({ closeoutId: closeoutReturn, date, amountHalalas: 33000 });
-  await reviewCloseout({ closeoutId: closeoutReturn, date, action: "return", reason: "checklist return" });
-  const afterReturn = await listCloseouts("owner", ownerUserId);
-  const returned = afterReturn.find((item) => (item.id === closeoutReturn || item.clientCloseoutId === closeoutReturn));
-  assert(returned?.status === "returned", `expected returned status, got ${returned?.status}`);
+  console.log("5) Submit is auto-approved (no review step)…");
+  await submitCloseout({ closeoutId: closeoutEdit, date, amountHalalas: 33000 });
+  const afterSubmit = await listCloseouts("owner", ownerUserId);
+  const submitted = findCloseout(afterSubmit, closeoutEdit);
+  assert(submitted?.status === "reviewed", `expected reviewed after submit, got ${submitted?.status}`);
 
-  console.log("6) Resubmit after return…");
-  await submitCloseout({ closeoutId: closeoutReturn, date, amountHalalas: 34000, mode: "resubmit" });
-  const afterResubmit = await listCloseouts("owner", ownerUserId);
-  const resubmitted = afterResubmit.find((item) => (item.id === closeoutReturn || item.clientCloseoutId === closeoutReturn));
-  assert(
-    resubmitted?.status === "submitted" || resubmitted?.status === "approved" || resubmitted?.status === "reviewed",
-    `expected submitted/approved/reviewed after resubmit, got ${resubmitted?.status}`,
-  );
+  console.log("6) Owner edit via resubmit…");
+  await submitCloseout({
+    closeoutId: closeoutEdit,
+    date,
+    amountHalalas: 34000,
+    mode: "resubmit",
+    role: "owner",
+    userId: ownerUserId,
+  });
+  const afterOwnerEdit = await listCloseouts("owner", ownerUserId);
+  const edited = findCloseout(afterOwnerEdit, closeoutEdit);
+  assert(edited?.status === "reviewed", `expected reviewed after owner edit, got ${edited?.status}`);
 
-  console.log("7) Standalone entry POST without closeoutId must fail…");
+  console.log("7) Employee resubmit must be forbidden…");
+  const employeeResubmit = await fetch(`${baseUrl}/api/v1/stores/${storeId}/closeouts`, {
+    method: "POST",
+    headers: headers("employee", employeeUserId),
+    body: JSON.stringify({
+      mode: "resubmit",
+      closeoutId: closeoutEdit,
+      date,
+      salesChannels: [{ salesChannelId, channelName: "Cash", amountHalalas: 35000 }],
+      outflows: [],
+      note: "employee resubmit should fail",
+    }),
+  });
+  assert(employeeResubmit.status === 403, `expected 403 for employee resubmit, got ${employeeResubmit.status}`);
+
+  console.log("8) Standalone entry POST without closeoutId must fail…");
   const standaloneResponse = await fetch(`${baseUrl}/api/v1/stores/${storeId}/entries`, {
     method: "POST",
     headers: headers("owner", ownerUserId),
@@ -143,9 +157,9 @@ async function main() {
     const items = Array.isArray(payload) ? payload : (payload?.items || []);
     const orphanLike = items.filter((item) => !item?.closeoutId);
     assert(orphanLike.length === 0, `expected no active list entries without closeoutId, got ${orphanLike.length}`);
-    console.log("8) Active entries list excludes orphan rows without closeoutId.");
+    console.log("9) Active entries list excludes orphan rows without closeoutId.");
   } else {
-    console.log("8) Skipped orphan list check — entries GET failed.");
+    console.log("9) Skipped orphan list check — entries GET failed.");
   }
 
   console.log("");

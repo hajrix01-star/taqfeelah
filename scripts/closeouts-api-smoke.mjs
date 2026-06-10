@@ -63,20 +63,20 @@ async function main() {
   });
   console.log("Submit OK:", Boolean(submit));
 
-  const review = await callJson(`${baseUrl}/api/v1/stores/${storeId}/closeouts/${encodeURIComponent(closeoutId)}/review`, {
-    method: "POST",
+  const list = await callJson(`${baseUrl}/api/v1/stores/${storeId}/closeouts`, {
+    method: "GET",
     headers: {
       ...commonHeaders,
       "x-user-id": ownerUserId,
       "x-member-role": "owner",
     },
-    body: JSON.stringify({
-      action: "approve",
-      date,
-      reason: "",
-    }),
   });
-  console.log("Review OK:", Boolean(review));
+  const closeouts = Array.isArray(list?.closeouts) ? list.closeouts : (Array.isArray(list) ? list : []);
+  const created = closeouts.find((item) => item.id === closeoutId || item.clientCloseoutId === closeoutId);
+  if (!created || created.status !== "reviewed") {
+    throw new Error(`Expected auto-approved closeout (status=reviewed), got ${created?.status ?? "not found"}`);
+  }
+  console.log("Auto-approved OK:", created.status);
 
   const summary = await callJson(`${baseUrl}/api/v1/stores/${storeId}/summary/day?date=${date}`, {
     method: "GET",
