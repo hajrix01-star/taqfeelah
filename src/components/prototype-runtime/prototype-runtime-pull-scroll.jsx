@@ -8,7 +8,10 @@ import {
   resolvePullToRefreshUsesNotebookSurface,
 } from "@/lib/ui/pull-to-refresh-policy";
 import { resolvePullToRefreshSurfaceStyle } from "@/lib/ui/pull-to-refresh-surface";
-import { usePullToRefresh } from "@/lib/ui/use-pull-to-refresh";
+import {
+  PULL_TO_REFRESH_REFRESH_SLOT,
+  usePullToRefresh,
+} from "@/lib/ui/use-pull-to-refresh";
 
 function PullToRefreshSpinner({ progress, spinning, releaseReady }) {
   const strokeDashoffset = 62 - (spinning ? 62 : progress * 62);
@@ -119,9 +122,11 @@ export function PrototypeRuntimePullScroll({
   const surfaceStyle = enabled
     ? resolvePullToRefreshSurfaceStyle(usesNotebookSurface, notebookTheme)
     : undefined;
-  const contentOffset = enabled ? slotHeight : 0;
-  const contentTransition = enabled && !isActive
-    ? "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)"
+  const indicatorOffset = refreshing
+    ? Math.max(0, PULL_TO_REFRESH_REFRESH_SLOT - 28)
+    : Math.max(0, slotHeight - 28);
+  const indicatorTransition = enabled && !isActive && slotHeight === 0
+    ? "transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms cubic-bezier(0.22, 1, 0.36, 1)"
     : "none";
 
   return (
@@ -134,11 +139,15 @@ export function PrototypeRuntimePullScroll({
       {enabled && (isActive || refreshing) && (
         <div
           aria-live="polite"
-          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-end justify-center"
-          style={{ height: contentOffset }}
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center"
+          style={{
+            transform: `translateY(${indicatorOffset}px)`,
+            opacity: refreshing ? 1 : Math.min(1, 0.35 + pullProgress * 0.65),
+            transition: indicatorTransition,
+          }}
         >
           <span className="sr-only">{statusLabel}</span>
-          <div className="pb-1.5">
+          <div className="pt-1">
             <PullToRefreshSpinner
               progress={pullProgress}
               spinning={refreshing}
@@ -147,16 +156,7 @@ export function PrototypeRuntimePullScroll({
           </div>
         </div>
       )}
-      {enabled ? (
-        <div
-          style={{
-            transform: `translateY(${contentOffset}px)`,
-            transition: contentTransition,
-          }}
-        >
-          {children}
-        </div>
-      ) : children}
+      {children}
     </div>
   );
 }
