@@ -3,6 +3,8 @@ import { DEFAULT_SALES_CHANNEL_UUIDS } from "@/core/client/sales-channel-catalog
 import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
 import {
   assertCanonicalUuidId,
+  buildOrgConfigPersistBaseline,
+  isClientGeneratedId,
   mapApiChannelToUi,
   mapApiStoreToBusiness,
   mapOrgConfigBundleToRuntime,
@@ -123,6 +125,37 @@ describe("org config runtime mapper", () => {
     for (const [legacyId, uuid] of Object.entries(DEFAULT_SALES_CHANNEL_UUIDS)) {
       expect(isUuid(uuid), `${legacyId} must be a canonical UUID`).toBe(true);
     }
+  });
+
+  it("recognizes pending client-generated ids", () => {
+    expect(isClientGeneratedId("custom-1718040000000")).toBe(true);
+    expect(isClientGeneratedId("staff-1718040000000")).toBe(true);
+    expect(isClientGeneratedId("channel-1718040000000")).toBe(true);
+    expect(isClientGeneratedId("302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c")).toBe(false);
+  });
+
+  it("builds persist baseline for pending stores before API create resolves ids", () => {
+    expect(() => buildOrgConfigPersistBaseline({
+      configuredBusinesses: [{
+        id: "custom-1718040000000",
+        nameAr: "New Branch",
+        nameEn: "New Branch",
+        customLocation: "Riyadh",
+      }],
+      archivedBusinessIds: [],
+      storeChannelSettings: {
+        "custom-1718040000000": { channels: [], activeIds: [] },
+      },
+      storeOperationalSettings: {},
+      staff: [{
+        id: "staff-1718040000000",
+        nameAr: "Sara",
+        nameEn: "Sara",
+        storeIds: ["custom-1718040000000"],
+        active: true,
+        removed: false,
+      }],
+    })).not.toThrow();
   });
 
   it("maps archived stores into archived ids", () => {
