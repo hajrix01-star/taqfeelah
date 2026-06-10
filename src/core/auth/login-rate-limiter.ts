@@ -1,20 +1,4 @@
-const WINDOW_MS = 15 * 60 * 1000;
-const MAX_ATTEMPTS = 10;
-
-type AttemptBucket = {
-  count: number;
-  resetAt: number;
-};
-
-const attempts = new Map<string, AttemptBucket>();
-
-function pruneExpired(now: number) {
-  for (const [key, bucket] of attempts) {
-    if (bucket.resetAt <= now) {
-      attempts.delete(key);
-    }
-  }
-}
+import { getLoginRateLimitStore, resetLoginRateLimitStoreForTests } from "@/core/auth/rate-limit-store";
 
 export function buildLoginRateLimitKey(ipAddress: string, identifier: string): string {
   const normalizedIp = ipAddress.trim() || "unknown-ip";
@@ -22,37 +6,18 @@ export function buildLoginRateLimitKey(ipAddress: string, identifier: string): s
   return `${normalizedIp}:${normalizedIdentifier}`;
 }
 
-export function checkLoginRateLimit(key: string): { allowed: boolean; retryAfterSeconds?: number } {
-  const now = Date.now();
-  pruneExpired(now);
-  const bucket = attempts.get(key);
-  if (!bucket || bucket.resetAt <= now) {
-    return { allowed: true };
-  }
-  if (bucket.count < MAX_ATTEMPTS) {
-    return { allowed: true };
-  }
-  return {
-    allowed: false,
-    retryAfterSeconds: Math.max(1, Math.ceil((bucket.resetAt - now) / 1000)),
-  };
+export async function checkLoginRateLimit(key: string): Promise<{ allowed: boolean; retryAfterSeconds?: number }> {
+  return getLoginRateLimitStore().check(key);
 }
 
-export function recordLoginFailure(key: string): void {
-  const now = Date.now();
-  pruneExpired(now);
-  const bucket = attempts.get(key);
-  if (!bucket || bucket.resetAt <= now) {
-    attempts.set(key, { count: 1, resetAt: now + WINDOW_MS });
-    return;
-  }
-  bucket.count += 1;
+export async function recordLoginFailure(key: string): Promise<void> {
+  await getLoginRateLimitStore().recordFailure(key);
 }
 
-export function clearLoginAttempts(key: string): void {
-  attempts.delete(key);
+export async function clearLoginAttempts(key: string): Promise<void> {
+  await getLoginRateLimitStore().clear(key);
 }
 
 export function resetLoginRateLimiterForTests(): void {
-  attempts.clear();
+  resetLoginRateLimitStoreForTests();
 }

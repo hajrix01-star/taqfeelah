@@ -12,25 +12,25 @@ describe("login-rate-limiter", () => {
     resetLoginRateLimiterForTests();
   });
 
-  it("allows attempts under the limit", () => {
+  it("allows attempts under the limit", async () => {
     const key = buildLoginRateLimitKey("127.0.0.1", "owner");
-    expect(checkLoginRateLimit(key).allowed).toBe(true);
+    expect((await checkLoginRateLimit(key)).allowed).toBe(true);
     for (let i = 0; i < 9; i += 1) {
-      recordLoginFailure(key);
+      await recordLoginFailure(key);
     }
-    expect(checkLoginRateLimit(key).allowed).toBe(true);
+    expect((await checkLoginRateLimit(key)).allowed).toBe(true);
   });
 
-  it("blocks after max attempts and clears on success", () => {
+  it("blocks after max attempts and clears on success", async () => {
     const key = buildLoginRateLimitKey("127.0.0.1", "owner");
     for (let i = 0; i < 10; i += 1) {
-      recordLoginFailure(key);
+      await recordLoginFailure(key);
     }
-    const blocked = checkLoginRateLimit(key);
+    const blocked = await checkLoginRateLimit(key);
     expect(blocked.allowed).toBe(false);
     expect(blocked.retryAfterSeconds).toBeGreaterThan(0);
 
-    clearLoginAttempts(key);
-    expect(checkLoginRateLimit(key).allowed).toBe(true);
+    await clearLoginAttempts(key);
+    expect((await checkLoginRateLimit(key)).allowed).toBe(true);
   });
 });
