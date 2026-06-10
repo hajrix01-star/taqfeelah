@@ -39,7 +39,17 @@ export async function logoutSessionViaApi() {
   });
 }
 
-export async function fetchRuntimeSettingsViaApi({
+const runtimeSettingsInflight = new Map();
+
+function buildRuntimeSettingsAuthKey({
+  organizationId = "",
+  actorUserId = "",
+  actorRole = "",
+} = {}) {
+  return `${organizationId}|${actorUserId}|${actorRole}`;
+}
+
+async function fetchRuntimeSettingsViaApiImpl({
   organizationId,
   actorUserId,
   actorRole,
@@ -50,6 +60,28 @@ export async function fetchRuntimeSettingsViaApi({
     actorRole,
     errorMessage: "Failed to load runtime settings.",
   });
+}
+
+export async function fetchRuntimeSettingsViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+} = {}) {
+  const authKey = buildRuntimeSettingsAuthKey({ organizationId, actorUserId, actorRole });
+  const inflight = runtimeSettingsInflight.get(authKey);
+  if (inflight) return inflight;
+
+  const promise = fetchRuntimeSettingsViaApiImpl({
+    organizationId,
+    actorUserId,
+    actorRole,
+  });
+  runtimeSettingsInflight.set(authKey, promise);
+  try {
+    return await promise;
+  } finally {
+    runtimeSettingsInflight.delete(authKey);
+  }
 }
 
 export async function fetchEmployeeLoginRosterViaApi() {
