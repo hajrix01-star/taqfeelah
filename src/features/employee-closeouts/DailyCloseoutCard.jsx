@@ -72,13 +72,6 @@ export default function DailyCloseoutCard({
         <p className="mx-3.5 -mt-1 mb-3 text-center text-[10px] font-bold text-[#82745A]">
           {lang === "ar" ? "قيم الداخل والخارج والناتج بالريال السعودي" : "In/Out/Net values are in SAR"}
         </p>
-        {(closeout.outflows || []).length > 0 && !expanded ? (
-          <p className="mx-3.5 mb-2 text-taq-nav font-bold text-[#806528]">
-            {lang === "ar"
-              ? `${(closeout.outflows || []).length} عملية خارج — اضغط اليوم لعرض التفاصيل`
-              : `${(closeout.outflows || []).length} outflow item(s) — tap the day to view details`}
-          </p>
-        ) : null}
         {expanded && salesRows.length > 0 ? (
           <div className="mx-3.5 mb-2 space-y-1 border-t border-dashed border-[#E8E1D4] pt-2">
             <p className="text-taq-nav font-black text-[#806528]">{lang === "ar" ? "قنوات الداخل" : "Sales channels"}</p>
