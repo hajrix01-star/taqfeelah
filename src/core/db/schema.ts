@@ -452,3 +452,43 @@ export const dailySaasMetrics = pgTable("daily_saas_metrics", {
   failedPaymentsCount: integer("failed_payments_count").notNull().default(0),
   updatedAt,
 });
+
+export const orgEngagementSnapshots = pgTable(
+  "org_engagement_snapshots",
+  {
+    snapshotDate: date("snapshot_date").notNull(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    organizationName: text("organization_name").notNull(),
+    organizationStatus: text("organization_status").notNull(),
+    subscriptionStatus: text("subscription_status"),
+    billingType: text("billing_type").notNull(),
+    planCode: text("plan_code"),
+    tenureDays: integer("tenure_days").notNull().default(0),
+    activeDaysL30: integer("active_days_l30").notNull().default(0),
+    activeUsersL30: integer("active_users_l30").notNull().default(0),
+    closeoutsL30: integer("closeouts_l30").notNull().default(0),
+    entriesL30: integer("entries_l30").notNull().default(0),
+    salesHalalasL30: bigint("sales_halalas_l30", { mode: "number" }).notNull().default(0),
+    engagementSegment: text("engagement_segment").notNull(),
+    lastCoreActivityAt: timestamp("last_core_activity_at", { withTimezone: true }),
+    daysSinceLastCoreActivity: integer("days_since_last_core_activity"),
+    storesCount: integer("stores_count").notNull().default(0),
+    updatedAt,
+  },
+  (table) => ({
+    pk: primaryKey({
+      name: "org_engagement_snapshots_pk",
+      columns: [table.snapshotDate, table.organizationId],
+    }),
+    segmentDateIdx: index("org_engagement_snapshots_segment_date_idx").on(
+      table.snapshotDate,
+      table.engagementSegment,
+    ),
+    billingDateIdx: index("org_engagement_snapshots_billing_date_idx").on(
+      table.snapshotDate,
+      table.billingType,
+    ),
+  }),
+);

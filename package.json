@@ -42,6 +42,7 @@
     "db:seed:auth": "node scripts/seed-auth-credentials.mjs",
     "db:migrate:auth": "node scripts/migrate-runtime-auth-to-identities.mjs",
     "db:seed:saas": "node scripts/seed-saas-foundation.mjs",
+    "saas:aggregate": "node --experimental-strip-types scripts/aggregate-saas-analytics.ts",
     "pwa:icons": "node scripts/generate-pwa-icons.mjs"
   },
   "dependencies": {
