@@ -10,6 +10,9 @@ export function nextDayIso(dateString) {
 export function formatDateTimeLabel(iso, lang) {
   if (!iso) return "";
   const datePart = iso.slice(0, 10);
-  const time = new Date(iso).toLocaleTimeString(lang === "ar" ? "ar-SA" : "en-US", { hour: "2-digit", minute: "2-digit" });
+  const time = new Date(iso).toLocaleTimeString(
+    lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
+    { hour: "2-digit", minute: "2-digit" },
+  );
   return `${formatCalendarDate(datePart, lang)} · ${time}`;
 }

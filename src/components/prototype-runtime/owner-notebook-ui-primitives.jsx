@@ -9,7 +9,7 @@ import { Badge } from "./prototype-runtime-shell-ui";
 export function formatNoteTime(iso, lang) {
   if (!iso) return "";
   try {
-    return new Intl.DateTimeFormat(lang === "ar" ? "ar-SA" : "en-GB", {
+    return new Intl.DateTimeFormat(lang === "ar" ? "ar-SA-u-nu-latn" : "en-GB", {
       day: "numeric",
       month: "short",
       hour: "2-digit",
