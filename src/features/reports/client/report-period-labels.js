@@ -1,9 +1,10 @@
+import { resolveDateTimeLocale } from "@/core/i18n/display-locale";
 import { monthSelectionValue } from "@/features/operations/operational-analytics";
 
 export function formatCalendarDate(dateString, lang) {
   const date = new Date(`${dateString}T12:00:00`);
   return new Intl.DateTimeFormat(
-    lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-US",
+    resolveDateTimeLocale(lang),
     { day: "numeric", month: "long", year: "numeric" },
   ).format(date);
 }
@@ -12,7 +13,7 @@ export function formatCalendarWeekday(dateString, lang) {
   const date = new Date(`${dateString}T12:00:00`);
   if (Number.isNaN(date.getTime())) return "";
   return new Intl.DateTimeFormat(
-    lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-US",
+    resolveDateTimeLocale(lang),
     { weekday: "long" },
   ).format(date);
 }
@@ -25,7 +26,7 @@ export function formatRegisterCloseoutTypeLabel(dateString, lang) {
 
 function formatCalendarMonth(year, month, lang) {
   return new Intl.DateTimeFormat(
-    lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-US",
+    resolveDateTimeLocale(lang),
     { month: "long", year: "numeric" },
   ).format(new Date(year, month, 1));
 }

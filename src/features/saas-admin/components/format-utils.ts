@@ -1,15 +1,15 @@
+import {
+  formatDisplayNumber,
+  resolveDateTimeLocale,
+} from "@/core/i18n/display-locale";
 import type { SaasAdminLocale } from "@/features/saas-admin/i18n/translations";
-
-function resolveIntlLocale(locale: SaasAdminLocale): string {
-  return locale === "en" ? "en-US" : "ar-SA";
-}
 
 export function formatNumber(
   value: number | null | undefined,
   locale: SaasAdminLocale = "ar",
 ): string {
   if (value === null || value === undefined) return "—";
-  return new Intl.NumberFormat(resolveIntlLocale(locale)).format(value);
+  return formatDisplayNumber(value, locale);
 }
 
 export function formatDateTime(
@@ -17,7 +17,7 @@ export function formatDateTime(
   locale: SaasAdminLocale = "ar",
 ): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat(resolveIntlLocale(locale), {
+  return new Intl.DateTimeFormat(resolveDateTimeLocale(locale), {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
