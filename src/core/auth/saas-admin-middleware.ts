@@ -68,6 +68,25 @@ export async function handleSaasAdminMiddleware(
     return null;
   }
 
+  if (
+    isPage
+    && pathname !== "/saas-admin/login"
+    && env.NEXT_PUBLIC_SAAS_ADMIN_ENABLED === "true"
+  ) {
+    const cookieName = env.AUTH_SESSION_COOKIE_NAME || "taqfeelah_session";
+    const session = await resolveEdgeAuthSessionFromRequest(
+      request,
+      cookieName,
+      env.AUTH_SESSION_SECRET,
+    );
+    if (!session?.userId) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/saas-admin/login";
+      loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
   if (!isApi) {
     return null;
   }

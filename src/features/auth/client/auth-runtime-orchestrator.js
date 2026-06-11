@@ -120,6 +120,10 @@ export function applyServerSessionBootstrap(session, apply = {}) {
   apply.setEmployee?.(false);
   apply.setLoggedInEmployeeId?.(null);
   apply.setOwnerPage?.("home");
+  const displayName = typeof session.displayName === "string" ? session.displayName.trim() : "";
+  if (displayName) {
+    apply.setOwnerProfile?.({ name: displayName });
+  }
   return true;
 }
 

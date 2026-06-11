@@ -11,6 +11,7 @@ import {
 } from "@/features/auth/server/auth-identities";
 import { getRuntimeSettingsByOrganizationId } from "@/features/runtime-settings/server/runtime-settings-service";
 import { resolveEmployeeUserId } from "@/features/auth/server/resolve-employee-user-id";
+import { resolveUserDisplayName } from "@/features/auth/server/resolve-user-display-name";
 
 const loginInputSchema = z.object({
   mode: z.enum(["owner_password", "employee_pin"]),
@@ -314,13 +315,3 @@ export async function createAuthSession(rawInput: LoginInput) {
   };
 }
 
-async function resolveUserDisplayName(userId: string): Promise<string> {
-  if (!isUuid(userId)) return "";
-  const db = getDb();
-  const [row] = await db
-    .select({ name: users.name })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-  return row?.name?.trim() || "";
-}

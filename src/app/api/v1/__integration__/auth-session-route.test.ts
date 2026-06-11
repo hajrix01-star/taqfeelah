@@ -16,6 +16,12 @@ vi.mock("@/features/auth/server/create-auth-session", () => ({
   createAuthSession,
 }));
 
+const resolveUserDisplayName = vi.fn(async () => "Owner Name");
+
+vi.mock("@/features/auth/server/resolve-user-display-name", () => ({
+  resolveUserDisplayName,
+}));
+
 vi.mock("@/core/auth/session-cookie", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/core/auth/session-cookie")>();
   return {
@@ -32,6 +38,8 @@ describe("auth session route integration", () => {
     __resetEnvCacheForTests();
     createAuthSession.mockReset();
     resolveAuthSessionFromRequest.mockReset();
+    resolveUserDisplayName.mockReset();
+    resolveUserDisplayName.mockResolvedValue("Owner Name");
   });
 
   afterEach(() => {
@@ -60,9 +68,10 @@ describe("auth session route integration", () => {
     const response = await GET(ownerRequest("http://localhost/api/v1/auth/session"));
 
     expect(response.status).toBe(200);
-    const body = await readJsonBody<{ authenticated: boolean; role: string }>(response);
+    const body = await readJsonBody<{ authenticated: boolean; role: string; displayName: string }>(response);
     expect(body.authenticated).toBe(true);
     expect(body.role).toBe("owner");
+    expect(body.displayName).toBe("Owner Name");
   });
 
   it("POST creates auth session and sets cookie", async () => {
@@ -70,6 +79,7 @@ describe("auth session route integration", () => {
       organizationId: TEST_ORGANIZATION_ID,
       userId: TEST_OWNER_USER_ID,
       role: "owner",
+      displayName: "Owner Name",
     });
 
     const { POST } = await import("../auth/session/route");

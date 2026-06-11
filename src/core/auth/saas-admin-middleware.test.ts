@@ -92,9 +92,38 @@ describe("handleSaasAdminMiddleware", () => {
     expect(response).toBeNull();
   });
 
-  it("does not block /saas-admin pages when enabled (layout handles UX guards)", async () => {
+  it("redirects unauthenticated /saas-admin pages to login when enabled", async () => {
     const response = await handleSaasAdminMiddleware(
       buildRequest("/saas-admin/overview"),
+      enabledEnv({ SAAS_ADMIN_API_ENABLED: "false" }),
+    );
+
+    expect(response?.status).toBe(307);
+    expect(response?.headers.get("location")).toContain("/saas-admin/login");
+    expect(response?.headers.get("location")).toContain("next=%2Fsaas-admin%2Foverview");
+  });
+
+  it("allows authenticated /saas-admin pages when enabled", async () => {
+    const cookie = createSignedAuthSessionCookieValue(
+      {
+        organizationId: "22222222-2222-4222-8222-222222222222",
+        userId: ownerUserId,
+        role: "owner",
+      },
+      secret,
+    );
+
+    const response = await handleSaasAdminMiddleware(
+      buildRequest("/saas-admin/overview", cookie),
+      enabledEnv({ SAAS_ADMIN_API_ENABLED: "false" }),
+    );
+
+    expect(response).toBeNull();
+  });
+
+  it("does not redirect /saas-admin/login", async () => {
+    const response = await handleSaasAdminMiddleware(
+      buildRequest("/saas-admin/login"),
       enabledEnv({ SAAS_ADMIN_API_ENABLED: "false" }),
     );
 

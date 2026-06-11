@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AdminSessionFooter } from "@/features/saas-admin/components/AdminSessionFooter";
 import { LanguageToggle } from "@/features/saas-admin/components/LanguageToggle";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
+import type { SaasAdminSessionView } from "@/features/saas-admin/server/resolve-saas-admin-session-view";
 
 const NAV_PATHS = [
   { href: "/saas-admin/overview", key: "overview" as const },
@@ -13,7 +15,11 @@ const NAV_PATHS = [
   { href: "/saas-admin/system-health", key: "systemHealth" as const },
 ];
 
-export function AdminSidebar() {
+type AdminSidebarProps = {
+  session: SaasAdminSessionView;
+};
+
+export function AdminSidebar({ session }: AdminSidebarProps) {
   const pathname = usePathname();
   const { t } = useSaasAdminLocale();
 
@@ -44,8 +50,8 @@ export function AdminSidebar() {
           );
         })}
       </nav>
-      <div className="border-t border-[var(--admin-border)] px-5 py-4 text-xs text-[var(--admin-muted)]">
-        {t.readOnlyFooter}
+      <div className="border-t border-[var(--admin-border)] px-5 py-4">
+        <AdminSessionFooter session={session} />
       </div>
     </aside>
   );

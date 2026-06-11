@@ -79,6 +79,30 @@ describe("auth runtime orchestrator", () => {
     expect(apply.setEmployeePage).toHaveBeenCalledWith("closeouts");
   });
 
+  it("bootstraps authenticated owner session with display name", () => {
+    const apply = {
+      setSessionOrganizationId: vi.fn(),
+      setSessionUserId: vi.fn(),
+      setLoggedIn: vi.fn(),
+      setEmployee: vi.fn(),
+      setLoggedInEmployeeId: vi.fn(),
+      setEmployeePage: vi.fn(),
+      setAuthScreen: vi.fn(),
+      setOwnerPage: vi.fn(),
+      setOwnerProfile: vi.fn(),
+    };
+
+    expect(applyServerSessionBootstrap({
+      authenticated: true,
+      role: "owner",
+      userId: "owner-uuid",
+      organizationId: "org-uuid",
+      displayName: "Tenant Owner",
+    }, apply)).toBe(true);
+    expect(apply.setOwnerProfile).toHaveBeenCalledWith({ name: "Tenant Owner" });
+    expect(apply.setOwnerPage).toHaveBeenCalledWith("home");
+  });
+
   it("bootstraps authenticated employee session from server", () => {
     const apply = {
       setSessionOrganizationId: vi.fn(),

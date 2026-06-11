@@ -12,6 +12,7 @@ import {
   recordLoginFailure,
 } from "@/core/auth/login-rate-limiter";
 import { createAuthSession } from "@/features/auth/server/create-auth-session";
+import { resolveUserDisplayName } from "@/features/auth/server/resolve-user-display-name";
 import { AppError, ServiceUnavailableError, UnauthorizedError } from "@/core/errors/app-error";
 import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
 
@@ -46,11 +47,13 @@ export async function GET(request: Request) {
     if (!session) {
       return ok({ authenticated: false });
     }
+    const displayName = await resolveUserDisplayName(session.userId);
     return ok({
       authenticated: true,
       organizationId: session.organizationId,
       userId: session.userId,
       role: session.role,
+      displayName,
     });
   } catch (error) {
     return failRequest(error, request);
