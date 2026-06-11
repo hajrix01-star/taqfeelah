@@ -90,7 +90,7 @@ export default function OwnerCloseoutManagePanel({
           )}
           <div className="grid grid-cols-2 gap-3">
             <button type="button" onClick={onEdit} className="rounded-2xl bg-white py-3.5 text-xs font-black text-[#112A46] ring-1 ring-black/[0.08]">
-              {lang === "ar" ? "تعديل التقفيلة" : "Edit closeout"}
+              {lang === "ar" ? "تعديل التقفيلة من قبل المالك" : "Edit closeout (owner)"}
             </button>
             <button type="button" onClick={onDelete} className="rounded-2xl bg-[#FFF1EE] py-3.5 text-xs font-black text-[#B44747] ring-1 ring-[#B44747]/15">
               {lang === "ar" ? "حذف التقفيلة" : "Delete closeout"}

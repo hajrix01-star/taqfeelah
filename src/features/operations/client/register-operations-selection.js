@@ -34,13 +34,18 @@ export function resolveRestoreOperationTarget(operationalEntries, entryId, archi
  * @param {boolean} [input.closeoutsApiDbSource]
  * @param {() => Array<{ id?: string }>} [input.readDailyCloseouts]
  */
+export function resolveCloseoutForOperationalEntry(entry, closeouts = []) {
+  if (!entry?.closeoutId || !Array.isArray(closeouts)) return null;
+  return closeouts.find((item) => item.id === entry.closeoutId) || null;
+}
+
 export function resolveOwnerOperationOpenAction(entry, {
   bindsToServerAuth = false,
   closeoutsApiDbSource = false,
   readDailyCloseouts = () => [],
 } = {}) {
   if (!bindsToServerAuth && !closeoutsApiDbSource && entry?.type === "summary" && entry.closeoutId) {
-    const closeout = readDailyCloseouts().find((item) => item.id === entry.closeoutId);
+    const closeout = resolveCloseoutForOperationalEntry(entry, readDailyCloseouts());
     if (closeout) {
       return { kind: "closeout", closeout, entry: null };
     }
