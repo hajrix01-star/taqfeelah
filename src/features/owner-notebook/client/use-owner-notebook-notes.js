@@ -5,7 +5,6 @@ import {
   createOwnerNotebookNoteInput,
   deleteOwnerNotebookNote,
   filterOwnerNotebookNotes,
-  readOwnerNotebookNotes,
   sortOwnerNotebookNotes,
   toggleOwnerNotebookNoteDone,
   updateOwnerNotebookNote,
@@ -17,6 +16,10 @@ import {
   fetchOwnerNotebookNotesViaApi,
   updateOwnerNotebookNoteViaApi,
 } from "./owner-notebook-api-client";
+import {
+  mergeLegacyOwnerNotebookNotesIntoLocal,
+  migrateOwnerNotebookNotesToApi,
+} from "./owner-notebook-legacy-migration";
 
 function buildNotebookScopeKey(organizationId = "", userId = "") {
   return `${organizationId || "default-org"}:${userId || "default-user"}`;
@@ -49,17 +52,25 @@ export function useOwnerNotebookNotes({
             actorUserId: userId,
           });
           if (cancelled) return;
-          setNotes(sortOwnerNotebookNotes(loaded));
+          const migration = await migrateOwnerNotebookNotesToApi({
+            organizationId,
+            actorUserId: userId,
+            apiNotes: loaded,
+          });
+          if (cancelled) return;
+          setNotes(sortOwnerNotebookNotes(migration.notes));
         } catch (error) {
           console.warn("owner notebook load failed", error);
-          if (!cancelled) setNotes([]);
+          if (!cancelled) {
+            setNotes(mergeLegacyOwnerNotebookNotesIntoLocal({ organizationId, userId }));
+          }
         } finally {
           if (!cancelled) setHydrated(true);
         }
         return;
       }
 
-      setNotes(readOwnerNotebookNotes({ organizationId, userId }));
+      setNotes(mergeLegacyOwnerNotebookNotesIntoLocal({ organizationId, userId }));
       setHydrated(true);
     };
 

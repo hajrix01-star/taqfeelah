@@ -44,12 +44,21 @@ export function sortOwnerNotebookNotes(notes = []) {
   ));
 }
 
-export function readOwnerNotebookNotes({ organizationId = "", userId = "" } = {}) {
-  if (!storageAllowed() || typeof window === "undefined") return [];
-  const storageKey = buildOwnerNotebookStorageKey(organizationId, userId);
-  const stored = readLocalStorageJson(storageKey, [], { scope: "ui-preferences" });
+export function parseOwnerNotebookNotesRaw(stored) {
   if (!Array.isArray(stored)) return [];
   return sortOwnerNotebookNotes(stored.map(normalizeNote).filter(Boolean));
+}
+
+export function readOwnerNotebookNotesFromStorageKey(storageKey) {
+  if (!storageAllowed() || typeof window === "undefined" || !storageKey) return [];
+  const stored = readLocalStorageJson(storageKey, [], { scope: "ui-preferences" });
+  return parseOwnerNotebookNotesRaw(stored);
+}
+
+export function readOwnerNotebookNotes({ organizationId = "", userId = "" } = {}) {
+  return readOwnerNotebookNotesFromStorageKey(
+    buildOwnerNotebookStorageKey(organizationId, userId),
+  );
 }
 
 export function writeOwnerNotebookNotes(notes, { organizationId = "", userId = "" } = {}) {
