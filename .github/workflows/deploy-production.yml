@@ -152,11 +152,16 @@ jobs:
           POST_DEPLOY_BASELINE_VERIFY: "true"
           RESET_FOUNDATION_ON_DEPLOY: ${{ contains(github.event.head_commit.message, '[reset-foundation]') }}
           RESET_FOUNDATION_CONFIRM: "reset-modern-foundation"
-          DEPLOYMENT_WAVE: "5"
+          DEPLOYMENT_WAVE: "7"
           APP_MODE: "production"
           NEXT_PUBLIC_APP_MODE: "production"
-          NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true"
-          ALLOW_HEADER_AUTH_CONTEXT: "true"
+          NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "false"
+          ALLOW_HEADER_AUTH_CONTEXT: "false"
+          AUTH_DB_CREDENTIALS_ENABLED: "true"
+          NEXT_PUBLIC_AUTH_API_ENABLED: "true"
+          SAAS_ADMIN_API_ENABLED: "true"
+          NEXT_PUBLIC_SAAS_ADMIN_ENABLED: "true"
+          SAAS_PLATFORM_ADMIN_USER_IDS: ${{ secrets.SAAS_PLATFORM_ADMIN_USER_IDS }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTH_SESSION_SECRET: ${{ secrets.AUTH_SESSION_SECRET }}
           AUTH_ORGANIZATION_ID: ${{ secrets.AUTH_ORGANIZATION_ID }}

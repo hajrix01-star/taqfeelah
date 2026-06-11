@@ -157,7 +157,7 @@
 | `NEXT_PUBLIC_SAAS_ADMIN_ENABLED=true` | إظهار لوحة `/saas-admin` |
 | `USAGE_TRACKING_ENABLED=true` | (اختياري) تتبع الاستخدام + snapshots |
 
-**تحقق تلقائي (عند wave ≥ 7):** `GET /api/v1/saas-admin/overview` → 503 (مغلق)، `GET /saas-admin` → 200 (شاشة «غير مفعّلة»).
+**تحقق تلقائي (عند wave ≥ 7):** `GET /api/v1/saas-admin/overview` → 503 (مغلق) أو 401 (مفعّل بدون جلسة)، `GET /saas-admin` → 200.
 
 **تفعيل اللايف (بعد النشر):**
 

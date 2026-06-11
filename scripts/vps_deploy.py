@@ -72,6 +72,14 @@ PRODUCTION_ENV_KEYS = [
     "SAAS_PLATFORM_ADMIN_USER_IDS",
 ]
 
+# Opt-in flags: wave defaults must not overwrite explicit CI or VPS values once enabled.
+SAAS_OPT_IN_ENV_KEYS = (
+    "SAAS_ADMIN_API_ENABLED",
+    "NEXT_PUBLIC_SAAS_ADMIN_ENABLED",
+    "USAGE_TRACKING_ENABLED",
+    "SAAS_PLATFORM_ADMIN_USER_IDS",
+)
+
 # Bootstrap defaults align with scripts/seed-closeouts-foundation.mjs so deploy can
 # proceed without GitHub app-env secrets. DATABASE_URL must still come from secrets
 # or an existing VPS .env.production file.
@@ -124,13 +132,10 @@ WAVE_6_ENV_OVERRIDES: dict[str, str] = {
     "NEXT_PUBLIC_AUTH_API_ENABLED": "true",
 }
 
-# Wave 7 scaffolds SaaS admin (Phase 11). SaaS flags stay OFF until product enables them.
+# Wave 7 scaffolds SaaS admin (Phase 11). SaaS flags are opt-in via CI secrets or VPS env.
 WAVE_7_ENV_OVERRIDES: dict[str, str] = {
     **WAVE_6_ENV_OVERRIDES,
     "DEPLOYMENT_WAVE": "7",
-    "SAAS_ADMIN_API_ENABLED": "false",
-    "NEXT_PUBLIC_SAAS_ADMIN_ENABLED": "false",
-    "USAGE_TRACKING_ENABLED": "false",
 }
 
 WAVE_ENV_OVERRIDES: dict[str, dict[str, str]] = {
@@ -176,6 +181,9 @@ PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
     ),
     "AUTH_EMPLOYEE_PIN_MAP": '{"ahmed":"1234","sara":"1234"}',
     "NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE": "true",
+    "SAAS_ADMIN_API_ENABLED": "false",
+    "NEXT_PUBLIC_SAAS_ADMIN_ENABLED": "false",
+    "USAGE_TRACKING_ENABLED": "false",
 }
 
 VPS_POSTGRES_CONTAINER = "taqfeelah-postgres"
@@ -540,13 +548,39 @@ def read_remote_production_env(vps: VPS, app_dir: str) -> dict[str, str]:
     return parse_env_file(out)
 
 
-def apply_deployment_wave_overrides(merged_env: dict[str, str]) -> dict[str, str]:
+def apply_deployment_wave_overrides(
+    merged_env: dict[str, str],
+    existing_remote_env: dict[str, str] | None = None,
+) -> dict[str, str]:
     wave = os.environ.get("DEPLOYMENT_WAVE", merged_env.get("DEPLOYMENT_WAVE", "1")).strip()
     overrides = WAVE_ENV_OVERRIDES.get(wave)
     if not overrides:
         return merged_env
     result = dict(merged_env)
     result.update(overrides)
+    remote_env = existing_remote_env or {}
+    for key in SAAS_OPT_IN_ENV_KEYS:
+        ci_value = os.environ.get(key)
+        if ci_value:
+            result[key] = ci_value
+        elif remote_env.get(key):
+            result[key] = remote_env[key]
+    return result
+
+
+def resolve_saas_platform_admin_ids(merged_env: dict[str, str]) -> dict[str, str]:
+    result = dict(merged_env)
+    if result.get("SAAS_PLATFORM_ADMIN_USER_IDS"):
+        return result
+    owner_id = result.get("AUTH_OWNER_USER_ID") or result.get(
+        "NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID"
+    )
+    saas_enabled = (
+        result.get("SAAS_ADMIN_API_ENABLED") == "true"
+        or result.get("NEXT_PUBLIC_SAAS_ADMIN_ENABLED") == "true"
+    )
+    if saas_enabled and owner_id:
+        result["SAAS_PLATFORM_ADMIN_USER_IDS"] = owner_id
     return result
 
 
@@ -603,7 +637,8 @@ def resolve_production_env(existing_remote_env: dict[str, str] | None = None) ->
         if value:
             merged[key] = value
 
-    merged = apply_deployment_wave_overrides(merged)
+    merged = apply_deployment_wave_overrides(merged, existing_remote_env)
+    merged = resolve_saas_platform_admin_ids(merged)
 
     if not merged.get("DATABASE_URL"):
         raise RuntimeError(
@@ -1384,10 +1419,14 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             if body.strip():
                 safe_print("Wave 7 SaaS KPIs response preview:")
                 safe_print(body.strip()[:240])
-            if saas_kpis_status_code != "503":
+            saas_api_enabled = os.environ.get("SAAS_ADMIN_API_ENABLED") == "true"
+            expected_saas_status = "401" if saas_api_enabled else "503"
+            if saas_kpis_status_code != expected_saas_status:
                 raise RuntimeError(
-                    "Deployment wave 7 verification failed: SaaS KPIs API returned "
-                    f"HTTP {saas_kpis_status_code or 'unknown'} (expected 503 while disabled)"
+                    "Deployment wave 7 verification failed: SaaS overview API returned "
+                    f"HTTP {saas_kpis_status_code or 'unknown'} "
+                    f"(expected {expected_saas_status} when "
+                    f"{'enabled' if saas_api_enabled else 'disabled'})"
                 )
             continue
         if "wave7-saas-page.html" in c:
