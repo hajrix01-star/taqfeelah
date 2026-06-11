@@ -21,12 +21,31 @@ vi.mock("@/features/auth/server/verify-auth-otp", () => ({
 describe("auth otp routes integration", () => {
   beforeEach(() => {
     setupRouteIntegrationEnv();
+    process.env.AUTH_OTP_ENABLED = "true";
     requestAuthOtp.mockReset();
     verifyAuthOtp.mockReset();
   });
 
   afterEach(() => {
     teardownRouteIntegrationEnv();
+  });
+
+  it("POST /auth/otp/request returns 503 when OTP is disabled", async () => {
+    process.env.AUTH_OTP_ENABLED = "false";
+
+    const { POST } = await import("../auth/otp/request/route");
+    const response = await POST(
+      ownerRequest("http://localhost/api/v1/auth/otp/request", {
+        method: "POST",
+        body: JSON.stringify({
+          channel: "whatsapp",
+          destination: "+966500000000",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    expect(requestAuthOtp).not.toHaveBeenCalled();
   });
 
   it("POST /auth/otp/request accepts whatsapp destination", async () => {
