@@ -34,8 +34,8 @@ export default function OwnerNotebookNoteSharePreview({
       className={`${fluid ? "w-full" : "w-[390px]"} overflow-hidden rounded-[20px] shadow-[0_10px_32px_rgba(17,42,70,0.12)] ring-1 ring-[#112A46]/[0.06]`}
       style={{ backgroundColor: activeTheme.paper, fontFamily }}
     >
-      <div className="relative px-4 pb-3 pt-2.5" style={lines}>
-        <div className="flex h-11 items-center justify-center">
+      <div className="relative px-4 pb-3 pt-3" style={lines}>
+        <div className="flex items-center justify-center pb-4 pt-1">
           <img
             src={TAQFEELAH_LOGO_SRC}
             alt=""
