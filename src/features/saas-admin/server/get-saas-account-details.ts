@@ -4,7 +4,6 @@ import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-acc
 import { getDb } from "@/core/db/client";
 import {
   attachments,
-  authIdentities,
   dailyCloseouts,
   entries,
   organizationMembers,
@@ -16,6 +15,7 @@ import {
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import type { SaasAccountDetails } from "@/features/saas-admin/types";
+import { resolveOrganizationOwnerMember } from "@/features/saas-admin/server/resolve-organization-owner-member";
 import { currentMonthRangeUtc, resolveAccountStatus } from "@/features/saas-admin/server/saas-admin-utils";
 
 const inputSchema = z.object({
@@ -53,28 +53,7 @@ export async function getSaasAccountDetails(
     .orderBy(desc(subscriptions.updatedAt))
     .limit(1);
 
-  const [owner] = await db
-    .select({
-      name: users.name,
-      username: authIdentities.username,
-    })
-    .from(organizationMembers)
-    .innerJoin(users, eq(organizationMembers.userId, users.id))
-    .leftJoin(
-      authIdentities,
-      and(
-        eq(authIdentities.userId, users.id),
-        eq(authIdentities.provider, "username_password"),
-      ),
-    )
-    .where(
-      and(
-        eq(organizationMembers.organizationId, input.organizationId),
-        eq(organizationMembers.role, "owner"),
-        eq(organizationMembers.status, "active"),
-      ),
-    )
-    .limit(1);
+  const owner = await resolveOrganizationOwnerMember(input.organizationId, db);
 
   const storeRows = await db
     .select({
@@ -89,7 +68,8 @@ export async function getSaasAccountDetails(
 
   const memberRows = await db
     .select({
-      id: users.id,
+      memberId: organizationMembers.id,
+      userId: users.id,
       name: users.name,
       role: organizationMembers.role,
       status: organizationMembers.status,
@@ -247,6 +227,7 @@ export async function getSaasAccountDetails(
     name: org.name,
     ownerName: owner?.name ?? null,
     ownerUsername: owner?.username ?? null,
+    ownerMemberId: owner?.memberId ?? null,
     status: resolveAccountStatus({
       organizationStatus: org.status,
       subscriptionStatus: subscription?.status,
@@ -266,7 +247,8 @@ export async function getSaasAccountDetails(
       createdAt: row.createdAt.toISOString(),
     })),
     users: memberRows.map((row) => ({
-      id: row.id,
+      memberId: row.memberId,
+      userId: row.userId,
       name: row.name,
       role: row.role,
       status: row.status,

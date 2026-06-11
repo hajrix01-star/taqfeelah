@@ -38,11 +38,15 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const body = await request.json();
+    const planCode = body?.planCode;
     const updated = await updateSaasAccount({
       actorUserId,
       organizationId: id.trim(),
       name: typeof body?.organizationName === "string" ? body.organizationName : undefined,
       status: body?.status === "active" || body?.status === "suspended" ? body.status : undefined,
+      planCode: planCode === "starter" || planCode === "growth" || planCode === "enterprise"
+        ? planCode
+        : undefined,
     });
 
     return ok(updated);

@@ -82,6 +82,7 @@ export type SaasAccountDetails = {
   name: string;
   ownerName: string | null;
   ownerUsername: string | null;
+  ownerMemberId: string | null;
   status: AccountStatus;
   planCode: PlanCode;
   createdAt: string;
@@ -92,7 +93,13 @@ export type SaasAccountDetails = {
   operationsCount: number;
   attachmentsCount: number;
   stores: Array<{ id: string; name: string; status: string; createdAt: string }>;
-  users: Array<{ id: string; name: string; role: string; status: string }>;
+  users: Array<{
+    memberId: string;
+    userId: string;
+    name: string;
+    role: string;
+    status: string;
+  }>;
   recentCloseouts: Array<{
     id: string;
     storeName: string;

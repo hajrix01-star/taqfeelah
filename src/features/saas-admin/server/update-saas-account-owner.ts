@@ -5,6 +5,7 @@ import { getDb } from "@/core/db/client";
 import { auditEvents, authIdentities, organizationMembers, users } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import { upsertOwnerPasswordIdentity } from "@/features/auth/server/auth-identities";
+import { resolveOrganizationOwnerMember } from "@/features/saas-admin/server/resolve-organization-owner-member";
 import { syncRuntimeOwnerProfileForOrganization } from "@/features/runtime-settings/server/sync-runtime-owner-profile";
 
 const inputSchema = z.object({
@@ -51,30 +52,22 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
   }
 
   const db = getDb();
-  const [ownerMember] = await db
-    .select({
-      memberId: organizationMembers.id,
-      userId: organizationMembers.userId,
-      name: users.name,
-    })
-    .from(organizationMembers)
-    .innerJoin(users, eq(users.id, organizationMembers.userId))
-    .where(
-      and(
-        eq(organizationMembers.organizationId, input.organizationId),
-        eq(organizationMembers.role, "owner"),
-        eq(organizationMembers.status, "active"),
-      ),
-    )
-    .limit(1);
+  const ownerMember = await resolveOrganizationOwnerMember(input.organizationId, db);
 
   if (!ownerMember?.userId) {
-    throw new ValidationError("Active owner member was not found for this organization.");
+    throw new ValidationError("Owner member was not found for this organization.");
   }
 
   const now = new Date();
 
   const result = await db.transaction(async (tx) => {
+    if (ownerMember.memberStatus !== "active") {
+      await tx
+        .update(organizationMembers)
+        .set({ status: "active", updatedAt: now })
+        .where(eq(organizationMembers.id, ownerMember.memberId));
+    }
+
     let ownerName = ownerMember.name;
     if (input.ownerName) {
       const [updatedUser] = await tx
@@ -109,6 +102,10 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
         throw new ValidationError("Owner username is required when setting credentials.");
       }
 
+      if (!identity?.id && !input.ownerPassword) {
+        throw new ValidationError("Owner password is required when creating login credentials.");
+      }
+
       await assertOwnerUsernameAvailableForUser(nextUsername, ownerMember.userId, tx);
 
       if (input.ownerPassword) {
@@ -128,8 +125,6 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
             updatedAt: now,
           })
           .where(eq(authIdentities.id, identity.id));
-      } else if (input.ownerUsername) {
-        throw new ValidationError("Owner password is required when creating login credentials.");
       }
 
       ownerUsername = nextUsername;
@@ -145,6 +140,7 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
         ownerName,
         ownerUsername: ownerUsername || null,
         passwordRotated: Boolean(input.ownerPassword),
+        reactivatedOwner: ownerMember.memberStatus !== "active",
       },
     });
 
@@ -153,7 +149,7 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
       ownerMemberId: ownerMember.memberId,
       ownerUserId: ownerMember.userId,
       ownerName,
-      ownerUsername: ownerUsername || null,
+      ownerUsername: ownerUsername || ownerMember.username,
       updatedAt: now.toISOString(),
     };
   });

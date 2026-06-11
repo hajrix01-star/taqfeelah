@@ -1,60 +1,104 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   repairSaasAccountFoundation,
   updateSaasAccount,
   updateSaasAccountOwner,
 } from "@/features/saas-admin/client/saas-admin-api-client";
+import type { PlanCode } from "@/features/saas-admin/types";
+import { mapSaasAdminApiError } from "@/features/saas-admin/client/map-saas-admin-api-error";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type EditAccountFormsProps = {
   organizationId: string;
   organizationName: string;
   organizationStatus: string;
+  planCode: PlanCode;
   ownerName: string | null;
   ownerUsername?: string | null;
   onUpdated: () => void;
 };
 
+function trimOptional(value: string): string | undefined {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function isPlanCode(value: string | null | undefined): value is "starter" | "growth" | "enterprise" {
+  return value === "starter" || value === "growth" || value === "enterprise";
+}
+
 export function EditAccountForms({
   organizationId,
   organizationName,
   organizationStatus,
+  planCode,
   ownerName,
   ownerUsername = null,
   onUpdated,
 }: EditAccountFormsProps) {
   const { t } = useSaasAdminLocale();
+
+  function formatError(error: unknown, fallback: string) {
+    if (!(error instanceof Error)) return fallback;
+    return mapSaasAdminApiError(error.message, t) || fallback;
+  }
+  const feedbackRef = useRef<HTMLDivElement>(null);
   const [accountName, setAccountName] = useState(organizationName);
   const [accountStatus, setAccountStatus] = useState(organizationStatus === "suspended" ? "suspended" : "active");
+  const [accountPlan, setAccountPlan] = useState<"starter" | "growth" | "enterprise">(
+    isPlanCode(planCode) ? planCode : "starter",
+  );
   const [editOwnerName, setEditOwnerName] = useState(ownerName || "");
   const [editOwnerUsername, setEditOwnerUsername] = useState(ownerUsername || "");
   const [editOwnerPassword, setEditOwnerPassword] = useState("");
-
-  useEffect(() => {
-    setEditOwnerUsername(ownerUsername || "");
-  }, [ownerUsername]);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [accountError, setAccountError] = useState<string | null>(null);
+  const [ownerError, setOwnerError] = useState<string | null>(null);
+  const [repairError, setRepairError] = useState<string | null>(null);
+  const [accountSuccess, setAccountSuccess] = useState<string | null>(null);
+  const [ownerSuccess, setOwnerSuccess] = useState<string | null>(null);
+  const [repairSuccess, setRepairSuccess] = useState<string | null>(null);
   const [isSavingAccount, setIsSavingAccount] = useState(false);
   const [isSavingOwner, setIsSavingOwner] = useState(false);
   const [isRepairing, setIsRepairing] = useState(false);
 
+  useEffect(() => {
+    setAccountName(organizationName);
+    setAccountStatus(organizationStatus === "suspended" ? "suspended" : "active");
+    if (isPlanCode(planCode)) {
+      setAccountPlan(planCode);
+    }
+  }, [organizationName, organizationStatus, planCode]);
+
+  useEffect(() => {
+    setEditOwnerName(ownerName || "");
+    setEditOwnerUsername(ownerUsername || "");
+  }, [ownerName, ownerUsername]);
+
+  function showFeedback() {
+    requestAnimationFrame(() => {
+      feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }
+
   async function handleAccountSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
-    setSuccess(null);
+    setAccountError(null);
+    setAccountSuccess(null);
     setIsSavingAccount(true);
     try {
       await updateSaasAccount(organizationId, {
-        organizationName: accountName,
+        organizationName: trimOptional(accountName),
         status: accountStatus as "active" | "suspended",
+        planCode: accountPlan,
       });
-      setSuccess(t.editAccount.accountSaved);
+      setAccountSuccess(t.editAccount.accountSaved);
       onUpdated();
+      showFeedback();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : t.editAccount.saveError);
+      setAccountError(formatError(submitError, t.editAccount.saveError));
+      showFeedback();
     } finally {
       setIsSavingAccount(false);
     }
@@ -62,35 +106,43 @@ export function EditAccountForms({
 
   async function handleOwnerSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
-    setSuccess(null);
+    setOwnerError(null);
+    setOwnerSuccess(null);
     setIsSavingOwner(true);
     try {
-      await updateSaasAccountOwner(organizationId, {
-        ownerName: editOwnerName || undefined,
-        ownerUsername: editOwnerUsername || undefined,
-        ownerPassword: editOwnerPassword || undefined,
-      });
-      setSuccess(t.editAccount.ownerSaved);
+      const payload = {
+        ownerName: trimOptional(editOwnerName),
+        ownerUsername: trimOptional(editOwnerUsername),
+        ownerPassword: trimOptional(editOwnerPassword),
+      };
+      if (!payload.ownerName && !payload.ownerUsername && !payload.ownerPassword) {
+        throw new Error(t.editAccount.ownerNoChanges);
+      }
+      await updateSaasAccountOwner(organizationId, payload);
+      setOwnerSuccess(t.editAccount.ownerSaved);
       setEditOwnerPassword("");
       onUpdated();
+      showFeedback();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : t.editAccount.saveError);
+      setOwnerError(formatError(submitError, t.editAccount.saveError));
+      showFeedback();
     } finally {
       setIsSavingOwner(false);
     }
   }
 
   async function handleRepair() {
-    setError(null);
-    setSuccess(null);
+    setRepairError(null);
+    setRepairSuccess(null);
     setIsRepairing(true);
     try {
       const result = await repairSaasAccountFoundation(organizationId);
-      setSuccess(result.repaired ? t.editAccount.repairDone : t.editAccount.repairSkipped);
+      setRepairSuccess(result.repaired ? t.editAccount.repairDone : t.editAccount.repairSkipped);
       onUpdated();
+      showFeedback();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : t.editAccount.repairError);
+      setRepairError(formatError(submitError, t.editAccount.repairError));
+      showFeedback();
     } finally {
       setIsRepairing(false);
     }
@@ -110,6 +162,18 @@ export function EditAccountForms({
           />
         </label>
         <label className="block space-y-1 text-sm">
+          <span className="text-[var(--admin-muted)]">{t.common.plan}</span>
+          <select
+            value={accountPlan}
+            onChange={(e) => setAccountPlan(e.target.value as typeof accountPlan)}
+            className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
+          >
+            <option value="starter">{t.plans.starter}</option>
+            <option value="growth">{t.plans.growth}</option>
+            <option value="enterprise">{t.plans.enterprise}</option>
+          </select>
+        </label>
+        <label className="block space-y-1 text-sm">
           <span className="text-[var(--admin-muted)]">{t.common.status}</span>
           <select
             value={accountStatus}
@@ -120,6 +184,8 @@ export function EditAccountForms({
             <option value="suspended">{t.status.suspended}</option>
           </select>
         </label>
+        {accountError ? <p className="text-sm text-[var(--admin-danger)]">{accountError}</p> : null}
+        {accountSuccess ? <p className="text-sm text-green-700">{accountSuccess}</p> : null}
         <button
           type="submit"
           disabled={isSavingAccount}
@@ -131,6 +197,7 @@ export function EditAccountForms({
 
       <form onSubmit={handleOwnerSubmit} className="space-y-3 rounded-xl border border-[var(--admin-border)] bg-white p-4">
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.editAccount.ownerTitle}</h3>
+        <p className="text-xs leading-6 text-[var(--admin-muted)]">{t.editAccount.ownerCredentialsHint}</p>
         <label className="block space-y-1 text-sm">
           <span className="text-[var(--admin-muted)]">{t.newAccount.ownerName}</span>
           <input
@@ -160,6 +227,8 @@ export function EditAccountForms({
             dir="ltr"
           />
         </label>
+        {ownerError ? <p className="text-sm text-[var(--admin-danger)]">{ownerError}</p> : null}
+        {ownerSuccess ? <p className="text-sm text-green-700">{ownerSuccess}</p> : null}
         <button
           type="submit"
           disabled={isSavingOwner}
@@ -172,6 +241,8 @@ export function EditAccountForms({
       <section className="rounded-xl border border-dashed border-[var(--admin-border)] bg-[#FAFBFC] p-4">
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.editAccount.repairTitle}</h3>
         <p className="mt-1 text-sm text-[var(--admin-muted)]">{t.editAccount.repairDescription}</p>
+        {repairError ? <p className="mt-2 text-sm text-[var(--admin-danger)]">{repairError}</p> : null}
+        {repairSuccess ? <p className="mt-2 text-sm text-green-700">{repairSuccess}</p> : null}
         <button
           type="button"
           disabled={isRepairing}
@@ -182,8 +253,7 @@ export function EditAccountForms({
         </button>
       </section>
 
-      {error ? <p className="text-sm text-[var(--admin-danger)]">{error}</p> : null}
-      {success ? <p className="text-sm text-green-700">{success}</p> : null}
+      <div ref={feedbackRef} />
     </div>
   );
 }
