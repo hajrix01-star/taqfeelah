@@ -4,6 +4,18 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      preflight_wait_minutes:
+        description: "Minutes to wait before SSH probe (use after fail2ban blocks)"
+        required: false
+        default: "3"
+        type: choice
+        options:
+          - "0"
+          - "3"
+          - "5"
+          - "10"
+          - "15"
 
 concurrency:
   group: production-deploy
@@ -93,6 +105,23 @@ jobs:
             exit 1
           fi
 
+      - name: Wait before SSH probe (fail2ban cooldown)
+        env:
+          DISPATCH_WAIT_MINUTES: ${{ github.event.inputs.preflight_wait_minutes || '5' }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          if [ "$RUN_ATTEMPT" -gt 1 ]; then
+            wait_seconds=$((DISPATCH_WAIT_MINUTES * 60))
+            echo "Re-run attempt ${RUN_ATTEMPT}: waiting ${wait_seconds}s for SSH ban cooldown…"
+            sleep "$wait_seconds"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$DISPATCH_WAIT_MINUTES" != "0" ]; then
+            wait_seconds=$((DISPATCH_WAIT_MINUTES * 60))
+            echo "Manual deploy: waiting ${wait_seconds}s before SSH probe…"
+            sleep "$wait_seconds"
+          else
+            echo "First push deploy: skipping preflight wait"
+          fi
+
       - name: Preflight VPS connectivity (same runner as deploy)
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -101,10 +130,10 @@ jobs:
           VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_CONNECT_TIMEOUT: "30"
-          VPS_CONNECT_RETRIES: "10"
-          VPS_RETRY_DELAY_SECONDS: "15"
-          VPS_PROBE_RETRIES: "8"
-          VPS_PROBE_RETRY_DELAY_SECONDS: "20"
+          VPS_CONNECT_RETRIES: "12"
+          VPS_RETRY_DELAY_SECONDS: "20"
+          VPS_PROBE_RETRIES: "12"
+          VPS_PROBE_RETRY_DELAY_SECONDS: "30"
         run: |
           python scripts/vps_deploy.py preflight \
             --domain taqfeelah.com \

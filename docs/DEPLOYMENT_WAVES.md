@@ -176,7 +176,7 @@
 إذا فشل **Preflight VPS connectivity** وظهر `TCP *:22 — blocked or timed out`:
 
 1. **الموقع قد يبقى شغالاً** — هذا يعني أن Nginx والتطبيق يعملان، لكن GitHub لا يستطيع الدخول عبر SSH للنشر.
-2. **جرّب أولاً:** من GitHub Actions اضغط **Re-run failed jobs** (أحياناً الحظر مؤقت).
+2. **جرّب أولاً:** من GitHub Actions → **Production Deploy** → **Run workflow** واختر `preflight_wait_minutes` = 10 أو 15 (ينتظر قبل فحص SSH). أو اضغط **Re-run failed jobs** (أحياناً الحظر مؤقت).
 3. **مرة واحدة على VPS** (root): `bash scripts/vps-harden-github-deploy.sh` — يعيد تشغيل SSH، يفتح OpenSSH في UFW، ويرفع `maxretry` في fail2ban لتقليل حظر GitHub Actions.
 4. **على VPS (Hostinger hPanel أو SSH يدوي):**
    - تأكد أن خدمة SSH تعمل: `systemctl status ssh`

@@ -1792,6 +1792,10 @@ def main() -> int:
 
     if args.action == "preflight":
         print_section("Runner → VPS connectivity probe")
+        preflight_wait = max(0.0, float(os.environ.get("VPS_PREFLIGHT_WAIT_SECONDS", "0")))
+        if preflight_wait > 0:
+            safe_print(f"Initial preflight wait {preflight_wait:.0f}s before TCP probe…")
+            time.sleep(preflight_wait)
         probe_retries = max(1, int(os.environ.get("VPS_PROBE_RETRIES", "4")))
         probe_delay = max(0.0, float(os.environ.get("VPS_PROBE_RETRY_DELAY_SECONDS", "10")))
         probe_lines: list[str] = []
