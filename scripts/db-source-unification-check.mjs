@@ -2,6 +2,9 @@
 /**
  * PR-2 §2.4 checklist — DB-only closeout path against local or remote API.
  * Usage: node scripts/db-source-unification-check.mjs
+ *
+ * On production (ALLOW_HEADER_AUTH_CONTEXT=false), logs in via session cookies
+ * before exercising closeout APIs.
  */
 import { randomUUID } from "node:crypto";
 
@@ -11,10 +14,32 @@ const storeId = process.env.CHECK_STORE_ID || "302cf87a-b3cf-43f8-bb5d-afd2ab6d8
 const employeeUserId = process.env.CHECK_EMPLOYEE_USER_ID || "4cf1450d-08d8-4ca1-b180-1c2642174a79";
 const ownerUserId = process.env.CHECK_OWNER_USER_ID || "e8f3e35b-6051-4da3-8b10-979700c2f00f";
 const salesChannelId = process.env.CHECK_SALES_CHANNEL_ID || "9bc40d4f-c773-4ba3-87db-b8bb1467dafb";
+const ownerUsername = process.env.CHECK_OWNER_USERNAME || "hajri";
+const ownerPassword = process.env.CHECK_OWNER_PASSWORD || "123";
+const employeeId = process.env.CHECK_EMPLOYEE_ID || "ahmed";
+const employeePin = process.env.CHECK_EMPLOYEE_PIN || "1234";
+
+/** @type {{ employee: string | null, owner: string | null }} */
+const sessionCookies = { employee: null, owner: null };
 
 function isoDateNow() {
   const d = new Date();
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
+
+function collectSetCookies(response) {
+  if (typeof response.headers.getSetCookie === "function") {
+    return response.headers.getSetCookie();
+  }
+  const single = response.headers.get("set-cookie");
+  return single ? [single] : [];
+}
+
+function cookieHeaderFromSetCookies(setCookies) {
+  return setCookies
+    .map((value) => value.split(";")[0]?.trim())
+    .filter(Boolean)
+    .join("; ");
 }
 
 async function callJson(url, init) {
@@ -32,7 +57,7 @@ async function callJson(url, init) {
   return data;
 }
 
-function headers(role, userId) {
+function headerAuthHeaders(role, userId) {
   return {
     "content-type": "application/json",
     "x-organization-id": organizationId,
@@ -41,10 +66,81 @@ function headers(role, userId) {
   };
 }
 
+function requestHeaders(role, userId) {
+  const cookie = role === "owner" ? sessionCookies.owner : sessionCookies.employee;
+  if (cookie) {
+    return {
+      "content-type": "application/json",
+      cookie,
+    };
+  }
+  return headerAuthHeaders(role, userId);
+}
+
+async function loginSession(role) {
+  const payload = role === "owner"
+    ? { mode: "owner_password", username: ownerUsername, password: ownerPassword }
+    : { mode: "employee_pin", employeeId, pin: employeePin };
+
+  const response = await fetch(`${baseUrl}/api/v1/auth/session`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const raw = await response.text();
+  let data = null;
+  try {
+    data = raw ? JSON.parse(raw) : null;
+  } catch {
+    data = raw;
+  }
+  if (!response.ok) {
+    throw new Error(`POST /api/v1/auth/session (${role}) → ${response.status}: ${JSON.stringify(data)}`);
+  }
+
+  const cookie = cookieHeaderFromSetCookies(collectSetCookies(response));
+  if (!cookie) {
+    throw new Error(`POST /api/v1/auth/session (${role}) succeeded but no Set-Cookie header was returned.`);
+  }
+
+  if (role === "owner") {
+    sessionCookies.owner = cookie;
+  } else {
+    sessionCookies.employee = cookie;
+  }
+}
+
+async function ensureSessionAuthIfNeeded() {
+  const probe = await fetch(`${baseUrl}/api/v1/stores/${storeId}/closeouts`, {
+    method: "GET",
+    headers: headerAuthHeaders("employee", employeeUserId),
+  });
+  const raw = await probe.text();
+  if (probe.ok) {
+    return;
+  }
+
+  let payload = null;
+  try {
+    payload = raw ? JSON.parse(raw) : null;
+  } catch {
+    payload = raw;
+  }
+
+  const message = typeof payload?.error?.message === "string" ? payload.error.message : "";
+  if (probe.status !== 400 || !message.includes("Session cookie is required")) {
+    throw new Error(`GET closeouts probe → ${probe.status}: ${raw}`);
+  }
+
+  console.log("Session auth required — logging in as employee and owner…");
+  await loginSession("employee");
+  await loginSession("owner");
+}
+
 async function submitCloseout({ closeoutId, date, amountHalalas = 30000, mode = "submit", role = "employee", userId = employeeUserId }) {
   return callJson(`${baseUrl}/api/v1/stores/${storeId}/closeouts`, {
     method: "POST",
-    headers: headers(role, userId),
+    headers: requestHeaders(role, userId),
     body: JSON.stringify({
       mode,
       closeoutId,
@@ -59,7 +155,7 @@ async function submitCloseout({ closeoutId, date, amountHalalas = 30000, mode = 
 async function listCloseouts(role, userId) {
   const payload = await callJson(`${baseUrl}/api/v1/stores/${storeId}/closeouts`, {
     method: "GET",
-    headers: headers(role, userId),
+    headers: requestHeaders(role, userId),
   });
   return Array.isArray(payload?.closeouts) ? payload.closeouts : (Array.isArray(payload) ? payload : []);
 }
@@ -80,6 +176,8 @@ async function main() {
 
   console.log(`Target: ${baseUrl}`);
   console.log(`Date: ${date}\n`);
+
+  await ensureSessionAuthIfNeeded();
 
   console.log("1) Employee submit closeout A…");
   const submitA = await submitCloseout({ closeoutId: closeoutA, date, amountHalalas: 31000 });
@@ -121,7 +219,7 @@ async function main() {
   console.log("7) Employee resubmit must be forbidden…");
   const employeeResubmit = await fetch(`${baseUrl}/api/v1/stores/${storeId}/closeouts`, {
     method: "POST",
-    headers: headers("employee", employeeUserId),
+    headers: requestHeaders("employee", employeeUserId),
     body: JSON.stringify({
       mode: "resubmit",
       closeoutId: closeoutEdit,
@@ -136,7 +234,7 @@ async function main() {
   console.log("8) Standalone entry POST without closeoutId must fail…");
   const standaloneResponse = await fetch(`${baseUrl}/api/v1/stores/${storeId}/entries`, {
     method: "POST",
-    headers: headers("owner", ownerUserId),
+    headers: requestHeaders("owner", ownerUserId),
     body: JSON.stringify({
       date,
       type: "expense",
@@ -150,7 +248,7 @@ async function main() {
 
   const orphanCheck = await fetch(`${baseUrl}/api/v1/stores/${storeId}/entries?status=active&limit=500`, {
     method: "GET",
-    headers: headers("owner", ownerUserId),
+    headers: requestHeaders("owner", ownerUserId),
   });
   if (orphanCheck.ok) {
     const payload = await orphanCheck.json();
