@@ -38,6 +38,7 @@ export default function OverviewPage() {
   const {
     kpis,
     activityTrend,
+    activityTrendSource,
     topActiveAccounts,
     inactiveAccounts,
     systemHealth,
@@ -55,17 +56,17 @@ export default function OverviewPage() {
         ) : null}
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard title={t.overview.totalAccounts} value={formatNumber(kpis.totalAccounts, locale)} />
-          <KpiCard title={t.overview.activeAccounts} value={formatNumber(kpis.activeAccounts, locale)} />
-          <KpiCard title={t.overview.storesCount} value={formatNumber(kpis.storesCount, locale)} />
-          <KpiCard title={t.overview.usersCount} value={formatNumber(kpis.usersCount, locale)} />
-          <KpiCard title={t.overview.closeoutsThisMonth} value={formatNumber(kpis.closeoutsThisMonth, locale)} />
-          <KpiCard title={t.overview.operationsThisMonth} value={formatNumber(kpis.operationsThisMonth, locale)} />
-          <KpiCard title={t.overview.attachmentsCount} value={formatNumber(kpis.attachmentsCount, locale)} />
-          <KpiCard title={t.overview.lastActivity} value={formatDateTime(kpis.lastActivityAt, locale)} />
+          <KpiCard title={t.overview.totalAccounts} value={formatNumber(kpis.totalAccounts.value, locale)} source={kpis.totalAccounts.source} />
+          <KpiCard title={t.overview.activeAccounts} value={formatNumber(kpis.activeAccounts.value, locale)} source={kpis.activeAccounts.source} />
+          <KpiCard title={t.overview.storesCount} value={formatNumber(kpis.storesCount.value, locale)} source={kpis.storesCount.source} />
+          <KpiCard title={t.overview.usersCount} value={formatNumber(kpis.usersCount.value, locale)} source={kpis.usersCount.source} />
+          <KpiCard title={t.overview.closeoutsThisMonth} value={formatNumber(kpis.closeoutsThisMonth.value, locale)} source={kpis.closeoutsThisMonth.source} />
+          <KpiCard title={t.overview.operationsThisMonth} value={formatNumber(kpis.operationsThisMonth.value, locale)} source={kpis.operationsThisMonth.source} />
+          <KpiCard title={t.overview.attachmentsCount} value={formatNumber(kpis.attachmentsCount.value, locale)} source={kpis.attachmentsCount.source} />
+          <KpiCard title={t.overview.lastActivity} value={formatDateTime(kpis.lastActivityAt.value, locale)} source={kpis.lastActivityAt.source} />
         </section>
 
-        <ChartCard title={t.overview.activity30Days} description={t.overview.activity30DaysDesc}>
+        <ChartCard title={t.overview.activity30Days} description={t.overview.activity30DaysDesc} source={activityTrendSource}>
           {activityTrend.length === 0 ? (
             <p className="text-sm text-[var(--admin-muted)]">{t.overview.noActivity}</p>
           ) : (

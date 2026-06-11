@@ -4,15 +4,22 @@ export type PlanCode = "starter" | "growth" | "enterprise" | string | null;
 
 export type MetricAvailability = "available" | "estimated" | "unavailable";
 
+export type MetricSource = "live" | "aggregated" | "estimated";
+
+export type MetricWithSource<T> = {
+  value: T;
+  source: MetricSource;
+};
+
 export type SaasOverviewKpis = {
-  totalAccounts: number;
-  activeAccounts: number;
-  storesCount: number;
-  usersCount: number;
-  closeoutsThisMonth: number;
-  operationsThisMonth: number;
-  attachmentsCount: number;
-  lastActivityAt: string | null;
+  totalAccounts: MetricWithSource<number>;
+  activeAccounts: MetricWithSource<number>;
+  storesCount: MetricWithSource<number>;
+  usersCount: MetricWithSource<number>;
+  closeoutsThisMonth: MetricWithSource<number>;
+  operationsThisMonth: MetricWithSource<number>;
+  attachmentsCount: MetricWithSource<number>;
+  lastActivityAt: MetricWithSource<string | null>;
 };
 
 export type ActivityTrendPoint = {
@@ -43,6 +50,7 @@ export type SaasEngagementMeta = {
 export type SaasOverview = {
   kpis: SaasOverviewKpis;
   activityTrend: ActivityTrendPoint[];
+  activityTrendSource: MetricSource;
   topActiveAccounts: AccountActivitySummary[];
   inactiveAccounts: AccountActivitySummary[];
   systemHealth: SystemHealthSummary;
@@ -120,8 +128,9 @@ export type SaasUsageReport = {
     operations: number;
     attachments: number;
   }>;
-  avgCloseoutsPerStore: number | null;
-  avgOperationsPerAccount: number | null;
+  monthlyTrendSource: MetricSource;
+  avgCloseoutsPerStore: MetricWithSource<number | null>;
+  avgOperationsPerAccount: MetricWithSource<number | null>;
   topActiveAccounts: AccountActivitySummary[];
   inactiveAccounts: AccountActivitySummary[];
   lastActivityByAccount: Array<{
@@ -132,22 +141,28 @@ export type SaasUsageReport = {
   }>;
 };
 
+export type InvestorMetricField<T> = {
+  value: T;
+  source: MetricSource;
+  availability: MetricAvailability;
+  label?: string;
+};
+
 export type InvestorMetrics = {
-  activeAccounts: number;
-  activeStores: number;
-  monthlyCloseouts: number;
-  monthlyOperations: number;
-  avgCloseoutsPerStore: number | null;
-  attachmentsPerCloseout: number | null;
-  estimatedMrr: { value: number | null; availability: MetricAvailability; label: string };
-  estimatedArr: { value: number | null; availability: MetricAvailability; label: string };
-  potentialMrr: { value: number | null; availability: MetricAvailability; label: string };
-  growthRate: { value: number | null; availability: MetricAvailability };
-  inactiveAccounts: number;
-  retentionProxy: { value: number | null; availability: MetricAvailability };
-  usageIntensity: { value: number | null; availability: MetricAvailability };
+  activeAccounts: InvestorMetricField<number>;
+  activeStores: InvestorMetricField<number>;
+  monthlyCloseouts: InvestorMetricField<number>;
+  monthlyOperations: InvestorMetricField<number>;
+  avgCloseoutsPerStore: InvestorMetricField<number | null>;
+  attachmentsPerCloseout: InvestorMetricField<number | null>;
+  estimatedMrr: InvestorMetricField<number | null>;
+  estimatedArr: InvestorMetricField<number | null>;
+  potentialMrr: InvestorMetricField<number | null>;
+  growthRate: InvestorMetricField<number | null>;
+  inactiveAccounts: InvestorMetricField<number>;
+  retentionProxy: InvestorMetricField<number | null>;
+  usageIntensity: InvestorMetricField<number | null>;
   currency: string;
-  disclaimer: string;
 };
 
 export type SystemHealthReport = {

@@ -47,15 +47,17 @@ export default function UsagePage() {
         <section className="grid gap-4 sm:grid-cols-2">
           <KpiCard
             title={t.usage.avgCloseoutsPerStore}
-            value={data.avgCloseoutsPerStore !== null ? formatNumber(data.avgCloseoutsPerStore, locale) : t.common.unavailable}
+            value={data.avgCloseoutsPerStore.value !== null ? formatNumber(data.avgCloseoutsPerStore.value, locale) : t.common.unavailable}
+            source={data.avgCloseoutsPerStore.source}
           />
           <KpiCard
             title={t.usage.avgOpsPerAccount}
-            value={data.avgOperationsPerAccount !== null ? formatNumber(data.avgOperationsPerAccount, locale) : t.common.unavailable}
+            value={data.avgOperationsPerAccount.value !== null ? formatNumber(data.avgOperationsPerAccount.value, locale) : t.common.unavailable}
+            source={data.avgOperationsPerAccount.source}
           />
         </section>
 
-        <ChartCard title={t.usage.monthlyGrowth} description={t.usage.monthlyGrowthDesc}>
+        <ChartCard title={t.usage.monthlyGrowth} description={t.usage.monthlyGrowthDesc} source={data.monthlyTrendSource}>
           {data.monthlyTrend.length === 0 ? (
             <p className="text-sm text-[var(--admin-muted)]">{t.usage.noMonthly}</p>
           ) : (

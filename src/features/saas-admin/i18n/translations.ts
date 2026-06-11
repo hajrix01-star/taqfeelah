@@ -15,6 +15,11 @@ export const translations = {
       investorMetrics: "مؤشرات المستثمر",
       systemHealth: "صحة النظام",
     },
+    metricSource: {
+      live: "لحظي",
+      aggregated: "مجمّع",
+      estimated: "تقديري",
+    },
     common: {
       loading: "جاري التحميل…",
       loadError: "تعذر تحميل البيانات",
@@ -179,6 +184,11 @@ export const translations = {
       usage: "Usage Reports",
       investorMetrics: "Investor Metrics",
       systemHealth: "System Health",
+    },
+    metricSource: {
+      live: "Live",
+      aggregated: "Aggregated",
+      estimated: "Estimated",
     },
     common: {
       loading: "Loading…",

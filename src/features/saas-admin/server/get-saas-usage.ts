@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, count, eq, gte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { getDb } from "@/core/db/client";
@@ -6,15 +6,16 @@ import {
   attachments,
   dailyCloseouts,
   entries,
-  organizationMembers,
-  orgEngagementSnapshots,
   organizations,
   stores,
-  users,
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import type { SaasUsageReport } from "@/features/saas-admin/types";
-import { resolveAccountStatus } from "@/features/saas-admin/server/saas-admin-utils";
+import {
+  buildEngagementAccountLists,
+  getPlatformSnapshot,
+  loadOwnerNamesByOrgId,
+} from "@/features/saas-admin/server/platform-metrics";
 
 const inputSchema = z.object({
   actorUserId: z.string().uuid(),
@@ -30,6 +31,7 @@ export async function getSaasUsage(rawInput: z.infer<typeof inputSchema>): Promi
 
   const db = getDb();
   const monthsBack = parsed.data.months;
+  const snapshot = await getPlatformSnapshot();
 
   const closeoutsByMonth = await db
     .select({
@@ -95,80 +97,21 @@ export async function getSaasUsage(rawInput: z.infer<typeof inputSchema>): Promi
     ? Number((totalOperations / Number(orgCount.total)).toFixed(2))
     : null;
 
-  const [latestSnapshot] = await db
-    .select({ snapshotDate: orgEngagementSnapshots.snapshotDate })
-    .from(orgEngagementSnapshots)
-    .orderBy(desc(orgEngagementSnapshots.snapshotDate))
-    .limit(1);
-
-  let topActiveAccounts: SaasUsageReport["topActiveAccounts"] = [];
-  let inactiveAccounts: SaasUsageReport["inactiveAccounts"] = [];
-  let lastActivityByAccount: SaasUsageReport["lastActivityByAccount"] = [];
-
-  if (latestSnapshot?.snapshotDate) {
-    const snapshotRows = await db
-      .select()
-      .from(orgEngagementSnapshots)
-      .where(eq(orgEngagementSnapshots.snapshotDate, latestSnapshot.snapshotDate))
-      .orderBy(desc(orgEngagementSnapshots.closeoutsL30))
-      .limit(200);
-
-    const orgIds = snapshotRows.map((row) => row.organizationId);
-    const ownerRows = orgIds.length
-      ? await db
-        .select({
-          organizationId: organizationMembers.organizationId,
-          ownerName: users.name,
-        })
-        .from(organizationMembers)
-        .innerJoin(users, eq(organizationMembers.userId, users.id))
-        .where(
-          and(
-            eq(organizationMembers.role, "owner"),
-            eq(organizationMembers.status, "active"),
-            inArray(organizationMembers.organizationId, orgIds),
-          ),
-        )
-      : [];
-
-    const ownerByOrg = new Map(ownerRows.map((row) => [row.organizationId, row.ownerName]));
-
-    const mapActivity = (row: (typeof snapshotRows)[number]) => ({
-      id: row.organizationId,
-      name: row.organizationName,
-      ownerName: ownerByOrg.get(row.organizationId) ?? null,
-      closeoutsThisMonth: row.closeoutsL30,
-      lastActivityAt: row.lastCoreActivityAt?.toISOString() ?? null,
-      status: resolveAccountStatus({
-        organizationStatus: row.organizationStatus,
-        subscriptionStatus: row.subscriptionStatus,
-      }),
-    });
-
-    topActiveAccounts = snapshotRows
-      .filter((row) => row.closeoutsL30 > 0)
-      .slice(0, 10)
-      .map(mapActivity);
-
-    inactiveAccounts = snapshotRows
-      .filter((row) => row.engagementSegment === "dormant" || row.engagementSegment === "churned")
-      .slice(0, 10)
-      .map(mapActivity);
-
-    lastActivityByAccount = snapshotRows.map((row) => ({
-      id: row.organizationId,
-      name: row.organizationName,
-      lastActivityAt: row.lastCoreActivityAt?.toISOString() ?? null,
-      daysSinceActivity: row.daysSinceLastCoreActivity,
-    }));
-  }
+  const orgIds = snapshot.engagement.snapshotRows.map((row) => row.organizationId);
+  const ownerByOrg = await loadOwnerNamesByOrgId(orgIds);
+  const engagementLists = buildEngagementAccountLists(
+    snapshot.engagement.snapshotRows,
+    ownerByOrg,
+    { topLimit: 10, inactiveLimit: 10 },
+  );
 
   return {
     monthlyTrend,
-    avgCloseoutsPerStore,
-    avgOperationsPerAccount,
-    topActiveAccounts,
-    inactiveAccounts,
-    lastActivityByAccount,
+    monthlyTrendSource: "live",
+    avgCloseoutsPerStore: { value: avgCloseoutsPerStore, source: "live" },
+    avgOperationsPerAccount: { value: avgOperationsPerAccount, source: "live" },
+    topActiveAccounts: engagementLists.topActiveAccounts,
+    inactiveAccounts: engagementLists.inactiveAccounts,
+    lastActivityByAccount: engagementLists.lastActivityByAccount,
   };
 }
