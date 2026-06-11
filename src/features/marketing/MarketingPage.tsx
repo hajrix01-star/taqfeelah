@@ -1,252 +1,276 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { motion } from "framer-motion";
+import { AppFontStyles } from "@/components/prototype-runtime/prototype-runtime-app-font-styles";
 import { buildSupportWhatsAppUrl } from "@/core/config/marketing-support";
 import { PWA_APP_NAME } from "@/core/config/pwa";
+import { TAQFEELAH_LOGO_SRC } from "@/lib/brand/taqfeelah-logo";
+import MarketingAppPreview from "@/features/marketing/MarketingAppPreview";
 import {
   MARKETING_FAQ,
   MARKETING_FEATURES,
   MARKETING_PLANS,
 } from "@/features/marketing/marketing-content";
+import {
+  MarketingCard,
+  MarketingCta,
+  MarketingFadeIn,
+  MarketingSectionIntro,
+  MarketingShell,
+  marketingColors,
+  marketingMutedTextClassName,
+  marketingNavLinkClassName,
+} from "@/features/marketing/marketing-ui";
 
 const APP_ENTRY_HREF = "/app";
 const contactMessage = "مرحبًا، أريد معرفة المزيد عن تقفيلة والباقات المتاحة.";
-
-function MarketingCta({
-  href,
-  children,
-  variant = "primary",
-  external = false,
-}: {
-  href: string;
-  children: ReactNode;
-  variant?: "primary" | "secondary";
-  external?: boolean;
-}) {
-  const className =
-    variant === "primary"
-      ? "inline-flex w-full items-center justify-center rounded-2xl bg-[#112A46] px-5 py-3 text-sm font-black text-white no-underline transition hover:bg-[#0d2138] sm:w-auto"
-      : "inline-flex w-full items-center justify-center rounded-2xl border border-[#D9D0C0] bg-white px-5 py-3 text-sm font-black text-[#112A46] no-underline transition hover:bg-[#F0ECE2] sm:w-auto";
-
-  if (external) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
-        {children}
-      </a>
-    );
-  }
-
-  return (
-    <Link href={href} className={className}>
-      {children}
-    </Link>
-  );
-}
 
 export default function MarketingPage() {
   const whatsappHref = buildSupportWhatsAppUrl(contactMessage);
 
   return (
-    <div className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]" dir="rtl">
-      <header className="sticky top-0 z-40 border-b border-[#ECE6DA]/90 bg-[#F8F6F0]/95 backdrop-blur-sm">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <Link href="/" className="flex items-center gap-3 no-underline">
-            <Image
-              src="/brand/taqfeelah-logo.png"
-              alt={PWA_APP_NAME}
-              width={132}
-              height={44}
-              priority
-              className="h-9 w-auto object-contain sm:h-11"
+    <MarketingShell
+      header={
+        <header className="sticky top-0 z-40 border-b border-[#ECE6DA]/90 bg-[#F8F6F0]/95 backdrop-blur-sm">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+            <Link href="/" className="flex items-center no-underline">
+              <img
+                src={TAQFEELAH_LOGO_SRC}
+                alt={PWA_APP_NAME}
+                draggable={false}
+                className="h-9 w-auto select-none object-contain sm:h-11"
+              />
+            </Link>
+            <nav className="hidden items-center gap-6 md:flex" style={{ color: marketingColors.muted }}>
+              <a href="#features" className={marketingNavLinkClassName()}>
+                الميزات
+              </a>
+              <a href="#pricing" className={marketingNavLinkClassName()}>
+                الباقات
+              </a>
+              <a href="#contact" className={marketingNavLinkClassName()}>
+                تواصل
+              </a>
+            </nav>
+            <div className="hidden sm:block">
+              <MarketingCta href={APP_ENTRY_HREF}>الدخول للتطبيق</MarketingCta>
+            </div>
+          </div>
+        </header>
+      }
+      footer={
+        <footer className="border-t border-[#ECE6DA] py-8">
+          <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 text-center text-xs font-bold sm:flex-row sm:px-6 sm:text-right" style={{ color: marketingColors.muted }}>
+            <p>
+              © {new Date().getFullYear()} {PWA_APP_NAME} — متابعة تشغيل يومية
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <Link href={APP_ENTRY_HREF} className="no-underline hover:text-[#112A46]">
+                الدخول للتطبيق
+              </Link>
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="no-underline hover:text-[#112A46]"
+              >
+                الدعم
+              </a>
+            </div>
+          </div>
+        </footer>
+      }
+      mobileCta={<MarketingCta href={APP_ENTRY_HREF}>الدخول للتطبيق</MarketingCta>}
+    >
+      <AppFontStyles />
+
+      <section className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="space-y-6"
+        >
+          <p
+            className="inline-flex rounded-full bg-white px-3 py-1 text-taq-meta font-black ring-1 ring-black/[0.05]"
+            style={{ color: marketingColors.gold }}
+          >
+            تشغيل يومي للمحلات — ليس محاسبة
+          </p>
+          <h1 className="text-3xl font-black leading-[1.15] sm:text-4xl lg:text-[2.65rem]">
+            الداخل − الخارج = الناتج
+          </h1>
+          <p className={`max-w-xl ${marketingMutedTextClassName()} sm:text-base`} style={{ color: marketingColors.soft }}>
+            {PWA_APP_NAME} يحوّل يومك في المحل إلى صورة واضحة: مبيعات، خارج، تقفيلات
+            موظفين، وتقارير — بنفس روح الدفتر المعتمدة في التطبيق.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <MarketingCta href={APP_ENTRY_HREF}>جرّب التطبيق الآن</MarketingCta>
+            <MarketingCta href="#pricing" variant="secondary">
+              عرض الباقات
+            </MarketingCta>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              { label: "واجهة دفتر", value: "مألوفة وسريعة" },
+              { label: "PWA", value: "تثبيت على الجوال" },
+              { label: "تعدد محلات", value: "منشأة واحدة" },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl bg-white px-4 py-3 text-center ring-1 ring-black/[0.045]"
+              >
+                <p className="text-taq-meta font-black" style={{ color: marketingColors.gold }}>
+                  {item.label}
+                </p>
+                <p className="mt-1 text-sm font-black">{item.value}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <MarketingAppPreview />
+      </section>
+
+      <section id="features" className="border-y border-[#ECE6DA] bg-white/70 py-14">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <MarketingFadeIn>
+            <MarketingSectionIntro
+              eyebrow="Features"
+              title="ميزات تناسب يومك في المحل"
+              description="كل ما تحتاجه لمتابعة التشغيل — بدون فواتير ضريبية أو مخزون معقّد."
             />
-          </Link>
-          <nav className="hidden items-center gap-6 text-sm font-bold text-[#5C6F84] md:flex">
-            <a href="#features" className="no-underline hover:text-[#112A46]">
-              الميزات
-            </a>
-            <a href="#pricing" className="no-underline hover:text-[#112A46]">
-              الباقات
-            </a>
-            <a href="#contact" className="no-underline hover:text-[#112A46]">
-              تواصل
-            </a>
-          </nav>
-          <MarketingCta href={APP_ENTRY_HREF}>الدخول للتطبيق</MarketingCta>
-        </div>
-      </header>
-
-      <main>
-        <section className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div className="space-y-6">
-            <p className="inline-flex rounded-full bg-[#E8F2EA] px-3 py-1 text-xs font-black text-[#2F6B4C]">
-              تشغيل يومي للمحلات — ليس محاسبة
-            </p>
-            <h1 className="text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-              الداخل − الخارج = الناتج
-            </h1>
-            <p className="max-w-xl text-base font-bold leading-7 text-[#5C6F84] sm:text-lg">
-              {PWA_APP_NAME} يساعدك على متابعة يومك التشغيلي: مبيعات، خارج، تقفيلات موظفين،
-              وتقارير واضحة — من الجوال أو الكمبيوتر.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <MarketingCta href={APP_ENTRY_HREF}>جرّب التطبيق الآن</MarketingCta>
-              <MarketingCta href="#pricing" variant="secondary">
-                عرض الباقات
-              </MarketingCta>
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-[#ECE6DA] bg-white p-6 shadow-[0_24px_60px_rgba(17,42,70,0.08)]">
-            <p className="text-sm font-black text-[#827762]">لماذا تقفيلة؟</p>
-            <ul className="mt-4 space-y-3 text-sm font-bold leading-7 text-[#112A46]">
-              <li>واجهة بسيطة شبيهة بالدفتر — بدون تعقيد ERP.</li>
-              <li>موظف يقفّل يومه؛ مالك يتابع ويعدّل.</li>
-              <li>قابل للتثبيت كتطبيق PWA على الجوال.</li>
-            </ul>
-            <div className="mt-6 rounded-2xl bg-[#F8F6F0] p-4 text-center">
-              <p className="text-xs font-black text-[#827762]">معادلة التشغيل</p>
-              <p className="mt-2 text-2xl font-black">داخل − خارج = ناتج</p>
-            </div>
-          </div>
-        </section>
-
-        <section id="features" className="border-y border-[#ECE6DA] bg-white py-14">
-          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-            <div className="mb-8 max-w-2xl">
-              <h2 className="text-2xl font-black sm:text-3xl">ميزات تناسب يومك في المحل</h2>
-              <p className="mt-3 text-sm font-bold leading-7 text-[#5C6F84] sm:text-base">
-                كل ما تحتاجه لمتابعة التشغيل — بدون فواتير ضريبية أو مخزون معقّد.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {MARKETING_FEATURES.map((feature) => (
-                <article
-                  key={feature.title}
-                  className="rounded-3xl border border-[#ECE6DA] bg-[#F8F6F0] p-5"
-                >
+          </MarketingFadeIn>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {MARKETING_FEATURES.map((feature, index) => (
+              <MarketingFadeIn key={feature.title} delay={index * 0.04}>
+                <MarketingCard className="h-full">
+                  <div
+                    className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-2xl text-sm font-black text-white"
+                    style={{ backgroundColor: marketingColors.ink }}
+                  >
+                    {index + 1}
+                  </div>
                   <h3 className="text-lg font-black">{feature.title}</h3>
-                  <p className="mt-2 text-sm font-bold leading-7 text-[#5C6F84]">
+                  <p className={`mt-2 ${marketingMutedTextClassName()}`} style={{ color: marketingColors.soft }}>
                     {feature.description}
                   </p>
-                </article>
-              ))}
-            </div>
+                </MarketingCard>
+              </MarketingFadeIn>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section id="pricing" className="py-14">
-          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-            <div className="mb-8 max-w-2xl">
-              <h2 className="text-2xl font-black sm:text-3xl">باقات مرنة للبداية والنمو</h2>
-              <p className="mt-3 text-sm font-bold leading-7 text-[#5C6F84] sm:text-base">
-                ابدأ مجانًا في مرحلة الإطلاق، ثم اختر الباقة المناسبة عند التوسع.
-              </p>
-            </div>
-            <div className="grid gap-4 lg:grid-cols-3">
-              {MARKETING_PLANS.map((plan) => (
-                <article
-                  key={plan.id}
-                  className={`flex flex-col rounded-3xl border p-6 ${
-                    plan.featured
-                      ? "border-[#112A46] bg-[#112A46] text-white shadow-[0_20px_50px_rgba(17,42,70,0.18)]"
-                      : "border-[#ECE6DA] bg-white"
-                  }`}
-                >
-                  <p className={`text-sm font-black ${plan.featured ? "text-[#D7E4F2]" : "text-[#827762]"}`}>
+      <section id="pricing" className="py-14">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <MarketingFadeIn>
+            <MarketingSectionIntro
+              eyebrow="Pricing"
+              title="باقات مرنة للبداية والنمو"
+              description="ابدأ مجانًا في مرحلة الإطلاق، ثم اختر الباقة المناسبة عند التوسع."
+            />
+          </MarketingFadeIn>
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            {MARKETING_PLANS.map((plan, index) => (
+              <MarketingFadeIn key={plan.id} delay={index * 0.05}>
+                <MarketingCard featured={plan.featured} className="flex h-full flex-col">
+                  {plan.featured ? (
+                    <p
+                      className="mb-3 inline-flex self-start rounded-full px-3 py-1 text-taq-meta font-black text-white"
+                      style={{ backgroundColor: marketingColors.gold }}
+                    >
+                      الأكثر طلبًا
+                    </p>
+                  ) : null}
+                  <p className="text-sm font-black" style={{ color: marketingColors.muted }}>
                     {plan.name}
                   </p>
                   <p className="mt-3 text-3xl font-black">{plan.priceLabel}</p>
-                  <p className={`text-xs font-bold ${plan.featured ? "text-[#D7E4F2]" : "text-[#827762]"}`}>
+                  <p className="text-taq-meta font-bold" style={{ color: marketingColors.muted }}>
                     {plan.periodLabel}
                   </p>
-                  <p className={`mt-4 text-sm font-bold leading-7 ${plan.featured ? "text-white/90" : "text-[#5C6F84]"}`}>
+                  <p className={`mt-4 ${marketingMutedTextClassName()}`} style={{ color: marketingColors.soft }}>
                     {plan.description}
                   </p>
-                  <ul className={`mt-5 space-y-2 text-sm font-bold ${plan.featured ? "text-white" : "text-[#112A46]"}`}>
+                  <ul className="mt-5 space-y-2 text-sm font-bold">
                     {plan.highlights.map((item) => (
-                      <li key={item}>• {item}</li>
+                      <li key={item} className="flex items-start gap-2">
+                        <span style={{ color: marketingColors.gold }}>•</span>
+                        <span>{item}</span>
+                      </li>
                     ))}
                   </ul>
-                  <div className="mt-6">
+                  <div className="mt-6 pt-2">
                     <MarketingCta
                       href={plan.id === "starter" ? APP_ENTRY_HREF : whatsappHref}
-                      variant={plan.featured ? "secondary" : "primary"}
+                      variant={plan.id === "starter" ? "primary" : plan.featured ? "secondary" : "primary"}
                       external={plan.id !== "starter"}
                     >
                       {plan.ctaLabel}
                     </MarketingCta>
                   </div>
-                </article>
-              ))}
-            </div>
+                </MarketingCard>
+              </MarketingFadeIn>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="border-y border-[#ECE6DA] bg-white py-14">
-          <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-2">
-            <div>
-              <h2 className="text-2xl font-black sm:text-3xl">جرّب التطبيق مباشرة</h2>
-              <p className="mt-3 text-sm font-bold leading-7 text-[#5C6F84] sm:text-base">
-                بعد التسجيل أو الدخول تنتقل إلى التطبيق التشغيلي كما هو — نفس التجربة على
-                الجوال والكمبيوتر.
-              </p>
-              <div className="mt-6">
-                <MarketingCta href={APP_ENTRY_HREF}>الدخول إلى التطبيق</MarketingCta>
-              </div>
+      <section className="border-y border-[#ECE6DA] bg-white/70 py-14">
+        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+          <MarketingFadeIn>
+            <MarketingSectionIntro
+              eyebrow="Try the app"
+              title="جرّب التطبيق مباشرة"
+              description="بعد التسجيل أو الدخول تنتقل إلى التطبيق التشغيلي — نفس التجربة على الجوال والكمبيوتر."
+            />
+            <div className="mt-6">
+              <MarketingCta href={APP_ENTRY_HREF}>الدخول إلى التطبيق</MarketingCta>
             </div>
-            <div className="space-y-4">
-              {MARKETING_FAQ.map((item) => (
-                <article key={item.question} className="rounded-3xl border border-[#ECE6DA] bg-[#F8F6F0] p-5">
+          </MarketingFadeIn>
+          <div className="space-y-4">
+            {MARKETING_FAQ.map((item, index) => (
+              <MarketingFadeIn key={item.question} delay={index * 0.05}>
+                <MarketingCard>
                   <h3 className="text-base font-black">{item.question}</h3>
-                  <p className="mt-2 text-sm font-bold leading-7 text-[#5C6F84]">{item.answer}</p>
-                </article>
-              ))}
-            </div>
+                  <p className={`mt-2 ${marketingMutedTextClassName()}`} style={{ color: marketingColors.soft }}>
+                    {item.answer}
+                  </p>
+                </MarketingCard>
+              </MarketingFadeIn>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section id="contact" className="py-14">
-          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-            <div className="rounded-[2rem] border border-[#ECE6DA] bg-white p-8 text-center sm:p-10">
-              <h2 className="text-2xl font-black sm:text-3xl">تواصل معنا</h2>
-              <p className="mx-auto mt-3 max-w-2xl text-sm font-bold leading-7 text-[#5C6F84] sm:text-base">
+      <section id="contact" className="py-14">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <MarketingFadeIn>
+            <MarketingCard className="p-8 text-center sm:p-10">
+              <p className="text-taq-meta font-black uppercase tracking-wide" style={{ color: marketingColors.gold }}>
+                Contact
+              </p>
+              <h2 className="mt-2 text-2xl font-black sm:text-3xl">تواصل معنا</h2>
+              <p
+                className={`mx-auto mt-3 max-w-2xl ${marketingMutedTextClassName()} sm:text-base`}
+                style={{ color: marketingColors.soft }}
+              >
                 لديك سؤال عن الباقات أو تفعيل منشأتك؟ راسلنا على واتساب وسنرد في أقرب وقت.
               </p>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <a
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-2xl bg-[#25D366] px-5 py-3 text-sm font-black text-white no-underline"
-                >
+                <MarketingCta href={whatsappHref} variant="whatsapp" external>
                   واتساب — تواصل معنا
-                </a>
+                </MarketingCta>
                 <MarketingCta href={APP_ENTRY_HREF} variant="secondary">
                   تسجيل / دخول
                 </MarketingCta>
               </div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer className="border-t border-[#ECE6DA] py-8">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 text-center text-xs font-bold text-[#827762] sm:flex-row sm:px-6 sm:text-right">
-          <p>© {new Date().getFullYear()} {PWA_APP_NAME} — متابعة تشغيل يومية</p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link href={APP_ENTRY_HREF} className="no-underline hover:text-[#112A46]">
-              الدخول للتطبيق
-            </Link>
-            <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="no-underline hover:text-[#112A46]">
-              الدعم
-            </a>
-          </div>
+            </MarketingCard>
+          </MarketingFadeIn>
         </div>
-      </footer>
-
-      <div className="sticky bottom-0 z-40 border-t border-[#ECE6DA] bg-[#F8F6F0]/95 p-3 backdrop-blur-sm md:hidden">
-        <MarketingCta href={APP_ENTRY_HREF}>الدخول للتطبيق</MarketingCta>
-      </div>
-    </div>
+      </section>
+    </MarketingShell>
   );
 }

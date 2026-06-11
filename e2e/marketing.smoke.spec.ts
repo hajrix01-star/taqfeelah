@@ -8,6 +8,7 @@ test.describe("marketing landing smoke", () => {
       timeout: 30_000,
     });
     await expect(page.getByRole("link", { name: "الدخول للتطبيق" }).first()).toBeVisible();
+    await expect(page.getByText("معاينة من واجهة التطبيق المعتمدة")).toBeVisible();
     await expect(page.getByRole("heading", { name: "باقات مرنة للبداية والنمو" })).toBeVisible();
   });
 });
