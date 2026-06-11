@@ -34,14 +34,8 @@ export default function OwnerNotebookNoteSharePreview({
       className={`${fluid ? "w-full" : "w-[390px]"} overflow-hidden rounded-[20px] shadow-[0_10px_32px_rgba(17,42,70,0.12)] ring-1 ring-[#112A46]/[0.06]`}
       style={{ backgroundColor: activeTheme.paper, fontFamily }}
     >
-      <div className="relative px-4 pb-3 pt-2.5" style={lines}>
-        <span
-          className={`pointer-events-none absolute bottom-0 top-0 w-[2px] ${isArabic ? "right-[17px]" : "left-[17px]"}`}
-          style={{ backgroundColor: activeTheme.margin }}
-          aria-hidden
-        />
-
-        <div className="flex h-11 items-center justify-center">
+      <div className="relative px-4 pb-3 pt-3" style={lines}>
+        <div className="flex items-center justify-center pb-4 pt-1">
           <img
             src={TAQFEELAH_LOGO_SRC}
             alt=""
@@ -62,7 +56,7 @@ export default function OwnerNotebookNoteSharePreview({
           <span className="block h-[2px] w-14 rounded-full bg-[#C28A30]" />
         </div>
 
-        <div className={`${isArabic ? "pe-7 ps-0.5" : "ps-7 pe-0.5"} min-h-[88px] pb-1`}>
+        <div className="min-h-[88px] px-0.5 pb-1">
           <p
             className={`whitespace-pre-wrap text-[14px] font-bold leading-[44px] ${
               done ? "text-[#A99D87] line-through decoration-[#A99D87]/70" : "text-[#112A46]"
