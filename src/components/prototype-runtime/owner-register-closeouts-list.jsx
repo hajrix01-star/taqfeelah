@@ -29,18 +29,18 @@ export function OwnerRegisterCloseoutsList({
 }) {
   if (loadError) {
     return (
-      <div className="mx-5 rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10">{loadErrorMessage}</div>
+      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10">{loadErrorMessage}</div>
     );
   }
 
   if (closeoutSummaries.length === 0) {
     return (
-      <div className="mx-5 rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">{text(lang, "noCloseoutsPeriod")}</div>
+      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">{text(lang, "noCloseoutsPeriod")}</div>
     );
   }
 
   return (
-    <div className="space-y-2.5 px-5">
+    <div className="space-y-2.5">
       {closeoutSummaries.map((summary) => {
         const isExpanded = expandedCloseoutKey === summary.key;
         const storeLabel = businessName(summary.store, lang, true) || businessName(summary.store, lang);

@@ -45,7 +45,7 @@ export function OwnerSettingsAccountSection({
   setSection,
 }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={text(lang, "myAccountSecurity")} onBack={() => setSection("home")} lang={lang} />
       <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
         <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "ownerFullName")}</p>
@@ -87,7 +87,7 @@ export function OwnerSettingsStoresSection({
 }) {
   const Arrow = lang === "ar" ? ChevronLeft : ChevronRight;
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "المحلات" : "Shops"} onBack={() => setSection("home")} lang={lang} />
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs font-bold text-[#716753]">{text(lang, "activeStores")}</p>
@@ -164,7 +164,7 @@ export function OwnerSettingsTeamSection({
   deleteDialogProps,
 }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "الفريق والصلاحيات" : "Team & access"} onBack={() => { cancelManagingTeam(); setSection("home"); }} lang={lang} />
       <div className="mb-3 flex items-center justify-between">
         <p className="text-taq-meta font-bold text-[#806528]">{text(lang, "employeeEntryOnly")}</p>
@@ -250,7 +250,7 @@ export function OwnerSettingsAppearanceSection({
   setSection,
 }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={text(lang, "notebookAppearance")} onBack={() => setSection("home")} lang={lang} />
       <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
         <p className="mb-2 text-taq-meta font-bold text-[#827762]">{lang === "ar" ? "اختر شكل دفتر التقفيلة والتقارير وصور المشاركة." : "Choose the notebook style for closeouts, reports, and sharing."}</p>
@@ -271,7 +271,7 @@ export function OwnerSettingsAppearanceSection({
 export function OwnerSettingsSubscriptionSection({ lang, setSection }) {
   if (APP_IN_PRODUCTION_MODE) {
     return (
-      <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+      <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
         <SettingsPageHeader title={lang === "ar" ? "الخطة والاشتراك" : "Plan & subscription"} onBack={() => setSection("home")} lang={lang} />
         <div className="rounded-3xl bg-white p-5 ring-1 ring-black/[0.045]">
           <Badge tone="warning">{lang === "ar" ? "معطّل حاليًا" : "Disabled for now"}</Badge>
@@ -281,7 +281,7 @@ export function OwnerSettingsSubscriptionSection({ lang, setSection }) {
     );
   }
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "الخطة والاشتراك" : "Plan & subscription"} onBack={() => setSection("home")} lang={lang} />
       <div className="rounded-3xl bg-white p-5 ring-1 ring-black/[0.045]">
         <Badge tone="navy">{text(lang, "currentPlan")}</Badge>
@@ -295,7 +295,7 @@ export function OwnerSettingsSubscriptionSection({ lang, setSection }) {
 
 export function OwnerSettingsSupportSection({ lang, setSection, onOpenSupport, onOpenHelp }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={text(lang, "support")} onBack={() => setSection("home")} lang={lang} />
       <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
         <SettingsLink lang={lang} icon={Smartphone} title={text(lang, "whatsappSupport")} onClick={onOpenSupport} border />
@@ -316,7 +316,7 @@ export function OwnerSettingsHomeSection({
 }) {
   const Arrow = lang === "ar" ? ChevronLeft : ChevronRight;
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <div className="mb-5">
         <p className="text-xs font-bold text-[#8B8274]">{text(lang, "ownerAccount")}</p>
         <h1 className="text-xl font-black">{text(lang, "settings")}</h1>

@@ -140,7 +140,7 @@ export function OwnerSummaryScreen({
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px] lg:max-w-none">
       <BackTitle lang={lang} title={text(lang, "dailySummary")} onBack={onBack} />
-      <div className="space-y-5 px-5">
+      <div className="space-y-5 taq-page-gutter">
         <EntryDatePicker lang={lang} value={summaryDate} onChange={setSummaryDate} />
         <div>
           <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
@@ -196,7 +196,7 @@ export function OwnerExpenseScreen({
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px] lg:max-w-none">
       <BackTitle lang={lang} title={text(lang, "addOutflow")} onBack={onBack} />
-      <div className="space-y-5 px-5">
+      <div className="space-y-5 taq-page-gutter">
         <div className="rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "ownerOutflowNotice")}</div>
         <EntryDatePicker lang={lang} value={operationDate} onChange={setOperationDate} />
         <div>

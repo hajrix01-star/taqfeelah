@@ -36,18 +36,18 @@ export function OwnerRegisterOperationsList({
 }) {
   if (loadError) {
     return (
-      <div className="mx-5 rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10">{loadErrorMessage}</div>
+      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10">{loadErrorMessage}</div>
     );
   }
 
   if (visibleEntries.length === 0) {
     return (
-      <div className="mx-5 rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">{text(lang, "noOperationsMatch")}</div>
+      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">{text(lang, "noOperationsMatch")}</div>
     );
   }
 
   return (
-    <div className="space-y-2.5 px-5">
+    <div className="space-y-2.5">
       {visibleEntries.map((entry) => {
         const store = businessesList.find((business) => business.id === entry.businessId);
         const isSale = entry.type === "summary";

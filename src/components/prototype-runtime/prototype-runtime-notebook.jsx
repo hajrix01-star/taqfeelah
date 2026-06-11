@@ -33,7 +33,7 @@ function Notebook({ children, theme = "yellow", lang = "ar", fullPage = false })
   return (
     <div
       dir={isArabic ? "rtl" : "ltr"}
-      className={`relative overflow-hidden px-5 pb-0 pt-0 ${fullPage ? "" : `rounded-[28px] ${activeTheme.ring ? "ring-1 ring-[#DED8CB]" : ""}`}`}
+      className={`relative overflow-hidden pb-0 pt-0 ${fullPage ? "" : "px-5"} ${fullPage ? "" : `rounded-[28px] ${activeTheme.ring ? "ring-1 ring-[#DED8CB]" : ""}`}`}
       style={{
         backgroundColor: fullPage ? "transparent" : activeTheme.paper,
         boxShadow: fullPage ? "none" : activeTheme.shadow,

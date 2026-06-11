@@ -107,7 +107,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
   const canUsePassword = isOwnerLoginMethodEnabled("username_password");
   const showAuthMethodTabs = canUsePhoneOtp && canUsePassword;
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-[800px] flex-col px-6 pb-8 pt-10">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter flex min-h-[800px] flex-col pb-8 pt-10">
       <div className="flex justify-end"><LanguageSwitch lang={lang} setLang={setLang} /></div>
       <div className="mt-16 flex justify-center"><Logo lang={lang} /></div>
       <div className="mt-10 text-center">
@@ -281,7 +281,7 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
     if (!APP_IN_PRODUCTION_MODE) onLogin(person?.id || employeeIdentifier, "", person || null);
   };
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-[800px] flex-col px-6 pb-8 pt-10">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter flex min-h-[800px] flex-col pb-8 pt-10">
       <div className="flex justify-end"><LanguageSwitch lang={lang} setLang={setLang} /></div>
       <div className="mt-16 flex justify-center"><Logo lang={lang} /></div>
       <div className="mt-10 text-center">
