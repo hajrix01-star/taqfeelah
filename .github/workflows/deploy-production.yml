@@ -8,7 +8,7 @@ on:
       preflight_wait_minutes:
         description: "Minutes to wait before SSH probe (use after fail2ban blocks)"
         required: false
-        default: "3"
+        default: "10"
         type: choice
         options:
           - "0"
@@ -105,13 +105,29 @@ jobs:
             exit 1
           fi
 
+      - name: Public site probe (diagnostic)
+        run: |
+          set -euo pipefail
+          for url in https://taqfeelah.com https://www.taqfeelah.com; do
+            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "$url" || echo "000")"
+            echo "$url → HTTP $code"
+          done
+          echo "If HTTPS is 200 but SSH preflight fails, fail2ban/firewall is blocking GitHub runners."
+          echo "On VPS (root): bash scripts/vps-unban-ci-ssh.sh"
+
       - name: Wait before SSH probe (fail2ban cooldown)
         env:
-          DISPATCH_WAIT_MINUTES: ${{ github.event.inputs.preflight_wait_minutes || '3' }}
+          DISPATCH_WAIT_MINUTES: ${{ github.event.inputs.preflight_wait_minutes || '10' }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
+          set -euo pipefail
+          min_wait=0
           if [ "$RUN_ATTEMPT" -gt 1 ]; then
+            min_wait=600
             wait_seconds=$((DISPATCH_WAIT_MINUTES * 60))
+            if [ "$wait_seconds" -lt "$min_wait" ]; then
+              wait_seconds="$min_wait"
+            fi
             echo "Re-run attempt ${RUN_ATTEMPT}: waiting ${wait_seconds}s for SSH ban cooldown…"
             sleep "$wait_seconds"
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$DISPATCH_WAIT_MINUTES" != "0" ]; then
@@ -119,8 +135,8 @@ jobs:
             echo "Manual deploy: waiting ${wait_seconds}s before SSH probe…"
             sleep "$wait_seconds"
           else
-            echo "Push deploy: short 45s cooldown so a prior SSH session can finish (avoid stacking probes)…"
-            sleep 45
+            echo "Push deploy: waiting 90s so prior SSH sessions can finish and fail2ban can cool down…"
+            sleep 90
           fi
 
       - name: Preflight VPS connectivity (same runner as deploy)
