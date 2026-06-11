@@ -11,7 +11,7 @@ test.describe("SaaS admin mobile shell", () => {
     const response = await page.goto(`${SAAS_ADMIN_BASE}/login`, { waitUntil: "domcontentloaded" });
     expect(response?.status(), "login page should respond").toBeLessThan(500);
 
-    await expect(page.getByRole("heading", { name: "دخول لوحة SaaS" })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "دخول لوحة إدارة المنصة" })).toBeVisible({
       timeout: 30_000,
     });
 

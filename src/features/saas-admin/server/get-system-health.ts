@@ -68,7 +68,7 @@ export async function getSystemHealth(
   return {
     api: {
       status: "healthy",
-      message: "واجهة API تعمل.",
+      message: "الواجهة البرمجية تعمل.",
     },
     database: {
       status: databaseStatus,

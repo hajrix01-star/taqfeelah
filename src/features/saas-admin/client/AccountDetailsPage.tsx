@@ -16,6 +16,13 @@ import { AdminChartFrame } from "@/features/saas-admin/components/AdminChartFram
 import { AdminTable, AdminTableCell } from "@/features/saas-admin/components/AdminTable";
 import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import {
+  formatCloseoutStatus,
+  formatEntityStatus,
+  formatMemberRole,
+  formatOperationType,
+  formatPlanCode,
+} from "@/features/saas-admin/components/admin-display-labels";
+import {
   formatBytes,
   formatDateTime,
   formatNumber,
@@ -80,7 +87,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             {t.common.plan}
             :
             {" "}
-            {data.planCode || "—"}
+            {formatPlanCode(data.planCode, t)}
           </span>
           <span className="text-sm text-[var(--admin-muted)]">
             {t.common.owner}
@@ -115,7 +122,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
               {data.stores.map((row) => (
                 <tr key={row.id}>
                   <AdminTableCell col={0} className="font-semibold">{row.name}</AdminTableCell>
-                  <AdminTableCell col={1}>{row.status}</AdminTableCell>
+                  <AdminTableCell col={1}>{formatEntityStatus(row.status, t)}</AdminTableCell>
                   <AdminTableCell col={2} className="text-[var(--admin-muted)]">{formatDateTime(row.createdAt, locale)}</AdminTableCell>
                 </tr>
               ))}
@@ -133,8 +140,8 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
               {data.users.map((row) => (
                 <tr key={row.id}>
                   <AdminTableCell col={0} className="font-semibold">{row.name}</AdminTableCell>
-                  <AdminTableCell col={1}>{row.role}</AdminTableCell>
-                  <AdminTableCell col={2}>{row.status}</AdminTableCell>
+                  <AdminTableCell col={1}>{formatMemberRole(row.role, t)}</AdminTableCell>
+                  <AdminTableCell col={2}>{formatEntityStatus(row.status, t)}</AdminTableCell>
                 </tr>
               ))}
             </AdminTable>
@@ -149,7 +156,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
                 <tr key={row.id}>
                   <AdminTableCell col={0}>{row.storeName}</AdminTableCell>
                   <AdminTableCell col={1}>{row.date}</AdminTableCell>
-                  <AdminTableCell col={2}>{row.status}</AdminTableCell>
+                  <AdminTableCell col={2}>{formatCloseoutStatus(row.status, t)}</AdminTableCell>
                 </tr>
               ))}
             </AdminTable>
@@ -161,7 +168,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
               {data.recentOperations.map((row) => (
                 <tr key={row.id}>
                   <AdminTableCell col={0}>{row.storeName}</AdminTableCell>
-                  <AdminTableCell col={1}>{row.type}</AdminTableCell>
+                  <AdminTableCell col={1}>{formatOperationType(row.type, t)}</AdminTableCell>
                   <AdminTableCell col={2}>{row.date}</AdminTableCell>
                 </tr>
               ))}

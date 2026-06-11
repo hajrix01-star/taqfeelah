@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
 import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
 import { AdminTable, AdminTableCell } from "@/features/saas-admin/components/AdminTable";
+import { formatPlanCode } from "@/features/saas-admin/components/admin-display-labels";
 import { formatDateTime, formatNumber } from "@/features/saas-admin/components/format-utils";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
 import { StatusBadge } from "@/features/saas-admin/components/StatusBadge";
@@ -57,9 +58,9 @@ function AccountFilters({
         className="admin-filter-field rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm"
       >
         <option value="">{t.common.allPlans}</option>
-        <option value="starter">Starter</option>
-        <option value="growth">Growth</option>
-        <option value="enterprise">Enterprise</option>
+        <option value="starter">{t.plans.starter}</option>
+        <option value="growth">{t.plans.growth}</option>
+        <option value="enterprise">{t.plans.enterprise}</option>
       </select>
     </>
   );
@@ -167,7 +168,7 @@ export default function AccountsPage() {
                   <AdminTableCell col={3}>{formatNumber(row.usersCount, locale)}</AdminTableCell>
                   <AdminTableCell col={4}>{formatNumber(row.closeoutsThisMonth, locale)}</AdminTableCell>
                   <AdminTableCell col={5} className="text-[var(--admin-muted)]">{formatDateTime(row.lastActivityAt, locale)}</AdminTableCell>
-                  <AdminTableCell col={6}>{row.planCode || "—"}</AdminTableCell>
+                  <AdminTableCell col={6}>{formatPlanCode(row.planCode, t)}</AdminTableCell>
                   <AdminTableCell col={7}><StatusBadge status={row.status} /></AdminTableCell>
                 </tr>
               ))}
