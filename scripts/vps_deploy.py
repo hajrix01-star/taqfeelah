@@ -1130,14 +1130,6 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"-H 'content-type: application/json' "
                 f"-d {shlex.quote(auth_bad_payload)}"
             ),
-            (
-                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave6-auth-employee.json "
-                f"-w '%{{http_code}}' -c {shlex.quote(VERIFY_COOKIE_JAR)} "
-                f"-b {shlex.quote(VERIFY_COOKIE_JAR)} "
-                f"-X POST https://{shlex.quote(domain)}/api/v1/auth/session "
-                f"-H 'content-type: application/json' "
-                f"-d {shlex.quote(auth_employee_payload)}"
-            ),
         ] if auth_verify else []),
         (
             f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave1-entries.json "
@@ -1236,6 +1228,16 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 ),
             ] if auth_verify else []),
         ] if saas_verify else []),
+        *([
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave6-auth-employee.json "
+                f"-w '%{{http_code}}' -c {shlex.quote(VERIFY_COOKIE_JAR)} "
+                f"-b {shlex.quote(VERIFY_COOKIE_JAR)} "
+                f"-X POST https://{shlex.quote(domain)}/api/v1/auth/session "
+                f"-H 'content-type: application/json' "
+                f"-d {shlex.quote(auth_employee_payload)}"
+            ),
+        ] if auth_verify else []),
         f"curl -I --max-time 15 https://{shlex.quote(www_domain)} || true",
         "curl -I --max-time 15 https://hajrix.com || true",
         "curl -I --max-time 15 https://arz-lounge.com || true",
