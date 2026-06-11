@@ -18,16 +18,36 @@ import { upsertOwnerPasswordIdentity } from "@/features/auth/server/auth-identit
 const PLAN_CODES = ["starter", "growth", "enterprise"] as const;
 const TRIAL_DAYS = 14;
 
+function optionalNonEmptyString(max: number) {
+  return z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().min(1).max(max).optional(),
+  );
+}
+
 const inputSchema = z.object({
   actorUserId: z.string().uuid(),
-  organizationName: z.string().trim().min(1).max(120),
-  ownerName: z.string().trim().min(1).max(120),
-  ownerUsername: z.string().trim().min(1).max(120),
-  ownerPassword: z.string().trim().min(4).max(120),
-  storeName: z.string().trim().min(1).max(120).optional(),
-  storeLocation: z.string().trim().max(240).optional(),
+  organizationName: z.string().trim().min(1, "Organization name is required.").max(120),
+  ownerName: z.string().trim().min(1, "Owner name is required.").max(120),
+  ownerUsername: z.string().trim().min(1, "Username is required.").max(120),
+  ownerPassword: z
+    .string()
+    .trim()
+    .min(4, "Password must be at least 4 characters.")
+    .max(120),
+  storeName: optionalNonEmptyString(120),
+  storeLocation: optionalNonEmptyString(240),
   planCode: z.enum(PLAN_CODES).default("starter"),
 });
+
+function formatCreateSaasAccountValidationMessage(error: z.ZodError): string {
+  const fieldErrors = error.flatten().fieldErrors as Record<string, string[] | undefined>;
+  for (const items of Object.values(fieldErrors)) {
+    const message = items?.find((value) => value.trim());
+    if (message) return message;
+  }
+  return "Invalid SaaS account create input.";
+}
 
 export type CreateSaasAccountInput = z.infer<typeof inputSchema>;
 
@@ -66,7 +86,10 @@ async function assertOwnerUsernameAvailable(username: string, executor: Pick<Ret
 export async function createSaasAccount(rawInput: CreateSaasAccountInput): Promise<CreateSaasAccountResult> {
   const parsed = inputSchema.safeParse(rawInput);
   if (!parsed.success) {
-    throw new ValidationError("Invalid SaaS account create input.", parsed.error.flatten());
+    throw new ValidationError(
+      formatCreateSaasAccountValidationMessage(parsed.error),
+      parsed.error.flatten(),
+    );
   }
   const input = parsed.data;
 

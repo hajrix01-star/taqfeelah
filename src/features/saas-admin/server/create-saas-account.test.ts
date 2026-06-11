@@ -33,4 +33,21 @@ describe("createSaasAccount", () => {
       }),
     ).rejects.toBeInstanceOf(ValidationError);
   });
+
+  it("returns a clear message for short passwords", async () => {
+    const { createSaasAccount } = await import("@/features/saas-admin/server/create-saas-account");
+
+    await expect(
+      createSaasAccount({
+        actorUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
+        organizationName: "Acme",
+        ownerName: "Owner",
+        ownerUsername: "acme",
+        ownerPassword: "123",
+        planCode: "starter",
+      }),
+    ).rejects.toMatchObject({
+      message: "Password must be at least 4 characters.",
+    });
+  });
 });

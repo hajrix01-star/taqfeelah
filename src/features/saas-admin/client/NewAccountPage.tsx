@@ -109,6 +109,7 @@ export default function NewAccountPage() {
               <span className="text-[var(--admin-muted)]">{t.newAccount.ownerPassword}</span>
               <input
                 required
+                minLength={4}
                 type="password"
                 autoComplete="new-password"
                 value={ownerPassword}
@@ -116,6 +117,7 @@ export default function NewAccountPage() {
                 className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
                 dir="ltr"
               />
+              <span className="text-xs text-[var(--admin-muted)]">{t.newAccount.ownerPasswordHint}</span>
             </label>
           </section>
 

@@ -6,6 +6,16 @@ import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-adm
 
 export const dynamic = "force-dynamic";
 
+function readRequiredString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function readOptionalString(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed || undefined;
+}
+
 export async function GET(request: Request) {
   try {
     const { actorUserId } = assertSaasAdminRouteReady(request);
@@ -41,12 +51,12 @@ export async function POST(request: Request) {
     const planCode = body?.planCode;
     const created = await createSaasAccount({
       actorUserId,
-      organizationName: typeof body?.organizationName === "string" ? body.organizationName : "",
-      ownerName: typeof body?.ownerName === "string" ? body.ownerName : "",
-      ownerUsername: typeof body?.ownerUsername === "string" ? body.ownerUsername : "",
+      organizationName: readRequiredString(body?.organizationName),
+      ownerName: readRequiredString(body?.ownerName),
+      ownerUsername: readRequiredString(body?.ownerUsername),
       ownerPassword: typeof body?.ownerPassword === "string" ? body.ownerPassword : "",
-      storeName: typeof body?.storeName === "string" ? body.storeName : undefined,
-      storeLocation: typeof body?.storeLocation === "string" ? body.storeLocation : undefined,
+      storeName: readOptionalString(body?.storeName),
+      storeLocation: readOptionalString(body?.storeLocation),
       planCode:
         planCode === "starter" || planCode === "growth" || planCode === "enterprise"
           ? planCode
