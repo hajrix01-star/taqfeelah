@@ -5,6 +5,8 @@ type SaasAdminMiddlewareEnv = {
   SAAS_ADMIN_API_ENABLED?: string;
   NEXT_PUBLIC_SAAS_ADMIN_ENABLED?: string;
   SAAS_PLATFORM_ADMIN_USER_IDS?: string;
+  AUTH_OWNER_USER_ID?: string;
+  NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID?: string;
   AUTH_SESSION_COOKIE_NAME?: string;
   AUTH_SESSION_SECRET?: string;
 };
@@ -22,10 +24,19 @@ function parsePlatformAdminUserIds(rawValue: string | undefined): Set<string> {
   );
 }
 
-function isPlatformAdminUser(actorUserId: string, env: SaasAdminMiddlewareEnv): boolean {
+function isPlatformAdminUser(
+  actorUserId: string,
+  role: string | undefined,
+  env: SaasAdminMiddlewareEnv,
+): boolean {
   const allowedUserIds = parsePlatformAdminUserIds(env.SAAS_PLATFORM_ADMIN_USER_IDS);
-  if (!allowedUserIds.size) return false;
-  return allowedUserIds.has(actorUserId.toLowerCase());
+  for (const candidate of [env.AUTH_OWNER_USER_ID, env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID]) {
+    if (candidate && UUID_RE.test(candidate)) {
+      allowedUserIds.add(candidate.toLowerCase());
+    }
+  }
+  if (allowedUserIds.has(actorUserId.toLowerCase())) return true;
+  return role === "owner";
 }
 
 function jsonError(status: number, code: string, message: string) {
@@ -72,10 +83,7 @@ export async function handleSaasAdminMiddleware(
     return jsonError(401, "UNAUTHORIZED", "Unauthorized");
   }
 
-  if (!isPlatformAdminUser(session.userId, env)) {
-    if (!parsePlatformAdminUserIds(env.SAAS_PLATFORM_ADMIN_USER_IDS).size) {
-      return jsonError(403, "FORBIDDEN", "Platform admin access is not configured.");
-    }
+  if (!isPlatformAdminUser(session.userId, session.role, env)) {
     return jsonError(403, "FORBIDDEN", "User is not authorized for platform admin operations.");
   }
 

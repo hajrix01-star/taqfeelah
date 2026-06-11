@@ -47,12 +47,12 @@ describe("handleSaasAdminMiddleware", () => {
     expect(response?.status).toBe(401);
   });
 
-  it("returns 403 when session user is not on platform admin allowlist", async () => {
+  it("returns 403 when session user is not owner and not on platform admin allowlist", async () => {
     const cookie = createSignedAuthSessionCookieValue(
       {
         organizationId: "22222222-2222-4222-8222-222222222222",
         userId: "33333333-3333-4333-8333-333333333333",
-        role: "owner",
+        role: "employee",
       },
       secret,
     );

@@ -62,6 +62,13 @@ export function createPrototypeRuntimeAuthHandlers({
         setOwnerPage,
       },
     });
+
+    if (typeof window !== "undefined") {
+      const nextPath = new URLSearchParams(window.location.search).get("next");
+      if (nextPath && nextPath.startsWith("/saas-admin")) {
+        window.location.assign(nextPath);
+      }
+    }
   };
 
   const completeEmployeeLogin = (personId, apiUserId = "", rosterPerson = null, organizationId = "") => {

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { isPlatformAdminUser } from "@/core/auth/assert-platform-admin-access";
 import { isSaasAdminClientEnabled } from "@/core/config/saas-admin-api-mode";
 import { resolveServerAuthSession } from "@/features/auth/server/resolve-server-auth-session";
@@ -6,7 +7,6 @@ import { AdminShell } from "@/features/saas-admin/components/AdminShell";
 import {
   SaasAdminDisabledScreen,
   SaasAdminUnauthorizedScreen,
-  SaasAdminUnauthenticatedScreen,
 } from "@/features/saas-admin/components/SaasAdminGuardScreens";
 import { getSaasAdminLocaleFromCookies } from "@/features/saas-admin/i18n/locale-server";
 
@@ -19,10 +19,10 @@ export default async function SaasAdminLayout({ children }: { children: ReactNod
 
   const session = await resolveServerAuthSession();
   if (!session?.userId) {
-    return <SaasAdminUnauthenticatedScreen initialLocale={initialLocale} />;
+    redirect(`/app?next=${encodeURIComponent("/saas-admin/overview")}`);
   }
 
-  if (!isPlatformAdminUser(session.userId)) {
+  if (!isPlatformAdminUser(session.userId, session.role)) {
     return <SaasAdminUnauthorizedScreen initialLocale={initialLocale} />;
   }
 

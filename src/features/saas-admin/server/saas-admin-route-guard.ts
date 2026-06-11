@@ -1,3 +1,4 @@
+import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { isSaasAdminApiEnabled } from "@/core/config/saas-admin-api-mode";
 import { readEnv } from "@/core/config/env";
 import { resolveRequestContext } from "@/core/auth/request-context";
@@ -14,5 +15,10 @@ export function assertSaasAdminRouteReady(request: Request) {
   }
 
   const requestContext = resolveRequestContext(request, { requireUser: true });
-  return { actorUserId: requestContext.userId! };
+  const actorUserId = requestContext.userId!;
+  assertPlatformAdminAccess({
+    actorUserId,
+    role: requestContext.role ?? undefined,
+  });
+  return { actorUserId };
 }
