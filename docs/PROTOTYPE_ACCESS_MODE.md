@@ -155,7 +155,8 @@ When flags remain at default values:
 When flags remain at default values:
 
 - `/saas-admin` route exists but shows disabled shell unless `NEXT_PUBLIC_SAAS_ADMIN_ENABLED=true`
-- `GET /api/v1/saas-admin/kpis/overview` and `/organizations` return 503 unless `SAAS_ADMIN_API_ENABLED=true`
+- `GET /api/v1/saas-admin/overview` (and other `/api/v1/saas-admin/*` routes) return 503 unless `SAAS_ADMIN_API_ENABLED=true`
+- `middleware.ts` blocks SaaS admin API calls without a valid platform-admin session when the API flag is on
 - `recordUsageEvent()` is a no-op unless `USAGE_TRACKING_ENABLED=true`
 - Platform admin access uses `SAAS_PLATFORM_ADMIN_USER_IDS` allowlist
 - See `docs/PHASE_11_SAAS_ADMIN.md`

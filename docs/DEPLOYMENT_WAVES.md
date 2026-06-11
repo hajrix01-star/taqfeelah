@@ -144,17 +144,38 @@
 
 ---
 
-### الموجة 7 — SaaS (مؤسّسة — غير مفعّلة)
+### الموجة 7 — SaaS Admin (منشور — الأعلام مغلقة افتراضيًا)
 
-**الحالة:** البنية جاهزة — أعلام SaaS تبقى `false` حتى قرار المنتج.
+**الحالة:** لوحة `/saas-admin` وواجهات API منشورة على `main`؛ أعلام SaaS تبقى `false` حتى التفعيل اليدوي على VPS.
 
 **المراحل التقنية:** 11
 
-**تحقق تلقائي (عند wave ≥ 7):** `GET /api/v1/saas-admin/kpis/overview` → 503 (مغلق)، `GET /saas-admin` → 200.
+| العلم | عند التفعيل |
+|-------|-------------|
+| `SAAS_PLATFORM_ADMIN_USER_IDS` | UUID مالك المنصة (مطلوب قبل أي وصول) |
+| `SAAS_ADMIN_API_ENABLED=true` | تفعيل `/api/v1/saas-admin/*` |
+| `NEXT_PUBLIC_SAAS_ADMIN_ENABLED=true` | إظهار لوحة `/saas-admin` |
+| `USAGE_TRACKING_ENABLED=true` | (اختياري) تتبع الاستخدام + snapshots |
 
-**قبل تفعيل SaaS:** `pnpm db:seed:saas` + `SAAS_PLATFORM_ADMIN_USER_IDS`.
+**تحقق تلقائي (عند wave ≥ 7):** `GET /api/v1/saas-admin/overview` → 503 (مغلق)، `GET /saas-admin` → 200 (شاشة «غير مفعّلة»).
 
-راجع `docs/PHASE_11_SAAS_ADMIN.md`.
+**تفعيل اللايف (بعد النشر):**
+
+```bash
+cd /opt/taqfeelah && set -a && . ./.env.production && set +a
+# عدّل .env.production:
+# SAAS_PLATFORM_ADMIN_USER_IDS=<uuid>
+# SAAS_ADMIN_API_ENABLED=true
+# NEXT_PUBLIC_SAAS_ADMIN_ENABLED=true
+pm2 restart taqfeelah   # أو انتظر نشرًا كاملاً يعيد البناء
+pnpm saas:aggregate    # اختياري — لملء engagement snapshots
+```
+
+ثم: تسجيل دخول كمالك مسموح → [https://taqfeelah.com/saas-admin](https://taqfeelah.com/saas-admin)
+
+**قبل التفعيل:** `pnpm db:seed:saas` (إن لزم) + تحديد `SAAS_PLATFORM_ADMIN_USER_IDS`.
+
+راجع `docs/PHASE_11_SAAS_ADMIN.md` و`docs/API_CONTRACT.md`.
 
 ---
 
