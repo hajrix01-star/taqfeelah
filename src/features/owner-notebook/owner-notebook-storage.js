@@ -4,6 +4,12 @@ import { isValidNotebookTheme, notebookThemes } from "@/features/daily-closeouts
 
 export const OWNER_NOTEBOOK_STORAGE_KEY = "taqfeelah_owner_notebook_v1";
 
+export function buildOwnerNotebookStorageKey(organizationId = "", userId = "") {
+  const org = typeof organizationId === "string" && organizationId.trim() ? organizationId.trim() : "default-org";
+  const user = typeof userId === "string" && userId.trim() ? userId.trim() : "default-user";
+  return `${OWNER_NOTEBOOK_STORAGE_KEY}:${org}:${user}`;
+}
+
 export const OWNER_NOTEBOOK_COLOR_IDS = Object.keys(notebookThemes);
 
 const DEFAULT_COLOR = "yellow";
@@ -38,18 +44,19 @@ export function sortOwnerNotebookNotes(notes = []) {
   ));
 }
 
-export function readOwnerNotebookNotes() {
+export function readOwnerNotebookNotes({ organizationId = "", userId = "" } = {}) {
   if (!storageAllowed() || typeof window === "undefined") return [];
-  const stored = readLocalStorageJson(OWNER_NOTEBOOK_STORAGE_KEY, [], { scope: "ui-preferences" });
+  const storageKey = buildOwnerNotebookStorageKey(organizationId, userId);
+  const stored = readLocalStorageJson(storageKey, [], { scope: "ui-preferences" });
   if (!Array.isArray(stored)) return [];
   return sortOwnerNotebookNotes(stored.map(normalizeNote).filter(Boolean));
 }
 
-export function writeOwnerNotebookNotes(notes) {
+export function writeOwnerNotebookNotes(notes, { organizationId = "", userId = "" } = {}) {
   if (!storageAllowed() || typeof window === "undefined") return { ok: false, error: "disabled" };
   const normalized = sortOwnerNotebookNotes(notes.map(normalizeNote).filter(Boolean));
   return safeSetLocalStorageItem(
-    OWNER_NOTEBOOK_STORAGE_KEY,
+    buildOwnerNotebookStorageKey(organizationId, userId),
     JSON.stringify(normalized),
     { scope: "ui-preferences" },
   );

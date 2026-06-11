@@ -17,7 +17,13 @@ import {
   OWNER_NOTEBOOK_VIEW_TABS,
 } from "./owner-notebook-ui-primitives";
 
-export function OwnerNotebookScreen({ lang, notebookTheme = "yellow" }) {
+export function OwnerNotebookScreen({
+  lang,
+  notebookTheme = "yellow",
+  organizationId = "",
+  userId = "",
+  apiEnabled = false,
+}) {
   const {
     hydrated,
     notes,
@@ -30,7 +36,7 @@ export function OwnerNotebookScreen({ lang, notebookTheme = "yellow" }) {
     saveNote,
     removeNote,
     toggleDone,
-  } = useOwnerNotebookNotes();
+  } = useOwnerNotebookNotes({ organizationId, userId, apiEnabled });
 
   const [composerOpen, setComposerOpen] = useState(false);
   const [shareNote, setShareNote] = useState(null);

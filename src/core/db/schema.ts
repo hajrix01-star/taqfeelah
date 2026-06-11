@@ -492,3 +492,33 @@ export const orgEngagementSnapshots = pgTable(
     ),
   }),
 );
+
+export const ownerNotebookNotes = pgTable(
+  "owner_notebook_notes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    text: text("text").notNull(),
+    kind: text("kind").notNull(),
+    done: boolean("done").notNull().default(false),
+    color: text("color").notNull().default("yellow"),
+    createdAt,
+    updatedAt,
+  },
+  (table) => ({
+    orgUserIdx: index("owner_notebook_notes_org_user_idx").on(
+      table.organizationId,
+      table.userId,
+    ),
+    orgUserUpdatedIdx: index("owner_notebook_notes_org_user_updated_idx").on(
+      table.organizationId,
+      table.userId,
+      table.updatedAt,
+    ),
+  }),
+);

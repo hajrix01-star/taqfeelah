@@ -5,6 +5,7 @@ import { storeAttachmentPayload } from "@/features/attachments/client/prototype-
 import { readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import { applyNotebookThemeCssVariables } from "@/features/daily-closeouts/notebook-themes";
 import { readEmployeeNotebookTheme } from "@/features/employee-closeouts/employee-theme-storage";
+import { isUuid } from "@/core/client/api-id-utils";
 import { resolveRuntimeApiActorContext, usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
 import { useEmployeeEntryActions } from "@/features/employee-shell/client/use-employee-entry-actions";
 import { useEmployeePortalState } from "@/features/employee-shell/client/use-employee-portal-state";
@@ -546,6 +547,13 @@ export function usePrototypeRuntimeAppState() {
     ownerCloseoutChannelConfig: ownerCloseout.ownerCloseoutChannelConfig,
   });
 
+  const ownerNotebookApiEnabled = useMemo(
+    () => BINDS_TO_SERVER_AUTH
+      && isUuid(closeoutsApiOrganizationId)
+      && isUuid(ownerApiUserId),
+    [closeoutsApiOrganizationId, ownerApiUserId],
+  );
+
   const apiBundle = usePrototypeRuntimeRuntimeApiBundle({
     closeoutsApiDbSource: CLOSEOUTS_API_DB_SOURCE,
     closeoutsApiEnabled,
@@ -612,6 +620,7 @@ export function usePrototypeRuntimeAppState() {
     closeoutsApiStrictMode,
     closeoutsApiOrganizationId,
     ownerApiUserId,
+    ownerNotebookApiEnabled,
     reportingBusinesses,
     archivedBusinessIds,
     notebookTheme,
