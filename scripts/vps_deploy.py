@@ -657,6 +657,12 @@ def resolve_production_env(existing_remote_env: dict[str, str] | None = None) ->
     merged = apply_deployment_wave_overrides(merged, existing_remote_env)
     merged = resolve_saas_platform_admin_ids(merged)
 
+    if deployment_wave_requires_auth_verify():
+        if not merged.get("AUTH_OWNER_USERNAME", "").strip():
+            merged["AUTH_OWNER_USERNAME"] = "hajri"
+        if not merged.get("AUTH_OWNER_PASSWORD"):
+            merged["AUTH_OWNER_PASSWORD"] = "123"
+
     if not merged.get("DATABASE_URL"):
         raise RuntimeError(
             "DATABASE_URL is required for production deploy. "
@@ -1069,8 +1075,9 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     phase9_verify = deployment_wave_requires_phase9_verify()
     auth_verify = deployment_wave_requires_auth_verify()
     saas_verify = deployment_wave_requires_saas_verify()
-    auth_owner_username = os.environ.get("AUTH_OWNER_USERNAME", "hajri")
-    auth_owner_password = os.environ.get("AUTH_OWNER_PASSWORD", "123")
+    # GitHub Actions injects empty strings when secrets are unset — treat as missing.
+    auth_owner_username = os.environ.get("AUTH_OWNER_USERNAME", "").strip() or "hajri"
+    auth_owner_password = os.environ.get("AUTH_OWNER_PASSWORD", "") or "123"
     auth_employee_user_id = "4cf1450d-08d8-4ca1-b180-1c2642174a79"
     auth_employee_pin = "1234"
     auth_flags = verify_request_auth_flags(auth_verify, wave_org_id, wave_owner_id)
@@ -1246,7 +1253,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
         if err.strip():
             safe_print("STDERR:")
             safe_print(err.strip())
-        if "/api/v1/auth/session" in c:
+        if "taqfeelah-auth-session.json" in c and "wave6-auth" not in c:
             auth_status_code = out.strip()[-3:] if out.strip() else None
             _, body, _ = vps.run("cat /tmp/taqfeelah-auth-session.json 2>/dev/null || true", check=False)
             if body.strip():
