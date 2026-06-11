@@ -49,6 +49,7 @@ export function OperationModal({
   onClose,
   onVoid,
   onRestore,
+  onEditOwnerCloseout,
   canVoid = true,
   canRestore = true,
   entryAttachmentsApiEnabled = false,
@@ -83,7 +84,6 @@ export function OperationModal({
                 <Badge tone={isSale ? "success" : "warning"}>{operationDisplayLabel(item, lang)}</Badge>
                 {voided && <Badge tone="warning">{text(lang, "voided")}</Badge>}
                 {!voided && entryWasRestored(item) && <Badge tone="success">{text(lang, "restored")}</Badge>}
-                {!voided && item.reviewed && <Badge tone="success">{text(lang, "reviewed")}</Badge>}
                 <h3 className="mt-2 w-full text-lg font-black">{noteLabel(item, lang)}</h3>
               </div>
               <button type="button" onClick={onClose}><X className="h-5 w-5" /></button>
@@ -107,11 +107,11 @@ export function OperationModal({
               )}
             </div>
 
-            {(item.auditTrail || []).length > 0 && (
+            {(item.auditTrail || []).filter((action) => action.action !== "reviewed").length > 0 && (
               <div className="mb-4 rounded-2xl bg-white p-4">
                 <p className="mb-3 text-xs font-black text-[#112A46]">{text(lang, "auditTrail")}</p>
                 <div className="space-y-2">
-                  {item.auditTrail.map((action, index) => (
+                  {item.auditTrail.filter((action) => action.action !== "reviewed").map((action, index) => (
                     <div key={`${action.action}-${action.at}-${index}`} className="flex items-start justify-between gap-3 text-taq-meta font-bold">
                       <div className="flex items-start gap-2">
                         <span className={`mt-1 h-2 w-2 rounded-full ${action.action === "voided" ? "bg-[#B44747]" : action.action === "restored" || action.action === "reviewed" || action.action === "duplicate_approved" ? "bg-[#257844]" : "bg-[#806528]"}`} />
@@ -155,6 +155,15 @@ export function OperationModal({
               </div>
             )}
 
+            {onEditOwnerCloseout && item.closeoutId && !voided && (
+              <button
+                type="button"
+                onClick={() => onEditOwnerCloseout(item)}
+                className="mb-3 w-full rounded-2xl bg-[#112A46] py-4 text-sm font-extrabold text-white"
+              >
+                {text(lang, "editOwnerCloseout")}
+              </button>
+            )}
             {canRestore && voided && <button onClick={() => onRestore(item.id)} className="w-full rounded-2xl bg-[#E6F5E9] py-4 text-sm font-extrabold text-[#257844]">{text(lang, "restoreEntry")}</button>}
             {canVoid && !voided && <button onClick={() => onVoid(item.id)} className="w-full rounded-2xl bg-[#FFF1EE] py-4 text-sm font-extrabold text-[#B44747]">{text(lang, "voidEntry")}</button>}
           </div>

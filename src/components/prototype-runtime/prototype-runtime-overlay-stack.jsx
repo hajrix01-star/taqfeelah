@@ -1,5 +1,8 @@
 "use client";
 
+import { useCallback } from "react";
+import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
+import { resolveCloseoutForOperationalEntry } from "@/features/operations/client/register-operations-selection";
 import {
   DuplicateSalesDialog,
   OperationModal,
@@ -68,6 +71,28 @@ export function PrototypeRuntimeOverlayStack({
   helpOpen,
   setHelpOpen,
 }) {
+  const { closeouts, reloadCloseoutsFromApi } = useDailyCloseouts();
+
+  const handleEditOwnerCloseoutFromEntry = useCallback(async (entry) => {
+    let closeout = resolveCloseoutForOperationalEntry(entry, closeouts);
+    if (!closeout && typeof reloadCloseoutsFromApi === "function") {
+      try {
+        const remoteCloseouts = await reloadCloseoutsFromApi();
+        closeout = resolveCloseoutForOperationalEntry(entry, remoteCloseouts);
+      } catch {
+        // fall through to alert below
+      }
+    }
+    if (!closeout) {
+      window.alert(lang === "ar"
+        ? "تعذر العثور على التقفيلة المرتبطة بهذه العملية."
+        : "Could not find the closeout linked to this entry.");
+      return;
+    }
+    setSelected(null);
+    setOwnerEditCloseout(closeout);
+  }, [closeouts, lang, reloadCloseoutsFromApi, setOwnerEditCloseout, setSelected]);
+
   return (
     <>
       {!(employee && employeeEntryActive) && !(!employee && ownerEntryActive) && (
@@ -102,6 +127,7 @@ export function PrototypeRuntimeOverlayStack({
         onClose={() => setSelected(null)}
         onVoid={requestVoidOperation}
         onRestore={requestRestoreOperation}
+        onEditOwnerCloseout={!employee ? handleEditOwnerCloseoutFromEntry : undefined}
         canVoid={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)}
         canRestore={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)}
         {...entryAttachmentsApiProps}
