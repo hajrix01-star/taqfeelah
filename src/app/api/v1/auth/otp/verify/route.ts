@@ -1,10 +1,16 @@
+import { isAuthOtpEnabled } from "@/core/config/auth-otp-mode";
 import { fail, ok } from "@/core/http/api-response";
+import { ServiceUnavailableError } from "@/core/errors/app-error";
 import { verifyAuthOtp } from "@/features/auth/server/verify-auth-otp";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    if (!isAuthOtpEnabled()) {
+      throw new ServiceUnavailableError("OTP login is disabled.");
+    }
+
     const body = await request.json();
     const result = await verifyAuthOtp({
       channel: body?.channel === "email" ? "email" : "whatsapp",

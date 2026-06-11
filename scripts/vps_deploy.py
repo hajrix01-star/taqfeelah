@@ -1494,10 +1494,13 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             continue
         if "wave7-saas-page.html" in c:
             saas_page_status_code = out.strip()[-3:] if out.strip() else None
-            if saas_page_status_code != "200":
+            saas_client_enabled = os.environ.get("NEXT_PUBLIC_SAAS_ADMIN_ENABLED") == "true"
+            expected_page_statuses = {"200", "307"} if saas_client_enabled else {"200"}
+            if saas_page_status_code not in expected_page_statuses:
                 raise RuntimeError(
                     "Deployment wave 7 verification failed: /saas-admin returned "
-                    f"HTTP {saas_page_status_code or 'unknown'} (expected 200)"
+                    f"HTTP {saas_page_status_code or 'unknown'} "
+                    f"(expected {' or '.join(sorted(expected_page_statuses))})"
                 )
             continue
         if "wave7-saas-kpis-auth.json" in c:
