@@ -55,6 +55,7 @@ export function useStoreDaySummaries({
   const [error, setError] = useState("");
   const [loaded, setLoaded] = useState(false);
   const loadedContextRef = useRef("");
+  const refreshKeyRef = useRef(refreshKey);
   const loadContextKey = `${period}|${periodKey}|${storeIdsKey}`;
 
   useEffect(() => {
@@ -73,10 +74,12 @@ export function useStoreDaySummaries({
       setLoading(true);
       setError("");
       const contextChanged = loadedContextRef.current !== loadContextKey;
-      if (contextChanged) {
+      const refreshKeyChanged = refreshKeyRef.current !== refreshKey;
+      if (contextChanged || refreshKeyChanged) {
         setSummariesByStoreId({});
         setLoaded(false);
       }
+      refreshKeyRef.current = refreshKey;
       try {
         const storeIds = storeIdsKey.split("|").filter(Boolean);
         const fetched = await Promise.all(

@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
+import { resolveSelectedCloseoutOwnerEditSource } from "@/features/closeouts/client/closeout-owner-edit-display";
 import { resolveCloseoutForOperationalEntry } from "@/features/operations/client/register-operations-selection";
 import {
   DuplicateSalesDialog,
@@ -73,17 +74,14 @@ export function PrototypeRuntimeOverlayStack({
 }) {
   const { closeouts, reloadCloseoutsFromApi } = useDailyCloseouts();
 
-  const selectedOwnerEditSource = useMemo(() => {
-    if (!selected) return null;
-    if (selected.closeoutOwnerEditedAt) {
-      return {
-        ownerEditedAt: selected.closeoutOwnerEditedAt,
-        ownerEditedByUserId: selected.closeoutOwnerEditedByUserId,
-        ownerEditedByName: selected.closeoutOwnerEditedByName,
-      };
-    }
-    return resolveCloseoutForOperationalEntry(selected, closeouts);
-  }, [closeouts, selected]);
+  const selectedOwnerEditSource = useMemo(
+    () => resolveSelectedCloseoutOwnerEditSource(
+      selected,
+      closeouts,
+      resolveCloseoutForOperationalEntry,
+    ),
+    [closeouts, selected],
+  );
 
   const handleEditOwnerCloseoutFromEntry = useCallback(async (entry) => {
     let closeout = resolveCloseoutForOperationalEntry(entry, closeouts);

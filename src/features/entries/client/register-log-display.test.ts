@@ -4,6 +4,7 @@ import {
   buildRegisterCloseoutSummaries,
   filterRegisterLogEntries,
   registerLogFilterCount,
+  resolveRegisterCloseoutActorLabel,
   summarizeRegisterPeriod,
 } from "./register-log-display";
 
@@ -61,6 +62,34 @@ describe("register-log-display", () => {
     expect(summaries).toHaveLength(1);
     expect(summaries[0].totals.sales).toBe(100);
     expect(summaries[0].totals.expense).toBe(10);
+  });
+
+  it("labels owner-entered closeouts with the owner fallback when name is missing", () => {
+    const label = resolveRegisterCloseoutActorLabel({
+      entries: [
+        { enteredBy: { userId: "employee-1", nameAr: "أحمد", nameEn: "Ahmed" } },
+        { enteredBy: { userId: "owner-uuid", role: "owner", nameAr: "", nameEn: "" } },
+      ],
+    }, {
+      ownerUserId: "owner-uuid",
+      lang: "ar",
+      enteredByOwnerLabel: "المالك",
+    });
+    expect(label).toBe("المالك");
+  });
+
+  it("does not fall back to the first employee when owner uuid is provided", () => {
+    const label = resolveRegisterCloseoutActorLabel({
+      entries: [
+        { enteredBy: { userId: "employee-1", nameAr: "أحمد", nameEn: "Ahmed" } },
+        { enteredBy: { userId: "owner-uuid", role: "owner", nameAr: "خالد", nameEn: "Khalid" } },
+      ],
+    }, {
+      ownerUserId: "owner-uuid",
+      lang: "ar",
+      enteredByOwnerLabel: "المالك",
+    });
+    expect(label).toBe("خالد");
   });
 
   it("carries owner edit metadata into closeout summaries", () => {

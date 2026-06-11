@@ -152,6 +152,7 @@ export function useRegisterEntriesFromApi({
     requestIdRef.current = requestId;
     cursorsRef.current = new Map();
     setHasMore(false);
+    setEntries([]);
     setLoading(true);
     setError("");
 

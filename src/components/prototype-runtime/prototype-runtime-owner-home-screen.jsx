@@ -112,6 +112,11 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     && summaryApiError
     && !localSummaryHasFinancialActivity
     && !summaryApiHasData;
+  const awaitingScopedApiTotals = summaryApiActive
+    && !preferEntrySummaries
+    && !summaryLoadFailedWithoutFallback
+    && (summaryApiLoading || !summaryApiLoaded)
+    && (isCombined ? !summaryApiHasData : apiStoreResult == null);
   const summaryPending = isOwnerApiSummaryPending({
     apiEnabled: summaryApiActive,
     preferEntrySummaries,
@@ -119,7 +124,7 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     loaded: summaryApiLoaded,
     hasData: summaryApiHasData,
     loadFailed: summaryLoadFailedWithoutFallback,
-  });
+  }) || awaitingScopedApiTotals;
   const summaryLoadErrorMessage = lang === "ar"
     ? "تعذر تحميل الملخص المالي من الخادم. لم يتم عرض أرقام بديلة حتى لا تظهر أصفار غير صحيحة."
     : "Failed to load the financial summary from the server. No fallback figures are shown to avoid incorrect zero totals.";
