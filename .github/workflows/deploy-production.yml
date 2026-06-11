@@ -107,7 +107,7 @@ jobs:
 
       - name: Wait before SSH probe (fail2ban cooldown)
         env:
-          DISPATCH_WAIT_MINUTES: ${{ github.event.inputs.preflight_wait_minutes || '5' }}
+          DISPATCH_WAIT_MINUTES: ${{ github.event.inputs.preflight_wait_minutes || '3' }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
           if [ "$RUN_ATTEMPT" -gt 1 ]; then
@@ -119,8 +119,8 @@ jobs:
             echo "Manual deploy: waiting ${wait_seconds}s before SSH probe…"
             sleep "$wait_seconds"
           else
-            echo "Push deploy: waiting 180s so previous SSH session can finish and fail2ban can cool down…"
-            sleep 180
+            echo "Push deploy: short 45s cooldown so a prior SSH session can finish (avoid stacking probes)…"
+            sleep 45
           fi
 
       - name: Preflight VPS connectivity (same runner as deploy)
@@ -130,11 +130,12 @@ jobs:
           VPS_PASS: ${{ secrets.VPS_PASS }}
           VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_CONNECT_TIMEOUT: "30"
-          VPS_CONNECT_RETRIES: "12"
-          VPS_RETRY_DELAY_SECONDS: "20"
-          VPS_PROBE_RETRIES: "12"
-          VPS_PROBE_RETRY_DELAY_SECONDS: "30"
+          VPS_TCP_PROBE_TIMEOUT: "10"
+          VPS_CONNECT_TIMEOUT: "20"
+          VPS_CONNECT_RETRIES: "2"
+          VPS_RETRY_DELAY_SECONDS: "12"
+          VPS_PROBE_RETRIES: "2"
+          VPS_PROBE_RETRY_DELAY_SECONDS: "15"
         run: |
           python scripts/vps_deploy.py preflight \
             --domain taqfeelah.com \
@@ -147,9 +148,9 @@ jobs:
           VPS_PASS: ${{ secrets.VPS_PASS }}
           VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_CONNECT_TIMEOUT: "30"
-          VPS_CONNECT_RETRIES: "10"
-          VPS_RETRY_DELAY_SECONDS: "15"
+          VPS_CONNECT_TIMEOUT: "20"
+          VPS_CONNECT_RETRIES: "3"
+          VPS_RETRY_DELAY_SECONDS: "12"
           RESET_FOUNDATION_ON_DEPLOY: ${{ contains(github.event.head_commit.message, '[reset-foundation]') }}
           RESET_FOUNDATION_CONFIRM: "reset-modern-foundation"
           DEPLOYMENT_WAVE: "5"
@@ -202,9 +203,9 @@ jobs:
           VPS_PASS: ${{ secrets.VPS_PASS }}
           VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_CONNECT_TIMEOUT: "30"
-          VPS_CONNECT_RETRIES: "10"
-          VPS_RETRY_DELAY_SECONDS: "15"
+          VPS_CONNECT_TIMEOUT: "20"
+          VPS_CONNECT_RETRIES: "3"
+          VPS_RETRY_DELAY_SECONDS: "12"
           POST_DEPLOY_BASELINE_VERIFY: "true"
           DEPLOYMENT_WAVE: "5"
         run: |

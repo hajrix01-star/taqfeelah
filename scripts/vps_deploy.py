@@ -11,9 +11,12 @@ Usage examples:
 Environment variables:
   VPS_HOST, VPS_USER, VPS_PASS (or VPS_SSH_PRIVATE_KEY)
   VPS_PORT (optional, default: 22)
-  VPS_CONNECT_TIMEOUT (optional seconds, default: 25)
-  VPS_CONNECT_RETRIES (optional, default: 3)
-  VPS_RETRY_DELAY_SECONDS (optional seconds, default: 5)
+  VPS_CONNECT_TIMEOUT (optional seconds, default: 20)
+  VPS_TCP_PROBE_TIMEOUT (optional seconds, default: 10)
+  VPS_CONNECT_RETRIES (optional, default: 2)
+  VPS_RETRY_DELAY_SECONDS (optional seconds, default: 8)
+  VPS_PROBE_RETRIES (optional, default: 2)
+  VPS_PROBE_RETRY_DELAY_SECONDS (optional seconds, default: 12)
   POST_DEPLOY_BASELINE_VERIFY (optional, default: true on verify)
 """
 
@@ -21,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import errno
 import io
 import os
 import shlex
@@ -192,6 +196,63 @@ def safe_print(value: str) -> None:
         sys.stdout.flush()
 
 
+FAIL_FAST_CONNECT_REASONS = frozenset({"permission denied"})
+
+
+def classify_connect_error(exc: BaseException) -> str:
+    """Map socket/paramiko errors to a short failure reason for logs."""
+    if isinstance(exc, paramiko.AuthenticationException):
+        return "permission denied"
+    if isinstance(exc, (socket.timeout, TimeoutError)):
+        return "timeout"
+    if isinstance(exc, OSError):
+        os_errno = getattr(exc, "errno", None)
+        if os_errno in {errno.ETIMEDOUT}:
+            return "timeout"
+        if os_errno in {errno.ECONNREFUSED}:
+            return "connection refused"
+        if os_errno in {errno.EHOSTUNREACH, errno.ENETUNREACH}:
+            return "host unreachable"
+    message = str(exc).lower()
+    if "timed out" in message or "timeout" in message:
+        return "timeout"
+    if "connection refused" in message:
+        return "connection refused"
+    if "permission denied" in message or "authentication failed" in message:
+        return "permission denied"
+    if (
+        "no route to host" in message
+        or "host unreachable" in message
+        or "network is unreachable" in message
+    ):
+        return "host unreachable"
+    return "unknown"
+
+
+def resolve_tcp_endpoints(host: str, port: int) -> list[tuple[socket.AddressFamily, tuple, str]]:
+    endpoints: list[tuple[socket.AddressFamily, tuple, str]] = []
+    seen: set[tuple[socket.AddressFamily, str, int]] = set()
+    for family, _, _, _, sockaddr in socket.getaddrinfo(host, port, type=socket.SOCK_STREAM):
+        ip = sockaddr[0]
+        key = (family, ip, port)
+        if key in seen:
+            continue
+        seen.add(key)
+        endpoints.append((family, sockaddr, ip))
+    if not endpoints:
+        raise RuntimeError(f"No SSH endpoints resolved for {host}:{port}")
+    return endpoints
+
+
+def pick_primary_endpoint(
+    endpoints: list[tuple[socket.AddressFamily, tuple, str]],
+) -> tuple[socket.AddressFamily, tuple, str]:
+    for endpoint in endpoints:
+        if endpoint[0] == socket.AF_INET:
+            return endpoint
+    return endpoints[0]
+
+
 class VPS:
     def __init__(
         self,
@@ -201,9 +262,9 @@ class VPS:
         *,
         port: int = 22,
         pkey: paramiko.PKey | None = None,
-        connect_timeout: float = 25,
-        connect_retries: int = 3,
-        retry_delay_seconds: float = 5,
+        connect_timeout: float = 20,
+        connect_retries: int = 2,
+        retry_delay_seconds: float = 8,
     ) -> None:
         self.host = host
         self.user = user
@@ -220,79 +281,92 @@ class VPS:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         return client
 
-    def _resolved_endpoints(self) -> list[tuple[socket.AddressFamily, tuple]]:
-        endpoints: list[tuple[socket.AddressFamily, tuple]] = []
-        seen: set[tuple[socket.AddressFamily, str, int]] = set()
-        for family, _, _, _, sockaddr in socket.getaddrinfo(
-            self.host,
-            self.port,
-            type=socket.SOCK_STREAM,
-        ):
-            ip = sockaddr[0]
-            port = sockaddr[1]
-            key = (family, ip, port)
-            if key in seen:
-                continue
-            seen.add(key)
-            endpoints.append((family, sockaddr))
-        if not endpoints:
-            raise RuntimeError(f"No SSH endpoints resolved for {self.host}:{self.port}")
-        return endpoints
+    def _resolved_endpoints(self) -> list[tuple[socket.AddressFamily, tuple, str]]:
+        return resolve_tcp_endpoints(self.host, self.port)
+
+    def _connect_ssh_once(
+        self,
+        family: socket.AddressFamily,
+        sockaddr: tuple,
+        ip: str,
+        *,
+        attempt: int,
+    ) -> tuple[paramiko.SSHClient | None, str]:
+        sock: socket.socket | None = None
+        client = self._new_client()
+        safe_print(
+            f"SSH connect attempt {attempt}/{self.connect_retries} "
+            f"→ {ip}:{self.port} (timeout {self.connect_timeout:.0f}s)"
+        )
+        try:
+            sock = socket.socket(family, socket.SOCK_STREAM)
+            sock.settimeout(self.connect_timeout)
+            sock.connect(sockaddr)
+            connect_kwargs: dict = {
+                "hostname": self.host,
+                "port": self.port,
+                "username": self.user,
+                "sock": sock,
+                "timeout": self.connect_timeout,
+                "banner_timeout": self.connect_timeout,
+                "auth_timeout": self.connect_timeout,
+                "look_for_keys": False,
+                "allow_agent": False,
+            }
+            if self.pkey is not None:
+                connect_kwargs["pkey"] = self.pkey
+                if self.password:
+                    connect_kwargs["password"] = self.password
+            else:
+                connect_kwargs["password"] = self.password
+            client.connect(**connect_kwargs)
+            return client, "connected"
+        except Exception as exc:
+            reason = classify_connect_error(exc)
+            safe_print(f"SSH {ip}:{self.port} — {reason}")
+            try:
+                client.close()
+            except Exception:
+                pass
+            try:
+                if sock is not None:
+                    sock.close()
+            except Exception:
+                pass
+            return None, reason
 
     def __enter__(self) -> "VPS":
         endpoints = self._resolved_endpoints()
+        family, sockaddr, ip = pick_primary_endpoint(endpoints)
+        unique_ips = ", ".join(endpoint_ip for _, _, endpoint_ip in endpoints)
         errors: list[str] = []
         for attempt in range(1, self.connect_retries + 1):
-            for family, sockaddr in endpoints:
-                sock: socket.socket | None = None
-                client = self._new_client()
-                ip = sockaddr[0]
-                try:
-                    sock = socket.socket(family, socket.SOCK_STREAM)
-                    sock.settimeout(self.connect_timeout)
-                    sock.connect(sockaddr)
-                    connect_kwargs: dict = {
-                        "hostname": self.host,
-                        "port": self.port,
-                        "username": self.user,
-                        "sock": sock,
-                        "timeout": self.connect_timeout,
-                        "banner_timeout": self.connect_timeout,
-                        "auth_timeout": self.connect_timeout,
-                        "look_for_keys": False,
-                        "allow_agent": False,
-                    }
-                    if self.pkey is not None:
-                        connect_kwargs["pkey"] = self.pkey
-                        if self.password:
-                            connect_kwargs["password"] = self.password
-                    else:
-                        connect_kwargs["password"] = self.password
-                    client.connect(**connect_kwargs)
-                    self.client = client
-                    return self
-                except Exception as exc:
-                    errors.append(f"attempt {attempt}, endpoint {ip}:{self.port}: {exc!r}")
-                    try:
-                        client.close()
-                    except Exception:
-                        pass
-                    try:
-                        if sock is not None:
-                            sock.close()
-                    except Exception:
-                        pass
-            if attempt < self.connect_retries:
+            client, reason = self._connect_ssh_once(
+                family,
+                sockaddr,
+                ip,
+                attempt=attempt,
+            )
+            if client is not None:
+                self.client = client
+                return self
+            errors.append(f"attempt {attempt}/{self.connect_retries}, {ip}:{self.port}: {reason}")
+            if reason in FAIL_FAST_CONNECT_REASONS:
+                safe_print(f"SSH probe stopping early: {reason} (retries will not help)")
+                break
+            if attempt < self.connect_retries and self.retry_delay_seconds > 0:
+                safe_print(
+                    f"SSH retry backoff {self.retry_delay_seconds:.0f}s before next attempt…"
+                )
                 time.sleep(self.retry_delay_seconds)
 
-        unique_ips = ", ".join(sockaddr[0] for _, sockaddr in endpoints)
-        details = "\n".join(errors[-6:])
+        details = "\n".join(errors)
         raise RuntimeError(
             "Unable to establish SSH connection to "
-            f"{self.host}:{self.port} after {self.connect_retries} retries.\n"
+            f"{self.host}:{self.port} after {len(errors)} SSH attempt(s).\n"
             f"Resolved endpoints: {unique_ips}\n"
-            "Common causes: blocked port 22, incorrect VPS_HOST, or provider firewall rules.\n"
-            f"Last failures:\n{details}"
+            "Common causes: fail2ban ban, blocked port 22, incorrect VPS_HOST, or firewall rules.\n"
+            f"Failures:\n{details}"
         )
 
     def __exit__(self, exc_type, exc, tb) -> None:
@@ -370,13 +444,13 @@ def open_vps_client(
         password,
         port=port if port is not None else parse_env_int("VPS_PORT", 22),
         pkey=pkey,
-        connect_timeout=float(connect_timeout or os.environ.get("VPS_CONNECT_TIMEOUT", "25")),
+        connect_timeout=float(connect_timeout or os.environ.get("VPS_CONNECT_TIMEOUT", "20")),
         connect_retries=connect_retries
         if connect_retries is not None
-        else parse_env_int("VPS_CONNECT_RETRIES", 3),
+        else parse_env_int("VPS_CONNECT_RETRIES", 2),
         retry_delay_seconds=retry_delay_seconds
         if retry_delay_seconds is not None
-        else float(os.environ.get("VPS_RETRY_DELAY_SECONDS", "5")),
+        else float(os.environ.get("VPS_RETRY_DELAY_SECONDS", "8")),
     )
 
 
@@ -756,37 +830,62 @@ def cmd_deploy(vps: VPS, domain: str, www_domain: str, local_path: str) -> None:
     vps.run(certbot_cmd)
 
 
-def probe_vps_connectivity(host: str, port: int, timeout: float) -> list[str]:
-    """Probe DNS + TCP reachability from the runner before SSH auth."""
-    lines: list[str] = []
+def tcp_probe_endpoint(
+    family: socket.AddressFamily,
+    sockaddr: tuple,
+    ip: str,
+    port: int,
+    *,
+    attempt: int,
+    max_attempts: int,
+    timeout: float,
+) -> tuple[bool, str]:
+    """TCP reachability check on a single endpoint (no SSH auth)."""
+    safe_print(
+        f"TCP probe attempt {attempt}/{max_attempts} "
+        f"→ {ip}:{port} (timeout {timeout:.0f}s)"
+    )
+    sock: socket.socket | None = None
     try:
-        endpoints = []
-        seen: set[tuple[socket.AddressFamily, str, int]] = set()
-        for family, _, _, _, sockaddr in socket.getaddrinfo(host, port, type=socket.SOCK_STREAM):
-            ip = sockaddr[0]
-            key = (family, ip, port)
-            if key in seen:
-                continue
-            seen.add(key)
-            endpoints.append((family, sockaddr, ip))
-        if not endpoints:
-            raise RuntimeError(f"No endpoints resolved for {host}:{port}")
-        lines.append(f"Resolved {len(endpoints)} endpoint(s) for {host}:{port}")
-        for family, sockaddr, ip in endpoints:
-            sock: socket.socket | None = None
-            try:
-                sock = socket.socket(family, socket.SOCK_STREAM)
-                sock.settimeout(timeout)
-                sock.connect(sockaddr)
-                lines.append(f"TCP {ip}:{port} — reachable")
-            except Exception as exc:
-                lines.append(f"TCP {ip}:{port} — blocked or timed out ({exc!r})")
-            finally:
-                if sock is not None:
-                    sock.close()
+        sock = socket.socket(family, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect(sockaddr)
+        safe_print(f"TCP {ip}:{port} — reachable")
+        return True, "reachable"
     except Exception as exc:
-        lines.append(f"DNS/TCP probe failed: {exc!r}")
-    return lines
+        reason = classify_connect_error(exc)
+        safe_print(f"TCP {ip}:{port} — {reason}")
+        return False, reason
+    finally:
+        if sock is not None:
+            sock.close()
+
+
+def probe_vps_connectivity(
+    host: str,
+    port: int,
+    timeout: float,
+    *,
+    attempt: int,
+    max_attempts: int,
+) -> tuple[bool, str, str]:
+    """Probe DNS + TCP on the primary endpoint before SSH auth."""
+    endpoints = resolve_tcp_endpoints(host, port)
+    family, sockaddr, ip = pick_primary_endpoint(endpoints)
+    safe_print(
+        f"Resolved {len(endpoints)} endpoint(s) for {host}:{port}; "
+        f"probing primary {ip}:{port}"
+    )
+    ok, reason = tcp_probe_endpoint(
+        family,
+        sockaddr,
+        ip,
+        port,
+        attempt=attempt,
+        max_attempts=max_attempts,
+        timeout=timeout,
+    )
+    return ok, reason, ip
 
 
 def cmd_preflight(vps: VPS, domain: str, www_domain: str) -> None:
@@ -1786,37 +1885,57 @@ def main() -> int:
     if not password and pkey is None:
         raise RuntimeError("Missing VPS auth: set VPS_PASS or VPS_SSH_PRIVATE_KEY")
     port = parse_env_int("VPS_PORT", 22)
-    connect_timeout = float(os.environ.get("VPS_CONNECT_TIMEOUT", "25"))
-    connect_retries = parse_env_int("VPS_CONNECT_RETRIES", 3)
-    retry_delay_seconds = float(os.environ.get("VPS_RETRY_DELAY_SECONDS", "5"))
+    connect_timeout = float(os.environ.get("VPS_CONNECT_TIMEOUT", "20"))
+    tcp_probe_timeout = float(os.environ.get("VPS_TCP_PROBE_TIMEOUT", "10"))
+    connect_retries = parse_env_int("VPS_CONNECT_RETRIES", 2)
+    retry_delay_seconds = float(os.environ.get("VPS_RETRY_DELAY_SECONDS", "8"))
 
     if args.action == "preflight":
         print_section("Runner → VPS connectivity probe")
         preflight_wait = max(0.0, float(os.environ.get("VPS_PREFLIGHT_WAIT_SECONDS", "0")))
         if preflight_wait > 0:
-            safe_print(f"Initial preflight wait {preflight_wait:.0f}s before TCP probe…")
+            safe_print(
+                f"Preflight wait {preflight_wait:.0f}s "
+                "(VPS_PREFLIGHT_WAIT_SECONDS / workflow cooldown)…"
+            )
             time.sleep(preflight_wait)
-        probe_retries = max(1, int(os.environ.get("VPS_PROBE_RETRIES", "4")))
-        probe_delay = max(0.0, float(os.environ.get("VPS_PROBE_RETRY_DELAY_SECONDS", "10")))
-        probe_lines: list[str] = []
+        else:
+            safe_print("No extra preflight wait (VPS_PREFLIGHT_WAIT_SECONDS=0).")
+
+        probe_retries = max(1, int(os.environ.get("VPS_PROBE_RETRIES", "2")))
+        probe_delay = max(0.0, float(os.environ.get("VPS_PROBE_RETRY_DELAY_SECONDS", "12")))
+        probe_ok = False
+        last_reason = "unknown"
+        last_ip = host
         for attempt in range(1, probe_retries + 1):
-            if attempt > 1:
-                safe_print(f"Probe retry {attempt}/{probe_retries} after {probe_delay:.0f}s…")
+            if attempt > 1 and probe_delay > 0:
+                safe_print(
+                    f"TCP probe backoff {probe_delay:.0f}s before attempt "
+                    f"{attempt}/{probe_retries}…"
+                )
                 time.sleep(probe_delay)
-            probe_lines = probe_vps_connectivity(host, port, connect_timeout)
-            for line in probe_lines:
-                safe_print(line)
-            if any("reachable" in line for line in probe_lines):
+            probe_ok, last_reason, last_ip = probe_vps_connectivity(
+                host,
+                port,
+                tcp_probe_timeout,
+                attempt=attempt,
+                max_attempts=probe_retries,
+            )
+            if probe_ok:
                 break
-        if not any("reachable" in line for line in probe_lines):
+            if last_reason in FAIL_FAST_CONNECT_REASONS:
+                safe_print(f"TCP probe stopping early: {last_reason}")
+                break
+
+        if not probe_ok:
             raise RuntimeError(
                 "VPS port is not reachable from GitHub Actions.\n"
+                f"Last TCP probe: {last_ip}:{port} — {last_reason}\n"
                 "The site may still be online while SSH from CI is blocked.\n"
                 "Common causes: fail2ban after repeated deploys, UFW/firewall, SSH down, wrong VPS_PORT.\n"
                 "On VPS: systemctl status ssh; fail2ban-client status sshd; ufw status.\n"
                 "Then Re-run failed jobs in GitHub Actions, or wait 15–30 min for bans to expire.\n"
-                "See docs/DEPLOYMENT_WAVES.md (troubleshooting section).\n"
-                + "\n".join(probe_lines)
+                "See docs/DEPLOYMENT_WAVES.md (troubleshooting section)."
             )
 
     with open_vps_client(
