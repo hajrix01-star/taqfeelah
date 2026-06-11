@@ -1932,9 +1932,9 @@ def main() -> int:
                 "VPS port is not reachable from GitHub Actions.\n"
                 f"Last TCP probe: {last_ip}:{port} — {last_reason}\n"
                 "The site may still be online while SSH from CI is blocked.\n"
-                "Common causes: fail2ban after repeated deploys, UFW/firewall, SSH down, wrong VPS_PORT.\n"
-                "On VPS (root): bash scripts/vps-unban-ci-ssh.sh\n"
-                "Then: systemctl status ssh; fail2ban-client status sshd; ufw status.\n"
+                "Common causes: Hostinger VPS Firewall, UFW/iptables, SSH down, wrong VPS_HOST/VPS_PORT.\n"
+                "On VPS (root): bash scripts/vps-diagnose-ci-access.sh\n"
+                "If fail2ban is installed: bash scripts/vps-unban-ci-ssh.sh\n"
                 "Re-run Production Deploy with preflight_wait_minutes=10, or wait for bans to expire.\n"
                 "See docs/DEPLOYMENT_WAVES.md (troubleshooting section)."
             )

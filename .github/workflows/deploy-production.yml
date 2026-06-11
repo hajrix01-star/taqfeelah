@@ -112,8 +112,8 @@ jobs:
             code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "$url" || echo "000")"
             echo "$url → HTTP $code"
           done
-          echo "If HTTPS is 200 but SSH preflight fails, fail2ban/firewall is blocking GitHub runners."
-          echo "On VPS (root): bash scripts/vps-unban-ci-ssh.sh"
+          echo "If HTTPS is 200 but SSH preflight fails, firewall or Hostinger VPS Firewall blocks GitHub runners."
+          echo "On VPS (root): bash scripts/vps-diagnose-ci-access.sh"
 
       - name: Wait before SSH probe (fail2ban cooldown)
         env:
