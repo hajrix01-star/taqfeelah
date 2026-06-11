@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Lock, Plus } from "lucide-react";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
@@ -66,11 +66,7 @@ export function OwnerNotebookScreen({ lang, notebookTheme = "yellow" }) {
     setEditingId(null);
   };
 
-  useEffect(() => {
-    if (hydrated && notes.length === 0) setComposerOpen(true);
-  }, [hydrated, notes.length]);
-
-  const showGlobalEmpty = hydrated && filter === "all" && notes.length === 0;
+  const showGlobalEmpty = hydrated && filter === "all" && notes.length === 0 && !composerOpen;
   const showTabEmpty = hydrated && visibleNotes.length === 0 && !showGlobalEmpty;
 
   return (
@@ -91,7 +87,7 @@ export function OwnerNotebookScreen({ lang, notebookTheme = "yellow" }) {
               lang={lang}
               notebookTheme={notebookTheme}
               onAdd={handleAdd}
-              onCancel={notes.length > 0 ? () => setComposerOpen(false) : undefined}
+              onCancel={() => setComposerOpen(false)}
             />
           ) : (
             <button

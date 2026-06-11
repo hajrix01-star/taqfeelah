@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { BookMarked, Check, Pencil, Plus, Send, Trash2 } from "lucide-react";
 import { notebookCardBackground, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
 import { text } from "./prototype-runtime-demo-data";
@@ -70,27 +70,40 @@ export function NotebookViewTabs({ lang, active, tabs, onChange, tabCounts = {} 
   );
 }
 
-function KindSegment({ lang, value, onChange }) {
+function KindSegment({ lang, value, onChange, compact = false }) {
   const options = [
     { id: "note", label: "ownerNotebookNote" },
     { id: "task", label: "ownerNotebookTask" },
   ];
   return (
-    <div className="inline-flex rounded-full bg-[#F0ECE2]/80 p-1 ring-1 ring-[#E8E1D4]">
+    <div className={`inline-flex shrink-0 rounded-full bg-[#F0ECE2]/80 ring-1 ring-[#E8E1D4] ${compact ? "p-0.5" : "p-1"}`}>
       {options.map((option) => (
         <button
           key={option.id}
           type="button"
           onClick={() => onChange(option.id)}
-          className={`rounded-full px-3 py-1.5 text-taq-meta font-black transition-colors duration-150 ${
-            value === option.id ? "bg-white text-[#112A46] shadow-sm" : "text-[#827762]"
-          }`}
+          className={`rounded-full font-black transition-colors duration-150 ${
+            compact ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-taq-meta"
+          } ${value === option.id ? "bg-white text-[#112A46] shadow-sm" : "text-[#827762]"}`}
         >
           {text(lang, option.label)}
         </button>
       ))}
     </div>
   );
+}
+
+function useAutoGrowTextarea(value) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    element.style.height = "auto";
+    element.style.height = `${Math.min(element.scrollHeight, 120)}px`;
+  }, [value]);
+
+  return ref;
 }
 
 export function NoteComposerPanel({
@@ -102,6 +115,7 @@ export function NoteComposerPanel({
   const [draft, setDraft] = useState("");
   const [kind, setKind] = useState("note");
   const [color, setColor] = useState(notebookTheme);
+  const textareaRef = useAutoGrowTextarea(draft);
 
   useEffect(() => {
     setColor(notebookTheme);
@@ -134,41 +148,38 @@ export function NoteComposerPanel({
 
   return (
     <article
-      className="overflow-hidden rounded-[22px] border border-[#E8E1D4] px-3.5 py-3.5 shadow-[0_8px_18px_rgba(17,42,70,0.06)]"
+      className="overflow-hidden rounded-[18px] border border-[#E8E1D4] px-3 py-2.5 shadow-[0_6px_14px_rgba(17,42,70,0.05)]"
       style={cardStyle}
     >
       <textarea
+        ref={textareaRef}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={handleKeyDown}
-        rows={3}
+        rows={1}
         placeholder={text(lang, "ownerNotebookPlaceholder")}
-        className="w-full resize-none bg-transparent text-taq-body-sm font-bold leading-6 text-[#112A46] outline-none placeholder:font-bold placeholder:text-[#A99D87]"
+        className="w-full resize-none overflow-hidden bg-transparent text-taq-body-sm font-bold leading-5 text-[#112A46] outline-none placeholder:font-bold placeholder:text-[#A99D87]"
       />
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <KindSegment lang={lang} value={kind} onChange={setKind} />
-        <span className="hidden text-[10px] font-bold text-[#A99D87] sm:inline">
-          {lang === "ar" ? "⌘/Ctrl + Enter للحفظ" : "⌘/Ctrl + Enter to save"}
-        </span>
+      <div className="mt-2 flex items-center gap-2">
+        <KindSegment lang={lang} value={kind} onChange={setKind} compact />
+        <span className="h-5 w-px shrink-0 bg-[#E8E1D4]/90" aria-hidden />
+        <ThemePicker lang={lang} theme={color} onChange={setColor} compact />
       </div>
-      <div className="mt-3">
-        <ThemePicker lang={lang} theme={color} onChange={setColor} />
-      </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="mt-2.5 flex items-center gap-2">
         <button
           type="button"
           onClick={submit}
           disabled={!draft.trim()}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#112A46] px-4 py-3 text-taq-meta font-black text-white disabled:opacity-45"
+          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#112A46] px-3 py-2 text-[11px] font-black text-white disabled:opacity-45"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-3.5 w-3.5" />
           {text(lang, "ownerNotebookAdd")}
         </button>
         {onCancel ? (
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-2xl bg-white px-4 py-3 text-taq-meta font-black text-[#827762] ring-1 ring-[#E8E1D4]"
+            className="shrink-0 rounded-xl bg-white px-3 py-2 text-[11px] font-black text-[#827762] ring-1 ring-[#E8E1D4]"
           >
             {text(lang, "cancel")}
           </button>
@@ -182,6 +193,7 @@ function NoteEditPanel({ lang, note, onSave, onCancel, onDelete }) {
   const [draft, setDraft] = useState(note.text);
   const [kind, setKind] = useState(note.kind);
   const [color, setColor] = useState(note.color);
+  const textareaRef = useAutoGrowTextarea(draft);
 
   useEffect(() => {
     setDraft(note.text);
@@ -194,45 +206,43 @@ function NoteEditPanel({ lang, note, onSave, onCancel, onDelete }) {
   };
 
   return (
-    <div className="border-t border-[#E8E1D4] px-3.5 py-3" style={cardStyle}>
+    <div className="border-t border-[#E8E1D4] px-3 py-2.5" style={cardStyle}>
       <textarea
+        ref={textareaRef}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
-        rows={4}
-        className="w-full resize-none bg-transparent text-taq-body-sm font-bold leading-6 text-[#112A46] outline-none"
+        rows={1}
+        className="w-full resize-none overflow-hidden bg-transparent text-taq-body-sm font-bold leading-5 text-[#112A46] outline-none"
       />
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <KindSegment lang={lang} value={kind} onChange={setKind} />
+      <div className="mt-2 flex items-center gap-2">
+        <KindSegment lang={lang} value={kind} onChange={setKind} compact />
+        <span className="h-5 w-px shrink-0 bg-[#E8E1D4]/90" aria-hidden />
+        <ThemePicker lang={lang} theme={color} onChange={setColor} compact />
       </div>
-      <div className="mt-3">
-        <ThemePicker lang={lang} theme={color} onChange={setColor} />
-      </div>
-      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_auto]">
+      <div className="mt-2.5 flex items-center gap-2">
         <button
           type="button"
           onClick={() => onSave({ text: draft, kind, color })}
           disabled={!draft.trim()}
-          className="rounded-2xl bg-[#112A46] px-4 py-2.5 text-taq-meta font-black text-white disabled:opacity-45"
+          className="flex-1 rounded-xl bg-[#112A46] px-3 py-2 text-[11px] font-black text-white disabled:opacity-45"
         >
           {text(lang, "save")}
         </button>
-        <div className="grid grid-cols-2 gap-2 sm:contents">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-2xl bg-white px-3 py-2.5 text-taq-meta font-black text-[#827762] ring-1 ring-[#E8E1D4]"
-          >
-            {text(lang, "cancel")}
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            aria-label={text(lang, "delete")}
-            className="rounded-2xl bg-[#FFF1EE] px-3 py-2.5 text-taq-meta font-black text-[#B44747] ring-1 ring-[#B44747]/10"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="shrink-0 rounded-xl bg-white px-3 py-2 text-[11px] font-black text-[#827762] ring-1 ring-[#E8E1D4]"
+        >
+          {text(lang, "cancel")}
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label={text(lang, "delete")}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#FFF1EE] text-[#B44747] ring-1 ring-[#B44747]/10"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );

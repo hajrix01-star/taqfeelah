@@ -45,13 +45,46 @@ function Notebook({ children, theme = "yellow", lang = "ar", fullPage = false })
     </div>
   );
 }
-function ThemePicker({ lang, theme, onChange }) {
+function ThemePicker({ lang, theme, onChange, compact = false }) {
+  if (compact) {
+    return (
+      <div
+        role="listbox"
+        aria-label={text(lang, "notebookAppearance")}
+        className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {NOTEBOOK_THEME_IDS.map((id) => {
+          const active = theme === id;
+          const label = text(lang, id);
+          return (
+            <button
+              key={id}
+              type="button"
+              role="option"
+              aria-selected={active}
+              aria-label={label}
+              title={label}
+              onClick={() => onChange(id)}
+              className={`relative shrink-0 rounded-full border ${active ? "border-[#112A46] ring-2 ring-[#112A46]/15" : "border-[#D9D1C1]"}`}
+            >
+              <span
+                className="block h-6 w-6 rounded-full"
+                style={{ backgroundColor: notebookThemes[id].paper }}
+              />
+              {active && <Check className="absolute inset-0 m-auto h-3.5 w-3.5 text-[#112A46]" strokeWidth={3} />}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
       {NOTEBOOK_THEME_IDS.map((id) => {
         const active = theme === id;
         return (
-          <button key={id} onClick={() => onChange(id)} className="flex flex-col items-center gap-1.5" title={text(lang, id)}>
+          <button key={id} type="button" onClick={() => onChange(id)} className="flex flex-col items-center gap-1.5" title={text(lang, id)}>
             <span className={`relative block h-7 w-7 rounded-full border ${active ? "border-[#112A46] ring-2 ring-[#112A46]/15" : "border-[#D9D1C1]"}`} style={{ backgroundColor: notebookThemes[id].paper }}>
               {active && <Check className="absolute inset-0 m-auto h-4 w-4 text-[#112A46]" strokeWidth={3} />}
             </span>
