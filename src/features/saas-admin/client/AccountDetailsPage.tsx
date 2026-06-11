@@ -21,6 +21,7 @@ import {
 import { KpiCard } from "@/features/saas-admin/components/KpiCard";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
 import { StatusBadge } from "@/features/saas-admin/components/StatusBadge";
+import { AddAccountMemberForm } from "@/features/saas-admin/client/AddAccountMemberForm";
 import { fetchSaasAccountDetails } from "@/features/saas-admin/client/saas-admin-api-client";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
@@ -31,7 +32,7 @@ type AccountDetailsPageProps = {
 
 export default function AccountDetailsPage({ accountId }: AccountDetailsPageProps) {
   const { locale, t } = useSaasAdminLocale();
-  const { data, error, isLoading } = useSaasAdminQuery(
+  const { data, error, isLoading, refetch } = useSaasAdminQuery(
     ["saas-admin", "account", accountId],
     () => fetchSaasAccountDetails(accountId),
   );
@@ -100,8 +101,13 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             </AdminTable>
           </section>
 
-          <section>
-            <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">{t.common.users}</h2>
+          <section className="space-y-4">
+            <h2 className="text-sm font-bold text-[var(--admin-primary)]">{t.common.users}</h2>
+            <AddAccountMemberForm
+              organizationId={accountId}
+              stores={data.stores}
+              onCreated={() => { void refetch(); }}
+            />
             <AdminTable columns={[t.common.name, t.common.role, t.common.status]} empty={data.users.length === 0}>
               {data.users.map((row) => (
                 <tr key={row.id}>

@@ -1,6 +1,6 @@
 # Phase 11 — SaaS admin console (inactive by default)
 
-> Read-only platform console at `/saas-admin` with unified `platform-metrics` source. No billing provider activation yet.
+> Platform console at `/saas-admin` with unified `platform-metrics` source. Account provisioning is available; billing provider activation is not yet wired.
 
 ## Flags (all OFF by default)
 
@@ -11,12 +11,13 @@
 | `USAGE_TRACKING_ENABLED` | `false` | Persists `usage_events` writes |
 | `SAAS_PLATFORM_ADMIN_USER_IDS` | empty | Comma-separated UUID allowlist |
 
-## UI routes (desktop-first, read-only)
+## UI routes (desktop-first)
 
 - `/saas-admin` → redirects to `/saas-admin/overview`
 - `/saas-admin/overview`
 - `/saas-admin/accounts`
-- `/saas-admin/accounts/[id]`
+- `/saas-admin/accounts/new` — provision organization + owner + default store
+- `/saas-admin/accounts/[id]` — details + add staff (PIN)
 - `/saas-admin/usage`
 - `/saas-admin/investor-metrics`
 - `/saas-admin/system-health`
@@ -24,11 +25,13 @@
 Layout guards: disabled → unauthenticated → unauthorized → `AdminShell`.  
 `middleware.ts` enforces API auth early; page UX guards stay in `layout.tsx`.
 
-## API routes (read-only unless noted)
+## API routes
 
 - `GET /api/v1/saas-admin/overview`
 - `GET /api/v1/saas-admin/accounts`
+- `POST /api/v1/saas-admin/accounts` — provision account
 - `GET /api/v1/saas-admin/accounts/:id`
+- `POST /api/v1/saas-admin/accounts/:id/members` — provision staff PIN user
 - `GET /api/v1/saas-admin/usage`
 - `GET /api/v1/saas-admin/investor-metrics`
 - `GET /api/v1/saas-admin/system-health`
