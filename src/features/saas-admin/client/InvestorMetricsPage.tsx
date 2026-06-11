@@ -30,6 +30,7 @@ export default function InvestorMetricsPage() {
     unavailable: t.common.unavailable,
     estimated: t.common.estimated,
   };
+  const currencySuffix = ` ${t.common.currencySar}`;
 
   if (isLoading) return <LoadingSkeleton />;
   if (error || !data) {
@@ -65,17 +66,17 @@ export default function InvestorMetricsPage() {
           />
           <KpiCard
             title={t.investor.estimatedMrr}
-            value={formatInvestorKpi(data.estimatedMrr, locale, metricLabels, ` ${data.currency}`)}
+            value={formatInvestorKpi(data.estimatedMrr, locale, metricLabels, currencySuffix)}
             source={data.estimatedMrr.source}
           />
           <KpiCard
             title={t.investor.estimatedArr}
-            value={formatInvestorKpi(data.estimatedArr, locale, metricLabels, ` ${data.currency}`)}
+            value={formatInvestorKpi(data.estimatedArr, locale, metricLabels, currencySuffix)}
             source={data.estimatedArr.source}
           />
           <KpiCard
             title={t.investor.potentialMrr}
-            value={formatInvestorKpi(data.potentialMrr, locale, metricLabels, ` ${data.currency}`)}
+            value={formatInvestorKpi(data.potentialMrr, locale, metricLabels, currencySuffix)}
             source={data.potentialMrr.source}
           />
           <KpiCard

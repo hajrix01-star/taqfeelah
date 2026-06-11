@@ -77,9 +77,9 @@ export default function NewAccountPage() {
                 onChange={(e) => setPlanCode(e.target.value as typeof planCode)}
                 className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
               >
-                <option value="starter">Starter</option>
-                <option value="growth">Growth</option>
-                <option value="enterprise">Enterprise</option>
+                <option value="starter">{t.plans.starter}</option>
+                <option value="growth">{t.plans.growth}</option>
+                <option value="enterprise">{t.plans.enterprise}</option>
               </select>
             </label>
           </section>
