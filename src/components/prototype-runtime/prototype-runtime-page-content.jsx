@@ -103,7 +103,7 @@ export function PrototypeRuntimePageContent({
   return (
     <>
       {employee && !activeEmployee && (
-        <section className="px-5 pb-24">
+        <section className="taq-page-gutter pb-24">
           <div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">
             {text(lang, "noActiveEmployee")}
           </div>

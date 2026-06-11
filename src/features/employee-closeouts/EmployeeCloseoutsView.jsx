@@ -85,7 +85,7 @@ export default function EmployeeCloseoutsView({
 
   if (viewGate === "loading") {
     return (
-      <section className="px-5 pb-28">
+      <section className="taq-page-gutter pb-28">
         <div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">
           {lang === "ar" ? "جاري تحميل إعدادات المحل وقنوات البيع من الخادم…" : "Loading store settings and sales channels from the server…"}
         </div>
@@ -95,7 +95,7 @@ export default function EmployeeCloseoutsView({
 
   if (viewGate === "no-store") {
     return (
-      <section className="px-5 pb-28">
+      <section className="taq-page-gutter pb-28">
         <div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">
           {lang === "ar" ? "لا يوجد محل مرتبط" : "No linked store"}
         </div>

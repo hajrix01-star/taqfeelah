@@ -42,7 +42,7 @@ function LanguageSwitch({ lang, setLang }) {
 
 function BackTitle({ title, onBack, lang, inNotebook = false }) {
   const BackIcon = lang === "ar" ? ChevronRight : ChevronLeft;
-  return <div className={`mb-5 flex items-center gap-3 ${inNotebook ? "" : "px-5"}`}><button onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]"><BackIcon className="h-5 w-5" /></button><h2 className="text-xl font-black">{title}</h2></div>;
+  return <div className={`mb-5 flex items-center gap-3 ${inNotebook ? "" : "taq-page-gutter"}`}><button onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]"><BackIcon className="h-5 w-5" /></button><h2 className="text-xl font-black">{title}</h2></div>;
 }
 
 function TopBar({
@@ -76,7 +76,7 @@ function TopBar({
     paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
   };
   return (
-    <header dir="ltr" className="taq-topbar sticky top-0 z-40 shrink-0 px-5 pb-2" style={headerStyle}>
+    <header dir="ltr" className="taq-topbar sticky top-0 z-40 shrink-0 pb-2" style={headerStyle}>
       <div className={`absolute top-[calc(22px+env(safe-area-inset-top,0px))] flex h-10 w-10 items-center justify-center ${lang === "ar" ? "left-[14px]" : "right-[14px]"}`}>
         {!employee && showNotifications && (
           <button onClick={onNotifications} className="relative flex h-9 w-9 items-center justify-center text-[#112A46]">

@@ -275,7 +275,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
           )}
         />
 
-        <div className="px-5">
+        <div>
           <RegisterStoreChips
             lang={lang}
             businessesList={availableBusinesses}
@@ -312,7 +312,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
           salesChannelOptions={salesChannelOptions}
         />
 
-        <div className="mb-3 flex items-center justify-between px-5">
+        <div className="mb-3 flex items-center justify-between">
           <span className="text-taq-meta font-black text-[#112A46]">{text(lang, "logResults")}</span>
           <span className="rounded-lg bg-white px-2.5 py-1 text-[10px] font-black tabular-nums text-[#827762] ring-1 ring-[#E8E1D4]">
             {logView === "operations"

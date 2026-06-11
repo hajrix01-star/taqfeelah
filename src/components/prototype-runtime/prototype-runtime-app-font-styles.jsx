@@ -3,14 +3,26 @@
 export function AppFontStyles() {
   return (
     <style>{`@import url('https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&family=Caveat:wght@700&family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap');
+      :root { --taq-page-gutter: 16px; }
+      @media (min-width: 640px) and (max-width: 1023px) {
+        :root { --taq-page-gutter: 18px; }
+      }
+      @media (min-width: 1024px) {
+        :root { --taq-page-gutter: 20px; }
+      }
+      .taq-page-gutter {
+        box-sizing: border-box;
+        padding-inline: var(--taq-page-gutter);
+      }
       .taq-notch { display: none !important; }
       .taq-shell { width: 100% !important; max-width: none !important; min-height: 100dvh !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; }
       .taq-screen { height: 100dvh !important; max-height: 100dvh !important; min-height: 100dvh !important; display: grid !important; grid-template-rows: auto 1fr auto !important; overflow: hidden !important; }
       .taq-scroll { min-height: 0 !important; -webkit-overflow-scrolling: touch; }
+      .taq-topbar { padding-inline: var(--taq-page-gutter) !important; }
       .taq-owner-nav { position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; transform: none !important; width: 100% !important; max-width: none !important; border-radius: 0 !important; box-shadow: none !important; }
       .taq-notebook-surface .taq-notebook-content {
         box-sizing: border-box;
-        padding-inline: 14px;
+        padding-inline: var(--taq-page-gutter);
         max-width: 100%;
       }
       .taq-notebook-surface .taq-owner-page.taq-notebook-body {

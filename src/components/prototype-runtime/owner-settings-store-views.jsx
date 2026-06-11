@@ -26,7 +26,7 @@ export function OwnerSettingsStoreProfilePanel({
   deleteDialogProps,
 }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "بيانات المحل" : "Shop details"} onBack={backFromStorePanel} lang={lang} />
       <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
         <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "shopName")}</p>
@@ -58,7 +58,7 @@ export function OwnerSettingsStoreChannelsPanel({
   deleteDialogProps,
 }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={text(lang, "salesChannels")} onBack={backFromStorePanel} lang={lang} />
       <p className="mb-3 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "channelControlHint")}</p>
       <div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
@@ -112,7 +112,7 @@ export function OwnerSettingsStoreExpensesPanel({
   saveOperationalSettings,
 }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={text(lang, "outflowCategories")} onBack={backFromStorePanel} lang={lang} />
       <p className="mb-3 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{lang === "ar" ? "تظهر هذه البنود عند اختيار نوع العملية: مصروف. إيقاف البند لا يغير التقارير السابقة." : "These items appear only for Expense entries. Disabling an item does not change historical reports."}</p>
       <div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
@@ -142,7 +142,7 @@ export function OwnerSettingsStoreAlertsPanel({
   saveOperationalSettings,
 }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "التنبيهات والتفضيلات" : "Alerts & preferences"} onBack={backFromStorePanel} lang={lang} />
       <div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
         <SettingRow title={text(lang, "dailyCloseoutAlert")} desc={text(lang, "dailyCloseoutAlertPrototype")} toggle={<SettingToggle enabled={operationalConfig.closeoutAlert} onToggle={() => updateOperationalDraft({ closeoutAlert: !operationalConfig.closeoutAlert })} />} />
@@ -169,7 +169,7 @@ export function OwnerSettingsStoreStaffPanel({
   backFromStorePanel,
 }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={text(lang, "linkedEmployees")} onBack={backFromStorePanel} lang={lang} />
       <div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
         {linkedStaff.length ? linkedStaff.map((person, index) => (
@@ -209,7 +209,7 @@ export function OwnerSettingsStoreOverviewPanel({
   deleteDialogProps,
 }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-5 pb-24">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={text(lang, "storeSettings")} onBack={closeStore} lang={lang} />
       <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
         <div className="flex items-center gap-3">
