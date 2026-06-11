@@ -12,7 +12,8 @@ import {
 } from "recharts";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
 import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
-import { AdminTable } from "@/features/saas-admin/components/AdminTable";
+import { AdminChartFrame } from "@/features/saas-admin/components/AdminChartFrame";
+import { AdminTable, AdminTableCell } from "@/features/saas-admin/components/AdminTable";
 import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import {
   formatBytes,
@@ -113,9 +114,9 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             <AdminTable columns={[t.common.name, t.common.status, t.accountDetails.createdAt]} empty={data.stores.length === 0}>
               {data.stores.map((row) => (
                 <tr key={row.id}>
-                  <td className="px-4 py-3 font-semibold">{row.name}</td>
-                  <td className="px-4 py-3">{row.status}</td>
-                  <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.createdAt, locale)}</td>
+                  <AdminTableCell col={0} className="font-semibold">{row.name}</AdminTableCell>
+                  <AdminTableCell col={1}>{row.status}</AdminTableCell>
+                  <AdminTableCell col={2} className="text-[var(--admin-muted)]">{formatDateTime(row.createdAt, locale)}</AdminTableCell>
                 </tr>
               ))}
             </AdminTable>
@@ -131,9 +132,9 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             <AdminTable columns={[t.common.name, t.common.role, t.common.status]} empty={data.users.length === 0}>
               {data.users.map((row) => (
                 <tr key={row.id}>
-                  <td className="px-4 py-3 font-semibold">{row.name}</td>
-                  <td className="px-4 py-3">{row.role}</td>
-                  <td className="px-4 py-3">{row.status}</td>
+                  <AdminTableCell col={0} className="font-semibold">{row.name}</AdminTableCell>
+                  <AdminTableCell col={1}>{row.role}</AdminTableCell>
+                  <AdminTableCell col={2}>{row.status}</AdminTableCell>
                 </tr>
               ))}
             </AdminTable>
@@ -146,9 +147,9 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             <AdminTable columns={[t.accountDetails.colStore, t.common.date, t.common.status]} empty={data.recentCloseouts.length === 0}>
               {data.recentCloseouts.map((row) => (
                 <tr key={row.id}>
-                  <td className="px-4 py-3">{row.storeName}</td>
-                  <td className="px-4 py-3">{row.date}</td>
-                  <td className="px-4 py-3">{row.status}</td>
+                  <AdminTableCell col={0}>{row.storeName}</AdminTableCell>
+                  <AdminTableCell col={1}>{row.date}</AdminTableCell>
+                  <AdminTableCell col={2}>{row.status}</AdminTableCell>
                 </tr>
               ))}
             </AdminTable>
@@ -159,9 +160,9 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             <AdminTable columns={[t.accountDetails.colStore, t.common.type, t.common.date]} empty={data.recentOperations.length === 0}>
               {data.recentOperations.map((row) => (
                 <tr key={row.id}>
-                  <td className="px-4 py-3">{row.storeName}</td>
-                  <td className="px-4 py-3">{row.type}</td>
-                  <td className="px-4 py-3">{row.date}</td>
+                  <AdminTableCell col={0}>{row.storeName}</AdminTableCell>
+                  <AdminTableCell col={1}>{row.type}</AdminTableCell>
+                  <AdminTableCell col={2}>{row.date}</AdminTableCell>
                 </tr>
               ))}
             </AdminTable>
@@ -172,18 +173,18 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
           {data.monthlyUsage.length === 0 ? (
             <p className="text-sm text-[var(--admin-muted)]">{t.accountDetails.noMonthlyUsage}</p>
           ) : (
-            <div className="h-56 sm:h-64">
+            <AdminChartFrame>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.monthlyUsage}>
+                <BarChart data={data.monthlyUsage} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                  <YAxis tick={{ fontSize: 10 }} width={36} />
+                  <Tooltip wrapperStyle={{ maxWidth: "min(100vw - 2rem, 18rem)" }} />
                   <Bar dataKey="closeouts" name={t.common.closeouts} fill="#112A46" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="operations" name={t.common.operations} fill="#F5A623" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+            </AdminChartFrame>
           )}
         </ChartCard>
 
@@ -192,10 +193,10 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
           <AdminTable columns={[t.accountDetails.colStore, t.common.type, t.common.size, t.common.date]} empty={data.attachments.length === 0}>
             {data.attachments.map((row) => (
               <tr key={row.id}>
-                <td className="px-4 py-3">{row.storeName}</td>
-                <td className="px-4 py-3">{row.mimeType}</td>
-                <td className="px-4 py-3">{formatBytes(row.sizeBytes)}</td>
-                <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.createdAt, locale)}</td>
+                <AdminTableCell col={0}>{row.storeName}</AdminTableCell>
+                <AdminTableCell col={1}>{row.mimeType}</AdminTableCell>
+                <AdminTableCell col={2}>{formatBytes(row.sizeBytes)}</AdminTableCell>
+                <AdminTableCell col={3} className="text-[var(--admin-muted)]">{formatDateTime(row.createdAt, locale)}</AdminTableCell>
               </tr>
             ))}
           </AdminTable>

@@ -1,9 +1,11 @@
 "use client";
 
+import { forwardRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AdminSessionFooter } from "@/features/saas-admin/components/AdminSessionFooter";
 import { LanguageToggle } from "@/features/saas-admin/components/LanguageToggle";
+import { useMaxLg } from "@/features/saas-admin/hooks/use-max-lg";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 import type { SaasAdminSessionView } from "@/features/saas-admin/server/resolve-saas-admin-session-view";
 
@@ -22,18 +24,25 @@ type AdminSidebarProps = {
   onNavigate?: () => void;
 };
 
-export function AdminSidebar({
-  id = "saas-admin-sidebar",
-  session,
-  mobileOpen = false,
-  onNavigate,
-}: AdminSidebarProps) {
+export const AdminSidebar = forwardRef<HTMLElement, AdminSidebarProps>(function AdminSidebar(
+  {
+    id = "saas-admin-sidebar",
+    session,
+    mobileOpen = false,
+    onNavigate,
+  },
+  ref,
+) {
   const pathname = usePathname();
   const { t } = useSaasAdminLocale();
+  const isMobileLayout = useMaxLg();
 
   return (
     <aside
+      ref={ref}
       id={id}
+      data-testid="admin-sidebar"
+      aria-hidden={isMobileLayout && !mobileOpen ? true : undefined}
       className={`admin-sidebar flex w-[min(85vw,18rem)] shrink-0 flex-col border-inline-start border-[var(--admin-border)] bg-[var(--admin-surface)] lg:w-64 ${
         mobileOpen
           ? "max-lg:translate-x-0"
@@ -51,7 +60,7 @@ export function AdminSidebar({
         <p className="text-xs font-semibold tracking-wide text-[var(--admin-muted)]">{t.brand}</p>
         <h2 className="mt-1 text-base font-bold text-[var(--admin-primary)]">{t.panelTitle}</h2>
       </div>
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
+      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3" aria-label={t.panelTitle}>
         {NAV_PATHS.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
@@ -75,4 +84,4 @@ export function AdminSidebar({
       </div>
     </aside>
   );
-}
+});

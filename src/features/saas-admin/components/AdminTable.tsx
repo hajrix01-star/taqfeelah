@@ -1,4 +1,12 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { createContext, useContext, type ReactNode } from "react";
+
+type AdminTableContextValue = {
+  columns: string[];
+};
+
+const AdminTableContext = createContext<AdminTableContextValue>({ columns: [] });
 
 type AdminTableProps = {
   columns: string[];
@@ -6,6 +14,26 @@ type AdminTableProps = {
   empty?: boolean;
   emptyMessage?: string;
 };
+
+type AdminTableCellProps = {
+  col: number;
+  children: ReactNode;
+  className?: string;
+};
+
+export function AdminTableCell({ col, children, className = "" }: AdminTableCellProps) {
+  const { columns } = useContext(AdminTableContext);
+  const label = columns[col] ?? "";
+
+  return (
+    <td
+      data-label={label}
+      className={`admin-table-cell px-4 py-3 ${className}`.trim()}
+    >
+      {children}
+    </td>
+  );
+}
 
 export function AdminTable({
   columns,
@@ -15,29 +43,33 @@ export function AdminTable({
 }: AdminTableProps) {
   if (empty) {
     return (
-      <div className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] px-6 py-10 text-center text-sm text-[var(--admin-muted)]">
+      <div className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] px-4 py-10 text-center text-sm text-[var(--admin-muted)] sm:px-6">
         {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div className="admin-table-scroll overflow-x-auto rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] shadow-sm">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-[var(--admin-border)] bg-[#FAFBFC]">
-            {columns.map((column) => (
-              <th
-                key={column}
-                className="px-4 py-3 text-right text-xs font-semibold text-[var(--admin-muted)]"
-              >
-                {column}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[var(--admin-border)]">{children}</tbody>
-      </table>
-    </div>
+    <AdminTableContext.Provider value={{ columns }}>
+      <div className="admin-table-scroll overflow-x-auto rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] shadow-sm">
+        <table className="admin-table w-full text-sm">
+          <thead className="admin-table-head">
+            <tr className="border-b border-[var(--admin-border)] bg-[#FAFBFC]">
+              {columns.map((column) => (
+                <th
+                  key={column}
+                  className="px-4 py-3 text-right text-xs font-semibold text-[var(--admin-muted)]"
+                >
+                  {column}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="admin-table-body divide-y divide-[var(--admin-border)]">
+            {children}
+          </tbody>
+        </table>
+      </div>
+    </AdminTableContext.Provider>
   );
 }

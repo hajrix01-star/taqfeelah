@@ -9,11 +9,18 @@
   --admin-success: #16a34a;
   --admin-warning: #d97706;
   --admin-danger: #dc2626;
+  --admin-mobile-topbar-height: calc(3.5rem + env(safe-area-inset-top, 0px));
   background: var(--admin-bg);
   color: var(--admin-text);
   min-height: 100dvh;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-tap-highlight-color: transparent;
+  overflow-x: clip;
+}
+
+.saas-admin-root .admin-mobile-topbar {
+  min-height: var(--admin-mobile-topbar-height);
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .saas-admin-root .admin-sidebar {
@@ -29,6 +36,20 @@
     max-height: 100dvh;
     box-shadow: 0 12px 40px rgba(17, 42, 70, 0.18);
   }
+
+  .saas-admin-root .admin-sidebar[aria-hidden="true"] {
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .saas-admin-root .admin-sidebar {
+    transition: none;
+  }
+}
+
+.saas-admin-root .admin-page-body {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
 }
 
 .saas-admin-root .admin-table-scroll {
@@ -36,8 +57,73 @@
   overscroll-behavior-x: contain;
 }
 
-.saas-admin-root .admin-table-scroll table {
-  min-width: 40rem;
+@media (min-width: 768px) {
+  .saas-admin-root .admin-table-scroll table {
+    min-width: 40rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .saas-admin-root .admin-table-scroll {
+    overflow-x: visible;
+  }
+
+  .saas-admin-root .admin-table {
+    min-width: 0;
+  }
+
+  .saas-admin-root .admin-table-head {
+    display: none;
+  }
+
+  .saas-admin-root .admin-table-body {
+    display: block;
+  }
+
+  .saas-admin-root .admin-table-body > tr {
+    display: block;
+    border-bottom: 1px solid var(--admin-border);
+    padding: 0.35rem 0;
+  }
+
+  .saas-admin-root .admin-table-body > tr:last-child {
+    border-bottom: 0;
+  }
+
+  .saas-admin-root .admin-table-cell {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 1rem;
+    text-align: end;
+    border: 0;
+  }
+
+  .saas-admin-root .admin-table-cell::before {
+    content: attr(data-label);
+    flex: 0 0 42%;
+    max-width: 42%;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--admin-muted);
+    text-align: start;
+  }
+
+  .saas-admin-root .admin-table-cell > * {
+    min-width: 0;
+    flex: 1 1 auto;
+    text-align: end;
+  }
+}
+
+.saas-admin-root .admin-chart-frame {
+  min-height: 14rem;
+}
+
+.saas-admin-root .admin-chart-frame .recharts-wrapper {
+  margin-inline: -0.25rem;
 }
 
 .saas-admin-root input,
@@ -53,5 +139,15 @@
   .saas-admin-root textarea,
   .saas-admin-root button {
     font-size: inherit;
+  }
+}
+
+.saas-admin-root .admin-filter-field {
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .saas-admin-root .admin-filter-field {
+    width: auto;
   }
 }
