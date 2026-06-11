@@ -29,11 +29,13 @@ describe("auth runtime orchestrator", () => {
       setLoggedInEmployeeId: vi.fn(),
       setAuthScreen: vi.fn(),
       setOwnerPage: vi.fn(),
+      setOwnerProfile: vi.fn(),
     };
 
     applyOwnerLoginSuccess({
       apiUserId: "owner-uuid",
       organizationId: "org-uuid",
+      displayName: "Tenant Owner",
       prototypeAccessMode: false,
       apply,
     });
@@ -44,6 +46,7 @@ describe("auth runtime orchestrator", () => {
     expect(apply.setEmployee).toHaveBeenCalledWith(false);
     expect(apply.setLoggedInEmployeeId).toHaveBeenCalledWith(null);
     expect(apply.setOwnerPage).toHaveBeenCalledWith("home");
+    expect(apply.setOwnerProfile).toHaveBeenCalledWith({ name: "Tenant Owner" });
   });
 
   it("applies employee login success state from staff roster", () => {
@@ -74,6 +77,30 @@ describe("auth runtime orchestrator", () => {
     expect(apply.setLoggedInEmployeeId).toHaveBeenCalledWith("ahmed");
     expect(apply.setEmployeeBusinessId).toHaveBeenCalledWith("shami");
     expect(apply.setEmployeePage).toHaveBeenCalledWith("closeouts");
+  });
+
+  it("bootstraps authenticated owner session with display name", () => {
+    const apply = {
+      setSessionOrganizationId: vi.fn(),
+      setSessionUserId: vi.fn(),
+      setLoggedIn: vi.fn(),
+      setEmployee: vi.fn(),
+      setLoggedInEmployeeId: vi.fn(),
+      setEmployeePage: vi.fn(),
+      setAuthScreen: vi.fn(),
+      setOwnerPage: vi.fn(),
+      setOwnerProfile: vi.fn(),
+    };
+
+    expect(applyServerSessionBootstrap({
+      authenticated: true,
+      role: "owner",
+      userId: "owner-uuid",
+      organizationId: "org-uuid",
+      displayName: "Tenant Owner",
+    }, apply)).toBe(true);
+    expect(apply.setOwnerProfile).toHaveBeenCalledWith({ name: "Tenant Owner" });
+    expect(apply.setOwnerPage).toHaveBeenCalledWith("home");
   });
 
   it("bootstraps authenticated employee session from server", () => {

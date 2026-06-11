@@ -81,6 +81,7 @@ export type SaasAccountDetails = {
   id: string;
   name: string;
   ownerName: string | null;
+  ownerUsername: string | null;
   status: AccountStatus;
   planCode: PlanCode;
   createdAt: string;

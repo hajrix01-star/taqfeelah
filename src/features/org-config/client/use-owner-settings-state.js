@@ -91,8 +91,13 @@ export function useOwnerSettingsState({
   const [lastCloseoutDates, setLastCloseoutDates] = useState(() => readDemoLastCloseoutDates(skipDemoBootstrap));
 
   const currentOwnerActor = useMemo(
-    () => ({ ...ownerActor, nameAr: ownerProfile.name, nameEn: ownerProfile.name }),
-    [ownerActor, ownerProfile.name],
+    () => ({
+      ...ownerActor,
+      userId: sessionUserId || ownerActor?.userId || "owner",
+      nameAr: ownerProfile?.name?.trim() || "",
+      nameEn: ownerProfile?.name?.trim() || "",
+    }),
+    [ownerActor, ownerProfile?.name, sessionUserId],
   );
   const ownerDisplayName = ownerProfile?.name || (lang === "ar" ? "المالك" : "Owner");
 

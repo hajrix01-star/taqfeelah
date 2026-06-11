@@ -73,6 +73,7 @@ export function usePrototypeRuntimeSessionSync({
   setArchivedBusinessIds,
   setStoreChannelSettings,
   setStoreOperationalSettings,
+  setOwnerProfile,
   employeeBusinessId,
   setEmployeeBusinessId,
   closeoutsApiEnabled,
@@ -98,6 +99,7 @@ export function usePrototypeRuntimeSessionSync({
           setLoggedInEmployeeId,
           setEmployeePage,
           setOwnerPage,
+          setOwnerProfile,
         });
       })
       .catch((error) => {
@@ -118,6 +120,7 @@ export function usePrototypeRuntimeSessionSync({
     setOwnerPage,
     setSessionOrganizationId,
     setSessionUserId,
+    setOwnerProfile,
   ]);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   repairSaasAccountFoundation,
   updateSaasAccount,
@@ -13,6 +13,7 @@ type EditAccountFormsProps = {
   organizationName: string;
   organizationStatus: string;
   ownerName: string | null;
+  ownerUsername?: string | null;
   onUpdated: () => void;
 };
 
@@ -21,14 +22,19 @@ export function EditAccountForms({
   organizationName,
   organizationStatus,
   ownerName,
+  ownerUsername = null,
   onUpdated,
 }: EditAccountFormsProps) {
   const { t } = useSaasAdminLocale();
   const [accountName, setAccountName] = useState(organizationName);
   const [accountStatus, setAccountStatus] = useState(organizationStatus === "suspended" ? "suspended" : "active");
   const [editOwnerName, setEditOwnerName] = useState(ownerName || "");
-  const [editOwnerUsername, setEditOwnerUsername] = useState("");
+  const [editOwnerUsername, setEditOwnerUsername] = useState(ownerUsername || "");
   const [editOwnerPassword, setEditOwnerPassword] = useState("");
+
+  useEffect(() => {
+    setEditOwnerUsername(ownerUsername || "");
+  }, [ownerUsername]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSavingAccount, setIsSavingAccount] = useState(false);

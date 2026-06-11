@@ -5,6 +5,7 @@ import { getDb } from "@/core/db/client";
 import { auditEvents, authIdentities, organizationMembers, users } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import { upsertOwnerPasswordIdentity } from "@/features/auth/server/auth-identities";
+import { syncRuntimeOwnerProfileForOrganization } from "@/features/runtime-settings/server/sync-runtime-owner-profile";
 
 const inputSchema = z.object({
   actorUserId: z.string().uuid(),
@@ -73,7 +74,7 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
 
   const now = new Date();
 
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     let ownerName = ownerMember.name;
     if (input.ownerName) {
       const [updatedUser] = await tx
@@ -156,4 +157,14 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
       updatedAt: now.toISOString(),
     };
   });
+
+  if (input.ownerName) {
+    await syncRuntimeOwnerProfileForOrganization({
+      organizationId: input.organizationId,
+      actorUserId: input.actorUserId,
+      reason: "saas_owner_updated",
+    });
+  }
+
+  return result;
 }

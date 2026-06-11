@@ -50,6 +50,7 @@ import {
   buildEntry,
   prototypeOwnerActor,
 } from "./prototype-runtime-demo-operational-entries";
+import { resolvePrototypeOwnerActor } from "./resolve-prototype-owner-actor";
 import { nextDayIso } from "./prototype-runtime-date-helpers";
 import { usePrototypeRuntimeEmployeeThemeSync } from "./use-prototype-runtime-employee-theme-sync";
 import { usePrototypeRuntimeOwnerSaveActions } from "./use-prototype-runtime-owner-save-actions";
@@ -98,7 +99,7 @@ export function usePrototypeRuntimeAppState() {
     prototypeOwnerUsername: PROTOTYPE_OWNER_USERNAME,
     prototypeOwnerPassword: PROTOTYPE_OWNER_PASSWORD,
     defaultStoreChannelConfig: DEFAULT_STORE_CHANNEL_CONFIG,
-    prototypeOwnerActor,
+    ownerActor: resolvePrototypeOwnerActor(prototypeOwnerActor),
     channelNameFn: channelName,
   });
 
@@ -327,6 +328,7 @@ export function usePrototypeRuntimeAppState() {
     setArchivedBusinessIds,
     setStoreChannelSettings,
     setStoreOperationalSettings,
+    setOwnerProfile,
     employeeBusinessId,
     setEmployeeBusinessId,
     closeoutsApiEnabled,

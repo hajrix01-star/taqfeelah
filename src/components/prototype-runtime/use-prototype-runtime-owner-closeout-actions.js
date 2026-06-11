@@ -30,13 +30,14 @@ export function usePrototypeRuntimeOwnerCloseoutActions({
   const [ownerEntryActive, setOwnerEntryActive] = useState(false);
   const [ownerEditCloseout, setOwnerEditCloseout] = useState(null);
 
+  const resolvedOwnerName = ownerProfile?.name?.trim() || ownerDisplayName || "";
   const ownerCloseoutActor = useMemo(() => ({
     id: ownerApiUserId || currentOwnerActor?.userId || "owner",
     apiUserId: ownerApiUserId,
-    nameAr: ownerProfile?.nameAr || ownerDisplayName,
-    nameEn: ownerProfile?.nameEn || ownerDisplayName,
+    nameAr: resolvedOwnerName,
+    nameEn: resolvedOwnerName,
     submitActorRole: "owner",
-  }), [currentOwnerActor?.userId, ownerApiUserId, ownerDisplayName, ownerProfile?.nameAr, ownerProfile?.nameEn]);
+  }), [currentOwnerActor?.userId, ownerApiUserId, resolvedOwnerName]);
 
   const ownerCloseoutBusiness = useMemo(() => {
     const storeId = activeOwnerStoreId || activeBusinesses[0]?.id;

@@ -11,6 +11,7 @@ import {
 } from "@/features/auth/server/auth-identities";
 import { getRuntimeSettingsByOrganizationId } from "@/features/runtime-settings/server/runtime-settings-service";
 import { resolveEmployeeUserId } from "@/features/auth/server/resolve-employee-user-id";
+import { resolveUserDisplayName } from "@/features/auth/server/resolve-user-display-name";
 
 const loginInputSchema = z.object({
   mode: z.enum(["owner_password", "employee_pin"]),
@@ -270,10 +271,13 @@ export async function createAuthSession(rawInput: LoginInput) {
       throw new UnauthorizedError("Owner credentials are not linked to an owner member.");
     }
 
+    const displayName = await resolveUserDisplayName(userId);
+
     return {
       organizationId: member.organizationId,
       userId,
       role: resolveMemberRole(member.role, role),
+      displayName,
     };
   }
 
@@ -301,9 +305,13 @@ export async function createAuthSession(rawInput: LoginInput) {
     throw new UnauthorizedError("Owner credentials are not linked to an owner member.");
   }
 
+  const displayName = await resolveUserDisplayName(userId);
+
   return {
     organizationId,
     userId,
     role: resolveMemberRole(member.role, role),
+    displayName,
   };
 }
+

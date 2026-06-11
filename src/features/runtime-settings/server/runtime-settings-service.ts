@@ -55,7 +55,7 @@ function redactSettingsForRole(
   return rest;
 }
 
-async function readRuntimeSettingsEnvelope(organizationId: string) {
+async function readRawRuntimeSettingsEnvelope(organizationId: string) {
   const db = getDb();
   const [row] = await db
     .select({
@@ -77,7 +77,7 @@ async function readRuntimeSettingsEnvelope(organizationId: string) {
   if (!row) {
     const defaultSettings = await buildDefaultRuntimeSettingsForOrganization(organizationId);
     return {
-      settings: normalizeRuntimeSettings(defaultSettings),
+      settings: defaultSettings as Record<string, unknown>,
       updatedAt: null,
       updatedByUserId: null,
     };
@@ -88,10 +88,40 @@ async function readRuntimeSettingsEnvelope(organizationId: string) {
     return { settings: null, updatedAt: row.createdAt, updatedByUserId: row.actorUserId };
   }
   return {
-    settings: normalizeRuntimeSettings(parsedEnvelope.data.settings),
+    settings: parsedEnvelope.data.settings,
     schemaVersion: parsedEnvelope.data.schemaVersion,
     updatedAt: row.createdAt,
     updatedByUserId: row.actorUserId,
+  };
+}
+
+export { readRawRuntimeSettingsEnvelope };
+
+async function readRuntimeSettingsEnvelope(organizationId: string) {
+  const { mergeCanonicalOwnerProfileIntoSettings, resolveOrganizationOwnerName } = await import(
+    "@/features/runtime-settings/server/sync-runtime-owner-profile"
+  );
+  const envelope = await readRawRuntimeSettingsEnvelope(organizationId);
+  const canonicalOwnerName = await resolveOrganizationOwnerName(organizationId);
+
+  if (!envelope.settings) {
+    return {
+      settings: normalizeRuntimeSettings(
+        mergeCanonicalOwnerProfileIntoSettings(null, canonicalOwnerName),
+      ),
+      updatedAt: envelope.updatedAt,
+      updatedByUserId: envelope.updatedByUserId,
+      schemaVersion: envelope.schemaVersion,
+    };
+  }
+
+  return {
+    settings: normalizeRuntimeSettings(
+      mergeCanonicalOwnerProfileIntoSettings(envelope.settings, canonicalOwnerName),
+    ),
+    schemaVersion: envelope.schemaVersion,
+    updatedAt: envelope.updatedAt,
+    updatedByUserId: envelope.updatedByUserId,
   };
 }
 
