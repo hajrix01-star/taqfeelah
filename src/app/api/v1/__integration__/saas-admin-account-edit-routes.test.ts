@@ -147,8 +147,9 @@ describe("saas admin account edit routes integration", () => {
       { params: Promise.resolve({ id: "org-1" }) },
     );
 
-    expect(response.status).toBe(400);
-    const body = await readJsonBody<{ error: { code: string } }>(response);
-    expect(body.error.code).toBe("VALIDATION_ERROR");
+    expect(response.status).toBe(404);
+    const body = await readJsonBody<{ error: { code: string; cause?: string } }>(response);
+    expect(body.error.code).toBe("ORGANIZATION_NOT_FOUND");
+    expect(body.error.cause).toBeTruthy();
   });
 });

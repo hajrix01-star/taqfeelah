@@ -25,6 +25,12 @@ type StoreChannelConfig = {
 
 type StoreChannelSettings = Record<string, StoreChannelConfig | undefined>;
 
+type SalesChannelDb = Pick<ReturnType<typeof getDb>, "select" | "insert" | "update">;
+
+function resolveSalesChannelDb(executor?: SalesChannelDb) {
+  return executor ?? getDb();
+}
+
 function isUuid(value: string): boolean {
   return z.string().uuid().safeParse(value).success;
 }
@@ -42,8 +48,9 @@ async function ensureSalesChannelRow(
   storeUuid: string,
   channelUuid: string,
   channelName: string,
+  executor?: SalesChannelDb,
 ) {
-  const db = getDb();
+  const db = resolveSalesChannelDb(executor);
   const [existing] = await db
     .select({ id: salesChannels.id })
     .from(salesChannels)
@@ -78,6 +85,7 @@ async function provisionStoreChannels(
   storeUuid: string,
   config: StoreChannelConfig,
   salesChannelIdMap: Record<string, string>,
+  executor?: SalesChannelDb,
 ): Promise<StoreChannelConfig> {
   const channels = Array.isArray(config.channels) ? config.channels : [];
   const activeIds = Array.isArray(config.activeIds) ? config.activeIds : [];
@@ -108,6 +116,7 @@ async function provisionStoreChannels(
         storeUuid,
         channelUuid,
         salesChannelDisplayName(channel),
+        executor,
       );
     }
 
@@ -129,6 +138,7 @@ export async function provisionSalesChannels(
   options: {
     storeIdMap: Record<string, string>;
     salesChannelIdMap: Record<string, string>;
+    executor?: SalesChannelDb;
   },
 ): Promise<StoreChannelSettings> {
   if (!storeChannelSettings || typeof storeChannelSettings !== "object" || Array.isArray(storeChannelSettings)) {
@@ -153,6 +163,7 @@ export async function provisionSalesChannels(
       storeUuid,
       config,
       options.salesChannelIdMap,
+      options.executor,
     );
   }
 

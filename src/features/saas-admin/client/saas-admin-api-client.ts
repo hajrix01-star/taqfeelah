@@ -7,31 +7,7 @@ import type {
   SystemHealthReport,
 } from "@/features/saas-admin/types";
 
-type ApiErrorPayload = {
-  error?: {
-    message?: string;
-    details?: {
-      fieldErrors?: Record<string, string[]>;
-      formErrors?: string[];
-    };
-  };
-};
-
-function formatSaasAdminApiError(payload: ApiErrorPayload, status: number): string {
-  const fieldErrors = payload?.error?.details?.fieldErrors;
-  if (fieldErrors && typeof fieldErrors === "object") {
-    const messages = Object.values(fieldErrors).flatMap((items) => items ?? []);
-    if (messages.length) return messages[0]!;
-  }
-  const formErrors = payload?.error?.details?.formErrors;
-  if (Array.isArray(formErrors) && formErrors.length) {
-    return formErrors[0]!;
-  }
-  if (typeof payload?.error?.message === "string" && payload.error.message.trim()) {
-    return payload.error.message;
-  }
-  return `SaaS admin API failed (${status})`;
-}
+import { createSaasAdminApiError, type ApiErrorPayload } from "@/features/saas-admin/client/api-error";
 
 async function fetchSaasAdminJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
@@ -45,7 +21,7 @@ async function fetchSaasAdminJson<T>(path: string, init: RequestInit = {}): Prom
 
   const payload = await response.json().catch(() => ({})) as ApiErrorPayload;
   if (!response.ok) {
-    throw new Error(formatSaasAdminApiError(payload, response.status));
+    throw createSaasAdminApiError(payload, response.status);
   }
 
   return ((payload as { data?: T }).data ?? payload) as T;

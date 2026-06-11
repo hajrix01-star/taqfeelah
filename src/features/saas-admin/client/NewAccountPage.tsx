@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { resolveSaasAdminFormError, type SaasAdminFormError } from "@/features/saas-admin/client/api-error";
+import { AdminErrorAlert } from "@/features/saas-admin/components/AdminErrorAlert";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
 import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
 import { createSaasAccount } from "@/features/saas-admin/client/saas-admin-api-client";
@@ -18,7 +20,7 @@ export default function NewAccountPage() {
   const [storeName, setStoreName] = useState("");
   const [storeLocation, setStoreLocation] = useState("");
   const [planCode, setPlanCode] = useState<"starter" | "growth" | "enterprise">("starter");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SaasAdminFormError | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -37,7 +39,7 @@ export default function NewAccountPage() {
       });
       router.push(`/saas-admin/accounts/${created.organizationId}`);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : t.newAccount.submitError);
+      setError(resolveSaasAdminFormError(submitError, t, t.newAccount.submitError));
     } finally {
       setIsSubmitting(false);
     }
@@ -144,7 +146,7 @@ export default function NewAccountPage() {
           </section>
 
           {error ? (
-            <p className="text-sm text-[var(--admin-danger)]">{error}</p>
+            <AdminErrorAlert message={error.message} cause={error.cause} code={error.code} />
           ) : null}
 
           <button

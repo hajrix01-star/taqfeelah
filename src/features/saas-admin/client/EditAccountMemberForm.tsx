@@ -6,7 +6,7 @@ import {
   formatEntityStatus,
   formatMemberRole,
 } from "@/features/saas-admin/components/admin-display-labels";
-import { mapSaasAdminApiError } from "@/features/saas-admin/client/map-saas-admin-api-error";
+import { mapSaasAdminApiError } from "@/features/saas-admin/client/api-error";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type MemberRow = {
@@ -78,7 +78,7 @@ export function EditAccountMemberForm({
     } catch (submitError) {
       setError(
         submitError instanceof Error
-          ? mapSaasAdminApiError(submitError.message, t) || t.editMember.saveError
+          ? mapSaasAdminApiError(submitError, t) || t.editMember.saveError
           : t.editMember.saveError,
       );
     } finally {

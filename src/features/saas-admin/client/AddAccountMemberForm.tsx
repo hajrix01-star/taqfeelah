@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { resolveSaasAdminFormError, type SaasAdminFormError } from "@/features/saas-admin/client/api-error";
 import { createSaasAccountMember } from "@/features/saas-admin/client/saas-admin-api-client";
+import { AdminErrorAlert } from "@/features/saas-admin/components/AdminErrorAlert";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type StoreOption = {
@@ -21,7 +23,7 @@ export function AddAccountMemberForm({ organizationId, stores, onCreated }: AddA
   const [role, setRole] = useState<"employee" | "manager">("employee");
   const [pin, setPin] = useState("");
   const [storeIds, setStoreIds] = useState<string[]>(stores.map((store) => store.id));
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SaasAdminFormError | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function toggleStore(storeId: string) {
@@ -47,7 +49,7 @@ export function AddAccountMemberForm({ organizationId, stores, onCreated }: AddA
       setPin("");
       onCreated();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : t.addMember.submitError);
+      setError(resolveSaasAdminFormError(submitError, t, t.addMember.submitError));
     } finally {
       setIsSubmitting(false);
     }
@@ -108,7 +110,9 @@ export function AddAccountMemberForm({ organizationId, stores, onCreated }: AddA
           </div>
         </fieldset>
       ) : null}
-      {error ? <p className="text-sm text-[var(--admin-danger)]">{error}</p> : null}
+      {error ? (
+        <AdminErrorAlert message={error.message} cause={error.cause} code={error.code} />
+      ) : null}
       <button
         type="submit"
         disabled={isSubmitting}

@@ -108,9 +108,10 @@ describe("saas admin provision routes integration", () => {
       }),
     );
 
-    expect(response.status).toBe(400);
-    const body = await readJsonBody<{ error: { code: string } }>(response);
-    expect(body.error.code).toBe("VALIDATION_ERROR");
+    expect(response.status).toBe(409);
+    const body = await readJsonBody<{ error: { code: string; cause?: string } }>(response);
+    expect(body.error.code).toBe("OWNER_USERNAME_TAKEN");
+    expect(body.error.cause).toBeTruthy();
   });
 
   it("POST /saas-admin/accounts/:id/members provisions a member", async () => {

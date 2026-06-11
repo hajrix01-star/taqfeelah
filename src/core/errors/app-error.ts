@@ -2,13 +2,15 @@ export class AppError extends Error {
   readonly code: string;
   readonly status: number;
   readonly details?: unknown;
+  readonly causeHint?: string;
 
-  constructor(code: string, message: string, status = 500, details?: unknown) {
+  constructor(code: string, message: string, status = 500, details?: unknown, causeHint?: string) {
     super(message);
     this.name = "AppError";
     this.code = code;
     this.status = status;
     this.details = details;
+    this.causeHint = causeHint;
   }
 }
 
@@ -37,5 +39,12 @@ export class ServiceUnavailableError extends AppError {
   constructor(message = "Service unavailable") {
     super("SERVICE_UNAVAILABLE", message, 503);
     this.name = "ServiceUnavailableError";
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message: string, details?: unknown, causeHint?: string) {
+    super("CONFLICT", message, 409, details, causeHint);
+    this.name = "ConflictError";
   }
 }

@@ -28,7 +28,7 @@ type ProvisionSaasAccountFoundationInput = {
 
 export async function provisionSaasAccountFoundation(
   input: ProvisionSaasAccountFoundationInput,
-  executor: Pick<ReturnType<typeof getDb>, "insert">,
+  executor: Pick<ReturnType<typeof getDb>, "insert" | "select" | "update">,
 ) {
   const storeChannelSettings = await provisionSalesChannels(
     input.organizationId,
@@ -36,6 +36,7 @@ export async function provisionSaasAccountFoundation(
     {
       storeIdMap: { [input.storeId]: input.storeId },
       salesChannelIdMap: {},
+      executor,
     },
   );
 
