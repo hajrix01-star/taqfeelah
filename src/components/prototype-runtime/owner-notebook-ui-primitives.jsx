@@ -93,17 +93,49 @@ function KindSegment({ lang, value, onChange, compact = false }) {
   );
 }
 
-function useAutoGrowTextarea(value) {
+function useAutoGrowTextarea(value, { minHeight = 72, maxHeight = 240 } = {}) {
   const ref = useRef(null);
 
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
     element.style.height = "auto";
-    element.style.height = `${Math.min(element.scrollHeight, 120)}px`;
-  }, [value]);
+    const nextHeight = Math.min(Math.max(element.scrollHeight, minHeight), maxHeight);
+    element.style.height = `${nextHeight}px`;
+  }, [value, minHeight, maxHeight]);
 
   return ref;
+}
+
+function NoteColorToggle({ lang, color, onChange }) {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = (nextColor) => {
+    onChange(nextColor);
+    setOpen(false);
+  };
+
+  return (
+    <div className="min-w-0 flex-1">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+        className="inline-flex w-full items-center gap-2 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-black text-[#112A46] ring-1 ring-[#E8E1D4]"
+      >
+        <span
+          className="h-5 w-5 shrink-0 rounded-full border border-[#D9D1C1]"
+          style={{ backgroundColor: notebookThemes[color]?.paper }}
+        />
+        <span className="min-w-0 flex-1 truncate text-start">{text(lang, color)}</span>
+      </button>
+      {open ? (
+        <div className="mt-2 rounded-xl bg-white/95 p-2.5 ring-1 ring-[#E8E1D4]">
+          <ThemePicker lang={lang} theme={color} onChange={handleSelect} compact />
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export function NoteComposerPanel({
@@ -156,14 +188,14 @@ export function NoteComposerPanel({
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={handleKeyDown}
-        rows={1}
+        rows={2}
         placeholder={text(lang, "ownerNotebookPlaceholder")}
-        className="w-full resize-none overflow-hidden bg-transparent text-taq-body-sm font-bold leading-5 text-[#112A46] outline-none placeholder:font-bold placeholder:text-[#A99D87]"
+        className="min-h-[72px] w-full resize-none overflow-hidden bg-transparent text-taq-body-sm font-bold leading-6 text-[#112A46] outline-none placeholder:font-bold placeholder:text-[#A99D87]"
       />
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-2 flex items-start gap-2">
         <KindSegment lang={lang} value={kind} onChange={setKind} compact />
-        <span className="h-5 w-px shrink-0 bg-[#E8E1D4]/90" aria-hidden />
-        <ThemePicker lang={lang} theme={color} onChange={setColor} compact />
+        <span className="mt-1 h-5 w-px shrink-0 bg-[#E8E1D4]/90" aria-hidden />
+        <NoteColorToggle lang={lang} color={color} onChange={setColor} />
       </div>
       <div className="mt-2.5 flex items-center gap-2">
         <button
@@ -211,13 +243,13 @@ function NoteEditPanel({ lang, note, onSave, onCancel, onDelete }) {
         ref={textareaRef}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
-        rows={1}
-        className="w-full resize-none overflow-hidden bg-transparent text-taq-body-sm font-bold leading-5 text-[#112A46] outline-none"
+        rows={2}
+        className="min-h-[72px] w-full resize-none overflow-hidden bg-transparent text-taq-body-sm font-bold leading-6 text-[#112A46] outline-none"
       />
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-2 flex items-start gap-2">
         <KindSegment lang={lang} value={kind} onChange={setKind} compact />
-        <span className="h-5 w-px shrink-0 bg-[#E8E1D4]/90" aria-hidden />
-        <ThemePicker lang={lang} theme={color} onChange={setColor} compact />
+        <span className="mt-1 h-5 w-px shrink-0 bg-[#E8E1D4]/90" aria-hidden />
+        <NoteColorToggle lang={lang} color={color} onChange={setColor} />
       </div>
       <div className="mt-2.5 flex items-center gap-2">
         <button
