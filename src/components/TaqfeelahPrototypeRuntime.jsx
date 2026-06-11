@@ -55,6 +55,7 @@ export default function TaqfeelahPrototypeRuntime() {
     closeoutsApiStrictMode,
     closeoutsApiOrganizationId,
     ownerApiUserId,
+    ownerNotebookApiEnabled,
     reportingBusinesses,
     archivedBusinessIds,
     notebookTheme,
@@ -317,6 +318,7 @@ export default function TaqfeelahPrototypeRuntime() {
                 entriesApiEnabled={entriesApiEnabled}
                 closeoutsApiOrganizationId={closeoutsApiOrganizationId}
                 ownerApiUserId={ownerApiUserId}
+                ownerNotebookApiEnabled={ownerNotebookApiEnabled}
                 entryAttachmentsApiProps={entryAttachmentsApiProps}
                 saveOwnerSummary={saveOwnerSummary}
                 saveOwner={saveOwner}

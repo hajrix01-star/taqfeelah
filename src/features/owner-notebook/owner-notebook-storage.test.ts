@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildOwnerNotebookStorageKey,
   createOwnerNotebookNoteInput,
   deleteOwnerNotebookNote,
   filterOwnerNotebookNotes,
@@ -53,6 +54,15 @@ describe("owner-notebook-storage", () => {
 
     expect(filterOwnerNotebookNotes(notes, "notes")).toHaveLength(1);
     expect(filterOwnerNotebookNotes(notes, "tasks")).toHaveLength(1);
+  });
+
+  it("builds tenant-scoped storage keys", () => {
+    expect(buildOwnerNotebookStorageKey("org-a", "user-1")).toBe(
+      "taqfeelah_owner_notebook_v1:org-a:user-1",
+    );
+    expect(buildOwnerNotebookStorageKey("org-b", "user-2")).not.toBe(
+      buildOwnerNotebookStorageKey("org-a", "user-1"),
+    );
   });
 
   it("toggles task completion without changing updatedAt", () => {

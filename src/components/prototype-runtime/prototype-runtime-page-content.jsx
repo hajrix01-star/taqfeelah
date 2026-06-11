@@ -64,6 +64,7 @@ export function PrototypeRuntimePageContent({
   entriesApiEnabled,
   closeoutsApiOrganizationId,
   ownerApiUserId,
+  ownerNotebookApiEnabled = false,
   entryAttachmentsApiProps,
   saveOwnerSummary,
   saveOwner,
@@ -218,7 +219,13 @@ export function PrototypeRuntimePageContent({
         />
       )}
       {!employee && ownerPage === "notebook" && (
-        <OwnerNotebookScreen lang={lang} notebookTheme={notebookTheme} />
+        <OwnerNotebookScreen
+          lang={lang}
+          notebookTheme={notebookTheme}
+          organizationId={closeoutsApiOrganizationId}
+          userId={ownerApiUserId}
+          apiEnabled={ownerNotebookApiEnabled}
+        />
       )}
       {!employee && ownerPage === "register" && (
         <OwnerRegisterConnected
