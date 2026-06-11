@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AppQueryProvider } from "@/core/client/app-query-provider";
 import { AdminMobileTopBar } from "@/features/saas-admin/components/AdminMobileTopBar";
 import { AdminSidebar } from "@/features/saas-admin/components/AdminSidebar";
+import { useAdminMobileNav } from "@/features/saas-admin/hooks/use-admin-mobile-nav";
 import {
   SaasAdminLocaleProvider,
   useSaasAdminLocale,
@@ -29,6 +30,12 @@ function AdminShellFrame({
   const { dir, t } = useSaasAdminLocale();
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  const closeNav = useCallback(() => {
+    setNavOpen(false);
+  }, []);
 
   useEffect(() => {
     setNavOpen(false);
@@ -43,6 +50,13 @@ function AdminShellFrame({
     };
   }, [navOpen]);
 
+  useAdminMobileNav({
+    navOpen,
+    onClose: closeNav,
+    menuButtonRef,
+    sidebarRef,
+  });
+
   return (
     <div className="saas-admin-root flex min-h-[100dvh]" dir={dir}>
       {navOpen ? (
@@ -50,21 +64,23 @@ function AdminShellFrame({
           type="button"
           className="fixed inset-0 z-40 bg-[#112A46]/40 lg:hidden"
           aria-label={t.common.closeMenu}
-          onClick={() => setNavOpen(false)}
+          onClick={closeNav}
         />
       ) : null}
       <AdminSidebar
+        ref={sidebarRef}
         id="saas-admin-sidebar"
         session={session}
         mobileOpen={navOpen}
-        onNavigate={() => setNavOpen(false)}
+        onNavigate={closeNav}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminMobileTopBar
+          ref={menuButtonRef}
           navOpen={navOpen}
           onToggleNav={() => setNavOpen((open) => !open)}
         />
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip">
           {children}
         </main>
       </div>

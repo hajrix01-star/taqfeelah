@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
 import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
-import { AdminTable } from "@/features/saas-admin/components/AdminTable";
+import { AdminTable, AdminTableCell } from "@/features/saas-admin/components/AdminTable";
 import { formatDateTime, formatNumber } from "@/features/saas-admin/components/format-utils";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
 import { StatusBadge } from "@/features/saas-admin/components/StatusBadge";
@@ -12,12 +12,83 @@ import { fetchSaasAccounts } from "@/features/saas-admin/client/saas-admin-api-c
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
+type AccountFiltersProps = {
+  search: string;
+  status: string;
+  plan: string;
+  onSearchChange: (value: string) => void;
+  onStatusChange: (value: string) => void;
+  onPlanChange: (value: string) => void;
+};
+
+function AccountFilters({
+  search,
+  status,
+  plan,
+  onSearchChange,
+  onStatusChange,
+  onPlanChange,
+}: AccountFiltersProps) {
+  const { t } = useSaasAdminLocale();
+
+  return (
+    <>
+      <input
+        type="search"
+        placeholder={t.common.searchByName}
+        value={search}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="admin-filter-field min-w-0 rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm lg:w-52"
+      />
+      <select
+        value={status}
+        onChange={(e) => onStatusChange(e.target.value)}
+        className="admin-filter-field rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm"
+      >
+        <option value="all">{t.common.allStatuses}</option>
+        <option value="trial">{t.status.trial}</option>
+        <option value="active">{t.status.active}</option>
+        <option value="inactive">{t.status.inactive}</option>
+        <option value="suspended">{t.status.suspended}</option>
+      </select>
+      <select
+        value={plan}
+        onChange={(e) => onPlanChange(e.target.value)}
+        className="admin-filter-field rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm"
+      >
+        <option value="">{t.common.allPlans}</option>
+        <option value="starter">Starter</option>
+        <option value="growth">Growth</option>
+        <option value="enterprise">Enterprise</option>
+      </select>
+    </>
+  );
+}
+
+function NewAccountButton({ className = "" }: { className?: string }) {
+  const { t } = useSaasAdminLocale();
+  return (
+    <Link
+      href="/saas-admin/accounts/new"
+      className={`rounded-lg bg-[var(--admin-primary)] px-3 py-2.5 text-center text-sm font-semibold text-white ${className}`.trim()}
+    >
+      {t.accounts.newAccount}
+    </Link>
+  );
+}
+
+function DesktopHeaderActions({ children }: { children: ReactNode }) {
+  return <div className="hidden w-full flex-col gap-2 lg:flex lg:w-auto lg:flex-row lg:flex-wrap lg:items-center lg:justify-end">{children}</div>;
+}
+
 export default function AccountsPage() {
   const { locale, t } = useSaasAdminLocale();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [plan, setPlan] = useState("");
   const [page, setPage] = useState(1);
+
+  const resetPage = useCallback(() => setPage(1), []);
 
   const queryFn = useCallback(
     () => fetchSaasAccounts({
@@ -36,6 +107,27 @@ export default function AccountsPage() {
   );
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
+  const tableColumns = [
+    t.accounts.colAccount,
+    t.accounts.colOwner,
+    t.accounts.colStores,
+    t.accounts.colUsers,
+    t.accounts.colCloseoutsMonth,
+    t.accounts.colLastActivity,
+    t.accounts.colPlan,
+    t.accounts.colStatus,
+  ];
+
+  const filters = (
+    <AccountFilters
+      search={search}
+      status={status}
+      plan={plan}
+      onSearchChange={(value) => { resetPage(); setSearch(value); }}
+      onStatusChange={(value) => { resetPage(); setStatus(value); }}
+      onPlanChange={(value) => { resetPage(); setPlan(value); }}
+    />
+  );
 
   return (
     <>
@@ -43,45 +135,17 @@ export default function AccountsPage() {
         title={t.accounts.title}
         description={t.accounts.description}
         actions={(
-          <>
-            <Link
-              href="/saas-admin/accounts/new"
-              className="w-full rounded-lg bg-[var(--admin-primary)] px-3 py-2.5 text-center text-sm font-semibold text-white sm:w-auto"
-            >
-              {t.accounts.newAccount}
-            </Link>
-            <input
-              type="search"
-              placeholder={t.common.searchByName}
-              value={search}
-              onChange={(e) => { setPage(1); setSearch(e.target.value); }}
-              className="w-full min-w-0 rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm sm:w-52"
-            />
-            <select
-              value={status}
-              onChange={(e) => { setPage(1); setStatus(e.target.value); }}
-              className="w-full rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm sm:w-auto"
-            >
-              <option value="all">{t.common.allStatuses}</option>
-              <option value="trial">{t.status.trial}</option>
-              <option value="active">{t.status.active}</option>
-              <option value="inactive">{t.status.inactive}</option>
-              <option value="suspended">{t.status.suspended}</option>
-            </select>
-            <select
-              value={plan}
-              onChange={(e) => { setPage(1); setPlan(e.target.value); }}
-              className="w-full rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm sm:w-auto"
-            >
-              <option value="">{t.common.allPlans}</option>
-              <option value="starter">Starter</option>
-              <option value="growth">Growth</option>
-              <option value="enterprise">Enterprise</option>
-            </select>
-          </>
+          <DesktopHeaderActions>
+            <NewAccountButton className="w-full lg:w-auto" />
+            {filters}
+          </DesktopHeaderActions>
         )}
       />
       <AdminPageBody>
+        <div className="space-y-2 lg:hidden">
+          <NewAccountButton className="block w-full" />
+          <div className="grid gap-2">{filters}</div>
+        </div>
         {isLoading || isFetching ? <LoadingSkeleton /> : null}
         {error ? (
           <p className="text-sm text-[var(--admin-danger)]">
@@ -90,33 +154,21 @@ export default function AccountsPage() {
         ) : null}
         {!isLoading && data ? (
           <>
-            <AdminTable
-              columns={[
-                t.accounts.colAccount,
-                t.accounts.colOwner,
-                t.accounts.colStores,
-                t.accounts.colUsers,
-                t.accounts.colCloseoutsMonth,
-                t.accounts.colLastActivity,
-                t.accounts.colPlan,
-                t.accounts.colStatus,
-              ]}
-              empty={data.accounts.length === 0}
-            >
+            <AdminTable columns={tableColumns} empty={data.accounts.length === 0}>
               {data.accounts.map((row) => (
                 <tr key={row.id} className="hover:bg-[#FAFBFC]">
-                  <td className="px-4 py-3">
+                  <AdminTableCell col={0}>
                     <Link href={`/saas-admin/accounts/${row.id}`} className="font-semibold text-[var(--admin-primary)] hover:underline">
                       {row.name}
                     </Link>
-                  </td>
-                  <td className="px-4 py-3 text-[var(--admin-muted)]">{row.ownerName || "—"}</td>
-                  <td className="px-4 py-3">{formatNumber(row.storesCount, locale)}</td>
-                  <td className="px-4 py-3">{formatNumber(row.usersCount, locale)}</td>
-                  <td className="px-4 py-3">{formatNumber(row.closeoutsThisMonth, locale)}</td>
-                  <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.lastActivityAt, locale)}</td>
-                  <td className="px-4 py-3">{row.planCode || "—"}</td>
-                  <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
+                  </AdminTableCell>
+                  <AdminTableCell col={1} className="text-[var(--admin-muted)]">{row.ownerName || "—"}</AdminTableCell>
+                  <AdminTableCell col={2}>{formatNumber(row.storesCount, locale)}</AdminTableCell>
+                  <AdminTableCell col={3}>{formatNumber(row.usersCount, locale)}</AdminTableCell>
+                  <AdminTableCell col={4}>{formatNumber(row.closeoutsThisMonth, locale)}</AdminTableCell>
+                  <AdminTableCell col={5} className="text-[var(--admin-muted)]">{formatDateTime(row.lastActivityAt, locale)}</AdminTableCell>
+                  <AdminTableCell col={6}>{row.planCode || "—"}</AdminTableCell>
+                  <AdminTableCell col={7}><StatusBadge status={row.status} /></AdminTableCell>
                 </tr>
               ))}
             </AdminTable>

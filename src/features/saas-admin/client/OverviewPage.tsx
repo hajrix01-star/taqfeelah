@@ -13,7 +13,8 @@ import {
 } from "recharts";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
 import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
-import { AdminTable } from "@/features/saas-admin/components/AdminTable";
+import { AdminChartFrame } from "@/features/saas-admin/components/AdminChartFrame";
+import { AdminTable, AdminTableCell } from "@/features/saas-admin/components/AdminTable";
 import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import { formatDateTime, formatNumber } from "@/features/saas-admin/components/format-utils";
 import { KpiCard } from "@/features/saas-admin/components/KpiCard";
@@ -71,19 +72,19 @@ export default function OverviewPage() {
           {activityTrend.length === 0 ? (
             <p className="text-sm text-[var(--admin-muted)]">{t.overview.noActivity}</p>
           ) : (
-            <div className="h-56 sm:h-72">
+            <AdminChartFrame>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={activityTrend}>
+                <LineChart data={activityTrend} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Legend />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                  <YAxis tick={{ fontSize: 10 }} width={36} />
+                  <Tooltip wrapperStyle={{ maxWidth: "min(100vw - 2rem, 18rem)" }} />
+                  <Legend wrapperStyle={{ fontSize: "11px" }} />
                   <Line type="monotone" dataKey="closeouts" name={t.common.closeouts} stroke="#112A46" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="operations" name={t.common.operations} stroke="#F5A623" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
+            </AdminChartFrame>
           )}
         </ChartCard>
 
@@ -96,14 +97,14 @@ export default function OverviewPage() {
             >
               {topActiveAccounts.map((row) => (
                 <tr key={row.id} className="hover:bg-[#FAFBFC]">
-                  <td className="px-4 py-3">
+                  <AdminTableCell col={0}>
                     <Link href={`/saas-admin/accounts/${row.id}`} className="font-semibold text-[var(--admin-primary)] hover:underline">
                       {row.name}
                     </Link>
-                  </td>
-                  <td className="px-4 py-3">{formatNumber(row.closeoutsThisMonth, locale)}</td>
-                  <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.lastActivityAt, locale)}</td>
-                  <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
+                  </AdminTableCell>
+                  <AdminTableCell col={1}>{formatNumber(row.closeoutsThisMonth, locale)}</AdminTableCell>
+                  <AdminTableCell col={2} className="text-[var(--admin-muted)]">{formatDateTime(row.lastActivityAt, locale)}</AdminTableCell>
+                  <AdminTableCell col={3}><StatusBadge status={row.status} /></AdminTableCell>
                 </tr>
               ))}
             </AdminTable>
@@ -118,13 +119,13 @@ export default function OverviewPage() {
             >
               {inactiveAccounts.map((row) => (
                 <tr key={row.id} className="hover:bg-[#FAFBFC]">
-                  <td className="px-4 py-3">
+                  <AdminTableCell col={0}>
                     <Link href={`/saas-admin/accounts/${row.id}`} className="font-semibold text-[var(--admin-primary)] hover:underline">
                       {row.name}
                     </Link>
-                  </td>
-                  <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.lastActivityAt, locale)}</td>
-                  <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
+                  </AdminTableCell>
+                  <AdminTableCell col={1} className="text-[var(--admin-muted)]">{formatDateTime(row.lastActivityAt, locale)}</AdminTableCell>
+                  <AdminTableCell col={2}><StatusBadge status={row.status} /></AdminTableCell>
                 </tr>
               ))}
             </AdminTable>

@@ -2,12 +2,18 @@
 
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
-export function LanguageToggle() {
+type LanguageToggleProps = {
+  compact?: boolean;
+};
+
+export function LanguageToggle({ compact = false }: LanguageToggleProps) {
   const { locale, setLocale, t } = useSaasAdminLocale();
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs font-medium text-[var(--admin-muted)]">{t.language}</span>
+      {compact ? null : (
+        <span className="text-xs font-medium text-[var(--admin-muted)]">{t.language}</span>
+      )}
       <div className="flex overflow-hidden rounded-lg border border-[var(--admin-border)]">
         <button
           type="button"

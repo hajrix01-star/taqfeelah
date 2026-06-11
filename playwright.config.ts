@@ -32,6 +32,7 @@ export default defineConfig({
       NEXT_PUBLIC_PHASE9_API_ENABLED: "false",
       NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED: "false",
       NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE: "false",
+      NEXT_PUBLIC_SAAS_ADMIN_ENABLED: "true",
     },
   },
 });

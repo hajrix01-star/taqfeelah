@@ -8,7 +8,7 @@ type AdminHeaderProps = {
 
 export function AdminHeader({ title, description, actions }: AdminHeaderProps) {
   return (
-    <header className="sticky top-14 z-10 border-b border-[var(--admin-border)] bg-[var(--admin-bg)]/95 px-4 py-4 backdrop-blur sm:px-6 sm:py-5 lg:top-0">
+    <header className="sticky top-[var(--admin-mobile-topbar-height)] z-10 border-b border-[var(--admin-border)] bg-[var(--admin-bg)]/95 px-4 py-4 backdrop-blur sm:px-6 sm:py-5 lg:top-0">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <h1 className="text-lg font-bold text-[var(--admin-primary)] sm:text-xl">{title}</h1>
