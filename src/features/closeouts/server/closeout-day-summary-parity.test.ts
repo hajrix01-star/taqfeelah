@@ -54,11 +54,12 @@ vi.mock("@/core/config/entries-api-mode", () => ({
 function resolveSelectResult(call: number) {
   if (call === 0) return [{ name: "Test Store" }];
   if (call === 1) return closeoutRows;
-  if (call === 2) return entryRows.filter((row) => row.status === "active");
-  if (call === 3) return salesChannelRows;
-  if (call === 4) return [];
-  if (call === 5) return [{ id: ACTOR_ID, name: "Actor" }];
-  if (call === 6) return daySummaryMovementRows;
+  if (call === 2) return [];
+  if (call === 3) return entryRows.filter((row) => row.status === "active");
+  if (call === 4) return salesChannelRows;
+  if (call === 5) return [];
+  if (call === 6) return [{ id: ACTOR_ID, name: "Actor" }];
+  if (call === 7) return daySummaryMovementRows;
   return [];
 }
 

@@ -82,6 +82,12 @@ function buildCloseoutWorkflowHints(events) {
     if (event.type === "submitted" || event.type === "resubmitted" || event.type === "ownerEdit") {
       if (!hint.submittedAt || (at && at > hint.submittedAt)) hint.submittedAt = at;
     }
+    if (event.type === "resubmitted" || event.type === "ownerEdit") {
+      if (!hint.ownerEditedAt || (at && at > hint.ownerEditedAt)) {
+        hint.ownerEditedAt = at;
+        hint.ownerEditedByName = event.actorName || event.employeeName || null;
+      }
+    }
     if (event.type === "approved") {
       if (!hint.reviewedAt || (at && at > hint.reviewedAt)) hint.reviewedAt = at;
     }
@@ -104,6 +110,8 @@ function applyWorkflowHints(closeout, hints) {
     reviewedAt: closeout.reviewedAt || hints.reviewedAt || null,
     returnedAt: closeout.returnedAt || hints.returnedAt || null,
     returnReason: closeout.returnReason || hints.returnReason || null,
+    ownerEditedAt: closeout.ownerEditedAt || hints.ownerEditedAt || null,
+    ownerEditedByName: closeout.ownerEditedByName || hints.ownerEditedByName || null,
   };
 }
 

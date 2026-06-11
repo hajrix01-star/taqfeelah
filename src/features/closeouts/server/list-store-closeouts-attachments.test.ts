@@ -30,7 +30,8 @@ function createQueryChain(call: number) {
         createdAt: new Date("2026-06-07T10:00:00.000Z"),
       }]);
     }
-    if (call === 2) {
+    if (call === 2) return Promise.resolve([]);
+    if (call === 3) {
       return Promise.resolve([{
         id: SUMMARY_ENTRY_ID,
         closeoutId: CLOSEOUT_ID,
@@ -41,8 +42,8 @@ function createQueryChain(call: number) {
         amountHalalas: 120000,
       }]);
     }
-    if (call === 3) return Promise.resolve([]);
-    if (call === 4) {
+    if (call === 4) return Promise.resolve([]);
+    if (call === 5) {
       return Promise.resolve([{
         id: ATTACHMENT_ID,
         entryId: SUMMARY_ENTRY_ID,
@@ -52,7 +53,7 @@ function createQueryChain(call: number) {
         createdAt: new Date("2026-06-07T10:00:00.000Z"),
       }]);
     }
-    if (call === 5) return Promise.resolve([{ id: ACTOR_ID, name: "Actor" }]);
+    if (call === 6) return Promise.resolve([{ id: ACTOR_ID, name: "Actor" }]);
     return Promise.resolve([]);
   };
 

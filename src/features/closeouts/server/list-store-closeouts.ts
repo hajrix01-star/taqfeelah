@@ -6,6 +6,7 @@ import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
 import { toRiyals } from "@/core/money/halalas";
 import { dailyCloseouts, entries, entrySalesChannels, stores, users } from "@/core/db/schema";
+import { loadCloseoutOwnerEditMetaByCloseoutId } from "@/features/closeouts/server/load-closeout-owner-edit-meta";
 import type { CloseoutAttachmentRef } from "@/features/closeouts/server/closeout-attachment-ref";
 import { loadEntryAttachmentMetadataByEntryId } from "@/features/closeouts/server/load-entry-attachment-metadata";
 import {
@@ -102,6 +103,13 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
   if (closeoutRows.length === 0) return [];
 
   const closeoutIds = closeoutRows.map((row) => row.id);
+  const clientCloseoutIds = closeoutRows.map((row) => row.clientCloseoutId);
+  const { byDailyCloseoutId: ownerEditByDailyCloseoutId } = await loadCloseoutOwnerEditMetaByCloseoutId(db, {
+    organizationId: input.organizationId,
+    storeId: input.storeId,
+    closeoutRowIds: closeoutIds,
+    clientCloseoutIds,
+  });
   const entryRows = await db
     .select({
       id: entries.id,
@@ -231,6 +239,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
     const status = mapCloseoutStatus(row.status);
     const submittedByName = actorNameById.get(row.submittedByUserId) || "";
     const reviewedByName = row.reviewedByUserId ? actorNameById.get(row.reviewedByUserId) || "" : null;
+    const ownerEditMeta = ownerEditByDailyCloseoutId.get(row.id) || null;
 
     return {
       id: row.clientCloseoutId,
@@ -247,6 +256,9 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
       submittedAt: row.createdAt.toISOString(),
       reviewedAt: row.reviewedAt ? row.reviewedAt.toISOString() : null,
       reviewedByName,
+      ownerEditedAt: ownerEditMeta?.ownerEditedAt || null,
+      ownerEditedByUserId: ownerEditMeta?.ownerEditedByUserId || null,
+      ownerEditedByName: ownerEditMeta?.ownerEditedByName || null,
       returnedAt: null,
       returnedByName: null,
       returnReason: null,

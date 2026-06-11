@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import CloseoutAttachmentThumbs from "../closeouts/client/CloseoutAttachmentThumbs";
 import { countCloseoutAttachments } from "../closeouts/client/closeout-attachment-utils";
 import { computeCloseoutTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
+import CloseoutOwnerEditBadge from "../closeouts/client/CloseoutOwnerEditBadge";
 import { closeoutStatusLabel } from "../daily-closeouts/closeout-status";
 
 function money(value, lang) {
@@ -41,7 +42,10 @@ export default function OwnerCloseoutManagePanel({
                 {lang === "ar" ? "أرسلها:" : "Sent by:"} {closeout.submittedByName}
                 {closeout.submittedAt ? ` · ${formatDateTime(closeout.submittedAt, lang)}` : ""}
               </p>
-              <p className="mt-1 text-taq-meta font-black text-[#806528]">{statusText}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <p className="text-taq-meta font-black text-[#806528]">{statusText}</p>
+                <CloseoutOwnerEditBadge lang={lang} source={closeout} />
+              </div>
             </div>
             <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]"><X className="h-4 w-4" /></button>
           </div>

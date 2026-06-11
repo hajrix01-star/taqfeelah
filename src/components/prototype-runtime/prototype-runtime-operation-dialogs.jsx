@@ -27,6 +27,7 @@ import {
   entryHasAttachment,
   entryIsVoided,
 } from "./prototype-runtime-entry-helpers";
+import CloseoutOwnerEditBadge from "@/features/closeouts/client/CloseoutOwnerEditBadge";
 import { Badge } from "./prototype-runtime-shell-ui";
 
 export function SavedOutflowShareDialog({ lang, item, businessesList = businesses, onClose }) {
@@ -50,6 +51,7 @@ export function OperationModal({
   onVoid,
   onRestore,
   onEditOwnerCloseout,
+  ownerEditSource = null,
   canVoid = true,
   canRestore = true,
   entryAttachmentsApiEnabled = false,
@@ -84,6 +86,14 @@ export function OperationModal({
                 <Badge tone={isSale ? "success" : "warning"}>{operationDisplayLabel(item, lang)}</Badge>
                 {voided && <Badge tone="warning">{text(lang, "voided")}</Badge>}
                 {!voided && entryWasRestored(item) && <Badge tone="success">{text(lang, "restored")}</Badge>}
+                <CloseoutOwnerEditBadge
+                  lang={lang}
+                  source={ownerEditSource || {
+                    ownerEditedAt: item.closeoutOwnerEditedAt,
+                    ownerEditedByUserId: item.closeoutOwnerEditedByUserId,
+                    ownerEditedByName: item.closeoutOwnerEditedByName,
+                  }}
+                />
                 <h3 className="mt-2 w-full text-lg font-black">{noteLabel(item, lang)}</h3>
               </div>
               <button type="button" onClick={onClose}><X className="h-5 w-5" /></button>
