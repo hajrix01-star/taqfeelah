@@ -1,0 +1,16 @@
+.saas-admin-root {
+  --admin-bg: #f7f8fa;
+  --admin-surface: #ffffff;
+  --admin-primary: #112a46;
+  --admin-accent: #f5a623;
+  --admin-text: #111827;
+  --admin-muted: #6b7280;
+  --admin-border: #e5e7eb;
+  --admin-success: #16a34a;
+  --admin-warning: #d97706;
+  --admin-danger: #dc2626;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  min-height: 100dvh;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}

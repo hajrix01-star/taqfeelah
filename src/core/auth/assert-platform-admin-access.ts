@@ -34,3 +34,13 @@ export function assertPlatformAdminAccess(rawInput: z.infer<typeof inputSchema>)
 
   return { actorUserId: parsed.data.actorUserId };
 }
+
+export function isPlatformAdminUser(actorUserId: string | null | undefined): boolean {
+  if (!actorUserId) return false;
+  try {
+    assertPlatformAdminAccess({ actorUserId });
+    return true;
+  } catch {
+    return false;
+  }
+}

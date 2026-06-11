@@ -1,0 +1,174 @@
+import { and, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { z } from "zod";
+import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
+import { getDb } from "@/core/db/client";
+import {
+  attachments,
+  dailyCloseouts,
+  entries,
+  organizationMembers,
+  orgEngagementSnapshots,
+  organizations,
+  stores,
+  users,
+} from "@/core/db/schema";
+import { ValidationError } from "@/core/errors/app-error";
+import type { SaasUsageReport } from "@/features/saas-admin/types";
+import { resolveAccountStatus } from "@/features/saas-admin/server/saas-admin-utils";
+
+const inputSchema = z.object({
+  actorUserId: z.string().uuid(),
+  months: z.number().int().min(1).max(12).default(6),
+});
+
+export async function getSaasUsage(rawInput: z.infer<typeof inputSchema>): Promise<SaasUsageReport> {
+  const parsed = inputSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    throw new ValidationError("Invalid SaaS usage input.", parsed.error.flatten());
+  }
+  assertPlatformAdminAccess({ actorUserId: parsed.data.actorUserId });
+
+  const db = getDb();
+  const monthsBack = parsed.data.months;
+
+  const closeoutsByMonth = await db
+    .select({
+      month: sql<string>`to_char(${dailyCloseouts.date}, 'YYYY-MM')`,
+      total: count(),
+    })
+    .from(dailyCloseouts)
+    .where(gte(dailyCloseouts.date, sql`(current_date - make_interval(months => ${monthsBack}))::date`))
+    .groupBy(sql`to_char(${dailyCloseouts.date}, 'YYYY-MM')`)
+    .orderBy(sql`to_char(${dailyCloseouts.date}, 'YYYY-MM')`);
+
+  const operationsByMonth = await db
+    .select({
+      month: sql<string>`to_char(${entries.date}, 'YYYY-MM')`,
+      total: count(),
+    })
+    .from(entries)
+    .where(
+      and(
+        eq(entries.status, "active"),
+        gte(entries.date, sql`(current_date - make_interval(months => ${monthsBack}))::date`),
+      ),
+    )
+    .groupBy(sql`to_char(${entries.date}, 'YYYY-MM')`)
+    .orderBy(sql`to_char(${entries.date}, 'YYYY-MM')`);
+
+  const attachmentsByMonth = await db
+    .select({
+      month: sql<string>`to_char(${attachments.createdAt}, 'YYYY-MM')`,
+      total: count(),
+    })
+    .from(attachments)
+    .where(gte(attachments.createdAt, sql`(current_date - make_interval(months => ${monthsBack}))`))
+    .groupBy(sql`to_char(${attachments.createdAt}, 'YYYY-MM')`)
+    .orderBy(sql`to_char(${attachments.createdAt}, 'YYYY-MM')`);
+
+  const closeoutMap = new Map(closeoutsByMonth.map((row) => [row.month, Number(row.total)]));
+  const operationMap = new Map(operationsByMonth.map((row) => [row.month, Number(row.total)]));
+  const attachmentMap = new Map(attachmentsByMonth.map((row) => [row.month, Number(row.total)]));
+
+  const allMonths = new Set([
+    ...closeoutMap.keys(),
+    ...operationMap.keys(),
+    ...attachmentMap.keys(),
+  ]);
+
+  const monthlyTrend = [...allMonths].sort().map((month) => ({
+    month,
+    closeouts: closeoutMap.get(month) ?? 0,
+    operations: operationMap.get(month) ?? 0,
+    attachments: attachmentMap.get(month) ?? 0,
+  }));
+
+  const [storeCount] = await db.select({ total: count() }).from(stores);
+  const [orgCount] = await db.select({ total: count() }).from(organizations);
+  const totalCloseouts = closeoutsByMonth.reduce((sum, row) => sum + Number(row.total), 0);
+  const totalOperations = operationsByMonth.reduce((sum, row) => sum + Number(row.total), 0);
+
+  const avgCloseoutsPerStore = Number(storeCount?.total) > 0
+    ? Number((totalCloseouts / Number(storeCount.total)).toFixed(2))
+    : null;
+  const avgOperationsPerAccount = Number(orgCount?.total) > 0
+    ? Number((totalOperations / Number(orgCount.total)).toFixed(2))
+    : null;
+
+  const [latestSnapshot] = await db
+    .select({ snapshotDate: orgEngagementSnapshots.snapshotDate })
+    .from(orgEngagementSnapshots)
+    .orderBy(desc(orgEngagementSnapshots.snapshotDate))
+    .limit(1);
+
+  let topActiveAccounts: SaasUsageReport["topActiveAccounts"] = [];
+  let inactiveAccounts: SaasUsageReport["inactiveAccounts"] = [];
+  let lastActivityByAccount: SaasUsageReport["lastActivityByAccount"] = [];
+
+  if (latestSnapshot?.snapshotDate) {
+    const snapshotRows = await db
+      .select()
+      .from(orgEngagementSnapshots)
+      .where(eq(orgEngagementSnapshots.snapshotDate, latestSnapshot.snapshotDate))
+      .orderBy(desc(orgEngagementSnapshots.closeoutsL30))
+      .limit(200);
+
+    const orgIds = snapshotRows.map((row) => row.organizationId);
+    const ownerRows = orgIds.length
+      ? await db
+        .select({
+          organizationId: organizationMembers.organizationId,
+          ownerName: users.name,
+        })
+        .from(organizationMembers)
+        .innerJoin(users, eq(organizationMembers.userId, users.id))
+        .where(
+          and(
+            eq(organizationMembers.role, "owner"),
+            eq(organizationMembers.status, "active"),
+            inArray(organizationMembers.organizationId, orgIds),
+          ),
+        )
+      : [];
+
+    const ownerByOrg = new Map(ownerRows.map((row) => [row.organizationId, row.ownerName]));
+
+    const mapActivity = (row: (typeof snapshotRows)[number]) => ({
+      id: row.organizationId,
+      name: row.organizationName,
+      ownerName: ownerByOrg.get(row.organizationId) ?? null,
+      closeoutsThisMonth: row.closeoutsL30,
+      lastActivityAt: row.lastCoreActivityAt?.toISOString() ?? null,
+      status: resolveAccountStatus({
+        organizationStatus: row.organizationStatus,
+        subscriptionStatus: row.subscriptionStatus,
+      }),
+    });
+
+    topActiveAccounts = snapshotRows
+      .filter((row) => row.closeoutsL30 > 0)
+      .slice(0, 10)
+      .map(mapActivity);
+
+    inactiveAccounts = snapshotRows
+      .filter((row) => row.engagementSegment === "dormant" || row.engagementSegment === "churned")
+      .slice(0, 10)
+      .map(mapActivity);
+
+    lastActivityByAccount = snapshotRows.map((row) => ({
+      id: row.organizationId,
+      name: row.organizationName,
+      lastActivityAt: row.lastCoreActivityAt?.toISOString() ?? null,
+      daysSinceActivity: row.daysSinceLastCoreActivity,
+    }));
+  }
+
+  return {
+    monthlyTrend,
+    avgCloseoutsPerStore,
+    avgOperationsPerAccount,
+    topActiveAccounts,
+    inactiveAccounts,
+    lastActivityByAccount,
+  };
+}
