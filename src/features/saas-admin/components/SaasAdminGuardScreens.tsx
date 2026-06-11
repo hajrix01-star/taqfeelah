@@ -1,64 +1,80 @@
+"use client";
+
 import "@/features/saas-admin/components/admin-theme.css";
+import { LanguageToggle } from "@/features/saas-admin/components/LanguageToggle";
+import {
+  SaasAdminLocaleProvider,
+  useSaasAdminLocale,
+} from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
+import type { SaasAdminLocale } from "@/features/saas-admin/i18n/translations";
 
-export function SaasAdminDisabledScreen() {
+function GuardFrame({ children }: { children: React.ReactNode }) {
+  const { dir } = useSaasAdminLocale();
   return (
     <main
-      dir="rtl"
-      className="saas-admin-root flex min-h-[100dvh] items-center justify-center px-6"
+      dir={dir}
+      className="saas-admin-root flex min-h-[100dvh] flex-col items-center justify-center gap-4 px-6"
     >
-      <section className="max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-8 text-center shadow-sm">
-        <h1 className="text-lg font-bold text-[var(--admin-primary)]">لوحة SaaS غير مفعّلة</h1>
-        <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">
-          فعّل
-          {" "}
-          <code className="rounded bg-[#F3F4F6] px-2 py-1">NEXT_PUBLIC_SAAS_ADMIN_ENABLED=true</code>
-          {" "}
-          و
-          {" "}
-          <code className="rounded bg-[#F3F4F6] px-2 py-1">SAAS_ADMIN_API_ENABLED=true</code>
-          {" "}
-          ثم عيّن
-          {" "}
-          <code className="rounded bg-[#F3F4F6] px-2 py-1">SAAS_PLATFORM_ADMIN_USER_IDS</code>
-          .
-        </p>
-      </section>
+      <LanguageToggle />
+      {children}
     </main>
   );
 }
 
-export function SaasAdminUnauthorizedScreen() {
+function DisabledContent() {
+  const { t } = useSaasAdminLocale();
   return (
-    <main
-      dir="rtl"
-      className="saas-admin-root flex min-h-[100dvh] items-center justify-center px-6"
-    >
-      <section className="max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-8 text-center shadow-sm">
-        <h1 className="text-lg font-bold text-[var(--admin-primary)]">غير مصرح بالوصول</h1>
-        <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">
-          هذه اللوحة مخصصة لمسؤولي المنصة فقط. سجّل الدخول بحساب مدرج في
-          {" "}
-          <code className="rounded bg-[#F3F4F6] px-2 py-1">SAAS_PLATFORM_ADMIN_USER_IDS</code>
-          .
-        </p>
-        {/* TODO: ربط Auth Admin مخصص عند توفر نظام أدوار منصة دائم */}
-      </section>
-    </main>
+    <section className="max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-8 text-center shadow-sm">
+      <h1 className="text-lg font-bold text-[var(--admin-primary)]">{t.guard.disabledTitle}</h1>
+      <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.guard.disabledBody}</p>
+    </section>
   );
 }
 
-export function SaasAdminUnauthenticatedScreen() {
+function UnauthorizedContent() {
+  const { t } = useSaasAdminLocale();
   return (
-    <main
-      dir="rtl"
-      className="saas-admin-root flex min-h-[100dvh] items-center justify-center px-6"
-    >
-      <section className="max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-8 text-center shadow-sm">
-        <h1 className="text-lg font-bold text-[var(--admin-primary)]">يلزم تسجيل الدخول</h1>
-        <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">
-          سجّل الدخول أولًا للوصول إلى لوحة SaaS Admin.
-        </p>
-      </section>
-    </main>
+    <section className="max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-8 text-center shadow-sm">
+      <h1 className="text-lg font-bold text-[var(--admin-primary)]">{t.guard.unauthorizedTitle}</h1>
+      <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.guard.unauthorizedBody}</p>
+    </section>
+  );
+}
+
+function UnauthenticatedContent() {
+  const { t } = useSaasAdminLocale();
+  return (
+    <section className="max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-8 text-center shadow-sm">
+      <h1 className="text-lg font-bold text-[var(--admin-primary)]">{t.guard.unauthenticatedTitle}</h1>
+      <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.guard.unauthenticatedBody}</p>
+    </section>
+  );
+}
+
+type GuardScreenProps = {
+  initialLocale?: SaasAdminLocale;
+};
+
+export function SaasAdminDisabledScreen({ initialLocale = "ar" }: GuardScreenProps) {
+  return (
+    <SaasAdminLocaleProvider initialLocale={initialLocale}>
+      <GuardFrame><DisabledContent /></GuardFrame>
+    </SaasAdminLocaleProvider>
+  );
+}
+
+export function SaasAdminUnauthorizedScreen({ initialLocale = "ar" }: GuardScreenProps) {
+  return (
+    <SaasAdminLocaleProvider initialLocale={initialLocale}>
+      <GuardFrame><UnauthorizedContent /></GuardFrame>
+    </SaasAdminLocaleProvider>
+  );
+}
+
+export function SaasAdminUnauthenticatedScreen({ initialLocale = "ar" }: GuardScreenProps) {
+  return (
+    <SaasAdminLocaleProvider initialLocale={initialLocale}>
+      <GuardFrame><UnauthenticatedContent /></GuardFrame>
+    </SaasAdminLocaleProvider>
   );
 }

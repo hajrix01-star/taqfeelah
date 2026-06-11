@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Bar,
@@ -22,46 +21,43 @@ import { KpiCard } from "@/features/saas-admin/components/KpiCard";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
 import { StatusBadge } from "@/features/saas-admin/components/StatusBadge";
 import { fetchSaasUsage } from "@/features/saas-admin/client/saas-admin-api-client";
-import type { SaasUsageReport } from "@/features/saas-admin/types";
+import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
+import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 export default function UsagePage() {
-  const [data, setData] = useState<SaasUsageReport | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { locale, t } = useSaasAdminLocale();
+  const { data, error, isLoading } = useSaasAdminQuery(
+    ["saas-admin", "usage"],
+    () => fetchSaasUsage(6),
+  );
 
-  useEffect(() => {
-    fetchSaasUsage(6)
-      .then(setData)
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return <LoadingSkeleton />;
+  if (isLoading) return <LoadingSkeleton />;
   if (error || !data) {
-    return <div className="p-6 text-sm text-[var(--admin-danger)]">{error || "تعذر تحميل التقرير"}</div>;
+    return (
+      <div className="p-6 text-sm text-[var(--admin-danger)]">
+        {error instanceof Error ? error.message : t.usage.loadError}
+      </div>
+    );
   }
 
   return (
     <>
-      <AdminHeader
-        title="تقارير الاستخدام"
-        description="هل العملاء يستخدمون تقفيلة فعليًا؟"
-      />
+      <AdminHeader title={t.usage.title} description={t.usage.description} />
       <div className="space-y-6 p-6">
         <section className="grid gap-4 sm:grid-cols-2">
           <KpiCard
-            title="متوسط التقفيلات لكل محل"
-            value={data.avgCloseoutsPerStore !== null ? formatNumber(data.avgCloseoutsPerStore) : "غير متاح"}
+            title={t.usage.avgCloseoutsPerStore}
+            value={data.avgCloseoutsPerStore !== null ? formatNumber(data.avgCloseoutsPerStore, locale) : t.common.unavailable}
           />
           <KpiCard
-            title="متوسط العمليات لكل حساب"
-            value={data.avgOperationsPerAccount !== null ? formatNumber(data.avgOperationsPerAccount) : "غير متاح"}
+            title={t.usage.avgOpsPerAccount}
+            value={data.avgOperationsPerAccount !== null ? formatNumber(data.avgOperationsPerAccount, locale) : t.common.unavailable}
           />
         </section>
 
-        <ChartCard title="النمو الشهري" description="تقفيلات وعمليات ومرفقات">
+        <ChartCard title={t.usage.monthlyGrowth} description={t.usage.monthlyGrowthDesc}>
           {data.monthlyTrend.length === 0 ? (
-            <p className="text-sm text-[var(--admin-muted)]">لا توجد بيانات شهرية.</p>
+            <p className="text-sm text-[var(--admin-muted)]">{t.usage.noMonthly}</p>
           ) : (
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -71,18 +67,18 @@ export default function UsagePage() {
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="closeouts" name="تقفيلات" stroke="#112A46" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="operations" name="عمليات" stroke="#F5A623" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="attachments" name="مرفقات" stroke="#6B7280" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="closeouts" name={t.common.closeouts} stroke="#112A46" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="operations" name={t.common.operations} stroke="#F5A623" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="attachments" name={t.common.attachments} stroke="#6B7280" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           )}
         </ChartCard>
 
-        <ChartCard title="أكثر الحسابات نشاطًا">
+        <ChartCard title={t.usage.topActive}>
           {data.topActiveAccounts.length === 0 ? (
-            <p className="text-sm text-[var(--admin-muted)]">لا توجد حسابات نشطة.</p>
+            <p className="text-sm text-[var(--admin-muted)]">{t.usage.noActiveAccounts}</p>
           ) : (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -97,7 +93,7 @@ export default function UsagePage() {
                   <XAxis type="number" tick={{ fontSize: 11 }} />
                   <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="closeouts" name="تقفيلات" fill="#112A46" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="closeouts" name={t.common.closeouts} fill="#112A46" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -105,11 +101,11 @@ export default function UsagePage() {
         </ChartCard>
 
         <section>
-          <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">الحسابات الخاملة</h2>
+          <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">{t.usage.inactiveAccounts}</h2>
           <AdminTable
-            columns={["الحساب", "المالك", "آخر نشاط", "الحالة"]}
+            columns={[t.accounts.colAccount, t.accounts.colOwner, t.accounts.colLastActivity, t.common.status]}
             empty={data.inactiveAccounts.length === 0}
-            emptyMessage="لا توجد حسابات خاملة"
+            emptyMessage={t.usage.noInactive}
           >
             {data.inactiveAccounts.map((row) => (
               <tr key={row.id}>
@@ -119,7 +115,7 @@ export default function UsagePage() {
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-[var(--admin-muted)]">{row.ownerName || "—"}</td>
-                <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.lastActivityAt)}</td>
+                <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.lastActivityAt, locale)}</td>
                 <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
               </tr>
             ))}
@@ -127,9 +123,9 @@ export default function UsagePage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">آخر نشاط لكل حساب</h2>
+          <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">{t.usage.lastActivityPerAccount}</h2>
           <AdminTable
-            columns={["الحساب", "آخر نشاط", "أيام منذ النشاط"]}
+            columns={[t.accounts.colAccount, t.accounts.colLastActivity, t.usage.daysSinceActivity]}
             empty={data.lastActivityByAccount.length === 0}
           >
             {data.lastActivityByAccount.slice(0, 25).map((row) => (
@@ -139,9 +135,9 @@ export default function UsagePage() {
                     {row.name}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.lastActivityAt)}</td>
+                <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.lastActivityAt, locale)}</td>
                 <td className="px-4 py-3">
-                  {row.daysSinceActivity !== null ? formatNumber(row.daysSinceActivity) : "—"}
+                  {row.daysSinceActivity !== null ? formatNumber(row.daysSinceActivity, locale) : "—"}
                 </td>
               </tr>
             ))}

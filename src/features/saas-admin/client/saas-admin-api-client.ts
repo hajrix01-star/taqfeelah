@@ -64,35 +64,6 @@ export async function fetchSystemHealth() {
   return fetchSaasAdminJson<SystemHealthReport>("/api/v1/saas-admin/system-health");
 }
 
-// Legacy analytics endpoints (kept for backward compatibility)
-export async function fetchInvestorDashboard({ from, to }: { from: string; to: string }) {
-  const search = new URLSearchParams({ from, to });
-  return fetchSaasAdminJson(`/api/v1/saas-admin/analytics/investor-dashboard?${search.toString()}`);
-}
-
-export async function fetchSaasOrganizationAnalytics({
-  from,
-  to,
-  billingType = "all",
-  segment = "all",
-  limit = 100,
-}: {
-  from: string;
-  to: string;
-  billingType?: string;
-  segment?: string;
-  limit?: number;
-}) {
-  const search = new URLSearchParams({
-    from,
-    to,
-    billingType,
-    segment,
-    limit: String(limit),
-  });
-  return fetchSaasAdminJson(`/api/v1/saas-admin/analytics/organizations?${search.toString()}`);
-}
-
 export async function runSaasAnalyticsAggregate(snapshotDate?: string) {
   return fetchSaasAdminJson("/api/v1/saas-admin/analytics/aggregate", {
     method: "POST",

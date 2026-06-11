@@ -175,6 +175,10 @@ export async function getSaasOverview(rawInput: z.infer<typeof inputSchema>): Pr
   }
 
   return {
+    engagement: {
+      snapshotDate: latestSnapshot?.snapshotDate ?? null,
+      dataAvailable: Boolean(latestSnapshot?.snapshotDate),
+    },
     kpis: {
       totalAccounts: Number(orgCounts?.total || 0),
       activeAccounts: Number(orgCounts?.active || 0),

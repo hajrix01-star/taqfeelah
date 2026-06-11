@@ -1,11 +1,23 @@
-export function formatNumber(value: number | null | undefined): string {
-  if (value === null || value === undefined) return "—";
-  return new Intl.NumberFormat("ar-SA").format(value);
+import type { SaasAdminLocale } from "@/features/saas-admin/i18n/translations";
+
+function resolveIntlLocale(locale: SaasAdminLocale): string {
+  return locale === "en" ? "en-US" : "ar-SA";
 }
 
-export function formatDateTime(value: string | null | undefined): string {
+export function formatNumber(
+  value: number | null | undefined,
+  locale: SaasAdminLocale = "ar",
+): string {
+  if (value === null || value === undefined) return "—";
+  return new Intl.NumberFormat(resolveIntlLocale(locale)).format(value);
+}
+
+export function formatDateTime(
+  value: string | null | undefined,
+  locale: SaasAdminLocale = "ar",
+): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("ar-SA", {
+  return new Intl.DateTimeFormat(resolveIntlLocale(locale), {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -23,9 +35,13 @@ export function formatMetricValue(
   value: number | null,
   availability: "available" | "estimated" | "unavailable",
   suffix = "",
+  locale: SaasAdminLocale = "ar",
+  labels?: { unavailable: string; estimated: string },
 ): string {
-  if (availability === "unavailable" || value === null) return "غير متاح";
-  const formatted = formatNumber(value);
-  if (availability === "estimated") return `${formatted}${suffix} (تقديري)`;
+  const unavailableLabel = labels?.unavailable ?? "غير متاح";
+  const estimatedLabel = labels?.estimated ?? "تقديري";
+  if (availability === "unavailable" || value === null) return unavailableLabel;
+  const formatted = formatNumber(value, locale);
+  if (availability === "estimated") return `${formatted}${suffix} (${estimatedLabel})`;
   return `${formatted}${suffix}`;
 }

@@ -35,12 +35,18 @@ export type SystemHealthSummary = {
   api: "healthy" | "unavailable";
 };
 
+export type SaasEngagementMeta = {
+  snapshotDate: string | null;
+  dataAvailable: boolean;
+};
+
 export type SaasOverview = {
   kpis: SaasOverviewKpis;
   activityTrend: ActivityTrendPoint[];
   topActiveAccounts: AccountActivitySummary[];
   inactiveAccounts: AccountActivitySummary[];
   systemHealth: SystemHealthSummary;
+  engagement: SaasEngagementMeta;
 };
 
 export type SaasAccountRow = {

@@ -8,20 +8,23 @@ import {
   SaasAdminUnauthorizedScreen,
   SaasAdminUnauthenticatedScreen,
 } from "@/features/saas-admin/components/SaasAdminGuardScreens";
+import { getSaasAdminLocaleFromCookies } from "@/features/saas-admin/i18n/locale-server";
 
 export default async function SaasAdminLayout({ children }: { children: ReactNode }) {
+  const initialLocale = await getSaasAdminLocaleFromCookies();
+
   if (!isSaasAdminClientEnabled()) {
-    return <SaasAdminDisabledScreen />;
+    return <SaasAdminDisabledScreen initialLocale={initialLocale} />;
   }
 
   const session = await resolveServerAuthSession();
   if (!session?.userId) {
-    return <SaasAdminUnauthenticatedScreen />;
+    return <SaasAdminUnauthenticatedScreen initialLocale={initialLocale} />;
   }
 
   if (!isPlatformAdminUser(session.userId)) {
-    return <SaasAdminUnauthorizedScreen />;
+    return <SaasAdminUnauthorizedScreen initialLocale={initialLocale} />;
   }
 
-  return <AdminShell>{children}</AdminShell>;
+  return <AdminShell initialLocale={initialLocale}>{children}</AdminShell>;
 }

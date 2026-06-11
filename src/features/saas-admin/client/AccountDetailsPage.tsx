@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Bar,
@@ -23,40 +22,40 @@ import { KpiCard } from "@/features/saas-admin/components/KpiCard";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
 import { StatusBadge } from "@/features/saas-admin/components/StatusBadge";
 import { fetchSaasAccountDetails } from "@/features/saas-admin/client/saas-admin-api-client";
-import type { SaasAccountDetails } from "@/features/saas-admin/types";
+import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
+import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type AccountDetailsPageProps = {
   accountId: string;
 };
 
 export default function AccountDetailsPage({ accountId }: AccountDetailsPageProps) {
-  const [data, setData] = useState<SaasAccountDetails | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { locale, t } = useSaasAdminLocale();
+  const { data, error, isLoading } = useSaasAdminQuery(
+    ["saas-admin", "account", accountId],
+    () => fetchSaasAccountDetails(accountId),
+  );
 
-  useEffect(() => {
-    fetchSaasAccountDetails(accountId)
-      .then(setData)
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [accountId]);
-
-  if (loading) return <LoadingSkeleton />;
+  if (isLoading) return <LoadingSkeleton />;
   if (error || !data) {
-    return <div className="p-6 text-sm text-[var(--admin-danger)]">{error || "الحساب غير موجود"}</div>;
+    return (
+      <div className="p-6 text-sm text-[var(--admin-danger)]">
+        {error instanceof Error ? error.message : t.accountDetails.notFound}
+      </div>
+    );
   }
 
   return (
     <>
       <AdminHeader
         title={data.name}
-        description="تفاصيل الحساب — قراءة فقط"
+        description={t.accountDetails.description}
         actions={(
           <Link
             href="/saas-admin/accounts"
             className="rounded-lg border border-[var(--admin-border)] px-3 py-2 text-sm font-semibold text-[var(--admin-primary)]"
           >
-            العودة للحسابات
+            {t.common.backToAccounts}
           </Link>
         )}
       />
@@ -64,44 +63,46 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
         <section className="flex flex-wrap items-center gap-3">
           <StatusBadge status={data.status} />
           <span className="text-sm text-[var(--admin-muted)]">
-            الخطة:
+            {t.common.plan}
+            :
             {" "}
             {data.planCode || "—"}
           </span>
           <span className="text-sm text-[var(--admin-muted)]">
-            المالك:
+            {t.common.owner}
+            :
             {" "}
             {data.ownerName || "—"}
           </span>
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard title="تاريخ الإنشاء" value={formatDateTime(data.createdAt)} />
-          <KpiCard title="آخر نشاط" value={formatDateTime(data.lastActivityAt)} />
-          <KpiCard title="المحلات" value={formatNumber(data.storesCount)} />
-          <KpiCard title="المستخدمون" value={formatNumber(data.usersCount)} />
-          <KpiCard title="تقفيلات الشهر" value={formatNumber(data.closeoutsThisMonth)} />
-          <KpiCard title="العمليات" value={formatNumber(data.operationsCount)} />
-          <KpiCard title="المرفقات" value={formatNumber(data.attachmentsCount)} />
+          <KpiCard title={t.accountDetails.createdAt} value={formatDateTime(data.createdAt, locale)} />
+          <KpiCard title={t.accountDetails.lastActivity} value={formatDateTime(data.lastActivityAt, locale)} />
+          <KpiCard title={t.common.stores} value={formatNumber(data.storesCount, locale)} />
+          <KpiCard title={t.common.users} value={formatNumber(data.usersCount, locale)} />
+          <KpiCard title={t.accountDetails.closeoutsMonth} value={formatNumber(data.closeoutsThisMonth, locale)} />
+          <KpiCard title={t.accountDetails.operations} value={formatNumber(data.operationsCount, locale)} />
+          <KpiCard title={t.common.attachments} value={formatNumber(data.attachmentsCount, locale)} />
         </section>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <section>
-            <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">المحلات</h2>
-            <AdminTable columns={["الاسم", "الحالة", "تاريخ الإنشاء"]} empty={data.stores.length === 0}>
+            <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">{t.common.stores}</h2>
+            <AdminTable columns={[t.common.name, t.common.status, t.accountDetails.createdAt]} empty={data.stores.length === 0}>
               {data.stores.map((row) => (
                 <tr key={row.id}>
                   <td className="px-4 py-3 font-semibold">{row.name}</td>
                   <td className="px-4 py-3">{row.status}</td>
-                  <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.createdAt)}</td>
+                  <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.createdAt, locale)}</td>
                 </tr>
               ))}
             </AdminTable>
           </section>
 
           <section>
-            <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">المستخدمون</h2>
-            <AdminTable columns={["الاسم", "الدور", "الحالة"]} empty={data.users.length === 0}>
+            <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">{t.common.users}</h2>
+            <AdminTable columns={[t.common.name, t.common.role, t.common.status]} empty={data.users.length === 0}>
               {data.users.map((row) => (
                 <tr key={row.id}>
                   <td className="px-4 py-3 font-semibold">{row.name}</td>
@@ -115,8 +116,8 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
 
         <div className="grid gap-6 lg:grid-cols-2">
           <section>
-            <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">آخر التقفيلات</h2>
-            <AdminTable columns={["المحل", "التاريخ", "الحالة"]} empty={data.recentCloseouts.length === 0}>
+            <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">{t.accountDetails.recentCloseouts}</h2>
+            <AdminTable columns={[t.accountDetails.colStore, t.common.date, t.common.status]} empty={data.recentCloseouts.length === 0}>
               {data.recentCloseouts.map((row) => (
                 <tr key={row.id}>
                   <td className="px-4 py-3">{row.storeName}</td>
@@ -128,8 +129,8 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
           </section>
 
           <section>
-            <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">آخر العمليات</h2>
-            <AdminTable columns={["المحل", "النوع", "التاريخ"]} empty={data.recentOperations.length === 0}>
+            <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">{t.accountDetails.recentOperations}</h2>
+            <AdminTable columns={[t.accountDetails.colStore, t.common.type, t.common.date]} empty={data.recentOperations.length === 0}>
               {data.recentOperations.map((row) => (
                 <tr key={row.id}>
                   <td className="px-4 py-3">{row.storeName}</td>
@@ -141,9 +142,9 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
           </section>
         </div>
 
-        <ChartCard title="الاستخدام الشهري">
+        <ChartCard title={t.accountDetails.monthlyUsage}>
           {data.monthlyUsage.length === 0 ? (
-            <p className="text-sm text-[var(--admin-muted)]">لا توجد بيانات استخدام شهرية.</p>
+            <p className="text-sm text-[var(--admin-muted)]">{t.accountDetails.noMonthlyUsage}</p>
           ) : (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -152,8 +153,8 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="closeouts" name="تقفيلات" fill="#112A46" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="operations" name="عمليات" fill="#F5A623" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="closeouts" name={t.common.closeouts} fill="#112A46" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="operations" name={t.common.operations} fill="#F5A623" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -161,14 +162,14 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
         </ChartCard>
 
         <section>
-          <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">المرفقات الأخيرة</h2>
-          <AdminTable columns={["المحل", "النوع", "الحجم", "التاريخ"]} empty={data.attachments.length === 0}>
+          <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">{t.accountDetails.recentAttachments}</h2>
+          <AdminTable columns={[t.accountDetails.colStore, t.common.type, t.common.size, t.common.date]} empty={data.attachments.length === 0}>
             {data.attachments.map((row) => (
               <tr key={row.id}>
                 <td className="px-4 py-3">{row.storeName}</td>
                 <td className="px-4 py-3">{row.mimeType}</td>
                 <td className="px-4 py-3">{formatBytes(row.sizeBytes)}</td>
-                <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.createdAt)}</td>
+                <td className="px-4 py-3 text-[var(--admin-muted)]">{formatDateTime(row.createdAt, locale)}</td>
               </tr>
             ))}
           </AdminTable>

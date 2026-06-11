@@ -1,4 +1,7 @@
+"use client";
+
 import type { AccountStatus } from "@/features/saas-admin/types";
+import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 const STATUS_STYLES: Record<AccountStatus, string> = {
   trial: "bg-amber-50 text-[var(--admin-warning)] border-amber-200",
@@ -7,23 +10,18 @@ const STATUS_STYLES: Record<AccountStatus, string> = {
   suspended: "bg-red-50 text-[var(--admin-danger)] border-red-200",
 };
 
-const STATUS_LABELS: Record<AccountStatus, string> = {
-  trial: "تجريبي",
-  active: "نشط",
-  inactive: "غير نشط",
-  suspended: "موقوف",
-};
-
 type StatusBadgeProps = {
   status: AccountStatus;
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
+  const { t } = useSaasAdminLocale();
+
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLES[status]}`}
     >
-      {STATUS_LABELS[status]}
+      {t.status[status]}
     </span>
   );
 }
