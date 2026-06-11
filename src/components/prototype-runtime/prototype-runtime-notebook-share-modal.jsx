@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { notebookThemes } from "@/features/daily-closeouts/notebook-themes";
+import { canFetchNotebookExportForSnapshot } from "@/features/phase9/client/notebook-export-share-data";
 import { useNotebookExportShareData } from "@/features/phase9/client/use-notebook-export-share-data";
 import { businesses, text } from "./prototype-runtime-demo-data";
 import { todayIsoDate } from "./prototype-runtime-notebook";
@@ -43,17 +44,22 @@ export function NotebookShareModal({ lang, snapshot, onClose, businessesList = b
     apiRecord,
     apiChannelRows,
     apiDayRows,
+    loading: apiLoading,
   } = useNotebookExportShareData({
     enabled: notebookExportApiEnabled,
     auth: notebookExportAuth,
     snapshot,
   });
+  const shouldWaitForApi = canFetchNotebookExportForSnapshot(snapshot, notebookExportApiEnabled)
+    && apiLoading
+    && !snapshot?.summaryRecord;
 
   useEffect(() => { if (snapshot) { setFormat("image"); setImageError(""); setShareHint(""); cachedImageFileRef.current = null; } }, [snapshot]);
 
   useEffect(() => {
-    if (!snapshot || format !== "image") {
-      cachedImageFileRef.current = null;
+    if (!snapshot || format !== "image" || shouldWaitForApi) {
+      if (shouldWaitForApi) cachedImageFileRef.current = null;
+      if (!snapshot || format !== "image") cachedImageFileRef.current = null;
       return undefined;
     }
     const captureToken = ++preCaptureTokenRef.current;
@@ -79,7 +85,7 @@ export function NotebookShareModal({ lang, snapshot, onClose, businessesList = b
       cancelAnimationFrame(frameId);
       clearTimeout(timeoutId);
     };
-  }, [snapshot, format, lang]);
+  }, [snapshot, format, lang, shouldWaitForApi, apiEntries, apiRecord, apiChannelRows]);
 
   const model = useMemo(() => {
     if (!snapshot) return null;

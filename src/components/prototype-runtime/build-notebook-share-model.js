@@ -75,16 +75,41 @@ export function buildNotebookShareModel({
   const shareChannelRows = apiChannelRows || [...shareChannelMap.values()].filter((row) => row.amount > 0);
   const shareDayRows = apiDayRows || [...new Set(scopedShareEntries.filter(entryIsActive).map((entry) => entry.date))].sort().reverse().map((date) => ({ date, ...summarizeEntries(scopedShareEntries.filter((entry) => entry.date === date)) }));
   const shareProofEntries = scopedShareEntries.filter((entry) => entryIsActive(entry) && entryHasAttachment(entry));
-  const shareBusinessRows = includedBusinessIds.map((businessId) => { const item = businessesList.find((store) => store.id === businessId); return { business: item, ...summarizeEntries(scopedShareEntries.filter((entry) => entry.businessId === businessId)) }; }).filter((row) => row.business);
+  const snapshotBusinessRows = Array.isArray(snapshot.summaryBusinessRows) ? snapshot.summaryBusinessRows : null;
+  const shareBusinessRows = combined && snapshotBusinessRows
+    ? snapshotBusinessRows
+      .map((row) => {
+        const item = businessesList.find((store) => store.id === row.businessId);
+        if (!item) return null;
+        return {
+          business: item,
+          sales: Number(row.sales) || 0,
+          expense: Number(row.expense) || 0,
+          net: Number(row.net) || 0,
+          ratio: row.ratio || "0.0%",
+        };
+      })
+      .filter(Boolean)
+    : includedBusinessIds
+      .map((businessId) => {
+        const item = businessesList.find((store) => store.id === businessId);
+        return { business: item, ...summarizeEntries(scopedShareEntries.filter((entry) => entry.businessId === businessId)) };
+      })
+      .filter((row) => row.business);
   const outflowTotal = filteredOutflowEntries.reduce((sum, entry) => sum + entry.amount, 0);
   const outflowAverage = filteredOutflowEntries.length ? outflowTotal / filteredOutflowEntries.length : 0;
+  const snapshotRecord = snapshot.summaryRecord && typeof snapshot.summaryRecord === "object"
+    ? snapshot.summaryRecord
+    : null;
   const normalRecord = combined
-    ? summarizeEntries(scopedShareEntries)
-    : apiRecord
-      ? apiRecord
-      : monthly
-        ? summaryMonthFromEntries(operationalEntries, business.id, snapshot.selectedMonth)
-        : selectedDayItem;
+    ? (snapshotRecord || summarizeEntries(scopedShareEntries))
+    : snapshotRecord
+      ? snapshotRecord
+      : apiRecord
+        ? apiRecord
+        : monthly
+          ? summaryMonthFromEntries(operationalEntries, business.id, snapshot.selectedMonth)
+          : selectedDayItem;
   const record = isOutflowReport ? { sales: 0, expense: outflowTotal, net: -outflowTotal, ratio: "—" } : normalRecord;
   const ratio = record.ratio || (record.sales > 0 ? `${((record.expense / record.sales) * 100).toFixed(1)}%` : record.expense > 0 ? "—" : "0.0%");
   const title = combined ? text(lang, snapshot.screen === "reports" ? "combinedReport" : "combinedCloseout") : businessName(business, lang);
@@ -94,6 +119,81 @@ export function buildNotebookShareModel({
   const lines = {
     backgroundImage: `repeating-linear-gradient(180deg, transparent 0px, transparent 43px, ${activeTheme.line} 43px, ${activeTheme.line} 44px)`,
   };
+  const detailedSummary = !combined && (
+    (snapshot.screen === "reports" && snapshot.tab === "summary" && snapshot.showSummaryDetails)
+    || (snapshot.screen === "home" && snapshot.showDetails)
+  );
+  const shareChannels = snapshot.reportChannels || channels;
+  const salesBase = record.sales || 0;
+  const percentageOfSales = (amount) => salesBase > 0 ? `${((amount / salesBase) * 100).toFixed(1)}%` : amount > 0 ? "—" : "0.0%";
+  const shareEntries = scopedShareEntries;
+  const snapshotOutflowCategories = Array.isArray(snapshot.snapshotOutflowCategories)
+    ? snapshot.snapshotOutflowCategories
+    : null;
+  const detailOutflow = snapshotOutflowCategories?.length
+    ? snapshotOutflowCategories
+      .map((item) => ({
+        ...outflowReportCategories.find((category) => category.id === item.id) || { id: item.id, label: item.id },
+        amount: Number(item.amount) || 0,
+      }))
+      .filter((item) => item.amount > 0)
+    : outflowReportCategories
+      .filter((item) => item.id !== "all")
+      .map((item) => ({
+        ...item,
+        amount: shareEntries
+          .filter((entry) => entryIsActive(entry) && entryIsOutflow(entry) && entryCategory(entry) === item.id)
+          .reduce((sum, entry) => sum + entry.amount, 0),
+      }))
+      .filter((item) => item.amount > 0);
+  const snapshotChannelRows = Array.isArray(snapshot.snapshotChannelRows) ? snapshot.snapshotChannelRows : null;
+  const effectiveChannelRows = snapshotChannelRows?.length
+    ? snapshotChannelRows
+    : apiChannelRows?.length
+      ? apiChannelRows
+      : null;
+  const salesDetailRows = detailedSummary
+    ? (effectiveChannelRows
+      ? effectiveChannelRows.map((row) => {
+        const amount = Number(row.amount) || 0;
+        return {
+          label: row.label || channelName(row, lang),
+          ratio: percentageOfSales(amount),
+          value: money(amount, lang),
+          tone: "text-[#112A46]",
+        };
+      })
+      : aggregateChannels(
+        operationalEntries,
+        snapshot.selectedBusiness,
+        monthly ? "month" : "day",
+        shareDate,
+        snapshot.selectedMonth,
+        shareChannels,
+      ).map((channel) => {
+        const amount = channel.amount;
+        return {
+          label: channelName(channel, lang),
+          ratio: percentageOfSales(amount),
+          value: money(amount, lang),
+          tone: "text-[#112A46]",
+        };
+      }))
+    : [];
+  const outflowDetailRows = detailedSummary
+    ? detailOutflow.map((item) => ({
+      label: text(lang, item.label),
+      ratio: percentageOfSales(item.amount),
+      value: money(item.amount, lang),
+      tone: "text-[#B44747]",
+    }))
+    : [];
+  const homeDetailCaptionLines = detailedSummary && snapshot.screen === "home"
+    ? [
+      ...salesDetailRows.map((row) => `${row.label}: ${row.value}`),
+      ...outflowDetailRows.map((row) => `${row.label}: ${row.value}`),
+    ]
+    : [];
   const shareCaption = combined
     ? [
         lang === "ar" ? "تقفيلة - مقارنة المحلات" : "Taqfeelah - Shops comparison",
@@ -143,34 +243,11 @@ export function buildNotebookShareModel({
                 lang === "ar" ? `المبيعات: ${money(record.sales, lang)}` : `Sales: ${money(record.sales, lang)}`,
                 lang === "ar" ? `الخارج: ${money(record.expense, lang)}` : `Outflow: ${money(record.expense, lang)}`,
                 lang === "ar" ? `النتيجة: ${money(record.net, lang)}` : `Result: ${money(record.net, lang)}`,
+                ...homeDetailCaptionLines,
               ].join(String.fromCharCode(10));
 
-  const detailedSummary = !combined && (
-    (snapshot.screen === "reports" && snapshot.tab === "summary" && snapshot.showSummaryDetails)
-    || (snapshot.screen === "home" && snapshot.showDetails)
-  );
   const showOutflowOperations = isOutflowReport && snapshot.showOutflowTransactions && !combined;
   const shareOutflowOperations = showOutflowOperations ? newestEntries(filteredOutflowEntries) : [];
-  const shareChannels = snapshot.reportChannels || channels;
-  const salesBase = record.sales || 0;
-  const percentageOfSales = (amount) => salesBase > 0 ? `${((amount / salesBase) * 100).toFixed(1)}%` : amount > 0 ? "—" : "0.0%";
-  const shareEntries = scopedShareEntries;
-  const detailOutflow = outflowReportCategories.filter((item) => item.id !== "all").map((item) => ({ ...item, amount: shareEntries.filter((entry) => entryIsActive(entry) && entryIsOutflow(entry) && entryCategory(entry) === item.id).reduce((sum, entry) => sum + entry.amount, 0) })).filter((item) => item.amount > 0);
-  const salesDetailRows = aggregateChannels(operationalEntries, snapshot.selectedBusiness, monthly ? "month" : "day", shareDate, snapshot.selectedMonth, shareChannels).map((channel) => {
-    const amount = channel.amount;
-    return {
-      label: channelName(channel, lang),
-      ratio: percentageOfSales(amount),
-      value: money(amount, lang),
-      tone: "text-[#112A46]",
-    };
-  });
-  const outflowDetailRows = detailOutflow.map((item) => ({
-    label: text(lang, item.label),
-    ratio: percentageOfSales(item.amount),
-    value: money(item.amount, lang),
-    tone: "text-[#B44747]",
-  }));
   const tableRows = [
     { label: text(lang, "sales"), value: money(record.sales, lang), tone: "text-[#112A46]", heading: true },
     ...(detailedSummary ? salesDetailRows : []),

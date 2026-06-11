@@ -69,7 +69,6 @@ export default function CloseoutShareModal({
       title: labels.myCloseout,
       storeName: resolvedStoreName,
       employeeName: resolvedEmployeeName,
-      captionFooter: shareCaption,
       labels,
       record: totals,
       operations,
