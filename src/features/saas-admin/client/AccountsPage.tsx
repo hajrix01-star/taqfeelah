@@ -157,7 +157,7 @@ export default function AccountsPage() {
           <>
             <AdminTable columns={tableColumns} empty={data.accounts.length === 0}>
               {data.accounts.map((row) => (
-                <tr key={row.id} className="hover:bg-[#FAFBFC]">
+                <tr key={row.id} className="hover:bg-[var(--admin-hover)]">
                   <AdminTableCell col={0}>
                     <Link href={`/saas-admin/accounts/${row.id}`} className="font-semibold text-[var(--admin-primary)] hover:underline">
                       {row.name}

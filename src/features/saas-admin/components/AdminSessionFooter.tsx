@@ -9,11 +9,13 @@ import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 
 type AdminSessionFooterProps = {
   session: SaasAdminSessionView;
+  variant?: "default" | "sidebar";
 };
 
-export function AdminSessionFooter({ session }: AdminSessionFooterProps) {
+export function AdminSessionFooter({ session, variant = "default" }: AdminSessionFooterProps) {
   const { locale, t } = useSaasAdminLocale();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const isSidebar = variant === "sidebar";
 
   async function handleLogout() {
     if (isSigningOut) return;
@@ -31,20 +33,37 @@ export function AdminSessionFooter({ session }: AdminSessionFooterProps) {
     : t.auth.signedIn;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)]">
+        <p
+          className={`text-[11px] font-semibold uppercase tracking-wide ${
+            isSidebar ? "text-[var(--admin-sidebar-muted)]" : "text-[var(--admin-muted)]"
+          }`}
+        >
           {t.auth.sessionLabel}
         </p>
-        <p className="mt-1 text-sm font-semibold text-[var(--admin-text)]">{signedInLabel}</p>
-        <p className="mt-0.5 text-[11px] text-[var(--admin-muted)]" dir="ltr">
+        <p
+          className={`mt-0.5 text-sm font-semibold ${
+            isSidebar ? "text-[var(--admin-sidebar-text)]" : "text-[var(--admin-text)]"
+          }`}
+        >
+          {signedInLabel}
+        </p>
+        <p
+          className={`mt-0.5 text-[11px] ${isSidebar ? "text-[var(--admin-sidebar-muted)]" : "text-[var(--admin-muted)]"}`}
+          dir="ltr"
+        >
           {session.role}
         </p>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <Link
           href="/app"
-          className="rounded-lg border border-[var(--admin-border)] px-3 py-2 text-center text-xs font-semibold text-[var(--admin-primary)]"
+          className={`rounded-lg border px-3 py-2 text-center text-xs font-semibold ${
+            isSidebar
+              ? "border-[var(--admin-sidebar-border)] text-[var(--admin-sidebar-text)] hover:bg-[var(--admin-sidebar-hover)]"
+              : "border-[var(--admin-border)] text-[var(--admin-primary)] hover:bg-[var(--admin-hover)]"
+          }`}
         >
           {t.auth.openApp}
         </Link>
@@ -52,14 +71,22 @@ export function AdminSessionFooter({ session }: AdminSessionFooterProps) {
           type="button"
           disabled={isSigningOut}
           onClick={() => { void handleLogout(); }}
-          className="rounded-lg bg-[#F3F4F6] px-3 py-2 text-xs font-semibold text-[var(--admin-danger)] disabled:opacity-50"
+          className={`rounded-lg px-3 py-2 text-xs font-semibold disabled:opacity-50 ${
+            isSidebar
+              ? "bg-[var(--admin-sidebar-surface)] text-red-300 hover:bg-red-950/40"
+              : "bg-[var(--admin-hover)] text-[var(--admin-danger)]"
+          }`}
         >
           {isSigningOut ? t.auth.signingOut : t.auth.signOut}
         </button>
       </div>
-      <p className="text-[11px] text-[var(--admin-muted)]">{t.readOnlyFooter}</p>
+      <p className={`text-[11px] ${isSidebar ? "text-[var(--admin-sidebar-muted)]" : "text-[var(--admin-muted)]"}`}>
+        {t.readOnlyFooter}
+      </p>
       <ReleaseVersionLine
-        className="text-center text-[11px] font-semibold text-[var(--admin-muted)] lg:text-start"
+        className={`text-[11px] font-semibold lg:text-start ${
+          isSidebar ? "text-center text-[var(--admin-sidebar-muted)]" : "text-center text-[var(--admin-muted)]"
+        }`}
         lang={locale}
         showBuild
       />

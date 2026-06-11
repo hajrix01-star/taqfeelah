@@ -15,7 +15,7 @@ export const AdminMobileTopBar = forwardRef<HTMLButtonElement, AdminMobileTopBar
   const { t } = useSaasAdminLocale();
 
   return (
-    <header className="admin-mobile-topbar sticky top-0 z-30 flex items-center gap-2 border-b border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 pb-3 sm:gap-3 sm:px-4 lg:hidden">
+    <header className="admin-mobile-topbar sticky top-0 z-30 flex items-center gap-2 border-b border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 pb-2.5 sm:gap-3 sm:px-4 lg:hidden">
       <button
         ref={ref}
         type="button"
@@ -30,7 +30,7 @@ export const AdminMobileTopBar = forwardRef<HTMLButtonElement, AdminMobileTopBar
       </button>
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-semibold text-[var(--admin-muted)]">{t.brand}</p>
-        <p className="truncate text-sm font-bold text-[var(--admin-primary)]">{t.panelTitle}</p>
+        <p className="truncate text-sm font-bold text-[var(--admin-text)]">{t.panelTitle}</p>
       </div>
       <LanguageToggle compact />
     </header>

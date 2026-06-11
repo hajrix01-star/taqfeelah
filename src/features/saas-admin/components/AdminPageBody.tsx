@@ -7,7 +7,9 @@ type AdminPageBodyProps = {
 
 export function AdminPageBody({ children, className = "" }: AdminPageBodyProps) {
   return (
-    <div className={`admin-page-body space-y-4 p-4 sm:space-y-6 sm:p-6 ${className}`.trim()}>
+    <div
+      className={`admin-page-body admin-content-container space-y-4 p-4 sm:space-y-5 sm:p-5 ${className}`.trim()}
+    >
       {children}
     </div>
   );

@@ -50,7 +50,7 @@ function LoginForm({ nextPath }: { nextPath: string }) {
         <div className="flex justify-end">
           <LanguageToggle />
         </div>
-        <section className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 shadow-sm sm:p-8">
+        <section className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 sm:p-7">
           <p className="text-xs font-semibold tracking-wide text-[var(--admin-muted)]">{t.brand}</p>
           <h1 className="mt-1 text-xl font-bold text-[var(--admin-primary)]">{t.auth.loginTitle}</h1>
           <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.auth.loginDescription}</p>

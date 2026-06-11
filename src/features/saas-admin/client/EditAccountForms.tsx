@@ -238,7 +238,7 @@ export function EditAccountForms({
         </button>
       </form>
 
-      <section className="rounded-xl border border-dashed border-[var(--admin-border)] bg-[#FAFBFC] p-4">
+      <section className="rounded-lg border border-dashed border-[var(--admin-border)] bg-[var(--admin-surface-muted)] p-4">
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.editAccount.repairTitle}</h3>
         <p className="mt-1 text-sm text-[var(--admin-muted)]">{t.editAccount.repairDescription}</p>
         {repairError ? <p className="mt-2 text-sm text-[var(--admin-danger)]">{repairError}</p> : null}

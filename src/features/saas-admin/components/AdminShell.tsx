@@ -62,7 +62,7 @@ function AdminShellFrame({
       {navOpen ? (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-[#112A46]/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/50 lg:hidden"
           aria-label={t.common.closeMenu}
           onClick={closeNav}
         />

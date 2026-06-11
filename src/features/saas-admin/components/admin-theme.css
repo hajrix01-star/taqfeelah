@@ -1,21 +1,52 @@
 .saas-admin-root {
-  --admin-bg: #f7f8fa;
+  /* Content area */
+  --admin-bg: #f8fafc;
   --admin-surface: #ffffff;
-  --admin-primary: #112a46;
-  --admin-accent: #f5a623;
-  --admin-text: #111827;
-  --admin-muted: #6b7280;
-  --admin-border: #e5e7eb;
+  --admin-surface-muted: #f1f5f9;
+  --admin-hover: #f1f5f9;
+
+  /* Brand & actions */
+  --admin-primary: #2563eb;
+  --admin-primary-hover: #1d4ed8;
+  --admin-accent: #8b5cf6;
+
+  /* Sidebar (dark) */
+  --admin-sidebar-bg: #0f172a;
+  --admin-sidebar-surface: #1e293b;
+  --admin-sidebar-border: #334155;
+  --admin-sidebar-text: #e2e8f0;
+  --admin-sidebar-muted: #94a3b8;
+  --admin-sidebar-active: #2563eb;
+  --admin-sidebar-hover: rgba(255, 255, 255, 0.06);
+
+  /* Charts */
+  --admin-chart-primary: #2563eb;
+  --admin-chart-secondary: #8b5cf6;
+  --admin-chart-grid: #e2e8f0;
+
+  /* Typography & borders */
+  --admin-text: #0f172a;
+  --admin-muted: #64748b;
+  --admin-border: #e2e8f0;
   --admin-success: #16a34a;
   --admin-warning: #d97706;
   --admin-danger: #dc2626;
-  --admin-mobile-topbar-height: calc(3.5rem + env(safe-area-inset-top, 0px));
+
+  --admin-mobile-topbar-height: calc(3.25rem + env(safe-area-inset-top, 0px));
+  --admin-content-max-width: 88rem;
+
   background: var(--admin-bg);
   color: var(--admin-text);
   min-height: 100dvh;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-tap-highlight-color: transparent;
   overflow-x: clip;
+}
+
+.saas-admin-root .admin-content-container {
+  width: 100%;
+  max-width: var(--admin-content-max-width);
+  margin-inline: auto;
 }
 
 .saas-admin-root .admin-mobile-topbar {
@@ -26,6 +57,9 @@
 .saas-admin-root .admin-sidebar {
   z-index: 50;
   transition: transform 200ms ease;
+  background: var(--admin-sidebar-bg);
+  border-color: var(--admin-sidebar-border);
+  color: var(--admin-sidebar-text);
 }
 
 @media (max-width: 1023px) {
@@ -34,7 +68,7 @@
     inset-block: 0;
     inset-inline-start: 0;
     max-height: 100dvh;
-    box-shadow: 0 12px 40px rgba(17, 42, 70, 0.18);
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.35);
   }
 
   .saas-admin-root .admin-sidebar[aria-hidden="true"] {
@@ -49,7 +83,7 @@
 }
 
 .saas-admin-root .admin-page-body {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
 }
 
 .saas-admin-root .admin-table-scroll {
@@ -83,7 +117,7 @@
   .saas-admin-root .admin-table-body > tr {
     display: block;
     border-bottom: 1px solid var(--admin-border);
-    padding: 0.35rem 0;
+    padding: 0.25rem 0;
   }
 
   .saas-admin-root .admin-table-body > tr:last-child {
@@ -95,7 +129,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 0.55rem 1rem;
+    padding: 0.45rem 0.875rem;
     text-align: end;
     border: 0;
   }
@@ -119,7 +153,7 @@
 }
 
 .saas-admin-root .admin-chart-frame {
-  min-height: 14rem;
+  min-height: 12rem;
 }
 
 .saas-admin-root .admin-chart-frame .recharts-wrapper {

@@ -87,7 +87,7 @@ export function EditAccountMemberForm({
   }
 
   return (
-    <div className="rounded-lg border border-[var(--admin-border)] bg-[#FAFBFC] p-3">
+    <div className="rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface-muted)] p-3">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}

@@ -13,14 +13,14 @@ type ChartCardProps = {
 
 export function ChartCard({ title, description, source, children }: ChartCardProps) {
   return (
-    <section className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4 shadow-sm sm:p-5">
-      <header className="mb-4">
+    <section className="rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] p-3.5 sm:p-4">
+      <header className="mb-3">
         <div className="flex items-start justify-between gap-2">
-          <h2 className="text-base font-bold text-[var(--admin-primary)]">{title}</h2>
+          <h2 className="text-sm font-bold text-[var(--admin-text)] sm:text-base">{title}</h2>
           {source ? <MetricSourceBadge source={source} /> : null}
         </div>
         {description ? (
-          <p className="mt-1 text-sm text-[var(--admin-muted)]">{description}</p>
+          <p className="mt-0.5 text-sm text-[var(--admin-muted)]">{description}</p>
         ) : null}
       </header>
       {children}
