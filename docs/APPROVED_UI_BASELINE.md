@@ -19,7 +19,7 @@ After the checkpoint commit, **do not change** without explicit owner approval:
 - No fake phone frame; full viewport shell.
 - Owner: home (notebook), reports (notebook), register, settings, add flows.
 - Employee flows accepted visually.
-- Notebook lines scroll with content; red margin full scroll height.
+- Notebook ruled lines scroll with content; no vertical red margin line (removed 2026-06 per owner).
 - Prototype demo auth only — not production security.
 
 ## Allowed without re-approval
