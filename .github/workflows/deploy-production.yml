@@ -19,7 +19,7 @@ on:
 
 concurrency:
   group: production-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -119,7 +119,8 @@ jobs:
             echo "Manual deploy: waiting ${wait_seconds}s before SSH probe…"
             sleep "$wait_seconds"
           else
-            echo "First push deploy: skipping preflight wait"
+            echo "Push deploy: waiting 180s so previous SSH session can finish and fail2ban can cool down…"
+            sleep 180
           fi
 
       - name: Preflight VPS connectivity (same runner as deploy)
