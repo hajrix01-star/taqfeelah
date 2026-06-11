@@ -72,7 +72,6 @@ export default function EmployeeCloseoutsView({
     employeeRuntimeReady: runtimeReady,
     channelsReady,
     closeoutsListPending,
-    closeoutsRefreshing,
     setCardRef,
     toggleExpandedCard,
     handleSubmit,
@@ -135,7 +134,6 @@ export default function EmployeeCloseoutsView({
             employeeRuntimeReady={runtimeReady}
             channelsReady={channelsReady}
             syncError={syncError}
-            closeoutsRefreshing={closeoutsRefreshing}
             hasOlderHiddenCloseouts={hasOlderHiddenCloseouts}
             historyScopeLabel={historyScopeLabel}
             hiddenCloseoutCount={hiddenCloseoutCount}

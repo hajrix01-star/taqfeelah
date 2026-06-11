@@ -17,10 +17,7 @@ import {
 } from "./employee-closeout-history";
 import { resolveEmployeeStoreName } from "./store-name-resolver";
 import { countSentCloseoutsByDate } from "../closeouts/client/closeout-day-label";
-import {
-  isEmployeeCloseoutsListPending,
-  isEmployeeCloseoutsRefreshing,
-} from "./employee-closeouts-loading";
+import { isEmployeeCloseoutsListPending } from "./employee-closeouts-loading";
 import { resolveEmployeeCloseoutsViewGate } from "./employee-closeouts-view-gate";
 
 function resolveScrollContainer(node) {
@@ -264,12 +261,6 @@ export function useEmployeeCloseoutsViewState({
     hasCachedCloseouts: closeoutsHasData,
     loadFailed: closeoutsLoadFailed,
   });
-  const closeoutsRefreshing = isEmployeeCloseoutsRefreshing({
-    apiEnabled: usesCloseoutsApi,
-    loading: closeoutsLoading,
-    hasCachedCloseouts: closeoutsHasData,
-  });
-
   const closeShareModal = useCallback(() => {
     setShareTarget(null);
     setShareNewlySubmitted(false);
@@ -295,7 +286,6 @@ export function useEmployeeCloseoutsViewState({
     employeeRuntimeReady,
     channelsReady,
     closeoutsListPending,
-    closeoutsRefreshing,
     setCardRef,
     toggleExpandedCard,
     handleSubmit,
