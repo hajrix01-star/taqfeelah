@@ -14,6 +14,7 @@ import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
 import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
 import { AdminChartFrame } from "@/features/saas-admin/components/AdminChartFrame";
 import { AdminTable, AdminTableCell } from "@/features/saas-admin/components/AdminTable";
+import { ADMIN_CHART_COLORS } from "@/features/saas-admin/components/admin-chart-colors";
 import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import {
   formatCloseoutStatus,
@@ -198,12 +199,12 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             <AdminChartFrame>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.monthlyUsage} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={ADMIN_CHART_COLORS.grid} />
                   <XAxis dataKey="month" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
                   <YAxis tick={{ fontSize: 10 }} width={36} />
                   <Tooltip wrapperStyle={{ maxWidth: "min(100vw - 2rem, 18rem)" }} />
-                  <Bar dataKey="closeouts" name={t.common.closeouts} fill="#112A46" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="operations" name={t.common.operations} fill="#F5A623" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="closeouts" name={t.common.closeouts} fill={ADMIN_CHART_COLORS.primary} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="operations" name={t.common.operations} fill={ADMIN_CHART_COLORS.secondary} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </AdminChartFrame>

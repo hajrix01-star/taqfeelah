@@ -28,7 +28,7 @@ export function AdminTableCell({ col, children, className = "" }: AdminTableCell
   return (
     <td
       data-label={label}
-      className={`admin-table-cell px-4 py-3 ${className}`.trim()}
+      className={`admin-table-cell px-3.5 py-2.5 ${className}`.trim()}
     >
       {children}
     </td>
@@ -43,7 +43,7 @@ export function AdminTable({
 }: AdminTableProps) {
   if (empty) {
     return (
-      <div className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] px-4 py-10 text-center text-sm text-[var(--admin-muted)] sm:px-6">
+      <div className="rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-4 py-8 text-center text-sm text-[var(--admin-muted)] sm:px-5">
         {emptyMessage}
       </div>
     );
@@ -51,14 +51,14 @@ export function AdminTable({
 
   return (
     <AdminTableContext.Provider value={{ columns }}>
-      <div className="admin-table-scroll overflow-x-auto rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] shadow-sm">
+      <div className="admin-table-scroll overflow-x-auto rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)]">
         <table className="admin-table w-full text-sm">
           <thead className="admin-table-head">
-            <tr className="border-b border-[var(--admin-border)] bg-[#FAFBFC]">
+            <tr className="border-b border-[var(--admin-border)] bg-[var(--admin-surface-muted)]">
               {columns.map((column) => (
                 <th
                   key={column}
-                  className="px-4 py-3 text-right text-xs font-semibold text-[var(--admin-muted)]"
+                  className="px-3.5 py-2.5 text-right text-xs font-semibold text-[var(--admin-muted)]"
                 >
                   {column}
                 </th>

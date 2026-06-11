@@ -123,6 +123,8 @@ export const translations = {
     overview: {
       title: "نظرة عامة",
       description: "ملخص المنصة والمؤشرات الرئيسية",
+      kpiSectionAccounts: "الحسابات والمستخدمون",
+      kpiSectionActivity: "نشاط الشهر",
       totalAccounts: "إجمالي الحسابات",
       activeAccounts: "الحسابات النشطة",
       storesCount: "عدد المحلات",
@@ -417,6 +419,8 @@ export const translations = {
     overview: {
       title: "Overview",
       description: "Platform summary and key metrics",
+      kpiSectionAccounts: "Accounts & users",
+      kpiSectionActivity: "Monthly activity",
       totalAccounts: "Total accounts",
       activeAccounts: "Active accounts",
       storesCount: "Stores",

@@ -17,6 +17,7 @@ import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
 import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
 import { AdminChartFrame } from "@/features/saas-admin/components/AdminChartFrame";
 import { AdminTable, AdminTableCell } from "@/features/saas-admin/components/AdminTable";
+import { ADMIN_CHART_COLORS } from "@/features/saas-admin/components/admin-chart-colors";
 import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import { formatDateTime, formatNumber } from "@/features/saas-admin/components/format-utils";
 import { KpiCard } from "@/features/saas-admin/components/KpiCard";
@@ -46,7 +47,7 @@ export default function UsagePage() {
     <>
       <AdminHeader title={t.usage.title} description={t.usage.description} />
       <AdminPageBody>
-        <section className="grid gap-4 sm:grid-cols-2">
+        <section className="grid gap-3 sm:grid-cols-2">
           <KpiCard
             title={t.usage.avgCloseoutsPerStore}
             value={data.avgCloseoutsPerStore.value !== null ? formatNumber(data.avgCloseoutsPerStore.value, locale) : t.common.unavailable}
@@ -66,14 +67,14 @@ export default function UsagePage() {
             <AdminChartFrame>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.monthlyTrend} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={ADMIN_CHART_COLORS.grid} />
                   <XAxis dataKey="month" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
                   <YAxis tick={{ fontSize: 10 }} width={36} />
                   <Tooltip wrapperStyle={{ maxWidth: "min(100vw - 2rem, 18rem)" }} />
                   <Legend wrapperStyle={{ fontSize: "11px" }} />
-                  <Line type="monotone" dataKey="closeouts" name={t.common.closeouts} stroke="#112A46" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="operations" name={t.common.operations} stroke="#F5A623" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="attachments" name={t.common.attachments} stroke="#6B7280" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="closeouts" name={t.common.closeouts} stroke={ADMIN_CHART_COLORS.primary} strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="operations" name={t.common.operations} stroke={ADMIN_CHART_COLORS.secondary} strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="attachments" name={t.common.attachments} stroke={ADMIN_CHART_COLORS.tertiary} strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </AdminChartFrame>
@@ -84,7 +85,7 @@ export default function UsagePage() {
           {data.topActiveAccounts.length === 0 ? (
             <p className="text-sm text-[var(--admin-muted)]">{t.usage.noActiveAccounts}</p>
           ) : (
-            <AdminChartFrame className="h-64 sm:h-72">
+            <AdminChartFrame className="h-56 sm:h-60">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={data.topActiveAccounts.map((row) => ({
@@ -94,11 +95,11 @@ export default function UsagePage() {
                   layout="vertical"
                   margin={{ top: 4, right: 8, left: 4, bottom: 4 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={ADMIN_CHART_COLORS.grid} />
                   <XAxis type="number" tick={{ fontSize: 10 }} />
                   <YAxis type="category" dataKey="name" width={72} tick={{ fontSize: 10 }} />
                   <Tooltip wrapperStyle={{ maxWidth: "min(100vw - 2rem, 18rem)" }} />
-                  <Bar dataKey="closeouts" name={t.common.closeouts} fill="#112A46" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="closeouts" name={t.common.closeouts} fill={ADMIN_CHART_COLORS.primary} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </AdminChartFrame>
@@ -106,7 +107,7 @@ export default function UsagePage() {
         </ChartCard>
 
         <section>
-          <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">{t.usage.inactiveAccounts}</h2>
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--admin-muted)]">{t.usage.inactiveAccounts}</h2>
           <AdminTable
             columns={[t.accounts.colAccount, t.accounts.colOwner, t.accounts.colLastActivity, t.common.status]}
             empty={data.inactiveAccounts.length === 0}
@@ -128,7 +129,7 @@ export default function UsagePage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-sm font-bold text-[var(--admin-primary)]">{t.usage.lastActivityPerAccount}</h2>
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--admin-muted)]">{t.usage.lastActivityPerAccount}</h2>
           <AdminTable
             columns={[t.accounts.colAccount, t.accounts.colLastActivity, t.usage.daysSinceActivity]}
             empty={data.lastActivityByAccount.length === 0}

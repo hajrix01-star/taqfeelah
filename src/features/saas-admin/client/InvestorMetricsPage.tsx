@@ -49,7 +49,7 @@ export default function InvestorMetricsPage() {
           {t.investor.disclaimer}
         </div>
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard title={t.investor.activeAccounts} value={formatNumber(data.activeAccounts.value, locale)} source={data.activeAccounts.source} />
           <KpiCard title={t.investor.activeStores} value={formatNumber(data.activeStores.value, locale)} source={data.activeStores.source} />
           <KpiCard title={t.investor.monthlyCloseouts} value={formatNumber(data.monthlyCloseouts.value, locale)} source={data.monthlyCloseouts.source} />

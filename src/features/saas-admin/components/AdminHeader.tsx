@@ -8,12 +8,12 @@ type AdminHeaderProps = {
 
 export function AdminHeader({ title, description, actions }: AdminHeaderProps) {
   return (
-    <header className="sticky top-[var(--admin-mobile-topbar-height)] z-10 border-b border-[var(--admin-border)] bg-[var(--admin-bg)]/95 px-4 py-4 backdrop-blur sm:px-6 sm:py-5 lg:top-0">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <header className="sticky top-[var(--admin-mobile-topbar-height)] z-10 border-b border-[var(--admin-border)] bg-[var(--admin-bg)]/95 backdrop-blur lg:top-0">
+      <div className="admin-content-container flex flex-col gap-3 px-4 py-3 sm:px-5 sm:py-3.5 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
-          <h1 className="text-lg font-bold text-[var(--admin-primary)] sm:text-xl">{title}</h1>
+          <h1 className="text-base font-bold text-[var(--admin-text)] sm:text-lg">{title}</h1>
           {description ? (
-            <p className="mt-1 text-sm leading-6 text-[var(--admin-muted)]">{description}</p>
+            <p className="mt-0.5 text-sm leading-5 text-[var(--admin-muted)]">{description}</p>
           ) : null}
         </div>
         {actions ? (
