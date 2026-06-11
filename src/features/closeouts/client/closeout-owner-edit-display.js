@@ -16,17 +16,45 @@ export function resolveCloseoutOwnerEditMeta(source) {
  * @param {Array<object>} entries
  */
 export function resolveCloseoutOwnerEditMetaFromEntries(entries = []) {
+  let latest = null;
   for (const entry of entries) {
-    const meta = resolveCloseoutOwnerEditMeta(entry);
-    if (meta) return meta;
-    const nested = resolveCloseoutOwnerEditMeta({
-      ownerEditedAt: entry.closeoutOwnerEditedAt,
-      ownerEditedByUserId: entry.closeoutOwnerEditedByUserId,
-      ownerEditedByName: entry.closeoutOwnerEditedByName,
-    });
-    if (nested) return nested;
+    const candidates = [
+      resolveCloseoutOwnerEditMeta(entry),
+      resolveCloseoutOwnerEditMeta({
+        ownerEditedAt: entry.closeoutOwnerEditedAt,
+        ownerEditedByUserId: entry.closeoutOwnerEditedByUserId,
+        ownerEditedByName: entry.closeoutOwnerEditedByName,
+      }),
+    ].filter(Boolean);
+    for (const meta of candidates) {
+      if (!latest || String(meta.ownerEditedAt) > String(latest.ownerEditedAt)) {
+        latest = meta;
+      }
+    }
   }
-  return null;
+  return latest;
+}
+
+/**
+ * Prefer the freshest owner-edit metadata between a frozen entry and closeouts list.
+ *
+ * @param {object | null | undefined} selected
+ * @param {Array<object>} closeouts
+ * @param {(entry: object, closeouts: Array<object>) => object | null | undefined} resolveCloseoutForEntry
+ */
+export function resolveSelectedCloseoutOwnerEditSource(selected, closeouts, resolveCloseoutForEntry) {
+  if (!selected) return null;
+  const entryMeta = resolveCloseoutOwnerEditMeta({
+    ownerEditedAt: selected.closeoutOwnerEditedAt,
+    ownerEditedByUserId: selected.closeoutOwnerEditedByUserId,
+    ownerEditedByName: selected.closeoutOwnerEditedByName,
+  }) || resolveCloseoutOwnerEditMeta(selected);
+  const closeoutMeta = resolveCloseoutOwnerEditMeta(resolveCloseoutForEntry(selected, closeouts));
+  if (!entryMeta) return closeoutMeta;
+  if (!closeoutMeta) return entryMeta;
+  return String(closeoutMeta.ownerEditedAt) >= String(entryMeta.ownerEditedAt)
+    ? closeoutMeta
+    : entryMeta;
 }
 
 /**

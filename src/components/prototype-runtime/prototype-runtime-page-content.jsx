@@ -58,6 +58,8 @@ export function PrototypeRuntimePageContent({
   openDuplicateSummaryInRegister,
   acknowledgeDuplicateSales,
   handleOpenOwnerOperation,
+  selectedOperationId = null,
+  onReselectOperation = null,
   setShareSnapshot,
   activeViewBusiness,
   homeReportChannelConfig,
@@ -239,6 +241,8 @@ export function PrototypeRuntimePageContent({
           registerEntriesApiActorUserId={ownerApiUserId}
           registerEntriesApiActorRole="owner"
           registerEntriesRefreshKey={summaryRefreshKey}
+          selectedOperationId={selectedOperationId}
+          onReselectOperation={onReselectOperation}
           {...entryAttachmentsApiProps}
         />
       )}

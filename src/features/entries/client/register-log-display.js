@@ -1,5 +1,6 @@
 import { sumUiAmounts } from "@/domain/cash-movement/calculations";
 import { resolveCloseoutOwnerEditMetaFromEntries } from "@/features/closeouts/client/closeout-owner-edit-display";
+import { employeeDisplayName } from "@/features/employee-closeouts/employee-entries-display";
 import {
   aggregateSalesChannelsFromGroupEntries,
   entryHasAttachment,
@@ -17,6 +18,22 @@ export const DEFAULT_REGISTER_LOG_FILTERS = {
   actor: "all",
   salesChannel: "all",
 };
+
+/**
+ * @param {{ entries: Array<object> }} group
+ * @param {{ ownerUserId?: string, lang?: "ar" | "en", enteredByOwnerLabel?: string }} [options]
+ */
+export function resolveRegisterCloseoutActorLabel(
+  group,
+  { ownerUserId = "", lang = "ar", enteredByOwnerLabel = "المالك" } = {},
+) {
+  const ownerEntered = (ownerUserId
+    ? group.entries.find((entry) => entry.enteredBy?.userId === ownerUserId)
+    : null)
+    || group.entries.find((entry) => entry.enteredBy?.role === "owner")
+    || group.entries[0];
+  return employeeDisplayName(ownerEntered, lang) || enteredByOwnerLabel;
+}
 
 export function registerLogFilterCount(filters) {
   return Number(filters.status !== "all")

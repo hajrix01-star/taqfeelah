@@ -183,7 +183,8 @@ export function resolveOwnerSingleStoreTotals(
   { entriesDbSource = isEntriesApiDbSourceMode() } = {},
 ) {
   if (entriesDbSource) {
-    return apiTotals ?? localTotals;
+    if (apiTotals != null) return apiTotals;
+    return localTotals;
   }
   return preferEntryDerived
     ? localTotals
