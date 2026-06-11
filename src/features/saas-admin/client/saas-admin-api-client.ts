@@ -7,6 +7,32 @@ import type {
   SystemHealthReport,
 } from "@/features/saas-admin/types";
 
+type ApiErrorPayload = {
+  error?: {
+    message?: string;
+    details?: {
+      fieldErrors?: Record<string, string[]>;
+      formErrors?: string[];
+    };
+  };
+};
+
+function formatSaasAdminApiError(payload: ApiErrorPayload, status: number): string {
+  const fieldErrors = payload?.error?.details?.fieldErrors;
+  if (fieldErrors && typeof fieldErrors === "object") {
+    const messages = Object.values(fieldErrors).flatMap((items) => items ?? []);
+    if (messages.length) return messages[0]!;
+  }
+  const formErrors = payload?.error?.details?.formErrors;
+  if (Array.isArray(formErrors) && formErrors.length) {
+    return formErrors[0]!;
+  }
+  if (typeof payload?.error?.message === "string" && payload.error.message.trim()) {
+    return payload.error.message;
+  }
+  return `SaaS admin API failed (${status})`;
+}
+
 async function fetchSaasAdminJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -17,15 +43,12 @@ async function fetchSaasAdminJson<T>(path: string, init: RequestInit = {}): Prom
     },
   });
 
-  const payload = await response.json().catch(() => ({}));
+  const payload = await response.json().catch(() => ({})) as ApiErrorPayload;
   if (!response.ok) {
-    const message = typeof payload?.error?.message === "string"
-      ? payload.error.message
-      : `SaaS admin API failed (${response.status})`;
-    throw new Error(message);
+    throw new Error(formatSaasAdminApiError(payload, response.status));
   }
 
-  return (payload?.data ?? payload) as T;
+  return ((payload as { data?: T }).data ?? payload) as T;
 }
 
 export async function fetchSaasOverview() {
