@@ -26,6 +26,7 @@ import argparse
 import base64
 import errno
 import io
+import json
 import os
 import shlex
 import socket
@@ -79,6 +80,8 @@ SAAS_OPT_IN_ENV_KEYS = (
     "USAGE_TRACKING_ENABLED",
     "SAAS_PLATFORM_ADMIN_USER_IDS",
 )
+
+VERIFY_COOKIE_JAR = "/tmp/taqfeelah-deploy-verify-cookies.txt"
 
 # Bootstrap defaults align with scripts/seed-closeouts-foundation.mjs so deploy can
 # proceed without GitHub app-env secrets. DATABASE_URL must still come from secrets
@@ -626,6 +629,20 @@ def deployment_wave_requires_saas_verify() -> bool:
     return int(wave) >= 7
 
 
+def verify_request_auth_flags(
+    auth_verify: bool,
+    wave_org_id: str,
+    wave_owner_id: str,
+) -> str:
+    if auth_verify:
+        return f"-b {shlex.quote(VERIFY_COOKIE_JAR)}"
+    return (
+        f"-H 'x-organization-id: {wave_org_id}' "
+        f"-H 'x-user-id: {wave_owner_id}' "
+        f"-H 'x-member-role: owner'"
+    )
+
+
 def resolve_production_env(existing_remote_env: dict[str, str] | None = None) -> dict[str, str]:
     merged = dict(PRODUCTION_ENV_BOOTSTRAP_DEFAULTS)
     if existing_remote_env:
@@ -1056,6 +1073,31 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     auth_owner_password = os.environ.get("AUTH_OWNER_PASSWORD", "123")
     auth_employee_user_id = "4cf1450d-08d8-4ca1-b180-1c2642174a79"
     auth_employee_pin = "1234"
+    auth_flags = verify_request_auth_flags(auth_verify, wave_org_id, wave_owner_id)
+    auth_owner_payload = json.dumps(
+        {
+            "mode": "owner_password",
+            "username": auth_owner_username,
+            "password": auth_owner_password,
+        },
+        separators=(",", ":"),
+    )
+    auth_bad_payload = json.dumps(
+        {
+            "mode": "owner_password",
+            "username": auth_owner_username,
+            "password": "wrong-password-deploy-verify",
+        },
+        separators=(",", ":"),
+    )
+    auth_employee_payload = json.dumps(
+        {
+            "mode": "employee_pin",
+            "employeeId": "ahmed",
+            "pin": auth_employee_pin,
+        },
+        separators=(",", ":"),
+    )
     verify_cmds = [
         "docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'",
         "nginx -t",
@@ -1065,12 +1107,35 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             f"curl -sS --max-time 20 -o /tmp/taqfeelah-auth-session.json "
             f"-w '%{{http_code}}' https://{shlex.quote(domain)}/api/v1/auth/session"
         ),
+        *([
+            f"rm -f {shlex.quote(VERIFY_COOKIE_JAR)}",
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave6-auth-owner.json "
+                f"-w '%{{http_code}}' -c {shlex.quote(VERIFY_COOKIE_JAR)} "
+                f"-b {shlex.quote(VERIFY_COOKIE_JAR)} "
+                f"-X POST https://{shlex.quote(domain)}/api/v1/auth/session "
+                f"-H 'content-type: application/json' "
+                f"-d {shlex.quote(auth_owner_payload)}"
+            ),
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave6-auth-bad.json "
+                f"-w '%{{http_code}}' -X POST https://{shlex.quote(domain)}/api/v1/auth/session "
+                f"-H 'content-type: application/json' "
+                f"-d {shlex.quote(auth_bad_payload)}"
+            ),
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave6-auth-employee.json "
+                f"-w '%{{http_code}}' -c {shlex.quote(VERIFY_COOKIE_JAR)} "
+                f"-b {shlex.quote(VERIFY_COOKIE_JAR)} "
+                f"-X POST https://{shlex.quote(domain)}/api/v1/auth/session "
+                f"-H 'content-type: application/json' "
+                f"-d {shlex.quote(auth_employee_payload)}"
+            ),
+        ] if auth_verify else []),
         (
             f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave1-entries.json "
             f"-w '%{{http_code}}' https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/entries "
-            f"-H 'x-organization-id: {wave_org_id}' "
-            f"-H 'x-user-id: {wave_owner_id}' "
-            f"-H 'x-member-role: owner'"
+            f"{auth_flags}"
         ),
         *([
             (
@@ -1078,18 +1143,14 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"-w '%{{http_code}}' "
                 f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/summary/day"
                 f"?date=$(date -u +%Y-%m-%d) "
-                f"-H 'x-organization-id: {wave_org_id}' "
-                f"-H 'x-user-id: {wave_owner_id}' "
-                f"-H 'x-member-role: owner'"
+                f"{auth_flags}"
             ),
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave2-reports-days.json "
                 f"-w '%{{http_code}}' "
                 f"'https://{shlex.quote(domain)}/api/v1/reports/days?"
                 f"storeId={wave_store_id}&from=2026-01-01&to=2026-12-31' "
-                f"-H 'x-organization-id: {wave_org_id}' "
-                f"-H 'x-user-id: {wave_owner_id}' "
-                f"-H 'x-member-role: owner'"
+                f"{auth_flags}"
             ),
         ] if analytics_verify else []),
         *([
@@ -1098,9 +1159,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"-w '%{{http_code}}' "
                 f"'https://{domain}/api/v1/stores/{wave_store_id}/entries"
                 f"?status=active&paginated=1&limit=25' "
-                f"-H 'x-organization-id: {wave_org_id}' "
-                f"-H 'x-user-id: {wave_owner_id}' "
-                f"-H 'x-member-role: owner'"
+                f"{auth_flags}"
             ),
         ] if pagination_verify else []),
         *([
@@ -1108,26 +1167,20 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave4-stores.json "
                 f"-w '%{{http_code}}' "
                 f"'https://{domain}/api/v1/stores?status=active' "
-                f"-H 'x-organization-id: {wave_org_id}' "
-                f"-H 'x-user-id: {wave_owner_id}' "
-                f"-H 'x-member-role: owner'"
+                f"{auth_flags}"
             ),
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave4-members.json "
                 f"-w '%{{http_code}}' "
                 f"'https://{domain}/api/v1/members?status=active' "
-                f"-H 'x-organization-id: {wave_org_id}' "
-                f"-H 'x-user-id: {wave_owner_id}' "
-                f"-H 'x-member-role: owner'"
+                f"{auth_flags}"
             ),
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave4-sales-channels.json "
                 f"-w '%{{http_code}}' "
                 f"'https://{domain}/api/v1/stores/{wave_store_id}/sales-channels"
                 f"?status=active' "
-                f"-H 'x-organization-id: {wave_org_id}' "
-                f"-H 'x-user-id: {wave_owner_id}' "
-                f"-H 'x-member-role: owner'"
+                f"{auth_flags}"
             ),
         ] if org_config_verify else []),
         *([
@@ -1137,16 +1190,12 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"'https://{domain}/api/v1/exports/notebook?"
                 f"storeId={wave_store_id}&period=day&date='"
                 f"$(date -u +%Y-%m-%d) "
-                f"-H 'x-organization-id: {wave_org_id}' "
-                f"-H 'x-user-id: {wave_owner_id}' "
-                f"-H 'x-member-role: owner'"
+                f"{auth_flags}"
             ),
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave5-duplicate-ack.json "
                 f"-w '%{{http_code}}' -X POST "
-                f"-H 'x-organization-id: {wave_org_id}' "
-                f"-H 'x-user-id: {wave_owner_id}' "
-                f"-H 'x-member-role: owner' "
+                f"{auth_flags} "
                 f"-H 'content-type: application/json' "
                 f"-d '{{}}' "
                 f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/entries/"
@@ -1155,9 +1204,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave5-inline-attachment.json "
                 f"-w '%{{http_code}}' -X POST "
-                f"-H 'x-organization-id: {wave_org_id}' "
-                f"-H 'x-user-id: {wave_owner_id}' "
-                f"-H 'x-member-role: owner' "
+                f"{auth_flags} "
                 f"-H 'content-type: application/json' "
                 f"-d '{{}}' "
                 f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/attachments/inline"
@@ -1174,6 +1221,13 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"-w '%{{http_code}}' "
                 f"https://{shlex.quote(domain)}/saas-admin"
             ),
+            *([
+                (
+                    f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave7-saas-kpis-auth.json "
+                    f"-w '%{{http_code}}' -b {shlex.quote(VERIFY_COOKIE_JAR)} "
+                    f"https://{shlex.quote(domain)}/api/v1/saas-admin/overview"
+                ),
+            ] if auth_verify else []),
         ] if saas_verify else []),
         f"curl -I --max-time 15 https://{shlex.quote(www_domain)} || true",
         "curl -I --max-time 15 https://hajrix.com || true",
@@ -1437,6 +1491,21 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                     f"HTTP {saas_page_status_code or 'unknown'} (expected 200)"
                 )
             continue
+        if "wave7-saas-kpis-auth.json" in c:
+            saas_auth_status_code = out.strip()[-3:] if out.strip() else None
+            _, body, _ = vps.run(
+                "cat /tmp/taqfeelah-wave7-saas-kpis-auth.json 2>/dev/null || true",
+                check=False,
+            )
+            if body.strip():
+                safe_print("Wave 7 SaaS overview (authenticated) response preview:")
+                safe_print(body.strip()[:240])
+            if saas_auth_status_code != "200":
+                raise RuntimeError(
+                    "Deployment wave 7 verification failed: authenticated SaaS overview returned "
+                    f"HTTP {saas_auth_status_code or 'unknown'} (expected 200)"
+                )
+            continue
         if code != 0:
             raise RuntimeError(f"Verification command failed ({code}): {c}")
 
@@ -1537,6 +1606,27 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             """
         ).strip()
     )
+
+    if deployment_wave_requires_auth_verify():
+        print_section("Seed auth credentials (wave 6+)")
+        _, auth_seed_out, auth_seed_err = vps.run(
+            textwrap.dedent(
+                f"""
+                set -euo pipefail
+                cd {shlex.quote(app_dir)}
+                set -a
+                . ./.env.production
+                set +a
+                node scripts/seed-auth-credentials.mjs
+                """
+            ).strip(),
+            check=False,
+        )
+        if auth_seed_out.strip():
+            safe_print(auth_seed_out.strip())
+        if auth_seed_err.strip():
+            safe_print("STDERR:")
+            safe_print(auth_seed_err.strip())
 
     reset_foundation_on_deploy = env_flag_enabled("RESET_FOUNDATION_ON_DEPLOY")
 
