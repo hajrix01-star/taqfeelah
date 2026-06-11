@@ -1,4 +1,5 @@
 import { AppError } from "@/core/errors/app-error";
+import { getPublicErrorPayload, normalizeError } from "@/core/errors/normalize-error";
 import { logger } from "@/core/logger";
 
 export type FailContext = {
@@ -13,35 +14,24 @@ export function ok<T>(data: T, init?: ResponseInit) {
 }
 
 export function fail(error: unknown, context?: FailContext): Response {
-  if (error instanceof AppError) {
-    return Response.json(
+  const normalized = normalizeError(error);
+
+  if (!(error instanceof AppError) && normalized.code === "INTERNAL_ERROR") {
+    logger.error(
       {
-        error: {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-        },
+        err: error,
+        requestId: context?.requestId,
+        errorCode: normalized.code,
       },
-      { status: error.status },
+      "Unhandled API error",
     );
   }
 
-  logger.error(
-    {
-      err: error,
-      requestId: context?.requestId,
-    },
-    "Unhandled API error",
-  );
-
   return Response.json(
     {
-      error: {
-        code: "INTERNAL_ERROR",
-        message: "Unexpected server error.",
-      },
+      error: getPublicErrorPayload(normalized),
     },
-    { status: 500 },
+    { status: normalized.status },
   );
 }
 

@@ -20,9 +20,21 @@ All list endpoints: **pagination required**. Prefer **cursor / keyset** on `(dat
 
 ### Errors
 
+Structured errors follow RFC 9457-style problem details (stable `type` + `code`, human `message`, operator `cause`):
+
 ```json
-{ "error": { "code": "VALIDATION_ERROR", "message": "..." } }
+{
+  "error": {
+    "type": "https://taqfeelah.com/errors/owner-username-taken",
+    "code": "OWNER_USERNAME_TAKEN",
+    "title": "Owner username taken",
+    "message": "Owner username is already taken.",
+    "cause": "auth_identities already contains this username for provider username_password."
+  }
+}
 ```
+
+Legacy clients may continue to read `error.code` and `error.message`. Validation errors may include `error.details.fieldErrors`.
 
 ### Money in JSON
 

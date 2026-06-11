@@ -12,6 +12,8 @@ import {
   users,
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
+import { ERROR_CODES } from "@/core/errors/error-codes";
+import { catalogAppError } from "@/core/errors/normalize-error";
 import { upsertEmployeePinIdentity } from "@/features/auth/server/auth-identities";
 
 const inputSchema = z.object({
@@ -57,7 +59,7 @@ export async function createSaasAccountMember(
     .limit(1);
 
   if (!organization?.id) {
-    throw new ValidationError("Organization was not found.");
+    throw catalogAppError(ERROR_CODES.ORGANIZATION_NOT_FOUND);
   }
 
   if (uniqueStoreIds.length) {
@@ -71,7 +73,7 @@ export async function createSaasAccountMember(
         ),
       );
     if (storeRows.length !== uniqueStoreIds.length) {
-      throw new ValidationError("One or more storeIds are invalid for this organization.");
+      throw catalogAppError(ERROR_CODES.INVALID_STORE_IDS);
     }
   }
 

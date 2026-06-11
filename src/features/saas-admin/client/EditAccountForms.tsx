@@ -7,7 +7,7 @@ import {
   updateSaasAccountOwner,
 } from "@/features/saas-admin/client/saas-admin-api-client";
 import type { PlanCode } from "@/features/saas-admin/types";
-import { mapSaasAdminApiError } from "@/features/saas-admin/client/map-saas-admin-api-error";
+import { mapSaasAdminApiError } from "@/features/saas-admin/client/api-error";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type EditAccountFormsProps = {
@@ -42,7 +42,7 @@ export function EditAccountForms({
 
   function formatError(error: unknown, fallback: string) {
     if (!(error instanceof Error)) return fallback;
-    return mapSaasAdminApiError(error.message, t) || fallback;
+    return mapSaasAdminApiError(error, t) || fallback;
   }
   const feedbackRef = useRef<HTMLDivElement>(null);
   const [accountName, setAccountName] = useState(organizationName);

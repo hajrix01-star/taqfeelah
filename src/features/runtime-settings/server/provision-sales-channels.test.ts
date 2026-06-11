@@ -24,6 +24,35 @@ describe("provisionSalesChannels", () => {
     insertValues.mockResolvedValue(undefined);
   });
 
+  it("uses the provided executor instead of the global db client", async () => {
+    const executor = {
+      select,
+      insert,
+      update,
+    } as never;
+    const { provisionSalesChannels } = await import("./provision-sales-channels");
+
+    await provisionSalesChannels(
+      "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      {
+        shami: {
+          channels: [{ id: "cash", text: "cash" }],
+          activeIds: ["cash"],
+        },
+      },
+      {
+        storeIdMap: { shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c" },
+        salesChannelIdMap: {
+          cash: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+        },
+        executor,
+      },
+    );
+
+    expect(select).toHaveBeenCalled();
+    expect(insert).toHaveBeenCalled();
+  });
+
   it("upserts known prototype channels for active store config", async () => {
     const { provisionSalesChannels } = await import("./provision-sales-channels");
     const result = await provisionSalesChannels(

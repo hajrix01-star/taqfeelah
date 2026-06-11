@@ -13,6 +13,8 @@ import {
   users,
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
+import { ERROR_CODES } from "@/core/errors/error-codes";
+import { catalogAppError } from "@/core/errors/normalize-error";
 import { upsertOwnerPasswordIdentity } from "@/features/auth/server/auth-identities";
 import { provisionSaasAccountFoundation } from "@/features/saas-admin/server/provision-saas-account-foundation";
 
@@ -80,7 +82,7 @@ async function assertOwnerUsernameAvailable(username: string, executor: Pick<Ret
     .limit(1);
 
   if (existing?.id) {
-    throw new ValidationError("Owner username is already taken.");
+    throw catalogAppError(ERROR_CODES.OWNER_USERNAME_TAKEN);
   }
 }
 
