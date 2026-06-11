@@ -888,6 +888,63 @@ def probe_vps_connectivity(
     return ok, reason, ip
 
 
+def run_tcp_connectivity_preflight(host: str, port: int, tcp_probe_timeout: float) -> None:
+    """TCP-only reachability check from the runner before opening SSH."""
+    print_section("Runner → VPS connectivity probe")
+    preflight_wait = max(0.0, float(os.environ.get("VPS_PREFLIGHT_WAIT_SECONDS", "0")))
+    if preflight_wait > 0:
+        safe_print(
+            f"Preflight wait {preflight_wait:.0f}s "
+            "(VPS_PREFLIGHT_WAIT_SECONDS / workflow cooldown)…"
+        )
+        time.sleep(preflight_wait)
+    else:
+        safe_print("No extra preflight wait (VPS_PREFLIGHT_WAIT_SECONDS=0).")
+
+    probe_retries = max(1, int(os.environ.get("VPS_PROBE_RETRIES", "2")))
+    probe_delay = max(0.0, float(os.environ.get("VPS_PROBE_RETRY_DELAY_SECONDS", "12")))
+    probe_ok = False
+    last_reason = "unknown"
+    last_ip = host
+    for attempt in range(1, probe_retries + 1):
+        if attempt > 1 and probe_delay > 0:
+            safe_print(
+                f"TCP probe backoff {probe_delay:.0f}s before attempt "
+                f"{attempt}/{probe_retries}…"
+            )
+            time.sleep(probe_delay)
+        probe_ok, last_reason, last_ip = probe_vps_connectivity(
+            host,
+            port,
+            tcp_probe_timeout,
+            attempt=attempt,
+            max_attempts=probe_retries,
+        )
+        if probe_ok:
+            break
+        if last_reason in FAIL_FAST_CONNECT_REASONS:
+            safe_print(f"TCP probe stopping early: {last_reason}")
+            break
+
+    if not probe_ok:
+        raise RuntimeError(
+            "VPS port is not reachable from GitHub Actions.\n"
+            f"Last TCP probe: {last_ip}:{port} — {last_reason}\n"
+            "Intermittent timeouts often mean the GitHub runner IP is temporarily blocked.\n"
+            "Re-run the workflow (a new runner may succeed) or set VPS_HOST to the VPS public IP.\n"
+            "The site may still be online while SSH from CI is blocked.\n"
+            "On VPS (root): bash scripts/vps-diagnose-ci-access.sh\n"
+            "See docs/DEPLOYMENT_WAVES.md (troubleshooting section)."
+        )
+
+
+def cmd_deploy_production(vps: VPS, domain: str, www_domain: str, local_path: str) -> None:
+    """Preflight + deploy + verify in one SSH session (fewer connection storms)."""
+    cmd_preflight(vps, domain, www_domain)
+    cmd_deploy_pm2(vps, domain, www_domain, local_path)
+    cmd_verify(vps, domain, www_domain)
+
+
 def cmd_preflight(vps: VPS, domain: str, www_domain: str) -> None:
     print_section("SSH session")
     _, out, _ = vps.run("hostname && whoami && uptime", check=True)
@@ -1864,6 +1921,14 @@ def main() -> int:
     p_deploy_pm2.add_argument("--www-domain", required=True)
     p_deploy_pm2.add_argument("--local-path", default=".")
 
+    p_deploy_production = sub.add_parser(
+        "deploy-production",
+        help="TCP probe + preflight + deploy-pm2 + verify in one SSH session",
+    )
+    p_deploy_production.add_argument("--domain", required=True)
+    p_deploy_production.add_argument("--www-domain", required=True)
+    p_deploy_production.add_argument("--local-path", default=".")
+
     sub.add_parser("repair-docker")
     sub.add_parser("docker-debug")
     p_pm2_logs = sub.add_parser("pm2-logs")
@@ -1890,54 +1955,9 @@ def main() -> int:
     connect_retries = parse_env_int("VPS_CONNECT_RETRIES", 2)
     retry_delay_seconds = float(os.environ.get("VPS_RETRY_DELAY_SECONDS", "8"))
 
-    if args.action == "preflight":
-        print_section("Runner → VPS connectivity probe")
-        preflight_wait = max(0.0, float(os.environ.get("VPS_PREFLIGHT_WAIT_SECONDS", "0")))
-        if preflight_wait > 0:
-            safe_print(
-                f"Preflight wait {preflight_wait:.0f}s "
-                "(VPS_PREFLIGHT_WAIT_SECONDS / workflow cooldown)…"
-            )
-            time.sleep(preflight_wait)
-        else:
-            safe_print("No extra preflight wait (VPS_PREFLIGHT_WAIT_SECONDS=0).")
-
-        probe_retries = max(1, int(os.environ.get("VPS_PROBE_RETRIES", "2")))
-        probe_delay = max(0.0, float(os.environ.get("VPS_PROBE_RETRY_DELAY_SECONDS", "12")))
-        probe_ok = False
-        last_reason = "unknown"
-        last_ip = host
-        for attempt in range(1, probe_retries + 1):
-            if attempt > 1 and probe_delay > 0:
-                safe_print(
-                    f"TCP probe backoff {probe_delay:.0f}s before attempt "
-                    f"{attempt}/{probe_retries}…"
-                )
-                time.sleep(probe_delay)
-            probe_ok, last_reason, last_ip = probe_vps_connectivity(
-                host,
-                port,
-                tcp_probe_timeout,
-                attempt=attempt,
-                max_attempts=probe_retries,
-            )
-            if probe_ok:
-                break
-            if last_reason in FAIL_FAST_CONNECT_REASONS:
-                safe_print(f"TCP probe stopping early: {last_reason}")
-                break
-
-        if not probe_ok:
-            raise RuntimeError(
-                "VPS port is not reachable from GitHub Actions.\n"
-                f"Last TCP probe: {last_ip}:{port} — {last_reason}\n"
-                "The site may still be online while SSH from CI is blocked.\n"
-                "Common causes: Hostinger VPS Firewall, UFW/iptables, SSH down, wrong VPS_HOST/VPS_PORT.\n"
-                "On VPS (root): bash scripts/vps-diagnose-ci-access.sh\n"
-                "If fail2ban is installed: bash scripts/vps-unban-ci-ssh.sh\n"
-                "Re-run Production Deploy with preflight_wait_minutes=10, or wait for bans to expire.\n"
-                "See docs/DEPLOYMENT_WAVES.md (troubleshooting section)."
-            )
+    needs_tcp_preflight = args.action in {"preflight", "deploy-production"}
+    if needs_tcp_preflight:
+        run_tcp_connectivity_preflight(host, port, tcp_probe_timeout)
 
     with open_vps_client(
         port=port,
@@ -1957,6 +1977,8 @@ def main() -> int:
             cmd_preflight(vps, args.domain, args.www_domain)
         elif args.action == "deploy-pm2":
             cmd_deploy_pm2(vps, args.domain, args.www_domain, args.local_path)
+        elif args.action == "deploy-production":
+            cmd_deploy_production(vps, args.domain, args.www_domain, args.local_path)
         elif args.action == "repair-docker":
             cmd_repair_docker(vps)
         elif args.action == "docker-debug":

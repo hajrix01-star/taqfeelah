@@ -8,7 +8,7 @@ on:
       preflight_wait_minutes:
         description: "Minutes to wait before SSH probe (use after fail2ban blocks)"
         required: false
-        default: "10"
+        default: "3"
         type: choice
         options:
           - "0"
@@ -19,7 +19,7 @@ on:
 
 concurrency:
   group: production-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -105,68 +105,51 @@ jobs:
             exit 1
           fi
 
-      - name: Public site probe (diagnostic)
+      - name: Runner and site probe (diagnostic)
         run: |
           set -euo pipefail
+          echo "GitHub runner egress IP: $(curl -fsS --max-time 10 https://api.ipify.org || echo unknown)"
           for url in https://taqfeelah.com https://www.taqfeelah.com; do
             code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "$url" || echo "000")"
             echo "$url → HTTP $code"
           done
-          echo "If HTTPS is 200 but SSH preflight fails, firewall or Hostinger VPS Firewall blocks GitHub runners."
-          echo "On VPS (root): bash scripts/vps-diagnose-ci-access.sh"
+          echo "Intermittent SSH timeout: GitHub runner IP may be blocked — re-run uses a different IP."
+          echo "Set VPS_HOST to the VPS public IP (e.g. 77.37.51.67), not a hostname."
 
-      - name: Wait before SSH probe (fail2ban cooldown)
+      - name: Configure SSH cooldown
         env:
-          DISPATCH_WAIT_MINUTES: ${{ github.event.inputs.preflight_wait_minutes || '10' }}
+          DISPATCH_WAIT_MINUTES: ${{ github.event.inputs.preflight_wait_minutes || '3' }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
           set -euo pipefail
-          min_wait=0
           if [ "$RUN_ATTEMPT" -gt 1 ]; then
-            min_wait=600
             wait_seconds=$((DISPATCH_WAIT_MINUTES * 60))
-            if [ "$wait_seconds" -lt "$min_wait" ]; then
-              wait_seconds="$min_wait"
-            fi
-            echo "Re-run attempt ${RUN_ATTEMPT}: waiting ${wait_seconds}s for SSH ban cooldown…"
-            sleep "$wait_seconds"
+            if [ "$wait_seconds" -lt 300 ]; then wait_seconds=300; fi
+            echo "Re-run attempt ${RUN_ATTEMPT}: cooldown ${wait_seconds}s (applied in deploy script)…"
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$DISPATCH_WAIT_MINUTES" != "0" ]; then
             wait_seconds=$((DISPATCH_WAIT_MINUTES * 60))
-            echo "Manual deploy: waiting ${wait_seconds}s before SSH probe…"
-            sleep "$wait_seconds"
+            echo "Manual deploy: cooldown ${wait_seconds}s before SSH…"
           else
-            echo "Push deploy: waiting 90s so prior SSH sessions can finish and fail2ban can cool down…"
-            sleep 90
+            wait_seconds=45
+            echo "Push deploy: cooldown ${wait_seconds}s before SSH…"
           fi
+          echo "VPS_PREFLIGHT_WAIT_SECONDS=${wait_seconds}" >> "$GITHUB_ENV"
 
-      - name: Preflight VPS connectivity (same runner as deploy)
+      - name: Deploy to VPS (single SSH session)
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
           VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_TCP_PROBE_TIMEOUT: "10"
-          VPS_CONNECT_TIMEOUT: "20"
+          VPS_TCP_PROBE_TIMEOUT: "12"
+          VPS_CONNECT_TIMEOUT: "25"
           VPS_CONNECT_RETRIES: "2"
-          VPS_RETRY_DELAY_SECONDS: "12"
-          VPS_PROBE_RETRIES: "2"
-          VPS_PROBE_RETRY_DELAY_SECONDS: "15"
-        run: |
-          python scripts/vps_deploy.py preflight \
-            --domain taqfeelah.com \
-            --www-domain www.taqfeelah.com
-
-      - name: Deploy Taqfeelah (PM2 + Nginx + SSL)
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_PASS: ${{ secrets.VPS_PASS }}
-          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_CONNECT_TIMEOUT: "20"
-          VPS_CONNECT_RETRIES: "3"
-          VPS_RETRY_DELAY_SECONDS: "12"
+          VPS_RETRY_DELAY_SECONDS: "15"
+          VPS_PROBE_RETRIES: "3"
+          VPS_PROBE_RETRY_DELAY_SECONDS: "20"
+          VPS_PREFLIGHT_WAIT_SECONDS: ${{ env.VPS_PREFLIGHT_WAIT_SECONDS }}
+          POST_DEPLOY_BASELINE_VERIFY: "true"
           RESET_FOUNDATION_ON_DEPLOY: ${{ contains(github.event.head_commit.message, '[reset-foundation]') }}
           RESET_FOUNDATION_CONFIRM: "reset-modern-foundation"
           DEPLOYMENT_WAVE: "5"
@@ -194,52 +177,22 @@ jobs:
           NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP: ${{ secrets.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP }}
         run: |
           set -euo pipefail
-          attempt=1
-          max_attempts=4
-          while [ "$attempt" -le "$max_attempts" ]; do
-            echo "Deploy attempt ${attempt}/${max_attempts}"
-            if python scripts/vps_deploy.py deploy-pm2 \
+          workflow_attempt=1
+          max_workflow_attempts=3
+          while [ "$workflow_attempt" -le "$max_workflow_attempts" ]; do
+            echo "Full deploy attempt ${workflow_attempt}/${max_workflow_attempts} (one SSH session per try)"
+            if python scripts/vps_deploy.py deploy-production \
               --domain taqfeelah.com \
               --www-domain www.taqfeelah.com \
               --local-path .; then
               exit 0
             fi
-            if [ "$attempt" -eq "$max_attempts" ]; then
-              echo "::error::Deploy failed after ${max_attempts} SSH attempts"
+            if [ "$workflow_attempt" -eq "$max_workflow_attempts" ]; then
+              echo "::error::Deploy failed after ${max_workflow_attempts} full attempts"
               exit 1
             fi
-            sleep $((attempt * 15))
-            attempt=$((attempt + 1))
-          done
-
-      - name: Verify production and sibling sites
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_PASS: ${{ secrets.VPS_PASS }}
-          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_CONNECT_TIMEOUT: "20"
-          VPS_CONNECT_RETRIES: "3"
-          VPS_RETRY_DELAY_SECONDS: "12"
-          POST_DEPLOY_BASELINE_VERIFY: "true"
-          DEPLOYMENT_WAVE: "5"
-        run: |
-          set -euo pipefail
-          sleep 30
-          attempt=1
-          max_attempts=3
-          while [ "$attempt" -le "$max_attempts" ]; do
-            echo "Verify attempt ${attempt}/${max_attempts}"
-            if python scripts/vps_deploy.py verify \
-              --domain taqfeelah.com \
-              --www-domain www.taqfeelah.com; then
-              exit 0
-            fi
-            if [ "$attempt" -eq "$max_attempts" ]; then
-              echo "::error::Post-deploy verify failed after ${max_attempts} SSH attempts"
-              exit 1
-            fi
-            sleep $((attempt * 10))
-            attempt=$((attempt + 1))
+            sleep_seconds=$((workflow_attempt * 60))
+            echo "Waiting ${sleep_seconds}s before retry (next GitHub runner may use a different IP)…"
+            sleep "$sleep_seconds"
+            workflow_attempt=$((workflow_attempt + 1))
           done
