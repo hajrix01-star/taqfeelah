@@ -8,6 +8,7 @@ import { LanguageToggle } from "@/features/saas-admin/components/LanguageToggle"
 import { useMaxLg } from "@/features/saas-admin/hooks/use-max-lg";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 import type { SaasAdminSessionView } from "@/features/saas-admin/server/resolve-saas-admin-session-view";
+import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 
 const NAV_PATHS = [
   { href: "/saas-admin/overview", key: "overview" as const },
@@ -34,7 +35,7 @@ export const AdminSidebar = forwardRef<HTMLElement, AdminSidebarProps>(function 
   ref,
 ) {
   const pathname = usePathname();
-  const { t } = useSaasAdminLocale();
+  const { locale, t } = useSaasAdminLocale();
   const isMobileLayout = useMaxLg();
 
   return (
@@ -52,6 +53,11 @@ export const AdminSidebar = forwardRef<HTMLElement, AdminSidebarProps>(function 
       <div className="hidden border-b border-[var(--admin-border)] px-5 py-6 lg:block">
         <p className="text-xs font-semibold tracking-wide text-[var(--admin-muted)]">{t.brand}</p>
         <h1 className="mt-1 text-lg font-bold text-[var(--admin-primary)]">{t.panelTitle}</h1>
+        <ReleaseVersionLine
+          className="mt-2 text-[11px] font-semibold text-[var(--admin-muted)]"
+          lang={locale}
+          showBuild
+        />
         <div className="mt-4">
           <LanguageToggle />
         </div>

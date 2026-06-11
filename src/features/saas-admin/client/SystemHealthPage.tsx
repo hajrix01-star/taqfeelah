@@ -55,6 +55,15 @@ export default function SystemHealthPage() {
         <ChartCard title={t.systemHealth.opsMetrics}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-lg border border-[var(--admin-border)] p-4">
+              <p className="text-xs text-[var(--admin-muted)]">{t.systemHealth.releaseVersion}</p>
+              <p className="mt-1 font-semibold text-[var(--admin-primary)]" dir="ltr">
+                {data.release.label}
+              </p>
+              <p className="mt-0.5 text-[11px] text-[var(--admin-muted)]" dir="ltr">
+                {data.release.version}
+              </p>
+            </div>
+            <div className="rounded-lg border border-[var(--admin-border)] p-4">
               <p className="text-xs text-[var(--admin-muted)]">{t.systemHealth.lastDeploy}</p>
               <p className="mt-1 font-semibold text-[var(--admin-primary)]">
                 {data.lastDeploy.availability === "available" && data.lastDeploy.value

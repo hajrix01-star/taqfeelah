@@ -10,6 +10,7 @@ import {
 import type { SaasAdminLocale } from "@/features/saas-admin/i18n/translations";
 import { loginOwnerSessionViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
 import "@/features/saas-admin/components/admin-theme.css";
+import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 
 type SaasAdminLoginPageProps = {
   initialLocale?: SaasAdminLocale;
@@ -17,7 +18,7 @@ type SaasAdminLoginPageProps = {
 };
 
 function LoginForm({ nextPath }: { nextPath: string }) {
-  const { t, dir } = useSaasAdminLocale();
+  const { locale, t, dir } = useSaasAdminLocale();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +93,11 @@ function LoginForm({ nextPath }: { nextPath: string }) {
             </Link>
           </p>
         </section>
+        <ReleaseVersionLine
+          className="text-center text-[11px] font-semibold text-[var(--admin-muted)]"
+          lang={locale}
+          showBuild
+        />
       </div>
     </main>
   );

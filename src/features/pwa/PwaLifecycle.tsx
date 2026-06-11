@@ -1,11 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { isReleaseUpdateAvailable } from "@/release/check-update-available";
+import { getClientReleaseBuild } from "@/release/client-release";
+import type { ReleaseMeta } from "@/release/version";
 
 type UpdatePhase = "idle" | "available";
 
+async function fetchServerReleaseMeta(): Promise<ReleaseMeta | null> {
+  try {
+    const response = await fetch("/api/v1/meta", { cache: "no-store" });
+    if (!response.ok) return null;
+    const payload = (await response.json()) as ReleaseMeta;
+    if (!payload?.build || !payload?.label || !payload?.version) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 export default function PwaLifecycle() {
   const [updatePhase, setUpdatePhase] = useState<UpdatePhase>("idle");
+  const clientBuild = getClientReleaseBuild();
+
+  const evaluateUpdate = useCallback(async () => {
+    if (process.env.NODE_ENV === "development") {
+      setUpdatePhase("idle");
+      return;
+    }
+
+    const serverMeta = await fetchServerReleaseMeta();
+    if (!isReleaseUpdateAvailable(clientBuild, serverMeta?.build)) {
+      setUpdatePhase("idle");
+      return;
+    }
+
+    setUpdatePhase("available");
+  }, [clientBuild]);
+
+  useEffect(() => {
+    void evaluateUpdate();
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void evaluateUpdate();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [evaluateUpdate]);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return undefined;
@@ -14,24 +60,6 @@ export default function PwaLifecycle() {
       window.location.reload();
     };
 
-    const watchRegistration = (registration: ServiceWorkerRegistration) => {
-      if (registration.waiting && navigator.serviceWorker.controller) {
-        setUpdatePhase("available");
-      }
-
-      registration.addEventListener("updatefound", () => {
-        const worker = registration.installing;
-        if (!worker) return;
-
-        worker.addEventListener("statechange", () => {
-          if (worker.state === "installed" && navigator.serviceWorker.controller) {
-            setUpdatePhase("available");
-          }
-        });
-      });
-    };
-
-    navigator.serviceWorker.ready.then(watchRegistration).catch(() => undefined);
     navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
 
     return () => {
@@ -58,6 +86,7 @@ export default function PwaLifecycle() {
             const registration = await navigator.serviceWorker.getRegistration();
             registration?.waiting?.postMessage({ type: "SKIP_WAITING" });
             setUpdatePhase("idle");
+            window.location.reload();
           }}
         >
           تحديث الآن

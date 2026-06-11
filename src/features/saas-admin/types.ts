@@ -173,9 +173,16 @@ export type InvestorMetrics = {
   currency: string;
 };
 
+export type ReleaseInfo = {
+  version: string;
+  label: string;
+  build: string;
+};
+
 export type SystemHealthReport = {
   api: { status: "healthy" | "unavailable"; message: string };
   database: { status: "healthy" | "unhealthy" | "unavailable"; message: string };
+  release: ReleaseInfo;
   lastDeploy: { value: string | null; availability: MetricAvailability };
   errorCount: { value: number | null; availability: MetricAvailability };
   failedRequests: { value: number | null; availability: MetricAvailability };

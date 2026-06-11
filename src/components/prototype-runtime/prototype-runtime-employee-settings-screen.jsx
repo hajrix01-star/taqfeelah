@@ -12,6 +12,7 @@ import {
 } from "./prototype-runtime-demo-data";
 import { ThemePicker } from "./prototype-runtime-notebook";
 import { ActionRow, SettingToggle } from "./owner-settings-ui-primitives";
+import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 
 function EmployeeStoreContext({ lang, currentStore, assignedStores, onSelect, dark = false }) {
   const [open, setOpen] = useState(false);
@@ -84,6 +85,11 @@ export function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedSto
         <ActionRow label={text(lang, "support")} lang={lang} border onClick={onOpenSupport} />
         <ActionRow label={text(lang, "helpCenter")} lang={lang} onClick={onOpenHelp} />
       </div>
+      <ReleaseVersionLine
+        className="mt-6 text-center text-taq-meta font-bold text-[#A99D87]"
+        lang={lang}
+        showBuild
+      />
     </motion.section>
   );
 }
