@@ -68,6 +68,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             organizationName={data.name}
             organizationStatus={data.status === "suspended" ? "suspended" : "active"}
             ownerName={data.ownerName}
+            ownerUsername={data.ownerUsername}
             onUpdated={() => { void refetch(); }}
           />
           <div className="space-y-4">
@@ -84,6 +85,12 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             :
             {" "}
             {data.ownerName || "—"}
+          </span>
+          <span className="text-sm text-[var(--admin-muted)]" dir="ltr">
+            {t.newAccount.ownerUsername}
+            :
+            {" "}
+            {data.ownerUsername || "—"}
           </span>
             </section>
           </div>

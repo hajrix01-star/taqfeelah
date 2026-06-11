@@ -47,10 +47,11 @@ export function createPrototypeRuntimeAuthHandlers({
   setAuthEmployeePins,
   setOwnerProfile,
 }) {
-  const completeOwnerLogin = (apiUserId = "", organizationId = "") => {
+  const completeOwnerLogin = (apiUserId = "", organizationId = "", displayName = "") => {
     applyOwnerLoginSuccess({
       apiUserId,
       organizationId,
+      displayName,
       prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
       apply: {
         setSessionOrganizationId,
@@ -60,6 +61,7 @@ export function createPrototypeRuntimeAuthHandlers({
         setLoggedInEmployeeId,
         setAuthScreen,
         setOwnerPage,
+        setOwnerProfile,
       },
     });
 

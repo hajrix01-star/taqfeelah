@@ -115,6 +115,7 @@ export async function POST(request: Request) {
         organizationId: sessionClaims.organizationId,
         userId: sessionClaims.userId,
         role: sessionClaims.role,
+        displayName: sessionClaims.displayName || "",
       },
       {
         headers: {

@@ -270,10 +270,13 @@ export async function createAuthSession(rawInput: LoginInput) {
       throw new UnauthorizedError("Owner credentials are not linked to an owner member.");
     }
 
+    const displayName = await resolveUserDisplayName(userId);
+
     return {
       organizationId: member.organizationId,
       userId,
       role: resolveMemberRole(member.role, role),
+      displayName,
     };
   }
 
@@ -301,9 +304,23 @@ export async function createAuthSession(rawInput: LoginInput) {
     throw new UnauthorizedError("Owner credentials are not linked to an owner member.");
   }
 
+  const displayName = await resolveUserDisplayName(userId);
+
   return {
     organizationId,
     userId,
     role: resolveMemberRole(member.role, role),
+    displayName,
   };
+}
+
+async function resolveUserDisplayName(userId: string): Promise<string> {
+  if (!isUuid(userId)) return "";
+  const db = getDb();
+  const [row] = await db
+    .select({ name: users.name })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return row?.name?.trim() || "";
 }

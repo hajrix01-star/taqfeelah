@@ -79,6 +79,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
         onOwnerLogin(
           typeof session?.userId === "string" ? session.userId : "",
           typeof session?.organizationId === "string" ? session.organizationId : "",
+          typeof session?.displayName === "string" ? session.displayName : "",
         );
       } catch (failure) {
         const message = failure instanceof Error && failure.message

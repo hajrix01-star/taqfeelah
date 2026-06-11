@@ -42,12 +42,14 @@ import {
 export function applyOwnerLoginSuccess({
   apiUserId = "",
   organizationId = "",
+  displayName = "",
   prototypeAccessMode,
   apply = {},
 }) {
   persistLocalOwnerSession(prototypeAccessMode);
   const userId = typeof apiUserId === "string" ? apiUserId : "";
   const orgId = typeof organizationId === "string" ? organizationId : "";
+  const ownerName = typeof displayName === "string" ? displayName.trim() : "";
   apply.setSessionUserId?.(userId);
   apply.setSessionOrganizationId?.(orgId);
   apply.setLoggedIn?.(true);
@@ -55,6 +57,9 @@ export function applyOwnerLoginSuccess({
   apply.setLoggedInEmployeeId?.(null);
   apply.setAuthScreen?.("owner");
   apply.setOwnerPage?.("home");
+  if (ownerName) {
+    apply.setOwnerProfile?.({ name: ownerName });
+  }
 }
 
 /**

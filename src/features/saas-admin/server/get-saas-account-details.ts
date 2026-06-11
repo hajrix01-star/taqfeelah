@@ -4,6 +4,7 @@ import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-acc
 import { getDb } from "@/core/db/client";
 import {
   attachments,
+  authIdentities,
   dailyCloseouts,
   entries,
   organizationMembers,
@@ -53,9 +54,19 @@ export async function getSaasAccountDetails(
     .limit(1);
 
   const [owner] = await db
-    .select({ name: users.name })
+    .select({
+      name: users.name,
+      username: authIdentities.username,
+    })
     .from(organizationMembers)
     .innerJoin(users, eq(organizationMembers.userId, users.id))
+    .leftJoin(
+      authIdentities,
+      and(
+        eq(authIdentities.userId, users.id),
+        eq(authIdentities.provider, "username_password"),
+      ),
+    )
     .where(
       and(
         eq(organizationMembers.organizationId, input.organizationId),
@@ -235,6 +246,7 @@ export async function getSaasAccountDetails(
     id: org.id,
     name: org.name,
     ownerName: owner?.name ?? null,
+    ownerUsername: owner?.username ?? null,
     status: resolveAccountStatus({
       organizationStatus: org.status,
       subscriptionStatus: subscription?.status,
