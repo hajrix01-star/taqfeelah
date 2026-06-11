@@ -8,6 +8,23 @@ export const PWA_START_URL = "/app";
 export const PWA_SCOPE = "/";
 export const PWA_OFFLINE_URL = "/~offline";
 
+export const PWA_SHORTCUTS = [
+  {
+    name: "الدخول للتطبيق",
+    short_name: "التطبيق",
+    description: "افتح تقفيلة مباشرة",
+    url: "/app",
+    icons: [{ src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" as const }],
+  },
+  {
+    name: "تسجيل الدخول",
+    short_name: "دخول",
+    description: "سجّل دخولك إلى تقفيلة",
+    url: "/app",
+    icons: [{ src: "/icons/icon-maskable-192.png", sizes: "192x192", type: "image/png" as const }],
+  },
+] as const;
+
 export const PWA_ICONS = [
   {
     src: "/icons/icon-192.png",

@@ -4,6 +4,7 @@ import {
   PWA_DESCRIPTION,
   PWA_THEME_COLOR,
 } from "@/core/config/pwa";
+import PwaLifecycle from "@/features/pwa/PwaLifecycle";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -45,7 +46,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" suppressHydrationWarning>
-      <body>{children}</body>
+      <body>
+        {children}
+        <PwaLifecycle />
+      </body>
     </html>
   );
 }

@@ -17,7 +17,7 @@ test.describe("prototype access smoke", () => {
       }
     });
 
-    await page.goto("/");
+    await page.goto("/app");
 
     await expect(page.getByRole("heading", { name: "وضع الدخول التجريبي" })).toBeVisible({
       timeout: 60_000,
