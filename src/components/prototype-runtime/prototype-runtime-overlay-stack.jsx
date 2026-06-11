@@ -3,7 +3,9 @@
 import { useCallback, useMemo } from "react";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
 import { resolveSelectedCloseoutOwnerEditSource } from "@/features/closeouts/client/closeout-owner-edit-display";
+import { useRegisterEntriesCatalog } from "@/features/operations/client/use-register-entries-catalog";
 import { resolveCloseoutForOperationalEntry } from "@/features/operations/client/register-operations-selection";
+import { useResolvedSelectedOperation } from "@/features/operations/client/use-resolved-selected-operation";
 import {
   DuplicateSalesDialog,
   OperationModal,
@@ -73,14 +75,20 @@ export function PrototypeRuntimeOverlayStack({
   setHelpOpen,
 }) {
   const { closeouts, reloadCloseoutsFromApi } = useDailyCloseouts();
+  const registerEntriesCatalog = useRegisterEntriesCatalog();
+  const entryCatalogs = useMemo(
+    () => [operationalEntries, registerEntriesCatalog],
+    [operationalEntries, registerEntriesCatalog],
+  );
+  const resolvedSelected = useResolvedSelectedOperation(selected, entryCatalogs);
 
   const selectedOwnerEditSource = useMemo(
     () => resolveSelectedCloseoutOwnerEditSource(
-      selected,
+      resolvedSelected,
       closeouts,
       resolveCloseoutForOperationalEntry,
     ),
-    [closeouts, selected],
+    [closeouts, resolvedSelected],
   );
 
   const handleEditOwnerCloseoutFromEntry = useCallback(async (entry) => {
@@ -133,14 +141,14 @@ export function PrototypeRuntimeOverlayStack({
       )}
       <OperationModal
         lang={lang}
-        item={selected}
+        item={resolvedSelected}
         onClose={() => setSelected(null)}
         onVoid={requestVoidOperation}
         onRestore={requestRestoreOperation}
         onEditOwnerCloseout={!employee ? handleEditOwnerCloseoutFromEntry : undefined}
         ownerEditSource={selectedOwnerEditSource}
-        canVoid={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)}
-        canRestore={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)}
+        canVoid={Boolean(resolvedSelected) && !archivedBusinessIds.includes(resolvedSelected?.businessId)}
+        canRestore={Boolean(resolvedSelected) && !archivedBusinessIds.includes(resolvedSelected?.businessId)}
         {...entryAttachmentsApiProps}
       />
       <DuplicateSalesDialog

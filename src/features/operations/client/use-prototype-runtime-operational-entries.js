@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { buildOperationalEntriesFromCloseout } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import {
@@ -34,6 +35,8 @@ import {
 } from "@/components/prototype-runtime/prototype-runtime-boot";
 import { entryIsActive } from "@/components/prototype-runtime/prototype-runtime-entry-helpers";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { invalidateOperationalData } from "@/core/client/invalidate-operational-data";
+import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 
 export function usePrototypeRuntimeOperationalEntries({
   lang,
@@ -49,11 +52,64 @@ export function usePrototypeRuntimeOperationalEntries({
   phase9ApiEnabled,
   setLastCloseoutDates,
 }) {
-  const [operationalEntries, setOperationalEntries] = useState(() => readOperationalEntries());
-  const [operationalEntriesLoading, setOperationalEntriesLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const [bulkOperationalEntries, setBulkOperationalEntries] = useState(() => readOperationalEntries());
+  const [bulkOperationalEntriesLoading, setBulkOperationalEntriesLoading] = useState(false);
   const [operationalEntriesSyncError, setOperationalEntriesSyncError] = useState("");
-  const [summaryRefreshKey, setSummaryRefreshKey] = useState(0);
   const loadOperationalEntriesFromApiRef = useRef(async () => []);
+
+  const shouldDeferOwnerBulkEntriesLoad = !employee
+    && REGISTER_ENTRIES_PAGINATION_ENABLED
+    && ENTRIES_API_DB_SOURCE;
+
+  const duplicateWatchQueryKey = operationalQueryKeys.entriesDuplicateWatch({
+    organizationId: closeoutsApiOrganizationId,
+    actorUserId: apiActorUserId,
+    actorRole: apiActorRole,
+    storeIdsKey: apiTargetStoreIdsKey,
+  });
+
+  const duplicateWatchEnabled = loggedIn
+    && !employee
+    && entriesApiEnabled
+    && shouldDeferOwnerBulkEntriesLoad
+    && runtimeApiStoresReady
+    && isUuid(closeoutsApiOrganizationId)
+    && hasCloseoutApiActorMapping(apiActorUserId)
+    && Boolean(apiTargetStoreIdsKey);
+
+  const duplicateWatchQuery = useQuery({
+    queryKey: duplicateWatchQueryKey,
+    queryFn: async () => {
+      const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
+      if (!targetStoreIds.length) return [];
+
+      const { dateFrom, dateTo, limit } = resolveOwnerDuplicateWatchWindow();
+      const fetched = await Promise.all(
+        targetStoreIds.map((storeId) => fetchStoreEntriesViaApi({
+          organizationId: closeoutsApiOrganizationId,
+          actorUserId: apiActorUserId,
+          actorRole: apiActorRole,
+          storeId,
+          dateFrom,
+          dateTo,
+          status: "active",
+          limit,
+        })),
+      );
+      const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
+      return filterOwnerDuplicateWatchEntries(merged);
+    },
+    enabled: duplicateWatchEnabled,
+  });
+
+  const operationalEntries = shouldDeferOwnerBulkEntriesLoad
+    ? (duplicateWatchQuery.data ?? [])
+    : bulkOperationalEntries;
+  const operationalEntriesLoading = shouldDeferOwnerBulkEntriesLoad
+    ? duplicateWatchQuery.isPending
+    : bulkOperationalEntriesLoading;
+  const setOperationalEntries = setBulkOperationalEntries;
 
   const createOperationalEntryInApi = useCallback(async ({ payload, actorUserId, actorRole }) => {
     if (!entriesApiEnabled) {
@@ -80,74 +136,16 @@ export function usePrototypeRuntimeOperationalEntries({
     });
   }, [closeoutsApiOrganizationId, entriesApiEnabled, entriesApiStrictMode, phase9ApiEnabled]);
 
-  const shouldDeferOwnerBulkEntriesLoad = !employee
-    && REGISTER_ENTRIES_PAGINATION_ENABLED
-    && ENTRIES_API_DB_SOURCE;
-
-  const loadOwnerDuplicateWatchFromApi = useCallback(async () => {
-    if (!entriesApiEnabled) {
-      if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
-      return [];
-    }
-    if (!isUuid(closeoutsApiOrganizationId)) {
-      const message = lang === "ar"
-        ? "تعذر تحميل تنبيهات التكرار: معرف المنظمة غير صالح لمسار API."
-        : "Failed to load duplicate alerts: organization id is missing/invalid for entries API.";
-      setOperationalEntriesSyncError(message);
-      throw new Error(message);
-    }
-    if (!hasCloseoutApiActorMapping(apiActorUserId)) {
-      const message = lang === "ar"
-        ? "تعذر تحميل تنبيهات التكرار: معرف المستخدم غير مربوط بالخادم."
-        : "Failed to load duplicate alerts: actor user id is missing/invalid for entries API.";
-      setOperationalEntriesSyncError(message);
-      throw new Error(message);
-    }
-
-    const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
-    if (!targetStoreIds.length) {
-      setOperationalEntries([]);
-      return [];
-    }
-
-    const { dateFrom, dateTo, limit } = resolveOwnerDuplicateWatchWindow();
-    setOperationalEntriesLoading(true);
-    try {
-      const fetched = await Promise.all(
-        targetStoreIds.map((storeId) => fetchStoreEntriesViaApi({
-          organizationId: closeoutsApiOrganizationId,
-          actorUserId: apiActorUserId,
-          actorRole: apiActorRole,
-          storeId,
-          dateFrom,
-          dateTo,
-          status: "active",
-          limit,
-        })),
-      );
-      const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
-      const summaries = filterOwnerDuplicateWatchEntries(merged);
-      setOperationalEntries(summaries);
-      setOperationalEntriesSyncError("");
-      return summaries;
-    } finally {
-      setOperationalEntriesLoading(false);
-    }
-  }, [
-    apiActorRole,
-    apiActorUserId,
-    apiTargetStoreIdsKey,
-    closeoutsApiOrganizationId,
-    entriesApiEnabled,
-    entriesApiStrictMode,
-    lang,
-  ]);
-
   const loadOperationalEntriesFromApi = useCallback(async () => {
+    await invalidateOperationalData(queryClient);
+
     if (shouldDeferOwnerBulkEntriesLoad) {
-      setSummaryRefreshKey((current) => current + 1);
-      return [];
+      if (!duplicateWatchEnabled) return [];
+      await queryClient.refetchQueries({ queryKey: duplicateWatchQueryKey });
+      const refreshed = queryClient.getQueryData(duplicateWatchQueryKey);
+      return Array.isArray(refreshed) ? refreshed : [];
     }
+
     if (!entriesApiEnabled) {
       if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
       return [];
@@ -168,10 +166,10 @@ export function usePrototypeRuntimeOperationalEntries({
     }
 
     const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
-    setOperationalEntriesLoading(true);
+    setBulkOperationalEntriesLoading(true);
     if (!targetStoreIds.length) {
-      setOperationalEntries([]);
-      setOperationalEntriesLoading(false);
+      setBulkOperationalEntries([]);
+      setBulkOperationalEntriesLoading(false);
       return [];
     }
 
@@ -204,21 +202,23 @@ export function usePrototypeRuntimeOperationalEntries({
         return true;
       });
 
-      setOperationalEntries(deduped);
+      setBulkOperationalEntries(deduped);
       setOperationalEntriesSyncError("");
-      setSummaryRefreshKey((current) => current + 1);
       return deduped;
     } finally {
-      setOperationalEntriesLoading(false);
+      setBulkOperationalEntriesLoading(false);
     }
   }, [
     apiActorRole,
     apiActorUserId,
     apiTargetStoreIdsKey,
     closeoutsApiOrganizationId,
+    duplicateWatchEnabled,
+    duplicateWatchQueryKey,
     entriesApiEnabled,
     entriesApiStrictMode,
     lang,
+    queryClient,
     shouldDeferOwnerBulkEntriesLoad,
   ]);
 
@@ -226,7 +226,7 @@ export function usePrototypeRuntimeOperationalEntries({
 
   const removeOperationalEntriesForCloseout = useCallback((closeoutId, storeId = null) => {
     if (!closeoutId) return;
-    setOperationalEntries((current) => {
+    setBulkOperationalEntries((current) => {
       const next = current.filter((entry) => entry.closeoutId !== closeoutId);
       if (storeId) {
         const latestActiveCloseoutDate = next
@@ -279,7 +279,7 @@ export function usePrototypeRuntimeOperationalEntries({
       created.push(entry);
     }
     if (created.length) {
-      setOperationalEntries((current) => [...created, ...current]);
+      setBulkOperationalEntries((current) => [...created, ...current]);
       const summaryEntry = created.find((entry) => entry.type === "summary");
       if (summaryEntry) {
         setLastCloseoutDates((current) => mergeLastCloseoutDateForStore(current, summaryEntry.businessId, summaryEntry.date));
@@ -300,13 +300,10 @@ export function usePrototypeRuntimeOperationalEntries({
       }
       return;
     }
-    if (!runtimeApiStoresReady) {
-      return;
-    }
-    const load = shouldDeferOwnerBulkEntriesLoad
-      ? loadOwnerDuplicateWatchFromApi
-      : loadOperationalEntriesFromApi;
-    load().catch((error) => {
+    if (!runtimeApiStoresReady) return;
+    if (shouldDeferOwnerBulkEntriesLoad) return;
+
+    loadOperationalEntriesFromApi().catch((error) => {
       console.warn("operational entries API load failed", error);
       setOperationalEntriesSyncError(
         lang === "ar"
@@ -320,7 +317,6 @@ export function usePrototypeRuntimeOperationalEntries({
     entriesApiStrictMode,
     lang,
     loadOperationalEntriesFromApi,
-    loadOwnerDuplicateWatchFromApi,
     loggedIn,
     runtimeApiStoresReady,
     shouldDeferOwnerBulkEntriesLoad,
@@ -335,17 +331,16 @@ export function usePrototypeRuntimeOperationalEntries({
     if (BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE || typeof window === "undefined") return;
     safeSetLocalStorageItem(
       OPERATIONAL_ENTRIES_STORAGE_KEY,
-      JSON.stringify(stripEmbeddedAttachmentImages(operationalEntries)),
+      JSON.stringify(stripEmbeddedAttachmentImages(bulkOperationalEntries)),
       { scope: "operational-fallback" },
     );
-  }, [operationalEntries]);
+  }, [bulkOperationalEntries]);
 
   return {
     operationalEntries,
     setOperationalEntries,
     operationalEntriesLoading,
     operationalEntriesSyncError,
-    summaryRefreshKey,
     createOperationalEntryInApi,
     loadOperationalEntriesFromApi,
     syncCloseoutToOperationalEntries,

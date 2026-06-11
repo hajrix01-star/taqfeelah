@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { attachmentsFromEntries } from "@/components/prototype-runtime/prototype-runtime-demo-operational-entries";
+import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { fetchStoreEntriesViaApi } from "./store-entries-api-client";
 import { resolveAttachmentGroupForDate } from "./attachments-from-entries";
 
@@ -35,7 +37,6 @@ export function useHomeDayAttachments({
   actorUserId = "",
   actorRole = "owner",
   storeId = "",
-  refreshKey = 0,
 }) {
   const localGroup = useMemo(
     () => resolveAttachmentGroupForDate(attachmentsFromEntries(localDayEntries), selectedDate),
@@ -54,74 +55,45 @@ export function useHomeDayAttachments({
     selectedDate,
   });
 
-  const [fetchedDayEntries, setFetchedDayEntries] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [fetchError, setFetchError] = useState(false);
+  const query = useQuery({
+    queryKey: operationalQueryKeys.homeAttachments({
+      organizationId,
+      actorUserId,
+      actorRole,
+      storeId,
+      selectedDate,
+    }),
+    queryFn: async () => {
+      const items = await fetchStoreEntriesViaApi({
+        organizationId,
+        actorUserId,
+        actorRole,
+        storeId,
+        dateFrom: selectedDate,
+        dateTo: selectedDate,
+        status: "active",
+        limit: 200,
+      });
+      return Array.isArray(items) ? items : [];
+    },
+    enabled: shouldFetchDayEntries,
+    placeholderData: keepPreviousData,
+  });
 
-  useEffect(() => {
-    if (!shouldFetchDayEntries) {
-      setFetchedDayEntries([]);
-      setLoading(false);
-      setFetchError(false);
-      return undefined;
-    }
+  const loading = shouldFetchDayEntries && query.isPending && !query.isPlaceholderData;
+  const fetchError = shouldFetchDayEntries && query.isError;
 
-    let cancelled = false;
-
-    const load = async () => {
-      setLoading(true);
-      setFetchError(false);
-      try {
-        const items = await fetchStoreEntriesViaApi({
-          organizationId,
-          actorUserId,
-          actorRole,
-          storeId,
-          dateFrom: selectedDate,
-          dateTo: selectedDate,
-          status: "active",
-          limit: 200,
-        });
-        if (!cancelled) {
-          setFetchedDayEntries(Array.isArray(items) ? items : []);
-        }
-      } catch (error) {
-        console.warn("home day attachments fetch failed", error);
-        if (!cancelled) {
-          setFetchedDayEntries([]);
-          setFetchError(true);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    actorRole,
-    actorUserId,
-    organizationId,
-    refreshKey,
-    selectedDate,
-    shouldFetchDayEntries,
-    storeId,
-  ]);
-
-  const fetchedGroup = useMemo(
-    () => resolveAttachmentGroupForDate(attachmentsFromEntries(fetchedDayEntries), selectedDate),
-    [fetchedDayEntries, selectedDate],
-  );
+  const fetchedGroup = useMemo(() => {
+    const fetchedDayEntries = shouldFetchDayEntries ? (query.data ?? []) : [];
+    return resolveAttachmentGroupForDate(attachmentsFromEntries(fetchedDayEntries), selectedDate);
+  }, [query.data, selectedDate, shouldFetchDayEntries]);
 
   const group = localItemCount > 0 ? localGroup : fetchedGroup;
   const itemCount = group?.items?.length || 0;
 
   return {
     group,
-    loading: shouldFetchDayEntries && loading,
+    loading,
     fetchError,
     itemCount,
   };

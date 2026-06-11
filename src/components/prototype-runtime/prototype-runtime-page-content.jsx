@@ -58,15 +58,12 @@ export function PrototypeRuntimePageContent({
   openDuplicateSummaryInRegister,
   acknowledgeDuplicateSales,
   handleOpenOwnerOperation,
-  selectedOperationId = null,
-  onReselectOperation = null,
   setShareSnapshot,
   activeViewBusiness,
   homeReportChannelConfig,
   entriesApiEnabled,
   closeoutsApiOrganizationId,
   ownerApiUserId,
-  summaryRefreshKey,
   entryAttachmentsApiProps,
   saveOwnerSummary,
   saveOwner,
@@ -194,7 +191,6 @@ export function PrototypeRuntimePageContent({
             summaryApiOrganizationId={closeoutsApiOrganizationId}
             summaryApiActorUserId={ownerApiUserId}
             summaryApiActorRole="owner"
-            summaryRefreshKey={summaryRefreshKey}
             {...entryAttachmentsApiProps}
           />
         </NotebookScrollSurface>
@@ -240,9 +236,6 @@ export function PrototypeRuntimePageContent({
           registerEntriesApiOrganizationId={closeoutsApiOrganizationId}
           registerEntriesApiActorUserId={ownerApiUserId}
           registerEntriesApiActorRole="owner"
-          registerEntriesRefreshKey={summaryRefreshKey}
-          selectedOperationId={selectedOperationId}
-          onReselectOperation={onReselectOperation}
           {...entryAttachmentsApiProps}
         />
       )}

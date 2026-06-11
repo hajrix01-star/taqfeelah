@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { keepPreviousData, useQueries } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { combineUiTotals, mapDaySummaryToUiTotals } from "./map-day-summary-to-ui";
 import { fetchStoreDaySummaryViaApi, fetchStoreMonthSummaryViaApi } from "./store-summary-api-client";
 
@@ -42,90 +44,59 @@ export function useStoreDaySummaries({
   businesses = [],
   date = "",
   month = "",
-  refreshKey = 0,
 }) {
-  const storeIdsKey = useMemo(
-    () => businesses.map((business) => business?.id).filter(Boolean).join("|"),
+  const storeIds = useMemo(
+    () => businesses.map((business) => business?.id).filter(Boolean),
     [businesses],
   );
   const periodKey = period === "month" ? month : date;
+  const queryEnabled = enabled
+    && Boolean(periodKey)
+    && Boolean(organizationId)
+    && Boolean(actorUserId)
+    && storeIds.length > 0;
 
-  const [summariesByStoreId, setSummariesByStoreId] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [loaded, setLoaded] = useState(false);
-  const loadedContextRef = useRef("");
-  const refreshKeyRef = useRef(refreshKey);
-  const loadContextKey = `${period}|${periodKey}|${storeIdsKey}`;
-
-  useEffect(() => {
-    if (!enabled || !periodKey || !organizationId || !actorUserId || !storeIdsKey) {
-      setSummariesByStoreId({});
-      setLoading(false);
-      setError("");
-      setLoaded(false);
-      loadedContextRef.current = "";
-      return undefined;
-    }
-
-    let cancelled = false;
-
-    const load = async () => {
-      setLoading(true);
-      setError("");
-      const contextChanged = loadedContextRef.current !== loadContextKey;
-      const refreshKeyChanged = refreshKeyRef.current !== refreshKey;
-      if (contextChanged || refreshKeyChanged) {
-        setSummariesByStoreId({});
-        setLoaded(false);
-      }
-      refreshKeyRef.current = refreshKey;
-      try {
-        const storeIds = storeIdsKey.split("|").filter(Boolean);
-        const fetched = await Promise.all(
-          storeIds.map(async (storeId) => {
-            const summary = await fetchStoreSummaryForPeriod({
-              period,
-              organizationId,
-              actorUserId,
-              actorRole,
-              storeId,
-              date,
-              month,
-            });
-            return { storeId, summary };
-          }),
-        );
-
-        if (cancelled) return;
-
-        const next = {};
-        fetched.forEach(({ storeId, summary }) => {
-          if (!storeId || !summary) return;
-          next[storeId] = mapDaySummaryToUiTotals(summary);
+  const summaryQueries = useQueries({
+    queries: storeIds.map((storeId) => ({
+      queryKey: operationalQueryKeys.summaryPeriod({
+        organizationId,
+        actorUserId,
+        actorRole,
+        period,
+        periodKey,
+        storeId,
+      }),
+      queryFn: async () => {
+        const summary = await fetchStoreSummaryForPeriod({
+          period,
+          organizationId,
+          actorUserId,
+          actorRole,
+          storeId,
+          date,
+          month,
         });
-        setSummariesByStoreId(next);
-        setLoaded(true);
-        loadedContextRef.current = loadContextKey;
-      } catch (loadError) {
-        if (cancelled) return;
-        console.warn(`${period} summary API load failed`, loadError);
-        setError("failed");
-        if (loadedContextRef.current !== loadContextKey) {
-          setSummariesByStoreId({});
-          setLoaded(false);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
+        return summary ? mapDaySummaryToUiTotals(summary) : null;
+      },
+      enabled: queryEnabled,
+      placeholderData: keepPreviousData,
+    })),
+  });
 
-    load();
+  const summariesByStoreId = useMemo(() => {
+    const next = {};
+    summaryQueries.forEach((result, index) => {
+      const storeId = storeIds[index];
+      if (!storeId || !result.data) return;
+      next[storeId] = result.data;
+    });
+    return next;
+  }, [storeIds, summaryQueries]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [actorRole, actorUserId, date, enabled, loadContextKey, month, organizationId, period, periodKey, refreshKey, storeIdsKey]);
+  const loading = queryEnabled && summaryQueries.some((result) => result.isLoading);
+  const loaded = queryEnabled && summaryQueries.length > 0 && summaryQueries.every((result) => result.isSuccess || result.isError);
+  const error = summaryQueries.some((result) => result.isError) ? "failed" : "";
+  const hasData = Object.keys(summariesByStoreId).length > 0;
 
   const businessesWithDaySummaries = useMemo(
     () => businesses.map((business) => ({
@@ -146,7 +117,6 @@ export function useStoreDaySummaries({
   );
 
   const getStoreResult = (storeId) => summariesByStoreId[storeId] || null;
-  const hasData = Object.keys(summariesByStoreId).length > 0;
 
   return {
     summariesByStoreId,

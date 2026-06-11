@@ -1,26 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { resolveReportDateRange } from "./report-period-range";
-import {
-  combineUiTotalsList,
-  mapAttachmentsReportToProofs,
-  mapChannelsReportToUiRows,
-  mapDaysReportToUiRows,
-  mapOutflowCategoriesToUi,
-  mapOutflowTransactionsToUi,
-  mapPeriodSummaryToTotals,
-} from "./map-reports-to-ui";
-import {
-  fetchStoreAttachmentsReportViaApi,
-  fetchStoreChannelsReportViaApi,
-  fetchStoreDaysReportViaApi,
-  fetchStoreOutflowReportViaApi,
-  fetchStorePeriodSummaryViaApi,
-  getReportsApiMaps,
-} from "./store-reports-api-client";
+import { combineUiTotalsList } from "./map-reports-to-ui";
+import { fetchStoreReportsBundle } from "./fetch-store-reports-bundle";
 
 const emptyTotals = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0 };
+const emptyReportsBundle = {
+  totalsByStoreId: {},
+  daysRows: [],
+  channelRows: [],
+  outflowCategories: [],
+  outflowTransactions: [],
+  outflowTransactionCount: 0,
+  outflowTotal: 0,
+  attachmentProofs: { proofs: 0, items: [] },
+};
 
 export function useStoreReports({
   enabled = false,
@@ -38,7 +35,6 @@ export function useStoreReports({
   configuredChannels = [],
   outflowCategory = "all",
   includeOutflowTransactions = false,
-  refreshKey = 0,
 }) {
   const storeIdsKey = useMemo(() => {
     if (selectedStoreId && selectedStoreId !== "all") return selectedStoreId;
@@ -57,195 +53,48 @@ export function useStoreReports({
     [customFrom, customTo, period, selectedDate, selectedMonth, selectedYear],
   );
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [loaded, setLoaded] = useState(false);
-  const loadedContextRef = useRef("");
-  const loadContextKey = `${storeIdsKey}|${period}|${dateRange.from}|${dateRange.to}|${outflowCategory}|${includeOutflowTransactions}`;
-  const [totalsByStoreId, setTotalsByStoreId] = useState({});
-  const [daysRows, setDaysRows] = useState([]);
-  const [channelRows, setChannelRows] = useState([]);
-  const [outflowCategories, setOutflowCategories] = useState([]);
-  const [outflowTransactions, setOutflowTransactions] = useState([]);
-  const [outflowTransactionCount, setOutflowTransactionCount] = useState(0);
-  const [outflowTotal, setOutflowTotal] = useState(0);
-  const [attachmentProofs, setAttachmentProofs] = useState({ proofs: 0, items: [] });
+  const storeIds = useMemo(
+    () => (storeIdsKey ? storeIdsKey.split("|").filter(Boolean) : []),
+    [storeIdsKey],
+  );
 
-  useEffect(() => {
-    if (!enabled || !organizationId || !actorUserId || !storeIdsKey) {
-      setTotalsByStoreId({});
-      setDaysRows([]);
-      setChannelRows([]);
-      setOutflowCategories([]);
-      setOutflowTransactions([]);
-      setOutflowTransactionCount(0);
-      setOutflowTotal(0);
-      setAttachmentProofs({ proofs: 0, items: [] });
-      setLoading(false);
-      setError("");
-      setLoaded(false);
-      loadedContextRef.current = "";
-      return undefined;
-    }
+  const queryEnabled = enabled
+    && Boolean(organizationId)
+    && Boolean(actorUserId)
+    && storeIds.length > 0;
 
-    let cancelled = false;
-    const storeIds = storeIdsKey.split("|").filter(Boolean);
-    const isSingleStore = storeIds.length === 1;
-    const primaryStoreId = isSingleStore ? storeIds[0] : "";
+  const query = useQuery({
+    queryKey: operationalQueryKeys.reports({
+      organizationId,
+      actorUserId,
+      actorRole,
+      storeIdsKey,
+      period,
+      from: dateRange.from,
+      to: dateRange.to,
+      outflowCategory,
+      includeOutflowTransactions,
+    }),
+    queryFn: async () => fetchStoreReportsBundle({
+      organizationId,
+      actorUserId,
+      actorRole,
+      storeIds,
+      dateRange,
+      period,
+      configuredChannels,
+      outflowCategory,
+      includeOutflowTransactions,
+    }),
+    enabled: queryEnabled,
+    placeholderData: keepPreviousData,
+  });
 
-    const load = async () => {
-      setLoading(true);
-      setError("");
-      const contextChanged = loadedContextRef.current !== loadContextKey;
-      if (contextChanged) {
-        setTotalsByStoreId({});
-        setDaysRows([]);
-        setChannelRows([]);
-        setOutflowCategories([]);
-        setOutflowTransactions([]);
-        setOutflowTransactionCount(0);
-        setOutflowTotal(0);
-        setAttachmentProofs({ proofs: 0, items: [] });
-        setLoaded(false);
-      }
-      try {
-        const summaryResults = await Promise.all(
-          storeIds.map((storeId) => fetchStorePeriodSummaryViaApi({
-            organizationId,
-            actorUserId,
-            actorRole,
-            storeId,
-            from: dateRange.from,
-            to: dateRange.to,
-            period,
-          })),
-        );
-
-        if (cancelled) return;
-
-        const nextTotalsByStoreId = {};
-        summaryResults.forEach((summary, index) => {
-          const storeId = storeIds[index];
-          if (!storeId || !summary) return;
-          nextTotalsByStoreId[storeId] = mapPeriodSummaryToTotals(summary);
-        });
-        setTotalsByStoreId(nextTotalsByStoreId);
-
-        if (!isSingleStore) {
-          if (contextChanged) {
-            setDaysRows([]);
-            setChannelRows([]);
-            setOutflowCategories([]);
-            setOutflowTransactions([]);
-            setOutflowTransactionCount(0);
-            setOutflowTotal(0);
-            setAttachmentProofs({ proofs: 0, items: [] });
-          }
-          setLoaded(true);
-          loadedContextRef.current = loadContextKey;
-          return;
-        }
-
-        const [daysReport, channelsReport, outflowReport, attachmentsReport] = await Promise.all([
-          fetchStoreDaysReportViaApi({
-            organizationId,
-            actorUserId,
-            actorRole,
-            storeId: primaryStoreId,
-            from: dateRange.from,
-            to: dateRange.to,
-          }),
-          fetchStoreChannelsReportViaApi({
-            organizationId,
-            actorUserId,
-            actorRole,
-            storeId: primaryStoreId,
-            from: dateRange.from,
-            to: dateRange.to,
-          }),
-          fetchStoreOutflowReportViaApi({
-            organizationId,
-            actorUserId,
-            actorRole,
-            storeId: primaryStoreId,
-            from: dateRange.from,
-            to: dateRange.to,
-            categoryKey: outflowCategory,
-            includeTransactions: includeOutflowTransactions,
-          }),
-          fetchStoreAttachmentsReportViaApi({
-            organizationId,
-            actorUserId,
-            actorRole,
-            storeId: primaryStoreId,
-            from: dateRange.from,
-            to: dateRange.to,
-          }),
-        ]);
-
-        if (cancelled) return;
-
-        const { salesChannelIdMap } = getReportsApiMaps();
-        setDaysRows(mapDaysReportToUiRows(daysReport?.days));
-        setChannelRows(mapChannelsReportToUiRows(
-          channelsReport?.channels,
-          configuredChannels,
-          salesChannelIdMap,
-        ));
-        setOutflowCategories(mapOutflowCategoriesToUi(outflowReport?.categories));
-        setOutflowTransactions(mapOutflowTransactionsToUi(
-          outflowReport?.transactions,
-          primaryStoreId,
-        ));
-        setOutflowTransactionCount(Number(outflowReport?.transactionCount || 0));
-        setOutflowTotal(Number(outflowReport?.totalOutflow?.amountHalalas || 0) / 100);
-        setAttachmentProofs(mapAttachmentsReportToProofs(attachmentsReport));
-        setLoaded(true);
-        loadedContextRef.current = loadContextKey;
-      } catch (loadError) {
-        if (cancelled) return;
-        console.warn("store reports API load failed", loadError);
-        setError("failed");
-        if (loadedContextRef.current !== loadContextKey) {
-          setTotalsByStoreId({});
-          setDaysRows([]);
-          setChannelRows([]);
-          setOutflowCategories([]);
-          setOutflowTransactions([]);
-          setOutflowTransactionCount(0);
-          setOutflowTotal(0);
-          setAttachmentProofs({ proofs: 0, items: [] });
-          setLoaded(false);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    actorRole,
-    actorUserId,
-    configuredChannels,
-    customFrom,
-    customTo,
-    dateRange.from,
-    dateRange.to,
-    enabled,
-    includeOutflowTransactions,
-    organizationId,
-    outflowCategory,
-    period,
-    loadContextKey,
-    refreshKey,
-    selectedDate,
-    selectedMonth,
-    selectedYear,
-    storeIdsKey,
-  ]);
+  const bundle = query.data ?? emptyReportsBundle;
+  const totalsByStoreId = bundle.totalsByStoreId;
+  const loading = queryEnabled && query.isPending && !query.isPlaceholderData;
+  const loaded = queryEnabled && (query.isSuccess || query.isError);
+  const error = query.isError ? "failed" : "";
 
   const businessesWithSummaries = useMemo(
     () => businesses.map((business) => ({
@@ -275,12 +124,12 @@ export function useStoreReports({
     combinedTotals,
     singleStoreTotals,
     businessesWithSummaries,
-    daysRows,
-    channelRows,
-    outflowCategories,
-    outflowTransactions,
-    outflowTransactionCount,
-    outflowTotal,
-    attachmentProofs,
+    daysRows: bundle.daysRows,
+    channelRows: bundle.channelRows,
+    outflowCategories: bundle.outflowCategories,
+    outflowTransactions: bundle.outflowTransactions,
+    outflowTransactionCount: bundle.outflowTransactionCount,
+    outflowTotal: bundle.outflowTotal,
+    attachmentProofs: bundle.attachmentProofs,
   };
 }
