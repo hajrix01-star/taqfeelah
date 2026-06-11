@@ -5,6 +5,7 @@ import { AppQueryProvider } from "@/core/client/app-query-provider";
 import { migratePrototypeDemoDatasetIfNeeded } from "./prototype-demo-migrate";
 import { PROTOTYPE_BUILD_STAMP } from "@/prototype-build-stamp.mjs";
 import { isProductionAppMode } from "@/core/config/app-mode";
+import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 
 /**
  * Runs demo migration off the critical path so phones don't freeze on first paint.
@@ -49,6 +50,11 @@ export default function PrototypeClientGate({ children }) {
         <p className="text-[#112A46]">
           {productionMode ? "جاري تهيئة النظام…" : "جاري تحضير البيانات التجريبية…"}
         </p>
+        <ReleaseVersionLine
+          className="text-taq-meta font-bold text-[#A99D87]"
+          lang="ar"
+          showBuild
+        />
         {!productionMode ? (
           <p className="text-taq-meta font-bold text-[#A99D87]" dir="ltr">
             {PROTOTYPE_BUILD_STAMP}

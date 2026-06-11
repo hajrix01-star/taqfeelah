@@ -1,10 +1,28 @@
+import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import withSerwistInit from "@serwist/next";
 import { buildAllowedDevOrigins } from "./scripts/lan-hosts.mjs";
+
+const configDir = dirname(fileURLToPath(import.meta.url));
+const packageJson = JSON.parse(readFileSync(join(configDir, "package.json"), "utf8"));
+const releaseVersion = String(packageJson.version || "0.0.0");
+const releaseMajor = releaseVersion.split(".")[0]?.trim() || "0";
+const releaseLabel = `V${releaseMajor}`;
 
 const revision =
   spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf-8" }).stdout?.trim() ||
   `build-${Date.now()}`;
+
+const releaseEnv = {
+  RELEASE_VERSION: releaseVersion,
+  RELEASE_LABEL: releaseLabel,
+  RELEASE_BUILD: revision,
+  NEXT_PUBLIC_RELEASE_VERSION: releaseVersion,
+  NEXT_PUBLIC_RELEASE_LABEL: releaseLabel,
+  NEXT_PUBLIC_RELEASE_BUILD: revision,
+};
 
 const withSerwist = withSerwistInit({
   additionalPrecacheEntries: [
@@ -18,6 +36,7 @@ const withSerwist = withSerwistInit({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: releaseEnv,
   allowedDevOrigins: buildAllowedDevOrigins(),
   async headers() {
     return [

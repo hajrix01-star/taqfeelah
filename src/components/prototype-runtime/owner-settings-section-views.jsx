@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import {
   Building2,
   ChevronDown,
@@ -344,6 +345,11 @@ export function OwnerSettingsHomeSection({
         <SettingsLink lang={lang} icon={Smartphone} title={text(lang, "contactSupport")} onClick={() => setSection("support")} />
         <SettingsLink lang={lang} icon={UserRound} title={text(lang, "logout")} onClick={onLogout} danger border={false} />
       </div>
+      <ReleaseVersionLine
+        className="mt-6 text-center text-taq-meta font-bold text-[#A99D87]"
+        lang={lang}
+        showBuild
+      />
     </motion.section>
   );
 }

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { AppFontStyles } from "@/components/prototype-runtime/prototype-runtime-app-font-styles";
 import { buildSupportWhatsAppUrl } from "@/core/config/marketing-support";
 import { PWA_APP_NAME } from "@/core/config/pwa";
+import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import { TAQFEELAH_LOGO_SRC } from "@/lib/brand/taqfeelah-logo";
 import MarketingAppPreview from "@/features/marketing/MarketingAppPreview";
 import {
@@ -62,9 +63,12 @@ export default function MarketingPage() {
       footer={
         <footer className="border-t border-[#ECE6DA] py-8">
           <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 text-center text-xs font-bold sm:flex-row sm:px-6 sm:text-right" style={{ color: marketingColors.muted }}>
-            <p>
-              © {new Date().getFullYear()} {PWA_APP_NAME} — متابعة تشغيل يومية
-            </p>
+            <div className="space-y-1">
+              <p>
+                © {new Date().getFullYear()} {PWA_APP_NAME} — متابعة تشغيل يومية
+              </p>
+              <ReleaseVersionLine className="text-[#A99D87]" lang="ar" showBuild />
+            </div>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link href={APP_ENTRY_HREF} className="no-underline hover:text-[#112A46]">
                 الدخول للتطبيق

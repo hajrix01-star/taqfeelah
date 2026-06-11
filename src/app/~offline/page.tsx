@@ -1,4 +1,8 @@
+import { formatReleaseLine } from "@/release/format-release";
+import { getReleaseMeta } from "@/release/version";
+
 export default function OfflinePage() {
+  const release = getReleaseMeta();
   return (
     <main
       className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-[#F8F6F0] px-6 text-center font-sans text-[#112A46]"
@@ -18,6 +22,9 @@ export default function OfflinePage() {
       >
         إعادة المحاولة
       </a>
+      <p className="text-xs font-bold text-[#A99D87]" dir="ltr">
+        {formatReleaseLine(release, "ar", { showBuild: true })}
+      </p>
     </main>
   );
 }

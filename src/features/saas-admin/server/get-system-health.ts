@@ -11,6 +11,7 @@ import {
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import type { SystemHealthReport } from "@/features/saas-admin/types";
+import { getReleaseMeta } from "@/release/version";
 
 const inputSchema = z.object({
   actorUserId: z.string().uuid(),
@@ -60,10 +61,8 @@ export async function getSystemHealth(
     .select({ total: sum(attachments.sizeBytes) })
     .from(attachments);
 
-  const deployValue = process.env.VERCEL_GIT_COMMIT_SHA
-    || process.env.GITHUB_SHA
-    || process.env.DEPLOY_COMMIT
-    || null;
+  const release = getReleaseMeta();
+  const deployValue = release.build !== "dev" ? release.build : null;
 
   return {
     api: {
@@ -74,6 +73,7 @@ export async function getSystemHealth(
       status: databaseStatus,
       message: databaseMessage,
     },
+    release,
     lastDeploy: {
       value: deployValue,
       availability: deployValue ? "available" : "unavailable",

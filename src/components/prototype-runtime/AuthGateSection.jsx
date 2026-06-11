@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Smartphone, X } from "lucide-react";
 import { PROTOTYPE_BUILD_STAMP } from "@/prototype-build-stamp.mjs";
 import LanHintBanner from "@/features/demo/LanHintBanner";
+import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import {
   clearEmployeeCredentials,
   clearOwnerCredentials,
@@ -187,8 +188,13 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
           <p className="mt-2 border-t border-[#E4C66B]/45 pt-2 text-taq-meta font-bold text-[#957D43]">{text(lang, "futureLoginOnLoginScreen")}</p>
         </div>
       ) : null}
+      <ReleaseVersionLine
+        className="mt-4 text-center text-taq-meta font-bold text-[#827762]"
+        lang={lang}
+        showBuild
+      />
       {!APP_IN_PRODUCTION_MODE ? (
-        <p className="mt-3 text-center text-taq-meta font-bold text-[#827762]">
+        <p className="mt-2 text-center text-taq-meta font-bold text-[#A99D87]">
           {text(lang, "prototypeBuildLabel")}: <span dir="ltr" className="font-black text-[#112A46]">{PROTOTYPE_BUILD_STAMP}</span>
         </p>
       ) : null}
@@ -328,6 +334,11 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
         {error && <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{error}</p>}
       </div>
       <button type="button" onClick={onBack} className="mt-4 w-full text-xs font-black text-[#9A823E]">{text(lang, "backToOwnerLogin")}</button>
+      <ReleaseVersionLine
+        className="mt-4 text-center text-taq-meta font-bold text-[#A99D87]"
+        lang={lang}
+        showBuild
+      />
     </motion.section>
   );
 }
@@ -344,8 +355,13 @@ function HelpCenterSheet({ lang, open, onClose }) {
             <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white"><X className="h-4 w-4" /></button>
           </div>
           <p className="text-taq-meta font-bold leading-6 text-[#716753]">{text(lang, "helpCenterBody")}</p>
+          <ReleaseVersionLine
+            className="mt-3 rounded-xl bg-white px-3 py-2 text-center text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]"
+            lang={lang}
+            showBuild
+          />
           {!APP_IN_PRODUCTION_MODE ? (
-            <p className="mt-3 rounded-xl bg-white px-3 py-2 text-center text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">
+            <p className="mt-2 text-center text-taq-meta font-bold text-[#827762]">
               {text(lang, "prototypeBuildLabel")}: <span dir="ltr">{PROTOTYPE_BUILD_STAMP}</span>
             </p>
           ) : null}

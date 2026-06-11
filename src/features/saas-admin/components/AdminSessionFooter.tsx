@@ -5,13 +5,14 @@ import { useState } from "react";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 import { logoutSaasAdminSession } from "@/features/saas-admin/client/saas-admin-session";
 import type { SaasAdminSessionView } from "@/features/saas-admin/server/resolve-saas-admin-session-view";
+import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 
 type AdminSessionFooterProps = {
   session: SaasAdminSessionView;
 };
 
 export function AdminSessionFooter({ session }: AdminSessionFooterProps) {
-  const { t } = useSaasAdminLocale();
+  const { locale, t } = useSaasAdminLocale();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   async function handleLogout() {
@@ -57,6 +58,11 @@ export function AdminSessionFooter({ session }: AdminSessionFooterProps) {
         </button>
       </div>
       <p className="text-[11px] text-[var(--admin-muted)]">{t.readOnlyFooter}</p>
+      <ReleaseVersionLine
+        className="text-center text-[11px] font-semibold text-[var(--admin-muted)] lg:text-start"
+        lang={locale}
+        showBuild
+      />
     </div>
   );
 }
