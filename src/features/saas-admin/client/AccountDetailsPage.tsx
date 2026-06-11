@@ -32,6 +32,7 @@ import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleto
 import { StatusBadge } from "@/features/saas-admin/components/StatusBadge";
 import { AddAccountMemberForm } from "@/features/saas-admin/client/AddAccountMemberForm";
 import { EditAccountForms } from "@/features/saas-admin/client/EditAccountForms";
+import { EditAccountMemberForm } from "@/features/saas-admin/client/EditAccountMemberForm";
 import { fetchSaasAccountDetails } from "@/features/saas-admin/client/saas-admin-api-client";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
@@ -76,6 +77,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             organizationId={accountId}
             organizationName={data.name}
             organizationStatus={data.status === "suspended" ? "suspended" : "active"}
+            planCode={data.planCode}
             ownerName={data.ownerName}
             ownerUsername={data.ownerUsername}
             onUpdated={() => { void refetch(); }}
@@ -138,13 +140,26 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             />
             <AdminTable columns={[t.common.name, t.common.role, t.common.status]} empty={data.users.length === 0}>
               {data.users.map((row) => (
-                <tr key={row.id}>
+                <tr key={row.memberId}>
                   <AdminTableCell col={0} className="font-semibold">{row.name}</AdminTableCell>
                   <AdminTableCell col={1}>{formatMemberRole(row.role, t)}</AdminTableCell>
                   <AdminTableCell col={2}>{formatEntityStatus(row.status, t)}</AdminTableCell>
                 </tr>
               ))}
             </AdminTable>
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.editMember.title}</h3>
+              {data.users
+                .filter((row) => row.role !== "owner")
+                .map((row) => (
+                  <EditAccountMemberForm
+                    key={row.memberId}
+                    organizationId={accountId}
+                    member={row}
+                    onUpdated={() => { void refetch(); }}
+                  />
+                ))}
+            </div>
           </section>
         </div>
 

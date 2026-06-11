@@ -144,9 +144,30 @@ export async function createSaasAccountMember(
 
 export async function updateSaasAccount(
   organizationId: string,
-  payload: { organizationName?: string; status?: "active" | "suspended" },
+  payload: {
+    organizationName?: string;
+    status?: "active" | "suspended";
+    planCode?: "starter" | "growth" | "enterprise";
+  },
 ) {
   return fetchSaasAdminJson(`/api/v1/saas-admin/accounts/${organizationId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateSaasAccountMember(
+  organizationId: string,
+  memberId: string,
+  payload: {
+    name?: string;
+    role?: "manager" | "employee";
+    status?: "active" | "inactive";
+    pin?: string;
+    storeIds?: string[];
+  },
+) {
+  return fetchSaasAdminJson(`/api/v1/saas-admin/accounts/${organizationId}/members/${memberId}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
