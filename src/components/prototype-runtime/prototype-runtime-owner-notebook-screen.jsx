@@ -92,7 +92,6 @@ export function OwnerNotebookScreen({ lang, notebookTheme = "yellow" }) {
               notebookTheme={notebookTheme}
               onAdd={handleAdd}
               onCancel={notes.length > 0 ? () => setComposerOpen(false) : undefined}
-              autoFocus
             />
           ) : (
             <button

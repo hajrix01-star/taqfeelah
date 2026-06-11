@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BookMarked, Check, Pencil, Plus, Send, Trash2 } from "lucide-react";
 import { notebookCardBackground, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
 import { text } from "./prototype-runtime-demo-data";
@@ -98,10 +98,7 @@ export function NoteComposerPanel({
   notebookTheme,
   onAdd,
   onCancel,
-  autoFocus = false,
 }) {
-  const panelRef = useRef(null);
-  const inputRef = useRef(null);
   const [draft, setDraft] = useState("");
   const [kind, setKind] = useState("note");
   const [color, setColor] = useState(notebookTheme);
@@ -109,12 +106,6 @@ export function NoteComposerPanel({
   useEffect(() => {
     setColor(notebookTheme);
   }, [notebookTheme]);
-
-  useEffect(() => {
-    if (!autoFocus) return;
-    panelRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    inputRef.current?.focus({ preventScroll: true });
-  }, [autoFocus]);
 
   const submit = () => {
     const created = onAdd({ text: draft, kind, color });
@@ -143,12 +134,10 @@ export function NoteComposerPanel({
 
   return (
     <article
-      ref={panelRef}
       className="overflow-hidden rounded-[22px] border border-[#E8E1D4] px-3.5 py-3.5 shadow-[0_8px_18px_rgba(17,42,70,0.06)]"
       style={cardStyle}
     >
       <textarea
-        ref={inputRef}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={handleKeyDown}
