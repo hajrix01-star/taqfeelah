@@ -141,3 +141,36 @@ export async function createSaasAccountMember(
     body: JSON.stringify(payload),
   });
 }
+
+export async function updateSaasAccount(
+  organizationId: string,
+  payload: { organizationName?: string; status?: "active" | "suspended" },
+) {
+  return fetchSaasAdminJson(`/api/v1/saas-admin/accounts/${organizationId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateSaasAccountOwner(
+  organizationId: string,
+  payload: { ownerName?: string; ownerUsername?: string; ownerPassword?: string },
+) {
+  return fetchSaasAdminJson(`/api/v1/saas-admin/accounts/${organizationId}/owner`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function repairSaasAccountFoundation(organizationId: string) {
+  return fetchSaasAdminJson<{
+    organizationId: string;
+    repaired: boolean;
+    action: string;
+    ownerName: string;
+    storeId: string;
+  }>(`/api/v1/saas-admin/accounts/${organizationId}/repair-foundation`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}

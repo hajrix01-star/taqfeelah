@@ -324,7 +324,7 @@ export function OwnerSettingsHomeSection({
       <button onClick={() => setSection("account")} className="mb-5 flex w-full items-center gap-4 rounded-3xl bg-white p-4 text-start ring-1 ring-black/[0.045]">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#112A46] text-white"><UserRound className="h-6 w-6" /></div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-black">{ownerProfile?.name || text(lang, "ownerName")}</p>
+          <p className="text-sm font-black">{ownerProfile?.name || (lang === "ar" ? "المالك" : "Owner")}</p>
           <p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "myAccountSecurity")}</p>
         </div>
         <Arrow className="h-4 w-4 shrink-0 text-[#B99844]" />

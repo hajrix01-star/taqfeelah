@@ -14,6 +14,7 @@ import {
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import { upsertOwnerPasswordIdentity } from "@/features/auth/server/auth-identities";
+import { provisionSaasAccountFoundation } from "@/features/saas-admin/server/provision-saas-account-foundation";
 
 const PLAN_CODES = ["starter", "growth", "enterprise"] as const;
 const TRIAL_DAYS = 14;
@@ -168,6 +169,18 @@ export async function createSaasAccount(rawInput: CreateSaasAccountInput): Promi
       createdAt: now,
       updatedAt: now,
     });
+
+    await provisionSaasAccountFoundation(
+      {
+        organizationId,
+        actorUserId: input.actorUserId,
+        ownerUserId,
+        ownerName: input.ownerName.trim(),
+        storeId,
+        storeName,
+      },
+      tx,
+    );
 
     await tx.insert(auditEvents).values({
       organizationId,

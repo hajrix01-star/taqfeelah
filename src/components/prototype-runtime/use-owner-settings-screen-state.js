@@ -78,7 +78,7 @@ export function useOwnerSettingsScreenState({
   const [newEmployeeStoreIds, setNewEmployeeStoreIds] = useState([]);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [settingsNotice, setSettingsNotice] = useState("");
-  const [draftOwnerName, setDraftOwnerName] = useState(ownerProfile?.name || text(lang, "ownerName"));
+  const [draftOwnerName, setDraftOwnerName] = useState(ownerProfile?.name || "");
   const [draftAuthOwnerUsername, setDraftAuthOwnerUsername] = useState(authOwnerUsername || "");
   const [draftAuthOwnerPassword, setDraftAuthOwnerPassword] = useState(authOwnerPassword || "");
   const [draftAuthEmployeePins, setDraftAuthEmployeePins] = useState(() => ({ ...(authEmployeePins || {}) }));
@@ -129,7 +129,7 @@ export function useOwnerSettingsScreenState({
     );
   }, [configuredBusinesses, archivedBusinessIds, employeePreferences, ownerShellPreferences, storeChannelSettings, storeOperationalSettings, notebookTheme, staff, ownerProfile, authOwnerUsername, authOwnerPassword, authEmployeePins]);
   useEffect(() => { setDraftNotebookTheme(notebookTheme); setThemeDirty(false); }, [notebookTheme]);
-  useEffect(() => { setDraftOwnerName(ownerProfile?.name || text(lang, "ownerName")); }, [ownerProfile?.name, lang]);
+  useEffect(() => { setDraftOwnerName(ownerProfile?.name || ""); }, [ownerProfile?.name]);
   useEffect(() => { setDraftAuthOwnerUsername(authOwnerUsername || ""); }, [authOwnerUsername]);
   useEffect(() => { setDraftAuthOwnerPassword(authOwnerPassword || ""); }, [authOwnerPassword]);
   useEffect(() => { setDraftAuthEmployeePins({ ...(authEmployeePins || {}) }); }, [authEmployeePins]);

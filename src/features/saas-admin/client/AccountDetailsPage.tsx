@@ -22,6 +22,7 @@ import { KpiCard } from "@/features/saas-admin/components/KpiCard";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
 import { StatusBadge } from "@/features/saas-admin/components/StatusBadge";
 import { AddAccountMemberForm } from "@/features/saas-admin/client/AddAccountMemberForm";
+import { EditAccountForms } from "@/features/saas-admin/client/EditAccountForms";
 import { fetchSaasAccountDetails } from "@/features/saas-admin/client/saas-admin-api-client";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
@@ -61,7 +62,16 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
         )}
       />
       <div className="space-y-6 p-6">
-        <section className="flex flex-wrap items-center gap-3">
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
+          <EditAccountForms
+            organizationId={accountId}
+            organizationName={data.name}
+            organizationStatus={data.status === "suspended" ? "suspended" : "active"}
+            ownerName={data.ownerName}
+            onUpdated={() => { void refetch(); }}
+          />
+          <div className="space-y-4">
+            <section className="flex flex-wrap items-center gap-3">
           <StatusBadge status={data.status} />
           <span className="text-sm text-[var(--admin-muted)]">
             {t.common.plan}
@@ -75,6 +85,8 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             {" "}
             {data.ownerName || "—"}
           </span>
+            </section>
+          </div>
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

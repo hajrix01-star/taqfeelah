@@ -52,7 +52,9 @@ export function useOwnerSettingsState({
     initialSettings?.archivedBusinessIds || initialSettings?.archivedStores || [],
   );
   const [staff, setStaff] = useState(initialSettings?.staff || (skipDemoBootstrap ? [] : defaultStaff));
-  const [ownerProfile, setOwnerProfile] = useState(initialSettings?.ownerProfile || { name: "محمد الهاجري" });
+  const [ownerProfile, setOwnerProfile] = useState(
+    initialSettings?.ownerProfile || { name: "" },
+  );
   const [storeChannelSettings, setStoreChannelSettings] = useState(
     () => buildInitialStoreChannelSettings(initialSettings, initialBusinesses, defaultStoreChannelConfig),
   );

@@ -8,6 +8,7 @@ import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { ValidationError } from "@/core/errors/app-error";
 import { enrichStaffWithApiUserIds } from "@/features/auth/server/resolve-employee-user-id";
 import { enrichRuntimeStoreIdMap } from "@/features/runtime-settings/server/enrich-runtime-store-id-map";
+import { buildDefaultRuntimeSettingsForOrganization } from "@/features/runtime-settings/server/build-default-runtime-settings";
 import { provisionSalesChannels } from "@/features/runtime-settings/server/provision-sales-channels";
 import { provisionStaffMembers } from "@/features/runtime-settings/server/provision-staff-members";
 
@@ -74,7 +75,12 @@ async function readRuntimeSettingsEnvelope(organizationId: string) {
     .limit(1);
 
   if (!row) {
-    return { settings: null, updatedAt: null, updatedByUserId: null };
+    const defaultSettings = await buildDefaultRuntimeSettingsForOrganization(organizationId);
+    return {
+      settings: normalizeRuntimeSettings(defaultSettings),
+      updatedAt: null,
+      updatedByUserId: null,
+    };
   }
 
   const parsedEnvelope = runtimeSettingsEnvelopeSchema.safeParse(row.metadata);
