@@ -166,7 +166,6 @@ export default function TaqfeelahPrototypeRuntime() {
   const {
     operationalEntries,
     operationalEntriesLoading,
-    summaryRefreshKey,
     loadOperationalEntriesFromApi,
     syncCloseoutToOperationalEntries,
   } = operational;
@@ -312,15 +311,12 @@ export default function TaqfeelahPrototypeRuntime() {
                 openDuplicateSummaryInRegister={openDuplicateSummaryInRegister}
                 acknowledgeDuplicateSales={acknowledgeDuplicateSales}
                 handleOpenOwnerOperation={handleOpenOwnerOperation}
-                selectedOperationId={selected?.id || null}
-                onReselectOperation={setSelected}
                 setShareSnapshot={setShareSnapshot}
                 activeViewBusiness={activeViewBusiness}
                 homeReportChannelConfig={homeReportChannelConfig}
                 entriesApiEnabled={entriesApiEnabled}
                 closeoutsApiOrganizationId={closeoutsApiOrganizationId}
                 ownerApiUserId={ownerApiUserId}
-                summaryRefreshKey={summaryRefreshKey}
                 entryAttachmentsApiProps={entryAttachmentsApiProps}
                 saveOwnerSummary={saveOwnerSummary}
                 saveOwner={saveOwner}

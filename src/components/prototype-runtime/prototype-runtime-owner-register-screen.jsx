@@ -48,7 +48,7 @@ import { OwnerRegisterOperationsList } from "./owner-register-operations-list";
 import { RegisterStoreChips } from "./owner-register-store-filter";
 import { RegisterDashboardCard } from "./owner-register-ui-primitives";
 
-export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesRefreshKey = 0, registerEntriesSyncError = "", closeoutsSyncError = "", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner", selectedOperationId = null, onReselectOperation = null }) {
+export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesSyncError = "", closeoutsSyncError = "", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
   const [period, setPeriod] = useState("day");
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
@@ -113,7 +113,6 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
     selectedYear,
     customFrom,
     customTo,
-    refreshKey: registerEntriesRefreshKey,
   });
   const localPeriodEntries = useMemo(
     () => operationalEntries.filter((entry) => (safeBusinessId === "all" ? activeBusinesses.some((business) => business.id === entry.businessId) : entry.businessId === safeBusinessId) && entryDateMatches(entry, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo)),
@@ -147,7 +146,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
     if (!registerEntriesApiEnabled || logView !== "closeouts" || !apiRegisterEntriesHasMore) return undefined;
     loadAllRegisterEntries();
     return undefined;
-  }, [apiRegisterEntriesHasMore, loadAllRegisterEntries, logView, registerEntriesApiEnabled, registerEntriesRefreshKey, safeBusinessId, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo]);
+  }, [apiRegisterEntriesHasMore, loadAllRegisterEntries, logView, registerEntriesApiEnabled, safeBusinessId, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo]);
   const actorOptions = useMemo(() => {
     const seen = new Set();
     const options = [{ id: "all", label: lang === "ar" ? "الكل" : "All" }];
@@ -202,12 +201,6 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
     }),
     [filteredEntries, businessesList, lang, logFilters.salesChannel, registerEntriesApiActorUserId, registerEntriesApiEnabled],
   );
-  useEffect(() => {
-    if (!selectedOperationId || typeof onReselectOperation !== "function") return undefined;
-    const fresh = periodEntries.find((entry) => entry.id === selectedOperationId);
-    if (fresh) onReselectOperation(fresh);
-    return undefined;
-  }, [onReselectOperation, periodEntries, selectedOperationId]);
   useEffect(() => {
     if (!visibleEntries.length) {
       setExpandedEntryId(null);

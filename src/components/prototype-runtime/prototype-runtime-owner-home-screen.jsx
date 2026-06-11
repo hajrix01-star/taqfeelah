@@ -40,7 +40,7 @@ import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { useHomeDayAttachments } from "@/features/entries/client/use-home-day-attachments";
 import { SummaryReportDetails } from "./owner-summary-details";
 
-export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], onOpenCloseoutAlertInRegister = () => {}, onDismissCloseout = () => {}, onOpenDuplicateSummaryInRegister = () => {}, onAcknowledgeDuplicate = () => {}, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, configuredChannels = channels, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", summaryRefreshKey = 0, entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
+export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], onOpenCloseoutAlertInRegister = () => {}, onDismissCloseout = () => {}, onOpenDuplicateSummaryInRegister = () => {}, onAcknowledgeDuplicate = () => {}, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, configuredChannels = channels, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
   const [period, setPeriod] = useState("day");
   const [selectedDay, setSelectedDay] = useState(() => todayIsoDate());
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
@@ -70,7 +70,6 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     businesses: businessesList,
     date: selectedDate,
     month: selectedMonth,
-    refreshKey: summaryRefreshKey,
   });
   const {
     channelRows: apiChannelRows,
@@ -89,7 +88,6 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     selectedDate,
     selectedMonth,
     configuredChannels,
-    refreshKey: summaryRefreshKey,
   });
   const localComparisonBusinesses = buildBusinessesWithEntrySummaries({
     businesses: scopedBusinesses,
@@ -158,7 +156,6 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     actorUserId: summaryApiActorUserId,
     actorRole: summaryApiActorRole,
     storeId: currentBusiness?.id || "",
-    refreshKey: summaryRefreshKey,
   });
   const displayedProofCount = attachmentItemCount > 0
     ? attachmentItemCount

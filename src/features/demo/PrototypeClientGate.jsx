@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AppQueryProvider } from "@/core/client/app-query-provider";
 import { migratePrototypeDemoDatasetIfNeeded } from "./prototype-demo-migrate";
 import { PROTOTYPE_BUILD_STAMP } from "@/prototype-build-stamp.mjs";
 import { isProductionAppMode } from "@/core/config/app-mode";
@@ -88,5 +89,5 @@ export default function PrototypeClientGate({ children }) {
     );
   }
 
-  return children;
+  return <AppQueryProvider>{children}</AppQueryProvider>;
 }
