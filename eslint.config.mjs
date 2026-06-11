@@ -16,6 +16,8 @@ const eslintConfig = [
       "node_modules/**",
       "TaqfeelahPrototypeReference.tsx",
       "next-env.d.ts",
+      "public/sw*",
+      "public/swe-worker*",
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),

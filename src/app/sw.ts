@@ -14,7 +14,7 @@ declare const self: ServiceWorkerGlobalScope;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: true,
+  skipWaiting: false,
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: [
@@ -37,3 +37,10 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+self.addEventListener("message", (event) => {
+  const payload = event.data;
+  if (payload && typeof payload === "object" && (payload as { type?: string }).type === "SKIP_WAITING") {
+    void self.skipWaiting();
+  }
+});

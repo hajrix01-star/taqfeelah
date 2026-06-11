@@ -24,5 +24,7 @@ describe("pwa config", () => {
     expect(value.icons?.length).toBeGreaterThanOrEqual(4);
     expect(value.icons?.some((icon) => icon.sizes === "192x192")).toBe(true);
     expect(value.icons?.some((icon) => icon.sizes === "512x512")).toBe(true);
+    expect(value.shortcuts?.length).toBeGreaterThanOrEqual(2);
+    expect(value.shortcuts?.[0]?.url).toBe("/app");
   });
 });

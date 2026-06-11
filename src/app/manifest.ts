@@ -5,6 +5,7 @@ import {
   PWA_DESCRIPTION,
   PWA_ICONS,
   PWA_SCOPE,
+  PWA_SHORTCUTS,
   PWA_SHORT_NAME,
   PWA_START_URL,
   PWA_THEME_COLOR,
@@ -25,5 +26,9 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: PWA_THEME_COLOR,
     categories: ["business", "finance"],
     icons: [...PWA_ICONS],
+    shortcuts: PWA_SHORTCUTS.map((shortcut) => ({
+      ...shortcut,
+      icons: shortcut.icons.map((icon) => ({ ...icon })),
+    })),
   };
 }
