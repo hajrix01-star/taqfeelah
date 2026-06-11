@@ -43,13 +43,13 @@ function LoginForm({ nextPath }: { nextPath: string }) {
   return (
     <main
       dir={dir}
-      className="saas-admin-root flex min-h-[100dvh] items-center justify-center px-6 py-10"
+      className="saas-admin-root flex min-h-[100dvh] items-center justify-center px-4 py-8 sm:px-6 sm:py-10"
     >
       <div className="w-full max-w-md space-y-4">
         <div className="flex justify-end">
           <LanguageToggle />
         </div>
-        <section className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-8 shadow-sm">
+        <section className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 shadow-sm sm:p-8">
           <p className="text-xs font-semibold tracking-wide text-[var(--admin-muted)]">{t.brand}</p>
           <h1 className="mt-1 text-xl font-bold text-[var(--admin-primary)]">{t.auth.loginTitle}</h1>
           <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.auth.loginDescription}</p>

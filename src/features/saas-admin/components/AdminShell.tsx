@@ -1,7 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { AppQueryProvider } from "@/core/client/app-query-provider";
+import { AdminMobileTopBar } from "@/features/saas-admin/components/AdminMobileTopBar";
 import { AdminSidebar } from "@/features/saas-admin/components/AdminSidebar";
 import {
   SaasAdminLocaleProvider,
@@ -24,12 +26,48 @@ function AdminShellFrame({
   children: ReactNode;
   session: SaasAdminSessionView;
 }) {
-  const { dir } = useSaasAdminLocale();
+  const { dir, t } = useSaasAdminLocale();
+  const pathname = usePathname();
+  const [navOpen, setNavOpen] = useState(false);
+
+  useEffect(() => {
+    setNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!navOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [navOpen]);
 
   return (
     <div className="saas-admin-root flex min-h-[100dvh]" dir={dir}>
-      <AdminSidebar session={session} />
-      <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+      {navOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-[#112A46]/40 lg:hidden"
+          aria-label={t.common.closeMenu}
+          onClick={() => setNavOpen(false)}
+        />
+      ) : null}
+      <AdminSidebar
+        id="saas-admin-sidebar"
+        session={session}
+        mobileOpen={navOpen}
+        onNavigate={() => setNavOpen(false)}
+      />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <AdminMobileTopBar
+          navOpen={navOpen}
+          onToggleNav={() => setNavOpen((open) => !open)}
+        />
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

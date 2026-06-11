@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
+import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
 import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import {
   formatBytes,
@@ -37,7 +38,7 @@ export default function SystemHealthPage() {
   return (
     <>
       <AdminHeader title={t.systemHealth.title} description={t.systemHealth.description} />
-      <div className="space-y-6 p-6">
+      <AdminPageBody>
         <section className="grid gap-4 sm:grid-cols-2">
           <KpiCard
             title={t.systemHealth.apiStatus}
@@ -101,7 +102,7 @@ export default function SystemHealthPage() {
             </div>
           </div>
         </ChartCard>
-      </div>
+      </AdminPageBody>
     </>
   );
 }

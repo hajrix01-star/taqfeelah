@@ -16,30 +16,50 @@ const NAV_PATHS = [
 ];
 
 type AdminSidebarProps = {
+  id?: string;
   session: SaasAdminSessionView;
+  mobileOpen?: boolean;
+  onNavigate?: () => void;
 };
 
-export function AdminSidebar({ session }: AdminSidebarProps) {
+export function AdminSidebar({
+  id = "saas-admin-sidebar",
+  session,
+  mobileOpen = false,
+  onNavigate,
+}: AdminSidebarProps) {
   const pathname = usePathname();
   const { t } = useSaasAdminLocale();
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-inline-start border-[var(--admin-border)] bg-[var(--admin-surface)]">
-      <div className="border-b border-[var(--admin-border)] px-5 py-6">
+    <aside
+      id={id}
+      className={`admin-sidebar flex w-[min(85vw,18rem)] shrink-0 flex-col border-inline-start border-[var(--admin-border)] bg-[var(--admin-surface)] lg:w-64 ${
+        mobileOpen
+          ? "max-lg:translate-x-0"
+          : "max-lg:pointer-events-none max-lg:-translate-x-full rtl:max-lg:translate-x-full"
+      }`}
+    >
+      <div className="hidden border-b border-[var(--admin-border)] px-5 py-6 lg:block">
         <p className="text-xs font-semibold tracking-wide text-[var(--admin-muted)]">{t.brand}</p>
         <h1 className="mt-1 text-lg font-bold text-[var(--admin-primary)]">{t.panelTitle}</h1>
         <div className="mt-4">
           <LanguageToggle />
         </div>
       </div>
-      <nav className="flex flex-1 flex-col gap-1 p-3">
+      <div className="border-b border-[var(--admin-border)] px-5 py-4 lg:hidden">
+        <p className="text-xs font-semibold tracking-wide text-[var(--admin-muted)]">{t.brand}</p>
+        <h2 className="mt-1 text-base font-bold text-[var(--admin-primary)]">{t.panelTitle}</h2>
+      </div>
+      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
         {NAV_PATHS.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
+              onClick={onNavigate}
+              className={`rounded-lg px-3 py-3 text-sm font-semibold transition-colors ${
                 active
                   ? "bg-[var(--admin-primary)] text-white"
                   : "text-[var(--admin-text)] hover:bg-[#F3F4F6]"
@@ -50,7 +70,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
           );
         })}
       </nav>
-      <div className="border-t border-[var(--admin-border)] px-5 py-4">
+      <div className="border-t border-[var(--admin-border)] px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <AdminSessionFooter session={session} />
       </div>
     </aside>

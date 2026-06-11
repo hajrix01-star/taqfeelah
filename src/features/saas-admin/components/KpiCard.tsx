@@ -17,7 +17,7 @@ export function KpiCard({ title, value, subtitle, source }: KpiCardProps) {
         <p className="text-sm font-medium text-[var(--admin-muted)]">{title}</p>
         {source ? <MetricSourceBadge source={source} /> : null}
       </div>
-      <p className="mt-2 text-2xl font-bold text-[var(--admin-primary)]">{value}</p>
+      <p className="mt-2 text-xl font-bold tabular-nums text-[var(--admin-primary)] sm:text-2xl">{value}</p>
       {subtitle ? (
         <p className="mt-1 text-xs text-[var(--admin-muted)]">{subtitle}</p>
       ) : null}

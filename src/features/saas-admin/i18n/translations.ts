@@ -21,6 +21,8 @@ export const translations = {
       estimated: "تقديري",
     },
     common: {
+      openMenu: "فتح القائمة",
+      closeMenu: "إغلاق القائمة",
       loading: "جاري التحميل…",
       loadError: "تعذر تحميل البيانات",
       noData: "لا توجد بيانات",
@@ -261,6 +263,8 @@ export const translations = {
       estimated: "Estimated",
     },
     common: {
+      openMenu: "Open menu",
+      closeMenu: "Close menu",
       loading: "Loading…",
       loadError: "Failed to load data",
       noData: "No data",

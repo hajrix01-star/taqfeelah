@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
+import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
 import { AdminTable } from "@/features/saas-admin/components/AdminTable";
 import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import { formatDateTime, formatNumber } from "@/features/saas-admin/components/format-utils";
@@ -48,7 +49,7 @@ export default function OverviewPage() {
   return (
     <>
       <AdminHeader title={t.overview.title} description={t.overview.description} />
-      <div className="space-y-6 p-6">
+      <AdminPageBody>
         {!engagement.dataAvailable ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             {t.overview.engagementWarning}
@@ -70,7 +71,7 @@ export default function OverviewPage() {
           {activityTrend.length === 0 ? (
             <p className="text-sm text-[var(--admin-muted)]">{t.overview.noActivity}</p>
           ) : (
-            <div className="h-72">
+            <div className="h-56 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={activityTrend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
@@ -146,7 +147,7 @@ export default function OverviewPage() {
             </div>
           </div>
         </ChartCard>
-      </div>
+      </AdminPageBody>
     </>
   );
 }

@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
+import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
 import { createSaasAccount } from "@/features/saas-admin/client/saas-admin-api-client";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
@@ -56,8 +57,8 @@ export default function NewAccountPage() {
           </Link>
         )}
       />
-      <div className="mx-auto max-w-2xl p-6">
-        <form onSubmit={handleSubmit} className="space-y-5 rounded-xl border border-[var(--admin-border)] bg-white p-6">
+      <AdminPageBody className="mx-auto max-w-2xl">
+        <form onSubmit={handleSubmit} className="space-y-5 rounded-xl border border-[var(--admin-border)] bg-white p-4 sm:p-6">
           <section className="space-y-3">
             <h2 className="text-sm font-semibold text-[var(--admin-text)]">{t.newAccount.sectionOrganization}</h2>
             <label className="block space-y-1 text-sm">
@@ -154,7 +155,7 @@ export default function NewAccountPage() {
             {isSubmitting ? t.newAccount.submitting : t.newAccount.submit}
           </button>
         </form>
-      </div>
+      </AdminPageBody>
     </>
   );
 }
