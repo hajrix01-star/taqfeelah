@@ -13,7 +13,7 @@ type ChartCardProps = {
 
 export function ChartCard({ title, description, source, children }: ChartCardProps) {
   return (
-    <section className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 shadow-sm">
+    <section className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4 shadow-sm sm:p-5">
       <header className="mb-4">
         <div className="flex items-start justify-between gap-2">
           <h2 className="text-base font-bold text-[var(--admin-primary)]">{title}</h2>

@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
+import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
 import { formatMetricValue, formatNumber } from "@/features/saas-admin/components/format-utils";
 import { KpiCard } from "@/features/saas-admin/components/KpiCard";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
@@ -42,7 +43,7 @@ export default function InvestorMetricsPage() {
   return (
     <>
       <AdminHeader title={t.investor.title} description={t.investor.description} />
-      <div className="space-y-6 p-6">
+      <AdminPageBody>
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {t.investor.disclaimer}
         </div>
@@ -107,7 +108,7 @@ export default function InvestorMetricsPage() {
             source={data.usageIntensity.source}
           />
         </section>
-      </div>
+      </AdminPageBody>
     </>
   );
 }

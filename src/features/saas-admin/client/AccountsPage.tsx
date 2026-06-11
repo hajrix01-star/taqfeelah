@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
+import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
 import { AdminTable } from "@/features/saas-admin/components/AdminTable";
 import { formatDateTime, formatNumber } from "@/features/saas-admin/components/format-utils";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
@@ -42,10 +43,10 @@ export default function AccountsPage() {
         title={t.accounts.title}
         description={t.accounts.description}
         actions={(
-          <div className="flex flex-wrap items-center gap-2">
+          <>
             <Link
               href="/saas-admin/accounts/new"
-              className="rounded-lg bg-[var(--admin-primary)] px-3 py-2 text-sm font-semibold text-white"
+              className="w-full rounded-lg bg-[var(--admin-primary)] px-3 py-2.5 text-center text-sm font-semibold text-white sm:w-auto"
             >
               {t.accounts.newAccount}
             </Link>
@@ -54,12 +55,12 @@ export default function AccountsPage() {
               placeholder={t.common.searchByName}
               value={search}
               onChange={(e) => { setPage(1); setSearch(e.target.value); }}
-              className="rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2 text-sm"
+              className="w-full min-w-0 rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm sm:w-52"
             />
             <select
               value={status}
               onChange={(e) => { setPage(1); setStatus(e.target.value); }}
-              className="rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm sm:w-auto"
             >
               <option value="all">{t.common.allStatuses}</option>
               <option value="trial">{t.status.trial}</option>
@@ -70,17 +71,17 @@ export default function AccountsPage() {
             <select
               value={plan}
               onChange={(e) => { setPage(1); setPlan(e.target.value); }}
-              className="rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm sm:w-auto"
             >
               <option value="">{t.common.allPlans}</option>
               <option value="starter">Starter</option>
               <option value="growth">Growth</option>
               <option value="enterprise">Enterprise</option>
             </select>
-          </div>
+          </>
         )}
       />
-      <div className="space-y-4 p-6">
+      <AdminPageBody>
         {isLoading || isFetching ? <LoadingSkeleton /> : null}
         {error ? (
           <p className="text-sm text-[var(--admin-danger)]">
@@ -119,7 +120,7 @@ export default function AccountsPage() {
                 </tr>
               ))}
             </AdminTable>
-            <div className="flex items-center justify-between text-sm text-[var(--admin-muted)]">
+            <div className="flex flex-col gap-3 text-sm text-[var(--admin-muted)] sm:flex-row sm:items-center sm:justify-between">
               <span>
                 {t.common.page}
                 {" "}
@@ -140,7 +141,7 @@ export default function AccountsPage() {
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="rounded-lg border border-[var(--admin-border)] px-3 py-1.5 disabled:opacity-40"
+                  className="flex-1 rounded-lg border border-[var(--admin-border)] px-3 py-2 disabled:opacity-40 sm:flex-none"
                 >
                   {t.common.previous}
                 </button>
@@ -148,7 +149,7 @@ export default function AccountsPage() {
                   type="button"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => p + 1)}
-                  className="rounded-lg border border-[var(--admin-border)] px-3 py-1.5 disabled:opacity-40"
+                  className="flex-1 rounded-lg border border-[var(--admin-border)] px-3 py-2 disabled:opacity-40 sm:flex-none"
                 >
                   {t.common.next}
                 </button>
@@ -156,7 +157,7 @@ export default function AccountsPage() {
             </div>
           </>
         ) : null}
-      </div>
+      </AdminPageBody>
     </>
   );
 }

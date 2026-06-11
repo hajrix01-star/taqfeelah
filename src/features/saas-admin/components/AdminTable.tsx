@@ -22,8 +22,8 @@ export function AdminTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] shadow-sm">
-      <table className="min-w-full text-sm">
+    <div className="admin-table-scroll overflow-x-auto rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] shadow-sm">
+      <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[var(--admin-border)] bg-[#FAFBFC]">
             {columns.map((column) => (

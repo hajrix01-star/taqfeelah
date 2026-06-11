@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
+import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
 import { AdminTable } from "@/features/saas-admin/components/AdminTable";
 import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import { formatDateTime, formatNumber } from "@/features/saas-admin/components/format-utils";
@@ -43,7 +44,7 @@ export default function UsagePage() {
   return (
     <>
       <AdminHeader title={t.usage.title} description={t.usage.description} />
-      <div className="space-y-6 p-6">
+      <AdminPageBody>
         <section className="grid gap-4 sm:grid-cols-2">
           <KpiCard
             title={t.usage.avgCloseoutsPerStore}
@@ -61,7 +62,7 @@ export default function UsagePage() {
           {data.monthlyTrend.length === 0 ? (
             <p className="text-sm text-[var(--admin-muted)]">{t.usage.noMonthly}</p>
           ) : (
-            <div className="h-72">
+            <div className="h-56 sm:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.monthlyTrend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
@@ -82,7 +83,7 @@ export default function UsagePage() {
           {data.topActiveAccounts.length === 0 ? (
             <p className="text-sm text-[var(--admin-muted)]">{t.usage.noActiveAccounts}</p>
           ) : (
-            <div className="h-64">
+            <div className="h-56 sm:h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={data.topActiveAccounts.map((row) => ({
@@ -93,7 +94,7 @@ export default function UsagePage() {
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                   <XAxis type="number" tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
+                  <YAxis type="category" dataKey="name" width={88} tick={{ fontSize: 10 }} />
                   <Tooltip />
                   <Bar dataKey="closeouts" name={t.common.closeouts} fill="#112A46" radius={[0, 4, 4, 0]} />
                 </BarChart>
@@ -145,7 +146,7 @@ export default function UsagePage() {
             ))}
           </AdminTable>
         </section>
-      </div>
+      </AdminPageBody>
     </>
   );
 }

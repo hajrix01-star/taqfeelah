@@ -17,7 +17,7 @@ function GuardFrame({ children }: { children: React.ReactNode }) {
   return (
     <main
       dir={dir}
-      className="saas-admin-root flex min-h-[100dvh] flex-col items-center justify-center gap-4 px-6"
+      className="saas-admin-root flex min-h-[100dvh] flex-col items-center justify-center gap-4 px-4 py-8 sm:px-6"
     >
       <LanguageToggle />
       {children}
@@ -28,7 +28,7 @@ function GuardFrame({ children }: { children: React.ReactNode }) {
 function DisabledContent() {
   const { t } = useSaasAdminLocale();
   return (
-    <section className="max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-8 text-center shadow-sm">
+    <section className="w-full max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 text-center shadow-sm sm:p-8">
       <h1 className="text-lg font-bold text-[var(--admin-primary)]">{t.guard.disabledTitle}</h1>
       <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.guard.disabledBody}</p>
     </section>
@@ -51,7 +51,7 @@ function UnauthorizedContent({ session }: { session?: SaasAdminSessionView }) {
   }
 
   return (
-    <section className="max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-8 text-center shadow-sm">
+    <section className="w-full max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 text-center shadow-sm sm:p-8">
       <h1 className="text-lg font-bold text-[var(--admin-primary)]">{t.guard.unauthorizedTitle}</h1>
       <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.guard.unauthorizedBody}</p>
       {session?.displayName ? (
@@ -82,7 +82,7 @@ function UnauthorizedContent({ session }: { session?: SaasAdminSessionView }) {
 function UnauthenticatedContent() {
   const { t } = useSaasAdminLocale();
   return (
-    <section className="max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-8 text-center shadow-sm">
+    <section className="w-full max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 text-center shadow-sm sm:p-8">
       <h1 className="text-lg font-bold text-[var(--admin-primary)]">{t.guard.unauthenticatedTitle}</h1>
       <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.guard.unauthenticatedBody}</p>
       <Link

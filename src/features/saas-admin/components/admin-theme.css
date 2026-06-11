@@ -13,4 +13,45 @@
   color: var(--admin-text);
   min-height: 100dvh;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.saas-admin-root .admin-sidebar {
+  z-index: 50;
+  transition: transform 200ms ease;
+}
+
+@media (max-width: 1023px) {
+  .saas-admin-root .admin-sidebar {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    max-height: 100dvh;
+    box-shadow: 0 12px 40px rgba(17, 42, 70, 0.18);
+  }
+}
+
+.saas-admin-root .admin-table-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.saas-admin-root .admin-table-scroll table {
+  min-width: 40rem;
+}
+
+.saas-admin-root input,
+.saas-admin-root select,
+.saas-admin-root textarea,
+.saas-admin-root button {
+  font-size: 16px;
+}
+
+@media (min-width: 640px) {
+  .saas-admin-root input,
+  .saas-admin-root select,
+  .saas-admin-root textarea,
+  .saas-admin-root button {
+    font-size: inherit;
+  }
 }

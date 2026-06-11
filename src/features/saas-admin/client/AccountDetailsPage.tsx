@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
+import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
 import { AdminTable } from "@/features/saas-admin/components/AdminTable";
 import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import {
@@ -61,7 +62,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
           </Link>
         )}
       />
-      <div className="space-y-6 p-6">
+      <AdminPageBody>
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
           <EditAccountForms
             organizationId={accountId}
@@ -171,7 +172,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
           {data.monthlyUsage.length === 0 ? (
             <p className="text-sm text-[var(--admin-muted)]">{t.accountDetails.noMonthlyUsage}</p>
           ) : (
-            <div className="h-64">
+            <div className="h-56 sm:h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data.monthlyUsage}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
@@ -199,7 +200,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             ))}
           </AdminTable>
         </section>
-      </div>
+      </AdminPageBody>
     </>
   );
 }
