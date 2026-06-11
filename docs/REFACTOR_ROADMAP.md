@@ -1,7 +1,7 @@
 # خارطة refactor التشغيلية — تقفيلة V2
 
 > **ملف حي:** يُحدَّث بعد كل مرحلة مكتملة أو merge.  
-> آخر تحديث: **2026-06-08** — PR #91 مدمج ومنشور (`8e4fc59`)؛ Runtime ~2624 سطر.
+> آخر تحديث: **2026-06-10** — Wave K مُغلق؛ PR #143 مدمج (`69fa103`)؛ Runtime ~418 سطر.
 
 ---
 
@@ -33,16 +33,16 @@
 | 4.2 | ↳ تنظيف imports ميتة في Runtime (الدفعة 1) | ✅ | ~100+ import محذوف |
 | 5 | **PR #87 — تنظيف imports (batch 2)** | ✅ | مدمج `2fe613c` — نشر VPS ✅ |
 | 6 | **Hotfix #88 — حماية `channel config`** | ✅ | مدمج `254e16f` — إصلاح تعطل بوابة الموظف على الإنتاج |
-| 7 | **مرحلة لاحقة — PR-4+** *(مجزّأة)* | 🟠 لم ينتهي | hooks/auth قبل الإطلاق |
+| 7 | **مرحلة لاحقة — PR-4+** *(مجزّأة)* | 🟠 لم ينتهي | object storage + auth قبل الإطلاق |
 | 7.0 | ↳ **PR #89 — استخراج مرفقات البروتايب** | ✅ | مدمج `193be00` — نشر VPS |
 | 7.0.1 | ↳ **PR #90 — مكوّنات العرض (batch 1+2)** | ✅ | مدمج `01d9cde` — نشر VPS ✅ تأكيد إنتاج |
 | 7.0.2 | ↳ **PR #91 — تنظيف legacy موظف** | ✅ | مدمج `8e4fc59` — نشر VPS |
 | 7.1 | ↳ مرفقات (سقف حجم/عدد، object storage) | 🟠 لم ينتهي | IndexedDB + ضغط صور ✅ في #89؛ object storage لاحقًا |
-| 7.2 | ↳ استخراج hooks من Runtime (موجات G–J) | ✅ | مدمج `3511cca` — Runtime ~921 سطر |
-| 7.2.1 | ↳ **Wave K — Calculation Unification** *(لاحقًا)* | 🟠 لم ينتهي | `summarizeEntries` → adapter رفيع فوق `calculateDaySummary` |
-| 7.3 | ↳ Auth كامل + إيقاف `ALLOW_HEADER_AUTH_CONTEXT` | 🟠 لم ينتهي | قبل الإطلاق العام |
+| 7.2 | ↳ استخراج hooks من Runtime (موجات G–J + #138–#143) | ✅ | مدمج `69fa103` — Runtime ~418 سطر |
+| 7.2.1 | ↳ **Wave K — Calculation Unification** | ✅ | `summarizeEntries` → `rowsFromUiEntries` + `calculateDaySummary`؛ parity tests خضراء |
+| 7.3 | ↳ Auth كامل + إيقاف `ALLOW_HEADER_AUTH_CONTEXT` | 🟠 لم ينتهي | آخر خطوة قبل الإطلاق العام |
 
-**ملخص سريع:** ✅ **24** بند · 🟠 **5** بنود لم تنتهِ · النشط: **hooks / auth** قبل الإطلاق العام.
+**ملخص سريع:** ✅ **25** بند · 🟠 **4** بنود لم تنتهِ (+ اختياري واحد) · النشط: **تأكيد VPS** · **7.1** · **7.3 auth**.
 
 ---
 
@@ -85,9 +85,9 @@ main      →  دمج دفعة واحدة     →  نشر VPS تلقائي
 ## الحالة الحالية
 
 ```text
-المرحلة النشطة: PR-4+ — auth / object storage / Wave K (حسابات)
-التقدم الإجمالي:  ████████████████████  موجات G–J مدمجة `3511cca`؛ Runtime ~921 سطر
-المرحلة التالية:  7.3 auth · 7.1 object storage · 7.2.1 Wave K
+المرحلة النشطة: PR-4+ — تأكيد VPS · object storage (اختياري) · auth (آخر خطوة)
+التقدم الإجمالي:  ████████████████████  Runtime ~418 سطر؛ Wave K ✅؛ ops hardening #133
+المرحلة التالية:  تشيك يدوي VPS · 7.1 object storage · 7.3 auth
 ```
 
 | PR | الحالة | ملاحظة |
@@ -100,7 +100,10 @@ main      →  دمج دفعة واحدة     →  نشر VPS تلقائي
 | PR #90 (entry screens + dialogs) | 🟢 مدمج على `main` | `01d9cde` — نشر VPS ✅ |
 | PR #91 (employee legacy cleanup) | 🟢 مدمج على `main` | `8e4fc59` — نشر VPS |
 | Runtime waves G–J | 🟢 مدمج على `main` | `3511cca` — UI + orchestration hooks |
-| لاحقًا PR-4+ | 🟡 جاري | auth + object storage + Wave K |
+| PR #133 (ops hardening) | 🟢 مدمج على `main` | `12cc29a` — logging، rate limit، ErrorBoundary |
+| PR #138–#143 (runtime splits) | 🟢 مدمج على `main` | `69fa103` — Runtime ~418 سطر |
+| Wave K (حسابات) | 🟢 مُغلق | `summarizeEntries` موحّد مع `calculateDaySummary` + parity tests |
+| لاحقًا PR-4+ | 🟡 جاري | تأكيد VPS · object storage · auth |
 
 ---
 
@@ -228,16 +231,17 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 
 | موضوع | محتوى | أولوية |
 |--------|--------|--------|
-| مرفقات | سقف حجم/عدد؛ تحضير object storage | متوسطة |
-| منطق | ~~استخراج hooks من Runtime~~ ✅ G–J | — |
-| **Wave K — Calculation Unification** | `summarizeEntries` → `rowsFromUiEntries` + `calculateDaySummary` (adapter رفيع؛ **بدون تغيير نتائج**) | منخفضة — **بعد** استقرار G–J على VPS |
-| Auth كامل | جلسات حقيقية؛ إيقاف `ALLOW_HEADER_AUTH_CONTEXT` | قبل الإطلاق |
+| مرفقات | سقف حجم/عدد؛ تحضير object storage | متوسطة — عند الحاجة (أو تخزين محلي VPS) |
+| منطق | ~~استخراج hooks من Runtime~~ ✅ G–J + #138–#143 | — |
+| ~~Wave K — Calculation Unification~~ | ✅ `summarizeEntries` → `calculateDaySummary`؛ `accounting-parity` + `closeout-day-summary-parity` | — |
+| Auth كامل | جلسات حقيقية؛ إيقاف `ALLOW_HEADER_AUTH_CONTEXT` | **آخر خطوة** قبل الإطلاق |
 
 ### سياسة مصدر الحقيقة المالي (معتمدة)
 
 - **production DB mode** (`ENTRIES_API_ENABLED=true`): الإجماليات النهائية للرئيسية/التقارير من **PostgreSQL → API summary → `calculateDaySummary`** — **لا** `summarizeEntries` كمصدر نهائي.
 - **`summarizeEntries`**: demo/local + قوائم/تفاصيل تشغيلية؛ يُحسب محليًا لكن **`resolveOwnerPeriodSummaryPreference`** يفرض API في DB mode (`entriesDbSource: true` → `preferEntrySummaries = false`).
-- **golden/parity tests** (`accounting-parity.test.ts`, `operational-analytics.test.ts`) تبقى شغّالة قبل/بعد Wave K.
+- **golden/parity tests** (`accounting-parity.test.ts`, `operational-analytics.test.ts`, `closeout-day-summary-parity.test.ts`) ✅ خضراء — Wave K مُغلق.
+- **تنظيف اختياري لاحقًا:** `TaqfeelahPrototypeReference.tsx` (مرجع قديم غير مستخدم)؛ تكرار `ratio` في `closeout-share-operations.js`.
 
 ---
 
@@ -286,6 +290,9 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 | 2026-06-08 | دمج PR #91 على main (`8e4fc59`) — نشر VPS — Runtime ~2624 سطر |
 | 2026-06-09 | موجات Runtime G–J مدمجة (`3511cca`): UI (home/register/share/closeout modals) + hooks (session/entries/closeouts/auth) — Runtime ~921 سطر |
 | 2026-06-09 | تسجيل **Wave K — Calculation Unification** (لاحقًا): adapter `summarizeEntries` → `calculateDaySummary` بدون تغيير نتائج |
+| 2026-06-10 | دمج PR #133 ops hardening (`12cc29a`) — pino، rate limit، ErrorBoundary، pool tuning |
+| 2026-06-10 | دمج PR #138–#143 — تفكيك Runtime/closeouts/settings؛ Runtime ~418 سطر |
+| 2026-06-10 | **إغلاق Wave K (7.2.1) ✅** — تحقق: `summarizeEntries` غلاف رفيع؛ DB mode يفضّل API؛ parity tests خضراء |
 
 ---
 
