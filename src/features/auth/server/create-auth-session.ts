@@ -87,6 +87,73 @@ async function resolveEmployeeUserIdWithFallback(
   return member?.userId && isUuid(member.userId) ? member.userId : "";
 }
 
+async function resolveEmployeeUserIdGlobal(employeeId: string): Promise<string> {
+  const normalized = normalize(employeeId);
+  if (!normalized) return "";
+  if (isUuid(normalized)) return normalized;
+
+  const db = getDb();
+  const [member] = await db
+    .select({
+      userId: organizationMembers.userId,
+    })
+    .from(organizationMembers)
+    .innerJoin(users, eq(users.id, organizationMembers.userId))
+    .where(
+      and(
+        eq(organizationMembers.status, "active"),
+        or(eq(organizationMembers.role, "employee"), eq(organizationMembers.role, "manager")),
+        ilike(users.name, normalized),
+      ),
+    )
+    .limit(1);
+
+  return member?.userId && isUuid(member.userId) ? member.userId : "";
+}
+
+type ActiveMember = {
+  organizationId: string;
+  userId: string;
+  role: string;
+  status: string;
+};
+
+async function resolveActiveMembership(
+  userId: string,
+  loginRole: "owner" | "employee",
+): Promise<ActiveMember | null> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      organizationId: organizationMembers.organizationId,
+      userId: organizationMembers.userId,
+      role: organizationMembers.role,
+      status: organizationMembers.status,
+    })
+    .from(organizationMembers)
+    .where(
+      and(
+        eq(organizationMembers.userId, userId),
+        eq(organizationMembers.status, "active"),
+      ),
+    )
+    .limit(20);
+
+  if (!rows.length) return null;
+
+  if (loginRole === "owner") {
+    return rows.find((row) => row.role === "owner") ?? null;
+  }
+
+  return rows.find((row) => row.role === "employee" || row.role === "manager") ?? null;
+}
+
+function resolveMemberRole(memberRole: string, loginRole: "owner" | "employee"): "owner" | "manager" | "employee" {
+  if (loginRole === "owner") return "owner";
+  if (memberRole === "manager") return "manager";
+  return "employee";
+}
+
 export async function createAuthSession(rawInput: LoginInput) {
   const parsed = loginInputSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -161,12 +228,15 @@ export async function createAuthSession(rawInput: LoginInput) {
     if (!employeeId || !pin) {
       throw new ValidationError("employeeId and pin are required.");
     }
-    const mappedUserId = await resolveEmployeeUserIdWithFallback(
+    let mappedUserId = await resolveEmployeeUserIdWithFallback(
       employeeId,
       userIdMap,
       runtimeSettings,
       organizationId,
     );
+    if (!mappedUserId && isAuthDbCredentialsEnabled()) {
+      mappedUserId = await resolveEmployeeUserIdGlobal(employeeId);
+    }
     if (!mappedUserId) {
       throw new UnauthorizedError("Employee account mapping is invalid.");
     }
@@ -189,6 +259,22 @@ export async function createAuthSession(rawInput: LoginInput) {
       userId = mappedUserId;
       role = "employee";
     }
+  }
+
+  if (isAuthDbCredentialsEnabled()) {
+    const member = await resolveActiveMembership(userId, role);
+    if (!member) {
+      throw new UnauthorizedError("User is not an active organization member.");
+    }
+    if (role === "owner" && member.role !== "owner") {
+      throw new UnauthorizedError("Owner credentials are not linked to an owner member.");
+    }
+
+    return {
+      organizationId: member.organizationId,
+      userId,
+      role: resolveMemberRole(member.role, role),
+    };
   }
 
   const db = getDb();
@@ -214,15 +300,10 @@ export async function createAuthSession(rawInput: LoginInput) {
   if (role === "owner" && member.role !== "owner") {
     throw new UnauthorizedError("Owner credentials are not linked to an owner member.");
   }
-  const resolvedMemberRole: "owner" | "manager" | "employee" = member.role === "owner"
-    ? "owner"
-    : member.role === "manager"
-      ? "manager"
-      : "employee";
 
   return {
     organizationId,
     userId,
-    role: role === "owner" ? "owner" : resolvedMemberRole,
+    role: resolveMemberRole(member.role, role),
   };
 }
