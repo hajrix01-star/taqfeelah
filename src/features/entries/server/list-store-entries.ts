@@ -10,6 +10,7 @@ import {
   closeoutLinkedEntryScope,
   includeListedEntryRow,
 } from "./closeout-linked-entry-filter";
+import { loadCloseoutOwnerEditMetaByCloseoutId } from "@/features/closeouts/server/load-closeout-owner-edit-meta";
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD");
 
@@ -118,6 +119,9 @@ export async function listStoreEntries(rawInput: Input) {
     clientCloseoutId: string;
     daySequence: number;
     status: string;
+    ownerEditedAt: string | null;
+    ownerEditedByUserId: string | null;
+    ownerEditedByName: string | null;
   }>();
 
   if (closeoutIds.length > 0) {
@@ -137,11 +141,22 @@ export async function listStoreEntries(rawInput: Input) {
         ),
       );
 
+    const { byDailyCloseoutId: ownerEditByDailyCloseoutId } = await loadCloseoutOwnerEditMetaByCloseoutId(db, {
+      organizationId: input.organizationId,
+      storeId: input.storeId,
+      closeoutRowIds: closeoutRows.map((row) => row.id),
+      clientCloseoutIds: closeoutRows.map((row) => row.clientCloseoutId),
+    });
+
     closeoutRows.forEach((row) => {
+      const ownerEditMeta = ownerEditByDailyCloseoutId.get(row.id) || null;
       closeoutMetaById.set(row.id, {
         clientCloseoutId: row.clientCloseoutId,
         daySequence: row.daySequence,
         status: row.status,
+        ownerEditedAt: ownerEditMeta?.ownerEditedAt || null,
+        ownerEditedByUserId: ownerEditMeta?.ownerEditedByUserId || null,
+        ownerEditedByName: ownerEditMeta?.ownerEditedByName || null,
       });
     });
   }
@@ -355,6 +370,15 @@ export async function listStoreEntries(rawInput: Input) {
         : null,
       daySequence: row.closeoutId
         ? closeoutMetaById.get(row.closeoutId)?.daySequence ?? null
+        : null,
+      closeoutOwnerEditedAt: row.closeoutId
+        ? closeoutMetaById.get(row.closeoutId)?.ownerEditedAt || null
+        : null,
+      closeoutOwnerEditedByUserId: row.closeoutId
+        ? closeoutMetaById.get(row.closeoutId)?.ownerEditedByUserId || null
+        : null,
+      closeoutOwnerEditedByName: row.closeoutId
+        ? closeoutMetaById.get(row.closeoutId)?.ownerEditedByName || null
         : null,
       outflowId: null,
       enteredBy: createdBy,

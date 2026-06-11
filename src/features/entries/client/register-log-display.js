@@ -1,4 +1,5 @@
 import { sumUiAmounts } from "@/domain/cash-movement/calculations";
+import { resolveCloseoutOwnerEditMetaFromEntries } from "@/features/closeouts/client/closeout-owner-edit-display";
 import {
   aggregateSalesChannelsFromGroupEntries,
   entryHasAttachment,
@@ -138,6 +139,7 @@ export function buildRegisterCloseoutSummaries({
     );
     const channelSalesTotal = sumUiAmounts(salesChannels.map((row) => row.amount));
     const daySequence = group.entries.find((entry) => Number.isInteger(entry.daySequence))?.daySequence ?? null;
+    const ownerEditMeta = resolveCloseoutOwnerEditMetaFromEntries(group.entries);
     return {
       ...group,
       store,
@@ -147,6 +149,9 @@ export function buildRegisterCloseoutSummaries({
       operations: newestEntries(group.entries),
       actorLabel: resolveActorLabel(group),
       daySequence,
+      ownerEditedAt: ownerEditMeta?.ownerEditedAt || null,
+      ownerEditedByUserId: ownerEditMeta?.ownerEditedByUserId || null,
+      ownerEditedByName: ownerEditMeta?.ownerEditedByName || null,
     };
   });
 

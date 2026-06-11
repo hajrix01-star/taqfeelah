@@ -62,4 +62,28 @@ describe("register-log-display", () => {
     expect(summaries[0].totals.sales).toBe(100);
     expect(summaries[0].totals.expense).toBe(10);
   });
+
+  it("carries owner edit metadata into closeout summaries", () => {
+    const summaries = buildRegisterCloseoutSummaries({
+      filteredEntries: [
+        {
+          id: "e1",
+          closeoutId: "c1",
+          businessId: "b1",
+          date: "2026-06-06",
+          type: "summary",
+          status: "active",
+          amount: 100,
+          closeoutOwnerEditedAt: "2026-06-11T10:00:00.000Z",
+          closeoutOwnerEditedByName: "Owner",
+        },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fixture
+      ] as any[],
+      resolveChannelName: (row) => String((row as { channelId: string }).channelId),
+      resolveStore: (businessId: string) => ({ id: businessId }),
+      resolveActorLabel: () => "Ahmed",
+    });
+    expect(summaries[0].ownerEditedAt).toBe("2026-06-11T10:00:00.000Z");
+    expect(summaries[0].ownerEditedByName).toBe("Owner");
+  });
 });

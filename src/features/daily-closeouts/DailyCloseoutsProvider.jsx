@@ -317,6 +317,9 @@ export function DailyCloseoutsProvider({
       returnReason: null,
       reviewedAt: now,
       reviewedByName: null,
+      ownerEditedAt: now,
+      ownerEditedByUserId: employee.id,
+      ownerEditedByName: employeeName,
     });
     const apiSubmitAction = "ownerEdit";
 

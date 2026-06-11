@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
 import { resolveCloseoutForOperationalEntry } from "@/features/operations/client/register-operations-selection";
 import {
@@ -73,6 +73,18 @@ export function PrototypeRuntimeOverlayStack({
 }) {
   const { closeouts, reloadCloseoutsFromApi } = useDailyCloseouts();
 
+  const selectedOwnerEditSource = useMemo(() => {
+    if (!selected) return null;
+    if (selected.closeoutOwnerEditedAt) {
+      return {
+        ownerEditedAt: selected.closeoutOwnerEditedAt,
+        ownerEditedByUserId: selected.closeoutOwnerEditedByUserId,
+        ownerEditedByName: selected.closeoutOwnerEditedByName,
+      };
+    }
+    return resolveCloseoutForOperationalEntry(selected, closeouts);
+  }, [closeouts, selected]);
+
   const handleEditOwnerCloseoutFromEntry = useCallback(async (entry) => {
     let closeout = resolveCloseoutForOperationalEntry(entry, closeouts);
     if (!closeout && typeof reloadCloseoutsFromApi === "function") {
@@ -128,6 +140,7 @@ export function PrototypeRuntimeOverlayStack({
         onVoid={requestVoidOperation}
         onRestore={requestRestoreOperation}
         onEditOwnerCloseout={!employee ? handleEditOwnerCloseoutFromEntry : undefined}
+        ownerEditSource={selectedOwnerEditSource}
         canVoid={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)}
         canRestore={Boolean(selected) && !archivedBusinessIds.includes(selected?.businessId)}
         {...entryAttachmentsApiProps}

@@ -11,6 +11,7 @@ import {
   expandRegisterCloseoutOperationRows,
 } from "./prototype-runtime-entry-helpers";
 import { MoneyValue } from "./prototype-runtime-notebook";
+import CloseoutOwnerEditBadge from "@/features/closeouts/client/CloseoutOwnerEditBadge";
 import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
 
 export function OwnerRegisterCloseoutsList({
@@ -51,7 +52,10 @@ export function OwnerRegisterCloseoutsList({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                   <p className="text-taq-meta font-black text-[#112A46]">{formatCloseoutDayLabel({ formattedDate: formatCalendarDate(summary.date, lang), daySequence: summary.daySequence, sameDayCloseoutCount: summary.sameDayCloseoutCount })}</p>
-                  <p className="rounded-full border border-[#8EA1C4] px-2.5 py-1 text-taq-meta font-black text-[#214B7B]">{lang === "ar" ? `أدخلها ${summary.actorLabel}` : `Entered by ${summary.actorLabel}`}</p>
+                  <div className="flex flex-wrap items-center justify-end gap-1.5">
+                    <CloseoutOwnerEditBadge lang={lang} source={summary} />
+                    <p className="rounded-full border border-[#8EA1C4] px-2.5 py-1 text-taq-meta font-black text-[#214B7B]">{lang === "ar" ? `أدخلها ${summary.actorLabel}` : `Entered by ${summary.actorLabel}`}</p>
+                  </div>
                 </div>
                 <p className="mt-1 text-taq-meta font-bold text-[#716753]">{formatRegisterCloseoutTypeLabel(summary.date, lang)} {storeLabel}</p>
                 <div className="mt-2 grid grid-cols-3 gap-2 border-t border-dashed border-[#DDD3C0] pt-2">
