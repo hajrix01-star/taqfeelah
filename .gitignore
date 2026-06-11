@@ -14,3 +14,7 @@ playwright-report/
 test-results/
 blob-report/
 playwright/.cache/
+
+# Serwist build output
+public/sw*
+public/swe-worker*

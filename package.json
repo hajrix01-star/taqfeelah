@@ -41,9 +41,11 @@
     "db:reset:foundation": "node scripts/reset-and-seed-modern-foundation.mjs",
     "db:seed:auth": "node scripts/seed-auth-credentials.mjs",
     "db:migrate:auth": "node scripts/migrate-runtime-auth-to-identities.mjs",
-    "db:seed:saas": "node scripts/seed-saas-foundation.mjs"
+    "db:seed:saas": "node scripts/seed-saas-foundation.mjs",
+    "pwa:icons": "node scripts/generate-pwa-icons.mjs"
   },
   "dependencies": {
+    "@serwist/next": "^9.5.11",
     "@upstash/redis": "^1.38.0",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.23.12",
@@ -54,6 +56,7 @@
     "pino": "^10.3.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "serwist": "^9.5.11",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -68,6 +71,7 @@
     "eslint": "^9.34.0",
     "eslint-config-next": "^15.5.2",
     "husky": "^9.1.7",
+    "sharp": "^0.35.0",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
