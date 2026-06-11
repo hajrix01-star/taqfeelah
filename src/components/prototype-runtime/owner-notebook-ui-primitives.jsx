@@ -2,9 +2,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { BookMarked, Check, Pencil, Plus, Send, Trash2 } from "lucide-react";
-import { notebookCardBackground, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
+import { NOTEBOOK_THEME_IDS, notebookCardBackground, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
 import { text } from "./prototype-runtime-demo-data";
-import { ThemePicker } from "./prototype-runtime-notebook";
 import { Badge } from "./prototype-runtime-shell-ui";
 
 export function formatNoteTime(iso, lang) {
@@ -107,33 +106,99 @@ function useAutoGrowTextarea(value, { minHeight = 72, maxHeight = 240 } = {}) {
   return ref;
 }
 
-function NoteColorToggle({ lang, color, onChange }) {
-  const [open, setOpen] = useState(false);
+function NoteTextFieldWithColorPicker({
+  lang,
+  value,
+  onChange,
+  color,
+  onColorChange,
+  onKeyDown,
+  placeholder,
+  textareaRef,
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const handlePointerDown = (event) => {
+      if (containerRef.current?.contains(event.target)) return;
+      setPickerOpen(false);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [pickerOpen]);
 
   const handleSelect = (nextColor) => {
-    onChange(nextColor);
-    setOpen(false);
+    onColorChange(nextColor);
+    setPickerOpen(false);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Escape" && pickerOpen) {
+      event.preventDefault();
+      event.stopPropagation();
+      setPickerOpen(false);
+      return;
+    }
+    onKeyDown?.(event);
   };
 
   return (
-    <div className="min-w-0 flex-1">
+    <div ref={containerRef} className="relative min-h-[72px]">
       <button
         type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((prev) => !prev)}
-        className="inline-flex w-full items-center gap-2 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-black text-[#112A46] ring-1 ring-[#E8E1D4]"
-      >
-        <span
-          className="h-5 w-5 shrink-0 rounded-full border border-[#D9D1C1]"
-          style={{ backgroundColor: notebookThemes[color]?.paper }}
-        />
-        <span className="min-w-0 flex-1 truncate text-start">{text(lang, color)}</span>
-      </button>
-      {open ? (
-        <div className="mt-2 rounded-xl bg-white/95 p-2.5 ring-1 ring-[#E8E1D4]">
-          <ThemePicker lang={lang} theme={color} onChange={handleSelect} compact />
+        aria-expanded={pickerOpen}
+        aria-label={text(lang, "notebookAppearance")}
+        title={text(lang, color)}
+        onClick={() => setPickerOpen((open) => !open)}
+        className={`absolute top-2 left-2 z-10 h-7 w-7 rounded-full border border-[#D9D1C1] shadow-sm ring-2 ring-white/80 transition-transform active:scale-95 ${
+          pickerOpen ? "pointer-events-none opacity-0" : ""
+        }`}
+        style={{ backgroundColor: notebookThemes[color]?.paper }}
+      />
+      {pickerOpen ? (
+        <div
+          role="listbox"
+          aria-label={text(lang, "notebookAppearance")}
+          className="absolute inset-0 z-20 flex min-h-[72px] items-center gap-1.5 overflow-x-auto rounded-lg bg-white/94 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] ring-1 ring-[#E8E1D4]/90 backdrop-blur-[2px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {NOTEBOOK_THEME_IDS.map((id) => {
+            const active = color === id;
+            const label = text(lang, id);
+            return (
+              <button
+                key={id}
+                type="button"
+                role="option"
+                aria-selected={active}
+                aria-label={label}
+                title={label}
+                onClick={() => handleSelect(id)}
+                className={`relative shrink-0 rounded-full border transition-transform active:scale-95 ${
+                  active ? "border-[#112A46] ring-2 ring-[#112A46]/15" : "border-[#D9D1C1]"
+                }`}
+              >
+                <span
+                  className="block h-7 w-7 rounded-full"
+                  style={{ backgroundColor: notebookThemes[id]?.paper }}
+                />
+                {active ? <Check className="absolute inset-0 m-auto h-3.5 w-3.5 text-[#112A46]" strokeWidth={3} /> : null}
+              </button>
+            );
+          })}
         </div>
       ) : null}
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={onChange}
+        onKeyDown={handleKeyDown}
+        rows={2}
+        placeholder={placeholder}
+        dir={lang === "ar" ? "rtl" : "ltr"}
+        className="min-h-[72px] w-full resize-none overflow-hidden bg-transparent py-2 pl-11 pr-3 text-taq-body-sm font-bold leading-6 text-[#112A46] outline-none placeholder:font-bold placeholder:text-[#A99D87]"
+      />
     </div>
   );
 }
@@ -183,19 +248,18 @@ export function NoteComposerPanel({
       className="overflow-hidden rounded-[18px] border border-[#E8E1D4] px-3 py-2.5 shadow-[0_6px_14px_rgba(17,42,70,0.05)]"
       style={cardStyle}
     >
-      <textarea
-        ref={textareaRef}
+      <NoteTextFieldWithColorPicker
+        lang={lang}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={handleKeyDown}
-        rows={2}
         placeholder={text(lang, "ownerNotebookPlaceholder")}
-        className="min-h-[72px] w-full resize-none overflow-hidden bg-transparent text-taq-body-sm font-bold leading-6 text-[#112A46] outline-none placeholder:font-bold placeholder:text-[#A99D87]"
+        color={color}
+        onColorChange={setColor}
+        textareaRef={textareaRef}
       />
-      <div className="mt-2 flex items-start gap-2">
+      <div className={`mt-2 flex ${lang === "ar" ? "justify-end" : "justify-start"}`}>
         <KindSegment lang={lang} value={kind} onChange={setKind} compact />
-        <span className="mt-1 h-5 w-px shrink-0 bg-[#E8E1D4]/90" aria-hidden />
-        <NoteColorToggle lang={lang} color={color} onChange={setColor} />
       </div>
       <div className="mt-2.5 flex items-center gap-2">
         <button
@@ -239,17 +303,16 @@ function NoteEditPanel({ lang, note, onSave, onCancel, onDelete }) {
 
   return (
     <div className="border-t border-[#E8E1D4] px-3 py-2.5" style={cardStyle}>
-      <textarea
-        ref={textareaRef}
+      <NoteTextFieldWithColorPicker
+        lang={lang}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
-        rows={2}
-        className="min-h-[72px] w-full resize-none overflow-hidden bg-transparent text-taq-body-sm font-bold leading-6 text-[#112A46] outline-none"
+        color={color}
+        onColorChange={setColor}
+        textareaRef={textareaRef}
       />
-      <div className="mt-2 flex items-start gap-2">
+      <div className={`mt-2 flex ${lang === "ar" ? "justify-end" : "justify-start"}`}>
         <KindSegment lang={lang} value={kind} onChange={setKind} compact />
-        <span className="mt-1 h-5 w-px shrink-0 bg-[#E8E1D4]/90" aria-hidden />
-        <NoteColorToggle lang={lang} color={color} onChange={setColor} />
       </div>
       <div className="mt-2.5 flex items-center gap-2">
         <button
