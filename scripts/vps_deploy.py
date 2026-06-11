@@ -1128,6 +1128,18 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/attachments/inline"
             ),
         ] if phase9_verify else []),
+        *([
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave7-saas-kpis.json "
+                f"-w '%{{http_code}}' "
+                f"https://{shlex.quote(domain)}/api/v1/saas-admin/overview"
+            ),
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave7-saas-page.html "
+                f"-w '%{{http_code}}' "
+                f"https://{shlex.quote(domain)}/saas-admin"
+            ),
+        ] if saas_verify else []),
         f"curl -I --max-time 15 https://{shlex.quote(www_domain)} || true",
         "curl -I --max-time 15 https://hajrix.com || true",
         "curl -I --max-time 15 https://arz-lounge.com || true",

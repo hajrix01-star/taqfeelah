@@ -80,7 +80,7 @@
 | بيانات حقيقية | من DB فقط — لا demo |
 | MRR/ARR | تسمية «تقديري» إذا لا دفع حقيقي |
 | غير متاح | عرض نص واضح بدل أرقام وهمية |
-| الحماية | `SAAS_PLATFORM_ADMIN_USER_IDS` + feature flags |
+| الحماية | `SAAS_PLATFORM_ADMIN_USER_IDS` + feature flags + `middleware.ts` (API) |
 | لا تأثير على العميل | لا تعديل `/app` أو prototype |
 
 ---
@@ -105,4 +105,6 @@ NEXT_PUBLIC_SAAS_ADMIN_ENABLED=true
 - [x] مؤشرات تقديرية موضّحة
 - [x] system-health يعرض المتاح فقط
 - [x] لا تغيير على تطبيق العميل
-- [ ] CI أخضر — بعد فتح PR
+- [x] CI أخضر — مدمج في `main`
+- [x] `middleware.ts` لحماية `/api/v1/saas-admin/*`
+- [x] توثيق التفعيل في `docs/DEPLOYMENT_WAVES.md` و`docs/API_CONTRACT.md`

@@ -552,54 +552,51 @@ Returns unauthorized until OTP provider is configured.
 
 ---
 
-## SaaS Admin API (foundation — disabled by default)
+## SaaS Admin API (read-only — disabled by default)
 
-> Requires `SAAS_ADMIN_API_ENABLED=true` and `SAAS_PLATFORM_ADMIN_USER_IDS` allowlist.
+> Requires `SAAS_ADMIN_API_ENABLED=true`, signed auth session cookie, and `SAAS_PLATFORM_ADMIN_USER_IDS` allowlist.  
+> `middleware.ts` returns `503` / `401` / `403` before route handlers when the API is disabled or the caller is not a platform admin.
 
-### `GET /api/v1/saas-admin/kpis/overview` (implemented — gated)
+### `GET /api/v1/saas-admin/overview` (implemented — gated)
 
-Query: `from=YYYY-MM-DD`, `to=YYYY-MM-DD`
+Returns platform KPIs, activity trend, top/inactive accounts, system health summary, and engagement snapshot metadata.
 
-### `GET /api/v1/saas-admin/organizations` (implemented — gated)
+### `GET /api/v1/saas-admin/accounts` (implemented — gated)
 
-Query: optional `status=active|suspended|all`, `limit` (max 100)
+Query: `page` (default 1), `pageSize` (default 25), `status=all|trial|active|inactive|suspended`, optional `search`, `plan`
 
-### Planned (final phase)
+### `GET /api/v1/saas-admin/accounts/:id` (implemented — gated)
 
-> Separate API surface for `/saas-admin` (desktop-first console).
+Returns account profile, stores, users, usage trend, and operational totals.
 
-### `GET /saas-admin/kpis/overview`
+### `GET /api/v1/saas-admin/usage` (implemented — gated)
 
-Query: `from=YYYY-MM-DD`, `to=YYYY-MM-DD`  
-Returns: `newOrganizations`, `activeOrganizations`, `churnedOrganizations`, `MRR`, `ARR`, `collections`, `failedPayments`.
+Query: `months` (default 6) — engagement lists and snapshot availability.
 
-### `GET /saas-admin/kpis/usage`
+### `GET /api/v1/saas-admin/investor-metrics` (implemented — gated)
 
-Query: `from`, `to`, optional `organizationId`  
-Returns: `DAU`, `WAU`, `MAU`, activation ratio, dormant organizations.
+Returns investor-oriented KPIs (MRR/ARR labeled estimated where applicable).
 
-### `GET /saas-admin/organizations`
+### `GET /api/v1/saas-admin/system-health` (implemented — gated)
 
-Query: pagination + filters (`status`, `plan`, `risk`, `lastActiveBefore`)  
-Returns tenant health rows: subscription state, recent usage, payment risk flags.
+Returns database/API health probes for the admin console.
 
-### `GET /saas-admin/organizations/:organizationId`
+### `POST /api/v1/saas-admin/analytics/aggregate` (implemented — gated)
 
-Returns detailed tenant profile: plan, invoices summary, payment events, usage trends, operational totals.
+Body (optional): `{ "snapshotDate": "YYYY-MM-DD" }` — rebuilds engagement snapshots (`pnpm saas:aggregate` uses the same server function).
 
-### `PATCH /saas-admin/organizations/:organizationId/subscription`
+### Removed (superseded by dashboard routes above)
 
-Body: `planCode`, `status`, `cancelAtPeriodEnd`  
-Used by privileged roles only; writes `audit_events`.
+- `GET /api/v1/saas-admin/kpis/overview`
+- `GET /api/v1/saas-admin/organizations`
+- `GET /api/v1/saas-admin/analytics/investor-dashboard`
+- `GET /api/v1/saas-admin/analytics/organizations`
 
-### `GET /saas-admin/investor-report`
+### Planned (not implemented)
 
-Query: `period=month|quarter|year`, `from`, `to`  
-Returns investor-oriented aggregates and trends for export workflows.
-
-### `GET /saas-admin/exports/investor.csv`
-
-CSV export endpoint for KPI and cohort slices (phase-final operational requirement).
+- `PATCH /api/v1/saas-admin/accounts/:id/subscription` — subscription writes
+- `GET /api/v1/saas-admin/exports/investor.csv` — CSV export
+- Billing provider webhooks
 
 ---
 
