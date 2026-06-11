@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export const PULL_TO_REFRESH_THRESHOLD = 56;
-export const PULL_TO_REFRESH_MAX_DISTANCE = 112;
-export const PULL_TO_REFRESH_REFRESH_SLOT = 44;
-const PULL_TO_REFRESH_MIN_REFRESH_MS = 420;
+export const PULL_TO_REFRESH_THRESHOLD = 64;
+export const PULL_TO_REFRESH_MAX_DISTANCE = 120;
+export const PULL_TO_REFRESH_REFRESH_SLOT = 52;
+const PULL_TO_REFRESH_MIN_REFRESH_MS = 480;
+const PTR_SPRING_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 /**
  * Rubber-band curve similar to native mobile pull gestures.
@@ -32,6 +33,7 @@ export function usePullToRefresh({ enabled = true, onRefresh }) {
 
   const [pullDistance, setPullDistance] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   onRefreshRef.current = onRefresh;
   pullDistanceRef.current = pullDistance;
@@ -45,6 +47,7 @@ export function usePullToRefresh({ enabled = true, onRefresh }) {
     if (!enabled) {
       resetPull();
       setRefreshing(false);
+      setIsDragging(false);
     }
   }, [enabled, resetPull]);
 
@@ -58,6 +61,7 @@ export function usePullToRefresh({ enabled = true, onRefresh }) {
     const finishPull = async () => {
       if (!tracking) return;
       tracking = false;
+      setIsDragging(false);
 
       const distance = pullDistanceRef.current;
       if (distance >= PULL_TO_REFRESH_THRESHOLD && !refreshingRef.current) {
@@ -88,6 +92,7 @@ export function usePullToRefresh({ enabled = true, onRefresh }) {
       if (refreshingRef.current || element.scrollTop > 0) return;
       touchStartY = event.touches[0]?.clientY ?? 0;
       tracking = true;
+      setIsDragging(true);
     };
 
     const onTouchMove = (event) => {
@@ -98,6 +103,7 @@ export function usePullToRefresh({ enabled = true, onRefresh }) {
 
       if (delta <= 0 || element.scrollTop > 0) {
         tracking = false;
+        setIsDragging(false);
         setPullDistance(0);
         return;
       }
@@ -128,6 +134,10 @@ export function usePullToRefresh({ enabled = true, onRefresh }) {
   const releaseReady = !refreshing && pullDistance >= PULL_TO_REFRESH_THRESHOLD;
   const isActive = enabled && (refreshing || pullDistance > 0);
 
+  const contentTransition = isDragging
+    ? "none"
+    : `transform 320ms ${PTR_SPRING_EASE}`;
+
   return {
     scrollRef,
     pullDistance,
@@ -136,5 +146,7 @@ export function usePullToRefresh({ enabled = true, onRefresh }) {
     releaseReady,
     slotHeight,
     isActive,
+    isDragging,
+    contentTransition,
   };
 }

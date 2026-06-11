@@ -13,7 +13,6 @@ export function EmployeeCloseoutsListPanel({
   employeeRuntimeReady,
   channelsReady,
   syncError,
-  closeoutsRefreshing,
   hasOlderHiddenCloseouts,
   historyScopeLabel,
   hiddenCloseoutCount,
@@ -68,11 +67,6 @@ export function EmployeeCloseoutsListPanel({
       {syncError ? (
         <div className="mb-4 rounded-2xl bg-[#FFF1EE]/90 p-3 text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10 backdrop-blur-sm">
           {syncError}
-        </div>
-      ) : null}
-      {closeoutsRefreshing ? (
-        <div className="mb-4 rounded-2xl bg-[#FFF4D2]/95 p-3 text-center text-taq-meta font-bold text-[#806528] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
-          {lang === "ar" ? "جاري تحديث التقفيلات…" : "Refreshing closeouts…"}
         </div>
       ) : null}
       {hasOlderHiddenCloseouts && (

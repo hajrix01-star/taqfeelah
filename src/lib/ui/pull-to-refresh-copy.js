@@ -1,5 +1,5 @@
 /**
- * Visible pull-to-refresh label shown in the prototype indicator chip.
+ * Pull-to-refresh label copy (visible only when a UI surface chooses to show it).
  * @param {"ar" | "en"} lang
  * @param {"pull" | "release" | "refreshing"} phase
  */

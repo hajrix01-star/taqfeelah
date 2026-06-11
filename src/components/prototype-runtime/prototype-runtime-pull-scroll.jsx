@@ -2,41 +2,13 @@
 
 import React, { useCallback, useMemo } from "react";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
-import { pullToRefreshLabel } from "@/lib/ui/pull-to-refresh-copy";
+import { PullToRefreshIndicator } from "@/lib/ui/pull-to-refresh-indicator";
 import {
   resolvePullToRefreshTarget,
   resolvePullToRefreshUsesNotebookSurface,
 } from "@/lib/ui/pull-to-refresh-policy";
 import { resolvePullToRefreshSurfaceStyle } from "@/lib/ui/pull-to-refresh-surface";
 import { usePullToRefresh } from "@/lib/ui/use-pull-to-refresh";
-
-function PullToRefreshIndicator({ lang, offset, visible, refreshing, releaseReady }) {
-  const phase = refreshing ? "refreshing" : releaseReady ? "release" : "pull";
-  const opacity = visible ? Math.min(1, offset / 40) : 0;
-  const indicatorTransition = visible && offset === 0
-    ? "transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms cubic-bezier(0.22, 1, 0.36, 1)"
-    : "none";
-
-  return (
-    <div
-      aria-hidden={!visible}
-      className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center"
-      style={{
-        transform: `translateY(${Math.max(0, offset - 36)}px)`,
-        opacity,
-        transition: refreshing ? "opacity 150ms ease" : indicatorTransition,
-      }}
-    >
-      <div className="flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-taq-meta font-bold text-[#827762] shadow-sm ring-1 ring-black/[0.06]">
-        <span
-          className={`inline-block h-3.5 w-3.5 rounded-full border-2 border-[#D8CCA8] border-t-[#112A46] ${refreshing ? "animate-spin" : ""}`}
-          style={!refreshing ? { transform: `rotate(${Math.min(320, offset * 4)}deg)` } : undefined}
-        />
-        <span>{pullToRefreshLabel(lang, phase)}</span>
-      </div>
-    </div>
-  );
-}
 
 export function PrototypeRuntimePullScroll({
   lang,
@@ -93,10 +65,13 @@ export function PrototypeRuntimePullScroll({
 
   const {
     scrollRef,
+    pullProgress,
     refreshing,
     releaseReady,
     slotHeight,
     isActive,
+    isDragging,
+    contentTransition,
   } = usePullToRefresh({
     enabled,
     onRefresh: handleRefresh,
@@ -106,24 +81,36 @@ export function PrototypeRuntimePullScroll({
     ? resolvePullToRefreshSurfaceStyle(usesNotebookSurface, notebookTheme)
     : undefined;
   const indicatorVisible = isActive || refreshing;
+  const contentOffset = slotHeight > 0 ? slotHeight : 0;
 
   return (
     <div
       ref={scrollRef}
-      className={`taq-scroll relative min-h-0 overflow-y-auto ${enabled ? "touch-pan-y" : "overscroll-y-contain"}`}
+      className={`taq-scroll relative min-h-0 overflow-y-auto ${enabled ? "touch-pan-y overscroll-y-contain" : "overscroll-y-contain"}`}
       style={surfaceStyle}
       aria-busy={refreshing || undefined}
     >
       {enabled && (
         <PullToRefreshIndicator
           lang={lang}
-          offset={slotHeight}
+          slotHeight={slotHeight}
+          pullProgress={pullProgress}
           visible={indicatorVisible}
           refreshing={refreshing}
           releaseReady={releaseReady}
+          isDragging={isDragging}
         />
       )}
-      {children}
+      <div
+        className="relative"
+        style={{
+          transform: contentOffset > 0 ? `translate3d(0, ${contentOffset}px, 0)` : undefined,
+          transition: contentTransition,
+          willChange: isDragging ? "transform" : undefined,
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
