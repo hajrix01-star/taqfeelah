@@ -43,6 +43,12 @@ export default function AccountsPage() {
         description={t.accounts.description}
         actions={(
           <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/saas-admin/accounts/new"
+              className="rounded-lg bg-[var(--admin-primary)] px-3 py-2 text-sm font-semibold text-white"
+            >
+              {t.accounts.newAccount}
+            </Link>
             <input
               type="search"
               placeholder={t.common.searchByName}

@@ -540,19 +540,21 @@ Body:
 
 ---
 
-## Auth OTP (foundation stubs)
+## Auth OTP (disabled by default)
 
-### `POST /api/v1/auth/otp/request` (implemented — stub)
+> Set `AUTH_OTP_ENABLED=true` only after a provider is configured and product approves launch.
 
-Returns `deliveryStatus: stub_not_configured`. No SMS/email is sent until a provider is configured.
+### `POST /api/v1/auth/otp/request` (implemented — gated)
 
-### `POST /api/v1/auth/otp/verify` (implemented — stub)
+Returns `503 SERVICE_UNAVAILABLE` when `AUTH_OTP_ENABLED` is not `true`.
 
-Returns unauthorized until OTP provider is configured.
+### `POST /api/v1/auth/otp/verify` (implemented — gated)
+
+Returns `503 SERVICE_UNAVAILABLE` when `AUTH_OTP_ENABLED` is not `true`.
 
 ---
 
-## SaaS Admin API (read-only — disabled by default)
+## SaaS Admin API (disabled by default)
 
 > Requires `SAAS_ADMIN_API_ENABLED=true`, signed auth session cookie, and `SAAS_PLATFORM_ADMIN_USER_IDS` allowlist.  
 > `middleware.ts` returns `503` / `401` / `403` before route handlers when the API is disabled or the caller is not a platform admin.
@@ -568,6 +570,43 @@ Query: `page` (default 1), `pageSize` (default 25), `status=all|trial|active|ina
 ### `GET /api/v1/saas-admin/accounts/:id` (implemented — gated)
 
 Returns account profile, stores, users, usage trend, and operational totals.
+
+### `POST /api/v1/saas-admin/accounts` (implemented — gated)
+
+Creates a new organization with owner credentials, default store, and trial subscription.
+
+Body:
+
+```json
+{
+  "organizationName": "string",
+  "ownerName": "string",
+  "ownerUsername": "string",
+  "ownerPassword": "string",
+  "storeName": "string (optional)",
+  "storeLocation": "string (optional)",
+  "planCode": "starter|growth|enterprise (optional, default starter)"
+}
+```
+
+Returns `201` with `organizationId`, `ownerUsername`, `storeId`, `subscriptionId`, and `status: trial`.
+
+### `POST /api/v1/saas-admin/accounts/:id/members` (implemented — gated)
+
+Provisions a manager or employee with PIN login for the target organization.
+
+Body:
+
+```json
+{
+  "name": "string",
+  "role": "manager|employee",
+  "pin": "string",
+  "storeIds": ["uuid"] 
+}
+```
+
+Returns `201` with member profile metadata.
 
 ### `GET /api/v1/saas-admin/usage` (implemented — gated)
 
@@ -594,7 +633,7 @@ Body (optional): `{ "snapshotDate": "YYYY-MM-DD" }` — rebuilds engagement snap
 
 ### Planned (not implemented)
 
-- `PATCH /api/v1/saas-admin/accounts/:id/subscription` — subscription writes
+- `PATCH /api/v1/saas-admin/accounts/:id/subscription` — subscription lifecycle writes
 - `GET /api/v1/saas-admin/exports/investor.csv` — CSV export
 - Billing provider webhooks
 

@@ -70,3 +70,51 @@ export async function runSaasAnalyticsAggregate(snapshotDate?: string) {
     body: JSON.stringify(snapshotDate ? { snapshotDate } : {}),
   });
 }
+
+export type CreateSaasAccountPayload = {
+  organizationName: string;
+  ownerName: string;
+  ownerUsername: string;
+  ownerPassword: string;
+  storeName?: string;
+  storeLocation?: string;
+  planCode?: "starter" | "growth" | "enterprise";
+};
+
+export type CreateSaasAccountResponse = {
+  organizationId: string;
+  organizationName: string;
+  ownerUserId: string;
+  ownerMemberId: string;
+  ownerUsername: string;
+  storeId: string;
+  storeName: string;
+  subscriptionId: string;
+  planCode: string;
+  status: "trial";
+  createdAt: string;
+};
+
+export async function createSaasAccount(payload: CreateSaasAccountPayload) {
+  return fetchSaasAdminJson<CreateSaasAccountResponse>("/api/v1/saas-admin/accounts", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export type CreateSaasAccountMemberPayload = {
+  name: string;
+  role: "manager" | "employee";
+  pin: string;
+  storeIds?: string[];
+};
+
+export async function createSaasAccountMember(
+  organizationId: string,
+  payload: CreateSaasAccountMemberPayload,
+) {
+  return fetchSaasAdminJson(`/api/v1/saas-admin/accounts/${organizationId}/members`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
