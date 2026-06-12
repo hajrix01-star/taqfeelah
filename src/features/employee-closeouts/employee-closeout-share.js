@@ -1,31 +1,5 @@
-/** Share employee closeout PNG; prefer WhatsApp text delivery (clipboard + wa.me) when caption exists. */
-import {
-  copyShareCaptionText,
-  shareImageThroughWhatsApp,
-} from "../daily-closeouts/notebook-image-sharing";
-
-function openWhatsAppWithText(message) {
-  if (typeof window === "undefined") return;
-  window.open(`https://wa.me/?text=${encodeURIComponent(message || "")}`, "_blank", "noopener,noreferrer");
-}
-
-async function tryClipboardImageAndWhatsAppText({ file, caption }) {
-  if (!file || !caption || typeof navigator === "undefined") {
-    return { ok: false, method: "unsupported" };
-  }
-  if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
-    return { ok: false, method: "unsupported" };
-  }
-  try {
-    const type = file.type || "image/png";
-    await navigator.clipboard.write([new ClipboardItem({ [type]: file })]);
-    const textCopied = await copyShareCaptionText(caption);
-    openWhatsAppWithText(caption);
-    return { ok: true, method: "clipboard", copied: textCopied };
-  } catch {
-    return { ok: false, method: "unsupported" };
-  }
-}
+/** Share employee closeout PNG with image + caption together via the native share sheet. */
+import { shareImageThroughWhatsApp } from "../daily-closeouts/notebook-image-sharing";
 
 function formatShareMoney(value, lang) {
   const numericValue = Number(value) || 0;
@@ -89,13 +63,10 @@ export function buildEmployeeShareCaption(lang, storeName, employeeName, periodL
  * @returns {{ ok: boolean, method: string }}
  */
 export async function shareEmployeeCloseoutImage({ file, caption, lang }) {
-  if (file && caption) {
-    const clipboardResult = await tryClipboardImageAndWhatsAppText({ file, caption });
-    if (clipboardResult.ok) return clipboardResult;
-  }
   return shareImageThroughWhatsApp({
     file,
     caption,
     title: lang === "ar" ? "تقفيلتي" : "My closeout",
+    allowFileOnlyFallback: false,
   });
 }

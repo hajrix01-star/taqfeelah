@@ -28,20 +28,20 @@ describe("shareEmployeeCloseoutImage", () => {
     vi.unstubAllGlobals();
   });
 
-  it("prefers clipboard and WhatsApp text when caption and image are available", async () => {
+  it("shares image and caption together through native share", async () => {
     const file = makePngFile();
     const caption = "تقفيلتي لمحل ARZ بواسطة الموظف أحمد";
 
     const result = await shareEmployeeCloseoutImage({ file, caption, lang: "ar" });
 
-    expect(navigator.clipboard.write).toHaveBeenCalled();
-    expect(openSpy).toHaveBeenCalledWith(
-      `https://wa.me/?text=${encodeURIComponent(caption)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-    expect(navigator.share).not.toHaveBeenCalled();
-    expect(result).toEqual({ ok: true, method: "clipboard", copied: true });
+    expect(navigator.share).toHaveBeenCalledWith({
+      files: [file],
+      text: caption,
+      title: "تقفيلتي",
+    });
+    expect(openSpy).not.toHaveBeenCalled();
+    expect(navigator.clipboard.write).not.toHaveBeenCalled();
+    expect(result).toEqual({ ok: true, method: "share", copied: false });
   });
 });
 

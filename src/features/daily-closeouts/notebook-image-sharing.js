@@ -22,10 +22,12 @@ export async function shareImageThroughSystem({ file, caption = "", title = "", 
     ...(caption ? { text: caption } : {}),
     ...(title ? { title } : {}),
   };
-  const payloads = [
-    captionPayload,
-    ...(allowFileOnlyFallback ? [{ files: [file] }] : []),
-  ];
+  const payloads = caption
+    ? [captionPayload]
+    : [
+      captionPayload,
+      ...(allowFileOnlyFallback ? [{ files: [file] }] : []),
+    ];
   for (const payload of payloads) {
     try {
       if (navigator.canShare && !navigator.canShare(payload)) continue;
@@ -42,13 +44,14 @@ export async function shareImageThroughSystem({ file, caption = "", title = "", 
  * Prefer the native share sheet with the image first (mobile WhatsApp flow).
  * Opening wa.me before sharing the file breaks image delivery on many devices.
  *
- * @param {{ file?: File | null, caption?: string, title?: string }} params
+ * @param {{ file?: File | null, caption?: string, title?: string, allowFileOnlyFallback?: boolean }} params
  * @returns {Promise<{ ok: boolean, method: string, copied?: boolean }>}
  */
 export async function shareImageThroughWhatsApp({
   file = null,
   caption = "",
   title = "",
+  allowFileOnlyFallback = true,
 }) {
   if (!caption && !file) return { ok: false, method: "none" };
 
@@ -62,7 +65,7 @@ export async function shareImageThroughWhatsApp({
     file,
     caption,
     title,
-    allowFileOnlyFallback: true,
+    allowFileOnlyFallback: caption ? allowFileOnlyFallback : true,
   });
   if (systemShare.method === "share" || systemShare.method === "abort") {
     return { ok: true, method: systemShare.method, copied: false };

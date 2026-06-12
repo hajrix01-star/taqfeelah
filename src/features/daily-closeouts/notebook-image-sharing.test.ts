@@ -57,6 +57,32 @@ describe("shareImageThroughWhatsApp", () => {
     expect(result.method).toBe("text-only");
   });
 
+  it("does not fall back to image-only share when caption is provided", async () => {
+    const file = makePngFile();
+    const caption = "تقفيلتي لمحل مشويات المعلم الشامي";
+    const shareMock = vi.fn().mockResolvedValue(undefined);
+    const canShareMock = vi.fn((payload: { text?: string; files?: File[] }) => (
+      Boolean(payload.text) && Array.isArray(payload.files)
+    ));
+    vi.stubGlobal("navigator", {
+      share: shareMock,
+      canShare: canShareMock,
+      clipboard: {
+        writeText: vi.fn().mockResolvedValue(undefined),
+        write: vi.fn().mockResolvedValue(undefined),
+      },
+    });
+
+    const result = await shareImageThroughWhatsApp({ file, caption, allowFileOnlyFallback: false });
+
+    expect(shareMock).toHaveBeenCalledOnce();
+    expect(shareMock).toHaveBeenCalledWith({
+      files: [file],
+      text: caption,
+    });
+    expect(result).toEqual({ ok: true, method: "share", copied: false });
+  });
+
   it("falls back to clipboard and WhatsApp when native share is unavailable", async () => {
     vi.stubGlobal("navigator", {
       share: undefined,
