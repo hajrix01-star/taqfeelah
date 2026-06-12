@@ -22,6 +22,7 @@ describe("platform admin roles", () => {
     expect(platformAdminCan("support", "accounts:read")).toBe(true);
     expect(platformAdminCan("support", "accounts:setup-link")).toBe(true);
     expect(platformAdminCan("support", "accounts:repair")).toBe(true);
+    expect(platformAdminCan("support", "accounts:channels:write")).toBe(true);
     expect(platformAdminCan("support", "usage:read")).toBe(true);
     expect(platformAdminCan("support", "accounts:write")).toBe(false);
     expect(platformAdminCan("support", "plans:read")).toBe(false);
