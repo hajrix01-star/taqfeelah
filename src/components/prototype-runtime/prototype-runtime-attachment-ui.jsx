@@ -33,8 +33,19 @@ export function useAttachmentCapture(lang) {
   return { attachment, processing, error, selectAttachment, clearAttachment };
 }
 
-export function useAttachmentSource(attachment, attachmentApiContext = null) {
-  return useEntryAttachmentSource(attachment, attachmentApiContext || {});
+/**
+ * @param {Record<string, unknown> | null | undefined} attachmentApiContext
+ * @param {string} [storeId]
+ */
+export function mergeAttachmentApiContext(attachmentApiContext, storeId = "") {
+  const base = attachmentApiContext && typeof attachmentApiContext === "object"
+    ? attachmentApiContext
+    : {};
+  return storeId ? { ...base, storeId } : { ...base };
+}
+
+export function useAttachmentSource(attachment, attachmentApiContext = null, storeId = "") {
+  return useEntryAttachmentSource(attachment, mergeAttachmentApiContext(attachmentApiContext, storeId));
 }
 
 export function ProofThumb({ paper = false }) {
@@ -49,8 +60,8 @@ export function ProofThumb({ paper = false }) {
   );
 }
 
-export function AttachmentPreview({ attachment, className = "", attachmentApiContext = null }) {
-  const source = useAttachmentSource(attachment, attachmentApiContext);
+export function AttachmentPreview({ attachment, className = "", attachmentApiContext = null, storeId = "" }) {
+  const source = useAttachmentSource(attachment, attachmentApiContext, storeId);
   if (!source) return <ProofThumb />;
   return <img src={source} alt="" className={`object-cover ${className}`} />;
 }
@@ -63,8 +74,7 @@ export function AttachmentThumbButton({
   storeId = "",
   attachmentApiContext = null,
 }) {
-  const resolvedApiContext = attachmentApiContext || (storeId ? { storeId } : {});
-  const source = useAttachmentSource(attachment, resolvedApiContext);
+  const source = useAttachmentSource(attachment, attachmentApiContext, storeId);
   return (
     <button
       type="button"

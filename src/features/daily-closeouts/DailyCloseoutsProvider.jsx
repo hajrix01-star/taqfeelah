@@ -12,12 +12,13 @@ import {
   withCloseoutTotals,
   writeDailyCloseouts,
 } from "./daily-closeouts-demo-store";
+import { resolveEmployeeDisplayName } from "@/features/employee-closeouts/employee-portal-session";
+import { CLOSEOUT_STATUS } from "./closeout-status";
 
 const CLOSEOUT_SAVE_ERROR_AR = "تعذر الحفظ.";
 const CLOSEOUT_SAVE_ERROR_EN = "Failed to save.";
 const CLOSEOUT_SEND_ERROR_AR = "تعذر الإرسال.";
 const CLOSEOUT_SEND_ERROR_EN = "Failed to send.";
-import { CLOSEOUT_STATUS } from "./closeout-status";
 
 function resolveCloseoutWorkflowErrorMessage(error, lang, phase) {
   if (error instanceof Error && error.message.trim()) return error.message.trim();
@@ -204,7 +205,7 @@ export function DailyCloseoutsProvider({
       storeName: draft.storeName,
       date: draft.date,
       dateLabel: draft.date,
-      actorName: lang === "ar" ? employee.nameAr : employee.nameEn,
+      actorName: resolveEmployeeDisplayName(employee, lang),
     });
     return draft;
   }, [lang, logEvent, upsertCloseout]);
@@ -217,7 +218,7 @@ export function DailyCloseoutsProvider({
     }
 
     const now = new Date().toISOString();
-    const employeeName = lang === "ar" ? employee.nameAr : employee.nameEn;
+    const employeeName = resolveEmployeeDisplayName(employee, lang);
     const next = withCloseoutTotals({
       ...closeout,
       status: CLOSEOUT_STATUS.REVIEWED,
@@ -305,7 +306,7 @@ export function DailyCloseoutsProvider({
     }
 
     const now = new Date().toISOString();
-    const employeeName = lang === "ar" ? employee.nameAr : employee.nameEn;
+    const employeeName = resolveEmployeeDisplayName(employee, lang);
     const next = withCloseoutTotals({
       ...closeout,
       status: CLOSEOUT_STATUS.REVIEWED,
