@@ -290,6 +290,15 @@ export function PrototypeRuntimePageContent({
               }
               : null
           }
+          billingApiContext={
+            closeoutsApiOrganizationId && ownerApiUserId
+              ? {
+                organizationId: closeoutsApiOrganizationId,
+                actorUserId: ownerApiUserId,
+                actorRole: "owner",
+              }
+              : null
+          }
         />
       )}
       {saved && (

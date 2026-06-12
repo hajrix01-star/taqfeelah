@@ -6,8 +6,16 @@ import {
   subscriptions,
 } from "@/core/db/schema";
 import { countOrganizationUsage } from "@/features/billing/server/count-organization-usage";
-import { getPlanCatalogRow } from "@/features/billing/server/plan-catalog-repository";
-import type { PlanCode, ResolvedOrganizationEntitlements } from "@/features/billing/types";
+import {
+  getPlanCatalogRow,
+  listPlanCatalogRows,
+} from "@/features/billing/server/plan-catalog-repository";
+import { buildPlanFeatureLabels } from "@/features/billing/server/plan-feature-labels";
+import type {
+  OwnerPlanSummary,
+  PlanCode,
+  ResolvedOrganizationEntitlements,
+} from "@/features/billing/types";
 
 function isBillingAllowed(input: {
   organizationStatus: string;
@@ -73,9 +81,27 @@ export async function resolveOrganizationEntitlements(
   const maxEmployees = overrides?.maxEmployeesOverride ?? plan.maxEmployees;
   const priceMonthlyHalalas = overrides?.priceMonthlyOverrideHalalas ?? plan.priceMonthlyHalalas;
 
+  const catalogRows = await listPlanCatalogRows();
+  const upgradePlans: OwnerPlanSummary[] = catalogRows
+    .filter((row) => row.isActive && row.sortOrder > plan.sortOrder)
+    .sort((left, right) => left.sortOrder - right.sortOrder)
+    .map((row) => ({
+      planCode: row.planCode,
+      displayNameAr: row.displayNameAr,
+      displayNameEn: row.displayNameEn,
+      priceMonthlyHalalas: row.priceMonthlyHalalas,
+      priceYearlyHalalas: row.priceYearlyHalalas,
+      maxStores: row.maxStores,
+      maxEmployees: row.maxEmployees,
+      trialDays: row.trialDays,
+      features: buildPlanFeatureLabels(row),
+    }));
+
   return {
     organizationId,
     planCode,
+    planDisplayNameAr: plan.displayNameAr,
+    planDisplayNameEn: plan.displayNameEn,
     subscriptionStatus: subscription?.status ?? null,
     organizationStatus: organization.status,
     billingAllowed: isBillingAllowed({
@@ -86,7 +112,13 @@ export async function resolveOrganizationEntitlements(
     maxStores,
     maxEmployees,
     priceMonthlyHalalas,
+    priceYearlyHalalas: plan.priceYearlyHalalas,
     trialDays: plan.trialDays,
+    currentPeriodEnd: subscription?.currentPeriodEnd
+      ? subscription.currentPeriodEnd.toISOString()
+      : null,
+    features: buildPlanFeatureLabels(plan),
+    upgradePlans,
     usage,
     overrides: {
       maxStores: overrides?.maxStoresOverride ?? null,
