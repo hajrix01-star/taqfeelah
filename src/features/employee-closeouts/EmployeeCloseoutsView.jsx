@@ -105,19 +105,25 @@ export default function EmployeeCloseoutsView({
 
   if (entryCloseout) {
     return (
-      <DailyCloseoutEntryFlow
-        lang={lang}
-        notebookTheme={notebookTheme}
-        closeout={entryCloseout}
-        salesChannels={salesChannels}
-        storeName={storeLabel}
-        isOwnerEdit={entryOwnerEdit}
-        saving={saving}
-        channelLabel={channelLabel}
-        onCancel={() => handleCancelEntry(entryCloseout)}
-        onSubmit={handleSubmit}
-        findForStoreDate={resolveStoreDate}
-      />
+      <div
+        className="fixed inset-x-0 bottom-0 z-[50]"
+        style={{ top: "calc(70px + env(safe-area-inset-top, 0px))" }}
+      >
+        <DailyCloseoutEntryFlow
+          lang={lang}
+          notebookTheme={notebookTheme}
+          closeout={entryCloseout}
+          salesChannels={salesChannels}
+          storeName={storeLabel}
+          isOwnerEdit={entryOwnerEdit}
+          fullScreenOverlay={false}
+          saving={saving}
+          channelLabel={channelLabel}
+          onCancel={() => handleCancelEntry(entryCloseout)}
+          onSubmit={handleSubmit}
+          findForStoreDate={resolveStoreDate}
+        />
+      </div>
     );
   }
 

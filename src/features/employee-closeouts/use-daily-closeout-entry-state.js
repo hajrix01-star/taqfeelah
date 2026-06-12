@@ -100,6 +100,10 @@ export function useDailyCloseoutEntryState({
   }, [attachments.length]);
 
   const validateDate = useCallback(() => {
+    if (!date) {
+      window.alert(lang === "ar" ? "اختر تاريخ التقفيلة" : "Pick a closeout date");
+      return false;
+    }
     if (date > todayIsoDate()) {
       window.alert(lang === "ar" ? "لا يمكن اختيار تاريخ مستقبلي" : "Future dates are not allowed");
       return false;
