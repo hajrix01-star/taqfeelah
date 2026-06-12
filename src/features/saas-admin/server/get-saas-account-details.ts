@@ -230,6 +230,7 @@ export async function getSaasAccountDetails(
       organizationStatus: org.status,
       subscriptionStatus: subscription?.status,
     }),
+    organizationStatus: org.status as "active" | "suspended" | "archived" | "pending_activation",
     planCode: subscription?.planCode ?? null,
     createdAt: org.createdAt.toISOString(),
     lastActivityAt: engagement?.lastCoreActivityAt?.toISOString() ?? org.updatedAt.toISOString(),

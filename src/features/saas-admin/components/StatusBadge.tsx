@@ -7,7 +7,8 @@ const STATUS_STYLES: Record<AccountStatus, string> = {
   trial: "bg-[var(--taq-warning-bg)] text-[var(--admin-warning)] border-[var(--taq-warning-border)]",
   active: "bg-[var(--taq-success-bg)] text-[var(--admin-success)] border-[var(--taq-border)]",
   inactive: "bg-[var(--admin-surface-muted)] text-[var(--admin-muted)] border-[var(--admin-border)]",
-  suspended: "bg-[var(--taq-danger-bg)] text-[var(--admin-danger)] border-[rgba(180,71,71,0.25)]",
+  suspended: "bg-[var(--taq-warning-bg)] text-[var(--admin-warning)] border-[var(--taq-warning-border)]",
+  archived: "bg-[var(--admin-surface-muted)] text-[var(--admin-muted)] border-[var(--admin-border)]",
 };
 
 type StatusBadgeProps = {

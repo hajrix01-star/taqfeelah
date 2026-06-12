@@ -14,7 +14,6 @@ import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocalePr
 type EditAccountFormsProps = {
   organizationId: string;
   organizationName: string;
-  organizationStatus: string;
   planCode: string | null;
   ownerName: string | null;
   ownerUsername?: string | null;
@@ -33,7 +32,6 @@ function resolvePlanCode(value: string | null | undefined): PlanCode {
 export function EditAccountForms({
   organizationId,
   organizationName,
-  organizationStatus,
   planCode,
   ownerName,
   ownerUsername = null,
@@ -47,7 +45,6 @@ export function EditAccountForms({
   }
   const feedbackRef = useRef<HTMLDivElement>(null);
   const [accountName, setAccountName] = useState(organizationName);
-  const [accountStatus, setAccountStatus] = useState(organizationStatus === "suspended" ? "suspended" : "active");
   const [accountPlan, setAccountPlan] = useState<PlanCode>(resolvePlanCode(planCode));
   const [editOwnerName, setEditOwnerName] = useState(ownerName || "");
   const [editOwnerUsername, setEditOwnerUsername] = useState(ownerUsername || "");
@@ -64,9 +61,8 @@ export function EditAccountForms({
 
   useEffect(() => {
     setAccountName(organizationName);
-    setAccountStatus(organizationStatus === "suspended" ? "suspended" : "active");
     setAccountPlan(resolvePlanCode(planCode));
-  }, [organizationName, organizationStatus, planCode]);
+  }, [organizationName, planCode]);
 
   useEffect(() => {
     setEditOwnerName(ownerName || "");
@@ -87,7 +83,6 @@ export function EditAccountForms({
     try {
       await updateSaasAccount(organizationId, {
         organizationName: trimOptional(accountName),
-        status: accountStatus as "active" | "suspended",
         planCode: accountPlan,
       });
       setAccountSuccess(t.editAccount.accountSaved);
@@ -169,17 +164,6 @@ export function EditAccountForms({
             <option value="starter">{t.plans.starter}</option>
             <option value="growth">{t.plans.growth}</option>
             <option value="enterprise">{t.plans.enterprise}</option>
-          </select>
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="text-[var(--admin-muted)]">{t.common.status}</span>
-          <select
-            value={accountStatus}
-            onChange={(e) => setAccountStatus(e.target.value)}
-            className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
-          >
-            <option value="active">{t.status.active}</option>
-            <option value="suspended">{t.status.suspended}</option>
           </select>
         </label>
         {accountError ? <p className="text-sm text-[var(--admin-danger)]">{accountError}</p> : null}

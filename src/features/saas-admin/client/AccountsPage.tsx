@@ -51,6 +51,7 @@ function AccountFilters({
         <option value="active">{t.status.active}</option>
         <option value="inactive">{t.status.inactive}</option>
         <option value="suspended">{t.status.suspended}</option>
+        <option value="archived">{t.status.archived}</option>
       </select>
       <select
         value={plan}

@@ -25,14 +25,14 @@ export async function GET(request: Request) {
     const pageSizeRaw = Number(searchParams.get("pageSize") || "25");
     const statusRaw = searchParams.get("status") || "all";
 
-    if (!["all", "trial", "active", "inactive", "suspended"].includes(statusRaw)) {
+    if (!["all", "trial", "active", "inactive", "suspended", "archived"].includes(statusRaw)) {
       throw new ValidationError("Query param 'status' is invalid.");
     }
 
     const result = await getSaasAccounts({
       actorUserId,
       search: searchParams.get("search") || undefined,
-      status: statusRaw as "all" | "trial" | "active" | "inactive" | "suspended",
+      status: statusRaw as "all" | "trial" | "active" | "inactive" | "suspended" | "archived",
       plan: searchParams.get("plan") || undefined,
       page: Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : 1,
       pageSize: Number.isInteger(pageSizeRaw) && pageSizeRaw > 0 ? pageSizeRaw : 25,

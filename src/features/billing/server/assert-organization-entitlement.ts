@@ -16,7 +16,7 @@ export async function assertOrganizationEntitlement(
 
   if (action === "use_app" && !entitlements.billingAllowed) {
     throw new ValidationError(
-      "Account is suspended or pending activation.",
+      "Account is suspended, archived, or pending activation.",
     );
   }
 

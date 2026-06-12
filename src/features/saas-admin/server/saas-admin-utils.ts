@@ -24,6 +24,7 @@ export function resolveAccountStatus(input: {
   organizationStatus: string;
   subscriptionStatus: string | null | undefined;
 }): AccountStatus {
+  if (input.organizationStatus === "archived") return "archived";
   if (input.organizationStatus === "suspended") return "suspended";
   if (input.subscriptionStatus === "trialing") return "trial";
   if (input.subscriptionStatus === "active") return "active";
