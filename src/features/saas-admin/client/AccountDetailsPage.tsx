@@ -32,6 +32,7 @@ import {
 import { KpiCard } from "@/features/saas-admin/components/KpiCard";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
 import { AccountSetupLinkPanel } from "@/features/saas-admin/client/AccountSetupLinkPanel";
+import { AccountStoreChannelsSection } from "@/features/saas-admin/client/AccountStoreChannelsSection";
 import { AccountStoresSection } from "@/features/saas-admin/client/AccountStoresSection";
 import { AccountTeamSection } from "@/features/saas-admin/client/AccountTeamSection";
 import { EditAccountForms } from "@/features/saas-admin/client/EditAccountForms";
@@ -55,6 +56,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
   const canWriteMembers = can("accounts:members:write");
   const canSetupLink = can("accounts:setup-link");
   const canRepair = can("accounts:repair");
+  const canManageChannels = can("accounts:channels:write");
   const [activeTab, setActiveTab] = useState<AccountTab>("overview");
   const { data, error, isLoading, refetch } = useSaasAdminQuery(
     ["saas-admin", "account", accountId],
@@ -198,12 +200,20 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
         ) : null}
 
         {activeTab === "stores" ? (
-          <AccountStoresSection
-            organizationId={accountId}
-            stores={data.stores}
-            onUpdated={() => { void refetch(); }}
-            readOnly={!canWriteAccount}
-          />
+          <div className="space-y-4">
+            <AccountStoresSection
+              organizationId={accountId}
+              stores={data.stores}
+              onUpdated={() => { void refetch(); }}
+              readOnly={!canWriteAccount}
+            />
+            {canManageChannels ? (
+              <AccountStoreChannelsSection
+                organizationId={accountId}
+                stores={data.stores}
+              />
+            ) : null}
+          </div>
         ) : null}
 
         {activeTab === "team" ? (

@@ -620,6 +620,47 @@ Body:
 
 Returns `201` with member profile metadata.
 
+### `GET /api/v1/saas-admin/accounts/:id/stores/:storeId/sales-channels` (implemented — gated)
+
+Permission: `accounts:channels:write` (platform `owner` and `support`).
+
+Query: optional `status=active|retired|all`
+
+Returns `{ storeId, channels: [{ id, name, status, retiredAt, createdAt }] }`.
+
+### `POST /api/v1/saas-admin/accounts/:id/stores/:storeId/sales-channels` (implemented — gated)
+
+Permission: `accounts:channels:write`.
+
+Body:
+
+```json
+{
+  "name": "string",
+  "status": "active|retired (optional, default active)",
+  "reason": "string (optional)"
+}
+```
+
+Returns `201` with `{ channel: { id, name, status, retiredAt, createdAt } }`.  
+Audit: `sales_channel_created` with `metadata.source = platform_admin`.
+
+### `PATCH /api/v1/saas-admin/accounts/:id/stores/:storeId/sales-channels` (implemented — gated)
+
+Permission: `accounts:channels:write`.
+
+Body:
+
+```json
+{
+  "salesChannelId": "uuid",
+  "status": "active|retired",
+  "reason": "string (optional)"
+}
+```
+
+Audit: `sales_channel_retired` or `sales_channel_activated` with `metadata.source = platform_admin`.
+
 ### `GET /api/v1/saas-admin/usage` (implemented — gated)
 
 Query: `months` (default 6) — engagement lists and snapshot availability.

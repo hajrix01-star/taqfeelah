@@ -311,6 +311,63 @@ export async function revokePlatformAdminAccess(userId: string) {
   );
 }
 
+export type SaasAccountSalesChannel = {
+  id: string;
+  name: string;
+  status: "active" | "retired";
+  retiredAt: string | null;
+  createdAt: string;
+};
+
+export async function fetchSaasAccountStoreSalesChannels(
+  organizationId: string,
+  storeId: string,
+  status: "active" | "retired" | "all" = "all",
+) {
+  const search = new URLSearchParams();
+  if (status !== "all") search.set("status", status);
+  const query = search.toString();
+  return fetchSaasAdminJson<{ storeId: string; channels: SaasAccountSalesChannel[] }>(
+    `/api/v1/saas-admin/accounts/${organizationId}/stores/${storeId}/sales-channels${query ? `?${query}` : ""}`,
+  );
+}
+
+export async function createSaasAccountStoreSalesChannel(
+  organizationId: string,
+  storeId: string,
+  payload: {
+    name: string;
+    status?: "active" | "retired";
+    reason?: string;
+  },
+) {
+  return fetchSaasAdminJson<{ channel: SaasAccountSalesChannel }>(
+    `/api/v1/saas-admin/accounts/${organizationId}/stores/${storeId}/sales-channels`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export async function updateSaasAccountStoreSalesChannel(
+  organizationId: string,
+  storeId: string,
+  payload: {
+    salesChannelId: string;
+    status: "active" | "retired";
+    reason?: string;
+  },
+) {
+  return fetchSaasAdminJson<SaasAccountSalesChannel>(
+    `/api/v1/saas-admin/accounts/${organizationId}/stores/${storeId}/sales-channels`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
 export async function repairSaasAccountFoundation(organizationId: string) {
   return fetchSaasAdminJson<{
     organizationId: string;
