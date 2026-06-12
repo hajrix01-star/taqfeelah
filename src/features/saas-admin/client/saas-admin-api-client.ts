@@ -133,7 +133,7 @@ export async function updateSaasAccount(
   organizationId: string,
   payload: {
     organizationName?: string;
-    status?: "active" | "suspended";
+    status?: "active" | "suspended" | "archived";
     planCode?: "trial" | "starter" | "growth" | "enterprise";
   },
 ) {

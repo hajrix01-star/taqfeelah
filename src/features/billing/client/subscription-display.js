@@ -11,6 +11,7 @@ export function formatSubscriptionStatusLabel(status, lang) {
       past_due: "متأخر السداد",
       pending_activation: "بانتظار التفعيل",
       suspended: "موقوف",
+      archived: "مؤرشف",
     },
     en: {
       trialing: "Trial",
@@ -20,6 +21,7 @@ export function formatSubscriptionStatusLabel(status, lang) {
       past_due: "Past due",
       pending_activation: "Pending activation",
       suspended: "Suspended",
+      archived: "Archived",
     },
   };
   const table = labels[lang === "ar" ? "ar" : "en"];
@@ -27,6 +29,7 @@ export function formatSubscriptionStatusLabel(status, lang) {
 }
 
 export function formatSubscriptionStatusTone(status, organizationStatus) {
+  if (organizationStatus === "archived") return "neutral";
   if (organizationStatus === "suspended") return "warning";
   const normalized = typeof status === "string" ? status.trim().toLowerCase() : "";
   if (normalized === "active" || normalized === "trialing") return "navy";

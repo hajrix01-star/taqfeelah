@@ -31,6 +31,7 @@ function isBillingAllowed(input: {
   periodEnd: Date | null;
 }): boolean {
   if (input.organizationStatus === "suspended") return false;
+  if (input.organizationStatus === "archived") return false;
   if (input.organizationStatus === "pending_activation") return false;
 
   if (!input.subscriptionStatus) return true;

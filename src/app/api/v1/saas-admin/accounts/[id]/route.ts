@@ -1,8 +1,11 @@
 import { fail, ok } from "@/core/http/api-response";
 import { ValidationError } from "@/core/errors/app-error";
+import { parsePlanCode } from "@/features/billing/plan-codes";
 import { getSaasAccountDetails } from "@/features/saas-admin/server/get-saas-account-details";
 import { updateSaasAccount } from "@/features/saas-admin/server/update-saas-account";
 import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-admin-route-guard";
+
+const LIFECYCLE_STATUSES = new Set(["active", "suspended", "archived"]);
 
 export const dynamic = "force-dynamic";
 
@@ -38,15 +41,15 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const body = await request.json();
-    const planCode = body?.planCode;
+    const rawStatus = typeof body?.status === "string" ? body.status : undefined;
     const updated = await updateSaasAccount({
       actorUserId,
       organizationId: id.trim(),
       name: typeof body?.organizationName === "string" ? body.organizationName : undefined,
-      status: body?.status === "active" || body?.status === "suspended" ? body.status : undefined,
-      planCode: planCode === "starter" || planCode === "growth" || planCode === "enterprise"
-        ? planCode
+      status: rawStatus && LIFECYCLE_STATUSES.has(rawStatus)
+        ? rawStatus as "active" | "suspended" | "archived"
         : undefined,
+      planCode: parsePlanCode(body?.planCode) ?? undefined,
     });
 
     return ok(updated);

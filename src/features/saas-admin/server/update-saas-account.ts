@@ -10,7 +10,7 @@ const inputSchema = z.object({
   actorUserId: z.string().uuid(),
   organizationId: z.string().uuid(),
   name: z.string().trim().min(1).max(120).optional(),
-  status: z.enum(["active", "suspended"]).optional(),
+  status: z.enum(["active", "suspended", "archived"]).optional(),
   planCode: z.enum(PLAN_CODES).optional(),
 });
 

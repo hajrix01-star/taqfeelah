@@ -25,7 +25,8 @@ export function resolveEngagementSegment(input: {
   const organizationStatus = input.organizationStatus.toLowerCase();
 
   if (
-    organizationStatus === "suspended"
+    organizationStatus === "archived"
+    || organizationStatus === "suspended"
     || subscriptionStatus === "canceled"
     || subscriptionStatus === "cancelled"
     || (input.daysSinceLastCoreActivity !== null && input.daysSinceLastCoreActivity >= 60

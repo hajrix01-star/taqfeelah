@@ -27,7 +27,7 @@ import { currentMonthRangeUtc, resolveAccountStatus } from "@/features/saas-admi
 const inputSchema = z.object({
   actorUserId: z.string().uuid(),
   search: z.string().max(100).optional(),
-  status: z.enum(["all", "trial", "active", "inactive", "suspended"]).default("all"),
+  status: z.enum(["all", "trial", "active", "inactive", "suspended", "archived"]).default("all"),
   plan: z.string().max(50).optional(),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(100).default(25),
@@ -45,6 +45,7 @@ const latestSubscriptionSubquery = sql`
 `;
 
 const accountStatusSql = sql<string>`CASE
+  WHEN ${organizations.status} = 'archived' THEN 'archived'
   WHEN ${organizations.status} = 'suspended' THEN 'suspended'
   WHEN latest_sub.sub_status = 'trialing' THEN 'trial'
   WHEN latest_sub.sub_status = 'active' THEN 'active'
@@ -69,8 +70,12 @@ export async function getSaasAccounts(rawInput: z.infer<typeof inputSchema>): Pr
   if (input.plan?.trim()) {
     filters.push(sql`lower(coalesce(latest_sub.plan_code, '')) = ${input.plan.trim().toLowerCase()}`);
   }
-  if (input.status !== "all") {
+  if (input.status === "archived") {
+    filters.push(sql`${accountStatusSql} = 'archived'`);
+  } else if (input.status !== "all") {
     filters.push(sql`${accountStatusSql} = ${input.status}`);
+  } else {
+    filters.push(sql`${organizations.status} <> 'archived'`);
   }
   const whereClause = filters.length ? and(...filters) : undefined;
 

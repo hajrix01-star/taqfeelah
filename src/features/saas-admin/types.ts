@@ -1,4 +1,6 @@
-export type AccountStatus = "trial" | "active" | "inactive" | "suspended";
+export type AccountStatus = "trial" | "active" | "inactive" | "suspended" | "archived";
+
+export type OrganizationLifecycleStatus = "active" | "suspended" | "archived" | "pending_activation";
 
 export type PlanCode = "starter" | "growth" | "enterprise" | string | null;
 
@@ -85,6 +87,7 @@ export type SaasAccountDetails = {
   ownerPhone: string | null;
   ownerMemberId: string | null;
   status: AccountStatus;
+  organizationStatus: OrganizationLifecycleStatus;
   planCode: PlanCode;
   createdAt: string;
   lastActivityAt: string | null;
