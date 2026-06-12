@@ -38,6 +38,9 @@ function mapPostgresError(error: PostgresLikeError): AppError | null {
       if (error.constraint === "auth_identities_username_password_uq") {
         return catalogAppError(ERROR_CODES.OWNER_USERNAME_TAKEN);
       }
+      if (error.constraint === "auth_identities_login_phone_provider_uq") {
+        return catalogAppError(ERROR_CODES.OWNER_PHONE_TAKEN);
+      }
       return catalogAppError(ERROR_CODES.DATABASE_CONSTRAINT_VIOLATION, {
         cause: error.detail || error.message,
       });

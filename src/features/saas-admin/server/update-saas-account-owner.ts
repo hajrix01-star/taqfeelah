@@ -9,10 +9,9 @@ import {
   users,
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
-import { ERROR_CODES } from "@/core/errors/error-codes";
-import { catalogAppError } from "@/core/errors/normalize-error";
 import { assertValidLoginPhone } from "@/core/phone/normalize-login-phone";
 import { upsertOwnerPasswordIdentity } from "@/features/auth/server/auth-identities";
+import { ensureOwnerLoginPhoneAvailable } from "@/features/auth/server/owner-login-phone-availability";
 import { resolveOrganizationOwnerMember } from "@/features/saas-admin/server/resolve-organization-owner-member";
 import { syncRuntimeOwnerProfileForOrganization } from "@/features/runtime-settings/server/sync-runtime-owner-profile";
 
@@ -24,22 +23,6 @@ const inputSchema = z.object({
   ownerPhone: z.string().trim().min(1).max(30).optional(),
   ownerPassword: z.string().trim().min(4).max(120).optional(),
 });
-
-async function assertOwnerPhoneAvailableForUser(
-  phone: string,
-  userId: string | null,
-  executor: Pick<ReturnType<typeof getDb>, "select">,
-) {
-  const [existing] = await executor
-    .select({ id: authIdentities.id, userId: authIdentities.userId })
-    .from(authIdentities)
-    .where(eq(authIdentities.loginPhone, phone))
-    .limit(1);
-
-  if (existing?.id && existing.userId !== userId) {
-    throw catalogAppError(ERROR_CODES.OWNER_USERNAME_TAKEN);
-  }
-}
 
 async function assertOwnerUsernameAvailableForUser(
   username: string,
@@ -96,9 +79,18 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
     }
 
     const now = new Date();
-    await assertOwnerPhoneAvailableForUser(ownerPhone, null, db);
 
     await db.transaction(async (tx) => {
+      await ensureOwnerLoginPhoneAvailable(
+        {
+          phone: ownerPhone,
+          excludeUserId: null,
+          targetOrganizationId: input.organizationId,
+          actorUserId: input.actorUserId,
+        },
+        tx,
+      );
+
       await tx
         .update(accountSetupTokens)
         .set({ phoneNumber: ownerPhone })
@@ -154,10 +146,22 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
     let updatedOwnerPhone: string | undefined;
 
     if (ownerPhone) {
-      await assertOwnerPhoneAvailableForUser(ownerPhone, ownerMember.userId, tx);
+      await ensureOwnerLoginPhoneAvailable(
+        {
+          phone: ownerPhone,
+          excludeUserId: ownerMember.userId,
+          targetOrganizationId: input.organizationId,
+          actorUserId: input.actorUserId,
+        },
+        tx,
+      );
 
       const [identity] = await tx
-        .select({ id: authIdentities.id })
+        .select({
+          id: authIdentities.id,
+          username: authIdentities.username,
+          loginPhone: authIdentities.loginPhone,
+        })
         .from(authIdentities)
         .where(
           and(
@@ -168,11 +172,17 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
         .limit(1);
 
       if (identity?.id) {
+        const previousLoginPhone = identity.loginPhone || ownerMember.loginPhone;
+        const shouldSyncUsername =
+          Boolean(identity.username)
+          && (identity.username === previousLoginPhone || identity.username === ownerPhone);
+
         await tx
           .update(authIdentities)
           .set({
             loginPhone: ownerPhone,
             phoneNumber: ownerPhone,
+            username: shouldSyncUsername ? ownerPhone : identity.username,
             updatedAt: now,
           })
           .where(eq(authIdentities.id, identity.id));

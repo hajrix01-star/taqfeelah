@@ -34,6 +34,7 @@ export class SaasAdminApiError extends Error {
 
 const ERROR_CODE_MAP: Partial<Record<string, keyof SaasAdminTranslations["apiErrors"]>> = {
   OWNER_USERNAME_TAKEN: "ownerUsernameTaken",
+  OWNER_PHONE_TAKEN: "ownerPhoneTaken",
   ORGANIZATION_NOT_FOUND: "organizationNotFound",
   MEMBER_NOT_FOUND: "memberNotFound",
   SUBSCRIPTION_NOT_FOUND: "subscriptionNotFound",
@@ -107,10 +108,23 @@ export function mapSaasAdminApiErrorDetails(error: SaasAdminApiError, t: SaasAdm
   cause?: string;
   code: string;
 } {
+  const details = error.details as {
+    conflictingOrganizationName?: string | null;
+    conflictingOrganizationStatus?: string | null;
+  } | undefined;
+
+  let cause = error.causeText ? mapSaasAdminApiErrorCause(error.causeText, t) : undefined;
+  if (error.code === "OWNER_PHONE_TAKEN" && details?.conflictingOrganizationName) {
+    cause = `${t.apiErrors.ownerPhoneTakenCause} (${details.conflictingOrganizationName})`;
+    if (details.conflictingOrganizationStatus === "archived") {
+      cause = `${cause}. ${t.apiErrors.ownerPhoneTakenArchivedHint}`;
+    }
+  }
+
   return {
     code: error.code,
     message: mapSaasAdminApiError(error, t),
-    cause: error.causeText ? mapSaasAdminApiErrorCause(error.causeText, t) : undefined,
+    cause,
   };
 }
 
@@ -145,6 +159,12 @@ export function resolveSaasAdminFormError(
 function mapSaasAdminApiErrorCause(cause: string, t: SaasAdminTranslations): string {
   if (cause.includes("auth_identities already contains this username")) {
     return t.apiErrors.ownerUsernameTakenCause;
+  }
+  if (cause.includes("auth_identities already contains this login phone")) {
+    return t.apiErrors.ownerPhoneTakenCause;
+  }
+  if (cause.includes("Owner login phone is already assigned")) {
+    return t.apiErrors.ownerPhoneTakenCause;
   }
   if (cause.includes("outside the active transaction")) {
     return t.apiErrors.provisionDependencyMissingCause;

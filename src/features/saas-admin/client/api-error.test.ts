@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SaasAdminApiError, mapSaasAdminApiError, resolveSaasAdminFormError } from "@/features/saas-admin/client/api-error";
+import {
+  SaasAdminApiError,
+  mapSaasAdminApiError,
+  mapSaasAdminApiErrorDetails,
+  resolveSaasAdminFormError,
+} from "@/features/saas-admin/client/api-error";
 import { translations } from "@/features/saas-admin/i18n/translations";
 
 describe("saas admin api error mapping", () => {
@@ -16,6 +21,27 @@ describe("saas admin api error mapping", () => {
     expect(mapSaasAdminApiError(error, translations.ar)).toBe(
       translations.ar.apiErrors.ownerUsernameTaken,
     );
+  });
+
+  it("maps owner phone taken with conflicting organization", () => {
+    const details = mapSaasAdminApiErrorDetails(
+      new SaasAdminApiError(
+        {
+          code: "OWNER_PHONE_TAKEN",
+          message: "Owner login phone is already assigned to another account.",
+          cause: 'Owner login phone is already assigned to organization "Active Org".',
+          details: {
+            conflictingOrganizationName: "Active Org",
+            conflictingOrganizationStatus: "active",
+          } as never,
+        },
+        409,
+      ),
+      translations.ar,
+    );
+
+    expect(details.message).toBe(translations.ar.apiErrors.ownerPhoneTaken);
+    expect(details.cause).toContain("Active Org");
   });
 
   it("returns message and cause for form display", () => {

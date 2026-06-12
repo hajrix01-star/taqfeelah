@@ -1,18 +1,15 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { ensureOwnerLoginPhoneAvailable } from "@/features/auth/server/owner-login-phone-availability";
 import { z } from "zod";
 import { resolveAppPublicOrigin } from "@/core/auth/app-origin";
 import { getDb } from "@/core/db/client";
 import {
   auditEvents,
-  authIdentities,
   organizations,
   stores,
   subscriptions,
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
-import { ERROR_CODES } from "@/core/errors/error-codes";
-import { catalogAppError } from "@/core/errors/normalize-error";
 import { assertValidLoginPhone } from "@/core/phone/normalize-login-phone";
 import { createAccountSetupToken } from "@/features/account-setup/server/create-account-setup-token";
 import { DEFAULT_PLAN_CODE, PLAN_CODES } from "@/features/billing/plan-codes";
@@ -61,18 +58,6 @@ export type CreateSaasAccountResult = {
   createdAt: string;
 };
 
-async function assertOwnerPhoneAvailable(phone: string, executor: Pick<ReturnType<typeof getDb>, "select">) {
-  const [existing] = await executor
-    .select({ id: authIdentities.id })
-    .from(authIdentities)
-    .where(eq(authIdentities.loginPhone, phone))
-    .limit(1);
-
-  if (existing?.id) {
-    throw catalogAppError(ERROR_CODES.OWNER_USERNAME_TAKEN);
-  }
-}
-
 export async function createSaasAccount(
   rawInput: CreateSaasAccountInput,
   request?: Request,
@@ -110,7 +95,15 @@ export async function createSaasAccount(
   const publicOrigin = resolveAppPublicOrigin(request);
 
   await db.transaction(async (tx) => {
-    await assertOwnerPhoneAvailable(ownerPhone, tx);
+    await ensureOwnerLoginPhoneAvailable(
+      {
+        phone: ownerPhone,
+        excludeUserId: null,
+        targetOrganizationId: organizationId,
+        actorUserId: input.actorUserId,
+      },
+      tx,
+    );
 
     await tx.insert(organizations).values({
       id: organizationId,
