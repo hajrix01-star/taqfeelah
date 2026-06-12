@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  collectStaffPersonNameCandidates,
   enrichStaffWithApiUserIds,
+  findStaffPerson,
   resolveEmployeeUserId,
 } from "@/features/auth/server/resolve-employee-user-id";
 
@@ -26,6 +28,23 @@ describe("resolveEmployeeUserId", () => {
       staff: [{ id: "ahmed", nameEn: "Ahmed" }],
     };
     expect(resolveEmployeeUserId("ahmed", userIdMap, settings)).toBe(userIdMap.ahmed);
+  });
+});
+
+describe("findStaffPerson", () => {
+  it("matches runtime staff by Arabic display name", () => {
+    const staff = [{ id: "staff-1", nameAr: "أحمد", nameEn: "Ahmed" }];
+    expect(findStaffPerson(staff, "أحمد")?.id).toBe("staff-1");
+    expect(findStaffPerson(staff, "Ahmed")?.id).toBe("staff-1");
+  });
+});
+
+describe("collectStaffPersonNameCandidates", () => {
+  it("includes employee id and both display names", () => {
+    expect(collectStaffPersonNameCandidates({
+      nameAr: "أحمد",
+      nameEn: "Ahmed",
+    }, "أحمد")).toEqual(["أحمد", "Ahmed"]);
   });
 });
 

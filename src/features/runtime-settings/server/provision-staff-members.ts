@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { isAuthDbCredentialsEnabled } from "@/core/config/auth-api-mode";
 import { getDb } from "@/core/db/client";
+import { upsertEmployeePinIdentity } from "@/features/auth/server/auth-identities";
 import {
   memberStoreAccess,
   organizationMembers,
@@ -83,6 +85,12 @@ async function ensureOrganizationMember(
     status: "active",
   });
   return memberId;
+}
+
+async function syncEmployeePinIdentity(userId: string, pin: string | undefined) {
+  const normalizedPin = typeof pin === "string" ? pin.trim() : "";
+  if (!isAuthDbCredentialsEnabled() || normalizedPin.length < 4) return;
+  await upsertEmployeePinIdentity({ userId, pin: normalizedPin });
 }
 
 async function syncMemberStoreAccess(memberId: string, storeUuids: string[]) {
@@ -173,6 +181,7 @@ export async function provisionStaffMembers(
 
     const userId = await ensureStaffUser(organizationId, person, options.userIdMap);
     person.apiUserId = userId;
+    await syncEmployeePinIdentity(userId, person.pin);
 
     const memberId = await ensureOrganizationMember(organizationId, userId);
     const storeUuids = (person.storeIds || [])

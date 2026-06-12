@@ -21,7 +21,7 @@ function readStaffList(runtimeSettings: Record<string, unknown> | null | undefin
   return runtimeSettings.staff.filter((entry): entry is StaffPerson => Boolean(entry && typeof entry === "object"));
 }
 
-function findStaffPerson(staff: StaffPerson[], employeeId: string): StaffPerson | undefined {
+export function findStaffPerson(staff: StaffPerson[], employeeId: string): StaffPerson | undefined {
   const normalized = normalizeEmployeeKey(employeeId);
   if (!normalized) return undefined;
   const lowered = normalized.toLowerCase();
@@ -34,6 +34,22 @@ function findStaffPerson(staff: StaffPerson[], employeeId: string): StaffPerson 
     const nameAr = typeof person.nameAr === "string" ? person.nameAr.trim() : "";
     return nameEn === lowered || nameAr === normalized;
   });
+}
+
+export function collectStaffPersonNameCandidates(
+  person: StaffPerson | undefined,
+  employeeId = "",
+): string[] {
+  const names = new Set<string>();
+  const normalizedEmployeeId = normalizeEmployeeKey(employeeId);
+  if (normalizedEmployeeId) names.add(normalizedEmployeeId);
+  if (!person) return [...names];
+
+  const nameEn = typeof person.nameEn === "string" ? person.nameEn.trim() : "";
+  const nameAr = typeof person.nameAr === "string" ? person.nameAr.trim() : "";
+  if (nameEn) names.add(nameEn);
+  if (nameAr) names.add(nameAr);
+  return [...names];
 }
 
 function mappedUserIdFromMap(employeeId: string, userIdMap: Record<string, string>): string {

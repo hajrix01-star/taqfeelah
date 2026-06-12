@@ -318,5 +318,5 @@ export function mapEmployeeLoginRosterRows({
         storeIds,
       };
     })
-    .filter((person) => person.id && person.storeIds.length > 0);
+    .filter((person) => person.id);
 }

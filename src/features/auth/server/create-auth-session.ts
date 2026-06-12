@@ -10,7 +10,11 @@ import {
   verifyOwnerPasswordIdentity,
 } from "@/features/auth/server/auth-identities";
 import { getRuntimeSettingsByOrganizationId } from "@/features/runtime-settings/server/runtime-settings-service";
-import { resolveEmployeeUserId } from "@/features/auth/server/resolve-employee-user-id";
+import {
+  collectStaffPersonNameCandidates,
+  findStaffPerson,
+  resolveEmployeeUserId,
+} from "@/features/auth/server/resolve-employee-user-id";
 import { resolveUserDisplayName } from "@/features/auth/server/resolve-user-display-name";
 
 const loginInputSchema = z.object({
@@ -47,26 +51,20 @@ type StaffPerson = {
   nameEn?: string;
 };
 
-async function resolveEmployeeUserIdWithFallback(
-  employeeId: string,
-  userIdMap: Record<string, string>,
+function readRuntimeStaff(
   runtimeSettings: Record<string, unknown> | null | undefined,
-  organizationId: string,
-): Promise<string> {
-  const mapped = resolveEmployeeUserId(employeeId, userIdMap, runtimeSettings);
-  if (mapped) return mapped;
-
-  const staff = Array.isArray(runtimeSettings?.staff)
+): StaffPerson[] {
+  return Array.isArray(runtimeSettings?.staff)
     ? runtimeSettings.staff.filter((entry): entry is StaffPerson => Boolean(entry && typeof entry === "object"))
     : [];
-  const normalized = normalize(employeeId);
-  const person = staff.find((entry) => entry.id === normalized);
-  if (!person) return "";
+}
 
-  const nameCandidates = [person.nameEn, person.nameAr]
-    .map((value) => (typeof value === "string" ? value.trim() : ""))
-    .filter(Boolean);
-  if (nameCandidates.length === 0) return "";
+async function lookupOrganizationEmployeeUserIdByNames(
+  organizationId: string,
+  nameCandidates: string[],
+): Promise<string> {
+  const uniqueNames = [...new Set(nameCandidates.map((value) => normalize(value)).filter(Boolean))];
+  if (!uniqueNames.length) return "";
 
   const db = getDb();
   const [member] = await db
@@ -79,8 +77,8 @@ async function resolveEmployeeUserIdWithFallback(
       and(
         eq(organizationMembers.organizationId, organizationId),
         eq(organizationMembers.status, "active"),
-        eq(organizationMembers.role, "employee"),
-        or(...nameCandidates.map((name) => ilike(users.name, name))),
+        or(eq(organizationMembers.role, "employee"), eq(organizationMembers.role, "manager")),
+        or(...uniqueNames.map((name) => ilike(users.name, name))),
       ),
     )
     .limit(1);
@@ -88,10 +86,36 @@ async function resolveEmployeeUserIdWithFallback(
   return member?.userId && isUuid(member.userId) ? member.userId : "";
 }
 
-async function resolveEmployeeUserIdGlobal(employeeId: string): Promise<string> {
+async function resolveEmployeeUserIdWithFallback(
+  employeeId: string,
+  userIdMap: Record<string, string>,
+  runtimeSettings: Record<string, unknown> | null | undefined,
+  organizationId: string,
+): Promise<string> {
+  const mapped = resolveEmployeeUserId(employeeId, userIdMap, runtimeSettings);
+  if (mapped) return mapped;
+
   const normalized = normalize(employeeId);
   if (!normalized) return "";
   if (isUuid(normalized)) return normalized;
+
+  const staff = readRuntimeStaff(runtimeSettings);
+  const person = findStaffPerson(staff, normalized);
+  const nameCandidates = collectStaffPersonNameCandidates(person, normalized);
+
+  const fromOrganization = await lookupOrganizationEmployeeUserIdByNames(organizationId, nameCandidates);
+  if (fromOrganization) return fromOrganization;
+
+  if (isAuthDbCredentialsEnabled()) {
+    return resolveEmployeeUserIdGlobal(nameCandidates);
+  }
+
+  return "";
+}
+
+async function resolveEmployeeUserIdGlobal(nameCandidates: string[]): Promise<string> {
+  const uniqueNames = [...new Set(nameCandidates.map((value) => normalize(value)).filter(Boolean))];
+  if (!uniqueNames.length) return "";
 
   const db = getDb();
   const [member] = await db
@@ -104,12 +128,30 @@ async function resolveEmployeeUserIdGlobal(employeeId: string): Promise<string> 
       and(
         eq(organizationMembers.status, "active"),
         or(eq(organizationMembers.role, "employee"), eq(organizationMembers.role, "manager")),
-        ilike(users.name, normalized),
+        or(...uniqueNames.map((name) => ilike(users.name, name))),
       ),
     )
     .limit(1);
 
   return member?.userId && isUuid(member.userId) ? member.userId : "";
+}
+
+async function isEmployeeLoginName(
+  loginName: string,
+  organizationId: string,
+  runtimeSettings: Record<string, unknown> | null | undefined,
+): Promise<boolean> {
+  const normalized = normalize(loginName);
+  if (!normalized || isUuid(normalized)) return false;
+
+  const staff = readRuntimeStaff(runtimeSettings);
+  if (findStaffPerson(staff, normalized)) return true;
+
+  const userId = await lookupOrganizationEmployeeUserIdByNames(
+    organizationId,
+    collectStaffPersonNameCandidates(undefined, normalized),
+  );
+  return Boolean(userId);
 }
 
 type ActiveMember = {
@@ -209,6 +251,9 @@ export async function createAuthSession(rawInput: LoginInput) {
     if (isAuthDbCredentialsEnabled()) {
       const verified = await verifyOwnerPasswordIdentity(username, password);
       if (!verified) {
+        if (await isEmployeeLoginName(username, organizationId, runtimeSettings)) {
+          throw new UnauthorizedError("Employee accounts must use employee login.");
+        }
         throw new UnauthorizedError("Invalid credentials.");
       }
       userId = verified.userId;
@@ -218,6 +263,9 @@ export async function createAuthSession(rawInput: LoginInput) {
         throw new ValidationError("Owner auth configuration is incomplete.");
       }
       if (username !== ownerUsername.trim().toLowerCase() || password !== ownerPassword) {
+        if (await isEmployeeLoginName(username, organizationId, runtimeSettings)) {
+          throw new UnauthorizedError("Employee accounts must use employee login.");
+        }
         throw new UnauthorizedError("Invalid credentials.");
       }
       userId = ownerUserId;
@@ -236,7 +284,11 @@ export async function createAuthSession(rawInput: LoginInput) {
       organizationId,
     );
     if (!mappedUserId && isAuthDbCredentialsEnabled()) {
-      mappedUserId = await resolveEmployeeUserIdGlobal(employeeId);
+      const staff = readRuntimeStaff(runtimeSettings);
+      const person = findStaffPerson(staff, employeeId);
+      mappedUserId = await resolveEmployeeUserIdGlobal(
+        collectStaffPersonNameCandidates(person, employeeId),
+      );
     }
     if (!mappedUserId) {
       throw new UnauthorizedError("Employee account mapping is invalid.");

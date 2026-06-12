@@ -39,6 +39,17 @@ describe("employee login roster mapping", () => {
         removed: false,
         storeIds: ["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"],
       },
+      {
+        id: "00000000-0000-4000-8000-000000000099",
+        legacyId: "",
+        apiUserId: "00000000-0000-4000-8000-000000000099",
+        memberId: "member-no-store",
+        nameAr: "No Store",
+        nameEn: "No Store",
+        active: true,
+        removed: false,
+        storeIds: [],
+      },
     ]);
   });
 });
