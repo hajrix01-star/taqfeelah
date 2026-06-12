@@ -11,6 +11,7 @@ import {
   useSaasAdminLocale,
 } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 import type { SaasAdminLocale } from "@/features/saas-admin/i18n/translations";
+import { SaasAdminSessionProvider } from "@/features/saas-admin/client/SaasAdminSessionProvider";
 import type { SaasAdminSessionView } from "@/features/saas-admin/server/resolve-saas-admin-session-view";
 import "@/features/saas-admin/components/admin-theme.css";
 
@@ -92,7 +93,9 @@ export function AdminShell({ children, initialLocale = "ar", session }: AdminShe
   return (
     <SaasAdminLocaleProvider initialLocale={initialLocale}>
       <AppQueryProvider>
-        <AdminShellFrame session={session}>{children}</AdminShellFrame>
+        <SaasAdminSessionProvider session={session}>
+          <AdminShellFrame session={session}>{children}</AdminShellFrame>
+        </SaasAdminSessionProvider>
       </AppQueryProvider>
     </SaasAdminLocaleProvider>
   );

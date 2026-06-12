@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    await assertSaasAdminRouteReady(request);
+    await assertSaasAdminRouteReady(request, "analytics:aggregate");
 
     let snapshotDate: string | undefined;
     try {

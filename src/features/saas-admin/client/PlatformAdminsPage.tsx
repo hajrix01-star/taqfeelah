@@ -16,7 +16,9 @@ import {
   grantPlatformAdminAccess,
   lookupPlatformAdmin,
   revokePlatformAdminAccess,
+  updatePlatformAdminRole,
   type PlatformAdminLookup,
+  type PlatformAdminRole,
   type PlatformAdminRow,
 } from "@/features/saas-admin/client/saas-admin-api-client";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
@@ -42,6 +44,12 @@ export default function PlatformAdminsPage() {
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [revokingUserId, setRevokingUserId] = useState<string | null>(null);
+  const [newRole, setNewRole] = useState<PlatformAdminRole>("support");
+  const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
+
+  function formatPlatformRole(role: PlatformAdminRole) {
+    return role === "owner" ? t.platformAdmins.roleOwner : t.platformAdmins.roleSupport;
+  }
 
   async function refreshAdmins() {
     await queryClient.invalidateQueries({ queryKey: ["saas-admin", "platform-admins"] });
@@ -68,7 +76,7 @@ export default function PlatformAdminsPage() {
     setFormSuccess(null);
     setIsSubmitting(true);
     try {
-      await grantPlatformAdminAccess(userId);
+      await grantPlatformAdminAccess(userId, newRole);
       setLookupResult(null);
       setLookupUsername("");
       setFormSuccess(t.platformAdmins.grantSuccess);
@@ -90,6 +98,7 @@ export default function PlatformAdminsPage() {
         name: newName.trim(),
         username: newUsername.trim(),
         password: newPassword,
+        role: newRole,
       });
       setNewName("");
       setNewUsername("");
@@ -100,6 +109,22 @@ export default function PlatformAdminsPage() {
       setFormError(createError instanceof Error ? createError.message : t.platformAdmins.createError);
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleRoleChange(admin: PlatformAdminRow, role: PlatformAdminRole) {
+    if (admin.source === "env") return;
+    setFormError(null);
+    setFormSuccess(null);
+    setUpdatingRoleUserId(admin.userId);
+    try {
+      await updatePlatformAdminRole(admin.userId, role);
+      setFormSuccess(t.platformAdmins.roleUpdateSuccess);
+      await refreshAdmins();
+    } catch (roleError) {
+      setFormError(roleError instanceof Error ? roleError.message : t.platformAdmins.roleUpdateError);
+    } finally {
+      setUpdatingRoleUserId(null);
     }
   }
 
@@ -209,6 +234,17 @@ export default function PlatformAdminsPage() {
                   autoComplete="new-password"
                 />
               </label>
+              <label className="block space-y-1 text-sm sm:col-span-2">
+                <span className="text-[var(--admin-muted)]">{t.platformAdmins.platformRole}</span>
+                <select
+                  value={newRole}
+                  onChange={(event) => setNewRole(event.target.value as PlatformAdminRole)}
+                  className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
+                >
+                  <option value="support">{t.platformAdmins.roleSupport}</option>
+                  <option value="owner">{t.platformAdmins.roleOwner}</option>
+                </select>
+              </label>
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -219,6 +255,17 @@ export default function PlatformAdminsPage() {
             </form>
           ) : (
             <div className="space-y-3">
+              <label className="block space-y-1 text-sm">
+                <span className="text-[var(--admin-muted)]">{t.platformAdmins.platformRole}</span>
+                <select
+                  value={newRole}
+                  onChange={(event) => setNewRole(event.target.value as PlatformAdminRole)}
+                  className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
+                >
+                  <option value="support">{t.platformAdmins.roleSupport}</option>
+                  <option value="owner">{t.platformAdmins.roleOwner}</option>
+                </select>
+              </label>
               <form onSubmit={(event) => { void handleLookup(event); }} className="flex flex-col gap-3 sm:flex-row">
                 <label className="block min-w-0 flex-1 space-y-1 text-sm">
                   <span className="text-[var(--admin-muted)]">{t.platformAdmins.lookupUsername}</span>
@@ -270,6 +317,7 @@ export default function PlatformAdminsPage() {
           columns={[
             t.common.name,
             t.platformAdmins.username,
+            t.platformAdmins.platformRole,
             t.platformAdmins.source,
             t.common.date,
             "",
@@ -284,12 +332,29 @@ export default function PlatformAdminsPage() {
                 <span dir="ltr">{admin.username || "—"}</span>
               </AdminTableCell>
               <AdminTableCell col={2}>
+                {admin.source === "database" && admin.canRevoke ? (
+                  <select
+                    value={admin.platformRole}
+                    disabled={updatingRoleUserId === admin.userId}
+                    onChange={(event) => {
+                      void handleRoleChange(admin, event.target.value as PlatformAdminRole);
+                    }}
+                    className="rounded-md border border-[var(--admin-border)] bg-[var(--admin-surface)] px-2 py-1 text-xs"
+                  >
+                    <option value="support">{t.platformAdmins.roleSupport}</option>
+                    <option value="owner">{t.platformAdmins.roleOwner}</option>
+                  </select>
+                ) : (
+                  formatPlatformRole(admin.platformRole)
+                )}
+              </AdminTableCell>
+              <AdminTableCell col={3}>
                 {admin.source === "env" ? t.platformAdmins.sourceEnv : t.platformAdmins.sourceDatabase}
               </AdminTableCell>
-              <AdminTableCell col={3} className="text-[var(--admin-muted)]">
+              <AdminTableCell col={4} className="text-[var(--admin-muted)]">
                 {admin.grantedAt ? formatDateTime(admin.grantedAt, locale) : "—"}
               </AdminTableCell>
-              <AdminTableCell col={4}>
+              <AdminTableCell col={5}>
                 {admin.canRevoke ? (
                   <button
                     type="button"

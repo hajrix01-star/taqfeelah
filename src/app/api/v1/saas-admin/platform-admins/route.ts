@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request);
+    const { actorUserId } = await assertSaasAdminRouteReady(request, "platform-admins:read");
     const admins = await listPlatformAdmins(actorUserId);
     return ok({ admins });
   } catch (error) {
@@ -22,13 +22,14 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request);
+    const { actorUserId } = await assertSaasAdminRouteReady(request, "platform-admins:write");
     const body = await request.json() as {
       action?: string;
       userId?: string;
       username?: string;
       name?: string;
       password?: string;
+      role?: "owner" | "support";
     };
 
     const action = typeof body?.action === "string" ? body.action.trim() : "";
@@ -44,7 +45,10 @@ export async function POST(request: Request) {
       if (typeof body.userId !== "string") {
         throw new ValidationError("userId is required for grant.");
       }
-      const admin = await grantPlatformAdmin({ userId: body.userId }, actorUserId);
+      const admin = await grantPlatformAdmin({
+        userId: body.userId,
+        role: body.role === "owner" ? "owner" : "support",
+      }, actorUserId);
       return ok({ admin });
     }
 
@@ -54,6 +58,7 @@ export async function POST(request: Request) {
           name: typeof body.name === "string" ? body.name : "",
           username: typeof body.username === "string" ? body.username : "",
           password: typeof body.password === "string" ? body.password : "",
+          role: body.role === "owner" ? "owner" : "support",
         },
         actorUserId,
       );

@@ -29,6 +29,7 @@ type AccountTeamSectionProps = {
   stores: StoreOption[];
   users: MemberRow[];
   onUpdated: () => void;
+  readOnly?: boolean;
 };
 
 export function AccountTeamSection({
@@ -36,6 +37,7 @@ export function AccountTeamSection({
   stores,
   users,
   onUpdated,
+  readOnly = false,
 }: AccountTeamSectionProps) {
   const { t } = useSaasAdminLocale();
   const [addOpen, setAddOpen] = useState(false);
@@ -49,13 +51,15 @@ export function AccountTeamSection({
           {" · "}
           {users.length}
         </p>
-        <button
-          type="button"
-          onClick={() => setAddOpen(true)}
-          className="rounded-lg bg-[var(--admin-primary)] px-3 py-1.5 text-xs font-semibold text-white"
-        >
-          {t.addMember.submit}
-        </button>
+        {readOnly ? null : (
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            className="rounded-lg bg-[var(--admin-primary)] px-3 py-1.5 text-xs font-semibold text-white"
+          >
+            {t.addMember.submit}
+          </button>
+        )}
       </div>
 
       <AdminCompactTable
@@ -71,7 +75,7 @@ export function AccountTeamSection({
             <AdminCompactTableCell col={1}>{formatMemberRole(row.role, t)}</AdminCompactTableCell>
             <AdminCompactTableCell col={2}>{formatEntityStatus(row.status, t)}</AdminCompactTableCell>
             <AdminCompactTableCell col={3}>
-              {row.role !== "owner" ? (
+              {!readOnly && row.role !== "owner" ? (
                 <button
                   type="button"
                   onClick={() => setEditingMember(row)}

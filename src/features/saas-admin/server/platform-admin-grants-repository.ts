@@ -6,6 +6,10 @@ import { getDb } from "@/core/db/client";
 import { authIdentities, platformAdminGrants, users } from "@/core/db/schema";
 import { ConflictError, ForbiddenError, ValidationError } from "@/core/errors/app-error";
 import { upsertOwnerPasswordIdentity } from "@/features/auth/server/auth-identities";
+import {
+  parsePlatformAdminRole,
+  type PlatformAdminRole,
+} from "@/features/saas-admin/server/platform-admin-roles";
 
 export type PlatformAdminSource = "database" | "env";
 
@@ -14,6 +18,7 @@ export type PlatformAdminRow = {
   name: string;
   username: string | null;
   loginPhone: string | null;
+  platformRole: PlatformAdminRole;
   grantedAt: string | null;
   source: PlatformAdminSource;
   canRevoke: boolean;
@@ -81,13 +86,24 @@ async function loadUserAuthSummary(userIds: string[]) {
 }
 
 export async function hasPlatformAdminGrant(userId: string): Promise<boolean> {
+  const role = await resolvePlatformAdminRole(userId);
+  return role !== null;
+}
+
+export async function resolvePlatformAdminRole(userId: string): Promise<PlatformAdminRole | null> {
+  const envUserIds = buildEnvPlatformAdminUserIds();
+  if (envUserIds.has(userId.toLowerCase())) {
+    return "owner";
+  }
+
   const db = getDb();
   const [row] = await db
-    .select({ userId: platformAdminGrants.userId })
+    .select({ role: platformAdminGrants.role })
     .from(platformAdminGrants)
     .where(eq(platformAdminGrants.userId, userId))
     .limit(1);
-  return Boolean(row?.userId);
+
+  return parsePlatformAdminRole(row?.role);
 }
 
 export async function listPlatformAdmins(actorUserId: string): Promise<PlatformAdminRow[]> {
@@ -96,6 +112,7 @@ export async function listPlatformAdmins(actorUserId: string): Promise<PlatformA
   const grantRows = await db
     .select({
       userId: platformAdminGrants.userId,
+      role: platformAdminGrants.role,
       grantedAt: platformAdminGrants.grantedAt,
       name: users.name,
     })
@@ -118,6 +135,7 @@ export async function listPlatformAdmins(actorUserId: string): Promise<PlatformA
       name: grant.name,
       username: auth?.username ?? null,
       loginPhone: auth?.loginPhone ?? null,
+      platformRole: parsePlatformAdminRole(grant.role) ?? "owner",
       grantedAt: grant.grantedAt.toISOString(),
       source: envUserIds.has(grant.userId.toLowerCase()) ? "env" : "database",
       canRevoke: grant.userId !== actorUserId,
@@ -137,6 +155,7 @@ export async function listPlatformAdmins(actorUserId: string): Promise<PlatformA
       name: userRow?.name ?? envUserId,
       username: auth?.username ?? null,
       loginPhone: auth?.loginPhone ?? null,
+      platformRole: "owner",
       grantedAt: null,
       source: "env",
       canRevoke: false,
@@ -232,6 +251,7 @@ export async function lookupPlatformAdminCandidate(
 
 const grantSchema = z.object({
   userId: z.string().uuid(),
+  role: z.enum(["owner", "support"]).default("support"),
 });
 
 export async function grantPlatformAdmin(
@@ -257,6 +277,7 @@ export async function grantPlatformAdmin(
     .insert(platformAdminGrants)
     .values({
       userId: parsed.data.userId,
+      role: parsed.data.role,
       grantedAt: now,
       grantedByUserId,
     })
@@ -273,6 +294,7 @@ const createSchema = z.object({
   name: z.string().trim().min(1).max(120),
   username: z.string().trim().min(1).max(120),
   password: z.string().trim().min(4).max(120),
+  role: z.enum(["owner", "support"]).default("support"),
 });
 
 export async function createPlatformAdminUser(
@@ -323,6 +345,7 @@ export async function createPlatformAdminUser(
 
     await tx.insert(platformAdminGrants).values({
       userId,
+      role: parsed.data.role,
       grantedAt: now,
       grantedByUserId,
     });
@@ -331,6 +354,43 @@ export async function createPlatformAdminUser(
   const row = (await listPlatformAdmins(grantedByUserId)).find((item) => item.userId === userId);
   if (!row) {
     throw new Error("Failed to load platform admin after create.");
+  }
+  return row;
+}
+
+const updateRoleSchema = z.object({
+  role: z.enum(["owner", "support"]),
+});
+
+export async function updatePlatformAdminRole(
+  targetUserId: string,
+  rawInput: z.infer<typeof updateRoleSchema>,
+  actorUserId: string,
+): Promise<PlatformAdminRow> {
+  const parsed = updateRoleSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    throw new ValidationError("Invalid platform admin role input.", parsed.error.flatten());
+  }
+
+  const envUserIds = buildEnvPlatformAdminUserIds();
+  if (envUserIds.has(targetUserId.toLowerCase())) {
+    throw new ForbiddenError("Environment-configured platform admins cannot change role from the console.");
+  }
+
+  const db = getDb();
+  const updated = await db
+    .update(platformAdminGrants)
+    .set({ role: parsed.data.role })
+    .where(eq(platformAdminGrants.userId, targetUserId))
+    .returning({ userId: platformAdminGrants.userId });
+
+  if (!updated.length) {
+    throw new ValidationError("Platform admin grant not found.");
+  }
+
+  const row = (await listPlatformAdmins(actorUserId)).find((item) => item.userId === targetUserId);
+  if (!row) {
+    throw new Error("Failed to load platform admin after role update.");
   }
   return row;
 }

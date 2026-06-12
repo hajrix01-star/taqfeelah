@@ -19,10 +19,12 @@ import {
   runSaasAnalyticsAggregate,
 } from "@/features/saas-admin/client/saas-admin-api-client";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
+import { useSaasAdminSession } from "@/features/saas-admin/client/SaasAdminSessionProvider";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 export default function SystemHealthPage() {
   const { locale, t } = useSaasAdminLocale();
+  const { can } = useSaasAdminSession();
   const { data, error, isLoading } = useSaasAdminQuery(
     ["saas-admin", "system-health"],
     fetchSystemHealth,
@@ -78,22 +80,24 @@ export default function SystemHealthPage() {
           />
         </section>
 
-        <ChartCard title={t.systemHealth.maintenanceTitle} description={t.systemHealth.maintenanceDescription}>
-          {maintenanceError ? <AdminErrorAlert message={maintenanceError} /> : null}
-          {maintenanceSuccess ? (
-            <AdminCallout tone="info" className="mb-3">
-              {maintenanceSuccess}
-            </AdminCallout>
-          ) : null}
-          <button
-            type="button"
-            disabled={aggregating}
-            onClick={() => { void handleRunMaintenance(); }}
-            className="rounded-lg bg-[var(--admin-primary)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            {aggregating ? t.systemHealth.maintenanceRunning : t.systemHealth.maintenanceAction}
-          </button>
-        </ChartCard>
+        {can("system-health:write") ? (
+          <ChartCard title={t.systemHealth.maintenanceTitle} description={t.systemHealth.maintenanceDescription}>
+            {maintenanceError ? <AdminErrorAlert message={maintenanceError} /> : null}
+            {maintenanceSuccess ? (
+              <AdminCallout tone="info" className="mb-3">
+                {maintenanceSuccess}
+              </AdminCallout>
+            ) : null}
+            <button
+              type="button"
+              disabled={aggregating}
+              onClick={() => { void handleRunMaintenance(); }}
+              className="rounded-lg bg-[var(--admin-primary)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {aggregating ? t.systemHealth.maintenanceRunning : t.systemHealth.maintenanceAction}
+            </button>
+          </ChartCard>
+        ) : null}
 
         <ChartCard title={t.systemHealth.opsMetrics}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
