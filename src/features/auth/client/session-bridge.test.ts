@@ -36,16 +36,10 @@ describe("session bridge", () => {
     vi.clearAllMocks();
   });
 
-  it("persists local owner session when prototype access is off", async () => {
+  it("persists local owner session after login", async () => {
     const { persistLocalOwnerSession } = await import("./session-bridge");
-    persistLocalOwnerSession(false);
+    persistLocalOwnerSession();
     expect(saveAuthSession).toHaveBeenCalledWith({ role: "owner" });
-  });
-
-  it("skips local owner session when prototype access is on", async () => {
-    const { persistLocalOwnerSession } = await import("./session-bridge");
-    persistLocalOwnerSession(true);
-    expect(saveAuthSession).not.toHaveBeenCalled();
   });
 
   it("routes owner login through api only in server-auth mode", async () => {

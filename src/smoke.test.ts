@@ -13,7 +13,7 @@ describe("prototype runtime module boundary smoke", () => {
 
   it("loads prototype-runtime boot exports", async () => {
     const boot = await import("@/components/prototype-runtime/prototype-runtime-boot");
-    expect(boot.PROTOTYPE_ACCESS_MODE).toBeTypeOf("boolean");
+    expect(boot.BINDS_TO_SERVER_AUTH).toBeTypeOf("boolean");
     expect(boot.ENTRIES_API_DB_SOURCE).toBeTypeOf("boolean");
     expect(boot.CLOSEOUTS_API_DB_SOURCE).toBeTypeOf("boolean");
     expect(boot.readSavedSettings).toBeTypeOf("function");
@@ -137,14 +137,15 @@ describe("prototype runtime module boundary smoke", () => {
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
   it("loads runtime capability resolver", async () => {
-    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "true");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
     const { resolveRuntimeCapabilities } = await import("@/core/config/runtime-capabilities");
     const capabilities = resolveRuntimeCapabilities({
-      NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true",
+      NEXT_PUBLIC_APP_MODE: "production",
       NEXT_PUBLIC_ENTRIES_API_ENABLED: "false",
       NEXT_PUBLIC_CLOSEOUTS_API_ENABLED: "false",
     });
-    expect(capabilities.prototypeAccessMode).toBe(true);
+    expect(capabilities.prototypeAccessMode).toBe(false);
+    expect(capabilities.bindsToServerAuth).toBe(true);
     expect(capabilities.entriesApiDbSource).toBe(false);
   });
 });

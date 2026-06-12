@@ -33,7 +33,6 @@ function readRuntimeCapabilitiesEnv() {
   return {
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_APP_MODE: process.env.NEXT_PUBLIC_APP_MODE,
-    NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: process.env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE,
     NEXT_PUBLIC_CLOSEOUTS_API_ENABLED: process.env.NEXT_PUBLIC_CLOSEOUTS_API_ENABLED,
     NEXT_PUBLIC_ENTRIES_API_ENABLED: process.env.NEXT_PUBLIC_ENTRIES_API_ENABLED,
     NEXT_PUBLIC_ORG_CONFIG_API_ENABLED: process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED,
@@ -50,7 +49,7 @@ function readRuntimeCapabilitiesEnv() {
 export function resolveRuntimeCapabilities(env = readRuntimeCapabilitiesEnv()) {
   const appInProductionMode = isProductionAppMode();
   const prototypeAccessMode = isPrototypeAccessMode();
-  const bindsToServerAuth = appInProductionMode && !prototypeAccessMode;
+  const bindsToServerAuth = appInProductionMode;
   const closeoutsApiEnabled = isCloseoutsApiEnabled(env);
   const entriesApiEnabled = isEntriesApiEnabled(env);
   const entriesApiDbSource = isEntriesApiDbSourceMode(env);

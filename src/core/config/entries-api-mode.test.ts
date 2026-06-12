@@ -28,12 +28,11 @@ describe("entries api mode", () => {
     expect(isEntriesApiEnabled()).toBe(false);
   });
 
-  it("uses strict mode only outside prototype access", () => {
+  it("uses strict mode in production app mode", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
-    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "false");
     expect(isEntriesApiStrictMode()).toBe(true);
 
-    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "true");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
     expect(isEntriesApiStrictMode()).toBe(false);
   });
 });

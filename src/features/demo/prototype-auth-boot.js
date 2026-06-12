@@ -1,5 +1,6 @@
 import { resolveAuthStateFromSession } from "./login-credentials-storage";
 
+/** @deprecated Local demo staff — kept for non-DB prototype app mode only. */
 export function buildPrototypeDefaultStaff(employeePinDefault = "1234") {
   return [
     {
@@ -33,7 +34,6 @@ const LOGGED_OUT_BOOT = {
 /**
  * @typedef {Object} PrototypeAuthBootOptions
  * @property {boolean} [bindsToServerAuth]
- * @property {boolean} [prototypeAccessMode]
  * @property {() => Record<string, unknown> | null} [readSavedSettings]
  * @property {Array<Record<string, unknown>>} [defaultStaff]
  * @property {(staffList: Array<Record<string, unknown>>) => Record<string, unknown>} [resolveAuthState]
@@ -44,16 +44,15 @@ const LOGGED_OUT_BOOT = {
  */
 export function readPrototypeAuthBoot({
   bindsToServerAuth = false,
-  prototypeAccessMode = true,
   readSavedSettings = () => null,
   defaultStaff = buildPrototypeDefaultStaff(),
   resolveAuthState = resolveAuthStateFromSession,
 } = {}) {
-  if (!bindsToServerAuth || prototypeAccessMode) {
+  if (!bindsToServerAuth) {
     return LOGGED_OUT_BOOT;
   }
 
   const settings = readSavedSettings();
-  const staffList = settings?.staff || (bindsToServerAuth ? [] : defaultStaff);
-  return resolveAuthState(staffList);
+  const staffList = settings?.staff || [];
+  return resolveAuthState(staffList.length ? staffList : defaultStaff);
 }

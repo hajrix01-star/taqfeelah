@@ -5,12 +5,9 @@ import {
 } from "@/features/auth/client/auth-runtime-orchestrator";
 import { upsertPrototypeEmployeeRosterStaff } from "@/features/employee-closeouts/employee-portal-session";
 import { logoutViaSessionBridge } from "@/features/auth/client/session-bridge";
-import { readPrototypeAccessAuthContext } from "@/core/client/prototype-access-auth-context";
 import {
   APP_IN_PRODUCTION_MODE,
   BINDS_TO_SERVER_AUTH,
-  PROTOTYPE_ACCESS_MODE,
-  PROTOTYPE_DEFAULT_STAFF,
 } from "@/components/prototype-runtime/prototype-runtime-boot";
 
 export function createPrototypeRuntimeAuthHandlers({
@@ -59,7 +56,6 @@ export function createPrototypeRuntimeAuthHandlers({
       organizationId,
       displayName,
       mustChangePassword,
-      prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
       apply: {
         setSessionOrganizationId,
         setSessionUserId,
@@ -94,7 +90,6 @@ export function createPrototypeRuntimeAuthHandlers({
       organizationId,
       staff: loginStaff,
       activeBusinesses,
-      prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
       apply: {
         setSessionOrganizationId,
         setSessionUserId,
@@ -150,39 +145,9 @@ export function createPrototypeRuntimeAuthHandlers({
     });
   };
 
-  const enterPrototypeAsEmployee = () => {
-    const { organizationId, defaultEmployeeLegacyId, defaultEmployeeUserId } = readPrototypeAccessAuthContext();
-    const person = staff.find((item) => item.active && !item.removed)
-      || (defaultEmployeeUserId
-        ? {
-          id: defaultEmployeeUserId,
-          apiUserId: defaultEmployeeUserId,
-          legacyId: defaultEmployeeLegacyId,
-          active: true,
-          removed: false,
-          storeIds: [],
-        }
-        : null)
-      || PROTOTYPE_DEFAULT_STAFF[0];
-    if (!person?.id) return;
-    completeEmployeeLogin(
-      person.id,
-      person.apiUserId || defaultEmployeeUserId || "",
-      person,
-      organizationId,
-    );
-  };
-
-  const enterPrototypeAsOwner = () => {
-    const { organizationId, ownerUserId } = readPrototypeAccessAuthContext();
-    completeOwnerLogin(ownerUserId, organizationId);
-  };
-
   return {
     completeOwnerLogin,
     completeEmployeeLogin,
     logout,
-    enterPrototypeAsEmployee,
-    enterPrototypeAsOwner,
   };
 }

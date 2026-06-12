@@ -1,7 +1,5 @@
 "use client";
 
-import PrototypeAccessScreen from "@/features/demo/PrototypeAccessScreen";
-import { PROTOTYPE_ACCESS_MODE } from "./prototype-runtime-boot";
 import {
   EmployeeLoginScreen,
   LoginScreen,
@@ -17,20 +15,11 @@ export function PrototypeRuntimeLoggedOutGate({
   staff,
   onOwnerLogin,
   onEmployeeLogin,
-  onEnterAsOwner,
-  onEnterAsEmployee,
 }) {
   return (
     <div dir={lang === "ar" ? "rtl" : "ltr"} className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
       <AppFontStyles />
-      {PROTOTYPE_ACCESS_MODE ? (
-        <PrototypeAccessScreen
-          lang={lang}
-          setLang={setLang}
-          onOwner={onEnterAsOwner}
-          onEmployee={onEnterAsEmployee}
-        />
-      ) : authScreen === "owner" ? (
+      {authScreen === "owner" ? (
         <LoginScreen
           lang={lang}
           setLang={setLang}

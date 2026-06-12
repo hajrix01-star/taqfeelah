@@ -18,9 +18,8 @@ Browser storage is not a production source of truth.
 
 ## Production readiness contract
 
-Production source-unification mode must be DB-backed while keeping the current
-no-password/prototype entry flow until the auth launch phase. Do not merge/deploy
-this mode until the environment is configured with:
+Production source-unification mode must be DB-backed with real auth on `/app`.
+Do not merge/deploy this mode until the environment is configured with:
 
 ```bash
 APP_MODE=production
@@ -32,7 +31,7 @@ NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true
 NEXT_PUBLIC_PHASE9_API_ENABLED=true
 NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true
 NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true
-NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false
+# Prototype access mode removed — auth is the only entry path (see PRELAUNCH_CLEANUP.md)
 ALLOW_HEADER_AUTH_CONTEXT=false
 NEXT_PUBLIC_AUTH_API_ENABLED=true
 AUTH_DB_CREDENTIALS_ENABLED=true
@@ -43,14 +42,14 @@ AUTH_OWNER_USER_ID=...
 ```
 
 **CI production deploy** (`deploy-production.yml`) enables auth launch + wave 7 SaaS.  
-Legacy env ID maps are required only while `PROTOTYPE_ACCESS_MODE=true` or `ALLOW_HEADER_AUTH_CONTEXT=true`.
+Legacy env ID maps are required only while `ALLOW_HEADER_AUTH_CONTEXT=true` (integration tests).
 
 For manual VPS rollout, auth-launch values:
 
 ```bash
 NEXT_PUBLIC_AUTH_API_ENABLED=true
 AUTH_DB_CREDENTIALS_ENABLED=true
-NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false
+# Prototype access mode removed — auth is the only entry path (see PRELAUNCH_CLEANUP.md)
 ALLOW_HEADER_AUTH_CONTEXT=false
 AUTH_SESSION_SECRET=...
 ```

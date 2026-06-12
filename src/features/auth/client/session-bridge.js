@@ -23,14 +23,12 @@ export function readSessionBootState(options = {}) {
   return readPrototypeAuthBoot(options);
 }
 
-export function persistLocalOwnerSession(prototypeAccessMode) {
-  if (!prototypeAccessMode) {
-    saveAuthSession({ role: "owner" });
-  }
+export function persistLocalOwnerSession() {
+  saveAuthSession({ role: "owner" });
 }
 
-export function persistLocalEmployeeSession({ prototypeAccessMode, employeeId }) {
-  if (!prototypeAccessMode && employeeId) {
+export function persistLocalEmployeeSession({ employeeId }) {
+  if (employeeId) {
     saveAuthSession({ role: "employee", employeeId });
   }
 }
