@@ -2,8 +2,10 @@ import { fail, ok } from "@/core/http/api-response";
 import { ValidationError } from "@/core/errors/app-error";
 import {
   revokePlatformAdmin,
+  updatePlatformAdminProfile,
   updatePlatformAdminRole,
 } from "@/features/saas-admin/server/platform-admin-grants-repository";
+import { parsePlatformAdminRole } from "@/features/saas-admin/server/platform-admin-roles";
 import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-admin-route-guard";
 
 export const dynamic = "force-dynamic";
@@ -20,12 +22,44 @@ export async function PATCH(request: Request, context: RouteContext) {
       throw new ValidationError("userId is required.");
     }
 
-    const body = await request.json() as { role?: string };
-    const admin = await updatePlatformAdminRole(
-      userId,
-      { role: body.role === "owner" ? "owner" : "support" },
-      actorUserId,
+    const body = await request.json() as {
+      role?: string;
+      name?: string;
+      username?: string;
+      password?: string;
+    };
+
+    const hasProfileUpdate = Boolean(
+      (body.name && body.name.trim())
+      || (body.username && body.username.trim())
+      || (body.password && body.password.trim()),
     );
+    const nextRole = parsePlatformAdminRole(body.role);
+
+    if (!nextRole && !hasProfileUpdate) {
+      throw new ValidationError("At least one field must be provided to update.");
+    }
+
+    let admin;
+    if (nextRole) {
+      admin = await updatePlatformAdminRole(userId, { role: nextRole }, actorUserId);
+    }
+    if (hasProfileUpdate) {
+      admin = await updatePlatformAdminProfile(
+        userId,
+        {
+          name: body.name?.trim() || undefined,
+          username: body.username?.trim() || undefined,
+          password: body.password?.trim() || undefined,
+        },
+        actorUserId,
+      );
+    }
+
+    if (!admin) {
+      throw new ValidationError("At least one field must be provided to update.");
+    }
+
     return ok({ admin });
   } catch (error) {
     return fail(error);

@@ -256,6 +256,23 @@ export async function updatePlatformAdminRole(userId: string, role: PlatformAdmi
   );
 }
 
+export async function updatePlatformAdminProfile(
+  userId: string,
+  payload: {
+    name?: string;
+    username?: string;
+    password?: string;
+  },
+) {
+  return fetchSaasAdminJson<{ admin: PlatformAdminRow }>(
+    `/api/v1/saas-admin/platform-admins/${userId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
 export async function revokePlatformAdminAccess(userId: string) {
   return fetchSaasAdminJson<{ revoked: boolean; userId: string }>(
     `/api/v1/saas-admin/platform-admins/${userId}`,
