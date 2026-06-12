@@ -11,7 +11,7 @@ type RouteContext = {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    const { actorUserId } = assertSaasAdminRouteReady(request);
+    const { actorUserId } = await assertSaasAdminRouteReady(request);
     const { id, memberId } = await context.params;
     if (!id?.trim() || !memberId?.trim()) {
       throw new ValidationError("Organization id and member id are required.");

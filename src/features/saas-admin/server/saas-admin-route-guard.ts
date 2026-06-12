@@ -10,7 +10,7 @@ export type SaasAdminRouteActor = {
   role: MemberRole | null;
 };
 
-export function assertSaasAdminRouteReady(request: Request): SaasAdminRouteActor {
+export async function assertSaasAdminRouteReady(request: Request): Promise<SaasAdminRouteActor> {
   if (!isSaasAdminApiEnabled()) {
     throw new ServiceUnavailableError("SaaS admin API is disabled.");
   }
@@ -23,7 +23,7 @@ export function assertSaasAdminRouteReady(request: Request): SaasAdminRouteActor
   const requestContext = resolveRequestContext(request, { requireUser: true });
   const actorUserId = requestContext.userId!;
   const role = requestContext.role;
-  assertPlatformAdminAccess({
+  await assertPlatformAdminAccess({
     actorUserId,
     role: role ?? undefined,
   });

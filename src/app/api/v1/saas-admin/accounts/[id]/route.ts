@@ -12,7 +12,7 @@ type RouteContext = {
 
 export async function GET(request: Request, context: RouteContext) {
   try {
-    const { actorUserId } = assertSaasAdminRouteReady(request);
+    const { actorUserId } = await assertSaasAdminRouteReady(request);
     const { id } = await context.params;
     if (!id?.trim()) {
       throw new ValidationError("Organization id is required.");
@@ -31,7 +31,7 @@ export async function GET(request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    const { actorUserId } = assertSaasAdminRouteReady(request);
+    const { actorUserId } = await assertSaasAdminRouteReady(request);
     const { id } = await context.params;
     if (!id?.trim()) {
       throw new ValidationError("Organization id is required.");

@@ -19,84 +19,82 @@ export function PlanEditor({ plan, saving, onSave }: PlanEditorProps) {
   return (
     <AdminCard
       as="form"
-      padding="md"
-      className="space-y-3"
+      padding="sm"
+      className="flex h-full flex-col gap-2.5"
       onSubmit={(event: FormEvent<HTMLFormElement>) => { void form.submit(event); }}
     >
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-[var(--admin-text)]">
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="text-sm font-semibold leading-snug text-[var(--admin-text)]">
           {locale === "ar" ? plan.displayNameAr : plan.displayNameEn}
         </h3>
-        <span dir="ltr" className="rounded bg-[var(--admin-surface-muted)] px-2 py-0.5 text-xs font-mono">
+        <span dir="ltr" className="shrink-0 rounded bg-[var(--admin-surface-muted)] px-1.5 py-0.5 text-[10px] font-mono">
           {plan.planCode}
         </span>
       </div>
-      <label className="block space-y-1 text-sm">
+      <label className="block space-y-0.5 text-xs">
         <span className="text-[var(--admin-muted)]">{t.plansPage.displayNameAr}</span>
         <input
           required
           value={form.displayNameAr}
           onChange={(e) => form.setDisplayNameAr(e.target.value)}
-          className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
+          className="w-full rounded-md border border-[var(--admin-border)] px-2.5 py-1.5 text-sm"
         />
       </label>
-      <label className="block space-y-1 text-sm">
+      <label className="block space-y-0.5 text-xs">
         <span className="text-[var(--admin-muted)]">{t.plansPage.displayNameEn}</span>
         <input
           required
           value={form.displayNameEn}
           onChange={(e) => form.setDisplayNameEn(e.target.value)}
-          className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
+          className="w-full rounded-md border border-[var(--admin-border)] px-2.5 py-1.5 text-sm"
           dir="ltr"
         />
       </label>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block space-y-1 text-sm">
-          <span className="text-[var(--admin-muted)]">{t.plansPage.priceMonthly}</span>
-          <input
-            required
-            dir="ltr"
-            inputMode="decimal"
-            value={form.priceMonthly}
-            onChange={(e) => form.setPriceMonthly(e.target.value)}
-            className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
-          />
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="text-[var(--admin-muted)]">{t.plansPage.trialDays}</span>
-          <input
-            required
-            dir="ltr"
-            inputMode="numeric"
-            value={form.trialDays}
-            onChange={(e) => form.setTrialDays(e.target.value)}
-            className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
-          />
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="text-[var(--admin-muted)]">{t.plansPage.maxStores}</span>
-          <input
-            required
-            dir="ltr"
-            inputMode="numeric"
-            value={form.maxStores}
-            onChange={(e) => form.setMaxStores(e.target.value)}
-            className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
-          />
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="text-[var(--admin-muted)]">{t.plansPage.maxEmployees}</span>
-          <input
-            required
-            dir="ltr"
-            inputMode="numeric"
-            value={form.maxEmployees}
-            onChange={(e) => form.setMaxEmployees(e.target.value)}
-            className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
-          />
-        </label>
-      </div>
-      <label className="flex items-center gap-2 text-sm">
+      <label className="block space-y-0.5 text-xs">
+        <span className="text-[var(--admin-muted)]">{t.plansPage.priceMonthly}</span>
+        <input
+          required
+          dir="ltr"
+          inputMode="decimal"
+          value={form.priceMonthly}
+          onChange={(e) => form.setPriceMonthly(e.target.value)}
+          className="w-full rounded-md border border-[var(--admin-border)] px-2.5 py-1.5 text-sm"
+        />
+      </label>
+      <label className="block space-y-0.5 text-xs">
+        <span className="text-[var(--admin-muted)]">{t.plansPage.trialDays}</span>
+        <input
+          required
+          dir="ltr"
+          inputMode="numeric"
+          value={form.trialDays}
+          onChange={(e) => form.setTrialDays(e.target.value)}
+          className="w-full rounded-md border border-[var(--admin-border)] px-2.5 py-1.5 text-sm"
+        />
+      </label>
+      <label className="block space-y-0.5 text-xs">
+        <span className="text-[var(--admin-muted)]">{t.plansPage.maxStores}</span>
+        <input
+          required
+          dir="ltr"
+          inputMode="numeric"
+          value={form.maxStores}
+          onChange={(e) => form.setMaxStores(e.target.value)}
+          className="w-full rounded-md border border-[var(--admin-border)] px-2.5 py-1.5 text-sm"
+        />
+      </label>
+      <label className="block space-y-0.5 text-xs">
+        <span className="text-[var(--admin-muted)]">{t.plansPage.maxEmployees}</span>
+        <input
+          required
+          dir="ltr"
+          inputMode="numeric"
+          value={form.maxEmployees}
+          onChange={(e) => form.setMaxEmployees(e.target.value)}
+          className="w-full rounded-md border border-[var(--admin-border)] px-2.5 py-1.5 text-sm"
+        />
+      </label>
+      <label className="flex items-center gap-2 text-xs">
         <input
           type="checkbox"
           checked={form.isActive}
@@ -107,7 +105,7 @@ export function PlanEditor({ plan, saving, onSave }: PlanEditorProps) {
       <button
         type="submit"
         disabled={saving}
-        className="rounded-lg bg-[var(--admin-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+        className="mt-auto w-full rounded-md bg-[var(--admin-primary)] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
       >
         {saving ? t.plansPage.saving : t.plansPage.save}
       </button>

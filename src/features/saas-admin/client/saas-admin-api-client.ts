@@ -194,6 +194,61 @@ export async function createAccountSetupLink(
   );
 }
 
+export type PlatformAdminRow = {
+  userId: string;
+  name: string;
+  username: string | null;
+  loginPhone: string | null;
+  grantedAt: string | null;
+  source: "database" | "env";
+  canRevoke: boolean;
+};
+
+export type PlatformAdminLookup = {
+  userId: string;
+  name: string;
+  username: string | null;
+  loginPhone: string | null;
+  hasPasswordLogin: boolean;
+  alreadyGranted: boolean;
+};
+
+export async function fetchPlatformAdmins() {
+  return fetchSaasAdminJson<{ admins: PlatformAdminRow[] }>("/api/v1/saas-admin/platform-admins");
+}
+
+export async function lookupPlatformAdmin(username: string) {
+  return fetchSaasAdminJson<{ candidate: PlatformAdminLookup }>("/api/v1/saas-admin/platform-admins", {
+    method: "POST",
+    body: JSON.stringify({ action: "lookup", username }),
+  }).then((payload) => payload.candidate);
+}
+
+export async function grantPlatformAdminAccess(userId: string) {
+  return fetchSaasAdminJson<{ admin: PlatformAdminRow }>("/api/v1/saas-admin/platform-admins", {
+    method: "POST",
+    body: JSON.stringify({ action: "grant", userId }),
+  });
+}
+
+export async function createPlatformAdmin(payload: {
+  name: string;
+  username: string;
+  password: string;
+}) {
+  return fetchSaasAdminJson<{ admin: PlatformAdminRow }>("/api/v1/saas-admin/platform-admins", {
+    method: "POST",
+    body: JSON.stringify({ action: "create", ...payload }),
+  });
+}
+
+export async function revokePlatformAdminAccess(userId: string) {
+  return fetchSaasAdminJson<{ revoked: boolean; userId: string }>(
+    `/api/v1/saas-admin/platform-admins/${userId}`,
+    { method: "DELETE" },
+  );
+}
+
 export async function repairSaasAccountFoundation(organizationId: string) {
   return fetchSaasAdminJson<{
     organizationId: string;

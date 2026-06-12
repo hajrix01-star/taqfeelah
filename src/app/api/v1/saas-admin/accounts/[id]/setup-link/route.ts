@@ -14,7 +14,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, context: RouteContext) {
   try {
-    const { actorUserId } = assertSaasAdminRouteReady(request);
+    const { actorUserId } = await assertSaasAdminRouteReady(request);
     const { id: organizationId } = await context.params;
     const body = await request.json();
     const purpose = body?.purpose === "onboarding" ? "onboarding" : "password_reset";

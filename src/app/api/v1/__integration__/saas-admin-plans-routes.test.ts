@@ -9,10 +9,15 @@ import {
 } from "./helpers";
 
 const listPlanCatalogRows = vi.fn();
+const hasPlatformAdminGrant = vi.fn();
 
 vi.mock("@/features/billing/server/plan-catalog-repository", () => ({
   listPlanCatalogRows,
   upsertPlanCatalogRow: vi.fn(),
+}));
+
+vi.mock("@/features/saas-admin/server/platform-admin-grants-repository", () => ({
+  hasPlatformAdminGrant,
 }));
 
 describe("saas admin plans routes integration", () => {
@@ -22,6 +27,8 @@ describe("saas admin plans routes integration", () => {
     process.env.SAAS_PLATFORM_ADMIN_USER_IDS = "";
     __resetEnvCacheForTests();
     listPlanCatalogRows.mockReset();
+    hasPlatformAdminGrant.mockReset();
+    hasPlatformAdminGrant.mockResolvedValue(false);
   });
 
   afterEach(() => {
@@ -75,5 +82,6 @@ describe("saas admin plans routes integration", () => {
     const body = await readJsonBody<{ error: { message: string } }>(response);
     expect(body.error.message).toBe("User is not authorized for platform admin operations.");
     expect(listPlanCatalogRows).not.toHaveBeenCalled();
+    expect(hasPlatformAdminGrant).toHaveBeenCalledWith(TEST_OWNER_USER_ID);
   });
 });

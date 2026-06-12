@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const { actorUserId } = assertSaasAdminRouteReady(request);
+    const { actorUserId } = await assertSaasAdminRouteReady(request);
     const { searchParams } = new URL(request.url);
     const monthsRaw = Number(searchParams.get("months") || "6");
 
