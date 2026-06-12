@@ -200,4 +200,95 @@ describe("org config runtime sync", () => {
       closeoutAlert: true,
     });
   });
+
+  it("creates custom sales channels through sales channels post api", async () => {
+    const createdChannelId = "22222222-2222-4222-8222-222222222222";
+    const fetchMock = vi.fn(async (url, init) => {
+      if (String(url).includes("/sales-channels") && init?.method === "POST") {
+        return new Response(JSON.stringify({
+          channel: {
+            id: createdChannelId,
+            name: "Delivery",
+            status: "active",
+            retiredAt: null,
+            createdAt: "2026-06-12T00:00:00.000Z",
+          },
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync.js");
+    const applied = await persistOrgConfigSnapshot({
+      auth: {
+        organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+        actorUserId: "owner",
+        actorRole: "owner",
+      },
+      baseline: {
+        configuredBusinesses: [{
+          id: "shami",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {
+          shami: {
+            channels: [{
+              id: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+              apiChannelId: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+              nameAr: "Cash",
+              nameEn: "Cash",
+            }],
+            activeIds: ["9bc40d4f-c773-4ba3-87db-b8bb1467dafb"],
+          },
+        },
+        staff: [],
+      },
+      next: {
+        configuredBusinesses: [{
+          id: "shami",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {
+          shami: {
+            channels: [
+              {
+                id: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+                apiChannelId: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+                nameAr: "Cash",
+                nameEn: "Cash",
+              },
+              {
+                id: "channel-1718040000000",
+                custom: true,
+                nameAr: "Delivery",
+                nameEn: "Delivery",
+              },
+            ],
+            activeIds: [
+              "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+              "channel-1718040000000",
+            ],
+          },
+        },
+        staff: [],
+      },
+    });
+
+    const createCall = fetchMock.mock.calls.find(([url, init]) => (
+      String(url).includes("/sales-channels") && init?.method === "POST"
+    ));
+    expect(createCall).toBeTruthy();
+    expect(JSON.parse(String(createCall?.[1]?.body))).toMatchObject({
+      name: "Delivery",
+      status: "active",
+      reason: "owner_added_channel",
+    });
+    const remapped = applied.storeChannelSettings.shami;
+    expect(remapped.channels.some((channel: { id: string }) => channel.id === createdChannelId)).toBe(true);
+    expect(remapped.activeIds).toContain(createdChannelId);
+    expect(remapped.activeIds).not.toContain("channel-1718040000000");
+  });
 });
