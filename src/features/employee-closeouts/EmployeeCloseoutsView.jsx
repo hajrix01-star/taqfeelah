@@ -167,7 +167,14 @@ export default function EmployeeCloseoutsView({
         open={Boolean(shareTarget)}
         closeout={shareTarget}
         storeName={resolveCloseoutStoreName({ preferredStoreName: shareTarget?.storeName, closeout: shareTarget, currentStore, lang }) || storeLabel}
-        employeeName={lang === "ar" ? employee.nameAr : employee.nameEn}
+        employeeName={resolveEmployeeDisplayName(
+          employee,
+          lang,
+          sessionDisplayName
+            || shareTarget?.submittedByName
+            || shareTarget?.openedByName
+            || "",
+        )}
         notebookTheme={notebookTheme}
         formatCalendarDate={formatCalendarDate}
         newlySubmitted={shareNewlySubmitted}

@@ -39,7 +39,13 @@ export default function CloseoutShareModal({
 
   const periodLabel = closeout && formatCalendarDate ? formatCalendarDate(closeout.date, lang) : "";
   const resolvedStoreName = resolveCloseoutStoreName({ preferredStoreName: storeName, closeout, lang });
-  const resolvedEmployeeName = String(employeeName || closeout?.employeeName || "").trim();
+  const resolvedEmployeeName = String(
+    employeeName
+    || closeout?.submittedByName
+    || closeout?.openedByName
+    || closeout?.employeeName
+    || "",
+  ).trim();
   const resolvedPeriodLabel = periodLabel || closeout?.date || "";
   const labels = useMemo(() => shareLabels(lang), [lang]);
   const totals = useMemo(() => (closeout ? closeoutShareTotals(closeout) : null), [closeout]);
