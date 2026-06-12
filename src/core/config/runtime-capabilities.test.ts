@@ -21,13 +21,13 @@ describe("runtime capabilities", () => {
     expect(caps.bindsToServerAuth).toBe(true);
   });
 
-  it("keeps prototype access open by default until auth launch", () => {
+  it("disables prototype access by default after auth launch", () => {
     process.env.NEXT_PUBLIC_APP_MODE = "production";
     delete process.env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE;
 
     const caps = resolveRuntimeCapabilities(process.env);
-    expect(caps.prototypeAccessMode).toBe(true);
-    expect(caps.bindsToServerAuth).toBe(false);
+    expect(caps.prototypeAccessMode).toBe(false);
+    expect(caps.bindsToServerAuth).toBe(true);
   });
 
   it("cascades entries and phase9 flags from closeouts when unset", () => {

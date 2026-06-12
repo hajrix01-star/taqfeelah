@@ -495,6 +495,24 @@ export const orgEngagementSnapshots = pgTable(
   }),
 );
 
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt,
+  },
+  (table) => ({
+    tokenHashUq: uniqueIndex("password_reset_tokens_token_hash_uq").on(table.tokenHash),
+    userCreatedIdx: index("password_reset_tokens_user_created_idx").on(table.userId, table.createdAt),
+  }),
+);
+
 export const memberInvitations = pgTable(
   "member_invitations",
   {

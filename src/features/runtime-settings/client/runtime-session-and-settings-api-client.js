@@ -39,6 +39,31 @@ export async function logoutSessionViaApi() {
   });
 }
 
+export async function requestOwnerPasswordResetViaApi({ email }) {
+  return fetchApiJson("/api/v1/auth/password-reset/request", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: { email },
+    errorMessage: "Password reset request failed.",
+  });
+}
+
+export async function validateOwnerPasswordResetTokenViaApi(token) {
+  const search = new URLSearchParams({ token });
+  return fetchApiJson(`/api/v1/auth/password-reset/validate?${search.toString()}`, {
+    errorMessage: "Password reset token validation failed.",
+  });
+}
+
+export async function confirmOwnerPasswordResetViaApi({ token, newPassword, confirmPassword }) {
+  return fetchApiJson("/api/v1/auth/password-reset/confirm", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: { token, newPassword, confirmPassword },
+    errorMessage: "Password reset confirmation failed.",
+  });
+}
+
 export async function changeOwnerPasswordViaApi({ currentPassword, newPassword }) {
   return fetchApiJson("/api/v1/auth/change-password", {
     method: "POST",

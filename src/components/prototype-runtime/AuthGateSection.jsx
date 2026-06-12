@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Smartphone, X } from "lucide-react";
 import { PROTOTYPE_BUILD_STAMP } from "@/prototype-build-stamp.mjs";
@@ -178,6 +179,11 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
               <span className="text-taq-meta font-black text-[#716753]">{text(lang, "rememberMe")}</span>
             </label>
             <button type="button" onClick={() => { void submitPassword(); }} disabled={submitting} className="mt-4 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white disabled:bg-[#B8C0B7]">{text(lang, "verifyContinue")}</button>
+            {APP_IN_PRODUCTION_MODE ? (
+              <Link href="/auth/forgot-password" className="mt-3 block text-center text-taq-meta font-black text-[#9A823E]">
+                {lang === "ar" ? "نسيت كلمة المرور؟" : "Forgot password?"}
+              </Link>
+            ) : null}
           </>
         )}
         {error && <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{error}</p>}

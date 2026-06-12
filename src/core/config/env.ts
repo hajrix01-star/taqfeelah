@@ -37,6 +37,13 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).optional(),
   APP_PUBLIC_ORIGIN: z.string().url().optional(),
   NEXT_PUBLIC_APP_ORIGIN: z.string().url().optional(),
+  AUTH_PASSWORD_RESET_ENABLED: z.enum(["true", "false"]).optional(),
+  AUTH_EMAIL_FROM: z.string().email().optional(),
+  RESEND_API_KEY: z.string().min(1).optional(),
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.string().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
 });
 
 type AppEnv = z.infer<typeof envSchema>;
