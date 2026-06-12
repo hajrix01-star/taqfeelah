@@ -9,6 +9,7 @@ import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocalePr
 type StoreOption = {
   id: string;
   name: string;
+  status?: string;
 };
 
 type AddAccountMemberFormProps = {

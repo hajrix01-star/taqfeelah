@@ -3,17 +3,25 @@
 import { useState } from "react";
 import { AddAccountMemberForm } from "@/features/saas-admin/client/AddAccountMemberForm";
 import { EditAccountMemberForm } from "@/features/saas-admin/client/EditAccountMemberForm";
+import { updateSaasAccountMember } from "@/features/saas-admin/client/saas-admin-api-client";
+import { resolveSaasAdminFormError, type SaasAdminFormError } from "@/features/saas-admin/client/api-error";
+import { AdminErrorAlert } from "@/features/saas-admin/components/AdminErrorAlert";
 import { AdminCompactTable, AdminCompactTableCell } from "@/features/saas-admin/components/AdminCompactTable";
 import { AdminModal } from "@/features/saas-admin/components/AdminModal";
 import {
   formatEntityStatus,
   formatMemberRole,
 } from "@/features/saas-admin/components/admin-display-labels";
+import {
+  filterActiveStores,
+  formatMemberStoreAccessLabel,
+} from "@/features/saas-admin/client/format-member-store-access";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type StoreOption = {
   id: string;
   name: string;
+  status?: string;
 };
 
 type MemberRow = {
@@ -22,6 +30,12 @@ type MemberRow = {
   name: string;
   role: string;
   status: string;
+  storeIds?: string[];
+  storeAccess?: Array<{
+    storeId: string;
+    storeName: string;
+    storeStatus: string;
+  }>;
 };
 
 type AccountTeamSectionProps = {
@@ -42,6 +56,23 @@ export function AccountTeamSection({
   const { t } = useSaasAdminLocale();
   const [addOpen, setAddOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
+  const [togglingMemberId, setTogglingMemberId] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState<SaasAdminFormError | null>(null);
+  const assignableStores = filterActiveStores(stores);
+
+  async function handleToggleStatus(member: MemberRow) {
+    const nextStatus = member.status === "inactive" ? "active" : "inactive";
+    setToggleError(null);
+    setTogglingMemberId(member.memberId);
+    try {
+      await updateSaasAccountMember(organizationId, member.memberId, { status: nextStatus });
+      onUpdated();
+    } catch (submitError) {
+      setToggleError(resolveSaasAdminFormError(submitError, t, t.teamSection.toggleError));
+    } finally {
+      setTogglingMemberId(null);
+    }
+  }
 
   return (
     <div className="space-y-3">
@@ -62,8 +93,12 @@ export function AccountTeamSection({
         )}
       </div>
 
+      {toggleError ? (
+        <AdminErrorAlert message={toggleError.message} cause={toggleError.cause} code={toggleError.code} />
+      ) : null}
+
       <AdminCompactTable
-        columns={[t.common.name, t.common.role, t.common.status, ""]}
+        columns={[t.common.name, t.common.role, t.teamSection.storeAccess, t.common.status, ""]}
         empty={users.length === 0}
         emptyMessage={t.common.noData}
       >
@@ -73,16 +108,33 @@ export function AccountTeamSection({
               {row.name}
             </AdminCompactTableCell>
             <AdminCompactTableCell col={1}>{formatMemberRole(row.role, t)}</AdminCompactTableCell>
-            <AdminCompactTableCell col={2}>{formatEntityStatus(row.status, t)}</AdminCompactTableCell>
-            <AdminCompactTableCell col={3}>
+            <AdminCompactTableCell col={2} className="text-[var(--admin-muted)]">
+              {row.role === "owner"
+                ? "—"
+                : formatMemberStoreAccessLabel(row.storeAccess, t.teamSection.noStoreAccess)}
+            </AdminCompactTableCell>
+            <AdminCompactTableCell col={3}>{formatEntityStatus(row.status, t)}</AdminCompactTableCell>
+            <AdminCompactTableCell col={4}>
               {!readOnly && row.role !== "owner" ? (
-                <button
-                  type="button"
-                  onClick={() => setEditingMember(row)}
-                  className="rounded-md border border-[var(--admin-border)] px-2 py-0.5 text-[10px] font-semibold text-[var(--admin-primary)] hover:bg-[var(--admin-hover)]"
-                >
-                  {t.accountDetails.editMember}
-                </button>
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setEditingMember(row)}
+                    className="rounded-md border border-[var(--admin-border)] px-2 py-0.5 text-[10px] font-semibold text-[var(--admin-primary)] hover:bg-[var(--admin-hover)]"
+                  >
+                    {t.accountDetails.editMember}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={togglingMemberId === row.memberId}
+                    onClick={() => { void handleToggleStatus(row); }}
+                    className="rounded-md border border-[var(--admin-border)] px-2 py-0.5 text-[10px] font-semibold text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] disabled:opacity-50"
+                  >
+                    {row.status === "inactive"
+                      ? t.teamSection.activateMember
+                      : t.teamSection.deactivateMember}
+                  </button>
+                </div>
               ) : (
                 "—"
               )}
@@ -98,7 +150,7 @@ export function AccountTeamSection({
       >
         <AddAccountMemberForm
           organizationId={organizationId}
-          stores={stores}
+          stores={assignableStores}
           onCreated={() => {
             setAddOpen(false);
             onUpdated();
@@ -110,6 +162,7 @@ export function AccountTeamSection({
       <EditAccountMemberForm
         organizationId={organizationId}
         member={editingMember}
+        stores={assignableStores}
         open={editingMember !== null}
         onClose={() => setEditingMember(null)}
         onUpdated={() => {

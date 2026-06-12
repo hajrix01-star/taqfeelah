@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import {
@@ -7,13 +7,14 @@ import {
   memberStoreAccess,
   organizationMembers,
   organizations,
-  stores,
   users,
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import { ERROR_CODES } from "@/core/errors/error-codes";
 import { catalogAppError } from "@/core/errors/normalize-error";
 import { upsertEmployeePinIdentity } from "@/features/auth/server/auth-identities";
+import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
+import { assertSaasMemberStoreIds } from "@/features/saas-admin/server/assert-saas-member-store-ids";
 
 const inputSchema = z.object({
   actorUserId: z.string().uuid(),
@@ -46,7 +47,6 @@ export async function createSaasAccountMember(
   }
   const input = parsed.data;
 
-  const uniqueStoreIds = [...new Set(input.storeIds)];
   const db = getDb();
 
   const [organization] = await db
@@ -59,20 +59,8 @@ export async function createSaasAccountMember(
     throw catalogAppError(ERROR_CODES.ORGANIZATION_NOT_FOUND);
   }
 
-  if (uniqueStoreIds.length) {
-    const storeRows = await db
-      .select({ id: stores.id })
-      .from(stores)
-      .where(
-        and(
-          eq(stores.organizationId, input.organizationId),
-          inArray(stores.id, uniqueStoreIds),
-        ),
-      );
-    if (storeRows.length !== uniqueStoreIds.length) {
-      throw catalogAppError(ERROR_CODES.INVALID_STORE_IDS);
-    }
-  }
+  await assertOrganizationEntitlement(input.organizationId, "invite_employee");
+  const uniqueStoreIds = await assertSaasMemberStoreIds(db, input.organizationId, input.storeIds);
 
   const userId = randomUUID();
   const memberId = randomUUID();

@@ -17,6 +17,8 @@ const MESSAGE_CODE_MAP: Record<string, string> = {
   "Member was not found for this organization.": ERROR_CODES.MEMBER_NOT_FOUND,
   "Subscription was not found for this organization.": ERROR_CODES.SUBSCRIPTION_NOT_FOUND,
   "One or more storeIds are invalid for this organization.": ERROR_CODES.INVALID_STORE_IDS,
+  "Store was not found for this organization.": ERROR_CODES.STORE_NOT_FOUND,
+  "One or more selected stores are not active.": ERROR_CODES.INVALID_STORE_IDS,
   "Active owner was not found for this organization.": ERROR_CODES.MEMBER_NOT_FOUND,
   "Active store was not found for this organization.": ERROR_CODES.PROVISION_DEPENDENCY_MISSING,
 };

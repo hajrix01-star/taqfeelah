@@ -21,7 +21,6 @@ import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import {
   formatCloseoutStatus,
-  formatEntityStatus,
   formatOperationType,
   formatPlanCode,
 } from "@/features/saas-admin/components/admin-display-labels";
@@ -33,6 +32,7 @@ import {
 import { KpiCard } from "@/features/saas-admin/components/KpiCard";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
 import { AccountSetupLinkPanel } from "@/features/saas-admin/client/AccountSetupLinkPanel";
+import { AccountStoresSection } from "@/features/saas-admin/client/AccountStoresSection";
 import { AccountTeamSection } from "@/features/saas-admin/client/AccountTeamSection";
 import { EditAccountForms } from "@/features/saas-admin/client/EditAccountForms";
 import { fetchSaasAccountDetails } from "@/features/saas-admin/client/saas-admin-api-client";
@@ -198,23 +198,12 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
         ) : null}
 
         {activeTab === "stores" ? (
-          <AdminCompactTable
-            columns={[t.common.name, t.common.status, t.accountDetails.createdAt]}
-            empty={data.stores.length === 0}
-            emptyMessage={t.common.noData}
-          >
-            {data.stores.map((row) => (
-              <tr key={row.id} className="hover:bg-[var(--admin-hover)]">
-                <AdminCompactTableCell col={0} className="font-semibold text-[var(--admin-text)]">
-                  {row.name}
-                </AdminCompactTableCell>
-                <AdminCompactTableCell col={1}>{formatEntityStatus(row.status, t)}</AdminCompactTableCell>
-                <AdminCompactTableCell col={2} className="text-[var(--admin-muted)]">
-                  {formatDateTime(row.createdAt, locale)}
-                </AdminCompactTableCell>
-              </tr>
-            ))}
-          </AdminCompactTable>
+          <AccountStoresSection
+            organizationId={accountId}
+            stores={data.stores}
+            onUpdated={() => { void refetch(); }}
+            readOnly={!canWriteAccount}
+          />
         ) : null}
 
         {activeTab === "team" ? (

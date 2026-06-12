@@ -143,6 +143,35 @@ export async function updateSaasAccount(
   });
 }
 
+export async function createSaasAccountStore(
+  organizationId: string,
+  payload: {
+    name: string;
+    location?: string;
+  },
+) {
+  return fetchSaasAdminJson(`/api/v1/saas-admin/accounts/${organizationId}/stores`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateSaasAccountStore(
+  organizationId: string,
+  storeId: string,
+  payload: {
+    name?: string;
+    location?: string;
+    status?: "active" | "archived";
+    reason?: string;
+  },
+) {
+  return fetchSaasAdminJson(`/api/v1/saas-admin/accounts/${organizationId}/stores/${storeId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function updateSaasAccountMember(
   organizationId: string,
   memberId: string,

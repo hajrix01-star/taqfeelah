@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import {
@@ -6,11 +6,12 @@ import {
   memberStoreAccess,
   organizationMembers,
   organizations,
-  stores,
   users,
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
+import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
 import { upsertEmployeePinIdentity } from "@/features/auth/server/auth-identities";
+import { assertSaasMemberStoreIds } from "@/features/saas-admin/server/assert-saas-member-store-ids";
 
 const inputSchema = z.object({
   actorUserId: z.string().uuid(),
@@ -73,21 +74,12 @@ export async function updateSaasAccountMember(rawInput: z.infer<typeof inputSche
 
   const nextRole = input.role || member.role;
   const nextStatus = input.status || member.status;
-  const uniqueStoreIds = input.storeIds ? [...new Set(input.storeIds)] : null;
+  const uniqueStoreIds = input.storeIds
+    ? await assertSaasMemberStoreIds(db, input.organizationId, input.storeIds)
+    : null;
 
-  if (uniqueStoreIds?.length) {
-    const storeRows = await db
-      .select({ id: stores.id })
-      .from(stores)
-      .where(
-        and(
-          eq(stores.organizationId, input.organizationId),
-          inArray(stores.id, uniqueStoreIds),
-        ),
-      );
-    if (storeRows.length !== uniqueStoreIds.length) {
-      throw new ValidationError("One or more storeIds are invalid for this organization.");
-    }
+  if (input.status === "active" && member.status === "inactive") {
+    await assertOrganizationEntitlement(input.organizationId, "activate_employee");
   }
 
   const now = new Date();
