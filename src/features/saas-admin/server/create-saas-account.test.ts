@@ -18,6 +18,20 @@ vi.mock("@/core/db/client", () => ({
   }),
 }));
 
+vi.mock("@/features/billing/server/plan-catalog-repository", () => ({
+  getPlanCatalogRow: vi.fn(async () => ({
+    planCode: "starter",
+    trialDays: 14,
+  })),
+}));
+
+vi.mock("@/features/account-setup/server/create-account-setup-token", () => ({
+  createAccountSetupToken: vi.fn(async () => ({
+    setupUrl: "https://example.com/auth/setup?token=abc",
+    expiresAt: "2026-12-31T00:00:00.000Z",
+  })),
+}));
+
 describe("createSaasAccount", () => {
   it("rejects invalid input before database access", async () => {
     const { createSaasAccount } = await import("@/features/saas-admin/server/create-saas-account");
@@ -27,14 +41,13 @@ describe("createSaasAccount", () => {
         actorUserId: "not-a-uuid",
         organizationName: "",
         ownerName: "",
-        ownerUsername: "",
-        ownerPassword: "123",
+        ownerPhone: "",
         planCode: "starter",
       }),
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
-  it("returns a clear message for short passwords", async () => {
+  it("requires a valid owner phone", async () => {
     const { createSaasAccount } = await import("@/features/saas-admin/server/create-saas-account");
 
     await expect(
@@ -42,12 +55,11 @@ describe("createSaasAccount", () => {
         actorUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
         organizationName: "Acme",
         ownerName: "Owner",
-        ownerUsername: "acme",
-        ownerPassword: "123",
+        ownerPhone: "invalid",
         planCode: "starter",
       }),
     ).rejects.toMatchObject({
-      message: "Password must be at least 4 characters.",
+      message: "Invalid owner phone number.",
     });
   });
 });

@@ -56,14 +56,15 @@ describe("saas admin provision routes integration", () => {
     createSaasAccount.mockResolvedValueOnce({
       organizationId: "org-1",
       organizationName: "Acme",
-      ownerUserId: "user-1",
-      ownerMemberId: "member-1",
-      ownerUsername: "acme-owner",
+      ownerName: "Owner",
+      ownerPhone: "966512345678",
+      setupUrl: "https://example.com/auth/setup?token=abc",
+      setupExpiresAt: "2026-12-31T00:00:00.000Z",
       storeId: "store-1",
       storeName: "Acme",
       subscriptionId: "sub-1",
       planCode: "starter",
-      status: "trial",
+      status: "pending_activation",
       createdAt: "2026-06-11T00:00:00.000Z",
     });
 
@@ -74,8 +75,7 @@ describe("saas admin provision routes integration", () => {
         body: JSON.stringify({
           organizationName: "Acme",
           ownerName: "Owner",
-          ownerUsername: "acme-owner",
-          ownerPassword: "secret",
+          ownerPhone: "966512345678",
           planCode: "starter",
         }),
       }),
@@ -87,7 +87,7 @@ describe("saas admin provision routes integration", () => {
     expect(createSaasAccount).toHaveBeenCalledWith(expect.objectContaining({
       actorUserId: TEST_OWNER_USER_ID,
       organizationName: "Acme",
-      ownerUsername: "acme-owner",
+      ownerPhone: "966512345678",
       planCode: "starter",
     }));
   });

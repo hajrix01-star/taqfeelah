@@ -31,39 +31,44 @@ export function buildOwnerCredentialsWhatsAppMessage(input: OwnerCredentialsMess
   ].join("\n");
 }
 
+type OwnerSetupMessageInput = {
+  ownerName: string;
+  setupUrl: string;
+  organizationName: string;
+  storeName: string;
+  ownerPhone: string;
+};
+
+export function buildOwnerSetupWhatsAppMessage(input: OwnerSetupMessageInput): string {
+  return [
+    `مرحبًا ${input.ownerName}،`,
+    "",
+    "تم إنشاء حسابك في تطبيق تقفيلة لإدارة التقفيلات اليومية.",
+    "",
+    "لتفعيل حسابك وإنشاء كلمة المرور، افتح الرابط التالي:",
+    input.setupUrl,
+    "",
+    `جوال الدخول:\n${input.ownerPhone}`,
+    "",
+    `اسم النشاط:\n${input.organizationName}`,
+    `اسم أول محل:\n${input.storeName}`,
+    "",
+    "مهم:",
+    "الرابط لمرة واحدة وله صلاحية محدودة. لا تشاركه مع أحد.",
+    "",
+    "تطبيق تقفيلة",
+  ].join("\n");
+}
+
 type EmployeeInviteMessageInput = {
   employeeName: string;
   organizationName: string;
   storeName: string;
   inviteUrl: string;
-  activationCode?: string;
+  pin: string;
 };
 
-export function buildEmployeeInviteWhatsAppMessage(
-  input: EmployeeInviteMessageInput,
-  includeActivationCode = false,
-): string {
-  if (includeActivationCode && input.activationCode) {
-    return [
-      `مرحبًا ${input.employeeName}،`,
-      "",
-      "تمت دعوتك لاستخدام تطبيق تقفيلة لإدخال التقفيلة اليومية.",
-      "",
-      `النشاط:\n${input.organizationName}`,
-      `المحل:\n${input.storeName}`,
-      "",
-      `رابط الدعوة:\n${input.inviteUrl}`,
-      `رمز التفعيل:\n${input.activationCode}`,
-      "",
-      "بعد فتح الرابط، أدخل رمز التفعيل ثم أنشئ PIN خاص بك للدخول لاحقًا.",
-      "",
-      "ملاحظة:",
-      "لا تشارك هذا الرابط أو الرمز مع أي شخص.",
-      "",
-      "تطبيق تقفيلة",
-    ].join("\n");
-  }
-
+export function buildEmployeeInviteWhatsAppMessage(input: EmployeeInviteMessageInput): string {
   return [
     `مرحبًا ${input.employeeName}،`,
     "",
@@ -72,12 +77,16 @@ export function buildEmployeeInviteWhatsAppMessage(
     `النشاط:\n${input.organizationName}`,
     `المحل:\n${input.storeName}`,
     "",
-    `افتح رابط الدعوة:\n${input.inviteUrl}`,
+    `رابط الدعوة:\n${input.inviteUrl}`,
+    `رمز PIN (مرة واحدة لتسجيل الجهاز):\n${input.pin}`,
     "",
-    "بعد فتح الرابط، سيطلب منك النظام رمز التفعيل.",
-    "اطلب رمز التفعيل من المالك أو المسؤول.",
+    "بعد فتح الرابط:",
+    "1) أدخل جوالك",
+    "2) أدخل رمز PIN أعلاه",
+    "3) سيتم حفظ جهازك — بعدها الدخول بالجوال فقط",
     "",
-    "بعد التفعيل ستقوم بإنشاء PIN خاص بك للدخول لاحقًا.",
+    "ملاحظة:",
+    "لا تشارك هذا الرابط أو PIN مع أي شخص.",
     "",
     "تطبيق تقفيلة",
   ].join("\n");

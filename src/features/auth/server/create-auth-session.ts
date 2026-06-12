@@ -16,13 +16,17 @@ import {
   resolveEmployeeUserId,
 } from "@/features/auth/server/resolve-employee-user-id";
 import { resolveUserDisplayName } from "@/features/auth/server/resolve-user-display-name";
+import { createPhoneAuthSession } from "@/features/auth/server/create-phone-auth-session";
 
 const loginInputSchema = z.object({
-  mode: z.enum(["owner_password", "employee_pin"]),
+  mode: z.enum(["owner_password", "employee_pin", "owner_phone_password", "employee_phone_pin"]),
   username: z.string().optional(),
   password: z.string().optional(),
   employeeId: z.string().optional(),
+  phone: z.string().optional(),
   pin: z.string().optional(),
+  trustDevice: z.boolean().optional(),
+  trustedDeviceCookie: z.string().optional(),
 });
 
 type LoginInput = z.infer<typeof loginInputSchema>;
@@ -203,6 +207,37 @@ export async function createAuthSession(rawInput: LoginInput) {
     throw new ValidationError("Invalid login payload.", parsed.error.flatten());
   }
   const input = parsed.data;
+
+  if (input.mode === "owner_phone_password" || input.mode === "employee_phone_pin") {
+    return createPhoneAuthSession(
+      {
+        mode: input.mode,
+        phone: input.phone,
+        password: input.password,
+        pin: input.pin,
+        trustDevice: input.trustDevice,
+        trustedDeviceCookie: input.trustedDeviceCookie,
+      },
+      async (userId, loginRole) => {
+        const member = await resolveActiveMembership(userId, loginRole);
+        if (!member) {
+          throw new UnauthorizedError("User is not an active organization member.");
+        }
+        if (loginRole === "owner" && member.role !== "owner") {
+          throw new UnauthorizedError("Owner credentials are not linked to an owner member.");
+        }
+        const displayName = await resolveUserDisplayName(userId);
+        return {
+          organizationId: member.organizationId,
+          userId,
+          role: resolveMemberRole(member.role, loginRole),
+          displayName,
+          mustChangePassword: false,
+        };
+      },
+    );
+  }
+
   const envAuth = getProductionAuthRuntimeConfig();
   const organizationId = envAuth.organizationId;
   const ownerUserId = envAuth.ownerUserId;

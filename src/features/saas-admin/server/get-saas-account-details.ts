@@ -227,6 +227,7 @@ export async function getSaasAccountDetails(
     name: org.name,
     ownerName: owner?.name ?? null,
     ownerUsername: owner?.username ?? null,
+    ownerPhone: owner?.loginPhone ?? null,
     ownerMemberId: owner?.memberId ?? null,
     status: resolveAccountStatus({
       organizationStatus: org.status,

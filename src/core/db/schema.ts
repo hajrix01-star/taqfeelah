@@ -43,6 +43,8 @@ export const authIdentities = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     provider: text("provider").notNull(),
     phoneNumber: text("phone_number"),
+    /** Normalized E.164 login identifier (owners and employees). */
+    loginPhone: text("login_phone"),
     username: text("username"),
     passwordHash: text("password_hash"),
     /** When true, owner must set a new password before using the app. */
@@ -57,6 +59,9 @@ export const authIdentities = pgTable(
     usernamePasswordUq: uniqueIndex("auth_identities_username_password_uq")
       .on(table.provider, table.username)
       .where(sql`${table.provider} = 'username_password'`),
+    loginPhoneProviderUq: uniqueIndex("auth_identities_login_phone_provider_uq")
+      .on(table.provider, table.loginPhone)
+      .where(sql`${table.loginPhone} IS NOT NULL`),
   }),
 );
 
@@ -321,6 +326,79 @@ export const auditEvents = pgTable(
   }),
 );
 
+export const planCatalog = pgTable("plan_catalog", {
+  planCode: text("plan_code").primaryKey(),
+  displayNameAr: text("display_name_ar").notNull(),
+  displayNameEn: text("display_name_en").notNull(),
+  priceMonthlyHalalas: bigint("price_monthly_halalas", { mode: "number" }).notNull(),
+  priceYearlyHalalas: bigint("price_yearly_halalas", { mode: "number" }),
+  maxStores: integer("max_stores").notNull(),
+  maxEmployees: integer("max_employees").notNull(),
+  trialDays: integer("trial_days").notNull().default(14),
+  features: jsonb("features").notNull().default({}),
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt,
+  updatedAt,
+});
+
+export const organizationEntitlementOverrides = pgTable(
+  "organization_entitlement_overrides",
+  {
+    organizationId: uuid("organization_id")
+      .primaryKey()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    maxStoresOverride: integer("max_stores_override"),
+    maxEmployeesOverride: integer("max_employees_override"),
+    priceMonthlyOverrideHalalas: bigint("price_monthly_override_halalas", { mode: "number" }),
+    notes: text("notes"),
+    createdAt,
+    updatedAt,
+  },
+);
+
+export const accountSetupTokens = pgTable(
+  "account_setup_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    phoneNumber: text("phone_number").notNull(),
+    ownerName: text("owner_name"),
+    tokenHash: text("token_hash").notNull(),
+    purpose: text("purpose").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id, { onDelete: "set null" }),
+    createdAt,
+  },
+  (table) => ({
+    tokenHashUq: uniqueIndex("account_setup_tokens_token_hash_uq").on(table.tokenHash),
+    orgCreatedIdx: index("account_setup_tokens_org_created_idx").on(table.organizationId, table.createdAt),
+  }),
+);
+
+export const trustedDevices = pgTable(
+  "trusted_devices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deviceTokenHash: text("device_token_hash").notNull(),
+    userAgent: text("user_agent"),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }).notNull().defaultNow(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt,
+  },
+  (table) => ({
+    userRevokedIdx: index("trusted_devices_user_revoked_idx").on(table.userId, table.revokedAt),
+    deviceTokenHashUq: uniqueIndex("trusted_devices_device_token_hash_uq").on(table.deviceTokenHash),
+  }),
+);
+
 // Final phase SaaS management tables.
 export const subscriptions = pgTable(
   "subscriptions",
@@ -527,6 +605,8 @@ export const memberInvitations = pgTable(
     displayName: text("display_name").notNull(),
     role: text("role").notNull(),
     phoneNumber: text("phone_number"),
+    invitationType: text("invitation_type").notNull().default("employee_onboarding"),
+    pinHash: text("pin_hash"),
     activationCodeHash: text("activation_code_hash").notNull(),
     status: text("status").notNull().default("pending"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),

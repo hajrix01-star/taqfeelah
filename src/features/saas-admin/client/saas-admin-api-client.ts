@@ -1,3 +1,4 @@
+import type { PlanCatalogRow } from "@/features/billing/types";
 import type {
   InvestorMetrics,
   SaasAccountDetails,
@@ -73,9 +74,7 @@ export async function runSaasAnalyticsAggregate(snapshotDate?: string) {
 export type CreateSaasAccountPayload = {
   organizationName: string;
   ownerName: string;
-  ownerUsername: string;
-  ownerPassword?: string;
-  ownerPhone?: string;
+  ownerPhone: string;
   storeName?: string;
   storeLocation?: string;
   planCode?: "starter" | "growth" | "enterprise";
@@ -84,19 +83,26 @@ export type CreateSaasAccountPayload = {
 export type CreateSaasAccountResponse = {
   organizationId: string;
   organizationName: string;
-  ownerUserId: string;
-  ownerMemberId: string;
-  ownerUsername: string;
   ownerName: string;
-  ownerPhone: string | null;
-  tempPassword: string;
-  mustChangePassword: true;
+  ownerPhone: string;
+  setupUrl: string;
+  setupExpiresAt: string;
   storeId: string;
   storeName: string;
   subscriptionId: string;
   planCode: string;
-  status: "trial";
+  status: "pending_activation";
   createdAt: string;
+};
+
+export type PlanCatalogList = {
+  plans: PlanCatalogRow[];
+};
+
+export type AccountSetupLinkResponse = {
+  setupUrl: string;
+  expiresAt: string;
+  purpose: "onboarding" | "password_reset";
 };
 
 export async function createSaasAccount(payload: CreateSaasAccountPayload) {
@@ -162,6 +168,30 @@ export async function updateSaasAccountOwner(
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+}
+
+export async function fetchPlanCatalog() {
+  return fetchSaasAdminJson<PlanCatalogList>("/api/v1/saas-admin/plans");
+}
+
+export async function updatePlanCatalogRow(row: PlanCatalogRow) {
+  return fetchSaasAdminJson<{ plan: PlanCatalogRow }>("/api/v1/saas-admin/plans", {
+    method: "PATCH",
+    body: JSON.stringify(row),
+  });
+}
+
+export async function createAccountSetupLink(
+  organizationId: string,
+  purpose: "onboarding" | "password_reset" = "password_reset",
+) {
+  return fetchSaasAdminJson<AccountSetupLinkResponse>(
+    `/api/v1/saas-admin/accounts/${organizationId}/setup-link`,
+    {
+      method: "POST",
+      body: JSON.stringify({ purpose }),
+    },
+  );
 }
 
 export async function repairSaasAccountFoundation(organizationId: string) {

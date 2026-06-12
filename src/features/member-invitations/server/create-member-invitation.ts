@@ -6,6 +6,8 @@ import { buildInviteUrl } from "@/core/auth/app-origin";
 import { getDb } from "@/core/db/client";
 import { auditEvents, memberInvitations, organizations, stores } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
+import { assertValidLoginPhone } from "@/core/phone/normalize-login-phone";
+import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
 import { generateActivationCode } from "@/features/auth/server/activation-code";
 import { generateInviteToken } from "@/features/auth/server/invite-token";
 import { hashPassword } from "@/features/auth/server/password-hash";
@@ -18,7 +20,10 @@ const inputSchema = z.object({
   displayName: z.string().trim().min(1).max(120),
   role: z.enum(["employee", "manager"]),
   storeId: z.string().uuid(),
-  phoneNumber: z.string().trim().max(30).optional(),
+  phoneNumber: z.string().trim().min(1),
+  pin: z.string().trim().min(4).max(12),
+  invitationType: z.enum(["employee_onboarding", "device_pin_reset"]).default("employee_onboarding"),
+  targetUserId: z.string().uuid().optional(),
 });
 
 export type CreateMemberInvitationInput = z.infer<typeof inputSchema>;
@@ -27,13 +32,14 @@ export type CreateMemberInvitationResult = {
   invitationId: string;
   token: string;
   inviteUrl: string;
-  activationCode: string;
+  pin: string;
   displayName: string;
   role: "employee" | "manager";
   storeId: string;
   storeName: string;
   organizationName: string;
-  phoneNumber: string | null;
+  phoneNumber: string;
+  invitationType: "employee_onboarding" | "device_pin_reset";
   status: "pending";
   expiresAt: string;
   createdAt: string;
@@ -55,6 +61,15 @@ export async function createMemberInvitation(
     actorRole: input.actorRole,
     minimumRole: "owner",
   });
+
+  await assertOrganizationEntitlement(input.organizationId, "invite_employee");
+
+  let phoneNumber: string;
+  try {
+    phoneNumber = assertValidLoginPhone(input.phoneNumber);
+  } catch {
+    throw new ValidationError("Invalid employee phone number.");
+  }
 
   const db = getDb();
   const [store] = await db
@@ -99,6 +114,8 @@ export async function createMemberInvitation(
 
   const invitationId = randomUUID();
   const token = generateInviteToken();
+  const pin = input.pin.trim();
+  const pinHash = await hashPassword(pin);
   const activationCode = generateActivationCode(6);
   const activationCodeHash = await hashPassword(activationCode);
   const now = new Date();
@@ -113,11 +130,14 @@ export async function createMemberInvitation(
       storeId: input.storeId,
       displayName: input.displayName.trim(),
       role: input.role,
-      phoneNumber: input.phoneNumber?.trim() || null,
+      phoneNumber,
+      invitationType: input.invitationType,
+      pinHash,
       activationCodeHash,
       status: "pending",
       expiresAt,
       createdByUserId: input.actorUserId,
+      acceptedUserId: input.targetUserId ?? null,
       createdAt: now,
       updatedAt: now,
     });
@@ -132,6 +152,8 @@ export async function createMemberInvitation(
         displayName: input.displayName.trim(),
         role: input.role,
         storeId: input.storeId,
+        phoneNumber,
+        invitationType: input.invitationType,
         expiresAt: expiresAt.toISOString(),
       },
     });
@@ -141,13 +163,14 @@ export async function createMemberInvitation(
     invitationId,
     token,
     inviteUrl: buildInviteUrl(token, request),
-    activationCode,
+    pin,
     displayName: input.displayName.trim(),
     role: input.role,
     storeId: input.storeId,
     storeName: store.name,
     organizationName: organization.name,
-    phoneNumber: input.phoneNumber?.trim() || null,
+    phoneNumber,
+    invitationType: input.invitationType,
     status: "pending",
     expiresAt: expiresAt.toISOString(),
     createdAt: now.toISOString(),

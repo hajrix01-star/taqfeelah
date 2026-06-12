@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { assertValidLoginPhone, normalizeLoginPhone } from "@/core/phone/normalize-login-phone";
 import { getDb } from "@/core/db/client";
 import {
   auditEvents,
@@ -10,17 +11,22 @@ import {
   users,
 } from "@/core/db/schema";
 import { UnauthorizedError, ValidationError } from "@/core/errors/app-error";
+import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
 import { upsertEmployeePinIdentity } from "@/features/auth/server/auth-identities";
 import { verifyPassword } from "@/features/auth/server/password-hash";
 import { resolveEffectiveInvitationStatus } from "@/features/member-invitations/server/resolve-invitation-status";
 import { INVITATION_MAX_FAILED_ATTEMPTS } from "@/features/member-invitations/server/types";
 import { resolveUserDisplayName } from "@/features/auth/server/resolve-user-display-name";
+import {
+  registerTrustedDevice,
+  revokeTrustedDevicesForUser,
+} from "@/features/trusted-devices/server/trusted-device-repository";
 
 const inputSchema = z.object({
   token: z.string().trim().min(8).max(200),
-  activationCode: z.string().trim().min(4).max(12),
+  phone: z.string().trim().min(1),
   pin: z.string().trim().min(4).max(12),
-  confirmPin: z.string().trim().min(4).max(12),
+  trustDevice: z.boolean().default(true),
 });
 
 export async function activateMemberInvitation(rawInput: z.infer<typeof inputSchema>) {
@@ -30,8 +36,11 @@ export async function activateMemberInvitation(rawInput: z.infer<typeof inputSch
   }
   const input = parsed.data;
 
-  if (input.pin !== input.confirmPin) {
-    throw new ValidationError("PIN confirmation does not match.");
+  let normalizedPhone: string;
+  try {
+    normalizedPhone = assertValidLoginPhone(input.phone);
+  } catch {
+    throw new ValidationError("Invalid phone number.");
   }
 
   const db = getDb();
@@ -42,13 +51,16 @@ export async function activateMemberInvitation(rawInput: z.infer<typeof inputSch
       storeId: memberInvitations.storeId,
       displayName: memberInvitations.displayName,
       role: memberInvitations.role,
-      activationCodeHash: memberInvitations.activationCodeHash,
+      phoneNumber: memberInvitations.phoneNumber,
+      pinHash: memberInvitations.pinHash,
+      invitationType: memberInvitations.invitationType,
       status: memberInvitations.status,
       expiresAt: memberInvitations.expiresAt,
       usedAt: memberInvitations.usedAt,
       revokedAt: memberInvitations.revokedAt,
       lockedAt: memberInvitations.lockedAt,
       failedAttempts: memberInvitations.failedAttempts,
+      acceptedUserId: memberInvitations.acceptedUserId,
     })
     .from(memberInvitations)
     .where(eq(memberInvitations.token, input.token))
@@ -72,8 +84,18 @@ export async function activateMemberInvitation(rawInput: z.infer<typeof inputSch
     throw new ValidationError("This invitation is locked after too many failed attempts.");
   }
 
-  const codeValid = await verifyPassword(input.activationCode, row.activationCodeHash);
-  if (!codeValid) {
+  const invitationPhone = row.phoneNumber ? normalizeLoginPhone(row.phoneNumber) : "";
+  if (!invitationPhone || invitationPhone !== normalizedPhone) {
+    throw new ValidationError("Phone number does not match this invitation.");
+  }
+
+  const pinHash = row.pinHash;
+  if (!pinHash) {
+    throw new ValidationError("Invitation is missing PIN configuration.");
+  }
+
+  const pinValid = await verifyPassword(input.pin, pinHash);
+  if (!pinValid) {
     const nextAttempts = row.failedAttempts + 1;
     const now = new Date();
     const shouldLock = nextAttempts >= INVITATION_MAX_FAILED_ATTEMPTS;
@@ -91,9 +113,15 @@ export async function activateMemberInvitation(rawInput: z.infer<typeof inputSch
     throw new UnauthorizedError(
       shouldLock
         ? "Too many failed attempts. This invitation is now locked."
-        : "Invalid activation code.",
+        : "Invalid PIN.",
     );
   }
+
+  if (row.invitationType === "device_pin_reset") {
+    return completeDevicePinReset(row, normalizedPhone, input.pin, input.trustDevice);
+  }
+
+  await assertOrganizationEntitlement(row.organizationId, "activate_employee");
 
   const userId = randomUUID();
   const memberId = randomUUID();
@@ -123,7 +151,10 @@ export async function activateMemberInvitation(rawInput: z.infer<typeof inputSch
       storeId: row.storeId,
     });
 
-    await upsertEmployeePinIdentity({ userId, pin: input.pin }, tx);
+    await upsertEmployeePinIdentity(
+      { userId, pin: input.pin, loginPhone: normalizedPhone },
+      tx,
+    );
 
     await tx
       .update(memberInvitations)
@@ -151,6 +182,9 @@ export async function activateMemberInvitation(rawInput: z.infer<typeof inputSch
   });
 
   const displayName = await resolveUserDisplayName(userId);
+  const trustedDevice = input.trustDevice
+    ? await registerTrustedDevice({ userId })
+    : null;
 
   return {
     organizationId: row.organizationId,
@@ -159,5 +193,63 @@ export async function activateMemberInvitation(rawInput: z.infer<typeof inputSch
     role: row.role as "employee" | "manager",
     storeId: row.storeId,
     displayName,
+    trustedDevice,
+  };
+}
+
+async function completeDevicePinReset(
+  row: {
+    id: string;
+    organizationId: string;
+    storeId: string;
+    displayName: string;
+    role: string;
+    acceptedUserId: string | null;
+  },
+  loginPhone: string,
+  pin: string,
+  trustDevice: boolean,
+) {
+  const userId = row.acceptedUserId;
+  if (!userId) {
+    throw new ValidationError("Device PIN reset invitation is missing target user.");
+  }
+
+  const db = getDb();
+  const now = new Date();
+
+  await db.transaction(async (tx) => {
+    await upsertEmployeePinIdentity({ userId, pin, loginPhone }, tx);
+    await revokeTrustedDevicesForUser(userId);
+
+    await tx
+      .update(memberInvitations)
+      .set({
+        status: "used",
+        usedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(memberInvitations.id, row.id));
+
+    await tx.insert(auditEvents).values({
+      organizationId: row.organizationId,
+      storeId: row.storeId,
+      actorUserId: userId,
+      action: "employee_device_pin_reset",
+      metadata: { invitationId: row.id, userId },
+    });
+  });
+
+  const displayName = await resolveUserDisplayName(userId);
+  const trustedDevice = trustDevice ? await registerTrustedDevice({ userId }) : null;
+
+  return {
+    organizationId: row.organizationId,
+    userId,
+    memberId: null,
+    role: row.role as "employee" | "manager",
+    storeId: row.storeId,
+    displayName,
+    trustedDevice,
   };
 }

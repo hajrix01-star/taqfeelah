@@ -54,6 +54,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [username, setUsername] = useState(PROTOTYPE_OWNER_USERNAME);
+  const [ownerPhone, setOwnerPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -63,6 +64,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
     if (!saved) return;
     setRememberMe(true);
     if (saved.username) setUsername(saved.username);
+    if (saved.phone) setOwnerPhone(saved.phone);
     if (saved.password) setPassword(saved.password);
   }, []);
   const submitOtp = () => {
@@ -76,6 +78,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
       setSubmitting(true);
       try {
         const session = await loginOwnerViaSessionBridge({
+          phone: APP_IN_PRODUCTION_MODE ? ownerPhone.trim() : undefined,
           username: username.trim(),
           password,
           useServerAuth: APP_IN_PRODUCTION_MODE,
@@ -165,8 +168,12 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
           )
         ) : (
           <>
-            <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "username")}</p>
-            <input dir="ltr" value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
+            <p className="mb-2 text-xs font-bold text-[#716753]">{APP_IN_PRODUCTION_MODE ? text(lang, "mobileNumber") : text(lang, "username")}</p>
+            {APP_IN_PRODUCTION_MODE ? (
+              <input dir="ltr" inputMode="tel" value={ownerPhone} onChange={(event) => setOwnerPhone(event.target.value)} autoComplete="tel" className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
+            ) : (
+              <input dir="ltr" value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
+            )}
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "password")}</p>
             <input dir="ltr" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
             <label className="mt-3 flex cursor-pointer items-center gap-2.5">
@@ -214,8 +221,10 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
 function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
   const [selectedId, setSelectedId] = useState("");
   const [manualEmployeeId, setManualEmployeeId] = useState("");
+  const [employeePhone, setEmployeePhone] = useState("");
   const [boundUserId, setBoundUserId] = useState("");
   const [pin, setPin] = useState("");
+  const [trustDevice, setTrustDevice] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -274,11 +283,17 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
     ));
     if (!employeeIdentifier) { setError(text(lang, "noActiveEmployee")); return; }
     if (APP_IN_PRODUCTION_MODE) {
+      const phone = employeePhone.trim();
+      if (!phone) {
+        setError(lang === "ar" ? "أدخل جوالك." : "Enter your mobile number.");
+        return;
+      }
       setSubmitting(true);
       try {
         const session = await loginEmployeeViaSessionBridge({
-          employeeId: employeeIdentifier,
-          pin: pin.trim(),
+          phone,
+          pin: pin.trim() || undefined,
+          trustDevice,
           useServerAuth: APP_IN_PRODUCTION_MODE,
         });
         onLogin(
@@ -311,7 +326,34 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
         <p className="mx-auto mt-3 max-w-[280px] text-sm leading-6 text-[#827762]">{text(lang, "employeeLoginSubtitle")}</p>
       </div>
       <div className="mt-8 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-black/[0.045]">
-        {!pinOnlyLogin ? (
+        {APP_IN_PRODUCTION_MODE ? (
+          <>
+            <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "mobileNumber")}</p>
+            <input
+              dir="ltr"
+              inputMode="tel"
+              value={employeePhone}
+              onChange={(event) => setEmployeePhone(event.target.value)}
+              className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
+            />
+            <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employeePin")}</p>
+            <input dir="ltr" inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value)} placeholder="• • • •" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]" />
+            <p className="mt-2 text-taq-meta font-bold text-[#827762]">
+              {lang === "ar" ? "على جهاز موثوق يكفي الجوال فقط — وإلا أدخل PIN." : "On a trusted device, mobile only — otherwise enter PIN."}
+            </p>
+            <label className="mt-3 flex cursor-pointer items-center gap-2.5">
+              <input
+                type="checkbox"
+                checked={trustDevice}
+                onChange={(event) => setTrustDevice(event.target.checked)}
+                className="h-4 w-4 rounded border-[#C8BCA4] text-[#112A46] accent-[#112A46]"
+              />
+              <span className="text-taq-meta font-black text-[#716753]">
+                {lang === "ar" ? "حفظ هذا الجهاز" : "Trust this device"}
+              </span>
+            </label>
+          </>
+        ) : !pinOnlyLogin ? (
           <>
         <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employee")}</p>
         {activeStaff.length > 0 ? (
@@ -341,9 +383,13 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
             {lang === "ar" ? "أدخل PIN الخاص بك للمتابعة" : "Enter your PIN to continue"}
           </p>
         )}
-        <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employeePin")}</p>
-        <input dir="ltr" inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value)} placeholder="â€¢ â€¢ â€¢ â€¢" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]" />
-        {!APP_IN_PRODUCTION_MODE ? <p className="mt-2 text-taq-meta font-bold text-[#827762]">{text(lang, "employeePinHint")}</p> : null}
+        {!APP_IN_PRODUCTION_MODE ? (
+          <>
+            <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employeePin")}</p>
+            <input dir="ltr" inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value)} placeholder="• • • •" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]" />
+            <p className="mt-2 text-taq-meta font-bold text-[#827762]">{text(lang, "employeePinHint")}</p>
+          </>
+        ) : null}
         <label className="mt-3 flex cursor-pointer items-center gap-2.5">
           <input
             type="checkbox"

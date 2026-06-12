@@ -42,11 +42,11 @@ export function OwnerSettingsTeamInvites({
   const [error, setError] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [pin, setPin] = useState("");
   const [role, setRole] = useState("employee");
   const [storeId, setStoreId] = useState(activeStoredBusinesses[0]?.id || "");
   const [creating, setCreating] = useState(false);
   const [createdInvite, setCreatedInvite] = useState(null);
-  const [includeActivationCode, setIncludeActivationCode] = useState(false);
   const [copiedField, setCopiedField] = useState("");
 
   const loadInvitations = useCallback(async () => {
@@ -85,7 +85,7 @@ export function OwnerSettingsTeamInvites({
   }
 
   async function handleCreateInvite() {
-    if (!displayName.trim() || !storeId || creating) return;
+    if (!displayName.trim() || !phoneNumber.trim() || !pin.trim() || !storeId || creating) return;
     setCreating(true);
     setError("");
     try {
@@ -96,12 +96,13 @@ export function OwnerSettingsTeamInvites({
         displayName: displayName.trim(),
         role,
         storeId,
-        phoneNumber: phoneNumber.trim() || undefined,
+        phoneNumber: phoneNumber.trim(),
+        pin: pin.trim(),
       });
       setCreatedInvite(created);
       setDisplayName("");
       setPhoneNumber("");
-      setIncludeActivationCode(false);
+      setPin("");
       await loadInvitations();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Failed to create invitation.");
@@ -127,16 +128,13 @@ export function OwnerSettingsTeamInvites({
   }
 
   function openWhatsAppInvite(invite) {
-    const message = buildEmployeeInviteWhatsAppMessage(
-      {
-        employeeName: invite.displayName,
-        organizationName: invite.organizationName,
-        storeName: invite.storeName,
-        inviteUrl: invite.inviteUrl,
-        activationCode: invite.activationCode,
-      },
-      includeActivationCode && Boolean(invite.activationCode),
-    );
+    const message = buildEmployeeInviteWhatsAppMessage({
+      employeeName: invite.displayName,
+      organizationName: invite.organizationName,
+      storeName: invite.storeName,
+      inviteUrl: invite.inviteUrl,
+      pin: invite.pin,
+    });
     const url = buildWhatsAppShareUrl(message, invite.phoneNumber);
     window.open(url, "_blank", "noopener,noreferrer");
   }
@@ -144,43 +142,43 @@ export function OwnerSettingsTeamInvites({
   const labels = lang === "ar"
     ? {
       title: "دعوات الموظفين",
-      hint: "كل موظف له دعوة مستقلة مرتبطة بمحل محدد.",
+      hint: "كل موظف له دعوة مستقلة — جوال إلزامي وPIN تُرسله أنت عبر واتساب.",
       name: "اسم الموظف (للعرض فقط)",
-      phone: "جوال الموظف (اختياري)",
+      phone: "جوال الموظف",
+      pin: "PIN للتفعيل (مرة واحدة)",
       store: "المحل",
       roleEmployee: "موظف إدخال",
       roleManager: "مدير محل",
       create: "إنشاء دعوة",
       creating: "جاري الإنشاء…",
       inviteUrl: "رابط الدعوة",
-      activationCode: "رمز التفعيل",
+      pinLabel: "PIN",
       copyLink: "نسخ الرابط",
-      copyCode: "نسخ الرمز",
+      copyPin: "نسخ PIN",
       shareWhatsApp: "مشاركة عبر واتساب",
       revoke: "إلغاء الدعوة",
       expiresAt: "تنتهي في",
-      includeCode: "تضمين رمز التفعيل في رسالة واتساب",
       noInvites: "لا توجد دعوات بعد.",
       copied: "تم النسخ",
     }
     : {
       title: "Employee invitations",
-      hint: "Each employee gets a private invitation linked to one store.",
+      hint: "Each employee gets a private invite — mobile is required and you send the PIN via WhatsApp.",
       name: "Employee display name",
-      phone: "Employee mobile (optional)",
+      phone: "Employee mobile",
+      pin: "Activation PIN (one-time)",
       store: "Store",
       roleEmployee: "Entry employee",
       roleManager: "Store manager",
       create: "Create invitation",
       creating: "Creating…",
       inviteUrl: "Invite link",
-      activationCode: "Activation code",
+      pinLabel: "PIN",
       copyLink: "Copy link",
-      copyCode: "Copy code",
+      copyPin: "Copy PIN",
       shareWhatsApp: "Share via WhatsApp",
       revoke: "Revoke invitation",
       expiresAt: "Expires at",
-      includeCode: "Include activation code in WhatsApp message",
       noInvites: "No invitations yet.",
       copied: "Copied",
     };
@@ -204,6 +202,16 @@ export function OwnerSettingsTeamInvites({
           placeholder={labels.phone}
           className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none"
         />
+        <input
+          dir="ltr"
+          inputMode="numeric"
+          value={pin}
+          onChange={(event) => setPin(event.target.value)}
+          placeholder={labels.pin}
+          className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none"
+          minLength={4}
+          maxLength={12}
+        />
         <select
           value={storeId}
           onChange={(event) => setStoreId(event.target.value)}
@@ -223,7 +231,7 @@ export function OwnerSettingsTeamInvites({
         </select>
         <button
           type="button"
-          disabled={creating || !displayName.trim() || !storeId}
+          disabled={creating || !displayName.trim() || !phoneNumber.trim() || !pin.trim() || !storeId}
           onClick={() => { void handleCreateInvite(); }}
           className="w-full rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white disabled:bg-[#B8C0B7]"
         >
@@ -235,21 +243,13 @@ export function OwnerSettingsTeamInvites({
         <div className="mt-4 rounded-2xl bg-[#FFF8E8] p-3">
           <p className="text-taq-meta font-bold text-[#806528]">{labels.inviteUrl}</p>
           <p dir="ltr" className="mt-1 break-all text-xs font-black">{createdInvite.inviteUrl}</p>
-          <p className="mt-3 text-taq-meta font-bold text-[#806528]">{labels.activationCode}</p>
-          <p dir="ltr" className="mt-1 text-lg font-black tracking-[0.3em]">{createdInvite.activationCode}</p>
+          <p className="mt-3 text-taq-meta font-bold text-[#806528]">{labels.pinLabel}</p>
+          <p dir="ltr" className="mt-1 text-lg font-black tracking-[0.3em]">{createdInvite.pin}</p>
           <p className="mt-3 text-taq-meta font-bold text-[#806528]">{labels.expiresAt}</p>
           <p dir="ltr" className="mt-1 text-xs font-black">{new Date(createdInvite.expiresAt).toLocaleString(lang === "ar" ? "ar-SA" : "en-US")}</p>
-          <label className="mt-3 flex items-center gap-2 text-taq-meta font-bold text-[#716753]">
-            <input
-              type="checkbox"
-              checked={includeActivationCode}
-              onChange={(event) => setIncludeActivationCode(event.target.checked)}
-            />
-            {labels.includeCode}
-          </label>
           <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" onClick={() => { void copyText(createdInvite.inviteUrl, "link"); }} className="rounded-full bg-white px-3 py-2 text-taq-meta font-black">{copiedField === "link" ? labels.copied : labels.copyLink}</button>
-            <button type="button" onClick={() => { void copyText(createdInvite.activationCode, "code"); }} className="rounded-full bg-white px-3 py-2 text-taq-meta font-black">{copiedField === "code" ? labels.copied : labels.copyCode}</button>
+            <button type="button" onClick={() => { void copyText(createdInvite.pin, "pin"); }} className="rounded-full bg-white px-3 py-2 text-taq-meta font-black">{copiedField === "pin" ? labels.copied : labels.copyPin}</button>
             <button type="button" onClick={() => openWhatsAppInvite(createdInvite)} className="rounded-full bg-[#25D366] px-3 py-2 text-taq-meta font-black text-white">{labels.shareWhatsApp}</button>
             <button type="button" onClick={() => { void handleRevoke(createdInvite.invitationId); }} className="rounded-full bg-[#FFF1EE] px-3 py-2 text-taq-meta font-black text-[#B44747]">{labels.revoke}</button>
           </div>

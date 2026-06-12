@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Activity,
   BarChart3,
+  CreditCard,
   LayoutDashboard,
   TrendingUp,
   Users,
@@ -20,11 +21,12 @@ import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 
 const NAV_PATHS: Array<{
   href: string;
-  key: "overview" | "accounts" | "usage" | "investorMetrics" | "systemHealth";
+  key: "overview" | "accounts" | "plans" | "usage" | "investorMetrics" | "systemHealth";
   icon: LucideIcon;
 }> = [
   { href: "/saas-admin/overview", key: "overview", icon: LayoutDashboard },
   { href: "/saas-admin/accounts", key: "accounts", icon: Users },
+  { href: "/saas-admin/plans", key: "plans", icon: CreditCard },
   { href: "/saas-admin/usage", key: "usage", icon: BarChart3 },
   { href: "/saas-admin/investor-metrics", key: "investorMetrics", icon: TrendingUp },
   { href: "/saas-admin/system-health", key: "systemHealth", icon: Activity },

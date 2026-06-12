@@ -16,12 +16,14 @@ const ownerPasswordSchema = z.object({
   username: z.string().trim().min(1).max(120),
   password: z.string().trim().min(4).max(120),
   phoneNumber: z.string().trim().max(30).optional(),
+  loginPhone: z.string().trim().max(30).optional(),
   mustChangePassword: z.boolean().optional(),
 });
 
 const employeePinSchema = z.object({
   userId: z.string().uuid(),
   pin: z.string().trim().min(4).max(12),
+  loginPhone: z.string().trim().max(30).optional(),
 });
 
 export async function upsertOwnerPasswordIdentity(
@@ -50,6 +52,7 @@ export async function upsertOwnerPasswordIdentity(
 
   const mustChangePassword = input.mustChangePassword ?? false;
   const phoneNumber = input.phoneNumber?.trim() || null;
+  const loginPhone = input.loginPhone?.trim() || phoneNumber;
 
   if (existing?.id) {
     await db
@@ -58,6 +61,7 @@ export async function upsertOwnerPasswordIdentity(
         username,
         passwordHash,
         phoneNumber,
+        loginPhone,
         mustChangePassword,
         status: "active",
         updatedAt: new Date(),
@@ -74,6 +78,7 @@ export async function upsertOwnerPasswordIdentity(
       username,
       passwordHash,
       phoneNumber,
+      loginPhone,
       mustChangePassword,
       status: "active",
     })
@@ -105,11 +110,14 @@ export async function upsertEmployeePinIdentity(
     )
     .limit(1);
 
+  const loginPhone = input.loginPhone?.trim() || null;
+
   if (existing?.id) {
     await db
       .update(authIdentities)
       .set({
         passwordHash,
+        loginPhone,
         status: "active",
         updatedAt: new Date(),
       })
@@ -123,6 +131,7 @@ export async function upsertEmployeePinIdentity(
       userId: input.userId,
       provider: "employee_pin",
       passwordHash,
+      loginPhone,
       status: "active",
     })
     .returning({ id: authIdentities.id });
@@ -198,6 +207,58 @@ export async function verifyOwnerPasswordIdentity(username: string, password: st
     identityId: identity.id,
     mustChangePassword: identity.mustChangePassword,
   };
+}
+
+export async function verifyOwnerLoginPhoneIdentity(loginPhone: string, password: string) {
+  const normalizedPhone = loginPhone.trim();
+  if (!normalizedPhone || !password.trim()) return null;
+
+  const db = getDb();
+  const [identity] = await db
+    .select({
+      id: authIdentities.id,
+      userId: authIdentities.userId,
+      passwordHash: authIdentities.passwordHash,
+      mustChangePassword: authIdentities.mustChangePassword,
+    })
+    .from(authIdentities)
+    .where(
+      and(
+        eq(authIdentities.provider, "username_password"),
+        eq(authIdentities.loginPhone, normalizedPhone),
+        eq(authIdentities.status, "active"),
+      ),
+    )
+    .limit(1);
+
+  if (!identity?.passwordHash) return null;
+  const valid = await verifyPassword(password, identity.passwordHash);
+  if (!valid) return null;
+  return {
+    userId: identity.userId,
+    identityId: identity.id,
+    mustChangePassword: identity.mustChangePassword,
+  };
+}
+
+export async function resolveEmployeeUserIdByLoginPhone(loginPhone: string) {
+  const normalizedPhone = loginPhone.trim();
+  if (!normalizedPhone) return null;
+
+  const db = getDb();
+  const [identity] = await db
+    .select({ userId: authIdentities.userId })
+    .from(authIdentities)
+    .where(
+      and(
+        eq(authIdentities.provider, "employee_pin"),
+        eq(authIdentities.loginPhone, normalizedPhone),
+        eq(authIdentities.status, "active"),
+      ),
+    )
+    .limit(1);
+
+  return identity?.userId ?? null;
 }
 
 export async function verifyEmployeePinIdentity(userId: string, pin: string) {

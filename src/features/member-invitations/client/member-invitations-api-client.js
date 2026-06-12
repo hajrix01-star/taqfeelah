@@ -8,6 +8,7 @@ export async function createMemberInvitationViaApi({
   role,
   storeId,
   phoneNumber,
+  pin,
 }) {
   return fetchApiJsonWithPrototypeContext("/api/v1/member-invitations", {
     organizationId,
@@ -19,6 +20,7 @@ export async function createMemberInvitationViaApi({
       role,
       storeId,
       phoneNumber,
+      pin,
     },
     errorMessage: "Failed to create member invitation.",
   });
@@ -63,12 +65,12 @@ export async function fetchPublicInvitationViaApi(token) {
   return payload?.data ?? payload;
 }
 
-export async function activateMemberInvitationViaApi({ token, activationCode, pin, confirmPin }) {
+export async function activateMemberInvitationViaApi({ token, phone, pin, trustDevice = true }) {
   const response = await fetch(`/api/v1/member-invitations/public/${encodeURIComponent(token)}/activate`, {
     method: "POST",
     credentials: "include",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ activationCode, pin, confirmPin }),
+    body: JSON.stringify({ phone, pin, trustDevice }),
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {

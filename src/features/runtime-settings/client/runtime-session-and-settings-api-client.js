@@ -13,6 +13,20 @@ export async function loginOwnerSessionViaApi({ username, password }) {
   });
 }
 
+export async function loginOwnerPhoneSessionViaApi({ phone, password }) {
+  return fetchApiJson("/api/v1/auth/session", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    credentials: "include",
+    body: {
+      mode: "owner_phone_password",
+      phone,
+      password,
+    },
+    errorMessage: "Owner login failed.",
+  });
+}
+
 export async function getSessionStatusViaApi() {
   return fetchApiJson("/api/v1/auth/session", {
     errorMessage: "Failed to resolve session.",
@@ -27,6 +41,21 @@ export async function loginEmployeeSessionViaApi({ employeeId, pin }) {
       mode: "employee_pin",
       employeeId,
       pin,
+    },
+    errorMessage: "Employee login failed.",
+  });
+}
+
+export async function loginEmployeePhoneSessionViaApi({ phone, pin, trustDevice = true }) {
+  return fetchApiJson("/api/v1/auth/session", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    credentials: "include",
+    body: {
+      mode: "employee_phone_pin",
+      phone,
+      pin: pin || undefined,
+      trustDevice,
     },
     errorMessage: "Employee login failed.",
   });

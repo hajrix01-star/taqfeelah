@@ -6,7 +6,6 @@ import {
   activateMemberInvitationViaApi,
   fetchPublicInvitationViaApi,
 } from "@/features/member-invitations/client/member-invitations-api-client";
-import { saveEmployeeCredentials } from "@/features/demo/login-credentials-storage";
 import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
 
 type InviteActivationPageProps = {
@@ -27,9 +26,9 @@ export default function InviteActivationPage({ token }: InviteActivationPageProp
   const router = useRouter();
   const [preview, setPreview] = useState<InvitationPreview | null>(null);
   const [loadError, setLoadError] = useState("");
-  const [activationCode, setActivationCode] = useState("");
+  const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
+  const [trustDevice, setTrustDevice] = useState(true);
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -55,15 +54,12 @@ export default function InviteActivationPage({ token }: InviteActivationPageProp
     setSubmitError("");
     setSubmitting(true);
     try {
-      const activated = await activateMemberInvitationViaApi({
+      await activateMemberInvitationViaApi({
         token,
-        activationCode: activationCode.trim(),
+        phone: phone.trim(),
         pin: pin.trim(),
-        confirmPin: confirmPin.trim(),
+        trustDevice,
       });
-      if (activated?.userId) {
-        saveEmployeeCredentials({ employeeId: activated.userId, pin: pin.trim() });
-      }
       router.replace("/app");
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "تعذر تفعيل الدعوة.");
@@ -111,18 +107,18 @@ export default function InviteActivationPage({ token }: InviteActivationPageProp
             {preview.canActivate ? (
               <form onSubmit={handleSubmit} className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-black/[0.045]">
                 <label className="mb-4 block">
-                  <span className="mb-2 block text-xs font-bold text-[#716753]">رمز التفعيل</span>
+                  <span className="mb-2 block text-xs font-bold text-[#716753]">جوالك</span>
                   <input
                     dir="ltr"
-                    inputMode="numeric"
-                    value={activationCode}
-                    onChange={(event) => setActivationCode(event.target.value)}
-                    className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-center text-lg font-black outline-none ring-1 ring-[#E8E1D4]"
+                    inputMode="tel"
+                    value={phone}
+                    onChange={(event) => setPhone(event.target.value)}
+                    className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-center text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
                     required
                   />
                 </label>
                 <label className="mb-4 block">
-                  <span className="mb-2 block text-xs font-bold text-[#716753]">إنشاء PIN</span>
+                  <span className="mb-2 block text-xs font-bold text-[#716753]">رمز PIN من المالك</span>
                   <input
                     dir="ltr"
                     inputMode="numeric"
@@ -134,18 +130,14 @@ export default function InviteActivationPage({ token }: InviteActivationPageProp
                     maxLength={12}
                   />
                 </label>
-                <label className="mb-4 block">
-                  <span className="mb-2 block text-xs font-bold text-[#716753]">تأكيد PIN</span>
+                <label className="mb-4 flex cursor-pointer items-center gap-2.5">
                   <input
-                    dir="ltr"
-                    inputMode="numeric"
-                    value={confirmPin}
-                    onChange={(event) => setConfirmPin(event.target.value)}
-                    className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]"
-                    required
-                    minLength={4}
-                    maxLength={12}
+                    type="checkbox"
+                    checked={trustDevice}
+                    onChange={(event) => setTrustDevice(event.target.checked)}
+                    className="h-4 w-4 rounded border-[#C8BCA4] text-[#112A46] accent-[#112A46]"
                   />
+                  <span className="text-taq-meta font-black text-[#716753]">حفظ هذا الجهاز — الدخول بالجوال فقط لاحقًا</span>
                 </label>
                 <button
                   type="submit"
