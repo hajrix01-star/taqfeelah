@@ -17,6 +17,7 @@ type EditAccountFormsProps = {
   planCode: string | null;
   ownerName: string | null;
   ownerUsername?: string | null;
+  ownerPhone?: string | null;
   onUpdated: () => void;
   showAccountForm?: boolean;
   showOwnerForm?: boolean;
@@ -38,6 +39,7 @@ export function EditAccountForms({
   planCode,
   ownerName,
   ownerUsername = null,
+  ownerPhone = null,
   onUpdated,
   showAccountForm = true,
   showOwnerForm = true,
@@ -54,6 +56,7 @@ export function EditAccountForms({
   const [accountPlan, setAccountPlan] = useState<PlanCode>(resolvePlanCode(planCode));
   const [editOwnerName, setEditOwnerName] = useState(ownerName || "");
   const [editOwnerUsername, setEditOwnerUsername] = useState(ownerUsername || "");
+  const [editOwnerPhone, setEditOwnerPhone] = useState(ownerPhone || "");
   const [editOwnerPassword, setEditOwnerPassword] = useState("");
   const [accountError, setAccountError] = useState<string | null>(null);
   const [ownerError, setOwnerError] = useState<string | null>(null);
@@ -73,7 +76,8 @@ export function EditAccountForms({
   useEffect(() => {
     setEditOwnerName(ownerName || "");
     setEditOwnerUsername(ownerUsername || "");
-  }, [ownerName, ownerUsername]);
+    setEditOwnerPhone(ownerPhone || "");
+  }, [ownerName, ownerUsername, ownerPhone]);
 
   function showFeedback() {
     requestAnimationFrame(() => {
@@ -111,9 +115,10 @@ export function EditAccountForms({
       const payload = {
         ownerName: trimOptional(editOwnerName),
         ownerUsername: trimOptional(editOwnerUsername),
+        ownerPhone: trimOptional(editOwnerPhone),
         ownerPassword: trimOptional(editOwnerPassword),
       };
-      if (!payload.ownerName && !payload.ownerUsername && !payload.ownerPassword) {
+      if (!payload.ownerName && !payload.ownerUsername && !payload.ownerPhone && !payload.ownerPassword) {
         throw new Error(t.editAccount.ownerNoChanges);
       }
       await updateSaasAccountOwner(organizationId, payload);
@@ -195,6 +200,18 @@ export function EditAccountForms({
             value={editOwnerName}
             onChange={(e) => setEditOwnerName(e.target.value)}
             className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
+          />
+        </label>
+        <label className="block space-y-1 text-sm">
+          <span className="text-[var(--admin-muted)]">{t.newAccount.ownerPhone}</span>
+          <input
+            value={editOwnerPhone}
+            onChange={(e) => setEditOwnerPhone(e.target.value)}
+            placeholder={t.newAccount.ownerPhonePlaceholder}
+            className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
+            dir="ltr"
+            inputMode="tel"
+            autoComplete="tel"
           />
         </label>
         <label className="block space-y-1 text-sm">

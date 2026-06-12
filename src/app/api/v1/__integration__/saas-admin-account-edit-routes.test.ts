@@ -89,6 +89,7 @@ describe("saas admin account edit routes integration", () => {
         body: JSON.stringify({
           ownerName: "Owner 2",
           ownerUsername: "owner2",
+          ownerPhone: "966512345678",
           ownerPassword: "secret",
         }),
       }),
@@ -100,6 +101,7 @@ describe("saas admin account edit routes integration", () => {
       organizationId: "org-1",
       ownerName: "Owner 2",
       ownerUsername: "owner2",
+      ownerPhone: "966512345678",
       ownerPassword: "secret",
     }));
   });
