@@ -78,6 +78,8 @@ export function usePrototypeRuntimeAppState() {
     setLoggedInEmployeeId,
     employeeRuntimeReady,
     setEmployeeRuntimeReady,
+    mustChangePassword,
+    setMustChangePassword,
   } = session;
 
   const [saving, setSaving] = useState(false);
@@ -330,6 +332,7 @@ export function usePrototypeRuntimeAppState() {
     setStoreChannelSettings,
     setStoreOperationalSettings,
     setOwnerProfile,
+    setMustChangePassword,
     employeeBusinessId,
     setEmployeeBusinessId,
     closeoutsApiEnabled,
@@ -371,6 +374,7 @@ export function usePrototypeRuntimeAppState() {
       setAuthOwnerPassword,
       setAuthEmployeePins,
       setOwnerProfile,
+      setMustChangePassword,
     }),
     [
       activeBusinesses,
@@ -391,6 +395,7 @@ export function usePrototypeRuntimeAppState() {
       setOperationalEntries,
       setOwnerPage,
       setOwnerProfile,
+      setMustChangePassword,
       setOwnerManageCloseout,
       setPendingDuplicateSummary,
       setQuickAddOpen,
@@ -578,6 +583,8 @@ export function usePrototypeRuntimeAppState() {
     lang,
     setLang,
     loggedIn,
+    mustChangePassword,
+    setMustChangePassword,
     authScreen,
     setAuthScreen,
     employee,

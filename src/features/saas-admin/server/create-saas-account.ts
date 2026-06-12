@@ -16,6 +16,7 @@ import { ValidationError } from "@/core/errors/app-error";
 import { ERROR_CODES } from "@/core/errors/error-codes";
 import { catalogAppError } from "@/core/errors/normalize-error";
 import { upsertOwnerPasswordIdentity } from "@/features/auth/server/auth-identities";
+import { generateTemporaryPassword } from "@/features/auth/server/temp-password";
 import { provisionSaasAccountFoundation } from "@/features/saas-admin/server/provision-saas-account-foundation";
 
 const PLAN_CODES = ["starter", "growth", "enterprise"] as const;
@@ -33,11 +34,8 @@ const inputSchema = z.object({
   organizationName: z.string().trim().min(1, "Organization name is required.").max(120),
   ownerName: z.string().trim().min(1, "Owner name is required.").max(120),
   ownerUsername: z.string().trim().min(1, "Username is required.").max(120),
-  ownerPassword: z
-    .string()
-    .trim()
-    .min(4, "Password must be at least 4 characters.")
-    .max(120),
+  ownerPassword: z.string().trim().max(120).optional(),
+  ownerPhone: z.string().trim().max(30).optional(),
   storeName: optionalNonEmptyString(120),
   storeLocation: optionalNonEmptyString(240),
   planCode: z.enum(PLAN_CODES).default("starter"),
@@ -60,6 +58,10 @@ export type CreateSaasAccountResult = {
   ownerUserId: string;
   ownerMemberId: string;
   ownerUsername: string;
+  ownerName: string;
+  ownerPhone: string | null;
+  tempPassword: string;
+  mustChangePassword: true;
   storeId: string;
   storeName: string;
   subscriptionId: string;
@@ -110,6 +112,12 @@ export async function createSaasAccount(rawInput: CreateSaasAccountInput): Promi
 
   const storeName = input.storeName?.trim() || input.organizationName.trim();
   const ownerUsername = input.ownerUsername.trim().toLowerCase();
+  const providedPassword = input.ownerPassword?.trim() || "";
+  if (providedPassword && providedPassword.length < 4) {
+    throw new ValidationError("Password must be at least 4 characters.");
+  }
+  const tempPassword = providedPassword || generateTemporaryPassword(12);
+  const ownerPhone = input.ownerPhone?.trim() || null;
 
   return db.transaction(async (tx) => {
     await assertOwnerUsernameAvailable(ownerUsername, tx);
@@ -144,7 +152,9 @@ export async function createSaasAccount(rawInput: CreateSaasAccountInput): Promi
       {
         userId: ownerUserId,
         username: ownerUsername,
-        password: input.ownerPassword,
+        password: tempPassword,
+        phoneNumber: ownerPhone || undefined,
+        mustChangePassword: true,
       },
       tx,
     );
@@ -206,6 +216,10 @@ export async function createSaasAccount(rawInput: CreateSaasAccountInput): Promi
       ownerUserId,
       ownerMemberId,
       ownerUsername,
+      ownerName: input.ownerName.trim(),
+      ownerPhone,
+      tempPassword,
+      mustChangePassword: true as const,
       storeId,
       storeName,
       subscriptionId,

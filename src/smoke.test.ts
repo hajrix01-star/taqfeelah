@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Module-boundary smoke: catches missing imports/exports after runtime splits
@@ -7,6 +7,10 @@ import { describe, expect, it } from "vitest";
 const SMOKE_IMPORT_TIMEOUT_MS = 15_000;
 
 describe("prototype runtime module boundary smoke", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("loads prototype-runtime boot exports", async () => {
     const boot = await import("@/components/prototype-runtime/prototype-runtime-boot");
     expect(boot.PROTOTYPE_ACCESS_MODE).toBeTypeOf("boolean");
@@ -133,6 +137,7 @@ describe("prototype runtime module boundary smoke", () => {
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
   it("loads runtime capability resolver", async () => {
+    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "true");
     const { resolveRuntimeCapabilities } = await import("@/core/config/runtime-capabilities");
     const capabilities = resolveRuntimeCapabilities({
       NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true",

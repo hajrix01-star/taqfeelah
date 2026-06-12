@@ -22,6 +22,20 @@ vi.mock("@/features/auth/server/resolve-user-display-name", () => ({
   resolveUserDisplayName,
 }));
 
+const getOwnerPasswordIdentityFlags = vi.fn(async () => ({
+  mustChangePassword: false,
+  phoneNumber: null,
+  username: "owner",
+}));
+
+vi.mock("@/features/auth/server/auth-identities", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/auth/server/auth-identities")>();
+  return {
+    ...actual,
+    getOwnerPasswordIdentityFlags,
+  };
+});
+
 vi.mock("@/core/auth/session-cookie", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/core/auth/session-cookie")>();
   return {
@@ -40,6 +54,12 @@ describe("auth session route integration", () => {
     resolveAuthSessionFromRequest.mockReset();
     resolveUserDisplayName.mockReset();
     resolveUserDisplayName.mockResolvedValue("Owner Name");
+    getOwnerPasswordIdentityFlags.mockReset();
+    getOwnerPasswordIdentityFlags.mockResolvedValue({
+      mustChangePassword: false,
+      phoneNumber: null,
+      username: "owner",
+    });
   });
 
   afterEach(() => {
@@ -68,10 +88,17 @@ describe("auth session route integration", () => {
     const response = await GET(ownerRequest("http://localhost/api/v1/auth/session"));
 
     expect(response.status).toBe(200);
-    const body = await readJsonBody<{ authenticated: boolean; role: string; displayName: string }>(response);
+    const body = await readJsonBody<{
+      authenticated: boolean;
+      role: string;
+      displayName: string;
+      mustChangePassword: boolean;
+    }>(response);
     expect(body.authenticated).toBe(true);
     expect(body.role).toBe("owner");
     expect(body.displayName).toBe("Owner Name");
+    expect(body.mustChangePassword).toBe(false);
+    expect(getOwnerPasswordIdentityFlags).toHaveBeenCalledWith(TEST_OWNER_USER_ID);
   });
 
   it("POST creates auth session and sets cookie", async () => {

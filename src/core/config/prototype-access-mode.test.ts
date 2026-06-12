@@ -8,16 +8,16 @@ describe("isPrototypeAccessMode", () => {
     __resetEnvCacheForTests();
   });
 
-  it("is enabled by default until the auth launch phase", () => {
+  it("is disabled by default after the auth launch phase", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
-    expect(isPrototypeAccessMode()).toBe(true);
+    expect(isPrototypeAccessMode()).toBe(false);
   });
 
-  it("is enabled in development by default", () => {
+  it("is disabled in development by default", () => {
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
-    expect(isPrototypeAccessMode()).toBe(true);
+    expect(isPrototypeAccessMode()).toBe(false);
   });
 
   it("can be opted out explicitly before launch", () => {

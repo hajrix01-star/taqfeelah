@@ -12,6 +12,7 @@ import {
   recordLoginFailure,
 } from "@/core/auth/login-rate-limiter";
 import { createAuthSession } from "@/features/auth/server/create-auth-session";
+import { getOwnerPasswordIdentityFlags } from "@/features/auth/server/auth-identities";
 import { resolveUserDisplayName } from "@/features/auth/server/resolve-user-display-name";
 import { AppError, ServiceUnavailableError, UnauthorizedError } from "@/core/errors/app-error";
 import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
@@ -48,12 +49,16 @@ export async function GET(request: Request) {
       return ok({ authenticated: false });
     }
     const displayName = await resolveUserDisplayName(session.userId);
+    const ownerFlags = session.role === "owner"
+      ? await getOwnerPasswordIdentityFlags(session.userId)
+      : null;
     return ok({
       authenticated: true,
       organizationId: session.organizationId,
       userId: session.userId,
       role: session.role,
       displayName,
+      mustChangePassword: ownerFlags?.mustChangePassword === true,
     });
   } catch (error) {
     return failRequest(error, request);
@@ -119,6 +124,7 @@ export async function POST(request: Request) {
         userId: sessionClaims.userId,
         role: sessionClaims.role,
         displayName: sessionClaims.displayName || "",
+        mustChangePassword: sessionClaims.mustChangePassword === true,
       },
       {
         headers: {

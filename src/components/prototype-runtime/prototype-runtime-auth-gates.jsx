@@ -5,6 +5,7 @@ import { PROTOTYPE_ACCESS_MODE } from "./prototype-runtime-boot";
 import {
   EmployeeLoginScreen,
   LoginScreen,
+  OwnerPasswordChangeScreen,
 } from "./AuthGateSection";
 import { AppFontStyles } from "./prototype-runtime-app-font-styles";
 
@@ -56,6 +57,25 @@ export function PrototypeRuntimeOrgLoadingGate({ lang }) {
       <p className="text-center text-sm font-bold text-[#827762]">
         {lang === "ar" ? "جاري تحميل بيانات المنشأة من قاعدة البيانات..." : "Loading organization data from database..."}
       </p>
+    </div>
+  );
+}
+
+export function PrototypeRuntimeOwnerPasswordGate({
+  lang,
+  setLang,
+  onComplete,
+  onLogout,
+}) {
+  return (
+    <div dir={lang === "ar" ? "rtl" : "ltr"} className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
+      <AppFontStyles />
+      <OwnerPasswordChangeScreen
+        lang={lang}
+        setLang={setLang}
+        onComplete={onComplete}
+        onLogout={onLogout}
+      />
     </div>
   );
 }

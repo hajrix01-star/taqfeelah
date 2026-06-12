@@ -1,0 +1,78 @@
+import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+
+export async function createMemberInvitationViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  displayName,
+  role,
+  storeId,
+  phoneNumber,
+}) {
+  return fetchApiJsonWithPrototypeContext("/api/v1/member-invitations", {
+    organizationId,
+    actorUserId,
+    actorRole,
+    method: "POST",
+    body: {
+      displayName,
+      role,
+      storeId,
+      phoneNumber,
+    },
+    errorMessage: "Failed to create member invitation.",
+  });
+}
+
+export async function fetchMemberInvitationsViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+}) {
+  return fetchApiJsonWithPrototypeContext("/api/v1/member-invitations", {
+    organizationId,
+    actorUserId,
+    actorRole,
+    errorMessage: "Failed to load member invitations.",
+  });
+}
+
+export async function revokeMemberInvitationViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  invitationId,
+}) {
+  return fetchApiJsonWithPrototypeContext(`/api/v1/member-invitations/${invitationId}`, {
+    organizationId,
+    actorUserId,
+    actorRole,
+    method: "DELETE",
+    errorMessage: "Failed to revoke member invitation.",
+  });
+}
+
+export async function fetchPublicInvitationViaApi(token) {
+  const response = await fetch(`/api/v1/member-invitations/public/${encodeURIComponent(token)}`, {
+    credentials: "include",
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || "Failed to load invitation.");
+  }
+  return payload?.data ?? payload;
+}
+
+export async function activateMemberInvitationViaApi({ token, activationCode, pin, confirmPin }) {
+  const response = await fetch(`/api/v1/member-invitations/public/${encodeURIComponent(token)}/activate`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ activationCode, pin, confirmPin }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || "Failed to activate invitation.");
+  }
+  return payload?.data ?? payload;
+}

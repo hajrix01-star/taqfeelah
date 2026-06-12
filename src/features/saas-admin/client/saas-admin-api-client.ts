@@ -74,7 +74,8 @@ export type CreateSaasAccountPayload = {
   organizationName: string;
   ownerName: string;
   ownerUsername: string;
-  ownerPassword: string;
+  ownerPassword?: string;
+  ownerPhone?: string;
   storeName?: string;
   storeLocation?: string;
   planCode?: "starter" | "growth" | "enterprise";
@@ -86,6 +87,10 @@ export type CreateSaasAccountResponse = {
   ownerUserId: string;
   ownerMemberId: string;
   ownerUsername: string;
+  ownerName: string;
+  ownerPhone: string | null;
+  tempPassword: string;
+  mustChangePassword: true;
   storeId: string;
   storeName: string;
   subscriptionId: string;

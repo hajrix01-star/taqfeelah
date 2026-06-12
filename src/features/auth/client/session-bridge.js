@@ -5,6 +5,7 @@ import {
 } from "@/features/demo/login-credentials-storage";
 import { readPrototypeAuthBoot } from "@/features/demo/prototype-auth-boot";
 import {
+  changeOwnerPasswordViaApi,
   getSessionStatusViaApi,
   loginEmployeeSessionViaApi,
   loginOwnerSessionViaApi,
@@ -48,6 +49,11 @@ export async function loginOwnerViaSessionBridge({ username, password, useServer
 export async function loginEmployeeViaSessionBridge({ employeeId, pin, useServerAuth }) {
   if (!useServerAuth) return null;
   return loginEmployeeSessionViaApi({ employeeId, pin });
+}
+
+export async function changeOwnerPasswordViaSessionBridge({ currentPassword, newPassword, useServerAuth }) {
+  if (!useServerAuth) return null;
+  return changeOwnerPasswordViaApi({ currentPassword, newPassword });
 }
 
 export async function logoutViaSessionBridge({ useServerAuth }) {

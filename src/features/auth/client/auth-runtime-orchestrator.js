@@ -25,6 +25,7 @@ import {
  * @property {(value: string) => void} [setAuthOwnerPassword]
  * @property {(value: Record<string, string>) => void} [setAuthEmployeePins]
  * @property {(value: { name: string }) => void} [setOwnerProfile]
+ * @property {(value: boolean) => void} [setMustChangePassword]
  * @property {(value: unknown) => void} [setOwnerManageCloseout]
  * @property {(value: unknown) => void} [setSelected]
  * @property {(value: unknown) => void} [setVoidTarget]
@@ -43,6 +44,7 @@ export function applyOwnerLoginSuccess({
   apiUserId = "",
   organizationId = "",
   displayName = "",
+  mustChangePassword = false,
   prototypeAccessMode,
   apply = {},
 }) {
@@ -60,6 +62,7 @@ export function applyOwnerLoginSuccess({
   if (ownerName) {
     apply.setOwnerProfile?.({ name: ownerName });
   }
+  apply.setMustChangePassword?.(mustChangePassword === true);
 }
 
 /**
@@ -124,6 +127,7 @@ export function applyServerSessionBootstrap(session, apply = {}) {
   if (displayName) {
     apply.setOwnerProfile?.({ name: displayName });
   }
+  apply.setMustChangePassword?.(session.mustChangePassword === true);
   return true;
 }
 
@@ -159,4 +163,5 @@ export function applyLogoutReset({ bindsToServerAuth, apply = {} }) {
   apply.setAuthOwnerPassword?.("");
   apply.setAuthEmployeePins?.({});
   apply.setOwnerProfile?.({ name: "" });
+  apply.setMustChangePassword?.(false);
 }

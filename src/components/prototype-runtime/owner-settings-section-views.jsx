@@ -28,6 +28,7 @@ import {
   SettingsPageHeader,
 } from "./owner-settings-ui-primitives";
 import { ThemePicker } from "./prototype-runtime-notebook";
+import { OwnerSettingsTeamInvites } from "./owner-settings-team-invites";
 
 export function OwnerSettingsAccountSection({
   lang,
@@ -163,10 +164,21 @@ export function OwnerSettingsTeamSection({
   saveManagingTeam,
   setSection,
   deleteDialogProps,
+  inviteApiContext,
 }) {
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "الفريق والصلاحيات" : "Team & access"} onBack={() => { cancelManagingTeam(); setSection("home"); }} lang={lang} />
+      {inviteApiContext?.organizationId && inviteApiContext?.actorUserId ? (
+        <OwnerSettingsTeamInvites
+          lang={lang}
+          organizationId={inviteApiContext.organizationId}
+          actorUserId={inviteApiContext.actorUserId}
+          actorRole={inviteApiContext.actorRole || "owner"}
+          activeStoredBusinesses={activeStoredBusinesses}
+          displayBusinessName={displayBusinessName}
+        />
+      ) : null}
       <div className="mb-3 flex items-center justify-between">
         <p className="text-taq-meta font-bold text-[#806528]">{text(lang, "employeeEntryOnly")}</p>
         <button onClick={() => managingTeam ? cancelManagingTeam() : startManagingTeam()} className="text-taq-meta font-black text-[#9A823E]">
@@ -425,6 +437,7 @@ export function renderOwnerSettingsSection(section, state, callbacks) {
         teamSaving={state.teamSaving}
         saveManagingTeam={state.saveManagingTeam}
         deleteDialogProps={state.deleteDialogProps}
+        inviteApiContext={state.inviteApiContext}
       />
     );
   }

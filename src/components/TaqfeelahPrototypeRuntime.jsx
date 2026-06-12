@@ -9,6 +9,7 @@ import {
   PrototypeRuntimeLoggedOutGate,
   PrototypeRuntimeOrgErrorGate,
   PrototypeRuntimeOrgLoadingGate,
+  PrototypeRuntimeOwnerPasswordGate,
 } from "./prototype-runtime/prototype-runtime-auth-gates";
 import { PrototypeRuntimePageContent } from "./prototype-runtime/prototype-runtime-page-content";
 import { PrototypeRuntimeOverlayStack } from "./prototype-runtime/prototype-runtime-overlay-stack";
@@ -19,6 +20,8 @@ export default function TaqfeelahPrototypeRuntime() {
     lang,
     setLang,
     loggedIn,
+    mustChangePassword,
+    setMustChangePassword,
     authScreen,
     setAuthScreen,
     employee,
@@ -192,6 +195,17 @@ export default function TaqfeelahPrototypeRuntime() {
     ownerCloseoutAttachmentsApiProps,
     entryAttachmentsApiProps,
   } = apiBundle;
+
+  if (loggedIn && mustChangePassword && !employee) {
+    return (
+      <PrototypeRuntimeOwnerPasswordGate
+        lang={lang}
+        setLang={setLang}
+        onComplete={() => setMustChangePassword(false)}
+        onLogout={() => { void auth.logout(); }}
+      />
+    );
+  }
 
   if (!loggedIn) {
     return (
