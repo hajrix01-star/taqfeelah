@@ -1,7 +1,8 @@
-import { and, asc, count, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import {
+  accountSetupTokens,
   attachments,
   dailyCloseouts,
   entries,
@@ -51,6 +52,22 @@ export async function getSaasAccountDetails(
     .limit(1);
 
   const owner = await resolveOrganizationOwnerMember(input.organizationId, db);
+
+  let ownerPhone = owner?.loginPhone ?? null;
+  if (!ownerPhone) {
+    const [pendingSetup] = await db
+      .select({ phoneNumber: accountSetupTokens.phoneNumber })
+      .from(accountSetupTokens)
+      .where(
+        and(
+          eq(accountSetupTokens.organizationId, input.organizationId),
+          isNull(accountSetupTokens.usedAt),
+        ),
+      )
+      .orderBy(desc(accountSetupTokens.createdAt))
+      .limit(1);
+    ownerPhone = pendingSetup?.phoneNumber ?? null;
+  }
 
   const storeRows = await db
     .select({
@@ -224,7 +241,7 @@ export async function getSaasAccountDetails(
     name: org.name,
     ownerName: owner?.name ?? null,
     ownerUsername: owner?.username ?? null,
-    ownerPhone: owner?.loginPhone ?? null,
+    ownerPhone,
     ownerMemberId: owner?.memberId ?? null,
     status: resolveAccountStatus({
       organizationStatus: org.status,

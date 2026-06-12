@@ -23,6 +23,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       organizationId: id.trim(),
       ownerName: typeof body?.ownerName === "string" ? body.ownerName : undefined,
       ownerUsername: typeof body?.ownerUsername === "string" ? body.ownerUsername : undefined,
+      ownerPhone: typeof body?.ownerPhone === "string" ? body.ownerPhone : undefined,
       ownerPassword: typeof body?.ownerPassword === "string" ? body.ownerPassword : undefined,
     });
 

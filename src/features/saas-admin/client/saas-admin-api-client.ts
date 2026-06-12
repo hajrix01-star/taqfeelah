@@ -162,7 +162,7 @@ export async function updateSaasAccountMember(
 
 export async function updateSaasAccountOwner(
   organizationId: string,
-  payload: { ownerName?: string; ownerUsername?: string; ownerPassword?: string },
+  payload: { ownerName?: string; ownerUsername?: string; ownerPhone?: string; ownerPassword?: string },
 ) {
   return fetchSaasAdminJson(`/api/v1/saas-admin/accounts/${organizationId}/owner`, {
     method: "PATCH",

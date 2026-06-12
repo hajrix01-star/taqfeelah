@@ -189,6 +189,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             planCode={data.planCode}
             ownerName={data.ownerName}
             ownerUsername={data.ownerUsername}
+            ownerPhone={data.ownerPhone}
             onUpdated={() => { void refetch(); }}
             showAccountForm={canWriteAccount}
             showOwnerForm={canWriteAccount}

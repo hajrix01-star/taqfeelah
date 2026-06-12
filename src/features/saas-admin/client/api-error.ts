@@ -54,6 +54,7 @@ const MESSAGE_CODE_MAP: Record<string, keyof SaasAdminTranslations["apiErrors"]>
   "Subscription was not found for this organization.": "subscriptionNotFound",
   "At least one field must be provided to update.": "noChanges",
   "At least one owner field must be provided to update.": "noChanges",
+  "Invalid owner phone number.": "invalidOwnerPhone",
   "Organization was not found.": "organizationNotFound",
   "One or more storeIds are invalid for this organization.": "invalidStoreIds",
   "Account provisioning failed because required records were not available yet.": "provisionDependencyMissing",

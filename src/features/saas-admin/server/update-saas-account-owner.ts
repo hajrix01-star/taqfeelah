@@ -1,8 +1,17 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
-import { auditEvents, authIdentities, organizationMembers, users } from "@/core/db/schema";
+import {
+  accountSetupTokens,
+  auditEvents,
+  authIdentities,
+  organizationMembers,
+  users,
+} from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
+import { ERROR_CODES } from "@/core/errors/error-codes";
+import { catalogAppError } from "@/core/errors/normalize-error";
+import { assertValidLoginPhone } from "@/core/phone/normalize-login-phone";
 import { upsertOwnerPasswordIdentity } from "@/features/auth/server/auth-identities";
 import { resolveOrganizationOwnerMember } from "@/features/saas-admin/server/resolve-organization-owner-member";
 import { syncRuntimeOwnerProfileForOrganization } from "@/features/runtime-settings/server/sync-runtime-owner-profile";
@@ -12,8 +21,25 @@ const inputSchema = z.object({
   organizationId: z.string().uuid(),
   ownerName: z.string().trim().min(1).max(120).optional(),
   ownerUsername: z.string().trim().min(1).max(120).optional(),
+  ownerPhone: z.string().trim().min(1).max(30).optional(),
   ownerPassword: z.string().trim().min(4).max(120).optional(),
 });
+
+async function assertOwnerPhoneAvailableForUser(
+  phone: string,
+  userId: string | null,
+  executor: Pick<ReturnType<typeof getDb>, "select">,
+) {
+  const [existing] = await executor
+    .select({ id: authIdentities.id, userId: authIdentities.userId })
+    .from(authIdentities)
+    .where(eq(authIdentities.loginPhone, phone))
+    .limit(1);
+
+  if (existing?.id && existing.userId !== userId) {
+    throw catalogAppError(ERROR_CODES.OWNER_USERNAME_TAKEN);
+  }
+}
 
 async function assertOwnerUsernameAvailableForUser(
   username: string,
@@ -44,15 +70,61 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
   }
   const input = parsed.data;
 
-  if (!input.ownerName && !input.ownerUsername && !input.ownerPassword) {
+  if (!input.ownerName && !input.ownerUsername && !input.ownerPhone && !input.ownerPassword) {
     throw new ValidationError("At least one owner field must be provided to update.");
+  }
+
+  let ownerPhone: string | undefined;
+  if (input.ownerPhone) {
+    try {
+      ownerPhone = assertValidLoginPhone(input.ownerPhone);
+    } catch {
+      throw new ValidationError("Invalid owner phone number.");
+    }
   }
 
   const db = getDb();
   const ownerMember = await resolveOrganizationOwnerMember(input.organizationId, db);
 
   if (!ownerMember?.userId) {
-    throw new ValidationError("Owner member was not found for this organization.");
+    if (input.ownerName || input.ownerUsername || input.ownerPassword) {
+      throw new ValidationError("Owner member was not found for this organization.");
+    }
+
+    if (!ownerPhone) {
+      throw new ValidationError("At least one owner field must be provided to update.");
+    }
+
+    const now = new Date();
+    await assertOwnerPhoneAvailableForUser(ownerPhone, null, db);
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(accountSetupTokens)
+        .set({ phoneNumber: ownerPhone })
+        .where(
+          and(
+            eq(accountSetupTokens.organizationId, input.organizationId),
+            isNull(accountSetupTokens.usedAt),
+          ),
+        );
+
+      await tx.insert(auditEvents).values({
+        organizationId: input.organizationId,
+        actorUserId: input.actorUserId,
+        action: "saas_owner_phone_updated",
+        metadata: {
+          ownerPhone,
+          pendingActivation: true,
+        },
+      });
+    });
+
+    return {
+      organizationId: input.organizationId,
+      ownerPhone,
+      updatedAt: now.toISOString(),
+    };
   }
 
   const now = new Date();
@@ -79,6 +151,46 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
     }
 
     let ownerUsername: string | undefined;
+    let updatedOwnerPhone: string | undefined;
+
+    if (ownerPhone) {
+      await assertOwnerPhoneAvailableForUser(ownerPhone, ownerMember.userId, tx);
+
+      const [identity] = await tx
+        .select({ id: authIdentities.id })
+        .from(authIdentities)
+        .where(
+          and(
+            eq(authIdentities.userId, ownerMember.userId),
+            eq(authIdentities.provider, "username_password"),
+          ),
+        )
+        .limit(1);
+
+      if (identity?.id) {
+        await tx
+          .update(authIdentities)
+          .set({
+            loginPhone: ownerPhone,
+            phoneNumber: ownerPhone,
+            updatedAt: now,
+          })
+          .where(eq(authIdentities.id, identity.id));
+      }
+
+      await tx
+        .update(accountSetupTokens)
+        .set({ phoneNumber: ownerPhone })
+        .where(
+          and(
+            eq(accountSetupTokens.organizationId, input.organizationId),
+            isNull(accountSetupTokens.usedAt),
+          ),
+        );
+
+      updatedOwnerPhone = ownerPhone;
+    }
+
     if (input.ownerUsername || input.ownerPassword) {
       const [identity] = await tx
         .select({
@@ -136,6 +248,7 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
         userId: ownerMember.userId,
         ownerName,
         ownerUsername: ownerUsername || null,
+        ownerPhone: updatedOwnerPhone || null,
         passwordRotated: Boolean(input.ownerPassword),
         reactivatedOwner: ownerMember.memberStatus !== "active",
       },
@@ -147,6 +260,7 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
       ownerUserId: ownerMember.userId,
       ownerName,
       ownerUsername: ownerUsername || ownerMember.username,
+      ownerPhone: updatedOwnerPhone || ownerMember.loginPhone,
       updatedAt: now.toISOString(),
     };
   });
