@@ -6,17 +6,24 @@ import { mapSaasAdminApiError } from "@/features/saas-admin/client/api-error";
 import { AdminModal } from "@/features/saas-admin/components/AdminModal";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
+type StoreOption = {
+  id: string;
+  name: string;
+};
+
 type MemberRow = {
   memberId: string;
   userId: string;
   name: string;
   role: string;
   status: string;
+  storeIds?: string[];
 };
 
 type EditAccountMemberFormProps = {
   organizationId: string;
   member: MemberRow | null;
+  stores: StoreOption[];
   open: boolean;
   onClose: () => void;
   onUpdated: () => void;
@@ -30,6 +37,7 @@ function trimOptional(value: string): string | undefined {
 export function EditAccountMemberForm({
   organizationId,
   member,
+  stores,
   open,
   onClose,
   onUpdated,
@@ -39,6 +47,7 @@ export function EditAccountMemberForm({
   const [role, setRole] = useState<"manager" | "employee">("employee");
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [pin, setPin] = useState("");
+  const [storeIds, setStoreIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -48,10 +57,19 @@ export function EditAccountMemberForm({
     setName(member.name);
     setRole(member.role === "manager" ? "manager" : "employee");
     setStatus(member.status === "inactive" ? "inactive" : "active");
+    setStoreIds(member.storeIds?.length ? [...member.storeIds] : stores.map((store) => store.id));
     setPin("");
     setError(null);
     setSuccess(null);
-  }, [member]);
+  }, [member, stores]);
+
+  function toggleStore(storeId: string) {
+    setStoreIds((current) => (
+      current.includes(storeId)
+        ? current.filter((id) => id !== storeId)
+        : [...current, storeId]
+    ));
+  }
 
   if (!member || member.role === "owner") {
     return null;
@@ -70,6 +88,7 @@ export function EditAccountMemberForm({
         role,
         status,
         pin: trimOptional(pin),
+        storeIds,
       });
       setSuccess(t.editMember.saved);
       setPin("");
@@ -121,6 +140,23 @@ export function EditAccountMemberForm({
             </select>
           </label>
         </div>
+        {stores.length > 0 ? (
+          <fieldset className="space-y-2 text-sm">
+            <legend className="text-[var(--admin-muted)]">{t.addMember.storeAccess}</legend>
+            <div className="flex flex-wrap gap-3">
+              {stores.map((store) => (
+                <label key={store.id} className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={storeIds.includes(store.id)}
+                    onChange={() => toggleStore(store.id)}
+                  />
+                  <span>{store.name}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
         <label className="block space-y-1 text-sm">
           <span className="text-[var(--admin-muted)]">{t.editMember.pinOptional}</span>
           <input

@@ -109,6 +109,12 @@ export type SaasAccountDetails = {
     name: string;
     role: string;
     status: string;
+    storeIds: string[];
+    storeAccess: Array<{
+      storeId: string;
+      storeName: string;
+      storeStatus: string;
+    }>;
   }>;
   recentCloseouts: Array<{
     id: string;

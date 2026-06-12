@@ -12,11 +12,16 @@ import {
   formatEntityStatus,
   formatMemberRole,
 } from "@/features/saas-admin/components/admin-display-labels";
+import {
+  filterActiveStores,
+  formatMemberStoreAccessLabel,
+} from "@/features/saas-admin/client/format-member-store-access";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type StoreOption = {
   id: string;
   name: string;
+  status?: string;
 };
 
 type MemberRow = {
@@ -25,6 +30,12 @@ type MemberRow = {
   name: string;
   role: string;
   status: string;
+  storeIds?: string[];
+  storeAccess?: Array<{
+    storeId: string;
+    storeName: string;
+    storeStatus: string;
+  }>;
 };
 
 type AccountTeamSectionProps = {
@@ -47,6 +58,7 @@ export function AccountTeamSection({
   const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
   const [togglingMemberId, setTogglingMemberId] = useState<string | null>(null);
   const [toggleError, setToggleError] = useState<SaasAdminFormError | null>(null);
+  const assignableStores = filterActiveStores(stores);
 
   async function handleToggleStatus(member: MemberRow) {
     const nextStatus = member.status === "inactive" ? "active" : "inactive";
@@ -86,7 +98,7 @@ export function AccountTeamSection({
       ) : null}
 
       <AdminCompactTable
-        columns={[t.common.name, t.common.role, t.common.status, ""]}
+        columns={[t.common.name, t.common.role, t.teamSection.storeAccess, t.common.status, ""]}
         empty={users.length === 0}
         emptyMessage={t.common.noData}
       >
@@ -96,8 +108,13 @@ export function AccountTeamSection({
               {row.name}
             </AdminCompactTableCell>
             <AdminCompactTableCell col={1}>{formatMemberRole(row.role, t)}</AdminCompactTableCell>
-            <AdminCompactTableCell col={2}>{formatEntityStatus(row.status, t)}</AdminCompactTableCell>
-            <AdminCompactTableCell col={3}>
+            <AdminCompactTableCell col={2} className="text-[var(--admin-muted)]">
+              {row.role === "owner"
+                ? "—"
+                : formatMemberStoreAccessLabel(row.storeAccess, t.teamSection.noStoreAccess)}
+            </AdminCompactTableCell>
+            <AdminCompactTableCell col={3}>{formatEntityStatus(row.status, t)}</AdminCompactTableCell>
+            <AdminCompactTableCell col={4}>
               {!readOnly && row.role !== "owner" ? (
                 <div className="flex flex-wrap gap-1">
                   <button
@@ -133,7 +150,7 @@ export function AccountTeamSection({
       >
         <AddAccountMemberForm
           organizationId={organizationId}
-          stores={stores}
+          stores={assignableStores}
           onCreated={() => {
             setAddOpen(false);
             onUpdated();
@@ -145,6 +162,7 @@ export function AccountTeamSection({
       <EditAccountMemberForm
         organizationId={organizationId}
         member={editingMember}
+        stores={assignableStores}
         open={editingMember !== null}
         onClose={() => setEditingMember(null)}
         onUpdated={() => {

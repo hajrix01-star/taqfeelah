@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import {
@@ -6,6 +6,7 @@ import {
   attachments,
   dailyCloseouts,
   entries,
+  memberStoreAccess,
   organizationMembers,
   organizations,
   orgEngagementSnapshots,
@@ -93,6 +94,39 @@ export async function getSaasAccountDetails(
     .innerJoin(users, eq(organizationMembers.userId, users.id))
     .where(eq(organizationMembers.organizationId, input.organizationId))
     .orderBy(asc(users.name));
+
+  const memberIds = memberRows.map((row) => row.memberId);
+  const memberStoreAccessRows = memberIds.length
+    ? await db
+      .select({
+        memberId: memberStoreAccess.organizationMemberId,
+        storeId: memberStoreAccess.storeId,
+        storeName: stores.name,
+        storeStatus: stores.status,
+      })
+      .from(memberStoreAccess)
+      .innerJoin(stores, eq(stores.id, memberStoreAccess.storeId))
+      .where(
+        and(
+          eq(stores.organizationId, input.organizationId),
+          inArray(memberStoreAccess.organizationMemberId, memberIds),
+        ),
+      )
+    : [];
+
+  const storeAccessByMemberId = new Map<
+    string,
+    Array<{ storeId: string; storeName: string; storeStatus: string }>
+  >();
+  memberStoreAccessRows.forEach((row) => {
+    const current = storeAccessByMemberId.get(row.memberId) || [];
+    current.push({
+      storeId: row.storeId,
+      storeName: row.storeName,
+      storeStatus: row.storeStatus,
+    });
+    storeAccessByMemberId.set(row.memberId, current);
+  });
 
   const [closeoutsMonth] = await db
     .select({ total: count() })
@@ -264,13 +298,18 @@ export async function getSaasAccountDetails(
       status: row.status,
       createdAt: row.createdAt.toISOString(),
     })),
-    users: memberRows.map((row) => ({
-      memberId: row.memberId,
-      userId: row.userId,
-      name: row.name,
-      role: row.role,
-      status: row.status,
-    })),
+    users: memberRows.map((row) => {
+      const storeAccess = storeAccessByMemberId.get(row.memberId) || [];
+      return {
+        memberId: row.memberId,
+        userId: row.userId,
+        name: row.name,
+        role: row.role,
+        status: row.status,
+        storeIds: storeAccess.map((entry) => entry.storeId),
+        storeAccess,
+      };
+    }),
     recentCloseouts: recentCloseouts.map((row) => ({
       id: row.id,
       storeName: row.storeName,

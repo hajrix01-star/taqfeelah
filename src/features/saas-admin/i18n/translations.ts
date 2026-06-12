@@ -282,6 +282,8 @@ export const translations = {
       activateMember: "تفعيل",
       deactivateMember: "تعطيل",
       toggleError: "تعذر تحديث حالة المستخدم",
+      storeAccess: "صلاحية المحلات",
+      noStoreAccess: "بدون محلات",
     },
     addMember: {
       title: "إضافة موظف",
@@ -727,6 +729,8 @@ export const translations = {
       activateMember: "Activate",
       deactivateMember: "Deactivate",
       toggleError: "Failed to update member status",
+      storeAccess: "Store access",
+      noStoreAccess: "No stores",
     },
     addMember: {
       title: "Add staff member",
