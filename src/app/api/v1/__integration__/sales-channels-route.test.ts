@@ -10,10 +10,15 @@ import {
 } from "./helpers";
 
 const listStoreSalesChannels = vi.fn();
+const createStoreSalesChannel = vi.fn();
 const updateStoreSalesChannel = vi.fn();
 
 vi.mock("@/features/org-config/server/list-store-sales-channels", () => ({
   listStoreSalesChannels,
+}));
+
+vi.mock("@/features/org-config/server/create-store-sales-channel", () => ({
+  createStoreSalesChannel,
 }));
 
 vi.mock("@/features/org-config/server/update-store-sales-channel", () => ({
@@ -26,6 +31,7 @@ describe("sales channels route integration", () => {
   beforeEach(() => {
     setupRouteIntegrationEnv();
     listStoreSalesChannels.mockReset();
+    createStoreSalesChannel.mockReset();
     updateStoreSalesChannel.mockReset();
   });
 
@@ -66,6 +72,54 @@ describe("sales channels route integration", () => {
     const body = await readJsonBody<{ error: { code: string } }>(response);
     expect(body.error.code).toBe("VALIDATION_ERROR");
     expect(listStoreSalesChannels).not.toHaveBeenCalled();
+  });
+
+  it("POST creates a sales channel", async () => {
+    createStoreSalesChannel.mockResolvedValueOnce({
+      id: TEST_SALES_CHANNEL_ID,
+      name: "Delivery",
+      status: "active",
+      retiredAt: null,
+      createdAt: "2026-06-12T00:00:00.000Z",
+    });
+
+    const { POST } = await import("../stores/[storeId]/sales-channels/route");
+    const response = await POST(
+      ownerRequest(`http://localhost/api/v1/stores/${TEST_STORE_ID}/sales-channels`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Delivery",
+          status: "active",
+          reason: "owner_added_channel",
+        }),
+      }),
+      routeStoreContext(),
+    );
+
+    expect(response.status).toBe(200);
+    const body = await readJsonBody<{ channel: { id: string; name: string } }>(response);
+    expect(body.channel.name).toBe("Delivery");
+    expect(createStoreSalesChannel).toHaveBeenCalledWith(expect.objectContaining({
+      storeId: TEST_STORE_ID,
+      name: "Delivery",
+      status: "active",
+      reason: "owner_added_channel",
+      actorRole: "owner",
+    }));
+  });
+
+  it("POST requires a channel name", async () => {
+    const { POST } = await import("../stores/[storeId]/sales-channels/route");
+    const response = await POST(
+      ownerRequest(`http://localhost/api/v1/stores/${TEST_STORE_ID}/sales-channels`, {
+        method: "POST",
+        body: JSON.stringify({ status: "active" }),
+      }),
+      routeStoreContext(),
+    );
+
+    expect(response.status).toBe(400);
+    expect(createStoreSalesChannel).not.toHaveBeenCalled();
   });
 
   it("PATCH updates sales channel status", async () => {

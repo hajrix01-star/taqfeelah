@@ -3,6 +3,7 @@ import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
 import {
   createOrganizationMemberViaApi,
   createOrganizationStoreViaApi,
+  createStoreSalesChannelViaApi,
   updateOrganizationMemberViaApi,
   updateOrganizationStoreViaApi,
   updateStoreOperationalSettingsViaApi,
@@ -10,6 +11,7 @@ import {
 } from "./org-config-api-client.js";
 import {
   isClientGeneratedId,
+  mapApiChannelToUi,
   mapApiStoreToBusiness,
   mapApiMemberToStaff,
 } from "./org-config-runtime-mapper.js";
@@ -28,6 +30,32 @@ function channelApiId(channel) {
 
 function channelIsActive(channel, activeIds) {
   return Array.isArray(activeIds) && activeIds.includes(channel.id) && !channel.retired;
+}
+
+function cloneStoreChannelConfig(config = {}) {
+  return {
+    channels: (config.channels || []).map((channel) => ({ ...channel })),
+    activeIds: [...(config.activeIds || [])],
+  };
+}
+
+function remapChannelIdInConfig(config, oldId, createdChannel) {
+  const mappedChannel = mapApiChannelToUi(createdChannel);
+  return {
+    channels: config.channels.map((channel) => (
+      channel.id === oldId ? { ...channel, ...mappedChannel } : channel
+    )),
+    activeIds: config.activeIds.map((id) => (id === oldId ? mappedChannel.id : id)),
+  };
+}
+
+function remapStoreChannelSettingsStoreKey(settings, oldStoreId, newStoreId) {
+  if (!oldStoreId || !newStoreId || oldStoreId === newStoreId) return settings;
+  if (!settings[oldStoreId]) return settings;
+  const next = { ...settings };
+  next[newStoreId] = next[oldStoreId];
+  delete next[oldStoreId];
+  return next;
 }
 
 export async function persistOrgConfigSnapshot({
@@ -96,24 +124,62 @@ export async function persistOrgConfigSnapshot({
     }
   }
 
+  let remappedStoreChannelSettings = Object.fromEntries(
+    Object.entries(next.storeChannelSettings || {}).map(([storeId, config]) => [
+      storeId,
+      cloneStoreChannelConfig(config),
+    ]),
+  );
+
+  remappedBusinesses.forEach((business, index) => {
+    const previous = baselineBusinessById.get(nextBusinesses[index]?.id);
+    const previousId = previous?.id || nextBusinesses[index]?.id;
+    if (previousId && business.id !== previousId) {
+      remappedStoreChannelSettings = remapStoreChannelSettingsStoreKey(
+        remappedStoreChannelSettings,
+        previousId,
+        business.id,
+      );
+    }
+  });
+
   const baselineChannels = baseline.storeChannelSettings || {};
-  const nextChannels = next.storeChannelSettings || {};
   const storeIds = new Set([
     ...Object.keys(baselineChannels),
-    ...Object.keys(nextChannels),
+    ...Object.keys(remappedStoreChannelSettings),
   ]);
 
   for (const storeId of storeIds) {
     const beforeConfig = baselineChannels[storeId] || { channels: [], activeIds: [] };
-    const afterConfig = nextChannels[storeId] || { channels: [], activeIds: [] };
+    let afterConfig = remappedStoreChannelSettings[storeId] || { channels: [], activeIds: [] };
     const beforeById = new Map((beforeConfig.channels || []).map((channel) => [channel.id, channel]));
+
+    for (const afterChannel of afterConfig.channels || []) {
+      const apiId = channelApiId(afterChannel);
+      if (apiId) continue;
+
+      const name = (afterChannel.nameAr || afterChannel.nameEn || "").trim();
+      if (!name) continue;
+
+      const isActive = channelIsActive(afterChannel, afterConfig.activeIds);
+      const created = await createStoreSalesChannelViaApi({
+        ...authArgs,
+        storeId,
+        name,
+        status: isActive ? "active" : "retired",
+        reason: "owner_added_channel",
+      });
+      afterConfig = remapChannelIdInConfig(afterConfig, afterChannel.id, created);
+      remappedStoreChannelSettings[storeId] = afterConfig;
+    }
+
     const afterById = new Map((afterConfig.channels || []).map((channel) => [channel.id, channel]));
     const channelIds = new Set([...beforeById.keys(), ...afterById.keys()]);
 
     for (const channelId of channelIds) {
       const beforeChannel = beforeById.get(channelId);
       const afterChannel = afterById.get(channelId);
-      if (!afterChannel) continue;
+      if (!afterChannel || !beforeChannel) continue;
 
       const apiId = channelApiId(afterChannel) || channelApiId(beforeChannel);
       if (!apiId) continue;
@@ -224,7 +290,7 @@ export async function persistOrgConfigSnapshot({
   return {
     configuredBusinesses: remappedBusinesses,
     archivedBusinessIds: next.archivedBusinessIds || [],
-    storeChannelSettings: next.storeChannelSettings || {},
+    storeChannelSettings: remappedStoreChannelSettings,
     storeOperationalSettings: next.storeOperationalSettings || {},
     staff: remappedStaff,
   };

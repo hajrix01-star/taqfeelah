@@ -189,6 +189,38 @@ export async function updateOrganizationStoreViaApi({
   };
 }
 
+export async function createStoreSalesChannelViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  storeId,
+  name,
+  status = "active",
+  reason,
+}) {
+  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  if (!context) throw new Error("sales channel create api failed: missing store mapping");
+  if (!name?.trim()) throw new Error("sales channel create api failed: missing channel name");
+
+  const payload = await fetchApiJsonWithPrototypeContext(
+    `/api/v1/stores/${context.storeId}/sales-channels`,
+    {
+      organizationId,
+      actorUserId,
+      actorRole,
+      method: "POST",
+      body: {
+        name: name.trim(),
+        status,
+        reason,
+      },
+      errorMessage: "sales channel create api failed",
+      errorStyle: "status",
+    },
+  );
+  return payload?.channel || payload;
+}
+
 export async function updateStoreSalesChannelViaApi({
   organizationId,
   actorUserId,
