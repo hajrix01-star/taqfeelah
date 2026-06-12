@@ -9,6 +9,7 @@ import {
 } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 import type { SaasAdminLocale } from "@/features/saas-admin/i18n/translations";
 import { loginOwnerSessionViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
+import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import "@/features/saas-admin/components/admin-theme.css";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 
@@ -50,7 +51,7 @@ function LoginForm({ nextPath }: { nextPath: string }) {
         <div className="flex justify-end">
           <LanguageToggle />
         </div>
-        <section className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 sm:p-7">
+        <AdminCard as="section" padding="lg">
           <p className="text-xs font-semibold tracking-wide text-[var(--admin-muted)]">{t.brand}</p>
           <h1 className="mt-1 text-xl font-bold text-[var(--admin-primary)]">{t.auth.loginTitle}</h1>
           <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.auth.loginDescription}</p>
@@ -92,7 +93,7 @@ function LoginForm({ nextPath }: { nextPath: string }) {
               {t.auth.backToApp}
             </Link>
           </p>
-        </section>
+        </AdminCard>
         <ReleaseVersionLine
           className="text-center text-[11px] font-semibold text-[var(--admin-muted)]"
           lang={locale}

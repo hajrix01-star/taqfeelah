@@ -1,0 +1,20 @@
+:root {
+  --taq-cream: #f8f6f0;
+  --taq-cream-soft: #f7f5ef;
+  --taq-cream-paper: #fffdf8;
+  --taq-ink: #112a46;
+  --taq-ink-soft: #1a3a5c;
+  --taq-muted: #827762;
+  --taq-soft: #716753;
+  --taq-gold: #b99844;
+  --taq-gold-soft: #d4b96a;
+  --taq-border: #ece6da;
+  --taq-border-soft: #f0ece2;
+  --taq-danger: #b44747;
+  --taq-danger-bg: #fff1ee;
+  --taq-warning-bg: #fff4d2;
+  --taq-warning-text: #806528;
+  --taq-warning-border: #f0d9a2;
+  --taq-success: #2d6a4f;
+  --taq-success-bg: #e8f5ee;
+}

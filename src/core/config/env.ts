@@ -141,14 +141,21 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
   if (!authCfg.ownerUserId) {
     missing.push("AUTH_OWNER_USER_ID or NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID");
   }
-  if (Object.keys(authCfg.userIdMap).length === 0) {
-    missing.push("NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP");
-  }
-  if (Object.keys(parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP)).length === 0) {
-    missing.push("NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP");
-  }
-  if (Object.keys(parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP)).length === 0) {
-    missing.push("NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP");
+
+  const requiresLegacyEnvIdMaps =
+    env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE === "true"
+    || env.ALLOW_HEADER_AUTH_CONTEXT === "true";
+
+  if (requiresLegacyEnvIdMaps) {
+    if (Object.keys(authCfg.userIdMap).length === 0) {
+      missing.push("NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP");
+    }
+    if (Object.keys(parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP)).length === 0) {
+      missing.push("NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP");
+    }
+    if (Object.keys(parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP)).length === 0) {
+      missing.push("NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP");
+    }
   }
   if (authLaunchRequested && (!env.AUTH_SESSION_SECRET || env.AUTH_SESSION_SECRET.length < 16)) {
     missing.push("AUTH_SESSION_SECRET(min 16 chars) (only when launching auth)");

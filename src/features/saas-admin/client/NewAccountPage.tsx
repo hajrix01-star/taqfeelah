@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AccountCreatedSuccessPanel } from "@/features/saas-admin/client/AccountCreatedSuccessPanel";
+import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import { AdminErrorAlert } from "@/features/saas-admin/components/AdminErrorAlert";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
 import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
@@ -30,7 +31,7 @@ export default function NewAccountPage() {
         {form.createdAccount ? (
           <AccountCreatedSuccessPanel created={form.createdAccount} />
         ) : (
-          <form onSubmit={form.handleSubmit} className="space-y-5 rounded-xl border border-[var(--admin-border)] bg-white p-4 sm:p-6">
+          <AdminCard as="form" onSubmit={form.handleSubmit} padding="lg" className="space-y-5">
             <section className="space-y-3">
               <h2 className="text-sm font-semibold text-[var(--admin-text)]">{t.newAccount.sectionOrganization}</h2>
               <label className="block space-y-1 text-sm">
@@ -120,7 +121,7 @@ export default function NewAccountPage() {
             >
               {form.isSubmitting ? t.newAccount.submitting : t.newAccount.submit}
             </button>
-          </form>
+          </AdminCard>
         )}
       </AdminPageBody>
     </>

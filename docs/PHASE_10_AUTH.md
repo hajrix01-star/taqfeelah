@@ -1,6 +1,7 @@
-# Phase 10 — Auth foundations (inactive by default)
+# Phase 10 — Auth foundations
 
-> Build real user/credential infrastructure now; activate only shortly before launch.
+> **الحالة (2026-06-12):** مفعّل على الإنتاج عبر `DEPLOYMENT_WAVE=7` في `deploy-production.yml`.  
+> راجع `docs/PRODUCTION_STATUS.md` للتفاصيل والاستثناءات المؤجّلة.
 
 ## Flags (all OFF by default)
 
@@ -33,9 +34,9 @@
 7. Keep all DB data-source flags enabled (`entries`, `closeouts`, `org-config`, `phase9`, pagination)
 8. Deploy — wave 6 verify runs POST owner login, bad-password 401, employee PIN 200
 
-## Not activated yet
+## Not activated / deferred
 
-- Forced login on every environment
-- OTP SMS/email provider
-- Password reset/invite emails
-- `/app` route split (still `/` + prototype runtime)
+- OTP SMS/email provider (`AUTH_OTP_ENABLED` off)
+- Password reset emails (needs `RESEND_API_KEY` or SMTP — code ready)
+- Automated invite/setup emails (manual WhatsApp/copy link from SaaS admin)
+- `/app` still uses approved prototype runtime shell (visual baseline frozen)

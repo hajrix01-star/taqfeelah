@@ -1,7 +1,7 @@
 # خارطة refactor التشغيلية — تقفيلة V2
 
 > **ملف حي:** يُحدَّث بعد كل مرحلة مكتملة أو merge.  
-> آخر تحديث: **2026-06-10** — Wave K مُغلق؛ PR #143 مدمج (`69fa103`)؛ Runtime ~418 سطر.
+> آخر تحديث: **2026-06-12** — موجات إنتاج 1–7 مفعّلة في CI؛ راجع `docs/PRODUCTION_STATUS.md`.
 
 ---
 
@@ -40,7 +40,7 @@
 | 7.1 | ↳ مرفقات (سقف حجم/عدد، object storage) | 🟠 لم ينتهي | IndexedDB + ضغط صور ✅ في #89؛ object storage لاحقًا |
 | 7.2 | ↳ استخراج hooks من Runtime (موجات G–J + #138–#143) | ✅ | مدمج `69fa103` — Runtime ~418 سطر |
 | 7.2.1 | ↳ **Wave K — Calculation Unification** | ✅ | `summarizeEntries` → `rowsFromUiEntries` + `calculateDaySummary`؛ parity tests خضراء |
-| 7.3 | ↳ Auth كامل + إيقاف `ALLOW_HEADER_AUTH_CONTEXT` | 🟠 لم ينتهي | آخر خطوة قبل الإطلاق العام |
+| 7.3 | ↳ Auth كامل + إيقاف `ALLOW_HEADER_AUTH_CONTEXT` | ✅ | مفعّل في `deploy-production.yml` (wave 7) |
 
 **ملخص سريع:** ✅ **25** بند · 🟠 **4** بنود لم تنتهِ (+ اختياري واحد) · النشط: **تأكيد VPS** · **7.1** · **7.3 auth**.
 

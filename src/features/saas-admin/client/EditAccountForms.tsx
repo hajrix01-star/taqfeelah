@@ -8,6 +8,7 @@ import {
 } from "@/features/saas-admin/client/saas-admin-api-client";
 import { parsePlanCode, type PlanCode } from "@/features/billing/plan-codes";
 import { mapSaasAdminApiError } from "@/features/saas-admin/client/api-error";
+import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type EditAccountFormsProps = {
@@ -146,7 +147,7 @@ export function EditAccountForms({
 
   return (
     <div className="space-y-4">
-      <form onSubmit={handleAccountSubmit} className="space-y-3 rounded-xl border border-[var(--admin-border)] bg-white p-4">
+      <AdminCard as="form" padding="md" className="space-y-3" onSubmit={handleAccountSubmit}>
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.editAccount.accountTitle}</h3>
         <label className="block space-y-1 text-sm">
           <span className="text-[var(--admin-muted)]">{t.editAccount.organizationName}</span>
@@ -190,9 +191,9 @@ export function EditAccountForms({
         >
           {isSavingAccount ? t.editAccount.saving : t.editAccount.saveAccount}
         </button>
-      </form>
+      </AdminCard>
 
-      <form onSubmit={handleOwnerSubmit} className="space-y-3 rounded-xl border border-[var(--admin-border)] bg-white p-4">
+      <AdminCard as="form" padding="md" className="space-y-3" onSubmit={handleOwnerSubmit}>
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.editAccount.ownerTitle}</h3>
         <p className="text-xs leading-6 text-[var(--admin-muted)]">{t.editAccount.ownerCredentialsHint}</p>
         <label className="block space-y-1 text-sm">
@@ -233,9 +234,9 @@ export function EditAccountForms({
         >
           {isSavingOwner ? t.editAccount.saving : t.editAccount.saveOwner}
         </button>
-      </form>
+      </AdminCard>
 
-      <section className="rounded-lg border border-dashed border-[var(--admin-border)] bg-[var(--admin-surface-muted)] p-4">
+      <AdminCard variant="dashed" padding="md" className="bg-[var(--admin-surface-muted)]">
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.editAccount.repairTitle}</h3>
         <p className="mt-1 text-sm text-[var(--admin-muted)]">{t.editAccount.repairDescription}</p>
         {repairError ? <p className="mt-2 text-sm text-[var(--admin-danger)]">{repairError}</p> : null}
@@ -248,7 +249,7 @@ export function EditAccountForms({
         >
           {isRepairing ? t.editAccount.repairing : t.editAccount.repairAction}
         </button>
-      </section>
+      </AdminCard>
 
       <div ref={feedbackRef} />
     </div>

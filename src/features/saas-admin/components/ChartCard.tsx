@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { MetricSource } from "@/features/saas-admin/types";
+import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import { MetricSourceBadge } from "@/features/saas-admin/components/MetricSourceBadge";
 
 type ChartCardProps = {
@@ -13,7 +14,7 @@ type ChartCardProps = {
 
 export function ChartCard({ title, description, source, children }: ChartCardProps) {
   return (
-    <section className="rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] p-3.5 sm:p-4">
+    <AdminCard as="section" padding="sm">
       <header className="mb-3">
         <div className="flex items-start justify-between gap-2">
           <h2 className="text-sm font-bold text-[var(--admin-text)] sm:text-base">{title}</h2>
@@ -24,6 +25,6 @@ export function ChartCard({ title, description, source, children }: ChartCardPro
         ) : null}
       </header>
       {children}
-    </section>
+    </AdminCard>
   );
 }

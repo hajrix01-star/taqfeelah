@@ -1,7 +1,9 @@
 "use client";
 
+import type { FormEvent } from "react";
 import type { PlanCatalogRow } from "@/features/billing/types";
 import { usePlanEditorForm } from "@/features/billing/client/use-plan-editor-form";
+import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type PlanEditorProps = {
@@ -15,9 +17,11 @@ export function PlanEditor({ plan, saving, onSave }: PlanEditorProps) {
   const form = usePlanEditorForm(plan, onSave);
 
   return (
-    <form
-      onSubmit={(event) => { void form.submit(event); }}
-      className="space-y-3 rounded-xl border border-[var(--admin-border)] bg-white p-4"
+    <AdminCard
+      as="form"
+      padding="md"
+      className="space-y-3"
+      onSubmit={(event: FormEvent<HTMLFormElement>) => { void form.submit(event); }}
     >
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">
@@ -107,6 +111,6 @@ export function PlanEditor({ plan, saving, onSave }: PlanEditorProps) {
       >
         {saving ? t.plansPage.saving : t.plansPage.save}
       </button>
-    </form>
+    </AdminCard>
   );
 }

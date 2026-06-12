@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { resolveSaasAdminFormError, type SaasAdminFormError } from "@/features/saas-admin/client/api-error";
 import { createSaasAccountMember } from "@/features/saas-admin/client/saas-admin-api-client";
+import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import { AdminErrorAlert } from "@/features/saas-admin/components/AdminErrorAlert";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
@@ -56,7 +57,7 @@ export function AddAccountMemberForm({ organizationId, stores, onCreated }: AddA
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-[var(--admin-border)] bg-white p-4">
+    <AdminCard as="form" padding="md" className="space-y-4" onSubmit={handleSubmit}>
       <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.addMember.title}</h3>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block space-y-1 text-sm">
@@ -120,6 +121,6 @@ export function AddAccountMemberForm({ organizationId, stores, onCreated }: AddA
       >
         {isSubmitting ? t.addMember.submitting : t.addMember.submit}
       </button>
-    </form>
+    </AdminCard>
   );
 }

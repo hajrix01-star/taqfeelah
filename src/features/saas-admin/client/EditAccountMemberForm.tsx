@@ -108,7 +108,7 @@ export function EditAccountMemberForm({
               required
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className="w-full rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2"
+              className="w-full rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2"
             />
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -117,7 +117,7 @@ export function EditAccountMemberForm({
               <select
                 value={role}
                 onChange={(event) => setRole(event.target.value as typeof role)}
-                className="w-full rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2"
+                className="w-full rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2"
               >
                 <option value="employee">{t.addMember.roleEmployee}</option>
                 <option value="manager">{t.addMember.roleManager}</option>
@@ -128,7 +128,7 @@ export function EditAccountMemberForm({
               <select
                 value={status}
                 onChange={(event) => setStatus(event.target.value as typeof status)}
-                className="w-full rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2"
+                className="w-full rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2"
               >
                 <option value="active">{t.entityStatus.active}</option>
                 <option value="inactive">{t.entityStatus.inactive}</option>
@@ -144,7 +144,7 @@ export function EditAccountMemberForm({
               value={pin}
               onChange={(event) => setPin(event.target.value)}
               placeholder={t.editMember.pinOptionalHint}
-              className="w-full rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2"
+              className="w-full rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2"
               dir="ltr"
             />
           </label>

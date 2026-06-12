@@ -323,6 +323,10 @@ export const translations = {
       inactiveAccounts: "الحسابات الخاملة",
       retentionProxy: "مؤشر الاحتفاظ",
       usageIntensity: "كثافة الاستخدام",
+      accountMixChart: "توزيع الحسابات",
+      accountMixChartDesc: "نشط مقابل خامل",
+      revenueOutlookChart: "نظرة الإيرادات الشهرية",
+      revenueOutlookChartDesc: "تقديري مقابل محتمل (ريال سعودي)",
       loadError: "تعذر تحميل المؤشرات",
     },
     systemHealth: {
@@ -665,6 +669,10 @@ export const translations = {
       inactiveAccounts: "Inactive Accounts",
       retentionProxy: "Retention Proxy",
       usageIntensity: "Usage Intensity",
+      accountMixChart: "Account mix",
+      accountMixChartDesc: "Active vs inactive",
+      revenueOutlookChart: "Monthly revenue outlook",
+      revenueOutlookChartDesc: "Estimated vs potential (SAR)",
       loadError: "Failed to load investor metrics",
     },
     systemHealth: {
