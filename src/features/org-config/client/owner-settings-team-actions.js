@@ -108,6 +108,17 @@ export function resolveEmployeeStoreIds(person, fallbackStoreId = "shami") {
 /**
  * @param {StaffMember[]} staffDraft
  * @param {string} personId
+ * @param {string} mobile
+ */
+export function updateEmployeeMobileInDraft(staffDraft, personId, mobile) {
+  return staffDraft.map((person) => (
+    person.id === personId ? { ...person, mobile } : person
+  ));
+}
+
+/**
+ * @param {StaffMember[]} staffDraft
+ * @param {string} personId
  * @param {string} storeId
  * @param {string} [fallbackStoreId]
  */

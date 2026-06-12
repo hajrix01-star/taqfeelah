@@ -30,6 +30,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       role: body?.role === "manager" || body?.role === "employee" ? body.role : undefined,
       status: body?.status === "active" || body?.status === "inactive" ? body.status : undefined,
       pin: typeof body?.pin === "string" ? body.pin : undefined,
+      loginPhone: typeof body?.loginPhone === "string" ? body.loginPhone : undefined,
       storeIds,
     });
 

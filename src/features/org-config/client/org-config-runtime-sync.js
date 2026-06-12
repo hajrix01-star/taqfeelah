@@ -145,6 +145,7 @@ export async function persistOrgConfigSnapshot({
         role: "employee",
         storeIds: person.storeIds || [],
         pin,
+        loginPhone: person.mobile?.trim() || undefined,
       });
       const mapped = mapApiMemberToStaff({
         memberId: created.memberId,
@@ -171,6 +172,8 @@ export async function persistOrgConfigSnapshot({
 
     const nextName = person.nameAr || person.nameEn || "";
     const prevName = previous?.nameAr || previous?.nameEn || "";
+    const nextMobile = (person.mobile || "").trim();
+    const prevMobile = (previous?.mobile || "").trim();
     const nextStoreIds = [...(person.storeIds || [])].sort().join("|");
     const prevStoreIds = [...(previous?.storeIds || [])].sort().join("|");
     const nextActive = Boolean(person.active) && !person.removed;
@@ -178,6 +181,7 @@ export async function persistOrgConfigSnapshot({
 
     if (
       nextName !== prevName
+      || nextMobile !== prevMobile
       || nextStoreIds !== prevStoreIds
       || nextActive !== prevActive
       || (pin && pin !== previous?.pin)
@@ -189,6 +193,7 @@ export async function persistOrgConfigSnapshot({
         status: nextActive ? "active" : "inactive",
         storeIds: person.storeIds || [],
         pin,
+        loginPhone: nextMobile || undefined,
         reason: nextActive ? "owner_updated_member" : "owner_removed_member",
       });
     }

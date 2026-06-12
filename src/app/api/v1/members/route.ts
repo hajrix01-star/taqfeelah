@@ -56,6 +56,7 @@ export async function POST(request: Request) {
         ? body.role
         : "employee",
       storeIds,
+      loginPhone: typeof body?.loginPhone === "string" ? body.loginPhone : undefined,
       credentials: body?.credentials,
     });
 

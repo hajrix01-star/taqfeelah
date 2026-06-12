@@ -139,6 +139,38 @@ export async function upsertEmployeePinIdentity(
   return { id: created.id, userId: input.userId, provider: "employee_pin" as const };
 }
 
+export async function updateEmployeeLoginPhone(
+  userId: string,
+  loginPhone: string | null,
+  executor?: AuthIdentityDb,
+) {
+  const db = resolveDb(executor);
+  const [existing] = await db
+    .select({ id: authIdentities.id })
+    .from(authIdentities)
+    .where(
+      and(
+        eq(authIdentities.userId, userId),
+        eq(authIdentities.provider, "employee_pin"),
+      ),
+    )
+    .limit(1);
+
+  if (!existing?.id) {
+    throw new ValidationError("Employee login identity was not found. Set a PIN first.");
+  }
+
+  await db
+    .update(authIdentities)
+    .set({
+      loginPhone,
+      updatedAt: new Date(),
+    })
+    .where(eq(authIdentities.id, existing.id));
+
+  return { id: existing.id, userId, provider: "employee_pin" as const };
+}
+
 export async function getOwnerPasswordIdentityFlags(userId: string) {
   const db = getDb();
   const [identity] = await db

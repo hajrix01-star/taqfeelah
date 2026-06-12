@@ -10,7 +10,10 @@ import {
   users,
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
+import { assertValidLoginPhone } from "@/core/phone/normalize-login-phone";
+import { ensureEmployeeLoginPhoneAvailable } from "@/features/auth/server/employee-login-phone-availability";
 import {
+  updateEmployeeLoginPhone,
   upsertEmployeePinIdentity,
   upsertOwnerPasswordIdentity,
 } from "@/features/auth/server/auth-identities";
@@ -36,6 +39,7 @@ const inputSchema = z.object({
   role: z.enum(["owner", "manager", "employee"]).optional(),
   status: z.enum(["active", "inactive"]).optional(),
   storeIds: z.array(z.string().uuid()).optional(),
+  loginPhone: z.string().trim().min(1).max(30).optional(),
   credentials: credentialsSchema.optional(),
   reason: z.string().trim().max(240).optional(),
 });
@@ -84,6 +88,15 @@ export async function updateOrganizationMember(rawInput: z.infer<typeof inputSch
   const nextRole = input.role || member.role;
   const nextStatus = input.status || member.status;
   const uniqueStoreIds = input.storeIds ? [...new Set(input.storeIds)] : null;
+
+  let normalizedLoginPhone: string | undefined;
+  if (input.loginPhone) {
+    try {
+      normalizedLoginPhone = assertValidLoginPhone(input.loginPhone);
+    } catch {
+      throw new ValidationError("Invalid employee login phone number.");
+    }
+  }
 
   if (uniqueStoreIds?.length) {
     const storeRows = await db
@@ -150,13 +163,29 @@ export async function updateOrganizationMember(rawInput: z.infer<typeof inputSch
       if (nextRole === "owner") {
         throw new ValidationError("Employee pin credentials cannot be used for owner role.");
       }
+      if (normalizedLoginPhone) {
+        await ensureEmployeeLoginPhoneAvailable(
+          { phone: normalizedLoginPhone, excludeUserId: member.userId },
+          tx,
+        );
+      }
       await upsertEmployeePinIdentity(
         {
           userId: member.userId,
           pin: input.credentials.pin,
+          loginPhone: normalizedLoginPhone,
         },
         tx,
       );
+    } else if (normalizedLoginPhone) {
+      if (nextRole === "owner") {
+        throw new ValidationError("Employee login phone cannot be set for owner role.");
+      }
+      await ensureEmployeeLoginPhoneAvailable(
+        { phone: normalizedLoginPhone, excludeUserId: member.userId },
+        tx,
+      );
+      await updateEmployeeLoginPhone(member.userId, normalizedLoginPhone, tx);
     }
 
     await tx.insert(auditEvents).values({
@@ -173,6 +202,7 @@ export async function updateOrganizationMember(rawInput: z.infer<typeof inputSch
         nextStatus,
         storeIds: uniqueStoreIds,
         hasCredentials: Boolean(input.credentials),
+        loginPhoneUpdated: Boolean(normalizedLoginPhone),
       },
     });
 
@@ -182,6 +212,7 @@ export async function updateOrganizationMember(rawInput: z.infer<typeof inputSch
       name: input.name || member.name,
       role: nextRole,
       status: nextStatus,
+      loginPhone: normalizedLoginPhone ?? null,
       storeIds: uniqueStoreIds,
       updatedAt: now.toISOString(),
     };

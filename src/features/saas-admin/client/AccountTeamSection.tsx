@@ -30,6 +30,7 @@ type MemberRow = {
   name: string;
   role: string;
   status: string;
+  loginPhone?: string | null;
   storeIds?: string[];
   storeAccess?: Array<{
     storeId: string;

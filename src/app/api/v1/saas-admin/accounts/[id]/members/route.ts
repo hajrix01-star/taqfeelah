@@ -28,6 +28,7 @@ export async function POST(request: Request, context: RouteContext) {
       name: typeof body?.name === "string" ? body.name : "",
       role: body?.role === "manager" || body?.role === "employee" ? body.role : "employee",
       pin: typeof body?.pin === "string" ? body.pin : "",
+      loginPhone: typeof body?.loginPhone === "string" ? body.loginPhone : undefined,
       storeIds,
     });
 

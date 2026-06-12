@@ -11,6 +11,8 @@ import {
   users,
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
+import { assertValidLoginPhone } from "@/core/phone/normalize-login-phone";
+import { ensureEmployeeLoginPhoneAvailable } from "@/features/auth/server/employee-login-phone-availability";
 import {
   upsertEmployeePinIdentity,
   upsertOwnerPasswordIdentity,
@@ -35,6 +37,7 @@ const inputSchema = z.object({
   name: z.string().trim().min(1).max(120),
   role: z.enum(["owner", "manager", "employee"]),
   storeIds: z.array(z.string().uuid()).default([]),
+  loginPhone: z.string().trim().min(1).max(30).optional(),
   credentials: credentialsSchema.optional(),
 });
 
@@ -76,6 +79,15 @@ export async function createOrganizationMember(rawInput: z.infer<typeof inputSch
   const userId = randomUUID();
   const memberId = randomUUID();
   const now = new Date();
+
+  let normalizedLoginPhone: string | undefined;
+  if (input.loginPhone) {
+    try {
+      normalizedLoginPhone = assertValidLoginPhone(input.loginPhone);
+    } catch {
+      throw new ValidationError("Invalid employee login phone number.");
+    }
+  }
 
   return db.transaction(async (tx) => {
     await tx.insert(users).values({
@@ -123,10 +135,17 @@ export async function createOrganizationMember(rawInput: z.infer<typeof inputSch
       if (input.role === "owner") {
         throw new ValidationError("Employee pin credentials cannot be used for owner role.");
       }
+      if (normalizedLoginPhone) {
+        await ensureEmployeeLoginPhoneAvailable(
+          { phone: normalizedLoginPhone, excludeUserId: userId },
+          tx,
+        );
+      }
       await upsertEmployeePinIdentity(
         {
           userId,
           pin: input.credentials.pin,
+          loginPhone: normalizedLoginPhone,
         },
         tx,
       );
@@ -142,6 +161,7 @@ export async function createOrganizationMember(rawInput: z.infer<typeof inputSch
         role: input.role,
         storeIds: uniqueStoreIds,
         hasCredentials: Boolean(input.credentials),
+        loginPhone: normalizedLoginPhone || null,
       },
     });
 
@@ -151,6 +171,7 @@ export async function createOrganizationMember(rawInput: z.infer<typeof inputSch
       name: input.name,
       role: input.role,
       status: "active",
+      loginPhone: normalizedLoginPhone ?? null,
       storeIds: uniqueStoreIds,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),

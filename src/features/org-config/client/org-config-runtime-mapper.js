@@ -103,7 +103,7 @@ export function mapApiMemberToStaff(member, { employeePins = {} } = {}) {
     apiUserId: userId,
     nameAr: member?.name || "",
     nameEn: member?.name || "",
-    mobile: member?.mobile || "",
+    mobile: member?.loginPhone || member?.mobile || "",
     active: member?.status === "active",
     removed: member?.status === "inactive",
     storeIds,

@@ -35,6 +35,7 @@ export class SaasAdminApiError extends Error {
 const ERROR_CODE_MAP: Partial<Record<string, keyof SaasAdminTranslations["apiErrors"]>> = {
   OWNER_USERNAME_TAKEN: "ownerUsernameTaken",
   OWNER_PHONE_TAKEN: "ownerPhoneTaken",
+  EMPLOYEE_PHONE_TAKEN: "employeePhoneTaken",
   ORGANIZATION_NOT_FOUND: "organizationNotFound",
   MEMBER_NOT_FOUND: "memberNotFound",
   SUBSCRIPTION_NOT_FOUND: "subscriptionNotFound",
@@ -163,8 +164,8 @@ function mapSaasAdminApiErrorCause(cause: string, t: SaasAdminTranslations): str
   if (cause.includes("auth_identities already contains this login phone")) {
     return t.apiErrors.ownerPhoneTakenCause;
   }
-  if (cause.includes("Owner login phone is already assigned")) {
-    return t.apiErrors.ownerPhoneTakenCause;
+  if (cause.includes("auth_identities already contains this login phone")) {
+    return t.apiErrors.employeePhoneTakenCause;
   }
   if (cause.includes("outside the active transaction")) {
     return t.apiErrors.provisionDependencyMissingCause;

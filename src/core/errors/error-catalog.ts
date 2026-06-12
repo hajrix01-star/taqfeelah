@@ -84,6 +84,14 @@ export const ERROR_CATALOG: Record<ErrorCode, ErrorCatalogEntry> = {
     status: 409,
     type: `${ERROR_TYPE_BASE}/owner-phone-taken`,
   },
+  [ERROR_CODES.EMPLOYEE_PHONE_TAKEN]: {
+    code: ERROR_CODES.EMPLOYEE_PHONE_TAKEN,
+    title: "Employee phone taken",
+    message: "Employee login phone is already assigned to another user.",
+    cause: "auth_identities already contains this login phone for provider employee_pin.",
+    status: 409,
+    type: `${ERROR_TYPE_BASE}/employee-phone-taken`,
+  },
   [ERROR_CODES.ORGANIZATION_NOT_FOUND]: {
     code: ERROR_CODES.ORGANIZATION_NOT_FOUND,
     title: "Organization not found",

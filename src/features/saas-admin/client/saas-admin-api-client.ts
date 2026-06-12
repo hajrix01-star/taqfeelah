@@ -116,6 +116,7 @@ export type CreateSaasAccountMemberPayload = {
   name: string;
   role: "manager" | "employee";
   pin: string;
+  loginPhone?: string;
   storeIds?: string[];
 };
 
@@ -180,6 +181,7 @@ export async function updateSaasAccountMember(
     role?: "manager" | "employee";
     status?: "active" | "inactive";
     pin?: string;
+    loginPhone?: string;
     storeIds?: string[];
   },
 ) {

@@ -17,6 +17,8 @@ import {
   UserRound,
 } from "lucide-react";
 import { isNotebookThemeDirty } from "@/features/org-config/client/owner-settings-appearance-actions";
+import { LoginPhoneFields } from "@/core/phone/LoginPhoneFields";
+import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 import { buildStaffDeleteTarget } from "@/features/org-config/client/owner-settings-team-actions";
 import {
   openBillingUpgradeSupport,
@@ -166,6 +168,7 @@ export function OwnerSettingsTeamSection({
   toggleEmployeeStore,
   draftAuthEmployeePins,
   updateDraftEmployeePin,
+  updateEmployeeMobile,
   newEmployeeName,
   setNewEmployeeName,
   newEmployeeMobile,
@@ -207,6 +210,15 @@ export function OwnerSettingsTeamSection({
                 <p className="mt-1 text-taq-meta font-bold text-[#827762]">
                   {person.active ? text(lang, "active") : text(lang, "stopChannel")} {employeeStoreIds(person).length} {lang === "ar" ? "محل" : "shop(s)"}
                 </p>
+                {person.mobile ? (
+                  <p className="mt-1 text-taq-meta font-bold text-[#716753]" dir="ltr">
+                    {text(lang, "employeeMobile")}: {formatLoginPhoneForDisplay(person.mobile)}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-taq-meta font-bold text-[#B8A98E]">
+                    {text(lang, "employeeMobileMissing")}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <SettingToggle disabled={!managingTeam} enabled={person.active} onToggle={() => toggleEmployeeActive(person.id)} />
@@ -227,6 +239,16 @@ export function OwnerSettingsTeamSection({
                   ))}
                 </div>
                 <div className="mt-3">
+                  <p className="mb-2 text-xs font-black text-[#716753]">{text(lang, "employeeMobile")}</p>
+                  <LoginPhoneFields
+                    value={person.mobile || ""}
+                    onChange={(nextValue) => updateEmployeeMobile(person.id, nextValue)}
+                    dialClassName="w-24 rounded-2xl bg-[#F7F5EF] px-3 py-3 text-xs font-black outline-none"
+                    nationalClassName="min-w-0 flex-1 rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none"
+                    containerClassName="flex gap-2"
+                  />
+                </div>
+                <div className="mt-3">
                   <p className="mb-2 text-xs font-black text-[#716753]">{lang === "ar" ? "الرقم السري للموظف" : "Employee PIN"}</p>
                   <input dir="ltr" value={draftAuthEmployeePins?.[person.id] || ""} onChange={(event) => updateDraftEmployeePin(person.id, event.target.value)} placeholder={lang === "ar" ? "PIN أو كلمة مرور قصيرة" : "PIN or short passcode"} className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
                 </div>
@@ -238,7 +260,16 @@ export function OwnerSettingsTeamSection({
           <div className="p-4">
             <p className="mb-3 text-xs font-black">{text(lang, "addEmployee")}</p>
             <input value={newEmployeeName} onChange={(event) => setNewEmployeeName(event.target.value)} placeholder={text(lang, "newEmployeeName")} className="mb-2 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" />
-            <input value={newEmployeeMobile} onChange={(event) => setNewEmployeeMobile(event.target.value)} placeholder={text(lang, "employeeMobile")} className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" />
+            <div className="mb-3">
+              <p className="mb-2 text-xs font-black text-[#716753]">{text(lang, "employeeMobile")}</p>
+              <LoginPhoneFields
+                value={newEmployeeMobile}
+                onChange={setNewEmployeeMobile}
+                dialClassName="w-24 rounded-2xl bg-[#F7F5EF] px-3 py-3 text-xs font-black outline-none"
+                nationalClassName="min-w-0 flex-1 rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none"
+                containerClassName="flex gap-2"
+              />
+            </div>
             <div className="mb-3 flex flex-wrap gap-2">
               {activeStoredBusinesses.map((business) => (
                 <button key={business.id} onClick={() => toggleNewEmployeeStore(business.id)} className={`rounded-full px-3 py-2 text-taq-meta font-bold ${newEmployeeStoreIds.includes(business.id) ? "bg-[#112A46] text-white" : "bg-[#F0ECE2] text-[#827762]"}`}>
@@ -596,6 +627,7 @@ export function renderOwnerSettingsSection(section, state, callbacks) {
         toggleEmployeeStore={state.toggleEmployeeStore}
         draftAuthEmployeePins={state.draftAuthEmployeePins}
         updateDraftEmployeePin={state.updateDraftEmployeePin}
+        updateEmployeeMobile={state.updateEmployeeMobile}
         newEmployeeName={state.newEmployeeName}
         setNewEmployeeName={state.setNewEmployeeName}
         newEmployeeMobile={state.newEmployeeMobile}

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { LoginPhoneFields } from "@/core/phone/LoginPhoneFields";
 import { resolveSaasAdminFormError, type SaasAdminFormError } from "@/features/saas-admin/client/api-error";
 import { createSaasAccountMember } from "@/features/saas-admin/client/saas-admin-api-client";
 import { AdminErrorAlert } from "@/features/saas-admin/components/AdminErrorAlert";
@@ -28,6 +29,7 @@ export function AddAccountMemberForm({
   const { t } = useSaasAdminLocale();
   const [name, setName] = useState("");
   const [role, setRole] = useState<"employee" | "manager">("employee");
+  const [loginPhone, setLoginPhone] = useState("");
   const [pin, setPin] = useState("");
   const [storeIds, setStoreIds] = useState<string[]>(stores.map((store) => store.id));
   const [error, setError] = useState<SaasAdminFormError | null>(null);
@@ -50,9 +52,11 @@ export function AddAccountMemberForm({
         name,
         role,
         pin,
+        loginPhone: loginPhone.trim() || undefined,
         storeIds,
       });
       setName("");
+      setLoginPhone("");
       setPin("");
       onCreated();
     } catch (submitError) {
@@ -84,6 +88,10 @@ export function AddAccountMemberForm({
             <option value="employee">{t.addMember.roleEmployee}</option>
             <option value="manager">{t.addMember.roleManager}</option>
           </select>
+        </label>
+        <label className="block space-y-1 text-sm sm:col-span-2">
+          <span className="text-[var(--admin-muted)]">{t.editMember.loginPhone}</span>
+          <LoginPhoneFields value={loginPhone} onChange={setLoginPhone} />
         </label>
         <label className="block space-y-1 text-sm sm:col-span-2">
           <span className="text-[var(--admin-muted)]">{t.addMember.pin}</span>

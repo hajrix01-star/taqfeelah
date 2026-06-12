@@ -229,6 +229,7 @@ export async function createOrganizationMemberViaApi({
   role = "employee",
   storeIds = [],
   pin,
+  loginPhone,
 }) {
   const { storeIdMap } = getMaps();
   const mappedStoreIds = storeIds
@@ -242,6 +243,9 @@ export async function createOrganizationMemberViaApi({
   };
   if (typeof pin === "string" && pin.trim()) {
     body.credentials = { type: "employee_pin", pin: pin.trim() };
+  }
+  if (typeof loginPhone === "string" && loginPhone.trim()) {
+    body.loginPhone = loginPhone.trim();
   }
 
   const payload = await fetchApiJsonWithPrototypeContext("/api/v1/members", {
@@ -265,6 +269,7 @@ export async function updateOrganizationMemberViaApi({
   status,
   storeIds,
   pin,
+  loginPhone,
   reason,
 }) {
   if (!isUuid(memberId)) throw new Error("member update api failed: missing member id");
@@ -280,6 +285,9 @@ export async function updateOrganizationMemberViaApi({
   }
   if (typeof pin === "string" && pin.trim()) {
     body.credentials = { type: "employee_pin", pin: pin.trim() };
+  }
+  if (typeof loginPhone === "string" && loginPhone.trim()) {
+    body.loginPhone = loginPhone.trim();
   }
   if (typeof reason === "string" && reason.trim()) body.reason = reason.trim();
 

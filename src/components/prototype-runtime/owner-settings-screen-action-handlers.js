@@ -35,6 +35,7 @@ import {
   toggleEmployeeActiveInDraft,
   toggleEmployeeStoreInDraft,
   toggleStoreSelection,
+  updateEmployeeMobileInDraft,
 } from "@/features/org-config/client/owner-settings-team-actions";
 import {
   applyOwnerSettingsDeleteTarget,
@@ -321,6 +322,11 @@ export function createOwnerSettingsScreenHandlers(ctx) {
     setters.setDraftAuthEmployeePins((current) => ({ ...(current || {}), [personId]: value }));
   };
 
+  const updateEmployeeMobile = (personId, value) => {
+    if (!managingTeam) return;
+    setters.setDraftStaff((current) => updateEmployeeMobileInDraft(current || staff, personId, value));
+  };
+
   const toggleEmployeeActive = (personId) => {
     if (!managingTeam) return;
     setters.setDraftStaff((current) => toggleEmployeeActiveInDraft(current || staff, personId));
@@ -423,6 +429,7 @@ export function createOwnerSettingsScreenHandlers(ctx) {
     saveManagingTeam,
     addStaff,
     updateDraftEmployeePin,
+    updateEmployeeMobile,
     toggleEmployeeActive,
     toggleEmployeeStore,
     toggleNewEmployeeStore,

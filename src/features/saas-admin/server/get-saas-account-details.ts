@@ -4,6 +4,7 @@ import { getDb } from "@/core/db/client";
 import {
   accountSetupTokens,
   attachments,
+  authIdentities,
   dailyCloseouts,
   entries,
   memberStoreAccess,
@@ -96,6 +97,28 @@ export async function getSaasAccountDetails(
     .orderBy(asc(users.name));
 
   const memberIds = memberRows.map((row) => row.memberId);
+  const memberUserIds = memberRows.map((row) => row.userId);
+  const loginPhoneByUserId = new Map<string, string>();
+
+  if (memberUserIds.length) {
+    const phoneRows = await db
+      .select({
+        userId: authIdentities.userId,
+        loginPhone: authIdentities.loginPhone,
+      })
+      .from(authIdentities)
+      .where(
+        and(
+          inArray(authIdentities.userId, memberUserIds),
+          eq(authIdentities.provider, "employee_pin"),
+        ),
+      );
+
+    phoneRows.forEach((row) => {
+      if (row.loginPhone) loginPhoneByUserId.set(row.userId, row.loginPhone);
+    });
+  }
+
   const memberStoreAccessRows = memberIds.length
     ? await db
       .select({
@@ -306,6 +329,7 @@ export async function getSaasAccountDetails(
         name: row.name,
         role: row.role,
         status: row.status,
+        loginPhone: loginPhoneByUserId.get(row.userId) ?? null,
         storeIds: storeAccess.map((entry) => entry.storeId),
         storeAccess,
       };

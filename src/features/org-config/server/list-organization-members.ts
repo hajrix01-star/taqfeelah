@@ -2,7 +2,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { assertOrganizationAccess } from "@/core/auth/assert-organization-access";
 import { getDb } from "@/core/db/client";
-import { memberStoreAccess, organizationMembers, stores, users } from "@/core/db/schema";
+import { authIdentities, memberStoreAccess, organizationMembers, stores, users } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 
 const inputSchema = z.object({
@@ -48,6 +48,28 @@ export async function listOrganizationMembers(rawInput: z.infer<typeof inputSche
     .orderBy(asc(users.name), asc(organizationMembers.id));
 
   const memberIds = memberRows.map((row) => row.memberId);
+  const userIds = memberRows.map((row) => row.userId);
+  const loginPhoneByUserId = new Map<string, string>();
+
+  if (userIds.length) {
+    const phoneRows = await db
+      .select({
+        userId: authIdentities.userId,
+        loginPhone: authIdentities.loginPhone,
+      })
+      .from(authIdentities)
+      .where(
+        and(
+          inArray(authIdentities.userId, userIds),
+          eq(authIdentities.provider, "employee_pin"),
+        ),
+      );
+
+    phoneRows.forEach((row) => {
+      if (row.loginPhone) loginPhoneByUserId.set(row.userId, row.loginPhone);
+    });
+  }
+
   const accessRows = memberIds.length
     ? await db
       .select({
@@ -84,6 +106,7 @@ export async function listOrganizationMembers(rawInput: z.infer<typeof inputSche
       name: row.name,
       role: row.role,
       status: row.status,
+      loginPhone: loginPhoneByUserId.get(row.userId) ?? null,
       storeAccess: storeAccessByMemberId.get(row.memberId) || [],
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),

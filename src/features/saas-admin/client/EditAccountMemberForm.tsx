@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { LoginPhoneFields } from "@/core/phone/LoginPhoneFields";
 import { updateSaasAccountMember } from "@/features/saas-admin/client/saas-admin-api-client";
 import { mapSaasAdminApiError } from "@/features/saas-admin/client/api-error";
 import { AdminModal } from "@/features/saas-admin/components/AdminModal";
@@ -17,6 +18,7 @@ type MemberRow = {
   name: string;
   role: string;
   status: string;
+  loginPhone?: string | null;
   storeIds?: string[];
 };
 
@@ -46,6 +48,7 @@ export function EditAccountMemberForm({
   const [name, setName] = useState("");
   const [role, setRole] = useState<"manager" | "employee">("employee");
   const [status, setStatus] = useState<"active" | "inactive">("active");
+  const [loginPhone, setLoginPhone] = useState("");
   const [pin, setPin] = useState("");
   const [storeIds, setStoreIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +60,7 @@ export function EditAccountMemberForm({
     setName(member.name);
     setRole(member.role === "manager" ? "manager" : "employee");
     setStatus(member.status === "inactive" ? "inactive" : "active");
+    setLoginPhone(member.loginPhone || "");
     setStoreIds(member.storeIds?.length ? [...member.storeIds] : stores.map((store) => store.id));
     setPin("");
     setError(null);
@@ -87,6 +91,7 @@ export function EditAccountMemberForm({
         name: trimOptional(name),
         role,
         status,
+        loginPhone: trimOptional(loginPhone),
         pin: trimOptional(pin),
         storeIds,
       });
@@ -114,6 +119,13 @@ export function EditAccountMemberForm({
             value={name}
             onChange={(event) => setName(event.target.value)}
             className="w-full rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2"
+          />
+        </label>
+        <label className="block space-y-1 text-sm">
+          <span className="text-[var(--admin-muted)]">{t.editMember.loginPhone}</span>
+          <LoginPhoneFields
+            value={loginPhone}
+            onChange={setLoginPhone}
           />
         </label>
         <div className="grid gap-3 sm:grid-cols-2">

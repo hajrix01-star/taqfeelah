@@ -12,6 +12,8 @@ import {
 import { ValidationError } from "@/core/errors/app-error";
 import { ERROR_CODES } from "@/core/errors/error-codes";
 import { catalogAppError } from "@/core/errors/normalize-error";
+import { assertValidLoginPhone } from "@/core/phone/normalize-login-phone";
+import { ensureEmployeeLoginPhoneAvailable } from "@/features/auth/server/employee-login-phone-availability";
 import { upsertEmployeePinIdentity } from "@/features/auth/server/auth-identities";
 import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
 import { assertSaasMemberStoreIds } from "@/features/saas-admin/server/assert-saas-member-store-ids";
@@ -22,6 +24,7 @@ const inputSchema = z.object({
   name: z.string().trim().min(1).max(120),
   role: z.enum(["manager", "employee"]),
   pin: z.string().trim().min(4).max(12),
+  loginPhone: z.string().trim().min(1).max(30).optional(),
   storeIds: z.array(z.string().uuid()).default([]),
 });
 
@@ -66,6 +69,15 @@ export async function createSaasAccountMember(
   const memberId = randomUUID();
   const now = new Date();
 
+  let normalizedLoginPhone: string | undefined;
+  if (input.loginPhone) {
+    try {
+      normalizedLoginPhone = assertValidLoginPhone(input.loginPhone);
+    } catch {
+      throw new ValidationError("Invalid employee login phone number.");
+    }
+  }
+
   return db.transaction(async (tx) => {
     await tx.insert(users).values({
       id: userId,
@@ -94,7 +106,17 @@ export async function createSaasAccountMember(
       );
     }
 
-    await upsertEmployeePinIdentity({ userId, pin: input.pin }, tx);
+    if (normalizedLoginPhone) {
+      await ensureEmployeeLoginPhoneAvailable(
+        { phone: normalizedLoginPhone, excludeUserId: userId },
+        tx,
+      );
+    }
+
+    await upsertEmployeePinIdentity(
+      { userId, pin: input.pin, loginPhone: normalizedLoginPhone },
+      tx,
+    );
 
     await tx.insert(auditEvents).values({
       organizationId: input.organizationId,
@@ -105,6 +127,7 @@ export async function createSaasAccountMember(
         userId,
         role: input.role,
         storeIds: uniqueStoreIds,
+        loginPhone: normalizedLoginPhone || null,
       },
     });
 
@@ -114,6 +137,7 @@ export async function createSaasAccountMember(
       name: input.name,
       role: input.role,
       status: "active" as const,
+      loginPhone: normalizedLoginPhone ?? null,
       storeIds: uniqueStoreIds,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),

@@ -35,6 +35,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         : undefined,
       status: body?.status === "active" || body?.status === "inactive" ? body.status : undefined,
       storeIds,
+      loginPhone: typeof body?.loginPhone === "string" ? body.loginPhone : undefined,
       credentials: body?.credentials,
       reason: typeof body?.reason === "string" ? body.reason : undefined,
     });

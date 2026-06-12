@@ -9,6 +9,7 @@ import {
   toggleEmployeeActiveInDraft,
   toggleEmployeeStoreInDraft,
   toggleStoreSelection,
+  updateEmployeeMobileInDraft,
 } from "./owner-settings-team-actions";
 
 describe("owner settings team actions", () => {
@@ -63,6 +64,16 @@ describe("owner settings team actions", () => {
     );
     expect(reassigned[0].storeIds).toEqual(["shami", "arz"]);
     expect(toggleStoreSelection(["shami"], "arz")).toEqual(["shami", "arz"]);
+  });
+
+  it("updates employee mobile in draft", () => {
+    expect(updateEmployeeMobileInDraft(
+      [{ id: "staff-1", mobile: "+966501111111", storeIds: ["shami"] }],
+      "staff-1",
+      "+966502222222",
+    )).toEqual([
+      { id: "staff-1", mobile: "+966502222222", storeIds: ["shami"] },
+    ]);
   });
 
   it("builds staff delete target and failure messages", () => {
