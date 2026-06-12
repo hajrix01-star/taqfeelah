@@ -16,4 +16,18 @@ describe("platform admin grants repository contracts", () => {
       userId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
     }).success).toBe(true);
   });
+
+  it("validates profile update requires at least one field", () => {
+    const updateProfileSchema = z.object({
+      name: z.string().trim().min(1).max(120).optional(),
+      username: z.string().trim().min(1).max(120).optional(),
+      password: z.string().trim().min(4).max(120).optional(),
+    }).refine((value) => Boolean(value.name || value.username || value.password), {
+      message: "At least one profile field must be provided.",
+    });
+
+    expect(updateProfileSchema.safeParse({}).success).toBe(false);
+    expect(updateProfileSchema.safeParse({ name: "Owner" }).success).toBe(true);
+    expect(updateProfileSchema.safeParse({ password: "secret" }).success).toBe(true);
+  });
 });

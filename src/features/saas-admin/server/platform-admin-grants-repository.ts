@@ -5,7 +5,9 @@ import { readEnv } from "@/core/config/env";
 import { getDb } from "@/core/db/client";
 import { authIdentities, platformAdminGrants, users } from "@/core/db/schema";
 import { ConflictError, ForbiddenError, ValidationError } from "@/core/errors/app-error";
-import { upsertOwnerPasswordIdentity } from "@/features/auth/server/auth-identities";
+import {
+  upsertOwnerPasswordIdentity,
+} from "@/features/auth/server/auth-identities";
 import {
   parsePlatformAdminRole,
   type PlatformAdminRole,
@@ -358,9 +360,122 @@ export async function createPlatformAdminUser(
   return row;
 }
 
+async function assertPlatformAdminUsernameAvailable(
+  username: string,
+  userId: string,
+  executor: Pick<ReturnType<typeof getDb>, "select">,
+) {
+  const normalized = username.trim().toLowerCase();
+  const [existing] = await executor
+    .select({ id: authIdentities.id, userId: authIdentities.userId })
+    .from(authIdentities)
+    .where(
+      and(
+        eq(authIdentities.provider, "username_password"),
+        eq(authIdentities.username, normalized),
+      ),
+    )
+    .limit(1);
+
+  if (existing?.id && existing.userId !== userId) {
+    throw new ConflictError("Username is already taken.");
+  }
+}
+
 const updateRoleSchema = z.object({
   role: z.enum(["owner", "support"]),
 });
+
+const updateProfileSchema = z.object({
+  name: z.string().trim().min(1).max(120).optional(),
+  username: z.string().trim().min(1).max(120).optional(),
+  password: z.string().trim().min(4).max(120).optional(),
+}).refine((value) => Boolean(value.name || value.username || value.password), {
+  message: "At least one profile field must be provided.",
+});
+
+export async function updatePlatformAdminProfile(
+  targetUserId: string,
+  rawInput: z.infer<typeof updateProfileSchema>,
+  actorUserId: string,
+): Promise<PlatformAdminRow> {
+  const parsed = updateProfileSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    throw new ValidationError("Invalid platform admin profile input.", parsed.error.flatten());
+  }
+
+  const platformRole = await resolvePlatformAdminRole(targetUserId);
+  if (!platformRole) {
+    throw new ValidationError("User is not a platform admin.");
+  }
+
+  const db = getDb();
+  const now = new Date();
+
+  await db.transaction(async (tx) => {
+    if (parsed.data.name) {
+      await tx
+        .update(users)
+        .set({
+          name: parsed.data.name.trim(),
+          updatedAt: now,
+        })
+        .where(eq(users.id, targetUserId));
+    }
+
+    if (parsed.data.username || parsed.data.password) {
+      const [identity] = await tx
+        .select({
+          id: authIdentities.id,
+          username: authIdentities.username,
+        })
+        .from(authIdentities)
+        .where(
+          and(
+            eq(authIdentities.userId, targetUserId),
+            eq(authIdentities.provider, "username_password"),
+          ),
+        )
+        .limit(1);
+
+      const nextUsername = (parsed.data.username || identity?.username || "").trim().toLowerCase();
+      if (!nextUsername) {
+        throw new ValidationError("Username is required when setting credentials.");
+      }
+
+      if (!identity?.id && !parsed.data.password) {
+        throw new ValidationError("Password is required when creating login credentials.");
+      }
+
+      await assertPlatformAdminUsernameAvailable(nextUsername, targetUserId, tx);
+
+      if (parsed.data.password) {
+        await upsertOwnerPasswordIdentity(
+          {
+            userId: targetUserId,
+            username: nextUsername,
+            password: parsed.data.password,
+          },
+          tx,
+        );
+      } else if (parsed.data.username && identity?.id) {
+        await tx
+          .update(authIdentities)
+          .set({
+            username: nextUsername,
+            updatedAt: now,
+          })
+          .where(eq(authIdentities.id, identity.id));
+      }
+    }
+  });
+
+  const row = (await listPlatformAdmins(actorUserId)).find((item) => item.userId === targetUserId);
+  if (!row) {
+    throw new Error("Failed to load platform admin after profile update.");
+  }
+  return row;
+}
 
 export async function updatePlatformAdminRole(
   targetUserId: string,
