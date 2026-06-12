@@ -86,21 +86,6 @@ export function useEmployeeLoginForm({ lang, staff = [], onLogin }) {
   const submit = useCallback(async () => {
     if (submitting) return;
 
-    const employeeIdentifier = pinOnlyLogin
-      ? boundUserId
-      : (activeStaff.length > 0 ? selectedId : manualEmployeeId.trim());
-
-    const person = activeStaff.find((item) => (
-      item.id === employeeIdentifier
-      || item.legacyId === employeeIdentifier
-      || item.apiUserId === employeeIdentifier
-    ));
-
-    if (!employeeIdentifier) {
-      setError(text(lang, "noActiveEmployee"));
-      return;
-    }
-
     if (APP_IN_PRODUCTION_MODE) {
       const phone = employeePhone.trim();
       if (!phone) {
@@ -115,9 +100,15 @@ export function useEmployeeLoginForm({ lang, staff = [], onLogin }) {
           trustDevice,
           useServerAuth: true,
         });
+        const sessionUserId = typeof session?.userId === "string" ? session.userId : "";
+        const person = activeStaff.find((item) => (
+          item.id === sessionUserId
+          || item.legacyId === sessionUserId
+          || item.apiUserId === sessionUserId
+        ));
         onLogin(
-          person?.id || employeeIdentifier,
-          typeof session?.userId === "string" ? session.userId : "",
+          person?.id || sessionUserId,
+          sessionUserId,
           person || null,
           typeof session?.organizationId === "string" ? session.organizationId : "",
         );
@@ -129,6 +120,21 @@ export function useEmployeeLoginForm({ lang, staff = [], onLogin }) {
       } finally {
         setSubmitting(false);
       }
+      return;
+    }
+
+    const employeeIdentifier = pinOnlyLogin
+      ? boundUserId
+      : (activeStaff.length > 0 ? selectedId : manualEmployeeId.trim());
+
+    const person = activeStaff.find((item) => (
+      item.id === employeeIdentifier
+      || item.legacyId === employeeIdentifier
+      || item.apiUserId === employeeIdentifier
+    ));
+
+    if (!employeeIdentifier) {
+      setError(text(lang, "noActiveEmployee"));
       return;
     }
 
