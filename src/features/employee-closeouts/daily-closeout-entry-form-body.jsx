@@ -44,13 +44,16 @@ export function DailyCloseoutEntryFormBody({
     <>
       {phase === "date" && (
         <EntrySection number={1} title={titles.date} lang={lang}>
-          <input
-            type="date"
-            max={todayIso()}
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-            className="w-full rounded-2xl bg-white px-4 py-3 text-center text-sm font-bold ring-1 ring-black/[0.06]"
-          />
+          <label className="block text-center text-taq-meta font-bold text-[#827762]">
+            {lang === "ar" ? "تاريخ التقفيلة" : "Closeout date"}
+            <input
+              type="date"
+              max={todayIso()}
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+              className="mt-2 w-full rounded-2xl bg-white px-4 py-3 text-center text-sm font-bold text-[#112A46] ring-1 ring-black/[0.06] [color-scheme:light]"
+            />
+          </label>
           <p className="text-center text-taq-meta font-bold text-[#827762]">{storeName}</p>
         </EntrySection>
       )}

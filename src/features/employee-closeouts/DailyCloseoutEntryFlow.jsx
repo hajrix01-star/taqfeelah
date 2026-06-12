@@ -14,6 +14,7 @@ export default function DailyCloseoutEntryFlow({
   salesChannels,
   storeName,
   isOwnerEdit = false,
+  fullScreenOverlay = true,
   onCancel,
   onSubmit,
   findForStoreDate: _findForStoreDate,
@@ -40,10 +41,17 @@ export default function DailyCloseoutEntryFlow({
     handleSubmit,
   } = state;
 
+  const rootClassName = fullScreenOverlay
+    ? "absolute inset-0 z-[50] flex flex-col"
+    : "flex h-full min-h-0 flex-col";
+  const headerClassName = fullScreenOverlay
+    ? "relative z-[2] flex shrink-0 items-center justify-between border-b border-[#ECE6DA]/80 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]"
+    : "relative z-[2] flex shrink-0 items-center justify-between border-b border-[#ECE6DA]/80 px-4 pb-3 pt-3";
+
   return (
-    <div className="absolute inset-0 z-[50] flex flex-col" style={notebookLinesBackground(notebookTheme)}>
+    <div className={rootClassName} style={notebookLinesBackground(notebookTheme)}>
       <header
-        className="relative z-[2] flex shrink-0 items-center justify-between border-b border-[#ECE6DA]/80 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]"
+        className={headerClassName}
         style={notebookLinesBackground(notebookTheme)}
       >
         <button type="button" onClick={onCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]">
