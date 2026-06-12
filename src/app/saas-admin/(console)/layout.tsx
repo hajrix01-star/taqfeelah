@@ -16,7 +16,7 @@ export default async function SaasAdminConsoleLayout({ children }: { children: R
     redirect(await resolvePublicRedirectUrl(`/saas-admin/login?next=${encodeURIComponent("/saas-admin/overview")}`));
   }
 
-  if (!isPlatformAdminUser(session.userId, session.role)) {
+  if (!(await isPlatformAdminUser(session.userId, session.role))) {
     const sessionView = await resolveSaasAdminSessionView(session);
     return (
       <SaasAdminUnauthorizedScreen

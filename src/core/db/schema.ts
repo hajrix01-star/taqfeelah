@@ -634,6 +634,20 @@ export const memberInvitations = pgTable(
   }),
 );
 
+export const platformAdminGrants = pgTable(
+  "platform_admin_grants",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    grantedAt: timestamp("granted_at", { withTimezone: true }).notNull().defaultNow(),
+    grantedByUserId: uuid("granted_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  },
+  (table) => ({
+    grantedAtIdx: index("platform_admin_grants_granted_at_idx").on(table.grantedAt),
+  }),
+);
+
 export const ownerNotebookNotes = pgTable(
   "owner_notebook_notes",
   {

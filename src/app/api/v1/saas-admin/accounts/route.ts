@@ -19,7 +19,7 @@ function readOptionalString(value: unknown): string | undefined {
 
 export async function GET(request: Request) {
   try {
-    const { actorUserId } = assertSaasAdminRouteReady(request);
+    const { actorUserId } = await assertSaasAdminRouteReady(request);
     const { searchParams } = new URL(request.url);
     const pageRaw = Number(searchParams.get("page") || "1");
     const pageSizeRaw = Number(searchParams.get("pageSize") || "25");
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { actorUserId } = assertSaasAdminRouteReady(request);
+    const { actorUserId } = await assertSaasAdminRouteReady(request);
     const body = await request.json();
 
     const planCode = body?.planCode;

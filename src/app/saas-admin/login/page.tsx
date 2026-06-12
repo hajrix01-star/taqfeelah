@@ -17,7 +17,7 @@ export default async function SaasAdminLoginRoute({ searchParams }: SaasAdminLog
     : "/saas-admin/overview";
 
   const session = await resolveServerAuthSession();
-  if (session?.userId && isPlatformAdminUser(session.userId, session.role)) {
+  if (session?.userId && await isPlatformAdminUser(session.userId, session.role)) {
     redirect(await resolvePublicRedirectUrl(nextPath));
   }
 

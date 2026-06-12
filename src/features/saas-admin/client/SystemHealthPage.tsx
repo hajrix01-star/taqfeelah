@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
 import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
 import { AdminCard } from "@/features/saas-admin/components/AdminCard";
+import { AdminCallout } from "@/features/saas-admin/components/AdminCallout";
+import { AdminErrorAlert } from "@/features/saas-admin/components/AdminErrorAlert";
 import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import {
   formatBytes,
@@ -11,7 +14,10 @@ import {
 } from "@/features/saas-admin/components/format-utils";
 import { KpiCard } from "@/features/saas-admin/components/KpiCard";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
-import { fetchSystemHealth } from "@/features/saas-admin/client/saas-admin-api-client";
+import {
+  fetchSystemHealth,
+  runSaasAnalyticsAggregate,
+} from "@/features/saas-admin/client/saas-admin-api-client";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
@@ -21,11 +27,30 @@ export default function SystemHealthPage() {
     ["saas-admin", "system-health"],
     fetchSystemHealth,
   );
+  const [aggregating, setAggregating] = useState(false);
+  const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
+  const [maintenanceSuccess, setMaintenanceSuccess] = useState<string | null>(null);
 
   const metricLabels = {
     unavailable: t.common.unavailable,
     estimated: t.common.estimated,
   };
+
+  async function handleRunMaintenance() {
+    setMaintenanceError(null);
+    setMaintenanceSuccess(null);
+    setAggregating(true);
+    try {
+      await runSaasAnalyticsAggregate();
+      setMaintenanceSuccess(t.systemHealth.maintenanceSuccess);
+    } catch (aggregateError) {
+      setMaintenanceError(
+        aggregateError instanceof Error ? aggregateError.message : t.systemHealth.maintenanceError,
+      );
+    } finally {
+      setAggregating(false);
+    }
+  }
 
   if (isLoading) return <LoadingSkeleton />;
   if (error || !data) {
@@ -39,7 +64,7 @@ export default function SystemHealthPage() {
   return (
     <>
       <AdminHeader title={t.systemHealth.title} description={t.systemHealth.description} />
-      <AdminPageBody>
+      <AdminPageBody className="space-y-4">
         <section className="grid gap-4 sm:grid-cols-2">
           <KpiCard
             title={t.systemHealth.apiStatus}
@@ -52,6 +77,23 @@ export default function SystemHealthPage() {
             subtitle={data.database.status === "healthy" ? t.systemHealth.dbHealthy : t.systemHealth.dbUnhealthy}
           />
         </section>
+
+        <ChartCard title={t.systemHealth.maintenanceTitle} description={t.systemHealth.maintenanceDescription}>
+          {maintenanceError ? <AdminErrorAlert message={maintenanceError} /> : null}
+          {maintenanceSuccess ? (
+            <AdminCallout tone="info" className="mb-3">
+              {maintenanceSuccess}
+            </AdminCallout>
+          ) : null}
+          <button
+            type="button"
+            disabled={aggregating}
+            onClick={() => { void handleRunMaintenance(); }}
+            className="rounded-lg bg-[var(--admin-primary)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {aggregating ? t.systemHealth.maintenanceRunning : t.systemHealth.maintenanceAction}
+          </button>
+        </ChartCard>
 
         <ChartCard title={t.systemHealth.opsMetrics}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

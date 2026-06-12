@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    assertSaasAdminRouteReady(request);
+    await assertSaasAdminRouteReady(request);
     const plans = await listPlanCatalogRows();
     return ok({ plans });
   } catch (error) {
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    assertSaasAdminRouteReady(request);
+    await assertSaasAdminRouteReady(request);
     const body = await request.json();
     const planCode = parsePlanCode(body?.planCode);
     if (!planCode) {

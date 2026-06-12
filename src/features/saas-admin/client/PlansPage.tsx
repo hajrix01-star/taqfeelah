@@ -17,21 +17,23 @@ export default function PlansPage() {
   return (
     <>
       <AdminHeader title={t.plansPage.title} description={t.plansPage.description} />
-      <AdminPageBody className="mx-auto max-w-3xl space-y-4">
+      <AdminPageBody className="space-y-4">
         {error ? (
           <AdminErrorAlert
             message={error instanceof Error ? error.message : t.plansPage.loadError}
           />
         ) : null}
         {saveError ? <AdminErrorAlert message={saveError} /> : null}
-        {plans.map((plan) => (
-          <PlanEditor
-            key={plan.planCode}
-            plan={plan}
-            saving={savingPlanCode === plan.planCode}
-            onSave={savePlan}
-          />
-        ))}
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {plans.map((plan) => (
+            <PlanEditor
+              key={plan.planCode}
+              plan={plan}
+              saving={savingPlanCode === plan.planCode}
+              onSave={savePlan}
+            />
+          ))}
+        </div>
       </AdminPageBody>
     </>
   );
