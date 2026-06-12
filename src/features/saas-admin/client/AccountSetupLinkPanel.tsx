@@ -52,7 +52,7 @@ export function AccountSetupLinkPanel({
   }
 
   return (
-    <div className="rounded-xl border border-[var(--admin-border)] bg-white p-4">
+    <div className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4">
       <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.accountSetupLink.title}</h3>
       <p className="mt-1 text-xs text-[var(--admin-muted)]">{t.accountSetupLink.description}</p>
       <div className="mt-3 flex flex-wrap gap-2">

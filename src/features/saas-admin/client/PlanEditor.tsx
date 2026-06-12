@@ -17,7 +17,7 @@ export function PlanEditor({ plan, saving, onSave }: PlanEditorProps) {
   return (
     <form
       onSubmit={(event) => { void form.submit(event); }}
-      className="space-y-3 rounded-xl border border-[var(--admin-border)] bg-white p-4"
+      className="space-y-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4"
     >
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">

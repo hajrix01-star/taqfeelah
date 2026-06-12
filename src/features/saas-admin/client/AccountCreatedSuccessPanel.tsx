@@ -36,7 +36,7 @@ export function AccountCreatedSuccessPanel({ created }: AccountCreatedSuccessPan
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-[var(--admin-border)] bg-white p-4 sm:p-6">
+    <div className="space-y-4 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4 sm:p-6">
       <h2 className="text-base font-semibold text-[var(--admin-text)]">{t.newAccount.successTitle}</h2>
       <p className="text-sm text-[var(--admin-muted)]">{t.newAccount.successDescription}</p>
 

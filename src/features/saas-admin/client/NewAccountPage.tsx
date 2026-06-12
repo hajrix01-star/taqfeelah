@@ -30,7 +30,7 @@ export default function NewAccountPage() {
         {form.createdAccount ? (
           <AccountCreatedSuccessPanel created={form.createdAccount} />
         ) : (
-          <form onSubmit={form.handleSubmit} className="space-y-5 rounded-xl border border-[var(--admin-border)] bg-white p-4 sm:p-6">
+          <form onSubmit={form.handleSubmit} className="space-y-5 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4 sm:p-6">
             <section className="space-y-3">
               <h2 className="text-sm font-semibold text-[var(--admin-text)]">{t.newAccount.sectionOrganization}</h2>
               <label className="block space-y-1 text-sm">

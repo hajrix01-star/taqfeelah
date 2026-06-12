@@ -56,7 +56,7 @@ export function AddAccountMemberForm({ organizationId, stores, onCreated }: AddA
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-[var(--admin-border)] bg-white p-4">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4">
       <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.addMember.title}</h3>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block space-y-1 text-sm">

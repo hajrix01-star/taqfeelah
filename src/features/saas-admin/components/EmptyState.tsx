@@ -1,3 +1,5 @@
+import { AdminCard } from "@/features/saas-admin/components/AdminCard";
+
 type EmptyStateProps = {
   title: string;
   description?: string;
@@ -5,11 +7,11 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, description }: EmptyStateProps) {
   return (
-    <div className="rounded-xl border border-dashed border-[var(--admin-border)] bg-[var(--admin-surface)] px-6 py-12 text-center">
+    <AdminCard variant="dashed" padding="lg" className="px-6 py-12 text-center">
       <p className="text-sm font-semibold text-[var(--admin-primary)]">{title}</p>
       {description ? (
         <p className="mt-2 text-sm text-[var(--admin-muted)]">{description}</p>
       ) : null}
-    </div>
+    </AdminCard>
   );
 }

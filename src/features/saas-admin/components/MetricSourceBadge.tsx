@@ -4,9 +4,9 @@ import type { MetricSource } from "@/features/saas-admin/types";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 const SOURCE_STYLES: Record<MetricSource, string> = {
-  live: "bg-sky-50 text-sky-700 border-sky-200",
-  aggregated: "bg-violet-50 text-violet-700 border-violet-200",
-  estimated: "bg-amber-50 text-amber-800 border-amber-200",
+  live: "bg-[var(--admin-surface-muted)] text-[var(--admin-primary)] border-[var(--admin-border)]",
+  aggregated: "bg-[var(--taq-warning-bg)] text-[var(--taq-warning-text)] border-[var(--taq-warning-border)]",
+  estimated: "bg-[var(--taq-warning-bg)] text-[var(--taq-warning-text)] border-[var(--taq-warning-border)]",
 };
 
 type MetricSourceBadgeProps = {

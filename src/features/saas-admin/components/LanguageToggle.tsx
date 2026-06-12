@@ -35,7 +35,7 @@ export function LanguageToggle({ compact = false, variant = "default" }: Languag
                 : "bg-[var(--admin-primary)] text-white"
               : isSidebar
                 ? "bg-transparent text-[var(--admin-sidebar-text)] hover:bg-[var(--admin-sidebar-hover)]"
-                : "bg-white text-[var(--admin-text)] hover:bg-[var(--admin-hover)]"
+                : "bg-[var(--admin-surface)] text-[var(--admin-text)] hover:bg-[var(--admin-hover)]"
           }`}
         >
           عربي
@@ -50,7 +50,7 @@ export function LanguageToggle({ compact = false, variant = "default" }: Languag
                 : "bg-[var(--admin-primary)] text-white"
               : isSidebar
                 ? "bg-transparent text-[var(--admin-sidebar-text)] hover:bg-[var(--admin-sidebar-hover)]"
-                : "bg-white text-[var(--admin-text)] hover:bg-[var(--admin-hover)]"
+                : "bg-[var(--admin-surface)] text-[var(--admin-text)] hover:bg-[var(--admin-hover)]"
           }`}
         >
           EN

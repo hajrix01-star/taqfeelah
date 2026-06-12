@@ -1,36 +1,45 @@
+@import "../../../core/design-tokens/taq-brand.css";
+
 .saas-admin-root {
-  /* Content area */
-  --admin-bg: #f8fafc;
-  --admin-surface: #ffffff;
-  --admin-surface-muted: #f1f5f9;
-  --admin-hover: #f1f5f9;
+  /* Surfaces — warm ivory aligned with product notebook shell */
+  --admin-bg: var(--taq-cream);
+  --admin-surface: var(--taq-cream-paper);
+  --admin-surface-muted: var(--taq-cream-soft);
+  --admin-hover: var(--taq-cream-soft);
 
   /* Brand & actions */
-  --admin-primary: #2563eb;
-  --admin-primary-hover: #1d4ed8;
-  --admin-accent: #8b5cf6;
+  --admin-primary: var(--taq-ink);
+  --admin-primary-hover: var(--taq-ink-soft);
+  --admin-accent: var(--taq-gold);
 
-  /* Sidebar (dark) */
-  --admin-sidebar-bg: #0f172a;
-  --admin-sidebar-surface: #1e293b;
-  --admin-sidebar-border: #334155;
-  --admin-sidebar-text: #e2e8f0;
-  --admin-sidebar-muted: #94a3b8;
-  --admin-sidebar-active: #2563eb;
-  --admin-sidebar-hover: rgba(255, 255, 255, 0.06);
+  /* Sidebar — navy ink from product identity */
+  --admin-sidebar-bg: var(--taq-ink);
+  --admin-sidebar-surface: #1a3a5c;
+  --admin-sidebar-border: rgba(255, 255, 255, 0.1);
+  --admin-sidebar-text: #f8f6f0;
+  --admin-sidebar-muted: rgba(248, 246, 240, 0.62);
+  --admin-sidebar-active: var(--taq-gold);
+  --admin-sidebar-hover: rgba(255, 255, 255, 0.08);
 
   /* Charts */
-  --admin-chart-primary: #2563eb;
-  --admin-chart-secondary: #8b5cf6;
-  --admin-chart-grid: #e2e8f0;
+  --admin-chart-primary: var(--taq-ink);
+  --admin-chart-secondary: var(--taq-gold);
+  --admin-chart-tertiary: var(--taq-muted);
+  --admin-chart-grid: var(--taq-border);
 
   /* Typography & borders */
-  --admin-text: #0f172a;
-  --admin-muted: #64748b;
-  --admin-border: #e2e8f0;
-  --admin-success: #16a34a;
-  --admin-warning: #d97706;
-  --admin-danger: #dc2626;
+  --admin-text: var(--taq-ink);
+  --admin-muted: var(--taq-muted);
+  --admin-border: var(--taq-border);
+  --admin-success: var(--taq-success);
+  --admin-warning: var(--taq-warning-text);
+  --admin-danger: var(--taq-danger);
+
+  /* Card system — change here to restyle all admin cards */
+  --admin-card-radius: 1.25rem;
+  --admin-card-border: rgba(17, 42, 70, 0.07);
+  --admin-card-shadow: 0 1px 2px rgba(17, 42, 70, 0.04), 0 8px 24px rgba(120, 96, 53, 0.06);
+  --admin-card-shadow-hover: 0 2px 4px rgba(17, 42, 70, 0.06), 0 12px 32px rgba(120, 96, 53, 0.09);
 
   --admin-mobile-topbar-height: calc(3.25rem + env(safe-area-inset-top, 0px));
   --admin-content-max-width: 88rem;
@@ -41,6 +50,74 @@
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-tap-highlight-color: transparent;
   overflow-x: clip;
+}
+
+.saas-admin-root .admin-card {
+  border-radius: var(--admin-card-radius);
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-card-border);
+  box-shadow: var(--admin-card-shadow);
+  transition: box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.saas-admin-root .admin-card--muted {
+  background: var(--admin-surface-muted);
+  box-shadow: none;
+}
+
+.saas-admin-root .admin-card--dashed {
+  border-style: dashed;
+  border-color: var(--admin-border);
+  box-shadow: none;
+}
+
+.saas-admin-root .admin-card--inset {
+  background: var(--admin-surface-muted);
+  box-shadow: inset 0 1px 2px rgba(17, 42, 70, 0.04);
+}
+
+.saas-admin-root .admin-kpi-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.saas-admin-root .admin-kpi-card::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--taq-gold) 0%, var(--taq-gold-soft) 100%);
+  opacity: 0.85;
+}
+
+.saas-admin-root .admin-kpi-card:hover {
+  box-shadow: var(--admin-card-shadow-hover);
+}
+
+.saas-admin-root .admin-callout {
+  border-radius: calc(var(--admin-card-radius) - 0.25rem);
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.saas-admin-root .admin-callout--warning {
+  border: 1px solid var(--taq-warning-border);
+  background: var(--taq-warning-bg);
+  color: var(--taq-warning-text);
+}
+
+.saas-admin-root .admin-callout--info {
+  border: 1px solid var(--admin-card-border);
+  background: var(--admin-surface);
+  color: var(--admin-muted);
+}
+
+.saas-admin-root .admin-callout--danger {
+  border: 1px solid rgba(180, 71, 71, 0.25);
+  background: var(--taq-danger-bg);
+  color: var(--taq-danger);
 }
 
 .saas-admin-root .admin-content-container {
@@ -68,7 +145,7 @@
     inset-block: 0;
     inset-inline-start: 0;
     max-height: 100dvh;
-    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.35);
+    box-shadow: 0 12px 40px rgba(17, 42, 70, 0.35);
   }
 
   .saas-admin-root .admin-sidebar[aria-hidden="true"] {
@@ -78,6 +155,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .saas-admin-root .admin-sidebar {
+    transition: none;
+  }
+
+  .saas-admin-root .admin-card {
     transition: none;
   }
 }

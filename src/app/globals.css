@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../core/design-tokens/taq-brand.css";
 
 /* Taqfeelah typography scale (aligned with iOS/Material mobile body standards) */
 @theme {

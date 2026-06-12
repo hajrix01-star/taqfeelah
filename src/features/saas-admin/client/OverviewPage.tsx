@@ -17,6 +17,8 @@ import { AdminChartFrame } from "@/features/saas-admin/components/AdminChartFram
 import { AdminKpiSection } from "@/features/saas-admin/components/AdminKpiSection";
 import { AdminTable, AdminTableCell } from "@/features/saas-admin/components/AdminTable";
 import { ADMIN_CHART_COLORS } from "@/features/saas-admin/components/admin-chart-colors";
+import { AdminCallout } from "@/features/saas-admin/components/AdminCallout";
+import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import { formatDateTime, formatNumber } from "@/features/saas-admin/components/format-utils";
 import { KpiCard } from "@/features/saas-admin/components/KpiCard";
@@ -54,9 +56,7 @@ export default function OverviewPage() {
       <AdminHeader title={t.overview.title} description={t.overview.description} />
       <AdminPageBody>
         {!engagement.dataAvailable ? (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900">
-            {t.overview.engagementWarning}
-          </div>
+          <AdminCallout>{t.overview.engagementWarning}</AdminCallout>
         ) : null}
 
         <AdminKpiSection title={t.overview.kpiSectionAccounts}>
@@ -139,18 +139,18 @@ export default function OverviewPage() {
 
         <ChartCard title={t.overview.systemHealthSummary}>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface-muted)] p-3.5">
+            <AdminCard variant="inset" padding="sm">
               <p className="text-xs text-[var(--admin-muted)]">{t.overview.database}</p>
               <p className="mt-1 font-semibold text-[var(--admin-text)]">
                 {systemHealth.database === "healthy" ? t.common.healthy : t.overview.needsReview}
               </p>
-            </div>
-            <div className="rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface-muted)] p-3.5">
+            </AdminCard>
+            <AdminCard variant="inset" padding="sm">
               <p className="text-xs text-[var(--admin-muted)]">{t.overview.api}</p>
               <p className="mt-1 font-semibold text-[var(--admin-text)]">
                 {systemHealth.api === "healthy" ? t.common.working : t.common.unavailable}
               </p>
-            </div>
+            </AdminCard>
           </div>
         </ChartCard>
       </AdminPageBody>

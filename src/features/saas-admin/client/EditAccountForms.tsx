@@ -146,7 +146,7 @@ export function EditAccountForms({
 
   return (
     <div className="space-y-4">
-      <form onSubmit={handleAccountSubmit} className="space-y-3 rounded-xl border border-[var(--admin-border)] bg-white p-4">
+      <form onSubmit={handleAccountSubmit} className="space-y-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4">
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.editAccount.accountTitle}</h3>
         <label className="block space-y-1 text-sm">
           <span className="text-[var(--admin-muted)]">{t.editAccount.organizationName}</span>
@@ -192,7 +192,7 @@ export function EditAccountForms({
         </button>
       </form>
 
-      <form onSubmit={handleOwnerSubmit} className="space-y-3 rounded-xl border border-[var(--admin-border)] bg-white p-4">
+      <form onSubmit={handleOwnerSubmit} className="space-y-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4">
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.editAccount.ownerTitle}</h3>
         <p className="text-xs leading-6 text-[var(--admin-muted)]">{t.editAccount.ownerCredentialsHint}</p>
         <label className="block space-y-1 text-sm">

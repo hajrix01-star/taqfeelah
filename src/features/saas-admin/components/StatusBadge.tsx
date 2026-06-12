@@ -4,10 +4,10 @@ import type { AccountStatus } from "@/features/saas-admin/types";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 const STATUS_STYLES: Record<AccountStatus, string> = {
-  trial: "bg-amber-50 text-[var(--admin-warning)] border-amber-200",
-  active: "bg-green-50 text-[var(--admin-success)] border-green-200",
-  inactive: "bg-gray-50 text-[var(--admin-muted)] border-gray-200",
-  suspended: "bg-red-50 text-[var(--admin-danger)] border-red-200",
+  trial: "bg-[var(--taq-warning-bg)] text-[var(--admin-warning)] border-[var(--taq-warning-border)]",
+  active: "bg-[var(--taq-success-bg)] text-[var(--admin-success)] border-[var(--taq-border)]",
+  inactive: "bg-[var(--admin-surface-muted)] text-[var(--admin-muted)] border-[var(--admin-border)]",
+  suspended: "bg-[var(--taq-danger-bg)] text-[var(--admin-danger)] border-[rgba(180,71,71,0.25)]",
 };
 
 type StatusBadgeProps = {

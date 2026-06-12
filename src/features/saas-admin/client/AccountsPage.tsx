@@ -39,12 +39,12 @@ function AccountFilters({
         placeholder={t.common.searchByName}
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
-        className="admin-filter-field min-w-0 rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm lg:w-52"
+        className="admin-filter-field min-w-0 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2.5 text-sm lg:w-52"
       />
       <select
         value={status}
         onChange={(e) => onStatusChange(e.target.value)}
-        className="admin-filter-field rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm"
+        className="admin-filter-field rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2.5 text-sm"
       >
         <option value="all">{t.common.allStatuses}</option>
         <option value="trial">{t.status.trial}</option>
@@ -55,7 +55,7 @@ function AccountFilters({
       <select
         value={plan}
         onChange={(e) => onPlanChange(e.target.value)}
-        className="admin-filter-field rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm"
+        className="admin-filter-field rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2.5 text-sm"
       >
         <option value="">{t.common.allPlans}</option>
         <option value="trial">{t.plans.trial}</option>
