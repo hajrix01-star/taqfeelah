@@ -37,6 +37,7 @@ import { AccountTeamSection } from "@/features/saas-admin/client/AccountTeamSect
 import { EditAccountForms } from "@/features/saas-admin/client/EditAccountForms";
 import { fetchSaasAccountDetails } from "@/features/saas-admin/client/saas-admin-api-client";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
+import { useSaasAdminSession } from "@/features/saas-admin/client/SaasAdminSessionProvider";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type AccountDetailsPageProps = {
@@ -49,6 +50,11 @@ const ACTIVITY_ROW_LIMIT = 5;
 
 export default function AccountDetailsPage({ accountId }: AccountDetailsPageProps) {
   const { locale, t } = useSaasAdminLocale();
+  const { can } = useSaasAdminSession();
+  const canWriteAccount = can("accounts:write");
+  const canWriteMembers = can("accounts:members:write");
+  const canSetupLink = can("accounts:setup-link");
+  const canRepair = can("accounts:repair");
   const [activeTab, setActiveTab] = useState<AccountTab>("overview");
   const { data, error, isLoading, refetch } = useSaasAdminQuery(
     ["saas-admin", "account", accountId],
@@ -66,7 +72,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
 
   const tabs: Array<{ id: AccountTab; label: string }> = [
     { id: "overview", label: t.accountDetails.tabOverview },
-    { id: "settings", label: t.accountDetails.tabSettings },
+    ...(canWriteAccount || canRepair ? [{ id: "settings" as const, label: t.accountDetails.tabSettings }] : []),
     { id: "stores", label: t.accountDetails.tabStores },
     { id: "team", label: t.accountDetails.tabTeam },
     { id: "activity", label: t.accountDetails.tabActivity },
@@ -88,13 +94,15 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
       />
       <AdminPageBody className="space-y-4">
         <AdminCard padding="md" className="space-y-4">
-          <AccountLifecycleBar
-            organizationId={accountId}
-            organizationStatus={data.organizationStatus}
-            displayStatus={data.status}
-            planCode={data.planCode}
-            onUpdated={() => { void refetch(); }}
-          />
+          {canWriteAccount ? (
+            <AccountLifecycleBar
+              organizationId={accountId}
+              organizationStatus={data.organizationStatus}
+              displayStatus={data.status}
+              planCode={data.planCode}
+              onUpdated={() => { void refetch(); }}
+            />
+          ) : null}
           <div className="flex flex-wrap gap-1 border-b border-[var(--admin-border)] pb-1">
             {tabs.map((tab) => (
               <button
@@ -142,13 +150,15 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
                   {formatDateTime(data.createdAt, locale)}
                 </p>
               </AdminCard>
-              <AccountSetupLinkPanel
-                organizationId={accountId}
-                ownerName={data.ownerName || ""}
-                ownerPhone={data.ownerPhone || null}
-                organizationName={data.name}
-                storeName={data.stores?.[0]?.name || data.name}
-              />
+              {canSetupLink ? (
+                <AccountSetupLinkPanel
+                  organizationId={accountId}
+                  ownerName={data.ownerName || ""}
+                  ownerPhone={data.ownerPhone || null}
+                  organizationName={data.name}
+                  storeName={data.stores?.[0]?.name || data.name}
+                />
+              ) : null}
             </div>
 
             <ChartCard title={t.accountDetails.monthlyUsage}>
@@ -172,7 +182,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
           </div>
         ) : null}
 
-        {activeTab === "settings" ? (
+        {activeTab === "settings" && (canWriteAccount || canRepair) ? (
           <EditAccountForms
             organizationId={accountId}
             organizationName={data.name}
@@ -180,6 +190,9 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             ownerName={data.ownerName}
             ownerUsername={data.ownerUsername}
             onUpdated={() => { void refetch(); }}
+            showAccountForm={canWriteAccount}
+            showOwnerForm={canWriteAccount}
+            showRepairForm={canRepair}
           />
         ) : null}
 
@@ -209,6 +222,7 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             stores={data.stores}
             users={data.users}
             onUpdated={() => { void refetch(); }}
+            readOnly={!canWriteMembers}
           />
         ) : null}
 

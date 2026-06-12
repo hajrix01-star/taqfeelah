@@ -41,14 +41,13 @@ describe("assertPlatformAdminAccess", () => {
     })).rejects.toThrow("User is not authorized for platform admin operations.");
   });
 
-  it("allows authenticated owners even when allowlist uuid differs", async () => {
+  it("rejects org owners who are not on the platform admin allowlist", async () => {
     process.env.SAAS_PLATFORM_ADMIN_USER_IDS = "11111111-1111-4111-8111-111111111111";
     const { assertPlatformAdminAccess } = await import("./assert-platform-admin-access");
-    const result = await assertPlatformAdminAccess({
+    await expect(assertPlatformAdminAccess({
       actorUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
       role: "owner",
-    });
-    expect(result.actorUserId).toBe("e8f3e35b-6051-4da3-8b10-979700c2f00f");
+    })).rejects.toThrow("User is not authorized for platform admin operations.");
   });
 
   it("allows AUTH_OWNER_USER_ID when allowlist is empty", async () => {

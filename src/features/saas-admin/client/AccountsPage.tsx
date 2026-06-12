@@ -11,6 +11,7 @@ import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleto
 import { StatusBadge } from "@/features/saas-admin/components/StatusBadge";
 import { fetchSaasAccounts } from "@/features/saas-admin/client/saas-admin-api-client";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
+import { useSaasAdminSession } from "@/features/saas-admin/client/SaasAdminSessionProvider";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type AccountFiltersProps = {
@@ -86,6 +87,7 @@ function DesktopHeaderActions({ children }: { children: ReactNode }) {
 
 export default function AccountsPage() {
   const { locale, t } = useSaasAdminLocale();
+  const { can } = useSaasAdminSession();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [plan, setPlan] = useState("");
@@ -139,14 +141,14 @@ export default function AccountsPage() {
         description={t.accounts.description}
         actions={(
           <DesktopHeaderActions>
-            <NewAccountButton className="w-full lg:w-auto" />
+            {can("accounts:write") ? <NewAccountButton className="w-full lg:w-auto" /> : null}
             {filters}
           </DesktopHeaderActions>
         )}
       />
       <AdminPageBody>
         <div className="space-y-2 lg:hidden">
-          <NewAccountButton className="block w-full" />
+          {can("accounts:write") ? <NewAccountButton className="block w-full" /> : null}
           <div className="grid gap-2">{filters}</div>
         </div>
         {isLoading || isFetching ? <LoadingSkeleton /> : null}

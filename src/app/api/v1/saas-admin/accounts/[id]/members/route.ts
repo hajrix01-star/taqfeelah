@@ -11,7 +11,7 @@ type RouteContext = {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request);
+    const { actorUserId } = await assertSaasAdminRouteReady(request, "accounts:members:write");
     const { id: organizationId } = await context.params;
     if (!organizationId?.trim()) {
       throw new ValidationError("Organization id is required.");

@@ -408,6 +408,11 @@ export const translations = {
       needsPasswordLogin: "المستخدم لا يملك دخولًا باسم مستخدم وكلمة مرور — أنشئ حسابًا جديدًا أو أضف هوية دخول أولًا.",
       envHint:
         "المسؤولون المعرّفون في SAAS_PLATFORM_ADMIN_USER_IDS يظهرون هنا للمراجعة فقط ولا يمكن إلغاؤهم من الواجهة.",
+      platformRole: "صلاحية المنصة",
+      roleOwner: "أدمن (مالك المنصة)",
+      roleSupport: "دعم فني",
+      roleUpdateSuccess: "تم تحديث صلاحية المسؤول.",
+      roleUpdateError: "تعذر تحديث صلاحية المسؤول",
     },
   },
   en: {
@@ -816,6 +821,11 @@ export const translations = {
         "User has no username/password login — create a new admin or add a login identity first.",
       envHint:
         "Admins listed in SAAS_PLATFORM_ADMIN_USER_IDS appear here for reference and cannot be revoked from the UI.",
+      platformRole: "Platform role",
+      roleOwner: "Admin (platform owner)",
+      roleSupport: "Technical support",
+      roleUpdateSuccess: "Admin role updated.",
+      roleUpdateError: "Failed to update admin role",
     },
   },
 } as const;

@@ -34,16 +34,11 @@ function buildAllowedPlatformAdminUserIds(env: ReturnType<typeof readEnv>): Set<
 
 function isAllowedByEnv(
   actorUserId: string,
-  role: MemberRole | undefined,
+  _role: MemberRole | undefined,
   env: ReturnType<typeof readEnv>,
 ): boolean {
   const allowedUserIds = buildAllowedPlatformAdminUserIds(env);
-  if (allowedUserIds.has(actorUserId.toLowerCase())) {
-    return true;
-  }
-
-  // Single-tenant read-only console: authenticated org owners may access SaaS admin.
-  return role === "owner";
+  return allowedUserIds.has(actorUserId.toLowerCase());
 }
 
 export async function assertPlatformAdminAccess(rawInput: z.infer<typeof inputSchema>) {

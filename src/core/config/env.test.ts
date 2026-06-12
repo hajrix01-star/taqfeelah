@@ -20,7 +20,7 @@ const productionEnv = {
   NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP: JSON.stringify({ store1: "00000000-0000-4000-8000-000000000003" }),
   NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP: JSON.stringify({ cash: "00000000-0000-4000-8000-000000000004" }),
   NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true",
-  ALLOW_HEADER_AUTH_CONTEXT: "true",
+  ALLOW_HEADER_AUTH_CONTEXT: "false",
 } as const;
 
 function stubProductionEnv(overrides: Record<string, string | undefined> = {}) {
@@ -38,12 +38,12 @@ describe("allowHeaderAuthContext", () => {
     __resetEnvCacheForTests();
   });
 
-  it("defaults to true in non-production environments", () => {
+  it("defaults to false when not explicitly enabled", () => {
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("APP_MODE", "prototype");
     __resetEnvCacheForTests();
 
-    expect(allowHeaderAuthContext()).toBe(true);
+    expect(allowHeaderAuthContext()).toBe(false);
   });
 
   it("defaults to false in production when not explicitly overridden", () => {
@@ -91,9 +91,10 @@ describe("assertProductionRuntimeEnv", () => {
     expect(() => assertProductionRuntimeEnv()).not.toThrow();
   });
 
-  it("allows current no-password access during source-unification rollout", () => {
+  it("rejects production when header auth bypass is enabled", () => {
     stubProductionEnv({ NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true", ALLOW_HEADER_AUTH_CONTEXT: "true" });
-    expect(() => assertProductionRuntimeEnv()).not.toThrow();
+    expect(() => assertProductionRuntimeEnv()).toThrow(ServiceUnavailableError);
+    expect(() => assertProductionRuntimeEnv()).toThrow(/ALLOW_HEADER_AUTH_CONTEXT=false \(header auth is disabled in production\)/);
   });
 
   it("rejects partial auth launch without DB credentials auth", () => {
@@ -115,7 +116,7 @@ describe("assertProductionRuntimeEnv", () => {
       ALLOW_HEADER_AUTH_CONTEXT: "true",
     });
     expect(() => assertProductionRuntimeEnv()).toThrow(ServiceUnavailableError);
-    expect(() => assertProductionRuntimeEnv()).toThrow(/ALLOW_HEADER_AUTH_CONTEXT=false \(only when launching auth\)/);
+    expect(() => assertProductionRuntimeEnv()).toThrow(/ALLOW_HEADER_AUTH_CONTEXT=false \(header auth is disabled in production\)/);
   });
 
   it("rejects production when required DB API flags are incomplete", () => {

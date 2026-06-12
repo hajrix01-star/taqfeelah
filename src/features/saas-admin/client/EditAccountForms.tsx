@@ -18,6 +18,9 @@ type EditAccountFormsProps = {
   ownerName: string | null;
   ownerUsername?: string | null;
   onUpdated: () => void;
+  showAccountForm?: boolean;
+  showOwnerForm?: boolean;
+  showRepairForm?: boolean;
 };
 
 function trimOptional(value: string): string | undefined {
@@ -36,6 +39,9 @@ export function EditAccountForms({
   ownerName,
   ownerUsername = null,
   onUpdated,
+  showAccountForm = true,
+  showOwnerForm = true,
+  showRepairForm = true,
 }: EditAccountFormsProps) {
   const { t } = useSaasAdminLocale();
 
@@ -142,6 +148,7 @@ export function EditAccountForms({
 
   return (
     <div className="space-y-4">
+      {showAccountForm ? (
       <AdminCard as="form" padding="md" className="space-y-3" onSubmit={handleAccountSubmit}>
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.editAccount.accountTitle}</h3>
         <label className="block space-y-1 text-sm">
@@ -176,7 +183,9 @@ export function EditAccountForms({
           {isSavingAccount ? t.editAccount.saving : t.editAccount.saveAccount}
         </button>
       </AdminCard>
+      ) : null}
 
+      {showOwnerForm ? (
       <AdminCard as="form" padding="md" className="space-y-3" onSubmit={handleOwnerSubmit}>
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.editAccount.ownerTitle}</h3>
         <p className="text-xs leading-6 text-[var(--admin-muted)]">{t.editAccount.ownerCredentialsHint}</p>
@@ -219,7 +228,9 @@ export function EditAccountForms({
           {isSavingOwner ? t.editAccount.saving : t.editAccount.saveOwner}
         </button>
       </AdminCard>
+      ) : null}
 
+      {showRepairForm ? (
       <AdminCard variant="dashed" padding="md" className="bg-[var(--admin-surface-muted)]">
         <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.editAccount.repairTitle}</h3>
         <p className="mt-1 text-sm text-[var(--admin-muted)]">{t.editAccount.repairDescription}</p>
@@ -234,6 +245,7 @@ export function EditAccountForms({
           {isRepairing ? t.editAccount.repairing : t.editAccount.repairAction}
         </button>
       </AdminCard>
+      ) : null}
 
       <div ref={feedbackRef} />
     </div>

@@ -16,7 +16,9 @@ import {
 import { AdminSessionFooter } from "@/features/saas-admin/components/AdminSessionFooter";
 import { LanguageToggle } from "@/features/saas-admin/components/LanguageToggle";
 import { useMaxLg } from "@/features/saas-admin/hooks/use-max-lg";
+import { useSaasAdminSession } from "@/features/saas-admin/client/SaasAdminSessionProvider";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
+import { PLATFORM_ADMIN_NAV_PERMISSIONS } from "@/features/saas-admin/server/platform-admin-roles";
 import type { SaasAdminSessionView } from "@/features/saas-admin/server/resolve-saas-admin-session-view";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 
@@ -52,7 +54,9 @@ export const AdminSidebar = forwardRef<HTMLElement, AdminSidebarProps>(function 
 ) {
   const pathname = usePathname();
   const { locale, t } = useSaasAdminLocale();
+  const { can } = useSaasAdminSession();
   const isMobileLayout = useMaxLg();
+  const visibleNavPaths = NAV_PATHS.filter((item) => can(PLATFORM_ADMIN_NAV_PERMISSIONS[item.key]));
 
   return (
     <aside
@@ -87,7 +91,7 @@ export const AdminSidebar = forwardRef<HTMLElement, AdminSidebarProps>(function 
         <h2 className="mt-0.5 text-sm font-bold text-[var(--admin-sidebar-text)]">{t.panelTitle}</h2>
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2" aria-label={t.panelTitle}>
-        {NAV_PATHS.map((item) => {
+        {visibleNavPaths.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
           return (

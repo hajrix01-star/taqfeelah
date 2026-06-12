@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request);
+    const { actorUserId } = await assertSaasAdminRouteReady(request, "system-health:read");
     const result = await getSystemHealth({ actorUserId });
     return ok(result);
   } catch (error) {

@@ -10,6 +10,7 @@ import {
 
 const listPlanCatalogRows = vi.fn();
 const hasPlatformAdminGrant = vi.fn();
+const resolvePlatformAdminRole = vi.fn();
 
 vi.mock("@/features/billing/server/plan-catalog-repository", () => ({
   listPlanCatalogRows,
@@ -18,6 +19,7 @@ vi.mock("@/features/billing/server/plan-catalog-repository", () => ({
 
 vi.mock("@/features/saas-admin/server/platform-admin-grants-repository", () => ({
   hasPlatformAdminGrant,
+  resolvePlatformAdminRole,
 }));
 
 describe("saas admin plans routes integration", () => {
@@ -29,6 +31,8 @@ describe("saas admin plans routes integration", () => {
     listPlanCatalogRows.mockReset();
     hasPlatformAdminGrant.mockReset();
     hasPlatformAdminGrant.mockResolvedValue(false);
+    resolvePlatformAdminRole.mockReset();
+    resolvePlatformAdminRole.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -37,7 +41,18 @@ describe("saas admin plans routes integration", () => {
     delete process.env.SAAS_PLATFORM_ADMIN_USER_IDS;
   });
 
-  it("GET /saas-admin/plans allows authenticated owners when allowlist is empty", async () => {
+  it("GET /saas-admin/plans returns 403 for owners outside the platform admin allowlist", async () => {
+    const { GET } = await import("../saas-admin/plans/route");
+    const response = await GET(ownerRequest("http://localhost/api/v1/saas-admin/plans"));
+
+    expect(response.status).toBe(403);
+    expect(listPlanCatalogRows).not.toHaveBeenCalled();
+  });
+
+  it("GET /saas-admin/plans allows platform admins on the allowlist", async () => {
+    process.env.SAAS_PLATFORM_ADMIN_USER_IDS = TEST_OWNER_USER_ID;
+    __resetEnvCacheForTests();
+    resolvePlatformAdminRole.mockResolvedValueOnce("owner");
     listPlanCatalogRows.mockResolvedValueOnce([
       {
         planCode: "starter",

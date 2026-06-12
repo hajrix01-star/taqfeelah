@@ -640,6 +640,7 @@ export const platformAdminGrants = pgTable(
     userId: uuid("user_id")
       .primaryKey()
       .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role").notNull().default("owner"),
     grantedAt: timestamp("granted_at", { withTimezone: true }).notNull().defaultNow(),
     grantedByUserId: uuid("granted_by_user_id").references(() => users.id, { onDelete: "set null" }),
   },
