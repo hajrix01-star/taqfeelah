@@ -37,7 +37,17 @@ describe("saas admin plans routes integration", () => {
     delete process.env.SAAS_PLATFORM_ADMIN_USER_IDS;
   });
 
-  it("GET /saas-admin/plans allows authenticated owners when allowlist is empty", async () => {
+  it("GET /saas-admin/plans returns 403 for owners outside the platform admin allowlist", async () => {
+    const { GET } = await import("../saas-admin/plans/route");
+    const response = await GET(ownerRequest("http://localhost/api/v1/saas-admin/plans"));
+
+    expect(response.status).toBe(403);
+    expect(listPlanCatalogRows).not.toHaveBeenCalled();
+  });
+
+  it("GET /saas-admin/plans allows platform admins on the allowlist", async () => {
+    process.env.SAAS_PLATFORM_ADMIN_USER_IDS = TEST_OWNER_USER_ID;
+    __resetEnvCacheForTests();
     listPlanCatalogRows.mockResolvedValueOnce([
       {
         planCode: "starter",

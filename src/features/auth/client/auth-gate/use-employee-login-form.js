@@ -39,7 +39,8 @@ export function useEmployeeLoginForm({ lang, staff = [], onLogin }) {
   const pinOnlyLogin = APP_IN_PRODUCTION_MODE && Boolean(boundUserId);
 
   useEffect(() => {
-    if (!APP_IN_PRODUCTION_MODE) return;
+    // Production employee login uses phone + PIN only; roster is not shown publicly.
+    if (APP_IN_PRODUCTION_MODE) return;
     let cancelled = false;
     fetchEmployeeLoginRosterViaApi()
       .then((payload) => {

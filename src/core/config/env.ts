@@ -57,10 +57,7 @@ export function readEnv(): AppEnv {
 }
 
 export function allowHeaderAuthContext(env = readEnv()): boolean {
-  if (env.ALLOW_HEADER_AUTH_CONTEXT === "false") return false;
-  if (env.ALLOW_HEADER_AUTH_CONTEXT === "true") return true;
-  if (env.APP_MODE === "production" || env.NODE_ENV === "production") return false;
-  return true;
+  return env.ALLOW_HEADER_AUTH_CONTEXT === "true";
 }
 
 export function isServerProductionMode(env = readEnv()): boolean {
@@ -169,8 +166,8 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
   if (authLaunchRequested && env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE !== "false") {
     missing.push("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false (only when launching auth)");
   }
-  if (authLaunchRequested && env.ALLOW_HEADER_AUTH_CONTEXT === "true") {
-    missing.push("ALLOW_HEADER_AUTH_CONTEXT=false (only when launching auth)");
+  if (env.ALLOW_HEADER_AUTH_CONTEXT === "true") {
+    missing.push("ALLOW_HEADER_AUTH_CONTEXT=false (header auth is disabled in production)");
   }
 
   if (missing.length > 0) {

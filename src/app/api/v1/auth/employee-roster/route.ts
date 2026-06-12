@@ -1,8 +1,8 @@
 import { fail, ok } from "@/core/http/api-response";
-import { ServiceUnavailableError } from "@/core/errors/app-error";
+import { ForbiddenError, ServiceUnavailableError } from "@/core/errors/app-error";
+import { resolveRequestContext } from "@/core/auth/request-context";
 import {
   assertProductionRuntimeEnv,
-  getProductionAuthRuntimeConfig,
   isServerProductionMode,
   readEnv,
 } from "@/core/config/env";
@@ -10,7 +10,9 @@ import { getEmployeeLoginRoster } from "@/features/runtime-settings/server/runti
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+const ROSTER_ROLES = new Set(["owner", "manager", "employee"]);
+
+export async function GET(request: Request) {
   try {
     const env = readEnv();
     if (isServerProductionMode(env)) {
@@ -20,12 +22,12 @@ export async function GET() {
       throw new ServiceUnavailableError("DATABASE_URL is not configured.");
     }
 
-    const { organizationId } = getProductionAuthRuntimeConfig(env);
-    if (!organizationId) {
-      throw new ServiceUnavailableError("Organization is not configured.");
+    const requestContext = resolveRequestContext(request, { requireUser: true });
+    if (!requestContext.role || !ROSTER_ROLES.has(requestContext.role)) {
+      throw new ForbiddenError("Not authorized to view employee roster.");
     }
 
-    const staff = await getEmployeeLoginRoster(organizationId);
+    const staff = await getEmployeeLoginRoster(requestContext.organizationId);
     return ok({ staff });
   } catch (error) {
     return fail(error);
