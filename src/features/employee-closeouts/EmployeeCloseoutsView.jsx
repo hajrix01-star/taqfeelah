@@ -61,8 +61,6 @@ export default function EmployeeCloseoutsView({
     shareTarget,
     shareNewlySubmitted,
     storeLabel,
-    listScope,
-    setListScope,
     displayCloseouts,
     sameDayCloseoutCountByDate,
     hasOlderHiddenCloseouts,
@@ -129,8 +127,6 @@ export default function EmployeeCloseoutsView({
           <EmployeeCloseoutsListPanel
             lang={lang}
             pageTitle={pageTitle}
-            listScope={listScope}
-            setListScope={setListScope}
             employeeRuntimeReady={runtimeReady}
             channelsReady={channelsReady}
             syncError={syncError}

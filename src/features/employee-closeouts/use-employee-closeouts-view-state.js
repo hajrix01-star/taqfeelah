@@ -13,7 +13,6 @@ import {
   closeoutMatchesStore,
   employeeHistoryVisibilityLabel,
   isCloseoutWithinEmployeeHistory,
-  todayIsoDate,
 } from "./employee-closeout-history";
 import { resolveEmployeeStoreName } from "./store-name-resolver";
 import { countSentCloseoutsByDate } from "../closeouts/client/closeout-day-label";
@@ -68,7 +67,6 @@ export function useEmployeeCloseoutsViewState({
   const [shareTarget, setShareTarget] = useState(null);
   const [shareNewlySubmitted, setShareNewlySubmitted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [listScope, setListScope] = useState("month");
   const cardRefs = useRef(new Map());
   const pendingToggleAnchorRef = useRef(null);
 
@@ -119,12 +117,10 @@ export function useEmployeeCloseoutsViewState({
     [myStoreCloseouts, employeeHistoryVisibility],
   );
 
-  const storeCloseouts = useMemo(() => {
-    const scoped = listScope === "day"
-      ? historyScopedCloseouts.filter((item) => item.date === todayIsoDate())
-      : historyScopedCloseouts;
-    return sortCloseoutsNewestFirst(scoped);
-  }, [historyScopedCloseouts, listScope]);
+  const storeCloseouts = useMemo(
+    () => sortCloseoutsNewestFirst(historyScopedCloseouts),
+    [historyScopedCloseouts],
+  );
 
   const hiddenCloseoutCount = useMemo(
     () => myStoreCloseouts.filter((item) => !isCloseoutWithinEmployeeHistory(item, employeeHistoryVisibility)).length,
@@ -275,8 +271,6 @@ export function useEmployeeCloseoutsViewState({
     shareTarget,
     shareNewlySubmitted,
     storeLabel,
-    listScope,
-    setListScope,
     displayCloseouts,
     sameDayCloseoutCountByDate,
     hasOlderHiddenCloseouts,
