@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { DailyCloseoutsProvider } from "@/features/daily-closeouts/DailyCloseoutsProvider";
+import { resolveEmployeeDisplayName } from "@/features/employee-closeouts/employee-portal-session";
 import { TopBar } from "./prototype-runtime/prototype-runtime-chrome";
 import { AppFontStyles } from "./prototype-runtime/prototype-runtime-app-font-styles";
 import { PrototypeRuntimePullScroll } from "./prototype-runtime/prototype-runtime-pull-scroll";
@@ -26,6 +27,7 @@ export default function TaqfeelahPrototypeRuntime() {
     setAuthScreen,
     employee,
     employeeRuntimeReady,
+    sessionDisplayName,
     saving,
     saved,
     ownerOrgConfigReady,
@@ -259,7 +261,9 @@ export default function TaqfeelahPrototypeRuntime() {
               lang={lang}
               setLang={setLang}
               employee={employee}
-              employeeName={employee && activeEmployee ? (lang === "ar" ? activeEmployee.nameAr : activeEmployee.nameEn) : ""}
+              employeeName={employee
+                ? resolveEmployeeDisplayName(activeEmployee, lang, sessionDisplayName)
+                : ""}
               notebookMode={employee || (!employee && (ownerPage === "home" || ownerPage === "register" || ownerPage === "notebook" || ownerPage === "closeouts"))}
               notebookTheme={employee ? employeeNotebookTheme : notebookTheme}
               onLogout={auth.logout}
@@ -287,6 +291,7 @@ export default function TaqfeelahPrototypeRuntime() {
                 employee={employee}
                 employeePage={employeePage}
                 activeEmployee={activeEmployee}
+                sessionDisplayName={sessionDisplayName}
                 employeeRuntimeReady={employeeRuntimeReady}
                 currentEmployeeBusiness={currentEmployeeBusiness}
                 assignedEmployeeBusinesses={assignedEmployeeBusinesses}

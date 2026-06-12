@@ -25,6 +25,13 @@ export function enrichActiveEmployeeWithSessionUserId(activeEmployee, sessionUse
   return { ...activeEmployee, apiUserId: sessionUserId };
 }
 
+export function resolveEmployeeDisplayName(employee, lang = "ar", fallbackName = "") {
+  const localized = employee
+    ? (lang === "ar" ? employee.nameAr || employee.nameEn : employee.nameEn || employee.nameAr)
+    : "";
+  return (localized || fallbackName || "").trim();
+}
+
 /** @param {{ employee?: boolean, loggedInEmployeeId?: string, staff?: object[], sessionUserId?: string, uuidChecker?: (value: string) => boolean }} params */
 export function resolveActiveEmployee({
   employee = false,
