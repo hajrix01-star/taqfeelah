@@ -103,6 +103,25 @@ describe("handleSaasAdminMiddleware", () => {
     expect(response?.headers.get("location")).toContain("next=%2Fsaas-admin%2Foverview");
   });
 
+  it("redirects using configured public origin when upstream host is internal", async () => {
+    const previous = process.env.APP_PUBLIC_ORIGIN;
+    process.env.APP_PUBLIC_ORIGIN = "https://taqfeelah.com";
+
+    try {
+      const response = await handleSaasAdminMiddleware(
+        new NextRequest("https://localhost:3010/saas-admin/overview", { headers: new Headers() }),
+        enabledEnv({ SAAS_ADMIN_API_ENABLED: "false" }),
+      );
+
+      expect(response?.status).toBe(307);
+      expect(response?.headers.get("location"))
+        .toBe("https://taqfeelah.com/saas-admin/login?next=%2Fsaas-admin%2Foverview");
+    } finally {
+      if (previous === undefined) delete process.env.APP_PUBLIC_ORIGIN;
+      else process.env.APP_PUBLIC_ORIGIN = previous;
+    }
+  });
+
   it("allows authenticated /saas-admin pages when enabled", async () => {
     const cookie = createSignedAuthSessionCookieValue(
       {

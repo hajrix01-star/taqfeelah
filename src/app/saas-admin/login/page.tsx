@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { isPlatformAdminUser } from "@/core/auth/assert-platform-admin-access";
+import { resolvePublicRedirectUrl } from "@/core/http/public-redirect";
 import { resolveServerAuthSession } from "@/features/auth/server/resolve-server-auth-session";
 import { SaasAdminLoginPage } from "@/features/saas-admin/client/SaasAdminLoginPage";
 import { getSaasAdminLocaleFromCookies } from "@/features/saas-admin/i18n/locale-server";
@@ -17,7 +18,7 @@ export default async function SaasAdminLoginRoute({ searchParams }: SaasAdminLog
 
   const session = await resolveServerAuthSession();
   if (session?.userId && isPlatformAdminUser(session.userId, session.role)) {
-    redirect(nextPath);
+    redirect(await resolvePublicRedirectUrl(nextPath));
   }
 
   return <SaasAdminLoginPage initialLocale={initialLocale} nextPath={nextPath} />;

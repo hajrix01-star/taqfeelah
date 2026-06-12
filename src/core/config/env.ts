@@ -35,6 +35,8 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).optional(),
+  APP_PUBLIC_ORIGIN: z.string().url().optional(),
+  NEXT_PUBLIC_APP_ORIGIN: z.string().url().optional(),
 });
 
 type AppEnv = z.infer<typeof envSchema>;
