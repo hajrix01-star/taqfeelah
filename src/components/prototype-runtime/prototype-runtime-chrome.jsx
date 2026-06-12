@@ -49,7 +49,6 @@ function TopBar({
   lang,
   setLang,
   employee,
-  employeeName = "",
   onRoleChange,
   onLogout = () => {},
   onNotifications = () => {},
@@ -87,9 +86,6 @@ function TopBar({
       </div>
       <div className="absolute left-1/2 top-[calc(12px+env(safe-area-inset-top,0px))] -translate-x-1/2 text-center">
         <Logo compact centered />
-        {employee && employeeName ? (
-          <p className="mx-auto mt-0.5 max-w-[160px] truncate text-taq-meta font-extrabold text-[#716753]">{employeeName}</p>
-        ) : null}
       </div>
       <div className={`absolute top-[calc(22px+env(safe-area-inset-top,0px))] flex h-10 w-10 items-center justify-center ${lang === "ar" ? "right-[36px]" : "left-[36px]"}`}>
         <div ref={accountMenuRef} className="relative">

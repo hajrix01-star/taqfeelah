@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { UserRound } from "lucide-react";
 import DailyCloseoutCard from "./DailyCloseoutCard";
 import CloseoutsListLoading from "./CloseoutsListLoading";
 import { resolveEmployeeStoreName } from "./store-name-resolver";
@@ -39,9 +38,8 @@ export function EmployeeCloseoutsListPanel({
         {pageTitle || (lang === "ar" ? "تقفيلاتي اليومية" : "My daily closeouts")}
       </h1>
       {employeeDisplayName ? (
-        <p className="mx-auto mb-4 flex max-w-xs items-center justify-center gap-2 text-center text-sm font-extrabold text-[#716753]">
-          <UserRound className="h-4 w-4 shrink-0 text-[#9A823E]" aria-hidden="true" />
-          <span className="truncate">{employeeDisplayName}</span>
+        <p className="mx-auto mb-4 max-w-xs truncate text-center text-sm font-extrabold text-[#716753]">
+          {employeeDisplayName}
         </p>
       ) : null}
       {!employeeRuntimeReady && (
