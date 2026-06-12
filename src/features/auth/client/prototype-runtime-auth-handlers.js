@@ -44,6 +44,7 @@ export function createPrototypeRuntimeAuthHandlers({
   setAuthEmployeePins,
   setOwnerProfile,
   setMustChangePassword,
+  setSessionDisplayName,
 }) {
   const completeOwnerLogin = (
     apiUserId = "",
@@ -78,16 +79,30 @@ export function createPrototypeRuntimeAuthHandlers({
   };
 
   const completeEmployeeLogin = (personId, apiUserId = "", rosterPerson = null, organizationId = "") => {
-    const loginStaff = rosterPerson
-      ? upsertPrototypeEmployeeRosterStaff(staff, rosterPerson)
+    const displayName = rosterPerson?.nameAr || rosterPerson?.nameEn || "";
+    let resolvedRoster = rosterPerson;
+    if (!resolvedRoster && displayName && apiUserId) {
+      resolvedRoster = {
+        id: personId || apiUserId,
+        apiUserId,
+        nameAr: displayName,
+        nameEn: displayName,
+        active: true,
+        removed: false,
+        storeIds: [],
+      };
+    }
+    const loginStaff = resolvedRoster
+      ? upsertPrototypeEmployeeRosterStaff(staff, resolvedRoster)
       : staff;
-    if (rosterPerson) {
-      setStaff((current) => upsertPrototypeEmployeeRosterStaff(current, rosterPerson));
+    if (resolvedRoster) {
+      setStaff((current) => upsertPrototypeEmployeeRosterStaff(current, resolvedRoster));
     }
     applyEmployeeLoginSuccess({
       personId,
       apiUserId,
       organizationId,
+      displayName,
       staff: loginStaff,
       activeBusinesses,
       apply: {
@@ -100,6 +115,7 @@ export function createPrototypeRuntimeAuthHandlers({
         setEmployeeThemeOverride,
         setEmployeePage,
         setAuthScreen,
+        setSessionDisplayName,
       },
     });
   };

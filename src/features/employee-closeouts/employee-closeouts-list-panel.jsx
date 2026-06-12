@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { UserRound } from "lucide-react";
 import DailyCloseoutCard from "./DailyCloseoutCard";
 import CloseoutsListLoading from "./CloseoutsListLoading";
 import { resolveEmployeeStoreName } from "./store-name-resolver";
@@ -8,6 +9,7 @@ import { resolveEmployeeStoreName } from "./store-name-resolver";
 export function EmployeeCloseoutsListPanel({
   lang,
   pageTitle,
+  employeeDisplayName = "",
   employeeRuntimeReady,
   channelsReady,
   syncError,
@@ -33,9 +35,15 @@ export function EmployeeCloseoutsListPanel({
 }) {
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-28 pt-1">
-      <h1 className="relative mx-auto mb-4 w-fit pb-3 text-center text-taq-hero font-extrabold tracking-tight text-[#112A46] after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-[68px] after:-translate-x-1/2 after:bg-[#D69C2F]">
+      <h1 className="relative mx-auto mb-2 w-fit pb-3 text-center text-taq-hero font-extrabold tracking-tight text-[#112A46] after:absolute after:bottom-0 after:left-1/2 after:h-0.5 after:w-[68px] after:-translate-x-1/2 after:bg-[#D69C2F]">
         {pageTitle || (lang === "ar" ? "تقفيلاتي اليومية" : "My daily closeouts")}
       </h1>
+      {employeeDisplayName ? (
+        <p className="mx-auto mb-4 flex max-w-xs items-center justify-center gap-2 text-center text-sm font-extrabold text-[#716753]">
+          <UserRound className="h-4 w-4 shrink-0 text-[#9A823E]" aria-hidden="true" />
+          <span className="truncate">{employeeDisplayName}</span>
+        </p>
+      ) : null}
       {!employeeRuntimeReady && (
         <div className="mb-4 rounded-2xl bg-[#FFF4D2]/95 p-3 text-taq-meta font-bold text-[#806528] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
           {lang === "ar" ? "جاري تحميل إعدادات المحل وقنوات البيع من الخادم…" : "Loading store settings and sales channels from the server…"}

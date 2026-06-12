@@ -31,6 +31,7 @@ export function usePrototypeRuntimeSessionState() {
   const [loggedInEmployeeId, setLoggedInEmployeeId] = useState(() => prototypeAuthBoot.loggedInEmployeeId);
   const [employeeRuntimeReady, setEmployeeRuntimeReady] = useState(() => !prototypeAuthBoot.employee);
   const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [sessionDisplayName, setSessionDisplayName] = useState("");
 
   return {
     prototypeAuthBoot,
@@ -52,6 +53,8 @@ export function usePrototypeRuntimeSessionState() {
     setEmployeeRuntimeReady,
     mustChangePassword,
     setMustChangePassword,
+    sessionDisplayName,
+    setSessionDisplayName,
   };
 }
 
@@ -78,6 +81,7 @@ export function usePrototypeRuntimeSessionSync({
   setStoreOperationalSettings,
   setOwnerProfile,
   setMustChangePassword,
+  setSessionDisplayName,
   employeeBusinessId,
   setEmployeeBusinessId,
   closeoutsApiEnabled,
@@ -105,6 +109,7 @@ export function usePrototypeRuntimeSessionSync({
           setOwnerPage,
           setOwnerProfile,
           setMustChangePassword,
+          setSessionDisplayName,
         });
       })
       .catch((error) => {
@@ -127,6 +132,7 @@ export function usePrototypeRuntimeSessionSync({
     setSessionUserId,
     setOwnerProfile,
     setMustChangePassword,
+    setSessionDisplayName,
   ]);
 
   useEffect(() => {

@@ -5,6 +5,7 @@ import DailyCloseoutEntryFlow from "./DailyCloseoutEntryFlow";
 import CloseoutShareModal from "./CloseoutShareModal";
 import { resolveCloseoutStoreName } from "./store-name-resolver";
 import { EmployeeCloseoutsListPanel } from "./employee-closeouts-list-panel";
+import { resolveEmployeeDisplayName } from "./employee-portal-session";
 import { useEmployeeCloseoutsViewState } from "./use-employee-closeouts-view-state";
 
 export default function EmployeeCloseoutsView({
@@ -34,7 +35,9 @@ export default function EmployeeCloseoutsView({
   attachmentsApiOrganizationId = "",
   attachmentsApiActorUserId = "",
   attachmentsApiActorRole = "employee",
+  sessionDisplayName = "",
 }) {
+  const employeeDisplayName = resolveEmployeeDisplayName(employee, lang, sessionDisplayName);
   const state = useEmployeeCloseoutsViewState({
     lang,
     employee,
@@ -127,6 +130,7 @@ export default function EmployeeCloseoutsView({
           <EmployeeCloseoutsListPanel
             lang={lang}
             pageTitle={pageTitle}
+            employeeDisplayName={employeeDisplayName}
             employeeRuntimeReady={runtimeReady}
             channelsReady={channelsReady}
             syncError={syncError}

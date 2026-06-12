@@ -101,15 +101,25 @@ export function useEmployeeLoginForm({ lang, staff = [], onLogin }) {
           useServerAuth: true,
         });
         const sessionUserId = typeof session?.userId === "string" ? session.userId : "";
+        const sessionDisplayName = typeof session?.displayName === "string" ? session.displayName.trim() : "";
         const person = activeStaff.find((item) => (
           item.id === sessionUserId
           || item.legacyId === sessionUserId
           || item.apiUserId === sessionUserId
         ));
+        const rosterPerson = person || (sessionDisplayName ? {
+          id: sessionUserId,
+          apiUserId: sessionUserId,
+          nameAr: sessionDisplayName,
+          nameEn: sessionDisplayName,
+          active: true,
+          removed: false,
+          storeIds: [],
+        } : null);
         onLogin(
           person?.id || sessionUserId,
           sessionUserId,
-          person || null,
+          rosterPerson,
           typeof session?.organizationId === "string" ? session.organizationId : "",
         );
       } catch (failure) {

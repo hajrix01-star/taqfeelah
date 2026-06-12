@@ -9,6 +9,7 @@ import {
   resolveActiveEmployee,
   resolveAssignedEmployeeBusinesses,
   resolveCurrentEmployeeBusiness,
+  resolveEmployeeDisplayName,
   resolveEmployeeBusinessId,
   resolveEmployeeLoginStaff,
   synthesizeEmployeeBusinessesFromStoreIds,
@@ -20,6 +21,12 @@ describe("employee-portal-session", () => {
     expect(employeePinMatches({ pin: "4321" }, "4321", "1234")).toBe(true);
     expect(employeePinMatches({}, "1234", "1234")).toBe(true);
     expect(employeePinMatches({ pin: "9999" }, "1234", "1234")).toBe(false);
+  });
+
+  it("resolves localized employee display name with fallback", () => {
+    expect(resolveEmployeeDisplayName({ nameAr: "أحمد", nameEn: "Ahmed" }, "ar")).toBe("أحمد");
+    expect(resolveEmployeeDisplayName({ nameAr: "أحمد", nameEn: "Ahmed" }, "en")).toBe("Ahmed");
+    expect(resolveEmployeeDisplayName(null, "ar", "G")).toBe("G");
   });
 
   it("resolves active employee and enriches api user id from session", () => {

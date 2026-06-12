@@ -21,6 +21,7 @@ export function PrototypeRuntimePageContent({
   employee,
   employeePage,
   activeEmployee,
+  sessionDisplayName = "",
   employeeRuntimeReady,
   currentEmployeeBusiness,
   assignedEmployeeBusinesses,
@@ -113,6 +114,7 @@ export function PrototypeRuntimePageContent({
         <EmployeeCloseoutsView
           lang={lang}
           employee={activeEmployee}
+          sessionDisplayName={sessionDisplayName}
           employeeRuntimeReady={employeeRuntimeReady}
           currentStore={currentEmployeeBusiness}
           assignedStores={assignedEmployeeBusinesses}

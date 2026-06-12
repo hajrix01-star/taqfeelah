@@ -26,6 +26,7 @@ import {
  * @property {(value: Record<string, string>) => void} [setAuthEmployeePins]
  * @property {(value: { name: string }) => void} [setOwnerProfile]
  * @property {(value: boolean) => void} [setMustChangePassword]
+ * @property {(value: string) => void} [setSessionDisplayName]
  * @property {(value: unknown) => void} [setOwnerManageCloseout]
  * @property {(value: unknown) => void} [setSelected]
  * @property {(value: unknown) => void} [setVoidTarget]
@@ -79,6 +80,7 @@ export function applyEmployeeLoginSuccess({
   organizationId = "",
   staff = [],
   activeBusinesses = [],
+  displayName = "",
   apply = {},
 }) {
   const person = staff.find((item) => item.id === personId && item.active && !item.removed);
@@ -88,8 +90,13 @@ export function applyEmployeeLoginSuccess({
   persistLocalEmployeeSession({ employeeId: resolvedEmployeeId });
   const userId = typeof apiUserId === "string" ? apiUserId : "";
   const orgId = typeof organizationId === "string" ? organizationId : "";
+  const resolvedDisplayName = (typeof displayName === "string" ? displayName.trim() : "")
+    || person?.nameAr
+    || person?.nameEn
+    || "";
   apply.setSessionUserId?.(userId);
   apply.setSessionOrganizationId?.(orgId);
+  apply.setSessionDisplayName?.(resolvedDisplayName);
   apply.setLoggedIn?.(true);
   apply.setEmployee?.(true);
   apply.setLoggedInEmployeeId?.(resolvedEmployeeId);
@@ -114,11 +121,16 @@ export function applyServerSessionBootstrap(session, apply = {}) {
     apply.setEmployee?.(true);
     apply.setLoggedInEmployeeId?.(session.userId);
     apply.setEmployeePage?.("closeouts");
+    const employeeName = typeof session.displayName === "string" ? session.displayName.trim() : "";
+    if (employeeName) {
+      apply.setSessionDisplayName?.(employeeName);
+    }
     return true;
   }
 
   apply.setEmployee?.(false);
   apply.setLoggedInEmployeeId?.(null);
+  apply.setSessionDisplayName?.("");
   apply.setOwnerPage?.("home");
   const displayName = typeof session.displayName === "string" ? session.displayName.trim() : "";
   if (displayName) {
@@ -161,4 +173,5 @@ export function applyLogoutReset({ bindsToServerAuth, apply = {} }) {
   apply.setAuthEmployeePins?.({});
   apply.setOwnerProfile?.({ name: "" });
   apply.setMustChangePassword?.(false);
+  apply.setSessionDisplayName?.("");
 }
