@@ -1,4 +1,5 @@
-export type PlanCode = "starter" | "growth" | "enterprise";
+export type { PlanCode, PaidPlanCode } from "@/features/billing/plan-codes";
+import type { PlanCode } from "@/features/billing/plan-codes";
 
 export type PlanCatalogRow = {
   planCode: PlanCode;
@@ -51,6 +52,8 @@ export type ResolvedOrganizationEntitlements = {
   priceMonthlyHalalas: number;
   priceYearlyHalalas: number | null;
   trialDays: number;
+  isTrialPlan: boolean;
+  trialDaysRemaining: number | null;
   currentPeriodEnd: string | null;
   features: PlanFeatureLabel[];
   upgradePlans: OwnerPlanSummary[];

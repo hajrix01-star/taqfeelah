@@ -64,6 +64,7 @@ export const translations = {
       suspended: "موقوف",
     },
     plans: {
+      trial: "تجربة",
       starter: "أساسية",
       growth: "نمو",
       enterprise: "مؤسسات",
@@ -405,6 +406,7 @@ export const translations = {
       suspended: "Suspended",
     },
     plans: {
+      trial: "Trial",
       starter: "Starter",
       growth: "Growth",
       enterprise: "Enterprise",

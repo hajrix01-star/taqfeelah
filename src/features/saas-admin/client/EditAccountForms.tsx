@@ -6,7 +6,7 @@ import {
   updateSaasAccount,
   updateSaasAccountOwner,
 } from "@/features/saas-admin/client/saas-admin-api-client";
-import type { PlanCode } from "@/features/saas-admin/types";
+import { parsePlanCode, type PlanCode } from "@/features/billing/plan-codes";
 import { mapSaasAdminApiError } from "@/features/saas-admin/client/api-error";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
@@ -14,7 +14,7 @@ type EditAccountFormsProps = {
   organizationId: string;
   organizationName: string;
   organizationStatus: string;
-  planCode: PlanCode;
+  planCode: string | null;
   ownerName: string | null;
   ownerUsername?: string | null;
   onUpdated: () => void;
@@ -25,8 +25,8 @@ function trimOptional(value: string): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function isPlanCode(value: string | null | undefined): value is "starter" | "growth" | "enterprise" {
-  return value === "starter" || value === "growth" || value === "enterprise";
+function resolvePlanCode(value: string | null | undefined): PlanCode {
+  return parsePlanCode(value) ?? "starter";
 }
 
 export function EditAccountForms({
@@ -47,9 +47,7 @@ export function EditAccountForms({
   const feedbackRef = useRef<HTMLDivElement>(null);
   const [accountName, setAccountName] = useState(organizationName);
   const [accountStatus, setAccountStatus] = useState(organizationStatus === "suspended" ? "suspended" : "active");
-  const [accountPlan, setAccountPlan] = useState<"starter" | "growth" | "enterprise">(
-    isPlanCode(planCode) ? planCode : "starter",
-  );
+  const [accountPlan, setAccountPlan] = useState<PlanCode>(resolvePlanCode(planCode));
   const [editOwnerName, setEditOwnerName] = useState(ownerName || "");
   const [editOwnerUsername, setEditOwnerUsername] = useState(ownerUsername || "");
   const [editOwnerPassword, setEditOwnerPassword] = useState("");
@@ -66,9 +64,7 @@ export function EditAccountForms({
   useEffect(() => {
     setAccountName(organizationName);
     setAccountStatus(organizationStatus === "suspended" ? "suspended" : "active");
-    if (isPlanCode(planCode)) {
-      setAccountPlan(planCode);
-    }
+    setAccountPlan(resolvePlanCode(planCode));
   }, [organizationName, organizationStatus, planCode]);
 
   useEffect(() => {
@@ -168,6 +164,7 @@ export function EditAccountForms({
             onChange={(e) => setAccountPlan(e.target.value as typeof accountPlan)}
             className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
           >
+            <option value="trial">{t.plans.trial}</option>
             <option value="starter">{t.plans.starter}</option>
             <option value="growth">{t.plans.growth}</option>
             <option value="enterprise">{t.plans.enterprise}</option>

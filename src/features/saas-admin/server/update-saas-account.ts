@@ -4,7 +4,7 @@ import { getDb } from "@/core/db/client";
 import { auditEvents, organizations, subscriptions } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 
-const PLAN_CODES = ["starter", "growth", "enterprise"] as const;
+import { PLAN_CODES } from "@/features/billing/plan-codes";
 
 const inputSchema = z.object({
   actorUserId: z.string().uuid(),

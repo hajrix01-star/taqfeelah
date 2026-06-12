@@ -4,7 +4,8 @@ import {
   listPlanCatalogRows,
   upsertPlanCatalogRow,
 } from "@/features/billing/server/plan-catalog-repository";
-import type { PlanCode, PlanCatalogRow } from "@/features/billing/types";
+import { parsePlanCode } from "@/features/billing/plan-codes";
+import type { PlanCatalogRow } from "@/features/billing/types";
 import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-admin-route-guard";
 
 export const dynamic = "force-dynamic";
@@ -23,13 +24,13 @@ export async function PATCH(request: Request) {
   try {
     assertSaasAdminRouteReady(request);
     const body = await request.json();
-    const planCode = body?.planCode;
-    if (planCode !== "starter" && planCode !== "growth" && planCode !== "enterprise") {
-      throw new ValidationError("planCode must be starter, growth, or enterprise.");
+    const planCode = parsePlanCode(body?.planCode);
+    if (!planCode) {
+      throw new ValidationError("planCode must be trial, starter, growth, or enterprise.");
     }
 
     const row: PlanCatalogRow = {
-      planCode: planCode as PlanCode,
+      planCode,
       displayNameAr: String(body?.displayNameAr || ""),
       displayNameEn: String(body?.displayNameEn || ""),
       priceMonthlyHalalas: Number(body?.priceMonthlyHalalas ?? 0),

@@ -18,12 +18,16 @@ import {
 } from "lucide-react";
 import { isNotebookThemeDirty } from "@/features/org-config/client/owner-settings-appearance-actions";
 import { buildStaffDeleteTarget } from "@/features/org-config/client/owner-settings-team-actions";
-import { openBillingUpgradeSupport } from "@/features/billing/client/billing-upgrade-support";
+import {
+  openBillingUpgradeSupport,
+  openBillingUpgradeToPaidSupport,
+} from "@/features/billing/client/billing-upgrade-support";
 import {
   formatPeriodEndLabel,
   formatPlanPriceLabel,
   formatSubscriptionStatusLabel,
   formatSubscriptionStatusTone,
+  formatTrialDaysRemainingLabel,
   formatUsageRatio,
   pickLocalizedFeatureLabel,
   pickLocalizedPlanName,
@@ -345,17 +349,40 @@ export function OwnerSettingsSubscriptionSection({
       ) : null}
       {entitlements ? (
         <>
+          {entitlements.isTrialPlan ? (
+            <div className="mb-4 rounded-3xl bg-[#FFF4D2] p-5 ring-1 ring-[#F0D9A2]">
+              <Badge tone="warning">{text(lang, "trialPlanBadge")}</Badge>
+              <p className="mt-3 text-sm font-black text-[#806528]">{text(lang, "trialPlanTitle")}</p>
+              <p className="mt-2 text-taq-meta font-bold leading-6 text-[#806528]">{text(lang, "trialPlanDescription")}</p>
+              <p className="mt-3 text-taq-meta font-bold text-[#806528]">
+                {text(lang, "trialDaysRemaining")}: {formatTrialDaysRemainingLabel(entitlements.trialDaysRemaining, lang)}
+              </p>
+              <button
+                type="button"
+                onClick={() => openBillingUpgradeToPaidSupport({
+                  ownerName: ownerProfile?.name || "",
+                  currentPlanName: planName,
+                })}
+                className="mt-4 w-full rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white"
+              >
+                {text(lang, "upgradeToPaid")}
+              </button>
+            </div>
+          ) : null}
           <div className="mb-4 rounded-3xl bg-white p-5 ring-1 ring-black/[0.045]">
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone="navy">{text(lang, "currentPlan")}</Badge>
+              {entitlements.isTrialPlan ? <Badge tone="warning">{text(lang, "trialPlanBadge")}</Badge> : null}
               <Badge tone={statusTone}>{statusLabel}</Badge>
             </div>
             <h3 className="mt-4 text-lg font-black">{planName}</h3>
             <p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">
-              {formatPlanPriceLabel(entitlements.priceMonthlyHalalas, lang)}
+              {formatPlanPriceLabel(entitlements.priceMonthlyHalalas, lang, { isTrialPlan: entitlements.isTrialPlan })}
             </p>
             <p className="mt-3 text-taq-meta font-bold text-[#827762]">
-              {text(lang, "renewalDate")}: {formatPeriodEndLabel(entitlements.currentPeriodEnd, lang)}
+              {entitlements.isTrialPlan
+                ? `${text(lang, "trialEndsOn")}: ${formatPeriodEndLabel(entitlements.currentPeriodEnd, lang)}`
+                : `${text(lang, "renewalDate")}: ${formatPeriodEndLabel(entitlements.currentPeriodEnd, lang)}`}
             </p>
             <div className="mt-5 space-y-4">
               <SubscriptionUsageMeter
@@ -482,7 +509,9 @@ export function OwnerSettingsHomeSection({
           value={
             entitlementsLoading
               ? text(lang, "subscriptionLoading")
-              : (pickLocalizedPlanName(entitlements, lang) || text(lang, "subscription"))
+              : (entitlements?.isTrialPlan
+                ? text(lang, "trialPlanBadge")
+                : (pickLocalizedPlanName(entitlements, lang) || text(lang, "subscription")))
           }
           onClick={() => setSection("subscription")}
           border={false}

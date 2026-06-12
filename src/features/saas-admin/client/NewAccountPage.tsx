@@ -50,6 +50,7 @@ export default function NewAccountPage() {
                   className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
                 >
                   {(form.planOptions.length > 0 ? form.planOptions : [
+                    { planCode: "trial", displayNameAr: t.plans.trial, displayNameEn: t.plans.trial },
                     { planCode: "starter", displayNameAr: t.plans.starter, displayNameEn: t.plans.starter },
                     { planCode: "growth", displayNameAr: t.plans.growth, displayNameEn: t.plans.growth },
                     { planCode: "enterprise", displayNameAr: t.plans.enterprise, displayNameEn: t.plans.enterprise },

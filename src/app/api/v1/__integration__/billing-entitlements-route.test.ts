@@ -38,9 +38,11 @@ describe("billing entitlements route integration", () => {
       maxEmployees: 5,
       priceMonthlyHalalas: 9900,
       priceYearlyHalalas: 99000,
-      trialDays: 14,
+      trialDays: 15,
+      isTrialPlan: true,
+      trialDaysRemaining: 10,
       currentPeriodEnd: null,
-      features: [{ key: "maxStores", labelAr: "محل واحد", labelEn: "1 store" }],
+      features: [{ key: "isTrialPlan", labelAr: "خطة تجريبية مجانية", labelEn: "Free trial plan" }],
       upgradePlans: [],
       usage: { activeStores: 1, activeEmployees: 2, pendingInvitations: 0 },
       overrides: {

@@ -4,7 +4,17 @@ export function buildPlanFeatureLabels(plan: Pick<
   PlanCatalogRow,
   "maxStores" | "maxEmployees" | "trialDays" | "features"
 >): PlanFeatureLabel[] {
-  const features: PlanFeatureLabel[] = [
+  const features: PlanFeatureLabel[] = [];
+
+  if (plan.features.isTrialPlan === true) {
+    features.push({
+      key: "isTrialPlan",
+      labelAr: "خطة تجريبية مجانية",
+      labelEn: "Free trial plan",
+    });
+  }
+
+  features.push(
     {
       key: "maxStores",
       labelAr: plan.maxStores === 1 ? "محل واحد" : `حتى ${plan.maxStores} محلات`,
@@ -15,7 +25,7 @@ export function buildPlanFeatureLabels(plan: Pick<
       labelAr: plan.maxEmployees === 1 ? "موظف واحد" : `حتى ${plan.maxEmployees} موظف`,
       labelEn: plan.maxEmployees === 1 ? "1 employee" : `Up to ${plan.maxEmployees} employees`,
     },
-  ];
+  );
 
   if (plan.features.multiStore === true) {
     features.push({
@@ -35,9 +45,9 @@ export function buildPlanFeatureLabels(plan: Pick<
 
   if (plan.trialDays > 0) {
     features.push({
-      key: "trial",
-      labelAr: `تجربة ${plan.trialDays} يوم`,
-      labelEn: `${plan.trialDays}-day trial`,
+      key: "trialDuration",
+      labelAr: `مدة التجربة ${plan.trialDays} يوم`,
+      labelEn: `${plan.trialDays}-day trial period`,
     });
   }
 

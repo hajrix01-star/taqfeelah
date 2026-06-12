@@ -58,6 +58,7 @@ function AccountFilters({
         className="admin-filter-field rounded-lg border border-[var(--admin-border)] bg-white px-3 py-2.5 text-sm"
       >
         <option value="">{t.common.allPlans}</option>
+        <option value="trial">{t.plans.trial}</option>
         <option value="starter">{t.plans.starter}</option>
         <option value="growth">{t.plans.growth}</option>
         <option value="enterprise">{t.plans.enterprise}</option>

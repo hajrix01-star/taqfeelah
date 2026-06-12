@@ -6,17 +6,18 @@ describe("buildPlanFeatureLabels", () => {
     const labels = buildPlanFeatureLabels({
       maxStores: 3,
       maxEmployees: 20,
-      trialDays: 14,
-      features: { multiStore: true },
+      trialDays: 15,
+      features: { isTrialPlan: true, multiStore: true },
     });
 
     expect(labels.map((item) => item.key)).toEqual([
+      "isTrialPlan",
       "maxStores",
       "maxEmployees",
       "multiStore",
-      "trial",
+      "trialDuration",
     ]);
-    expect(labels[0]?.labelAr).toContain("3");
-    expect(labels[2]?.labelEn).toBe("Multi-store management");
+    expect(labels[1]?.labelAr).toContain("3");
+    expect(labels[3]?.labelEn).toBe("Multi-store management");
   });
 });

@@ -34,7 +34,10 @@ export function formatSubscriptionStatusTone(status, organizationStatus) {
   return "neutral";
 }
 
-export function formatPlanPriceLabel(priceMonthlyHalalas, lang) {
+export function formatPlanPriceLabel(priceMonthlyHalalas, lang, { isTrialPlan = false } = {}) {
+  if (isTrialPlan) {
+    return lang === "ar" ? "مجاني — خطة تجريبية" : "Free — trial plan";
+  }
   if (!priceMonthlyHalalas) {
     return lang === "ar" ? "حسب الطلب" : "Custom pricing";
   }
@@ -56,6 +59,19 @@ export function formatPeriodEndLabel(isoValue, lang) {
     month: "short",
     day: "numeric",
   });
+}
+
+export function formatTrialDaysRemainingLabel(daysRemaining, lang) {
+  if (daysRemaining == null) {
+    return lang === "ar" ? "غير محدد" : "Not set";
+  }
+  if (daysRemaining <= 0) {
+    return lang === "ar" ? "انتهت التجربة" : "Trial ended";
+  }
+  if (daysRemaining === 1) {
+    return lang === "ar" ? "يوم واحد متبقٍ" : "1 day left";
+  }
+  return lang === "ar" ? `${daysRemaining} يوم متبقٍ` : `${daysRemaining} days left`;
 }
 
 export function pickLocalizedPlanName(entitlements, lang) {

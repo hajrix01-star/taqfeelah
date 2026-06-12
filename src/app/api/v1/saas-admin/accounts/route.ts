@@ -1,5 +1,6 @@
 import { fail, ok } from "@/core/http/api-response";
 import { ValidationError } from "@/core/errors/app-error";
+import { DEFAULT_PLAN_CODE, parsePlanCode } from "@/features/billing/plan-codes";
 import { createSaasAccount } from "@/features/saas-admin/server/create-saas-account";
 import { getSaasAccounts } from "@/features/saas-admin/server/get-saas-accounts";
 import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-admin-route-guard";
@@ -56,10 +57,7 @@ export async function POST(request: Request) {
       ownerPhone: readRequiredString(body?.ownerPhone),
       storeName: readOptionalString(body?.storeName),
       storeLocation: readOptionalString(body?.storeLocation),
-      planCode:
-        planCode === "starter" || planCode === "growth" || planCode === "enterprise"
-          ? planCode
-          : "starter",
+      planCode: parsePlanCode(planCode) ?? DEFAULT_PLAN_CODE,
     });
 
     return ok(created, { status: 201 });

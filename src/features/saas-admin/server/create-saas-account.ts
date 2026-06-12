@@ -15,9 +15,8 @@ import { ERROR_CODES } from "@/core/errors/error-codes";
 import { catalogAppError } from "@/core/errors/normalize-error";
 import { assertValidLoginPhone } from "@/core/phone/normalize-login-phone";
 import { createAccountSetupToken } from "@/features/account-setup/server/create-account-setup-token";
+import { DEFAULT_PLAN_CODE, PLAN_CODES } from "@/features/billing/plan-codes";
 import { getPlanCatalogRow } from "@/features/billing/server/plan-catalog-repository";
-
-const PLAN_CODES = ["starter", "growth", "enterprise"] as const;
 
 function optionalNonEmptyString(max: number) {
   return z.preprocess(
@@ -33,7 +32,7 @@ const inputSchema = z.object({
   ownerPhone: z.string().trim().min(1, "Owner phone is required."),
   storeName: optionalNonEmptyString(120),
   storeLocation: optionalNonEmptyString(240),
-  planCode: z.enum(PLAN_CODES).default("starter"),
+  planCode: z.enum(PLAN_CODES).default(DEFAULT_PLAN_CODE),
 });
 
 function formatCreateSaasAccountValidationMessage(error: z.ZodError): string {

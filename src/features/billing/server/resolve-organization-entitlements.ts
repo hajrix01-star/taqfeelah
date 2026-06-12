@@ -11,11 +11,19 @@ import {
   listPlanCatalogRows,
 } from "@/features/billing/server/plan-catalog-repository";
 import { buildPlanFeatureLabels } from "@/features/billing/server/plan-feature-labels";
+import { DEFAULT_PLAN_CODE, isTrialPlanCode } from "@/features/billing/plan-codes";
 import type {
   OwnerPlanSummary,
   PlanCode,
   ResolvedOrganizationEntitlements,
 } from "@/features/billing/types";
+
+function resolveTrialDaysRemaining(periodEnd: Date | null | undefined): number | null {
+  if (!periodEnd) return null;
+  const diffMs = periodEnd.getTime() - Date.now();
+  if (diffMs <= 0) return 0;
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
 
 function isBillingAllowed(input: {
   organizationStatus: string;
@@ -63,7 +71,7 @@ export async function resolveOrganizationEntitlements(
     .orderBy(desc(subscriptions.updatedAt))
     .limit(1);
 
-  const planCode = (subscription?.planCode ?? "starter") as PlanCode;
+  const planCode = (subscription?.planCode ?? DEFAULT_PLAN_CODE) as PlanCode;
   const plan = await getPlanCatalogRow(planCode);
   if (!plan) {
     throw new Error(`Unknown plan code: ${planCode}`);
@@ -82,8 +90,13 @@ export async function resolveOrganizationEntitlements(
   const priceMonthlyHalalas = overrides?.priceMonthlyOverrideHalalas ?? plan.priceMonthlyHalalas;
 
   const catalogRows = await listPlanCatalogRows();
+  const isTrialPlan = isTrialPlanCode(planCode) || plan.features.isTrialPlan === true;
   const upgradePlans: OwnerPlanSummary[] = catalogRows
-    .filter((row) => row.isActive && row.sortOrder > plan.sortOrder)
+    .filter((row) => row.isActive && (
+      isTrialPlan
+        ? !isTrialPlanCode(row.planCode) && row.features.isTrialPlan !== true
+        : row.sortOrder > plan.sortOrder
+    ))
     .sort((left, right) => left.sortOrder - right.sortOrder)
     .map((row) => ({
       planCode: row.planCode,
@@ -114,6 +127,8 @@ export async function resolveOrganizationEntitlements(
     priceMonthlyHalalas,
     priceYearlyHalalas: plan.priceYearlyHalalas,
     trialDays: plan.trialDays,
+    isTrialPlan,
+    trialDaysRemaining: resolveTrialDaysRemaining(subscription?.currentPeriodEnd),
     currentPeriodEnd: subscription?.currentPeriodEnd
       ? subscription.currentPeriodEnd.toISOString()
       : null,
