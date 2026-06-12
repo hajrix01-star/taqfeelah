@@ -71,6 +71,7 @@ PRODUCTION_ENV_KEYS = [
     "NEXT_PUBLIC_SAAS_ADMIN_ENABLED",
     "USAGE_TRACKING_ENABLED",
     "SAAS_PLATFORM_ADMIN_USER_IDS",
+    "APP_PUBLIC_ORIGIN",
 ]
 
 # Opt-in flags: wave defaults must not overwrite explicit CI or VPS values once enabled.
@@ -154,6 +155,7 @@ WAVE_ENV_OVERRIDES: dict[str, dict[str, str]] = {
 PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
     "DEPLOYMENT_WAVE": "1",
     "APP_MODE": "production",
+    "APP_PUBLIC_ORIGIN": "https://taqfeelah.com",
     "NEXT_PUBLIC_APP_MODE": "production",
     "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE": "true",
     "ALLOW_HEADER_AUTH_CONTEXT": "true",
@@ -866,6 +868,7 @@ def cmd_deploy(vps: VPS, domain: str, www_domain: str, local_path: str) -> None:
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "upgrade";
                 proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
@@ -1502,6 +1505,18 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                     f"HTTP {saas_page_status_code or 'unknown'} "
                     f"(expected {' or '.join(sorted(expected_page_statuses))})"
                 )
+            if saas_client_enabled and saas_page_status_code == "307":
+                _, location_out, _ = vps.run(
+                    f"curl -sSI --max-time 15 https://{shlex.quote(domain)}/saas-admin "
+                    "| awk 'BEGIN{IGNORECASE=1} /^location:/ {print $0}'",
+                    check=False,
+                )
+                location_value = location_out.strip().lower()
+                if "localhost" in location_value or "127.0.0.1" in location_value:
+                    raise RuntimeError(
+                        "Deployment wave 7 verification failed: /saas-admin login redirect "
+                        f"leaks internal host ({location_out.strip()})"
+                    )
             continue
         if "wave7-saas-kpis-auth.json" in c:
             saas_auth_status_code = out.strip()[-3:] if out.strip() else None
@@ -1789,6 +1804,7 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "upgrade";
                 proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;

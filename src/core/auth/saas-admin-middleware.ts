@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { resolveEdgeAuthSessionFromRequest } from "@/core/auth/edge-session-cookie";
+import { resolvePublicOriginFromRequest } from "@/core/http/resolve-request-public-origin";
 
 type SaasAdminMiddlewareEnv = {
   SAAS_ADMIN_API_ENABLED?: string;
@@ -80,8 +81,7 @@ export async function handleSaasAdminMiddleware(
       env.AUTH_SESSION_SECRET,
     );
     if (!session?.userId) {
-      const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = "/saas-admin/login";
+      const loginUrl = new URL("/saas-admin/login", resolvePublicOriginFromRequest(request));
       loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
       return NextResponse.redirect(loginUrl);
     }
