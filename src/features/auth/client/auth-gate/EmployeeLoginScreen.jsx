@@ -6,6 +6,7 @@ import { useEmployeeLoginForm } from "@/features/auth/client/auth-gate/use-emplo
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 import { APP_IN_PRODUCTION_MODE } from "@/components/prototype-runtime/prototype-runtime-boot";
 import { LanguageSwitch, Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { AppLoginPhoneField } from "@/core/phone/AppLoginPhoneField";
 
 export function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
   const form = useEmployeeLoginForm({ lang, staff, onLogin });
@@ -22,13 +23,7 @@ export function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin
         {APP_IN_PRODUCTION_MODE ? (
           <>
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "mobileNumber")}</p>
-            <input
-              dir="ltr"
-              inputMode="tel"
-              value={form.employeePhone}
-              onChange={(event) => form.setEmployeePhone(event.target.value)}
-              className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
-            />
+            <AppLoginPhoneField value={form.employeePhone} onChange={form.setEmployeePhone} className="mb-4" />
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employeePin")}</p>
             <input dir="ltr" inputMode="numeric" value={form.pin} onChange={(event) => form.setPin(event.target.value)} placeholder="• • • •" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]" />
             <p className="mt-2 text-taq-meta font-bold text-[#827762]">

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Smartphone } from "lucide-react";
 import { PROTOTYPE_BUILD_STAMP } from "@/prototype-build-stamp.mjs";
 import LanHintBanner from "@/features/demo/LanHintBanner";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
@@ -10,6 +9,8 @@ import { useOwnerLoginForm } from "@/features/auth/client/auth-gate/use-owner-lo
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 import { APP_IN_PRODUCTION_MODE } from "@/components/prototype-runtime/prototype-runtime-boot";
 import { LanguageSwitch, Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { AppLoginPhoneField } from "@/core/phone/AppLoginPhoneField";
+import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 
 export function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
   const form = useOwnerLoginForm({ lang, onOwnerLogin });
@@ -33,24 +34,14 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
           form.stage === "phone" ? (
             <>
               <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "mobileNumber")}</p>
-              <div dir="ltr" className="flex items-center gap-3 rounded-2xl bg-[#F7F5EF] px-4 py-4 ring-1 ring-[#E8E1D4]">
-                <Smartphone className="h-5 w-5 text-[#B99844]" />
-                <span className="border-r border-[#DDD3C0] pr-3 text-sm font-black text-[#112A46]">+966</span>
-                <input
-                  value={form.phone}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  onChange={(event) => form.setPhone(event.target.value.replace(/\D/g, ""))}
-                  className="min-w-0 flex-1 bg-transparent text-sm font-black outline-none"
-                />
-              </div>
+              <AppLoginPhoneField value={form.phone} onChange={form.setPhone} />
               <p className="mt-2 text-taq-meta font-bold text-[#827762]">{text(lang, "mobileHint")}</p>
               <button type="button" onClick={() => { form.setStage("code"); form.setError(""); }} className="mt-5 w-full rounded-2xl bg-[#112A46] py-4 text-sm font-black text-white">{text(lang, "sendCode")}</button>
             </>
           ) : (
             <>
               <p className="text-xs font-bold text-[#716753]">{text(lang, "verificationCode")}</p>
-              <p className="mt-2 text-taq-meta font-bold text-[#827762]">{text(lang, "codeSentTo")} <span dir="ltr" className="text-[#112A46]">+966 {form.phone}</span></p>
+              <p className="mt-2 text-taq-meta font-bold text-[#827762]">{text(lang, "codeSentTo")} <span dir="ltr" className="text-[#112A46]">{formatLoginPhoneForDisplay(form.phone) || `+966 ${form.phone}`}</span></p>
               <input
                 dir="ltr"
                 inputMode="numeric"
@@ -69,7 +60,7 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
           <>
             <p className="mb-2 text-xs font-bold text-[#716753]">{APP_IN_PRODUCTION_MODE ? text(lang, "mobileNumber") : text(lang, "username")}</p>
             {APP_IN_PRODUCTION_MODE ? (
-              <input dir="ltr" inputMode="tel" value={form.ownerPhone} onChange={(event) => form.setOwnerPhone(event.target.value)} autoComplete="tel" className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
+              <AppLoginPhoneField value={form.ownerPhone} onChange={form.setOwnerPhone} className="mb-3" />
             ) : (
               <input dir="ltr" value={form.username} onChange={(event) => form.setUsername(event.target.value)} autoComplete="username" className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
             )}
