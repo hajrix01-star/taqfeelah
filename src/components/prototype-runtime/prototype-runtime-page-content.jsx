@@ -281,6 +281,15 @@ export function PrototypeRuntimePageContent({
           onLogout={logout}
           onOpenSupport={() => openWhatsAppSupport(lang)}
           onOpenHelp={() => setHelpOpen(true)}
+          inviteApiContext={
+            closeoutsApiOrganizationId && ownerApiUserId
+              ? {
+                organizationId: closeoutsApiOrganizationId,
+                actorUserId: ownerApiUserId,
+                actorRole: "owner",
+              }
+              : null
+          }
         />
       )}
       {saved && (

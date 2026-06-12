@@ -15,6 +15,8 @@ const ownerPasswordSchema = z.object({
   userId: z.string().uuid(),
   username: z.string().trim().min(1).max(120),
   password: z.string().trim().min(4).max(120),
+  phoneNumber: z.string().trim().max(30).optional(),
+  mustChangePassword: z.boolean().optional(),
 });
 
 const employeePinSchema = z.object({
@@ -46,12 +48,17 @@ export async function upsertOwnerPasswordIdentity(
     )
     .limit(1);
 
+  const mustChangePassword = input.mustChangePassword ?? false;
+  const phoneNumber = input.phoneNumber?.trim() || null;
+
   if (existing?.id) {
     await db
       .update(authIdentities)
       .set({
         username,
         passwordHash,
+        phoneNumber,
+        mustChangePassword,
         status: "active",
         updatedAt: new Date(),
       })
@@ -66,6 +73,8 @@ export async function upsertOwnerPasswordIdentity(
       provider: "username_password",
       username,
       passwordHash,
+      phoneNumber,
+      mustChangePassword,
       status: "active",
     })
     .returning({ id: authIdentities.id });
@@ -121,6 +130,43 @@ export async function upsertEmployeePinIdentity(
   return { id: created.id, userId: input.userId, provider: "employee_pin" as const };
 }
 
+export async function getOwnerPasswordIdentityFlags(userId: string) {
+  const db = getDb();
+  const [identity] = await db
+    .select({
+      mustChangePassword: authIdentities.mustChangePassword,
+      phoneNumber: authIdentities.phoneNumber,
+      username: authIdentities.username,
+    })
+    .from(authIdentities)
+    .where(
+      and(
+        eq(authIdentities.userId, userId),
+        eq(authIdentities.provider, "username_password"),
+        eq(authIdentities.status, "active"),
+      ),
+    )
+    .limit(1);
+
+  return identity ?? null;
+}
+
+export async function clearOwnerMustChangePassword(userId: string, executor?: AuthIdentityDb) {
+  const db = resolveDb(executor);
+  await db
+    .update(authIdentities)
+    .set({
+      mustChangePassword: false,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(authIdentities.userId, userId),
+        eq(authIdentities.provider, "username_password"),
+      ),
+    );
+}
+
 export async function verifyOwnerPasswordIdentity(username: string, password: string) {
   const normalized = username.trim().toLowerCase();
   if (!normalized || !password.trim()) return null;
@@ -132,6 +178,7 @@ export async function verifyOwnerPasswordIdentity(username: string, password: st
       userId: authIdentities.userId,
       passwordHash: authIdentities.passwordHash,
       status: authIdentities.status,
+      mustChangePassword: authIdentities.mustChangePassword,
     })
     .from(authIdentities)
     .where(
@@ -146,7 +193,11 @@ export async function verifyOwnerPasswordIdentity(username: string, password: st
   if (!identity?.passwordHash) return null;
   const valid = await verifyPassword(password, identity.passwordHash);
   if (!valid) return null;
-  return { userId: identity.userId, identityId: identity.id };
+  return {
+    userId: identity.userId,
+    identityId: identity.id,
+    mustChangePassword: identity.mustChangePassword,
+  };
 }
 
 export async function verifyEmployeePinIdentity(userId: string, pin: string) {

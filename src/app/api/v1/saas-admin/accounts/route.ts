@@ -54,7 +54,8 @@ export async function POST(request: Request) {
       organizationName: readRequiredString(body?.organizationName),
       ownerName: readRequiredString(body?.ownerName),
       ownerUsername: readRequiredString(body?.ownerUsername),
-      ownerPassword: typeof body?.ownerPassword === "string" ? body.ownerPassword : "",
+      ownerPassword: readOptionalString(body?.ownerPassword),
+      ownerPhone: readOptionalString(body?.ownerPhone),
       storeName: readOptionalString(body?.storeName),
       storeLocation: readOptionalString(body?.storeLocation),
       planCode:

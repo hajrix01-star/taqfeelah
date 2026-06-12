@@ -240,6 +240,7 @@ export async function createAuthSession(rawInput: LoginInput) {
 
   let userId = "";
   let role: "owner" | "employee" = "employee";
+  let mustChangePassword = false;
 
   if (input.mode === "owner_password") {
     const username = normalize(input.username).toLowerCase();
@@ -258,6 +259,7 @@ export async function createAuthSession(rawInput: LoginInput) {
       }
       userId = verified.userId;
       role = "owner";
+      mustChangePassword = verified.mustChangePassword;
     } else {
       if (!ownerUsername || !ownerPassword) {
         throw new ValidationError("Owner auth configuration is incomplete.");
@@ -330,6 +332,7 @@ export async function createAuthSession(rawInput: LoginInput) {
       userId,
       role: resolveMemberRole(member.role, role),
       displayName,
+      mustChangePassword: role === "owner" ? mustChangePassword : false,
     };
   }
 
@@ -364,6 +367,7 @@ export async function createAuthSession(rawInput: LoginInput) {
     userId,
     role: resolveMemberRole(member.role, role),
     displayName,
+    mustChangePassword: role === "owner" ? mustChangePassword : false,
   };
 }
 

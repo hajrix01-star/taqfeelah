@@ -45,6 +45,8 @@ export const authIdentities = pgTable(
     phoneNumber: text("phone_number"),
     username: text("username"),
     passwordHash: text("password_hash"),
+    /** When true, owner must set a new password before using the app. */
+    mustChangePassword: boolean("must_change_password").notNull().default(false),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
     status: text("status").notNull().default("active"),
     createdAt,
@@ -489,6 +491,47 @@ export const orgEngagementSnapshots = pgTable(
     billingDateIdx: index("org_engagement_snapshots_billing_date_idx").on(
       table.snapshotDate,
       table.billingType,
+    ),
+  }),
+);
+
+export const memberInvitations = pgTable(
+  "member_invitations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    token: text("token").notNull(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id, { onDelete: "cascade" }),
+    displayName: text("display_name").notNull(),
+    role: text("role").notNull(),
+    phoneNumber: text("phone_number"),
+    activationCodeHash: text("activation_code_hash").notNull(),
+    status: text("status").notNull().default("pending"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    failedAttempts: integer("failed_attempts").notNull().default(0),
+    lockedAt: timestamp("locked_at", { withTimezone: true }),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    acceptedUserId: uuid("accepted_user_id").references(() => users.id, { onDelete: "set null" }),
+    acceptedMemberId: uuid("accepted_member_id").references(() => organizationMembers.id, {
+      onDelete: "set null",
+    }),
+    createdAt,
+    updatedAt,
+  },
+  (table) => ({
+    tokenUq: uniqueIndex("member_invitations_token_uq").on(table.token),
+    orgStatusExpiresIdx: index("member_invitations_org_status_expires_idx").on(
+      table.organizationId,
+      table.status,
+      table.expiresAt,
     ),
   }),
 );

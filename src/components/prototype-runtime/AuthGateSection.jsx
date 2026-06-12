@@ -23,10 +23,12 @@ import {
 } from "@/features/employee-closeouts/employee-portal-session";
 import { fetchEmployeeLoginRosterViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
 import {
+  changeOwnerPasswordViaSessionBridge,
   loginEmployeeViaSessionBridge,
   loginOwnerViaSessionBridge,
   readSessionBootState,
 } from "@/features/auth/client/session-bridge";
+import { isUuid } from "@/core/client/api-id-utils";
 import { text } from "./prototype-runtime-demo-data";
 import {
   APP_IN_PRODUCTION_MODE,
@@ -81,6 +83,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
           typeof session?.userId === "string" ? session.userId : "",
           typeof session?.organizationId === "string" ? session.organizationId : "",
           typeof session?.displayName === "string" ? session.displayName : "",
+          session?.mustChangePassword === true,
         );
       } catch (failure) {
         const message = failure instanceof Error && failure.message
@@ -205,6 +208,7 @@ function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
 function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
   const [selectedId, setSelectedId] = useState("");
   const [manualEmployeeId, setManualEmployeeId] = useState("");
+  const [boundUserId, setBoundUserId] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -213,6 +217,7 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
   const [rosterLoading, setRosterLoading] = useState(APP_IN_PRODUCTION_MODE);
   const loginStaff = resolveEmployeeLoginStaff(staff, rosterStaff, APP_IN_PRODUCTION_MODE);
   const activeStaff = filterActiveLoginStaff(loginStaff);
+  const pinOnlyLogin = APP_IN_PRODUCTION_MODE && Boolean(boundUserId);
   useEffect(() => {
     if (!APP_IN_PRODUCTION_MODE) return;
     let cancelled = false;
@@ -241,7 +246,9 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
     const saved = readEmployeeCredentials();
     if (!saved) return;
     setRememberMe(true);
-    if (saved.employeeId && activeStaff.some((person) => (
+    if (saved.employeeId && isUuid(saved.employeeId)) {
+      setBoundUserId(saved.employeeId);
+    } else if (saved.employeeId && activeStaff.some((person) => (
       person.id === saved.employeeId
       || person.legacyId === saved.employeeId
       || person.apiUserId === saved.employeeId
@@ -251,7 +258,9 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
   }, [activeStaff]);
   const submit = async () => {
     if (submitting) return;
-    const employeeIdentifier = activeStaff.length > 0 ? selectedId : manualEmployeeId.trim();
+    const employeeIdentifier = pinOnlyLogin
+      ? boundUserId
+      : (activeStaff.length > 0 ? selectedId : manualEmployeeId.trim());
     const person = activeStaff.find((item) => (
       item.id === employeeIdentifier
       || item.legacyId === employeeIdentifier
@@ -296,6 +305,8 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
         <p className="mx-auto mt-3 max-w-[280px] text-sm leading-6 text-[#827762]">{text(lang, "employeeLoginSubtitle")}</p>
       </div>
       <div className="mt-8 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-black/[0.045]">
+        {!pinOnlyLogin ? (
+          <>
         <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employee")}</p>
         {activeStaff.length > 0 ? (
           <div className="mb-4 flex flex-wrap gap-2">
@@ -317,6 +328,12 @@ function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
             placeholder={lang === "ar" ? "Employee ID" : "Employee ID"}
             className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
           />
+        )}
+          </>
+        ) : (
+          <p className="mb-4 rounded-2xl bg-[#EAF7EF] p-3 text-center text-taq-meta font-bold text-[#257844]">
+            {lang === "ar" ? "أدخل PIN الخاص بك للمتابعة" : "Enter your PIN to continue"}
+          </p>
         )}
         <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employeePin")}</p>
         <input dir="ltr" inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value)} placeholder="â€¢ â€¢ â€¢ â€¢" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]" />
@@ -384,4 +401,65 @@ function readPrototypeAuthBoot() {
 }
 
 
-export { LoginScreen, EmployeeLoginScreen, HelpCenterSheet, readPrototypeAuthBoot };
+function OwnerPasswordChangeScreen({ lang, setLang, onComplete, onLogout }) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const submit = async () => {
+    if (submitting) return;
+    if (newPassword.trim().length < 6) {
+      setError(lang === "ar" ? "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل." : "New password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError(lang === "ar" ? "تأكيد كلمة المرور غير متطابق." : "Password confirmation does not match.");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      await changeOwnerPasswordViaSessionBridge({
+        currentPassword,
+        newPassword,
+        useServerAuth: APP_IN_PRODUCTION_MODE,
+      });
+      onComplete();
+    } catch (failure) {
+      setError(failure instanceof Error && failure.message ? failure.message : (lang === "ar" ? "تعذر تغيير كلمة المرور." : "Failed to change password."));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter flex min-h-[800px] flex-col pb-8 pt-10">
+      <div className="flex justify-end"><LanguageSwitch lang={lang} setLang={setLang} /></div>
+      <div className="mt-16 flex justify-center"><Logo lang={lang} /></div>
+      <div className="mt-10 text-center">
+        <h1 className="text-2xl font-black text-[#112A46]">{lang === "ar" ? "تغيير كلمة المرور" : "Change password"}</h1>
+        <p className="mx-auto mt-3 max-w-[300px] text-sm leading-6 text-[#827762]">
+          {lang === "ar" ? "يجب تغيير كلمة المرور المؤقتة قبل استخدام النظام." : "You must change your temporary password before using the app."}
+        </p>
+      </div>
+      <div className="mt-8 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-black/[0.045]">
+        <input dir="ltr" type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder={lang === "ar" ? "كلمة المرور المؤقتة" : "Temporary password"} className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
+        <input dir="ltr" type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder={lang === "ar" ? "كلمة المرور الجديدة" : "New password"} className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
+        <input dir="ltr" type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder={lang === "ar" ? "تأكيد كلمة المرور" : "Confirm password"} className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
+        <button type="button" onClick={() => { void submit(); }} disabled={submitting} className="w-full rounded-2xl bg-[#112A46] py-4 text-sm font-black text-white disabled:bg-[#B8C0B7]">{lang === "ar" ? "حفظ كلمة المرور" : "Save password"}</button>
+        {error ? <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{error}</p> : null}
+        <button type="button" onClick={onLogout} className="mt-4 w-full text-xs font-black text-[#9A823E]">{lang === "ar" ? "تسجيل الخروج" : "Log out"}</button>
+      </div>
+    </motion.section>
+  );
+}
+
+export {
+  LoginScreen,
+  EmployeeLoginScreen,
+  OwnerPasswordChangeScreen,
+  HelpCenterSheet,
+  readPrototypeAuthBoot,
+};

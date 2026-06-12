@@ -39,6 +39,7 @@ function OwnerSettingsScreen({
   onLogout = () => {},
   onOpenSupport = () => {},
   onOpenHelp = () => {},
+  inviteApiContext = null,
 }) {
   const state = useOwnerSettingsScreenState({
     lang,
@@ -73,7 +74,7 @@ function OwnerSettingsScreen({
     onPersistSettingsNow,
   });
 
-  const viewState = { ...state, lang };
+  const viewState = { ...state, lang, inviteApiContext };
 
   if (state.settingsStoreId && state.selectedStore) {
     return renderOwnerSettingsStorePanel(state.storePanel, viewState);

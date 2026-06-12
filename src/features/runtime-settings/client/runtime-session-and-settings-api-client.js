@@ -39,6 +39,18 @@ export async function logoutSessionViaApi() {
   });
 }
 
+export async function changeOwnerPasswordViaApi({ currentPassword, newPassword }) {
+  return fetchApiJson("/api/v1/auth/change-password", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: {
+      currentPassword,
+      newPassword,
+    },
+    errorMessage: "Password change failed.",
+  });
+}
+
 const runtimeSettingsInflight = new Map();
 
 function buildRuntimeSettingsAuthKey({
