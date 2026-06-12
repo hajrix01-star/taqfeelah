@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { buildWhatsAppShareUrl } from "@/core/whatsapp/share-link";
-import { buildOwnerCredentialsWhatsAppMessage } from "@/core/messaging/whatsapp-auth-messages";
+import { buildOwnerSetupWhatsAppMessage } from "@/core/messaging/whatsapp-auth-messages";
 import type { CreateSaasAccountResponse } from "@/features/saas-admin/client/saas-admin-api-client";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
@@ -22,12 +22,12 @@ export function AccountCreatedSuccessPanel({ created }: AccountCreatedSuccessPan
     window.setTimeout(() => setCopiedField(""), 2000);
   }
 
-  const whatsappMessage = buildOwnerCredentialsWhatsAppMessage({
+  const whatsappMessage = buildOwnerSetupWhatsAppMessage({
     ownerName: created.ownerName,
-    ownerLogin: created.ownerUsername,
-    tempPassword: created.tempPassword,
+    setupUrl: created.setupUrl,
     organizationName: created.organizationName,
     storeName: created.storeName,
+    ownerPhone: created.ownerPhone,
   });
 
   function openWhatsAppShare() {
@@ -41,19 +41,22 @@ export function AccountCreatedSuccessPanel({ created }: AccountCreatedSuccessPan
       <p className="text-sm text-[var(--admin-muted)]">{t.newAccount.successDescription}</p>
 
       <div className="rounded-lg bg-[#FFF8E8] p-3 text-sm" dir="ltr">
-        <p className="font-semibold text-[var(--admin-text)]">{t.newAccount.ownerUsername}</p>
-        <p className="mt-1 font-mono">{created.ownerUsername}</p>
-        <p className="mt-3 font-semibold text-[var(--admin-text)]">{t.newAccount.tempPasswordLabel}</p>
-        <p className="mt-1 font-mono">{created.tempPassword}</p>
+        <p className="font-semibold text-[var(--admin-text)]">{t.newAccount.setupLinkLabel}</p>
+        <p className="mt-1 break-all font-mono text-xs">{created.setupUrl}</p>
+        <p className="mt-3 font-semibold text-[var(--admin-text)]">{t.newAccount.ownerPhone}</p>
+        <p className="mt-1 font-mono">{created.ownerPhone}</p>
+        <p className="mt-3 text-xs text-[var(--admin-muted)]">
+          {t.newAccount.setupExpiresLabel}: {new Date(created.setupExpiresAt).toLocaleString()}
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => { void copyText(created.tempPassword, "password"); }}
+          onClick={() => { void copyText(created.setupUrl, "link"); }}
           className="rounded-lg border border-[var(--admin-border)] px-3 py-2 text-sm font-semibold"
         >
-          {copiedField === "password" ? t.newAccount.copied : t.newAccount.copyPassword}
+          {copiedField === "link" ? t.newAccount.copied : t.newAccount.copySetupLink}
         </button>
         <button
           type="button"

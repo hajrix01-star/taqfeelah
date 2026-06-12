@@ -4,6 +4,7 @@ import { assertOrganizationAccess } from "@/core/auth/assert-organization-access
 import { getDb } from "@/core/db/client";
 import { auditEvents, stores } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
+import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
 
 const inputSchema = z.object({
   organizationId: z.string().uuid(),
@@ -26,6 +27,8 @@ export async function createOrganizationStore(rawInput: z.infer<typeof inputSche
     actorRole: input.actorRole,
     minimumRole: "owner",
   });
+
+  await assertOrganizationEntitlement(input.organizationId, "add_store");
 
   const db = getDb();
   const storeId = randomUUID();

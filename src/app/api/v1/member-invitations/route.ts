@@ -48,7 +48,10 @@ export async function POST(request: Request) {
         displayName: typeof body?.displayName === "string" ? body.displayName : "",
         role: body?.role === "manager" ? "manager" : "employee",
         storeId: typeof body?.storeId === "string" ? body.storeId : "",
-        phoneNumber: typeof body?.phoneNumber === "string" ? body.phoneNumber : undefined,
+        phoneNumber: typeof body?.phoneNumber === "string" ? body.phoneNumber : "",
+        pin: typeof body?.pin === "string" ? body.pin : "",
+        invitationType: body?.invitationType === "device_pin_reset" ? "device_pin_reset" : "employee_onboarding",
+        targetUserId: typeof body?.targetUserId === "string" ? body.targetUserId : undefined,
       },
       request,
     );

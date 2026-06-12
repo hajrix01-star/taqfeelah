@@ -53,9 +53,7 @@ export async function POST(request: Request) {
       actorUserId,
       organizationName: readRequiredString(body?.organizationName),
       ownerName: readRequiredString(body?.ownerName),
-      ownerUsername: readRequiredString(body?.ownerUsername),
-      ownerPassword: readOptionalString(body?.ownerPassword),
-      ownerPhone: readOptionalString(body?.ownerPhone),
+      ownerPhone: readRequiredString(body?.ownerPhone),
       storeName: readOptionalString(body?.storeName),
       storeLocation: readOptionalString(body?.storeLocation),
       planCode:

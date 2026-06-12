@@ -7,7 +7,9 @@ import { readPrototypeAuthBoot } from "@/features/demo/prototype-auth-boot";
 import {
   changeOwnerPasswordViaApi,
   getSessionStatusViaApi,
+  loginEmployeePhoneSessionViaApi,
   loginEmployeeSessionViaApi,
+  loginOwnerPhoneSessionViaApi,
   loginOwnerSessionViaApi,
   logoutSessionViaApi,
 } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
@@ -41,13 +43,25 @@ export async function fetchServerSessionStatus() {
   return getSessionStatusViaApi();
 }
 
-export async function loginOwnerViaSessionBridge({ username, password, useServerAuth }) {
+/**
+ * @param {{ username?: string, password?: string, phone?: string, useServerAuth?: boolean }} input
+ */
+export async function loginOwnerViaSessionBridge({ username, password, phone, useServerAuth } = {}) {
   if (!useServerAuth) return null;
+  if (phone) {
+    return loginOwnerPhoneSessionViaApi({ phone, password });
+  }
   return loginOwnerSessionViaApi({ username, password });
 }
 
-export async function loginEmployeeViaSessionBridge({ employeeId, pin, useServerAuth }) {
+/**
+ * @param {{ employeeId?: string, phone?: string, pin?: string, trustDevice?: boolean, useServerAuth?: boolean }} input
+ */
+export async function loginEmployeeViaSessionBridge({ employeeId, phone, pin, trustDevice, useServerAuth } = {}) {
   if (!useServerAuth) return null;
+  if (phone) {
+    return loginEmployeePhoneSessionViaApi({ phone, pin, trustDevice });
+  }
   return loginEmployeeSessionViaApi({ employeeId, pin });
 }
 

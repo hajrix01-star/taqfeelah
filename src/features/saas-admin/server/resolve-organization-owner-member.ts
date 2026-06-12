@@ -8,6 +8,7 @@ type OwnerMemberRow = {
   name: string;
   memberStatus: string;
   username: string | null;
+  loginPhone: string | null;
 };
 
 export async function resolveOrganizationOwnerMember(
@@ -21,6 +22,7 @@ export async function resolveOrganizationOwnerMember(
       name: users.name,
       memberStatus: organizationMembers.status,
       username: authIdentities.username,
+      loginPhone: authIdentities.loginPhone,
     })
     .from(organizationMembers)
     .innerJoin(users, eq(users.id, organizationMembers.userId))

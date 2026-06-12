@@ -18,7 +18,7 @@ import {
   BINDS_TO_SERVER_AUTH,
   ORG_CONFIG_API_ENABLED,
 } from "@/components/prototype-runtime/prototype-runtime-boot";
-import { readPrototypeAuthBoot } from "@/components/prototype-runtime/AuthGateSection";
+import { readPrototypeAuthBoot } from "@/features/auth/client/auth-gate/read-runtime-auth-boot";
 
 export function usePrototypeRuntimeSessionState() {
   const prototypeAuthBoot = readPrototypeAuthBoot();

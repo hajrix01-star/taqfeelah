@@ -31,6 +31,7 @@ import {
 import { KpiCard } from "@/features/saas-admin/components/KpiCard";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
 import { StatusBadge } from "@/features/saas-admin/components/StatusBadge";
+import { AccountSetupLinkPanel } from "@/features/saas-admin/client/AccountSetupLinkPanel";
 import { AddAccountMemberForm } from "@/features/saas-admin/client/AddAccountMemberForm";
 import { EditAccountForms } from "@/features/saas-admin/client/EditAccountForms";
 import { EditAccountMemberForm } from "@/features/saas-admin/client/EditAccountMemberForm";
@@ -99,12 +100,19 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
             {data.ownerName || "—"}
           </span>
           <span className="text-sm text-[var(--admin-muted)]" dir="ltr">
-            {t.newAccount.ownerUsername}
+            {t.newAccount.ownerPhone}
             :
             {" "}
-            {data.ownerUsername || "—"}
+            {data.ownerPhone || data.ownerUsername || "—"}
           </span>
             </section>
+            <AccountSetupLinkPanel
+              organizationId={accountId}
+              ownerName={data.ownerName || ""}
+              ownerPhone={data.ownerPhone || null}
+              organizationName={data.name}
+              storeName={data.stores?.[0]?.name || data.name}
+            />
           </div>
         </section>
 

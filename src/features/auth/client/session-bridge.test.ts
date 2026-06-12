@@ -9,7 +9,9 @@ const clearAuthSession = vi.fn();
 
 vi.mock("@/features/runtime-settings/client/runtime-session-and-settings-api-client", () => ({
   loginOwnerSessionViaApi,
+  loginOwnerPhoneSessionViaApi: vi.fn(),
   loginEmployeeSessionViaApi,
+  loginEmployeePhoneSessionViaApi: vi.fn(),
   logoutSessionViaApi,
   getSessionStatusViaApi,
 }));

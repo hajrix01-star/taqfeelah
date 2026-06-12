@@ -16,6 +16,10 @@ import { getOwnerPasswordIdentityFlags } from "@/features/auth/server/auth-ident
 import { resolveUserDisplayName } from "@/features/auth/server/resolve-user-display-name";
 import { AppError, ServiceUnavailableError, UnauthorizedError } from "@/core/errors/app-error";
 import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
+import {
+  TRUSTED_DEVICE_COOKIE_NAME,
+  buildSetTrustedDeviceCookieHeader,
+} from "@/features/trusted-devices/server/trusted-device-cookie";
 
 export const dynamic = "force-dynamic";
 
@@ -28,10 +32,24 @@ function resolveClientIp(request: Request): string {
 }
 
 function resolveLoginIdentifier(payload: Record<string, unknown>): string {
-  if (payload.mode === "employee_pin") {
-    return typeof payload.employeeId === "string" ? payload.employeeId : "";
+  if (payload.mode === "employee_pin" || payload.mode === "employee_phone_pin") {
+    return typeof payload.phone === "string"
+      ? payload.phone
+      : (typeof payload.employeeId === "string" ? payload.employeeId : "");
   }
-  return typeof payload.username === "string" ? payload.username : "";
+  return typeof payload.phone === "string"
+    ? payload.phone
+    : (typeof payload.username === "string" ? payload.username : "");
+}
+
+function readCookieValue(request: Request, name: string): string | undefined {
+  const header = request.headers.get("cookie");
+  if (!header) return undefined;
+  for (const part of header.split(";")) {
+    const [rawKey, ...rest] = part.trim().split("=");
+    if (rawKey === name) return rest.join("=");
+  }
+  return undefined;
 }
 
 export async function GET(request: Request) {
@@ -88,9 +106,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const sessionClaims = await createAuthSession(
-      payload as Parameters<typeof createAuthSession>[0],
-    );
+    const sessionClaims = await createAuthSession({
+      ...(payload as Parameters<typeof createAuthSession>[0]),
+      trustedDeviceCookie: readCookieValue(request, TRUSTED_DEVICE_COOKIE_NAME),
+    });
     await clearLoginAttempts(rateKey);
     if (!env.AUTH_SESSION_SECRET || env.AUTH_SESSION_SECRET.length < 16) {
       throw new ServiceUnavailableError("AUTH_SESSION_SECRET is not configured.");
@@ -118,19 +137,32 @@ export async function POST(request: Request) {
       metadata: { role: sessionClaims.role },
     });
 
-    return ok(
-      {
+    const headers = new Headers({ "content-type": "application/json" });
+    headers.append("set-cookie", setCookie);
+
+    if ("trustedDevice" in sessionClaims && sessionClaims.trustedDevice) {
+      headers.append(
+        "set-cookie",
+        buildSetTrustedDeviceCookieHeader(
+          {
+            userId: sessionClaims.userId,
+            deviceId: sessionClaims.trustedDevice.deviceId,
+            secret: sessionClaims.trustedDevice.secret,
+          },
+          { secure: secureCookie },
+        ),
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
         organizationId: sessionClaims.organizationId,
         userId: sessionClaims.userId,
         role: sessionClaims.role,
         displayName: sessionClaims.displayName || "",
         mustChangePassword: sessionClaims.mustChangePassword === true,
-      },
-      {
-        headers: {
-          "set-cookie": setCookie,
-        },
-      },
+      }),
+      { status: 200, headers },
     );
   } catch (error) {
     if (error instanceof UnauthorizedError && rateKey) {
