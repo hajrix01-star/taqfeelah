@@ -82,9 +82,8 @@ describe("runtime settings bridge", () => {
     });
   });
 
-  it("resolveOwnerSettingsApiAuth prefers session UUIDs in production prototype-access mode", () => {
+  it("resolveOwnerSettingsApiAuth prefers session UUIDs when entries API is enabled", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
-    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "true");
     vi.stubEnv("NEXT_PUBLIC_ENTRIES_API_ENABLED", "true");
 
     expect(resolveOwnerSettingsApiAuth({
@@ -100,7 +99,6 @@ describe("runtime settings bridge", () => {
 
   it("resolveOwnerSettingsApiAuth uses session UUIDs in production server-auth mode", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
-    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "false");
 
     expect(resolveOwnerSettingsApiAuth({
       sessionOrganizationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",

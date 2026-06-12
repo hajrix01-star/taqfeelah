@@ -416,8 +416,6 @@ export function usePrototypeRuntimeAppState() {
     completeOwnerLogin,
     completeEmployeeLogin,
     logout,
-    enterPrototypeAsEmployee,
-    enterPrototypeAsOwner,
   } = authHandlers;
 
   const ownerCloseout = usePrototypeRuntimeOwnerCloseoutActions({
@@ -609,8 +607,6 @@ export function usePrototypeRuntimeAppState() {
       completeOwnerLogin,
       completeEmployeeLogin,
       logout,
-      enterPrototypeAsEmployee,
-      enterPrototypeAsOwner,
     },
     saveOwner,
     saveOwnerSummary,

@@ -9,7 +9,6 @@ import { buildPrototypeDefaultStaff } from "@/features/demo/prototype-auth-boot"
 
 const {
   appInProductionMode: APP_IN_PRODUCTION_MODE,
-  prototypeAccessMode: PROTOTYPE_ACCESS_MODE,
   bindsToServerAuth: BINDS_TO_SERVER_AUTH,
   entriesApiDbSource: ENTRIES_API_DB_SOURCE,
   registerEntriesPaginationEnabled: REGISTER_ENTRIES_PAGINATION_ENABLED,
@@ -42,7 +41,6 @@ const PROTOTYPE_DEFAULT_STAFF = buildPrototypeDefaultStaff(PROTOTYPE_EMPLOYEE_PI
 
 export {
   APP_IN_PRODUCTION_MODE,
-  PROTOTYPE_ACCESS_MODE,
   BINDS_TO_SERVER_AUTH,
   ENTRIES_API_DB_SOURCE,
   REGISTER_ENTRIES_PAGINATION_ENABLED,

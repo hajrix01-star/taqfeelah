@@ -9,10 +9,9 @@ describe("prototype auth boot", () => {
     expect(staff[1]?.storeIds).toContain("arz");
   });
 
-  it("returns logged-out boot in prototype access mode", () => {
+  it("returns logged-out boot when server auth is not active", () => {
     expect(readPrototypeAuthBoot({
-      bindsToServerAuth: true,
-      prototypeAccessMode: true,
+      bindsToServerAuth: false,
     })).toEqual({
       loggedIn: false,
       employee: false,
@@ -31,7 +30,6 @@ describe("prototype auth boot", () => {
 
     const boot = readPrototypeAuthBoot({
       bindsToServerAuth: true,
-      prototypeAccessMode: false,
       readSavedSettings: () => ({ staff: [{ id: "ahmed", active: true, storeIds: ["shami"] }] }),
       resolveAuthState,
     });
@@ -50,8 +48,8 @@ describe("prototype auth boot", () => {
 
     readPrototypeAuthBoot({
       bindsToServerAuth: true,
-      prototypeAccessMode: false,
       readSavedSettings: () => null,
+      defaultStaff: [],
       resolveAuthState,
     });
 

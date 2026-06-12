@@ -217,8 +217,6 @@ export default function TaqfeelahPrototypeRuntime() {
         staff={staff}
         onOwnerLogin={auth.completeOwnerLogin}
         onEmployeeLogin={auth.completeEmployeeLogin}
-        onEnterAsOwner={auth.enterPrototypeAsOwner}
-        onEnterAsEmployee={auth.enterPrototypeAsEmployee}
       />
     );
   }

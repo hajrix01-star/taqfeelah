@@ -1,4 +1,12 @@
 #!/usr/bin/env node
+/**
+ * Optional LOCAL DEV bootstrap only — not for production launch.
+ *
+ * Production customers are created via SaaS Admin (`/saas-admin/accounts/new`).
+ * Before first public launch, prefer an empty database + SaaS provisioning.
+ *
+ * Usage: DATABASE_URL=... node scripts/seed-closeouts-foundation.mjs
+ */
 
 import { randomUUID } from "node:crypto";
 import process from "node:process";
@@ -11,7 +19,7 @@ function valueFromEnv(name, fallback = "") {
 
 const DEFAULTS = {
   organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
-  organizationName: "Taqfeelah Demo Organization",
+  organizationName: "Local Dev Bootstrap (not a customer)",
   storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
   storeName: "مشويات المعلم الشامي",
   ownerUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",

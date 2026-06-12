@@ -36,7 +36,6 @@ describe("auth runtime orchestrator", () => {
       apiUserId: "owner-uuid",
       organizationId: "org-uuid",
       displayName: "Tenant Owner",
-      prototypeAccessMode: false,
       apply,
     });
 
@@ -68,7 +67,6 @@ describe("auth runtime orchestrator", () => {
       organizationId: "org-uuid",
       staff: [{ id: "ahmed", active: true, storeIds: ["shami"] }],
       activeBusinesses: [{ id: "arz" }],
-      prototypeAccessMode: false,
       apply,
     });
 

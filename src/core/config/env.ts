@@ -26,7 +26,6 @@ const envSchema = z.object({
   NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP: z.string().optional(),
   ALLOW_HEADER_AUTH_CONTEXT: z.enum(["true", "false"]).optional(),
   NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE: z.enum(["true", "false"]).optional(),
-  NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: z.enum(["true", "false"]).optional(),
   AUTH_DB_CREDENTIALS_ENABLED: z.enum(["true", "false"]).optional(),
   NEXT_PUBLIC_AUTH_API_ENABLED: z.enum(["true", "false"]).optional(),
   SAAS_PLATFORM_ADMIN_USER_IDS: z.string().optional(),
@@ -100,10 +99,7 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
   const missing: string[] = [];
   const authApiEnabled = env.NEXT_PUBLIC_AUTH_API_ENABLED === "true";
   const authDbCredentialsEnabled = env.AUTH_DB_CREDENTIALS_ENABLED === "true";
-  const authLaunchRequested =
-    authApiEnabled
-    || authDbCredentialsEnabled
-    || env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE === "false";
+  const authLaunchRequested = authApiEnabled || authDbCredentialsEnabled;
 
   if (!env.DATABASE_URL) missing.push("DATABASE_URL");
   if ((env.APP_MODE || "prototype") !== "production") {
@@ -139,9 +135,7 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
     missing.push("AUTH_OWNER_USER_ID or NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID");
   }
 
-  const requiresLegacyEnvIdMaps =
-    env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE === "true"
-    || env.ALLOW_HEADER_AUTH_CONTEXT === "true";
+  const requiresLegacyEnvIdMaps = env.ALLOW_HEADER_AUTH_CONTEXT === "true";
 
   if (requiresLegacyEnvIdMaps) {
     if (Object.keys(authCfg.userIdMap).length === 0) {
@@ -162,9 +156,6 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
   }
   if (authLaunchRequested && !authDbCredentialsEnabled) {
     missing.push("AUTH_DB_CREDENTIALS_ENABLED=true (only when launching auth)");
-  }
-  if (authLaunchRequested && env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE !== "false") {
-    missing.push("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false (only when launching auth)");
   }
   if (env.ALLOW_HEADER_AUTH_CONTEXT === "true") {
     missing.push("ALLOW_HEADER_AUTH_CONTEXT=false (header auth is disabled in production)");

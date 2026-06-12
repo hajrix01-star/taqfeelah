@@ -16,10 +16,6 @@ const productionEnv = {
   NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE: "true",
   AUTH_ORGANIZATION_ID: "00000000-0000-4000-8000-000000000001",
   AUTH_OWNER_USER_ID: "00000000-0000-4000-8000-000000000002",
-  NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP: JSON.stringify({ owner: "00000000-0000-4000-8000-000000000002" }),
-  NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP: JSON.stringify({ store1: "00000000-0000-4000-8000-000000000003" }),
-  NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP: JSON.stringify({ cash: "00000000-0000-4000-8000-000000000004" }),
-  NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true",
   ALLOW_HEADER_AUTH_CONTEXT: "false",
 } as const;
 
@@ -92,14 +88,13 @@ describe("assertProductionRuntimeEnv", () => {
   });
 
   it("rejects production when header auth bypass is enabled", () => {
-    stubProductionEnv({ NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "true", ALLOW_HEADER_AUTH_CONTEXT: "true" });
+    stubProductionEnv({ ALLOW_HEADER_AUTH_CONTEXT: "true" });
     expect(() => assertProductionRuntimeEnv()).toThrow(ServiceUnavailableError);
     expect(() => assertProductionRuntimeEnv()).toThrow(/ALLOW_HEADER_AUTH_CONTEXT=false \(header auth is disabled in production\)/);
   });
 
   it("rejects partial auth launch without DB credentials auth", () => {
     stubProductionEnv({
-      NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "false",
       ALLOW_HEADER_AUTH_CONTEXT: "false",
       NEXT_PUBLIC_AUTH_API_ENABLED: "true",
       AUTH_DB_CREDENTIALS_ENABLED: "false",
@@ -110,7 +105,6 @@ describe("assertProductionRuntimeEnv", () => {
 
   it("rejects header auth bypass when auth launch is requested", () => {
     stubProductionEnv({
-      NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "false",
       NEXT_PUBLIC_AUTH_API_ENABLED: "true",
       AUTH_DB_CREDENTIALS_ENABLED: "true",
       ALLOW_HEADER_AUTH_CONTEXT: "true",
@@ -130,7 +124,6 @@ describe("assertProductionRuntimeEnv", () => {
 
   it("accepts auth-launched production without legacy env ID maps", () => {
     stubProductionEnv({
-      NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "false",
       ALLOW_HEADER_AUTH_CONTEXT: "false",
       NEXT_PUBLIC_AUTH_API_ENABLED: "true",
       AUTH_DB_CREDENTIALS_ENABLED: "true",
@@ -142,8 +135,8 @@ describe("assertProductionRuntimeEnv", () => {
     expect(() => assertProductionRuntimeEnv()).not.toThrow();
   });
 
-  it("still requires legacy env ID maps during prototype access rollout", () => {
-    stubProductionEnv();
+  it("still requires legacy env ID maps when header auth bypass is enabled", () => {
+    stubProductionEnv({ ALLOW_HEADER_AUTH_CONTEXT: "true" });
     vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP", "");
     vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP", "");
     vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP", "");

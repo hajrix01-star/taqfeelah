@@ -14,7 +14,6 @@ const eslintConfig = [
     ignores: [
       ".next/**",
       "node_modules/**",
-      "TaqfeelahPrototypeReference.tsx",
       "next-env.d.ts",
       "public/sw*",
       "public/swe-worker*",

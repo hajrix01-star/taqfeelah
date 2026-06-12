@@ -45,10 +45,9 @@ export function applyOwnerLoginSuccess({
   organizationId = "",
   displayName = "",
   mustChangePassword = false,
-  prototypeAccessMode,
   apply = {},
 }) {
-  persistLocalOwnerSession(prototypeAccessMode);
+  persistLocalOwnerSession();
   const userId = typeof apiUserId === "string" ? apiUserId : "";
   const orgId = typeof organizationId === "string" ? organizationId : "";
   const ownerName = typeof displayName === "string" ? displayName.trim() : "";
@@ -72,7 +71,6 @@ export function applyOwnerLoginSuccess({
  * @param {string} [input.organizationId]
  * @param {Array<{ id?: string, active?: boolean, removed?: boolean, storeIds?: string[] }>} [input.staff]
  * @param {Array<{ id?: string }>} [input.activeBusinesses]
- * @param {boolean} input.prototypeAccessMode
  * @param {AuthRuntimeApply} [input.apply]
  */
 export function applyEmployeeLoginSuccess({
@@ -81,14 +79,13 @@ export function applyEmployeeLoginSuccess({
   organizationId = "",
   staff = [],
   activeBusinesses = [],
-  prototypeAccessMode,
   apply = {},
 }) {
   const person = staff.find((item) => item.id === personId && item.active && !item.removed);
   const resolvedEmployeeId = person?.id || (typeof apiUserId === "string" && apiUserId ? apiUserId : personId);
   if (!resolvedEmployeeId) return false;
 
-  persistLocalEmployeeSession({ prototypeAccessMode, employeeId: resolvedEmployeeId });
+  persistLocalEmployeeSession({ employeeId: resolvedEmployeeId });
   const userId = typeof apiUserId === "string" ? apiUserId : "";
   const orgId = typeof organizationId === "string" ? organizationId : "";
   apply.setSessionUserId?.(userId);
