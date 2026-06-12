@@ -1,26 +1,12 @@
 import { fail, ok } from "@/core/http/api-response";
-import { isSaasAdminApiEnabled } from "@/core/config/saas-admin-api-mode";
-import { ServiceUnavailableError } from "@/core/errors/app-error";
-import { readEnv } from "@/core/config/env";
-import { resolveRequestContext } from "@/core/auth/request-context";
-import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
+import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-admin-route-guard";
 import { aggregateSaasAnalytics } from "@/features/saas-admin/server/aggregate-saas-analytics";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    if (!isSaasAdminApiEnabled()) {
-      throw new ServiceUnavailableError("SaaS admin API is disabled.");
-    }
-
-    const env = readEnv();
-    if (!env.DATABASE_URL) {
-      throw new ServiceUnavailableError("DATABASE_URL is not configured.");
-    }
-
-    const requestContext = resolveRequestContext(request, { requireUser: true });
-    assertPlatformAdminAccess({ actorUserId: requestContext.userId! });
+    assertSaasAdminRouteReady(request);
 
     let snapshotDate: string | undefined;
     try {

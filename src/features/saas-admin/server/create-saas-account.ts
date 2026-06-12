@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { resolveAppPublicOrigin } from "@/core/auth/app-origin";
 import { getDb } from "@/core/db/client";
 import {
@@ -87,8 +86,6 @@ export async function createSaasAccount(
     );
   }
   const input = parsed.data;
-
-  assertPlatformAdminAccess({ actorUserId: input.actorUserId });
 
   let ownerPhone: string;
   try {

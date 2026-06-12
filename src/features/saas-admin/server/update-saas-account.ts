@@ -1,6 +1,5 @@
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { getDb } from "@/core/db/client";
 import { auditEvents, organizations, subscriptions } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
@@ -21,8 +20,6 @@ export async function updateSaasAccount(rawInput: z.infer<typeof inputSchema>) {
     throw new ValidationError("Invalid SaaS account update input.", parsed.error.flatten());
   }
   const input = parsed.data;
-
-  assertPlatformAdminAccess({ actorUserId: input.actorUserId });
 
   if (!input.name && !input.status && !input.planCode) {
     throw new ValidationError("At least one field must be provided to update.");

@@ -1,6 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { getDb } from "@/core/db/client";
 import {
   auditEvents,
@@ -30,8 +29,6 @@ export async function updateSaasAccountMember(rawInput: z.infer<typeof inputSche
     throw new ValidationError("Invalid SaaS member update input.", parsed.error.flatten());
   }
   const input = parsed.data;
-
-  assertPlatformAdminAccess({ actorUserId: input.actorUserId });
 
   if (!input.name && !input.role && !input.status && !input.pin && !input.storeIds) {
     throw new ValidationError("At least one field must be provided to update.");

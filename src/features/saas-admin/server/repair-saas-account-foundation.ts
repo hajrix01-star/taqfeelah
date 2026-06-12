@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { ValidationError } from "@/core/errors/app-error";
 import { syncRuntimeOwnerProfileForOrganization } from "@/features/runtime-settings/server/sync-runtime-owner-profile";
 
@@ -14,8 +13,6 @@ export async function repairSaasAccountFoundation(rawInput: z.infer<typeof input
     throw new ValidationError("Invalid SaaS account repair input.", parsed.error.flatten());
   }
   const input = parsed.data;
-  assertPlatformAdminAccess({ actorUserId: input.actorUserId });
-
   const result = await syncRuntimeOwnerProfileForOrganization({
     organizationId: input.organizationId,
     actorUserId: input.actorUserId,
