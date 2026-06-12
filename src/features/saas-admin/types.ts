@@ -96,7 +96,13 @@ export type SaasAccountDetails = {
   closeoutsThisMonth: number;
   operationsCount: number;
   attachmentsCount: number;
-  stores: Array<{ id: string; name: string; status: string; createdAt: string }>;
+  stores: Array<{
+    id: string;
+    name: string;
+    location: string;
+    status: string;
+    createdAt: string;
+  }>;
   users: Array<{
     memberId: string;
     userId: string;

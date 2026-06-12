@@ -73,6 +73,7 @@ export async function getSaasAccountDetails(
     .select({
       id: stores.id,
       name: stores.name,
+      location: stores.location,
       status: stores.status,
       createdAt: stores.createdAt,
     })
@@ -259,6 +260,7 @@ export async function getSaasAccountDetails(
     stores: storeRows.map((row) => ({
       id: row.id,
       name: row.name,
+      location: row.location || "",
       status: row.status,
       createdAt: row.createdAt.toISOString(),
     })),

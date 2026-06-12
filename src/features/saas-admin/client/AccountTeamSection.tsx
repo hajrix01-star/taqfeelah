@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { AddAccountMemberForm } from "@/features/saas-admin/client/AddAccountMemberForm";
 import { EditAccountMemberForm } from "@/features/saas-admin/client/EditAccountMemberForm";
+import { updateSaasAccountMember } from "@/features/saas-admin/client/saas-admin-api-client";
+import { resolveSaasAdminFormError, type SaasAdminFormError } from "@/features/saas-admin/client/api-error";
+import { AdminErrorAlert } from "@/features/saas-admin/components/AdminErrorAlert";
 import { AdminCompactTable, AdminCompactTableCell } from "@/features/saas-admin/components/AdminCompactTable";
 import { AdminModal } from "@/features/saas-admin/components/AdminModal";
 import {
@@ -42,6 +45,22 @@ export function AccountTeamSection({
   const { t } = useSaasAdminLocale();
   const [addOpen, setAddOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
+  const [togglingMemberId, setTogglingMemberId] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState<SaasAdminFormError | null>(null);
+
+  async function handleToggleStatus(member: MemberRow) {
+    const nextStatus = member.status === "inactive" ? "active" : "inactive";
+    setToggleError(null);
+    setTogglingMemberId(member.memberId);
+    try {
+      await updateSaasAccountMember(organizationId, member.memberId, { status: nextStatus });
+      onUpdated();
+    } catch (submitError) {
+      setToggleError(resolveSaasAdminFormError(submitError, t, t.teamSection.toggleError));
+    } finally {
+      setTogglingMemberId(null);
+    }
+  }
 
   return (
     <div className="space-y-3">
@@ -62,6 +81,10 @@ export function AccountTeamSection({
         )}
       </div>
 
+      {toggleError ? (
+        <AdminErrorAlert message={toggleError.message} cause={toggleError.cause} code={toggleError.code} />
+      ) : null}
+
       <AdminCompactTable
         columns={[t.common.name, t.common.role, t.common.status, ""]}
         empty={users.length === 0}
@@ -76,13 +99,25 @@ export function AccountTeamSection({
             <AdminCompactTableCell col={2}>{formatEntityStatus(row.status, t)}</AdminCompactTableCell>
             <AdminCompactTableCell col={3}>
               {!readOnly && row.role !== "owner" ? (
-                <button
-                  type="button"
-                  onClick={() => setEditingMember(row)}
-                  className="rounded-md border border-[var(--admin-border)] px-2 py-0.5 text-[10px] font-semibold text-[var(--admin-primary)] hover:bg-[var(--admin-hover)]"
-                >
-                  {t.accountDetails.editMember}
-                </button>
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setEditingMember(row)}
+                    className="rounded-md border border-[var(--admin-border)] px-2 py-0.5 text-[10px] font-semibold text-[var(--admin-primary)] hover:bg-[var(--admin-hover)]"
+                  >
+                    {t.accountDetails.editMember}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={togglingMemberId === row.memberId}
+                    onClick={() => { void handleToggleStatus(row); }}
+                    className="rounded-md border border-[var(--admin-border)] px-2 py-0.5 text-[10px] font-semibold text-[var(--admin-muted)] hover:bg-[var(--admin-hover)] disabled:opacity-50"
+                  >
+                    {row.status === "inactive"
+                      ? t.teamSection.activateMember
+                      : t.teamSection.deactivateMember}
+                  </button>
+                </div>
               ) : (
                 "—"
               )}

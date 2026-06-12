@@ -108,6 +108,14 @@ export const ERROR_CATALOG: Record<ErrorCode, ErrorCatalogEntry> = {
     status: 400,
     type: `${ERROR_TYPE_BASE}/invalid-store-ids`,
   },
+  [ERROR_CODES.STORE_NOT_FOUND]: {
+    code: ERROR_CODES.STORE_NOT_FOUND,
+    title: "Store not found",
+    message: "Store was not found for this organization.",
+    cause: "No stores row matches the supplied storeId in this organization.",
+    status: 404,
+    type: `${ERROR_TYPE_BASE}/store-not-found`,
+  },
   [ERROR_CODES.PROVISION_DEPENDENCY_MISSING]: {
     code: ERROR_CODES.PROVISION_DEPENDENCY_MISSING,
     title: "Provisioning dependency missing",
