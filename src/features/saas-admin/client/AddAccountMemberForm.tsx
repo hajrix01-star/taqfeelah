@@ -3,7 +3,6 @@
 import { FormEvent, useState } from "react";
 import { resolveSaasAdminFormError, type SaasAdminFormError } from "@/features/saas-admin/client/api-error";
 import { createSaasAccountMember } from "@/features/saas-admin/client/saas-admin-api-client";
-import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import { AdminErrorAlert } from "@/features/saas-admin/components/AdminErrorAlert";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
@@ -16,9 +15,15 @@ type AddAccountMemberFormProps = {
   organizationId: string;
   stores: StoreOption[];
   onCreated: () => void;
+  onCancel?: () => void;
 };
 
-export function AddAccountMemberForm({ organizationId, stores, onCreated }: AddAccountMemberFormProps) {
+export function AddAccountMemberForm({
+  organizationId,
+  stores,
+  onCreated,
+  onCancel,
+}: AddAccountMemberFormProps) {
   const { t } = useSaasAdminLocale();
   const [name, setName] = useState("");
   const [role, setRole] = useState<"employee" | "manager">("employee");
@@ -57,8 +62,7 @@ export function AddAccountMemberForm({ organizationId, stores, onCreated }: AddA
   }
 
   return (
-    <AdminCard as="form" padding="md" className="space-y-4" onSubmit={handleSubmit}>
-      <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.addMember.title}</h3>
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block space-y-1 text-sm">
           <span className="text-[var(--admin-muted)]">{t.common.name}</span>
@@ -114,13 +118,24 @@ export function AddAccountMemberForm({ organizationId, stores, onCreated }: AddA
       {error ? (
         <AdminErrorAlert message={error.message} cause={error.cause} code={error.code} />
       ) : null}
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-lg bg-[var(--admin-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-      >
-        {isSubmitting ? t.addMember.submitting : t.addMember.submit}
-      </button>
-    </AdminCard>
+      <div className="flex flex-wrap justify-end gap-2">
+        {onCancel ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border border-[var(--admin-border)] px-4 py-2 text-sm font-semibold text-[var(--admin-text)]"
+          >
+            {t.common.cancel}
+          </button>
+        ) : null}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="rounded-lg bg-[var(--admin-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+        >
+          {isSubmitting ? t.addMember.submitting : t.addMember.submit}
+        </button>
+      </div>
+    </form>
   );
 }

@@ -22,7 +22,6 @@ import { ChartCard } from "@/features/saas-admin/components/ChartCard";
 import {
   formatCloseoutStatus,
   formatEntityStatus,
-  formatMemberRole,
   formatOperationType,
   formatPlanCode,
 } from "@/features/saas-admin/components/admin-display-labels";
@@ -34,9 +33,8 @@ import {
 import { KpiCard } from "@/features/saas-admin/components/KpiCard";
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
 import { AccountSetupLinkPanel } from "@/features/saas-admin/client/AccountSetupLinkPanel";
-import { AddAccountMemberForm } from "@/features/saas-admin/client/AddAccountMemberForm";
+import { AccountTeamSection } from "@/features/saas-admin/client/AccountTeamSection";
 import { EditAccountForms } from "@/features/saas-admin/client/EditAccountForms";
-import { EditAccountMemberForm } from "@/features/saas-admin/client/EditAccountMemberForm";
 import { fetchSaasAccountDetails } from "@/features/saas-admin/client/saas-admin-api-client";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
@@ -206,47 +204,12 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
         ) : null}
 
         {activeTab === "team" ? (
-          <div className="space-y-4">
-            <AddAccountMemberForm
-              organizationId={accountId}
-              stores={data.stores}
-              onCreated={() => { void refetch(); }}
-            />
-            <AdminCompactTable
-              columns={[t.common.name, t.common.role, t.common.status, ""]}
-              empty={data.users.length === 0}
-              emptyMessage={t.common.noData}
-            >
-              {data.users.map((row) => (
-                <tr key={row.memberId} className="hover:bg-[var(--admin-hover)]">
-                  <AdminCompactTableCell col={0} className="font-semibold text-[var(--admin-text)]">
-                    {row.name}
-                  </AdminCompactTableCell>
-                  <AdminCompactTableCell col={1}>{formatMemberRole(row.role, t)}</AdminCompactTableCell>
-                  <AdminCompactTableCell col={2}>{formatEntityStatus(row.status, t)}</AdminCompactTableCell>
-                  <AdminCompactTableCell col={3}>
-                    {row.role !== "owner" ? (
-                      <span className="text-[10px] text-[var(--admin-muted)]">{t.accountDetails.editMember}</span>
-                    ) : (
-                      "—"
-                    )}
-                  </AdminCompactTableCell>
-                </tr>
-              ))}
-            </AdminCompactTable>
-            <div className="space-y-2">
-              {data.users
-                .filter((row) => row.role !== "owner")
-                .map((row) => (
-                  <EditAccountMemberForm
-                    key={row.memberId}
-                    organizationId={accountId}
-                    member={row}
-                    onUpdated={() => { void refetch(); }}
-                  />
-                ))}
-            </div>
-          </div>
+          <AccountTeamSection
+            organizationId={accountId}
+            stores={data.stores}
+            users={data.users}
+            onUpdated={() => { void refetch(); }}
+          />
         ) : null}
 
         {activeTab === "activity" ? (
