@@ -33,6 +33,7 @@ export const translations = {
       previous: "السابق",
       next: "التالي",
       backToAccounts: "العودة للحسابات",
+      cancel: "إلغاء",
       owner: "المالك",
       plan: "الخطة",
       status: "الحالة",
@@ -250,7 +251,7 @@ export const translations = {
       noChanges: "أدخل حقلًا واحدًا على الأقل للتعديل.",
     },
     editMember: {
-      title: "تعديل المستخدمين",
+      title: "تعديل المستخدم",
       save: "حفظ المستخدم",
       saving: "جاري الحفظ…",
       saved: "تم حفظ بيانات المستخدم",
@@ -439,6 +440,7 @@ export const translations = {
       previous: "Previous",
       next: "Next",
       backToAccounts: "Back to accounts",
+      cancel: "Cancel",
       owner: "Owner",
       plan: "Plan",
       status: "Status",
@@ -656,7 +658,7 @@ export const translations = {
       noChanges: "At least one field must be provided to update.",
     },
     editMember: {
-      title: "Edit users",
+      title: "Edit user",
       save: "Save user",
       saving: "Saving…",
       saved: "User details saved",

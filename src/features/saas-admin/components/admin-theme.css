@@ -9,12 +9,13 @@
 
   /* Brand & actions */
   --admin-primary: var(--taq-ink);
-  --admin-primary-hover: var(--taq-ink-soft);
+  --admin-primary-hover: var(--taq-ink-deep);
+  --admin-primary-gradient: var(--taq-ink-gradient);
   --admin-accent: var(--taq-gold);
 
-  /* Sidebar — navy ink from product identity */
-  --admin-sidebar-bg: var(--taq-ink);
-  --admin-sidebar-surface: #1a3a5c;
+  /* Sidebar — navy ink gradient from product identity */
+  --admin-sidebar-bg: var(--taq-ink-gradient);
+  --admin-sidebar-surface: var(--taq-ink-soft);
   --admin-sidebar-border: rgba(255, 255, 255, 0.1);
   --admin-sidebar-text: #f8f6f0;
   --admin-sidebar-muted: rgba(248, 246, 240, 0.62);
@@ -137,6 +138,18 @@
   background: var(--admin-sidebar-bg);
   border-color: var(--admin-sidebar-border);
   color: var(--admin-sidebar-text);
+}
+
+.saas-admin-root :is(button, a)[class*="bg-[var(--admin-primary)]"] {
+  background: var(--admin-primary-gradient);
+}
+
+.saas-admin-root :is(button, a)[class*="bg-[var(--admin-primary)]"]:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.saas-admin-root :is(button, a)[class*="bg-[var(--admin-primary)]"]:disabled {
+  filter: none;
 }
 
 @media (max-width: 1023px) {
