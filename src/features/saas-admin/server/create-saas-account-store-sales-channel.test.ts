@@ -10,15 +10,22 @@ vi.mock("@/core/db/client", () => ({
         })),
       })),
     })),
-    transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback({
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn(async () => []),
+    transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => {
+      let selectCount = 0;
+      return callback({
+        select: vi.fn(() => ({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              limit: vi.fn(async () => {
+                selectCount += 1;
+                if (selectCount === 1) return [{ id: "org-1" }];
+                return [];
+              }),
+            })),
           })),
         })),
-      })),
-    })),
+      });
+    }),
   }),
 }));
 
@@ -32,6 +39,7 @@ describe("createSaasAccountStoreSalesChannel", () => {
         organizationId: "e8f3e35b-6051-4da3-8b10-979700c2f001",
         storeId: "e8f3e35b-6051-4da3-8b10-979700c2f002",
         name: "",
+        status: "active",
       }),
     ).rejects.toBeInstanceOf(ValidationError);
   });
@@ -45,6 +53,7 @@ describe("createSaasAccountStoreSalesChannel", () => {
         organizationId: "e8f3e35b-6051-4da3-8b10-979700c2f001",
         storeId: "e8f3e35b-6051-4da3-8b10-979700c2f002",
         name: "Delivery",
+        status: "active",
       }),
     ).rejects.toMatchObject({
       code: "STORE_NOT_FOUND",
