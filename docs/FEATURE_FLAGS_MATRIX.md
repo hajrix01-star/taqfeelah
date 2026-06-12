@@ -12,12 +12,14 @@
 | `DATABASE_URL` | — | required | PostgreSQL connection |
 | `AUTH_SESSION_SECRET` | — | min 16 chars | Signed session cookies |
 
-## Development bypass (must be OFF before launch)
+## Auth launch (wave 6 — active on CI deploy)
 
-| Variable | Default (unset) | Production required | Purpose |
-|----------|-----------------|---------------------|---------|
-| `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` | `true` (ON until auth launch) | `true` for source-unification, `false` only for auth launch | Skip real auth; role picker |
-| `ALLOW_HEADER_AUTH_CONTEXT` | `true` until auth launch | `true` for source-unification, `false` only for auth launch | Header-based API auth for prototype/source-unification |
+| Variable | Default (unset) | Production (CI deploy) | Purpose |
+|----------|-----------------|------------------------|---------|
+| `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` | `true` in dev bootstrap | `false` | Real login screen on `/app` |
+| `ALLOW_HEADER_AUTH_CONTEXT` | `true` in dev bootstrap | `false` | Session cookies only — no header bypass |
+| `NEXT_PUBLIC_AUTH_API_ENABLED` | `false` | `true` | Auth API wired |
+| `AUTH_DB_CREDENTIALS_ENABLED` | `false` | `true` | `auth_identities` table |
 
 `assertProductionRuntimeEnv()` source-unification rules:
 
@@ -47,9 +49,10 @@
 | `USAGE_TRACKING_ENABLED` | `false` | Usage event recording |
 | `SAAS_PLATFORM_ADMIN_USER_IDS` | empty | Comma-separated platform admin UUIDs |
 
-## Temporary ID maps (prototype period only)
+## Temporary ID maps (legacy bootstrap only)
 
-Required by `assertProductionRuntimeEnv()` today; target is removal after session/org-config supplies UUIDs.
+Required by `assertProductionRuntimeEnv()` **only while** `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=true` or `ALLOW_HEADER_AUTH_CONTEXT=true`.  
+After auth launch, maps are optional — runtime hydrates UUIDs from org-config API + session.
 
 | Variable | Purpose |
 |----------|---------|

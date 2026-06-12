@@ -32,21 +32,20 @@ NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true
 NEXT_PUBLIC_PHASE9_API_ENABLED=true
 NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true
 NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true
-NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=true
-ALLOW_HEADER_AUTH_CONTEXT=true
+NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE=false
+ALLOW_HEADER_AUTH_CONTEXT=false
+NEXT_PUBLIC_AUTH_API_ENABLED=true
+AUTH_DB_CREDENTIALS_ENABLED=true
+AUTH_SESSION_SECRET=...
 AUTH_ORGANIZATION_ID=...
 AUTH_OWNER_USER_ID=...
-NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP=...
-NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP=...
-NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP=...
+# Legacy ID maps optional after auth launch — see docs/PRODUCTION_STATUS.md
 ```
 
-This means the runtime uses production DB/API behavior while the current open
-entry flow remains available through Prototype Access Mode until auth launch.
+**CI production deploy** (`deploy-production.yml`) enables auth launch + wave 7 SaaS.  
+Legacy env ID maps are required only while `PROTOTYPE_ACCESS_MODE=true` or `ALLOW_HEADER_AUTH_CONTEXT=true`.
 
-Auth/SaaS activation is intentionally deferred until after full source
-unification and product approval. Only then should these auth-launch values be
-enabled together:
+For manual VPS rollout, auth-launch values:
 
 ```bash
 NEXT_PUBLIC_AUTH_API_ENABLED=true

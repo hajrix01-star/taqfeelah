@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import "@/features/saas-admin/components/admin-theme.css";
 import { LanguageToggle } from "@/features/saas-admin/components/LanguageToggle";
 import {
@@ -28,10 +29,10 @@ function GuardFrame({ children }: { children: React.ReactNode }) {
 function DisabledContent() {
   const { t } = useSaasAdminLocale();
   return (
-    <section className="w-full max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 text-center shadow-sm sm:p-8">
+    <AdminCard as="section" padding="lg" className="w-full max-w-xl text-center">
       <h1 className="text-lg font-bold text-[var(--admin-primary)]">{t.guard.disabledTitle}</h1>
       <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.guard.disabledBody}</p>
-    </section>
+    </AdminCard>
   );
 }
 
@@ -51,7 +52,7 @@ function UnauthorizedContent({ session }: { session?: SaasAdminSessionView }) {
   }
 
   return (
-    <section className="w-full max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 text-center shadow-sm sm:p-8">
+    <AdminCard as="section" padding="lg" className="w-full max-w-xl text-center">
       <h1 className="text-lg font-bold text-[var(--admin-primary)]">{t.guard.unauthorizedTitle}</h1>
       <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.guard.unauthorizedBody}</p>
       {session?.displayName ? (
@@ -75,14 +76,14 @@ function UnauthorizedContent({ session }: { session?: SaasAdminSessionView }) {
           {t.guard.backToApp}
         </Link>
       </div>
-    </section>
+    </AdminCard>
   );
 }
 
 function UnauthenticatedContent() {
   const { t } = useSaasAdminLocale();
   return (
-    <section className="w-full max-w-xl rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 text-center shadow-sm sm:p-8">
+    <AdminCard as="section" padding="lg" className="w-full max-w-xl text-center">
       <h1 className="text-lg font-bold text-[var(--admin-primary)]">{t.guard.unauthenticatedTitle}</h1>
       <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.guard.unauthenticatedBody}</p>
       <Link
@@ -91,7 +92,7 @@ function UnauthenticatedContent() {
       >
         {t.guard.signIn}
       </Link>
-    </section>
+    </AdminCard>
   );
 }
 

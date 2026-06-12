@@ -11,7 +11,7 @@ type AdminCardProps = {
   padding?: AdminCardPadding;
   className?: string;
   children: ReactNode;
-};
+} & Record<string, unknown>;
 
 const PADDING_CLASS: Record<AdminCardPadding, string> = {
   none: "",
@@ -26,12 +26,14 @@ export function AdminCard({
   padding = "md",
   className = "",
   children,
+  ...rest
 }: AdminCardProps) {
   const paddingClass = PADDING_CLASS[padding];
 
   return (
     <Component
       className={`admin-card admin-card--${variant} ${paddingClass} ${className}`.trim()}
+      {...rest}
     >
       {children}
     </Component>

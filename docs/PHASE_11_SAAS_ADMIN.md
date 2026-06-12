@@ -1,6 +1,8 @@
-# Phase 11 — SaaS admin console (inactive by default)
+# Phase 11 — SaaS admin console
 
-> Platform console at `/saas-admin` with unified `platform-metrics` source. Account provisioning is available; billing provider activation is not yet wired.
+> **الحالة (2026-06-12):** مفعّل على الإنتاج عند ضبط `SAAS_PLATFORM_ADMIN_USER_IDS` في أسرار النشر.  
+> لا تسجيل ذاتي عام — الحسابات تُنشأ من `/saas-admin/accounts/new`.  
+> الدفع الإلكتروني **مؤجّل** — راجع `docs/PRODUCTION_STATUS.md`.
 
 ## Flags (all OFF by default)
 
@@ -57,9 +59,11 @@ See `docs/API_CONTRACT.md` for query params and response shapes.
 
 While flags stay `false`, deploy verify expects `GET /api/v1/saas-admin/overview` → `503` and `GET /saas-admin` → `200` (disabled shell).
 
-## Not activated yet
+## Deferred / not yet
 
-- Payment provider integration
-- Subscription write APIs
+- **Payment provider integration** (owner-approved deferral)
+- Self-service public signup page
+- Automated setup-link email (WhatsApp/manual copy today)
 - Investor CSV export route
 - Account disable/delete actions from admin UI
+- `pnpm saas:aggregate` cron (optional ops — run manually or schedule on VPS)

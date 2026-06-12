@@ -126,4 +126,28 @@ describe("assertProductionRuntimeEnv", () => {
     expect(() => assertProductionRuntimeEnv()).toThrow(ServiceUnavailableError);
     expect(() => assertProductionRuntimeEnv()).toThrow(/NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true/);
   });
+
+  it("accepts auth-launched production without legacy env ID maps", () => {
+    stubProductionEnv({
+      NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE: "false",
+      ALLOW_HEADER_AUTH_CONTEXT: "false",
+      NEXT_PUBLIC_AUTH_API_ENABLED: "true",
+      AUTH_DB_CREDENTIALS_ENABLED: "true",
+    });
+    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP", "");
+    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP", "");
+    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP", "");
+    __resetEnvCacheForTests();
+    expect(() => assertProductionRuntimeEnv()).not.toThrow();
+  });
+
+  it("still requires legacy env ID maps during prototype access rollout", () => {
+    stubProductionEnv();
+    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP", "");
+    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP", "");
+    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP", "");
+    __resetEnvCacheForTests();
+    expect(() => assertProductionRuntimeEnv()).toThrow(ServiceUnavailableError);
+    expect(() => assertProductionRuntimeEnv()).toThrow(/NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP/);
+  });
 });

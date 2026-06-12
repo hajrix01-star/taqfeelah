@@ -4,6 +4,7 @@ import { useState } from "react";
 import { buildWhatsAppShareUrl } from "@/core/whatsapp/share-link";
 import { buildOwnerSetupWhatsAppMessage } from "@/core/messaging/whatsapp-auth-messages";
 import { createAccountSetupLink } from "@/features/saas-admin/client/saas-admin-api-client";
+import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type AccountSetupLinkPanelProps = {
@@ -52,7 +53,7 @@ export function AccountSetupLinkPanel({
   }
 
   return (
-    <div className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4">
+    <AdminCard padding="md">
       <h3 className="text-sm font-semibold text-[var(--admin-text)]">{t.accountSetupLink.title}</h3>
       <p className="mt-1 text-xs text-[var(--admin-muted)]">{t.accountSetupLink.description}</p>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -86,6 +87,6 @@ export function AccountSetupLinkPanel({
         <p dir="ltr" className="mt-3 break-all rounded-lg bg-[#FFF8E8] p-2 text-xs font-mono">{setupUrl}</p>
       ) : null}
       {error ? <p className="mt-2 text-xs text-[var(--admin-danger)]">{error}</p> : null}
-    </div>
+    </AdminCard>
   );
 }

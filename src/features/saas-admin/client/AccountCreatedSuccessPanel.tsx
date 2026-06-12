@@ -5,6 +5,7 @@ import { useState } from "react";
 import { buildWhatsAppShareUrl } from "@/core/whatsapp/share-link";
 import { buildOwnerSetupWhatsAppMessage } from "@/core/messaging/whatsapp-auth-messages";
 import type { CreateSaasAccountResponse } from "@/features/saas-admin/client/saas-admin-api-client";
+import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
 type AccountCreatedSuccessPanelProps = {
@@ -36,7 +37,7 @@ export function AccountCreatedSuccessPanel({ created }: AccountCreatedSuccessPan
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4 sm:p-6">
+    <AdminCard padding="lg" className="space-y-4">
       <h2 className="text-base font-semibold text-[var(--admin-text)]">{t.newAccount.successTitle}</h2>
       <p className="text-sm text-[var(--admin-muted)]">{t.newAccount.successDescription}</p>
 
@@ -73,6 +74,6 @@ export function AccountCreatedSuccessPanel({ created }: AccountCreatedSuccessPan
         </Link>
       </div>
       <p className="text-xs text-[var(--admin-muted)]">{t.newAccount.whatsappOpenedHint}</p>
-    </div>
+    </AdminCard>
   );
 }
