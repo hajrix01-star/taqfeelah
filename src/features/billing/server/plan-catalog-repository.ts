@@ -5,6 +5,19 @@ import type { PlanCatalogRow, PlanCode } from "@/features/billing/types";
 
 const FALLBACK_PLANS: PlanCatalogRow[] = [
   {
+    planCode: "trial",
+    displayNameAr: "تجربة",
+    displayNameEn: "Trial",
+    priceMonthlyHalalas: 0,
+    priceYearlyHalalas: null,
+    maxStores: 3,
+    maxEmployees: 3,
+    trialDays: 15,
+    features: { isTrialPlan: true },
+    isActive: true,
+    sortOrder: 0,
+  },
+  {
     planCode: "starter",
     displayNameAr: "أساسية",
     displayNameEn: "Starter",

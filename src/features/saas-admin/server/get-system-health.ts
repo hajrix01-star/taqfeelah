@@ -1,6 +1,5 @@
 import { max, sql, sum } from "drizzle-orm";
 import { z } from "zod";
-import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { getDb } from "@/core/db/client";
 import {
   attachments,
@@ -24,8 +23,6 @@ export async function getSystemHealth(
   if (!parsed.success) {
     throw new ValidationError("Invalid system health input.", parsed.error.flatten());
   }
-  assertPlatformAdminAccess({ actorUserId: parsed.data.actorUserId });
-
   const db = getDb();
 
   let databaseStatus: SystemHealthReport["database"]["status"] = "healthy";

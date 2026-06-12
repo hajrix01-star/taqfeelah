@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import { z } from "zod";
-import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { getDb } from "@/core/db/client";
 import { organizations } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
@@ -20,8 +19,6 @@ export async function getSaasOverview(rawInput: z.infer<typeof inputSchema>): Pr
   if (!parsed.success) {
     throw new ValidationError("Invalid SaaS overview input.", parsed.error.flatten());
   }
-  assertPlatformAdminAccess({ actorUserId: parsed.data.actorUserId });
-
   const snapshot = await getPlatformSnapshot();
   const orgIds = snapshot.engagement.snapshotRows.map((row) => row.organizationId);
   const ownerByOrg = await loadOwnerNamesByOrgId(orgIds);

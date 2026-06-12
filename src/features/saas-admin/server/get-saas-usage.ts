@@ -1,6 +1,5 @@
 import { and, count, eq, gte, sql } from "drizzle-orm";
 import { z } from "zod";
-import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { getDb } from "@/core/db/client";
 import {
   attachments,
@@ -27,8 +26,6 @@ export async function getSaasUsage(rawInput: z.infer<typeof inputSchema>): Promi
   if (!parsed.success) {
     throw new ValidationError("Invalid SaaS usage input.", parsed.error.flatten());
   }
-  assertPlatformAdminAccess({ actorUserId: parsed.data.actorUserId });
-
   const db = getDb();
   const monthsBack = parsed.data.months;
   const snapshot = await getPlatformSnapshot();

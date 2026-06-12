@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { getDb } from "@/core/db/client";
 import {
   auditEvents,
@@ -46,8 +45,6 @@ export async function createSaasAccountMember(
     throw new ValidationError("Invalid SaaS member create input.", parsed.error.flatten());
   }
   const input = parsed.data;
-
-  assertPlatformAdminAccess({ actorUserId: input.actorUserId });
 
   const uniqueStoreIds = [...new Set(input.storeIds)];
   const db = getDb();

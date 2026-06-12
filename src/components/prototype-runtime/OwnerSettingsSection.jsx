@@ -40,6 +40,7 @@ function OwnerSettingsScreen({
   onOpenSupport = () => {},
   onOpenHelp = () => {},
   inviteApiContext = null,
+  billingApiContext = null,
 }) {
   const state = useOwnerSettingsScreenState({
     lang,
@@ -72,6 +73,7 @@ function OwnerSettingsScreen({
     setArchivedReadOnlyBusinessId,
     setLastCloseoutDates,
     onPersistSettingsNow,
+    billingApiContext,
   });
 
   const viewState = { ...state, lang, inviteApiContext };

@@ -78,6 +78,13 @@
       "when": 1781021200000,
       "tag": "0010_invitation_pin_flow",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1781021300000,
+      "tag": "0011_trial_plan_catalog",
+      "breakpoints": true
     }
   ]
 }

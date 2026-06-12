@@ -47,7 +47,7 @@ describe("handleSaasAdminMiddleware", () => {
     expect(response?.status).toBe(401);
   });
 
-  it("returns 403 when session user is not owner and not on platform admin allowlist", async () => {
+  it("allows authenticated API requests through to route handlers for authorization", async () => {
     const cookie = createSignedAuthSessionCookieValue(
       {
         organizationId: "22222222-2222-4222-8222-222222222222",
@@ -58,11 +58,11 @@ describe("handleSaasAdminMiddleware", () => {
     );
 
     const response = await handleSaasAdminMiddleware(
-      buildRequest("/api/v1/saas-admin/overview", cookie),
+      buildRequest("/api/v1/saas-admin/plans", cookie),
       enabledEnv(),
     );
 
-    expect(response?.status).toBe(403);
+    expect(response).toBeNull();
   });
 
   it("allows platform admin API requests with a valid session", async () => {

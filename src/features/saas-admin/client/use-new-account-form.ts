@@ -19,7 +19,7 @@ export function useNewAccountForm(t: SaasAdminTranslations) {
   const [ownerPhone, setOwnerPhone] = useState("");
   const [storeName, setStoreName] = useState("");
   const [storeLocation, setStoreLocation] = useState("");
-  const [planCode, setPlanCode] = useState<"starter" | "growth" | "enterprise">("starter");
+  const [planCode, setPlanCode] = useState<"trial" | "starter" | "growth" | "enterprise">("trial");
   const [error, setError] = useState<SaasAdminFormError | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdAccount, setCreatedAccount] = useState<CreateSaasAccountResponse | null>(null);

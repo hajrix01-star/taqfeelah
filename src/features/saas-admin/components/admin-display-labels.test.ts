@@ -12,6 +12,7 @@ const t = translations.ar;
 
 describe("admin-display-labels", () => {
   it("formats known plan codes in Arabic", () => {
+    expect(formatPlanCode("trial", t)).toBe("تجربة");
     expect(formatPlanCode("starter", t)).toBe("أساسية");
     expect(formatPlanCode("growth", t)).toBe("نمو");
     expect(formatPlanCode("enterprise", t)).toBe("مؤسسات");

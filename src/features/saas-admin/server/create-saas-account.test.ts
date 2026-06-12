@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ValidationError } from "@/core/errors/app-error";
 
-vi.mock("@/core/auth/assert-platform-admin-access", () => ({
-  assertPlatformAdminAccess: vi.fn(),
-}));
-
 vi.mock("@/core/db/client", () => ({
   getDb: () => ({
     transaction: vi.fn(),

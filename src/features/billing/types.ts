@@ -1,4 +1,5 @@
-export type PlanCode = "starter" | "growth" | "enterprise";
+export type { PlanCode, PaidPlanCode } from "@/features/billing/plan-codes";
+import type { PlanCode } from "@/features/billing/plan-codes";
 
 export type PlanCatalogRow = {
   planCode: PlanCode;
@@ -20,16 +21,42 @@ export type OrganizationEntitlementUsage = {
   pendingInvitations: number;
 };
 
+export type PlanFeatureLabel = {
+  key: string;
+  labelAr: string;
+  labelEn: string;
+};
+
+export type OwnerPlanSummary = {
+  planCode: PlanCode;
+  displayNameAr: string;
+  displayNameEn: string;
+  priceMonthlyHalalas: number;
+  priceYearlyHalalas: number | null;
+  maxStores: number;
+  maxEmployees: number;
+  trialDays: number;
+  features: PlanFeatureLabel[];
+};
+
 export type ResolvedOrganizationEntitlements = {
   organizationId: string;
   planCode: PlanCode;
+  planDisplayNameAr: string;
+  planDisplayNameEn: string;
   subscriptionStatus: string | null;
   organizationStatus: string;
   billingAllowed: boolean;
   maxStores: number;
   maxEmployees: number;
   priceMonthlyHalalas: number;
+  priceYearlyHalalas: number | null;
   trialDays: number;
+  isTrialPlan: boolean;
+  trialDaysRemaining: number | null;
+  currentPeriodEnd: string | null;
+  features: PlanFeatureLabel[];
+  upgradePlans: OwnerPlanSummary[];
   usage: OrganizationEntitlementUsage;
   overrides: {
     maxStores: number | null;

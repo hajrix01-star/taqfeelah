@@ -1,6 +1,5 @@
 import { and, asc, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
-import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { getDb } from "@/core/db/client";
 import {
   attachments,
@@ -31,8 +30,6 @@ export async function getSaasAccountDetails(
     throw new ValidationError("Invalid SaaS account details input.", parsed.error.flatten());
   }
   const input = parsed.data;
-  assertPlatformAdminAccess({ actorUserId: input.actorUserId });
-
   const db = getDb();
   const month = currentMonthRangeUtc();
 

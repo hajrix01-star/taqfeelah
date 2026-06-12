@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { ValidationError } from "@/core/errors/app-error";
 import type { InvestorMetrics } from "@/features/saas-admin/types";
 import { getPlatformSnapshot } from "@/features/saas-admin/server/platform-metrics";
@@ -16,8 +15,6 @@ export async function getInvestorMetrics(
   if (!parsed.success) {
     throw new ValidationError("Invalid investor metrics input.", parsed.error.flatten());
   }
-  assertPlatformAdminAccess({ actorUserId: parsed.data.actorUserId });
-
   const snapshot = await getPlatformSnapshot();
 
   return {

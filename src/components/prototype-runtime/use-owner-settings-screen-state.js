@@ -23,6 +23,9 @@ import {
   RUNTIME_SETTINGS_DB_SOURCE,
 } from "./prototype-runtime-boot";
 import { createOwnerSettingsScreenHandlers } from "./owner-settings-screen-action-handlers";
+import { useOrganizationEntitlements } from "@/features/billing/client/use-organization-entitlements";
+import { bindsToServerAuth } from "@/core/config/runtime-capabilities";
+import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 
 export function useOwnerSettingsScreenState({
   lang,
@@ -55,7 +58,23 @@ export function useOwnerSettingsScreenState({
   setArchivedReadOnlyBusinessId,
   setLastCloseoutDates,
   onPersistSettingsNow = null,
+  billingApiContext = null,
 }) {
+  const billingEnabled = Boolean(
+    billingApiContext?.organizationId
+    && billingApiContext?.actorUserId
+    && (bindsToServerAuth() || isOrgConfigApiEnabled()),
+  );
+  const {
+    entitlements,
+    loading: entitlementsLoading,
+    error: entitlementsError,
+    reload: reloadEntitlements,
+  } = useOrganizationEntitlements({
+    enabled: billingEnabled,
+    auth: billingApiContext || {},
+  });
+
   const [section, setSection] = useState("home");
   const [settingsStoreId, setSettingsStoreId] = useState(null);
   const [storePanel, setStorePanel] = useState("overview");
@@ -342,5 +361,9 @@ export function useOwnerSettingsScreenState({
     setOwnerPage,
     setArchivedReadOnlyBusinessId,
     setSelectedBusiness,
+    entitlements,
+    entitlementsLoading,
+    entitlementsError,
+    reloadEntitlements,
   };
 }

@@ -1,6 +1,5 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { assertPlatformAdminAccess } from "@/core/auth/assert-platform-admin-access";
 import { getDb } from "@/core/db/client";
 import { auditEvents, authIdentities, organizationMembers, users } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
@@ -44,8 +43,6 @@ export async function updateSaasAccountOwner(rawInput: z.infer<typeof inputSchem
     throw new ValidationError("Invalid SaaS owner update input.", parsed.error.flatten());
   }
   const input = parsed.data;
-
-  assertPlatformAdminAccess({ actorUserId: input.actorUserId });
 
   if (!input.ownerName && !input.ownerUsername && !input.ownerPassword) {
     throw new ValidationError("At least one owner field must be provided to update.");

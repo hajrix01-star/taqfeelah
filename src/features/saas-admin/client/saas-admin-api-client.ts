@@ -77,7 +77,7 @@ export type CreateSaasAccountPayload = {
   ownerPhone: string;
   storeName?: string;
   storeLocation?: string;
-  planCode?: "starter" | "growth" | "enterprise";
+  planCode?: "trial" | "starter" | "growth" | "enterprise";
 };
 
 export type CreateSaasAccountResponse = {
@@ -134,7 +134,7 @@ export async function updateSaasAccount(
   payload: {
     organizationName?: string;
     status?: "active" | "suspended";
-    planCode?: "starter" | "growth" | "enterprise";
+    planCode?: "trial" | "starter" | "growth" | "enterprise";
   },
 ) {
   return fetchSaasAdminJson(`/api/v1/saas-admin/accounts/${organizationId}`, {
