@@ -20,6 +20,36 @@ describe("groupAttachmentsFromEntries", () => {
     expect(groups[0].items[0].title).toBe("Receipt");
   });
 
+  it("includes sales and purchase attachments for the same day", () => {
+    const groups = groupAttachmentsFromEntries([
+      {
+        id: "e1",
+        date: "2026-06-10",
+        type: "summary",
+        amount: 100,
+        reviewed: false,
+        businessId: "b1",
+        attachment: { id: "a1" },
+        salesChannels: [{ channelId: "cash", name: "نقدي", amount: 100 }],
+      },
+      {
+        id: "e2",
+        date: "2026-06-10",
+        type: "purchases",
+        amount: 40,
+        reviewed: false,
+        businessId: "b1",
+        attachment: { id: "a2" },
+        note: "فاتورة مشتريات",
+      },
+    ], (entry: { note?: string; type: string }, lang: string) => (
+      lang === "ar" ? (entry.note || entry.type) : (entry.note || entry.type)
+    ));
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].items.map((item: { id: string }) => item.id)).toEqual(["a1", "a2"]);
+  });
+
   it("resolves the attachment group for the selected day", () => {
     const groups = [
       { dayId: "2026-06-09", date: "2026-06-09", items: [{ id: "old" }] },
