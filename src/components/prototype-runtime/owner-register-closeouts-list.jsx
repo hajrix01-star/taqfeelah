@@ -12,7 +12,7 @@ import {
 } from "./prototype-runtime-entry-helpers";
 import { MoneyValue } from "./prototype-runtime-notebook";
 import CloseoutOwnerEditBadge from "@/features/closeouts/client/CloseoutOwnerEditBadge";
-import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
+import { AttachmentThumbButton, EntryAttachmentShareButton } from "./prototype-runtime-attachment-ui";
 
 export function OwnerRegisterCloseoutsList({
   lang,
@@ -23,7 +23,7 @@ export function OwnerRegisterCloseoutsList({
   expandedCloseoutKey,
   setExpandedCloseoutKey,
   onOpenOperation,
-  setRegisterAttachmentPreview,
+  onPreviewAttachment,
   registerScrollId,
   loadError,
   loadErrorMessage,
@@ -85,7 +85,34 @@ export function OwnerRegisterCloseoutsList({
                   {summary.operations.flatMap((item) => expandRegisterCloseoutOperationRows(item, lang, logFilters.salesChannel).map((row) => (
                     <div key={row.key} className="flex w-full items-center gap-3 rounded-xl px-2 py-2 hover:bg-[#FFF4D2]/35">
                       {entryHasAttachment(row.item) ? (
-                        <AttachmentThumbButton attachment={row.item.attachment} storeId={row.item.businessId} attachmentApiContext={entryAttachmentApiContext} onOpen={setRegisterAttachmentPreview} />
+                        <div className="flex items-center gap-1.5">
+                          <AttachmentThumbButton
+                            attachment={row.item.attachment}
+                            storeId={row.item.businessId}
+                            attachmentApiContext={entryAttachmentApiContext}
+                            onOpen={(src) => onPreviewAttachment(src, {
+                              entry: row.item,
+                              storeName: storeLabel,
+                              operationLabel: row.label,
+                              entryTime: opTime(row.item, lang),
+                              daySequence: summary.daySequence,
+                              sameDayCloseoutCount: summary.sameDayCloseoutCount,
+                            })}
+                          />
+                          <EntryAttachmentShareButton
+                            lang={lang}
+                            attachment={row.item.attachment}
+                            entry={row.item}
+                            storeName={storeLabel}
+                            operationLabel={row.label}
+                            entryTime={opTime(row.item, lang)}
+                            daySequence={summary.daySequence}
+                            sameDayCloseoutCount={summary.sameDayCloseoutCount}
+                            storeId={row.item.businessId}
+                            attachmentApiContext={entryAttachmentApiContext}
+                            compact
+                          />
+                        </div>
                       ) : null}
                       <button type="button" onClick={() => onOpenOperation(row.item)} className="flex min-w-0 flex-1 items-center gap-3 text-start">
                         <strong dir="ltr" className={`min-w-[70px] shrink-0 whitespace-nowrap text-start tabular-nums text-taq-meta font-black ${entryIsVoided(row.item) ? "text-[#A99D87] line-through" : row.isSale ? "text-[#257844]" : "text-[#B44747]"}`}>

@@ -1,11 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, Check, Image as ImageIcon } from "lucide-react";
+import { Camera, Check, Image as ImageIcon, Send } from "lucide-react";
 import {
   prepareAttachment,
 } from "@/features/attachments/client/prototype-attachment-storage";
 import { useEntryAttachmentSource } from "@/features/entries/client/use-entry-attachment-source";
+import {
+  buildEntryAttachmentShareCaption,
+  dataUrlToShareFile,
+  shareEntryAttachmentImage,
+} from "@/features/entries/client/entry-attachment-share";
 import { text } from "./prototype-runtime-demo-data";
 
 export function useAttachmentCapture(lang) {
@@ -91,6 +96,61 @@ export function AttachmentThumbButton({
       ) : (
         <ProofThumb />
       )}
+    </button>
+  );
+}
+
+export function EntryAttachmentShareButton({
+  lang,
+  attachment,
+  entry,
+  storeName = "",
+  operationLabel = "",
+  entryTime = "",
+  daySequence = null,
+  sameDayCloseoutCount = 1,
+  storeId = "",
+  attachmentApiContext = null,
+  compact = false,
+  className = "",
+}) {
+  const source = useAttachmentSource(attachment, attachmentApiContext, storeId);
+  const [sharing, setSharing] = useState(false);
+
+  if (!attachment) return null;
+
+  const handleShare = async (event) => {
+    event.stopPropagation();
+    if (!source || sharing) return;
+    setSharing(true);
+    try {
+      const file = await dataUrlToShareFile(source, `invoice-${entry?.id || "attachment"}`);
+      const caption = buildEntryAttachmentShareCaption({
+        lang,
+        storeName,
+        operationLabel,
+        entryDate: entry?.date || "",
+        entryTime,
+        daySequence,
+        sameDayCloseoutCount,
+      });
+      await shareEntryAttachmentImage({ file, caption, lang });
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleShare}
+      disabled={!source || sharing}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] text-white ring-1 ring-[#1DA851]/30 transition enabled:hover:bg-[#1EBE5D] disabled:cursor-not-allowed disabled:opacity-60 ${compact ? "h-9 w-9" : "px-3 py-2 text-taq-nav font-black"} ${className}`}
+      aria-label={text(lang, "shareAttachmentWhatsApp")}
+      title={text(lang, "shareAttachmentWhatsApp")}
+    >
+      <Send className={compact ? "h-4 w-4" : "h-3.5 w-3.5"} />
+      {!compact ? text(lang, "shareViaWhatsApp") : null}
     </button>
   );
 }

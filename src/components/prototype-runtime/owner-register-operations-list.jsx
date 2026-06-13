@@ -13,7 +13,7 @@ import {
 } from "./prototype-runtime-entry-helpers";
 import { MoneyValue } from "./prototype-runtime-notebook";
 import { Badge } from "./prototype-runtime-shell-ui";
-import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
+import { AttachmentThumbButton, EntryAttachmentShareButton } from "./prototype-runtime-attachment-ui";
 
 export function OwnerRegisterOperationsList({
   lang,
@@ -27,7 +27,7 @@ export function OwnerRegisterOperationsList({
   expandedEntryId,
   setExpandedEntryId,
   onOpenOperation,
-  setRegisterAttachmentPreview,
+  onPreviewAttachment,
   registerEntriesApiEnabled,
   apiRegisterEntriesHasMore,
   registerLoadMoreRef,
@@ -93,7 +93,34 @@ export function OwnerRegisterOperationsList({
                 {entryHasAttachment(entry) ? (
                   <div className="mb-3">
                     <p className="mb-2 text-taq-nav font-black text-[#806528]">{text(lang, "attachmentExists")}</p>
-                    <AttachmentThumbButton attachment={entry.attachment} storeId={entry.businessId} attachmentApiContext={entryAttachmentApiContext} onOpen={setRegisterAttachmentPreview} />
+                    <div className="flex items-center gap-2">
+                      <AttachmentThumbButton
+                        attachment={entry.attachment}
+                        storeId={entry.businessId}
+                        attachmentApiContext={entryAttachmentApiContext}
+                        onOpen={(src) => onPreviewAttachment(src, {
+                          entry,
+                          storeName: businessName(store, lang, true) || businessName(store, lang),
+                          operationLabel: operationDisplayLabel(entry, lang, logFilters.salesChannel),
+                          entryTime: opTime(entry, lang),
+                          daySequence: registerDaySequence,
+                          sameDayCloseoutCount: registerSameDayCloseoutCount,
+                        })}
+                      />
+                      <EntryAttachmentShareButton
+                        lang={lang}
+                        attachment={entry.attachment}
+                        entry={entry}
+                        storeName={businessName(store, lang, true) || businessName(store, lang)}
+                        operationLabel={operationDisplayLabel(entry, lang, logFilters.salesChannel)}
+                        entryTime={opTime(entry, lang)}
+                        daySequence={registerDaySequence}
+                        sameDayCloseoutCount={registerSameDayCloseoutCount}
+                        storeId={entry.businessId}
+                        attachmentApiContext={entryAttachmentApiContext}
+                        compact
+                      />
+                    </div>
                   </div>
                 ) : null}
                 <div className="grid grid-cols-2 gap-2 text-taq-meta font-bold text-[#716753]">

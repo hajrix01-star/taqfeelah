@@ -12,9 +12,9 @@ import {
   summaryMonthFromEntries,
 } from "@/features/operations/operational-analytics";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
-import { businesses, businessName, channelName, channels, money, text } from "./prototype-runtime-demo-data";
+import { businesses, businessName, channelName, channels, money, opTime, text } from "./prototype-runtime-demo-data";
 import AttachmentLightbox from "../AttachmentLightbox";
-import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
+import { AttachmentThumbButton, EntryAttachmentShareButton } from "./prototype-runtime-attachment-ui";
 import {
   entryDateMatches,
   entryHasAttachment,
@@ -47,7 +47,11 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
   const [showReportDetails, setShowReportDetails] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
-  const [homeAttachmentPreview, setHomeAttachmentPreview] = useState("");
+  const [homeAttachmentPreview, setHomeAttachmentPreview] = useState(null);
+  const openHomeAttachmentPreview = (src, shareContext = null) => {
+    setHomeAttachmentPreview({ src, shareContext });
+  };
+  const closeHomeAttachmentPreview = () => setHomeAttachmentPreview(null);
   const monthly = period === "month";
   const isCombined = selectedBusiness === "all";
   const currentBusiness = businessesList.find((business) => business.id === selectedBusiness) || businessesList[0] || null;
@@ -286,11 +290,12 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
                   <DayAttachments
                     lang={lang}
                     group={attachmentGroup}
+                    businessesList={businessesList}
                     loading={attachmentsLoading}
                     loadFailed={attachmentsFetchError}
                     proofsCount={Number(result.proofs) || 0}
                     onOpenOperation={onOpenOperation}
-                    onPreviewAttachment={setHomeAttachmentPreview}
+                    onPreviewAttachment={openHomeAttachmentPreview}
                     entryAttachmentsApiEnabled={entryAttachmentsApiEnabled}
                     entryAttachmentsApiOrganizationId={entryAttachmentsApiOrganizationId}
                     entryAttachmentsApiActorUserId={entryAttachmentsApiActorUserId}
@@ -314,10 +319,11 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
         )}
       </Notebook>
       <AttachmentLightbox
-        open={Boolean(homeAttachmentPreview)}
-        src={homeAttachmentPreview}
+        open={Boolean(homeAttachmentPreview?.src)}
+        src={homeAttachmentPreview?.src || ""}
+        shareContext={homeAttachmentPreview?.shareContext || null}
         lang={lang}
-        onClose={() => setHomeAttachmentPreview("")}
+        onClose={closeHomeAttachmentPreview}
       />
     </motion.section>
   );
@@ -326,6 +332,7 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
 function DayAttachments({
   lang,
   group,
+  businessesList = businesses,
   loading = false,
   loadFailed = false,
   proofsCount = 0,
@@ -359,12 +366,24 @@ function DayAttachments({
   return (
     <div className="py-3">
       <div className="flex gap-3 overflow-x-auto pb-1">
-        {group.items.map((item) => (
+        {group.items.map((item) => {
+          const store = businessesList.find((business) => business.id === item.businessId);
+          const storeLabel = businessName(store, lang, true) || businessName(store, lang);
+          const operationLabel = lang === "ar" ? item.title : item.titleEn;
+          const shareContext = {
+            entry: item.entry,
+            storeName: storeLabel,
+            operationLabel,
+            entryTime: opTime(item.entry, lang),
+            daySequence: item.entry?.daySequence ?? null,
+            sameDayCloseoutCount: 1,
+          };
+          return (
           <div key={item.id} className="min-w-[78px] text-center">
-            <div className="mb-1 flex h-14 justify-center">
+            <div className="mb-1 flex h-14 justify-center gap-1">
               <AttachmentThumbButton
                 attachment={item.attachment}
-                onOpen={onPreviewAttachment}
+                onOpen={(src) => onPreviewAttachment(src, shareContext)}
                 className="h-14 w-14 rounded-xl"
                 attachmentApiContext={{
                   storeId: item.businessId,
@@ -374,6 +393,25 @@ function DayAttachments({
                   actorRole: entryAttachmentsApiActorRole,
                 }}
               />
+              <EntryAttachmentShareButton
+                lang={lang}
+                attachment={item.attachment}
+                entry={item.entry}
+                storeName={storeLabel}
+                operationLabel={operationLabel}
+                entryTime={opTime(item.entry, lang)}
+                daySequence={item.entry?.daySequence ?? null}
+                sameDayCloseoutCount={1}
+                storeId={item.businessId}
+                attachmentApiContext={{
+                  attachmentsApiEnabled: entryAttachmentsApiEnabled,
+                  organizationId: entryAttachmentsApiOrganizationId,
+                  actorUserId: entryAttachmentsApiActorUserId,
+                  actorRole: entryAttachmentsApiActorRole,
+                }}
+                compact
+                className="h-14 w-10 shrink-0"
+              />
             </div>
             <button type="button" onClick={() => onOpenOperation(item.entry)} className="w-full text-center">
               <p className="truncate text-taq-meta font-bold">{lang === "ar" ? item.title : item.titleEn}</p>
@@ -382,7 +420,8 @@ function DayAttachments({
               </p>
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
