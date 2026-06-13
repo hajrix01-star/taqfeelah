@@ -60,6 +60,7 @@ export function OwnerNotebookShareModal({ lang, note, onClose }) {
       kindLabel: ownerNotebookKindLabel(note, lang, shareLabels),
       done: Boolean(note.done),
       noteText: note.text,
+      checklist: Array.isArray(note.checklist) ? note.checklist : [],
     };
   }, [note, lang, shareLabels]);
 

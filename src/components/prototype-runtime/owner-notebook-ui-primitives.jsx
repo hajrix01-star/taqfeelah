@@ -1,8 +1,13 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { BookMarked, Check, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import { BookMarked, Check, Pencil, Plus, Send, Trash2, X } from "lucide-react";
 import { NOTEBOOK_THEME_IDS, notebookCardBackground, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
+import {
+  createChecklistItem,
+  hasOwnerNotebookTaskContent,
+  normalizeChecklist,
+} from "@/features/owner-notebook/owner-notebook-checklist";
 import { text } from "./prototype-runtime-demo-data";
 import { Badge } from "./prototype-runtime-shell-ui";
 
@@ -21,7 +26,7 @@ export function formatNoteTime(iso, lang) {
 }
 
 export const OWNER_NOTEBOOK_VIEW_TABS = [
-  { id: "all", label: "ownerNotebookAll" },
+  { id: "active", label: "ownerNotebookActive" },
   { id: "tasks", label: "ownerNotebookTasks" },
   { id: "notes", label: "ownerNotebookNotes" },
   { id: "done", label: "ownerNotebookDone" },
@@ -203,6 +208,110 @@ function NoteTextFieldWithColorPicker({
   );
 }
 
+function TaskChecklistEditor({
+  lang,
+  items,
+  onChange,
+  onEnterOnLast,
+}) {
+  const updateItemText = (itemId, nextText) => {
+    onChange(items.map((item) => (item.id === itemId ? { ...item, text: nextText } : item)));
+  };
+
+  const removeItem = (itemId) => {
+    const next = items.filter((item) => item.id !== itemId);
+    onChange(next.length ? next : [createChecklistItem("")]);
+  };
+
+  const handleKeyDown = (event, itemId, index) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      if (index === items.length - 1) {
+        onEnterOnLast?.();
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      {items.map((item, index) => (
+        <div key={item.id} className="flex items-center gap-1.5">
+          <span className="mt-0.5 h-4 w-4 shrink-0 rounded border border-[#D9D0C0] bg-white" />
+          <input
+            type="text"
+            value={item.text}
+            onChange={(event) => updateItemText(item.id, event.target.value)}
+            onKeyDown={(event) => handleKeyDown(event, item.id, index)}
+            placeholder={text(lang, "ownerNotebookItemPlaceholder")}
+            dir={lang === "ar" ? "rtl" : "ltr"}
+            className="min-w-0 flex-1 bg-transparent py-1 text-taq-body-sm font-bold text-[#112A46] outline-none placeholder:font-bold placeholder:text-[#A99D87]"
+          />
+          {items.length > 1 ? (
+            <button
+              type="button"
+              onClick={() => removeItem(item.id)}
+              aria-label={text(lang, "delete")}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[#B44747]/80 hover:bg-[#FFF1EE]"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={onEnterOnLast}
+        className="inline-flex items-center gap-1 rounded-lg px-1 py-1 text-[10px] font-black text-[#827762] hover:text-[#112A46]"
+      >
+        <Plus className="h-3 w-3" />
+        {text(lang, "ownerNotebookAddItem")}
+      </button>
+    </div>
+  );
+}
+
+function TaskChecklistDisplay({ lang, note, onToggleItem }) {
+  if (!note.checklist?.length) return null;
+  return (
+    <ul className="mt-2 space-y-1.5">
+      {note.checklist.map((item) => (
+        <li key={item.id} className="flex items-start gap-2">
+          <button
+            type="button"
+            aria-label={text(lang, item.done ? "ownerNotebookDone" : "ownerNotebookTask")}
+            aria-pressed={item.done}
+            onClick={() => onToggleItem?.(item.id)}
+            className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md ring-1 transition-colors duration-150 ${
+              item.done ? "bg-[#257844] text-white ring-[#257844]" : "bg-white text-transparent ring-[#D9D0C0] hover:ring-[#257844]/40"
+            }`}
+          >
+            <Check className="h-3 w-3" />
+          </button>
+          <span className={`text-taq-body-sm font-bold leading-6 ${
+            item.done ? "text-[#A99D87] line-through" : "text-[#112A46]"
+          }`}
+          >
+            {item.text}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function buildComposerChecklist(items) {
+  return normalizeChecklist(
+    items
+      .map((item) => ({ ...item, text: item.text.trim() }))
+      .filter((item) => item.text),
+  );
+}
+
+function canSubmitComposer({ kind, draft, checklistItems }) {
+  if (kind === "note") return draft.trim().length > 0;
+  return hasOwnerNotebookTaskContent("task", draft, buildComposerChecklist(checklistItems));
+}
+
 export function NoteComposerPanel({
   lang,
   notebookTheme,
@@ -210,19 +319,31 @@ export function NoteComposerPanel({
   onCancel,
 }) {
   const [draft, setDraft] = useState("");
-  const [kind, setKind] = useState("note");
+  const [kind, setKind] = useState("task");
   const [color, setColor] = useState(notebookTheme);
-  const textareaRef = useAutoGrowTextarea(draft);
+  const [checklistItems, setChecklistItems] = useState(() => [createChecklistItem("")]);
+  const textareaRef = useAutoGrowTextarea(draft, { minHeight: kind === "task" ? 48 : 72 });
 
   useEffect(() => {
     setColor(notebookTheme);
   }, [notebookTheme]);
 
+  const addChecklistRow = () => {
+    setChecklistItems((current) => [...current, createChecklistItem("")]);
+  };
+
   const submit = () => {
-    const created = onAdd({ text: draft, kind, color });
+    const checklist = kind === "task" ? buildComposerChecklist(checklistItems) : [];
+    const created = onAdd({
+      text: draft.trim(),
+      kind,
+      color,
+      ...(checklist.length ? { checklist } : {}),
+    });
     if (!created) return;
     setDraft("");
-    setKind("note");
+    setKind("task");
+    setChecklistItems([createChecklistItem("")]);
     setColor(notebookTheme);
     onCancel?.();
   };
@@ -230,7 +351,7 @@ export function NoteComposerPanel({
   const handleKeyDown = (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
-      if (draft.trim()) submit();
+      if (canSubmitComposer({ kind, draft, checklistItems })) submit();
     }
     if (event.key === "Escape") {
       event.preventDefault();
@@ -243,6 +364,10 @@ export function NoteComposerPanel({
     boxShadow: notebookThemes[color]?.shadow || undefined,
   };
 
+  const placeholder = kind === "task"
+    ? text(lang, "ownerNotebookTaskTitle")
+    : text(lang, "ownerNotebookPlaceholder");
+
   return (
     <article
       className="overflow-hidden rounded-[18px] border border-[#E8E1D4] px-3 py-2.5 shadow-[0_6px_14px_rgba(17,42,70,0.05)]"
@@ -253,11 +378,21 @@ export function NoteComposerPanel({
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={text(lang, "ownerNotebookPlaceholder")}
+        placeholder={placeholder}
         color={color}
         onColorChange={setColor}
         textareaRef={textareaRef}
       />
+      {kind === "task" ? (
+        <div className="mt-2 border-t border-[#E8E1D4]/80 pt-2">
+          <TaskChecklistEditor
+            lang={lang}
+            items={checklistItems}
+            onChange={setChecklistItems}
+            onEnterOnLast={addChecklistRow}
+          />
+        </div>
+      ) : null}
       <div className={`mt-2 flex ${lang === "ar" ? "justify-end" : "justify-start"}`}>
         <KindSegment lang={lang} value={kind} onChange={setKind} compact />
       </div>
@@ -265,7 +400,7 @@ export function NoteComposerPanel({
         <button
           type="button"
           onClick={submit}
-          disabled={!draft.trim()}
+          disabled={!canSubmitComposer({ kind, draft, checklistItems })}
           className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#112A46] px-3 py-2 text-[11px] font-black text-white disabled:opacity-45"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -289,17 +424,28 @@ function NoteEditPanel({ lang, note, onSave, onCancel, onDelete }) {
   const [draft, setDraft] = useState(note.text);
   const [kind, setKind] = useState(note.kind);
   const [color, setColor] = useState(note.color);
-  const textareaRef = useAutoGrowTextarea(draft);
+  const [checklistItems, setChecklistItems] = useState(
+    () => (note.checklist?.length ? note.checklist : [createChecklistItem("")]),
+  );
+  const textareaRef = useAutoGrowTextarea(draft, { minHeight: kind === "task" ? 48 : 72 });
 
   useEffect(() => {
     setDraft(note.text);
     setKind(note.kind);
     setColor(note.color);
-  }, [note.text, note.kind, note.color]);
+    setChecklistItems(note.checklist?.length ? note.checklist : [createChecklistItem("")]);
+  }, [note.text, note.kind, note.color, note.checklist]);
+
+  const addChecklistRow = () => {
+    setChecklistItems((current) => [...current, createChecklistItem("")]);
+  };
 
   const cardStyle = {
     backgroundColor: notebookCardBackground(color, "inset"),
   };
+
+  const checklist = kind === "task" ? buildComposerChecklist(checklistItems) : [];
+  const canSave = canSubmitComposer({ kind, draft, checklistItems: kind === "task" ? checklistItems : [] });
 
   return (
     <div className="border-t border-[#E8E1D4] px-3 py-2.5" style={cardStyle}>
@@ -310,15 +456,31 @@ function NoteEditPanel({ lang, note, onSave, onCancel, onDelete }) {
         color={color}
         onColorChange={setColor}
         textareaRef={textareaRef}
+        placeholder={kind === "task" ? text(lang, "ownerNotebookTaskTitle") : text(lang, "ownerNotebookPlaceholder")}
       />
+      {kind === "task" ? (
+        <div className="mt-2 border-t border-[#E8E1D4]/80 pt-2">
+          <TaskChecklistEditor
+            lang={lang}
+            items={checklistItems}
+            onChange={setChecklistItems}
+            onEnterOnLast={addChecklistRow}
+          />
+        </div>
+      ) : null}
       <div className={`mt-2 flex ${lang === "ar" ? "justify-end" : "justify-start"}`}>
         <KindSegment lang={lang} value={kind} onChange={setKind} compact />
       </div>
       <div className="mt-2.5 flex items-center gap-2">
         <button
           type="button"
-          onClick={() => onSave({ text: draft, kind, color })}
-          disabled={!draft.trim()}
+          onClick={() => onSave({
+            text: draft.trim(),
+            kind,
+            color,
+            ...(kind === "task" ? { checklist } : { checklist: [] }),
+          })}
+          disabled={!canSave}
           className="flex-1 rounded-xl bg-[#112A46] px-3 py-2 text-[11px] font-black text-white disabled:opacity-45"
         >
           {text(lang, "save")}
@@ -352,8 +514,10 @@ export function NoteCard({
   onSave,
   onDelete,
   onToggleDone,
+  onToggleChecklistItem,
   onShare,
 }) {
+  const hasChecklist = note.kind === "task" && note.checklist?.length > 0;
   const cardStyle = {
     backgroundColor: notebookCardBackground(note.color),
     boxShadow: notebookThemes[note.color]?.shadow || undefined,
@@ -365,12 +529,12 @@ export function NoteCard({
   return (
     <article
       className={`overflow-hidden rounded-[19px] border border-[#E8E1D4] shadow-[0_8px_18px_rgba(17,42,70,0.06)] transition-opacity duration-150 ${
-        note.done ? "opacity-90" : ""
+        note.done && !hasChecklist ? "opacity-90" : ""
       }`}
       style={cardStyle}
     >
       <div className="flex items-start gap-2.5 px-3.5 py-3">
-        {note.kind === "task" ? (
+        {note.kind === "task" && !hasChecklist ? (
           <button
             type="button"
             aria-label={text(lang, note.done ? "ownerNotebookDone" : "ownerNotebookTask")}
@@ -422,12 +586,19 @@ export function NoteCard({
               </div>
             ) : null}
           </div>
-          <p className={`whitespace-pre-wrap text-taq-body-sm font-bold leading-6 ${
-            note.done ? "text-[#A99D87] line-through" : "text-[#112A46]"
-          }`}
-          >
-            {note.text}
-          </p>
+          {note.text ? (
+            <p className={`whitespace-pre-wrap text-taq-body-sm font-bold leading-6 ${
+              note.done && !hasChecklist ? "text-[#A99D87] line-through" : "text-[#112A46]"
+            }`}
+            >
+              {note.text}
+            </p>
+          ) : null}
+          <TaskChecklistDisplay
+            lang={lang}
+            note={note}
+            onToggleItem={onToggleChecklistItem}
+          />
         </div>
       </div>
       {editing ? (

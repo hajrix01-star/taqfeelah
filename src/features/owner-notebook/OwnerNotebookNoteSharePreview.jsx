@@ -22,6 +22,7 @@ export default function OwnerNotebookNoteSharePreview({
   kind = "note",
   done = false,
   noteText = "",
+  checklist = [],
 }) {
   const activeTheme = notebookThemes[theme] || notebookThemes.yellow;
   const lines = notebookLinesBackground(theme);
@@ -57,19 +58,38 @@ export default function OwnerNotebookNoteSharePreview({
         </div>
 
         <div className="min-h-[88px] pb-1">
-          <p
-            className={`whitespace-pre-wrap text-[14px] font-bold leading-[44px] ${
-              done ? "text-[#A99D87] line-through decoration-[#A99D87]/70" : "text-[#112A46]"
-            }`}
-          >
-            {noteText || "\u00A0"}
-          </p>
+          {noteText ? (
+            <p
+              className={`whitespace-pre-wrap text-[14px] font-bold leading-[44px] ${
+                done && !checklist.length ? "text-[#A99D87] line-through decoration-[#A99D87]/70" : "text-[#112A46]"
+              }`}
+            >
+              {noteText}
+            </p>
+          ) : null}
+          {checklist.length > 0 ? (
+            <ul className={`space-y-1 ${noteText ? "mt-1" : ""}`}>
+              {checklist.map((item) => (
+                <li
+                  key={item.id}
+                  className={`text-[14px] font-bold leading-[32px] ${
+                    item.done ? "text-[#A99D87] line-through" : "text-[#112A46]"
+                  }`}
+                >
+                  {item.done ? "☑" : "☐"} {item.text}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {!noteText && !checklist.length ? (
+            <p className="text-[14px] font-bold leading-[44px] text-[#112A46]">{"\u00A0"}</p>
+          ) : null}
         </div>
       </div>
 
       <div className="border-t border-[#112A46]/[0.07] bg-white/30 px-4 py-2 text-center backdrop-blur-[1px]">
         <p className="text-[10px] font-bold text-[#957D43]">
-          {isArabic ? "دفتري · خاص بالمالك" : "My notebook · owner private"}
+          {isArabic ? "دفتري" : "My notebook"}
         </p>
       </div>
     </div>

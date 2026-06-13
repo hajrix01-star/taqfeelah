@@ -663,6 +663,7 @@ export const ownerNotebookNotes = pgTable(
     kind: text("kind").notNull(),
     done: boolean("done").notNull().default(false),
     color: text("color").notNull().default("yellow"),
+    checklist: jsonb("checklist").notNull().default([]),
     createdAt,
     updatedAt,
   },
