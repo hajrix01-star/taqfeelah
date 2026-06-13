@@ -7,6 +7,10 @@ import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { fetchStoreEntriesViaApi } from "./store-entries-api-client";
 import { resolveAttachmentGroupForDate } from "./attachments-from-entries";
 
+/**
+ * @typedef {{ date?: string, items?: Array<{ id: string }> } | null} HomeAttachmentGroup
+ */
+
 export function shouldFetchHomeDayAttachments({
   enabled = false,
   localItemCount = 0,
@@ -23,8 +27,38 @@ export function shouldFetchHomeDayAttachments({
     && Boolean(selectedDate)
     && Boolean(organizationId)
     && Boolean(actorUserId)
-    && localItemCount === 0
-    && proofsCount > 0;
+    && proofsCount > localItemCount;
+}
+
+/**
+ * @param {{
+ *   localGroup?: HomeAttachmentGroup,
+ *   fetchedGroup?: HomeAttachmentGroup,
+ *   shouldFetchDayEntries?: boolean,
+ *   fetchSucceeded?: boolean,
+ *   fetchFailed?: boolean,
+ * }} [input]
+ * @returns {HomeAttachmentGroup}
+ */
+export function resolveHomeDayAttachmentGroup({
+  localGroup = null,
+  fetchedGroup = null,
+  shouldFetchDayEntries = false,
+  fetchSucceeded = false,
+  fetchFailed = false,
+} = {}) {
+  const localItemCount = localGroup?.items?.length || 0;
+  const fetchedItemCount = fetchedGroup?.items?.length || 0;
+
+  if (shouldFetchDayEntries) {
+    if (fetchSucceeded) return fetchedGroup;
+    if (fetchFailed && localItemCount > 0) return localGroup;
+    return fetchedGroup;
+  }
+
+  if (fetchedItemCount > localItemCount) return fetchedGroup;
+  if (localItemCount > 0) return localGroup;
+  return fetchedGroup;
 }
 
 export function useHomeDayAttachments({
@@ -88,7 +122,13 @@ export function useHomeDayAttachments({
     return resolveAttachmentGroupForDate(attachmentsFromEntries(fetchedDayEntries), selectedDate);
   }, [query.data, selectedDate, shouldFetchDayEntries]);
 
-  const group = localItemCount > 0 ? localGroup : fetchedGroup;
+  const group = resolveHomeDayAttachmentGroup({
+    localGroup,
+    fetchedGroup,
+    shouldFetchDayEntries,
+    fetchSucceeded: shouldFetchDayEntries && query.isSuccess,
+    fetchFailed: shouldFetchDayEntries && query.isError,
+  });
   const itemCount = group?.items?.length || 0;
 
   return {
