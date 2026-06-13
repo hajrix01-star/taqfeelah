@@ -1,4 +1,5 @@
 import { shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
+import { formatChecklistForShare } from "./owner-notebook-checklist";
 
 function formatNoteShareTime(iso, lang) {
   if (!iso) return "";
@@ -25,14 +26,17 @@ export function ownerNotebookKindLabel(note, lang, labels = {}) {
 }
 
 export function buildOwnerNotebookShareCaption(note, lang, labels = {}) {
-  if (!note?.text) return "";
+  if (!note) return "";
   const kind = ownerNotebookKindLabel(note, lang, labels);
   const when = formatNoteShareTime(note.updatedAt || note.createdAt, lang);
-  return [
+  const checklistText = formatChecklistForShare(note.checklist || []);
+  const lines = [
     lang === "ar" ? `دفتري — ${kind}` : `My notebook — ${kind}`,
     when,
-    note.text.trim(),
-  ].join("\n");
+  ];
+  if (note.text?.trim()) lines.push(note.text.trim());
+  if (checklistText) lines.push(checklistText);
+  return lines.join("\n");
 }
 
 export function ownerNotebookShareFilename(note, lang) {

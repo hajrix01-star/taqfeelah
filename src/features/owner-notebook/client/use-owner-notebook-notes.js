@@ -6,6 +6,7 @@ import {
   deleteOwnerNotebookNote,
   filterOwnerNotebookNotes,
   sortOwnerNotebookNotes,
+  toggleOwnerNotebookChecklistItem,
   toggleOwnerNotebookNoteDone,
   updateOwnerNotebookNote,
   writeOwnerNotebookNotes,
@@ -32,7 +33,7 @@ export function useOwnerNotebookNotes({
 } = {}) {
   const [notes, setNotes] = useState([]);
   const [hydrated, setHydrated] = useState(false);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("active");
   const [editingId, setEditingId] = useState(null);
   const scopeKey = buildNotebookScopeKey(organizationId, userId);
   const notesRef = useRef(notes);
@@ -88,7 +89,7 @@ export function useOwnerNotebookNotes({
     return sorted;
   }, [organizationId, userId]);
 
-  const addNote = useCallback(async ({ text, kind = "note", color = "yellow" }) => {
+  const addNote = useCallback(async ({ text, kind = "task", color = "yellow", checklist }) => {
     if (apiEnabled) {
       try {
         const created = await createOwnerNotebookNoteViaApi({
@@ -97,6 +98,7 @@ export function useOwnerNotebookNotes({
           text,
           kind,
           color,
+          checklist,
         });
         if (!created) return null;
         const nextNotes = sortOwnerNotebookNotes([created, ...notesRef.current]);
@@ -108,7 +110,7 @@ export function useOwnerNotebookNotes({
       }
     }
 
-    const created = createOwnerNotebookNoteInput({ text, kind, color });
+    const created = createOwnerNotebookNoteInput({ text, kind, color, checklist });
     if (!created) return null;
     persistLocal([created, ...notesRef.current]);
     return created;
@@ -160,7 +162,7 @@ export function useOwnerNotebookNotes({
 
   const toggleDone = useCallback(async (noteId) => {
     const current = notesRef.current.find((note) => note.id === noteId);
-    if (!current || current.kind !== "task") return;
+    if (!current || current.kind !== "task" || current.checklist.length > 0) return;
 
     if (apiEnabled) {
       try {
@@ -182,6 +184,35 @@ export function useOwnerNotebookNotes({
     persistLocal(toggleOwnerNotebookNoteDone(notesRef.current, noteId));
   }, [apiEnabled, organizationId, persistLocal, userId]);
 
+  const toggleChecklistItem = useCallback(async (noteId, itemId) => {
+    const current = notesRef.current.find((note) => note.id === noteId);
+    if (!current || current.kind !== "task") return;
+
+    const nextChecklist = current.checklist.map((item) => (
+      item.id === itemId ? { ...item, done: !item.done } : item
+    ));
+    const patch = { checklist: nextChecklist };
+
+    if (apiEnabled) {
+      try {
+        const saved = await updateOwnerNotebookNoteViaApi({
+          organizationId,
+          actorUserId: userId,
+          noteId,
+          patch,
+        });
+        if (!saved) return;
+        const nextNotes = notesRef.current.map((note) => (note.id === noteId ? saved : note));
+        setNotes(nextNotes);
+      } catch (error) {
+        console.warn("owner notebook checklist toggle failed", error);
+      }
+      return;
+    }
+
+    persistLocal(toggleOwnerNotebookChecklistItem(notesRef.current, noteId, itemId));
+  }, [apiEnabled, organizationId, persistLocal, userId]);
+
   const visibleNotes = useMemo(
     () => filterOwnerNotebookNotes(notes, filter),
     [filter, notes],
@@ -199,5 +230,6 @@ export function useOwnerNotebookNotes({
     saveNote,
     removeNote,
     toggleDone,
+    toggleChecklistItem,
   };
 }

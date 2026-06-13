@@ -5,6 +5,12 @@ import { getDb } from "@/core/db/client";
 import { ownerNotebookNotes } from "@/core/db/schema";
 import { ForbiddenError, ValidationError } from "@/core/errors/app-error";
 import { isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
+import {
+  computeTaskDone,
+  hasOwnerNotebookTaskContent,
+  normalizeChecklist,
+  type OwnerNotebookChecklistItem,
+} from "@/features/owner-notebook/owner-notebook-checklist";
 
 const DEFAULT_COLOR = "yellow";
 
@@ -16,18 +22,59 @@ const actorInputSchema = z.object({
 
 const noteKindSchema = z.enum(["note", "task"]);
 
+const checklistItemSchema = z.object({
+  id: z.string().trim().min(1).max(64),
+  text: z.string().trim().min(1).max(500),
+  done: z.boolean(),
+});
+
+const checklistSchema = z.array(checklistItemSchema).max(30);
+
 const createNoteInputSchema = actorInputSchema.extend({
-  text: z.string().trim().min(1),
-  kind: noteKindSchema.default("note"),
+  text: z.string().trim().max(2000).default(""),
+  kind: noteKindSchema.default("task"),
   color: z.string().trim().min(1).default(DEFAULT_COLOR),
+  checklist: checklistSchema.optional(),
+}).superRefine((data, ctx) => {
+  const checklist = normalizeChecklist(data.checklist);
+  if (!hasOwnerNotebookTaskContent(data.kind, data.text, checklist)) {
+    ctx.addIssue({
+      code: "custom",
+      message: data.kind === "note"
+        ? "Note text is required."
+        : "Task needs a title or checklist item.",
+      path: ["text"],
+    });
+  }
 });
 
 const updateNoteInputSchema = actorInputSchema.extend({
   noteId: z.string().uuid(),
-  text: z.string().trim().min(1).optional(),
+  text: z.string().trim().max(2000).optional(),
   kind: noteKindSchema.optional(),
   done: z.boolean().optional(),
   color: z.string().trim().min(1).optional(),
+  checklist: checklistSchema.optional(),
+}).superRefine((data, ctx) => {
+  if (data.kind !== "note" && data.text === undefined && data.checklist === undefined) {
+    return;
+  }
+  const kind = data.kind ?? "task";
+  const text = data.text ?? "";
+  const checklist = data.checklist ? normalizeChecklist(data.checklist) : [];
+  if (data.text !== undefined || data.kind !== undefined || data.checklist !== undefined) {
+    if (kind === "note" && !text.trim()) {
+      ctx.addIssue({ code: "custom", message: "Note text is required.", path: ["text"] });
+    }
+    if (kind === "task" && data.text !== undefined && data.checklist !== undefined
+      && !hasOwnerNotebookTaskContent("task", text, checklist)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Task needs a title or checklist item.",
+        path: ["text"],
+      });
+    }
+  }
 });
 
 const deleteNoteInputSchema = actorInputSchema.extend({
@@ -40,6 +87,7 @@ export type OwnerNotebookNotePayload = {
   kind: "note" | "task";
   done: boolean;
   color: string;
+  checklist: OwnerNotebookChecklistItem[];
   createdAt: string;
   updatedAt: string;
 };
@@ -61,15 +109,18 @@ function mapRow(row: {
   kind: string;
   done: boolean;
   color: string;
+  checklist: unknown;
   createdAt: Date;
   updatedAt: Date;
 }): OwnerNotebookNotePayload {
   const kind = row.kind === "task" ? "task" : "note";
+  const checklist = kind === "task" ? normalizeChecklist(row.checklist) : [];
   return {
     id: row.id,
     text: row.text,
     kind,
-    done: kind === "task" ? row.done : false,
+    checklist,
+    done: computeTaskDone(kind, checklist, row.done),
     color: normalizeColor(row.color),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -84,6 +135,52 @@ async function assertOwnerNotebookAccess(input: z.infer<typeof actorInputSchema>
     actorRole: input.actorRole,
     minimumRole: "owner",
   });
+}
+
+function resolveNextChecklist(
+  kind: "note" | "task",
+  existingChecklist: OwnerNotebookChecklistItem[],
+  patchChecklist: OwnerNotebookChecklistItem[] | undefined,
+) {
+  if (kind !== "task") return [];
+  if (patchChecklist !== undefined) return normalizeChecklist(patchChecklist);
+  return existingChecklist;
+}
+
+function isOnlyDoneMutation(
+  existing: {
+    text: string;
+    kind: string;
+    done: boolean;
+    color: string;
+    checklist: OwnerNotebookChecklistItem[];
+  },
+  next: {
+    text: string;
+    kind: "note" | "task";
+    done: boolean;
+    color: string;
+    checklist: OwnerNotebookChecklistItem[];
+  },
+  input: z.infer<typeof updateNoteInputSchema>,
+) {
+  if (input.text !== undefined || input.kind !== undefined || input.color !== undefined) {
+    return false;
+  }
+  if (input.checklist !== undefined) {
+    if (existing.text !== next.text) return false;
+    if (existing.kind !== next.kind) return false;
+    if (existing.color !== next.color) return false;
+    if (existing.checklist.length !== next.checklist.length) return false;
+    return existing.checklist.every((item, index) => {
+      const other = next.checklist[index];
+      return other
+        && item.id === other.id
+        && item.text === other.text
+        && item.done !== other.done;
+    });
+  }
+  return input.done !== undefined;
 }
 
 export async function listOwnerNotebookNotes(
@@ -104,6 +201,7 @@ export async function listOwnerNotebookNotes(
       kind: ownerNotebookNotes.kind,
       done: ownerNotebookNotes.done,
       color: ownerNotebookNotes.color,
+      checklist: ownerNotebookNotes.checklist,
       createdAt: ownerNotebookNotes.createdAt,
       updatedAt: ownerNotebookNotes.updatedAt,
     })
@@ -131,16 +229,19 @@ export async function createOwnerNotebookNote(
 
   const kind = input.kind;
   const color = normalizeColor(input.color);
+  const checklist = kind === "task" ? normalizeChecklist(input.checklist) : [];
+  const done = computeTaskDone(kind, checklist, false);
   const db = getDb();
   const [created] = await db
     .insert(ownerNotebookNotes)
     .values({
       organizationId: input.organizationId,
       userId: input.actorUserId,
-      text: input.text,
+      text: input.text.trim(),
       kind,
-      done: false,
+      done,
       color,
+      checklist,
     })
     .returning({
       id: ownerNotebookNotes.id,
@@ -148,6 +249,7 @@ export async function createOwnerNotebookNote(
       kind: ownerNotebookNotes.kind,
       done: ownerNotebookNotes.done,
       color: ownerNotebookNotes.color,
+      checklist: ownerNotebookNotes.checklist,
       createdAt: ownerNotebookNotes.createdAt,
       updatedAt: ownerNotebookNotes.updatedAt,
     });
@@ -173,6 +275,7 @@ export async function updateOwnerNotebookNote(
       kind: ownerNotebookNotes.kind,
       done: ownerNotebookNotes.done,
       color: ownerNotebookNotes.color,
+      checklist: ownerNotebookNotes.checklist,
       createdAt: ownerNotebookNotes.createdAt,
       updatedAt: ownerNotebookNotes.updatedAt,
     })
@@ -190,17 +293,38 @@ export async function updateOwnerNotebookNote(
     throw new ValidationError("Owner notebook note was not found.");
   }
 
+  const existingChecklist = existing.kind === "task"
+    ? normalizeChecklist(existing.checklist)
+    : [];
   const nextKind = input.kind ?? (existing.kind === "task" ? "task" : "note");
-  const nextText = input.text ?? existing.text;
+  const nextText = input.text !== undefined ? input.text.trim() : existing.text;
   const nextColor = input.color ? normalizeColor(input.color) : normalizeColor(existing.color);
+  const nextChecklist = resolveNextChecklist(nextKind, existingChecklist, input.checklist);
   const nextDone = nextKind === "task"
-    ? (input.done ?? existing.done)
+    ? computeTaskDone("task", nextChecklist, input.done ?? existing.done)
     : false;
 
-  const onlyTogglingDone = input.done !== undefined
-    && input.text === undefined
-    && input.kind === undefined
-    && input.color === undefined;
+  if (!hasOwnerNotebookTaskContent(nextKind, nextText, nextChecklist)) {
+    throw new ValidationError("Task needs a title or checklist item.");
+  }
+
+  const skipUpdatedAt = isOnlyDoneMutation(
+    {
+      text: existing.text,
+      kind: existing.kind,
+      done: existing.done,
+      color: normalizeColor(existing.color),
+      checklist: existingChecklist,
+    },
+    {
+      text: nextText,
+      kind: nextKind,
+      done: nextDone,
+      color: nextColor,
+      checklist: nextChecklist,
+    },
+    input,
+  );
 
   const [updated] = await db
     .update(ownerNotebookNotes)
@@ -209,7 +333,8 @@ export async function updateOwnerNotebookNote(
       kind: nextKind,
       done: nextDone,
       color: nextColor,
-      ...(onlyTogglingDone ? {} : { updatedAt: new Date() }),
+      checklist: nextChecklist,
+      ...(skipUpdatedAt ? {} : { updatedAt: new Date() }),
     })
     .where(eq(ownerNotebookNotes.id, input.noteId))
     .returning({
@@ -218,6 +343,7 @@ export async function updateOwnerNotebookNote(
       kind: ownerNotebookNotes.kind,
       done: ownerNotebookNotes.done,
       color: ownerNotebookNotes.color,
+      checklist: ownerNotebookNotes.checklist,
       createdAt: ownerNotebookNotes.createdAt,
       updatedAt: ownerNotebookNotes.updatedAt,
     });

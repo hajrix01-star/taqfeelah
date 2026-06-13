@@ -21,14 +21,20 @@ export async function fetchOwnerNotebookNotesViaApi(context = {}) {
 
 export async function createOwnerNotebookNoteViaApi({
   text,
-  kind = "note",
+  kind = "task",
   color = "yellow",
+  checklist,
   ...context
 } = {}) {
   const payload = await fetchApiJsonWithPrototypeContext("/api/v1/owner-notebook/notes", {
     ...buildOwnerNotebookApiContext(context),
     method: "POST",
-    body: { text, kind, color },
+    body: {
+      text,
+      kind,
+      color,
+      ...(Array.isArray(checklist) ? { checklist } : {}),
+    },
     errorMessage: "Failed to create owner notebook note.",
   });
   return payload?.note || null;

@@ -33,6 +33,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       kind: body?.kind === "task" || body?.kind === "note" ? body.kind : undefined,
       done: typeof body?.done === "boolean" ? body.done : undefined,
       color: typeof body?.color === "string" ? body.color : undefined,
+      checklist: Array.isArray(body?.checklist) ? body.checklist : undefined,
     });
 
     return ok(result);

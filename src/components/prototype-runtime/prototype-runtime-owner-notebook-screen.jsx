@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
 import { notebookCardBackground } from "@/features/daily-closeouts/notebook-themes";
 import { useOwnerNotebookNotes } from "@/features/owner-notebook/client/use-owner-notebook-notes";
@@ -36,6 +36,7 @@ export function OwnerNotebookScreen({
     saveNote,
     removeNote,
     toggleDone,
+    toggleChecklistItem,
   } = useOwnerNotebookNotes({ organizationId, userId, apiEnabled });
 
   const [composerOpen, setComposerOpen] = useState(false);
@@ -49,7 +50,7 @@ export function OwnerNotebookScreen({
   const tabCounts = useMemo(() => {
     const tasks = notes.filter((note) => note.kind === "task");
     return {
-      all: notes.length,
+      active: notes.filter((note) => note.kind === "note" || !note.done).length,
       tasks: tasks.filter((task) => !task.done).length,
       notes: notes.filter((note) => note.kind === "note").length,
       done: tasks.filter((task) => task.done).length,
@@ -72,7 +73,7 @@ export function OwnerNotebookScreen({
     setEditingId(null);
   };
 
-  const showGlobalEmpty = hydrated && filter === "all" && notes.length === 0 && !composerOpen;
+  const showGlobalEmpty = hydrated && filter === "active" && notes.length === 0 && !composerOpen;
   const showTabEmpty = hydrated && visibleNotes.length === 0 && !showGlobalEmpty;
 
   return (
@@ -81,13 +82,6 @@ export function OwnerNotebookScreen({
         <NotebookHeading lang={lang} label={text(lang, "ownerNotebook")} />
 
         <div className="space-y-3">
-          <div className="flex items-center justify-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F7F5EF] px-3 py-1.5 text-[10px] font-black text-[#716753] ring-1 ring-[#E8E1D4]">
-              <Lock className="h-3 w-3" />
-              {text(lang, "ownerNotebookPrivate")}
-            </span>
-          </div>
-
           {composerOpen ? (
             <NoteComposerPanel
               lang={lang}
@@ -151,6 +145,7 @@ export function OwnerNotebookScreen({
                       }}
                       onDelete={() => removeNote(note.id)}
                       onToggleDone={() => toggleDone(note.id)}
+                      onToggleChecklistItem={(itemId) => toggleChecklistItem(note.id, itemId)}
                       onShare={setShareNote}
                     />
                   ))}

@@ -44,8 +44,9 @@ export async function POST(request: Request) {
       actorUserId: requestContext.userId!,
       actorRole: requestContext.role!,
       text: typeof body?.text === "string" ? body.text : "",
-      kind: body?.kind === "task" ? "task" : "note",
+      kind: body?.kind === "task" ? "task" : body?.kind === "note" ? "note" : "task",
       color: typeof body?.color === "string" ? body.color : "yellow",
+      checklist: Array.isArray(body?.checklist) ? body.checklist : undefined,
     });
 
     return ok(result);

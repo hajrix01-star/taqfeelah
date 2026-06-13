@@ -26,4 +26,19 @@ describe("owner-notebook-share", () => {
   it("labels completed tasks", () => {
     expect(ownerNotebookKindLabel({ kind: "task", done: true }, "ar", { done: "منجزة", task: "مهمة" })).toBe("منجزة");
   });
+
+  it("includes checklist lines in share caption", () => {
+    const caption = buildOwnerNotebookShareCaption({
+      ...note,
+      kind: "task",
+      text: "تجهيز المحل",
+      checklist: [
+        { id: "1", text: "تنظيف", done: false },
+        { id: "2", text: "تعبئة", done: true },
+      ],
+    }, "ar", { task: "مهمة", done: "منجزة", note: "ملاحظة" });
+    expect(caption).toContain("تجهيز المحل");
+    expect(caption).toContain("☐ تنظيف");
+    expect(caption).toContain("☑ تعبئة");
+  });
 });

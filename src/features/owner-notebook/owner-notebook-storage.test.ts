@@ -5,6 +5,7 @@ import {
   deleteOwnerNotebookNote,
   filterOwnerNotebookNotes,
   sortOwnerNotebookNotes,
+  toggleOwnerNotebookChecklistItem,
   toggleOwnerNotebookNoteDone,
   updateOwnerNotebookNote,
 } from "./owner-notebook-storage";
@@ -16,8 +17,24 @@ describe("owner-notebook-storage", () => {
 
     expect(note?.text).toBe("تذكير");
     expect(note?.color).toBe("ivory");
+    expect(note?.checklist).toEqual([]);
     expect(task?.kind).toBe("task");
     expect(task?.color).toBe("yellow");
+    expect(task?.done).toBe(false);
+  });
+
+  it("creates checklist tasks with multiple items", () => {
+    const task = createOwnerNotebookNoteInput({
+      text: "تجهيز المحل",
+      kind: "task",
+      color: "yellow",
+      checklist: [
+        { id: "1", text: "تنظيف", done: false },
+        { id: "2", text: "تعبئة", done: false },
+      ],
+    });
+
+    expect(task?.checklist).toHaveLength(2);
     expect(task?.done).toBe(false);
   });
 
@@ -46,14 +63,19 @@ describe("owner-notebook-storage", () => {
     expect(sorted[1]!.text).toBe("older");
   });
 
-  it("filters notes by kind", () => {
+  it("filters active notes without completed tasks", () => {
+    const activeTask = createOwnerNotebookNoteInput({ text: "t1", kind: "task", color: "yellow" });
+    const doneTask = createOwnerNotebookNoteInput({ text: "t2", kind: "task", color: "yellow" });
     const notes = [
       createOwnerNotebookNoteInput({ text: "n1", kind: "note", color: "yellow" }),
-      createOwnerNotebookNoteInput({ text: "t1", kind: "task", color: "yellow" }),
+      activeTask,
+      ...updateOwnerNotebookNote([doneTask!], doneTask!.id, { done: true }),
     ].filter(Boolean);
 
+    expect(filterOwnerNotebookNotes(notes, "active")).toHaveLength(2);
     expect(filterOwnerNotebookNotes(notes, "notes")).toHaveLength(1);
     expect(filterOwnerNotebookNotes(notes, "tasks")).toHaveLength(1);
+    expect(filterOwnerNotebookNotes(notes, "done")).toHaveLength(1);
   });
 
   it("builds tenant-scoped storage keys", () => {
@@ -65,11 +87,37 @@ describe("owner-notebook-storage", () => {
     );
   });
 
-  it("toggles task completion without changing updatedAt", () => {
+  it("toggles simple task completion without changing updatedAt", () => {
     const task = createOwnerNotebookNoteInput({ text: "task", kind: "task", color: "yellow" });
     const before = task!.updatedAt;
     const toggled = toggleOwnerNotebookNoteDone([task!], task!.id);
     expect(toggled[0]!.done).toBe(true);
     expect(toggled[0]!.updatedAt).toBe(before);
+  });
+
+  it("toggles checklist items and marks task done when complete", () => {
+    const task = createOwnerNotebookNoteInput({
+      text: "قائمة",
+      kind: "task",
+      color: "yellow",
+      checklist: [
+        { id: "1", text: "أول", done: true },
+        { id: "2", text: "ثاني", done: false },
+      ],
+    });
+    const toggled = toggleOwnerNotebookChecklistItem([task!], task!.id, "2");
+    expect(toggled[0]!.done).toBe(true);
+    expect(toggled[0]!.checklist[1]?.done).toBe(true);
+  });
+
+  it("ignores simple done toggle for checklist tasks", () => {
+    const task = createOwnerNotebookNoteInput({
+      text: "قائمة",
+      kind: "task",
+      color: "yellow",
+      checklist: [{ id: "1", text: "بند", done: false }],
+    });
+    const toggled = toggleOwnerNotebookNoteDone([task!], task!.id);
+    expect(toggled[0]!.done).toBe(false);
   });
 });
