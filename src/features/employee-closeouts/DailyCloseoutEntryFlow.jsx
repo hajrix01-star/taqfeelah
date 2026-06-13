@@ -33,11 +33,9 @@ export default function DailyCloseoutEntryFlow({
   });
 
   const {
-    phase,
     totals,
     previewAttachment,
     setPreviewAttachment,
-    continueToForm,
     handleSubmit,
   } = state;
 
@@ -73,20 +71,14 @@ export default function DailyCloseoutEntryFlow({
         </NotebookScrollSurface>
       </div>
       <div className="shrink-0 border-t border-[#ECE6DA]/80 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        {phase === "date" ? (
-          <button type="button" onClick={continueToForm} className="w-full rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white">
-            {lang === "ar" ? "التالي" : "Next"}
-          </button>
-        ) : (
-          <button
-            type="button"
-            disabled={saving || totals.totalSales <= 0}
-            onClick={handleSubmit}
-            className="w-full rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white disabled:opacity-50"
-          >
-            {lang === "ar" ? "حفظ وإرسال" : "Save & send"}
-          </button>
-        )}
+        <button
+          type="button"
+          disabled={saving || totals.totalSales <= 0}
+          onClick={handleSubmit}
+          className="w-full rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white disabled:opacity-50"
+        >
+          {lang === "ar" ? "حفظ وإرسال" : "Save & send"}
+        </button>
       </div>
       <AttachmentLightbox
         open={Boolean(previewAttachment)}
