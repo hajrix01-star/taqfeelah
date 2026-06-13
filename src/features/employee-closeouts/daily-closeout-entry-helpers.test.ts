@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   attachmentDataUrlsFromList,
   buildCloseoutOutflowRow,
+  resolveAttachmentPreviewSrc,
 } from "./daily-closeout-entry-helpers";
 
 const proof = "data:image/jpeg;base64,/9j/4AAQ";
@@ -43,5 +44,13 @@ describe("buildCloseoutOutflowRow", () => {
 describe("attachmentDataUrlsFromList", () => {
   it("normalizes strings and attachment objects", () => {
     expect(attachmentDataUrlsFromList([proof, { dataUrl: proof }, "invalid", null])).toEqual([proof, proof]);
+  });
+});
+
+describe("resolveAttachmentPreviewSrc", () => {
+  it("returns data URLs from strings and prepared attachment objects", () => {
+    expect(resolveAttachmentPreviewSrc(proof)).toBe(proof);
+    expect(resolveAttachmentPreviewSrc({ dataUrl: proof })).toBe(proof);
+    expect(resolveAttachmentPreviewSrc("invalid")).toBe("");
   });
 });

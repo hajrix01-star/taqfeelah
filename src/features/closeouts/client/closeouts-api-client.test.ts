@@ -34,6 +34,13 @@ describe("closeouts api client", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const proof = "data:image/jpeg;base64,/9j/4AAQ";
+    const preparedProof = {
+      kind: "image",
+      name: "proof.jpg",
+      mimeType: "image/jpeg",
+      sizeBytes: 120,
+      dataUrl: proof,
+    };
     const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
 
     await submitCloseoutViaApi({
@@ -45,12 +52,12 @@ describe("closeouts api client", () => {
         storeId: "shami",
         date: "2026-06-04",
         sales: [{ id: "cash", name: "Cash", amount: 100 }],
-        attachments: [proof],
+        attachments: [preparedProof],
       },
     });
 
     const payload = JSON.parse(String(fetchMock.mock.lastCall?.[1]?.body ?? "{}"));
-    expect(payload.attachments).toEqual([proof]);
+    expect(payload.attachments).toEqual([preparedProof]);
   });
 
   it("submits per-outflow proof attachments with the payload", async () => {

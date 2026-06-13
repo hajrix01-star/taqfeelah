@@ -2,6 +2,8 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useAttachmentCapture } from "@/components/prototype-runtime/prototype-runtime-attachment-ui";
+import { text } from "../../components/prototype-runtime/prototype-runtime-demo-data";
+import { prepareAttachment } from "@/features/attachments/client/prototype-attachment-storage";
 import { sanitizeAmountInput, toAmount } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
 import { computeCloseoutTotals, salesRecordFromChannels } from "../daily-closeouts/closeout-calculations";
 import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-demo-store";
@@ -34,6 +36,8 @@ export function useDailyCloseoutEntryState({
   });
   const [outflows, setOutflows] = useState(initialCloseout?.outflows || []);
   const [attachments, setAttachments] = useState(initialCloseout?.attachments || []);
+  const [attachmentProcessing, setAttachmentProcessing] = useState(false);
+  const [attachmentError, setAttachmentError] = useState("");
   const [previewAttachment, setPreviewAttachment] = useState("");
   const [outType, setOutType] = useState("purchases");
   const [expenseCategory, setExpenseCategory] = useState("maintenance");
@@ -102,17 +106,34 @@ export function useDailyCloseoutEntryState({
     )));
   }, []);
 
-  const onFiles = useCallback((event) => {
-    const files = [...(event.target.files || [])].slice(0, 6 - attachments.length);
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setAttachments((current) => [...current, reader.result]);
-      };
-      reader.readAsDataURL(file);
-    });
+  const onFiles = useCallback(async (event) => {
+    const remaining = Math.max(0, 6 - attachments.length);
+    const files = [...(event.target.files || [])].slice(0, remaining);
     event.target.value = "";
-  }, [attachments.length]);
+    if (!files.length) return;
+
+    setAttachmentProcessing(true);
+    setAttachmentError("");
+    const prepared = [];
+    try {
+      for (const file of files) {
+        try {
+          prepared.push(await prepareAttachment(file));
+        } catch (failure) {
+          setAttachmentError(text(
+            lang,
+            failure?.message === "invalid" ? "invalidAttachment" : "attachmentTooLarge",
+          ));
+          break;
+        }
+      }
+      if (prepared.length) {
+        setAttachments((current) => [...current, ...prepared].slice(0, 6));
+      }
+    } finally {
+      setAttachmentProcessing(false);
+    }
+  }, [attachments.length, lang]);
 
   const validateDate = useCallback(() => {
     if (!date) {
@@ -128,6 +149,10 @@ export function useDailyCloseoutEntryState({
 
   const handleSubmit = useCallback(async () => {
     if (!validateDate()) return;
+    if (attachmentProcessing || outflowAttachmentProcessing) {
+      window.alert(lang === "ar" ? "انتظر اكتمال معالجة الصور." : "Wait for images to finish processing.");
+      return;
+    }
     if (salesChannels.length === 0) {
       window.alert(lang === "ar" ? "لا توجد قنوات بيع مفعّلة لهذا المحل." : "No active sales channels for this store.");
       return;
@@ -146,7 +171,20 @@ export function useDailyCloseoutEntryState({
       return;
     }
     await onSubmit(closeout, { isOwnerEdit });
-  }, [buildCloseout, buildOutflowRow, clearOutflowAttachment, isOwnerEdit, lang, onSubmit, outAmount, outflows, salesChannels.length, validateDate]);
+  }, [
+    attachmentProcessing,
+    buildCloseout,
+    buildOutflowRow,
+    clearOutflowAttachment,
+    isOwnerEdit,
+    lang,
+    onSubmit,
+    outAmount,
+    outflowAttachmentProcessing,
+    outflows,
+    salesChannels.length,
+    validateDate,
+  ]);
 
   const updateSalesValue = useCallback((channelId, value) => {
     setSalesValues((current) => ({
@@ -165,6 +203,8 @@ export function useDailyCloseoutEntryState({
     salesValues,
     outflows,
     attachments,
+    attachmentProcessing,
+    attachmentError,
     previewAttachment,
     setPreviewAttachment,
     outType,
