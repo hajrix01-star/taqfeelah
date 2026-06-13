@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { auditEvents, dailyCloseouts, entries } from "@/core/db/schema";
+import { auditEvents, dailyCloseouts, entries, entrySalesChannels } from "@/core/db/schema";
 
 type InsertCall = { table: unknown; values: unknown };
 type UpdateCall = { table: unknown; set: unknown };
@@ -154,6 +154,7 @@ describe("submitStoreCloseout", () => {
 
     expect(result.summaryEntryId).toBeTruthy();
     expect(result.outflowEntryIds?.length).toBe(1);
+    expect(insertCalls.some((call) => call.table === entrySalesChannels)).toBe(false);
   });
 
   it("persists outflow entries linked to the closeout row", async () => {

@@ -183,16 +183,18 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
       })
       .returning({ id: entries.id });
 
-    await tx.insert(entrySalesChannels).values(
-      normalizedChannels.map((row) => ({
-        organizationId: input.organizationId,
-        storeId: input.storeId,
-        entryId: summaryEntry.id,
-        salesChannelId: row.salesChannelId,
-        channelNameSnapshot: row.channelName,
-        amountHalalas: row.amountHalalas,
-      })),
-    );
+    if (normalizedChannels.length > 0) {
+      await tx.insert(entrySalesChannels).values(
+        normalizedChannels.map((row) => ({
+          organizationId: input.organizationId,
+          storeId: input.storeId,
+          entryId: summaryEntry.id,
+          salesChannelId: row.salesChannelId,
+          channelNameSnapshot: row.channelName,
+          amountHalalas: row.amountHalalas,
+        })),
+      );
+    }
 
     const closeoutLevelAttachments = normalizeCloseoutLevelAttachments(input.attachments);
     if (closeoutLevelAttachments.length > 0) {

@@ -107,7 +107,7 @@ export function AttachmentCapture({
   return (
     <div>
       <label className={`relative flex w-full cursor-pointer items-center justify-center gap-3 overflow-hidden rounded-3xl border-2 border-dashed border-[#D7CBAF] bg-[#FFFDF7] ${tall ? "h-40 flex-col" : "min-h-24 px-4 py-3"}`}>
-        <input type="file" accept="image/*" capture="environment" onChange={onSelect} className="sr-only" />
+        <input type="file" accept="image/*" onChange={onSelect} className="sr-only" />
         {attachment ? (
           <>
             <AttachmentPreview attachment={attachment} className="absolute inset-0 h-full w-full opacity-25" />
