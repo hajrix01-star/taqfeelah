@@ -15,6 +15,15 @@ export function countCloseoutAttachments(attachments) {
   }).length;
 }
 
+export function countOutflowAttachments(outflows) {
+  if (!Array.isArray(outflows)) return 0;
+  return outflows.reduce((sum, row) => sum + countCloseoutAttachments(row?.attachments), 0);
+}
+
+export function countAllCloseoutProofAttachments(closeout) {
+  return countCloseoutAttachments(closeout?.attachments) + countOutflowAttachments(closeout?.outflows);
+}
+
 export function normalizeCloseoutAttachmentList(attachments) {
   if (!Array.isArray(attachments)) return [];
   return attachments.filter((item) => {

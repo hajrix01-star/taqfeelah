@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useAttachmentCapture } from "@/components/prototype-runtime/prototype-runtime-attachment-ui";
 import { sanitizeAmountInput, toAmount } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
 import { computeCloseoutTotals, salesRecordFromChannels } from "../daily-closeouts/closeout-calculations";
 import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-demo-store";
@@ -38,6 +39,13 @@ export function useDailyCloseoutEntryState({
   const [expenseCategory, setExpenseCategory] = useState("maintenance");
   const [outAmount, setOutAmount] = useState("");
   const [outNote, setOutNote] = useState("");
+  const {
+    attachment: outflowAttachment,
+    processing: outflowAttachmentProcessing,
+    error: outflowAttachmentError,
+    selectAttachment: selectOutflowAttachment,
+    clearAttachment: clearOutflowAttachment,
+  } = useAttachmentCapture(lang);
 
   const totals = useMemo(() => {
     const salesRecord = salesRecordFromChannels(
@@ -66,13 +74,14 @@ export function useDailyCloseoutEntryState({
     return withCloseoutTotals(base);
   }, [attachments, date, initialCloseout, notebookTheme, outflows, salesChannels, salesValues, storeName]);
 
-  const buildOutflowRow = useCallback((amountValue, noteValue = outNote) => buildCloseoutOutflowRow({
+  const buildOutflowRow = useCallback((amountValue, noteValue = outNote, attachments = outflowAttachment ? [outflowAttachment] : []) => buildCloseoutOutflowRow({
     lang,
     outType,
     expenseCategory,
     outNote: noteValue,
     amountValue,
-  }), [expenseCategory, lang, outNote, outType]);
+    attachments,
+  }), [expenseCategory, lang, outNote, outType, outflowAttachment]);
 
   const pushOutflow = useCallback(() => {
     const row = buildOutflowRow(outAmount);
@@ -80,10 +89,17 @@ export function useDailyCloseoutEntryState({
     setOutflows((current) => [...current, row]);
     setOutAmount("");
     setOutNote("");
-  }, [buildOutflowRow, outAmount]);
+    clearOutflowAttachment();
+  }, [buildOutflowRow, clearOutflowAttachment, outAmount]);
 
   const removeOutflow = useCallback((id) => {
     setOutflows((current) => current.filter((item) => item.id !== id));
+  }, []);
+
+  const removeOutflowAttachment = useCallback((id) => {
+    setOutflows((current) => current.map((item) => (
+      item.id === id ? { ...item, attachments: [] } : item
+    )));
   }, []);
 
   const onFiles = useCallback((event) => {
@@ -122,6 +138,7 @@ export function useDailyCloseoutEntryState({
       setOutflows(nextOutflows);
       setOutAmount("");
       setOutNote("");
+      clearOutflowAttachment();
     }
     const closeout = buildCloseout(nextOutflows);
     if ((closeout.totals?.totalSales || 0) <= 0) {
@@ -129,7 +146,7 @@ export function useDailyCloseoutEntryState({
       return;
     }
     await onSubmit(closeout, { isOwnerEdit });
-  }, [buildCloseout, buildOutflowRow, isOwnerEdit, lang, onSubmit, outAmount, outflows, salesChannels.length, validateDate]);
+  }, [buildCloseout, buildOutflowRow, clearOutflowAttachment, isOwnerEdit, lang, onSubmit, outAmount, outflows, salesChannels.length, validateDate]);
 
   const updateSalesValue = useCallback((channelId, value) => {
     setSalesValues((current) => ({
@@ -158,11 +175,17 @@ export function useDailyCloseoutEntryState({
     setOutAmount,
     outNote,
     setOutNote,
+    outflowAttachment,
+    outflowAttachmentProcessing,
+    outflowAttachmentError,
+    selectOutflowAttachment,
+    clearOutflowAttachment,
     totals,
     titles,
     labelChannel,
     pushOutflow,
     removeOutflow,
+    removeOutflowAttachment,
     onFiles,
     handleSubmit,
     updateSalesValue,

@@ -3,7 +3,11 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import CloseoutAttachmentThumbs from "../closeouts/client/CloseoutAttachmentThumbs";
-import { countCloseoutAttachments } from "../closeouts/client/closeout-attachment-utils";
+import {
+  countAllCloseoutProofAttachments,
+  countCloseoutAttachments,
+  countOutflowAttachments,
+} from "../closeouts/client/closeout-attachment-utils";
 import { computeCloseoutTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
 import CloseoutOwnerEditBadge from "../closeouts/client/CloseoutOwnerEditBadge";
 import { closeoutStatusLabel } from "../daily-closeouts/closeout-status";
@@ -61,12 +65,36 @@ export default function OwnerCloseoutManagePanel({
           </div>
           <div className="mb-4 space-y-2 rounded-2xl bg-white p-4 ring-1 ring-black/[0.045]">
             <p className="text-xs font-black text-[#806528]">{lang === "ar" ? "الخارج" : "Outflows"}</p>
-            {(closeout.outflows || []).map((row) => (
-              <div key={row.id} className="flex justify-between gap-2 text-sm font-bold">
-                <span className="min-w-0 truncate">{row.typeLabel || row.type}{row.category ? ` · ${row.category}` : ""}</span>
-                <span className="shrink-0 tabular-nums text-[#B44747]">-{money(row.amount, lang)} ر.س</span>
+            {(closeout.outflows || []).map((row) => {
+              const rowAttachmentCount = countCloseoutAttachments(row.attachments);
+              return (
+              <div key={row.id} className="rounded-xl bg-[#FFFDF7] px-3 py-2 ring-1 ring-[#F0ECE2]">
+                <div className="flex justify-between gap-2 text-sm font-bold">
+                  <span className="min-w-0 truncate">{row.typeLabel || row.type}{row.category ? ` · ${row.category}` : ""}</span>
+                  <span className="shrink-0 tabular-nums text-[#B44747]">-{money(row.amount, lang)} ر.س</span>
+                </div>
+                {rowAttachmentCount > 0 ? (
+                  <div className="mt-2">
+                    <p className="mb-1 text-taq-nav font-black text-[#806528]">
+                      {lang === "ar" ? "إثبات الخارج" : "Outflow proof"}
+                    </p>
+                    <CloseoutAttachmentThumbs
+                      lang={lang}
+                      closeoutId={closeout.id}
+                      storeId={closeout.storeId}
+                      attachments={row.attachments}
+                      thumbClassName="h-14 w-14"
+                      enabled
+                      attachmentsApiEnabled={attachmentsApiEnabled}
+                      organizationId={attachmentsApiOrganizationId}
+                      actorUserId={attachmentsApiActorUserId}
+                      actorRole={attachmentsApiActorRole}
+                    />
+                  </div>
+                ) : null}
               </div>
-            ))}
+              );
+            })}
             <p className="border-t border-[#F0ECE2] pt-2 text-sm font-black text-[#B44747]">{lang === "ar" ? "إجمالي الخارج" : "Total out"}: {money(totals.totalOutflow, lang)} ر.س</p>
           </div>
           <div className="mb-4 rounded-2xl bg-[#112A46] p-4 text-white">
@@ -76,7 +104,7 @@ export default function OwnerCloseoutManagePanel({
           {countCloseoutAttachments(closeout.attachments) > 0 && (
             <div className="mb-4">
               <p className="mb-2 text-xs font-black text-[#806528]">
-                {lang === "ar" ? "مرفقات التقفيلة" : "Closeout attachments"}
+                {lang === "ar" ? "إثبات الداخل / صور التقفيلة" : "Inflow / closeout proofs"}
               </p>
               <CloseoutAttachmentThumbs
                 lang={lang}

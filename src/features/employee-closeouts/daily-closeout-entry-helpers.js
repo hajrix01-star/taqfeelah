@@ -26,12 +26,36 @@ export function todayIsoDate() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
+export function attachmentDataUrlsFromList(rawList) {
+  if (!Array.isArray(rawList)) return [];
+  return rawList
+    .map((item) => {
+      if (typeof item === "string" && item.startsWith("data:")) return item;
+      if (item && typeof item === "object" && typeof item.dataUrl === "string" && item.dataUrl.startsWith("data:")) {
+        return item.dataUrl;
+      }
+      return "";
+    })
+    .filter(Boolean);
+}
+
+/**
+ * @param {{
+ *   lang?: string,
+ *   outType?: string,
+ *   expenseCategory?: string,
+ *   outNote?: string,
+ *   amountValue?: string | number,
+ *   attachments?: Array<string | { dataUrl?: string }>,
+ * }} params
+ */
 export function buildCloseoutOutflowRow({
   lang,
   outType,
   expenseCategory,
   outNote,
   amountValue,
+  attachments = [],
 }) {
   const amount = toAmount(amountValue);
   if (!amount) return null;
@@ -50,7 +74,7 @@ export function buildCloseoutOutflowRow({
     categoryId: outType === "expense" ? expenseCategory : null,
     note: String(outNote || "").trim(),
     amount,
-    attachments: [],
+    attachments: attachmentDataUrlsFromList(attachments),
   };
 }
 
@@ -59,7 +83,13 @@ export function buildCloseoutEntryTitles(lang) {
     date: lang === "ar" ? "اختر التاريخ" : "Pick date",
     sales: lang === "ar" ? "الداخل" : "Sales",
     outflows: lang === "ar" ? "الخارج" : "Outflows",
-    photos: lang === "ar" ? "صور الإثبات" : "Proof photos",
+    photos: lang === "ar" ? "صور إثبات الداخل (اختياري)" : "Inflow proof photos (optional)",
+    outflowProofHint: lang === "ar"
+      ? "ارفع صورة الفاتورة مع بند الخارج — نوع الإثبات يُحدد تلقائيًا من نوع العملية (مشتريات / مصروف / سحب)."
+      : "Attach the invoice with this outflow — proof type follows the operation (purchases / expense / withdrawal).",
+    inflowProofHint: lang === "ar"
+      ? "صور عامة لإثبات الداخل أو التقفيلة — ليست مربوطة ببند خارج محدد."
+      : "General inflow or closeout proofs — not tied to a specific outflow line.",
     review: lang === "ar" ? "المراجعة" : "Review",
   };
 }
