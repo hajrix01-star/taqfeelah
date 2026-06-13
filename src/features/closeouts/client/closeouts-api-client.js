@@ -98,9 +98,15 @@ export function diagnoseCloseoutSubmitFailure({
   }
 
   const salesChannels = extractCloseoutSalesChannels(closeout, { storeChannels });
-  if (!salesChannels.length) return { code: "empty_sales", unmappedChannels: [] };
+  if (!salesChannels.length && !hasPositiveOutflows(closeout)) {
+    return { code: "empty_sales", unmappedChannels: [] };
+  }
 
   return null;
+}
+
+function hasPositiveOutflows(closeout) {
+  return (closeout?.outflows || []).some((row) => Number(row?.amount || 0) > 0);
 }
 
 function extractAttachmentPayloads(rawList) {
@@ -140,7 +146,8 @@ export async function submitCloseoutViaApi({
   if (!mappedStoreId) return null;
 
   const salesChannels = extractCloseoutSalesChannels(closeout, { storeChannels });
-  if (!salesChannels.length) return null;
+  const outflows = extractOutflows(closeout);
+  if (!salesChannels.length && !outflows.length) return null;
 
   return fetchApiJsonWithPrototypeContext(`/api/v1/stores/${mappedStoreId}/closeouts`, {
     organizationId,

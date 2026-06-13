@@ -86,6 +86,34 @@ describe("closeouts api client", () => {
     expect(payload.outflows[0].amountHalalas).toBe(1000);
   });
 
+  it("submits outflow-only closeout without sales channels", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => new Response(JSON.stringify({ ok: true, outflowEntryIds: ["entry-out-1"] }), { status: 201 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
+
+    const result = await submitCloseoutViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      closeout: {
+        id: "owner-outflow-1",
+        storeId: "shami",
+        date: "2026-06-13",
+        sales: {},
+        outflows: [{ type: "expense", amount: 80, note: "out only" }],
+      },
+    });
+
+    expect(result).toEqual({ ok: true, outflowEntryIds: ["entry-out-1"] });
+    const payload = JSON.parse(String(fetchMock.mock.lastCall?.[1]?.body ?? "{}"));
+    expect(payload.salesChannels).toEqual([]);
+    expect(payload.outflows).toHaveLength(1);
+  });
+
   it("accepts legacy actor and store ids for mapping checks", async () => {
     setMapsEnv();
     const {

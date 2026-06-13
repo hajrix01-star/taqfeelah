@@ -96,12 +96,8 @@ export function usePrototypeRuntimeOwnerCloseoutActions({
   }, [entriesApiDbSource, openOwnerCloseoutEntry, openQuickAddSummary]);
 
   const handleOpenQuickAddExpense = useCallback(() => {
-    if (entriesApiDbSource) {
-      openOwnerCloseoutEntry();
-      return;
-    }
     openQuickAddExpense();
-  }, [entriesApiDbSource, openOwnerCloseoutEntry, openQuickAddExpense]);
+  }, [openQuickAddExpense]);
 
   const handleOwnerQuickAddOpen = useCallback(() => {
     setQuickAddOpen(true);
