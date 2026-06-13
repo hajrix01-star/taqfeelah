@@ -49,7 +49,7 @@ import { RegisterStoreChips } from "./owner-register-store-filter";
 import { RegisterDashboardCard } from "./owner-register-ui-primitives";
 
 export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesSyncError = "", closeoutsSyncError = "", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
-  const [period, setPeriod] = useState("day");
+  const [period, setPeriod] = useState("month");
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
   const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
@@ -61,7 +61,11 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
   const [logView, setLogView] = useState("closeouts");
   const [expandedEntryId, setExpandedEntryId] = useState(null);
   const [expandedCloseoutKey, setExpandedCloseoutKey] = useState(null);
-  const [registerAttachmentPreview, setRegisterAttachmentPreview] = useState("");
+  const [registerAttachmentPreview, setRegisterAttachmentPreview] = useState(null);
+  const openRegisterAttachmentPreview = (src, shareContext = null) => {
+    setRegisterAttachmentPreview({ src, shareContext });
+  };
+  const closeRegisterAttachmentPreview = () => setRegisterAttachmentPreview(null);
   const entryAttachmentApiContext = {
     attachmentsApiEnabled: entryAttachmentsApiEnabled,
     organizationId: entryAttachmentsApiOrganizationId,
@@ -334,7 +338,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
             expandedEntryId={expandedEntryId}
             setExpandedEntryId={setExpandedEntryId}
             onOpenOperation={onOpenOperation}
-            setRegisterAttachmentPreview={setRegisterAttachmentPreview}
+            onPreviewAttachment={openRegisterAttachmentPreview}
             registerEntriesApiEnabled={registerEntriesApiEnabled}
             apiRegisterEntriesHasMore={apiRegisterEntriesHasMore}
             registerLoadMoreRef={registerLoadMoreRef}
@@ -353,7 +357,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
             expandedCloseoutKey={expandedCloseoutKey}
             setExpandedCloseoutKey={setExpandedCloseoutKey}
             onOpenOperation={onOpenOperation}
-            setRegisterAttachmentPreview={setRegisterAttachmentPreview}
+            onPreviewAttachment={openRegisterAttachmentPreview}
             registerScrollId={registerScrollId}
             loadError={closeoutsLoadError}
             loadErrorMessage={closeoutsLoadErrorMessage}
@@ -361,10 +365,11 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
         )}
       </motion.section>
       <AttachmentLightbox
-        open={Boolean(registerAttachmentPreview)}
-        src={registerAttachmentPreview}
+        open={Boolean(registerAttachmentPreview?.src)}
+        src={registerAttachmentPreview?.src || ""}
+        shareContext={registerAttachmentPreview?.shareContext || null}
         lang={lang}
-        onClose={() => setRegisterAttachmentPreview("")}
+        onClose={closeRegisterAttachmentPreview}
       />
     </NotebookScrollSurface>
   );

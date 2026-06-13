@@ -1,9 +1,14 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Minus, Plus, RotateCcw, X } from "lucide-react";
+import { Minus, Plus, RotateCcw, Send, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+  buildEntryAttachmentShareCaption,
+  dataUrlToShareFile,
+  shareEntryAttachmentImage,
+} from "@/features/entries/client/entry-attachment-share";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
@@ -26,9 +31,11 @@ export default function AttachmentLightbox({
   src,
   lang = "ar",
   onClose,
+  shareContext = null,
 }) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [sharing, setSharing] = useState(false);
   const gestureRef = useRef({
     mode: "idle",
     pinchStartDistance: 0,
@@ -133,6 +140,26 @@ export default function AttachmentLightbox({
     gestureRef.current.mode = "idle";
   }, []);
 
+  const handleShare = useCallback(async () => {
+    if (!src || !shareContext || sharing) return;
+    setSharing(true);
+    try {
+      const file = await dataUrlToShareFile(src, `invoice-${shareContext.entry?.id || "attachment"}`);
+      const caption = buildEntryAttachmentShareCaption({
+        lang,
+        storeName: shareContext.storeName || "",
+        operationLabel: shareContext.operationLabel || "",
+        entryDate: shareContext.entry?.date || "",
+        entryTime: shareContext.entryTime || "",
+        daySequence: shareContext.daySequence ?? null,
+        sameDayCloseoutCount: shareContext.sameDayCloseoutCount ?? 1,
+      });
+      await shareEntryAttachmentImage({ file, caption, lang });
+    } finally {
+      setSharing(false);
+    }
+  }, [lang, shareContext, sharing, src]);
+
   if (!open || !src) return null;
 
   const lightbox = (
@@ -188,6 +215,18 @@ export default function AttachmentLightbox({
                 {Math.round(zoom * 100)}%
               </span>
             </div>
+            {shareContext ? (
+              <button
+                type="button"
+                onClick={handleShare}
+                disabled={sharing}
+                className="flex h-9 items-center gap-1.5 rounded-xl bg-[#25D366] px-3 text-taq-nav font-black text-white disabled:opacity-60"
+                aria-label={lang === "ar" ? "إرسال الفاتورة واتساب" : "Send invoice on WhatsApp"}
+              >
+                <Send className="h-4 w-4" />
+                <span>{lang === "ar" ? "واتساب" : "WhatsApp"}</span>
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onClose}
