@@ -104,12 +104,10 @@ export function useOwnerShellState({
     ownerNotificationBadge,
   } = useMemo(
     () => buildOwnerNotificationState({
-      duplicateSalesAlerts,
       closeoutAlerts,
       closeoutAlertEnabledForBusiness,
     }),
     [
-      duplicateSalesAlerts,
       closeoutAlerts,
       closeoutAlertEnabledForBusiness,
     ],
@@ -202,11 +200,10 @@ export function useOwnerShellState({
 
   const openNotifications = useCallback(() => {
     handleOwnerNotificationsClick({
-      duplicateSalesAlerts,
       unseenCloseoutAlerts,
       apply: navApply,
     });
-  }, [duplicateSalesAlerts, navApply, unseenCloseoutAlerts]);
+  }, [navApply, unseenCloseoutAlerts]);
 
   const resetOwnerShellNav = useCallback(() => {
     resetOwnerNavContext(navApply);

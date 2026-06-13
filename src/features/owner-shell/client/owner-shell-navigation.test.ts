@@ -44,16 +44,14 @@ describe("owner shell navigation", () => {
     expect(setOwnerPage).toHaveBeenCalledWith("home");
   });
 
-  it("routes notifications to duplicate summary alert first", () => {
+  it("routes notifications to unseen closeout alerts only", () => {
     const setOwnerPage = vi.fn();
 
     handleOwnerNotificationsClick({
-      duplicateSalesAlerts: [{ businessId: "shami", date: "2026-06-06" }],
-      unseenCloseoutAlerts: [],
+      unseenCloseoutAlerts: [{ id: "alert-1", businessId: "shami", date: "2026-06-06" }],
       apply: {
         setArchivedReadOnlyBusinessId: vi.fn(),
         setSelectedBusiness: vi.fn(),
-        setDuplicateSummaryFocus: vi.fn(),
         setOwnerPage,
       },
     });

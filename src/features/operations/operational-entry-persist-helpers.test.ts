@@ -23,7 +23,7 @@ describe("operational entry persist helpers", () => {
       allowedBusinessIds: ["shami"],
     })).toBe(false);
 
-    expect(shouldGateSummarySaveOnDuplicates({ type: "summary" })).toBe(true);
+    expect(shouldGateSummarySaveOnDuplicates({ type: "summary" })).toBe(false);
     expect(shouldGateSummarySaveOnDuplicates({ type: "expense" })).toBe(false);
   });
 
