@@ -380,3 +380,56 @@ export async function repairSaasAccountFoundation(organizationId: string) {
     body: JSON.stringify({}),
   });
 }
+
+async function fetchAuthJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(path, {
+    ...init,
+    credentials: "include",
+    headers: {
+      "content-type": "application/json",
+      ...(init.headers || {}),
+    },
+  });
+
+  const payload = await response.json().catch(() => ({})) as { data?: T; error?: { message?: string } };
+  if (!response.ok) {
+    throw new Error(typeof payload?.error?.message === "string" ? payload.error.message : "Request failed.");
+  }
+
+  return (payload.data ?? payload) as T;
+}
+
+export async function requestPlatformAdminPasswordResetViaApi({ email }: { email: string }) {
+  return fetchAuthJson<{ success: boolean; message?: string }>(
+    "/api/v1/auth/platform-admin/password-reset/request",
+    {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    },
+  );
+}
+
+export async function validatePlatformAdminPasswordResetTokenViaApi(token: string) {
+  const search = new URLSearchParams({ token, audience: "platform_admin" });
+  return fetchAuthJson<{ valid: boolean; status?: string }>(
+    `/api/v1/auth/platform-admin/password-reset/validate?${search.toString()}`,
+  );
+}
+
+export async function confirmPlatformAdminPasswordResetViaApi({
+  token,
+  newPassword,
+  confirmPassword,
+}: {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}) {
+  return fetchAuthJson<{ success: boolean }>(
+    "/api/v1/auth/platform-admin/password-reset/confirm",
+    {
+      method: "POST",
+      body: JSON.stringify({ token, newPassword, confirmPassword }),
+    },
+  );
+}

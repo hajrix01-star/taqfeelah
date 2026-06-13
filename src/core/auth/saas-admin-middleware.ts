@@ -21,6 +21,12 @@ export function isSaasAdminPagePath(pathname: string): boolean {
   return pathname === "/saas-admin" || pathname.startsWith("/saas-admin/");
 }
 
+export function isPublicSaasAdminPagePath(pathname: string): boolean {
+  return pathname === "/saas-admin/login"
+    || pathname === "/saas-admin/forgot-password"
+    || pathname === "/saas-admin/reset-password";
+}
+
 export async function handleSaasAdminMiddleware(
   request: NextRequest,
   env: SaasAdminMiddlewareEnv = process.env as SaasAdminMiddlewareEnv,
@@ -40,7 +46,7 @@ export async function handleSaasAdminMiddleware(
 
   if (
     isPage
-    && pathname !== "/saas-admin/login"
+    && !isPublicSaasAdminPagePath(pathname)
     && env.NEXT_PUBLIC_SAAS_ADMIN_ENABLED === "true"
   ) {
     const cookieName = env.AUTH_SESSION_COOKIE_NAME || "taqfeelah_session";

@@ -140,12 +140,14 @@ describe("handleSaasAdminMiddleware", () => {
     expect(response).toBeNull();
   });
 
-  it("does not redirect /saas-admin/login", async () => {
-    const response = await handleSaasAdminMiddleware(
-      buildRequest("/saas-admin/login"),
-      enabledEnv({ SAAS_ADMIN_API_ENABLED: "false" }),
-    );
+  it("does not redirect public /saas-admin auth pages when enabled", async () => {
+    for (const path of ["/saas-admin/login", "/saas-admin/forgot-password", "/saas-admin/reset-password"]) {
+      const response = await handleSaasAdminMiddleware(
+        buildRequest(path),
+        enabledEnv({ SAAS_ADMIN_API_ENABLED: "false" }),
+      );
 
-    expect(response).toBeNull();
+      expect(response).toBeNull();
+    }
   });
 });

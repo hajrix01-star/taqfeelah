@@ -4,8 +4,10 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
 import { requestOwnerPasswordResetViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
+import { usePasswordResetEnabled } from "@/features/auth/client/use-password-reset-enabled";
 
 export default function OwnerForgotPasswordPage() {
+  const { enabled, loading: statusLoading } = usePasswordResetEnabled();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -41,6 +43,16 @@ export default function OwnerForgotPasswordPage() {
           </p>
         </div>
         <form onSubmit={handleSubmit} className="mt-8 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-black/[0.045]">
+          {statusLoading ? (
+            <p className="text-center text-sm font-bold text-[#827762]">جاري التحقق…</p>
+          ) : null}
+          {!statusLoading && !enabled ? (
+            <p className="rounded-xl bg-[#F7F5EF] p-3 text-center text-sm font-bold text-[#827762]">
+              استعادة كلمة المرور غير مفعّلة حاليًا. تواصل مع الدعم.
+            </p>
+          ) : null}
+          {!statusLoading && enabled ? (
+            <>
           <label className="block">
             <span className="mb-2 block text-xs font-bold text-[#716753]">البريد الإلكتروني</span>
             <input
@@ -64,6 +76,8 @@ export default function OwnerForgotPasswordPage() {
           ) : null}
           {error ? (
             <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{error}</p>
+          ) : null}
+            </>
           ) : null}
         </form>
         <Link href="/app" className="mt-4 text-center text-xs font-black text-[#9A823E]">العودة لتسجيل الدخول</Link>

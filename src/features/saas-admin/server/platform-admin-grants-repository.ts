@@ -294,7 +294,7 @@ export async function grantPlatformAdmin(
 
 const createSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  username: z.string().trim().min(1).max(120),
+  username: z.string().trim().email("A valid email address is required.").max(120),
   password: z.string().trim().min(4).max(120),
   role: z.enum(["owner", "support"]).default("support"),
 });
@@ -388,7 +388,7 @@ const updateRoleSchema = z.object({
 
 const updateProfileSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
-  username: z.string().trim().min(1).max(120).optional(),
+  username: z.string().trim().email("A valid email address is required.").max(120).optional(),
   password: z.string().trim().min(4).max(120).optional(),
 }).refine((value) => Boolean(value.name || value.username || value.password), {
   message: "At least one profile field must be provided.",

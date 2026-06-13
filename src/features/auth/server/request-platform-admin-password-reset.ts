@@ -1,13 +1,13 @@
 import { requestPasswordReset } from "@/features/auth/server/request-password-reset";
 
-export async function requestOwnerPasswordReset(
+export async function requestPlatformAdminPasswordReset(
   rawInput: { email: string },
   request?: Request,
 ) {
   return requestPasswordReset(
     {
       email: rawInput.email,
-      audience: "owner",
+      audience: "platform_admin",
     },
     request,
   );

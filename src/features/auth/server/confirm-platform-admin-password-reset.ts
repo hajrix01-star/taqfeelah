@@ -1,12 +1,12 @@
 import { confirmPasswordReset } from "@/features/auth/server/confirm-password-reset";
 
-export async function confirmOwnerPasswordReset(rawInput: {
+export async function confirmPlatformAdminPasswordReset(rawInput: {
   token: string;
   newPassword: string;
   confirmPassword: string;
 }) {
   return confirmPasswordReset({
     ...rawInput,
-    audience: "owner",
+    audience: "platform_admin",
   });
 }

@@ -150,9 +150,10 @@ function PlatformAdminListItem({
             />
           </label>
           <label className="block space-y-1 text-xs">
-            <span className="text-[var(--admin-muted)]">{t.platformAdmins.username}</span>
+            <span className="text-[var(--admin-muted)]">{t.platformAdmins.email}</span>
             <input
               dir="ltr"
+              type="email"
               value={editDraft.username}
               onChange={(event) => onEditDraftChange({ ...editDraft, username: event.target.value })}
               placeholder={t.platformAdmins.usernameOptional}
@@ -429,10 +430,11 @@ export default function PlatformAdminsPage() {
                   />
                 </label>
                 <label className="block space-y-1 text-sm">
-                  <span className="text-[var(--admin-muted)]">{t.platformAdmins.username}</span>
+                  <span className="text-[var(--admin-muted)]">{t.platformAdmins.email}</span>
                   <input
                     required
                     dir="ltr"
+                    type="email"
                     value={newUsername}
                     onChange={(event) => setNewUsername(event.target.value)}
                     className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
@@ -489,6 +491,7 @@ export default function PlatformAdminsPage() {
                     <input
                       required
                       dir="ltr"
+                      type="email"
                       value={lookupUsername}
                       onChange={(event) => setLookupUsername(event.target.value)}
                       className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
