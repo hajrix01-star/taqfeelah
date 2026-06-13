@@ -80,29 +80,50 @@ export function OperationModal({
     <>
       <AnimatePresence>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-40 flex items-end bg-[#112A46]/35 sm:items-center sm:justify-center sm:p-6 lg:items-end lg:justify-start lg:p-0">
-          <div className="relative z-10 w-full rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[560px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8">
-            <div className="mb-4 flex justify-between">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge tone={isSale ? "success" : "warning"}>{operationDisplayLabel(item, lang)}</Badge>
-                {voided && <Badge tone="warning">{text(lang, "voided")}</Badge>}
-                {!voided && entryWasRestored(item) && <Badge tone="success">{text(lang, "restored")}</Badge>}
-                <CloseoutOwnerEditBadge
-                  lang={lang}
-                  source={ownerEditSource || {
-                    ownerEditedAt: item.closeoutOwnerEditedAt,
-                    ownerEditedByUserId: item.closeoutOwnerEditedByUserId,
-                    ownerEditedByName: item.closeoutOwnerEditedByName,
-                  }}
-                />
-                <h3 className="mt-2 w-full text-lg font-black">{noteLabel(item, lang)}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute inset-0"
+            aria-label={text(lang, "close")}
+          />
+          <motion.div
+            initial={{ y: 18 }}
+            animate={{ y: 0 }}
+            exit={{ y: 18 }}
+            className="relative z-10 flex max-h-[min(92dvh,100%)] w-full max-w-full flex-col overflow-hidden rounded-t-[30px] bg-[#F8F6F0] sm:max-w-[560px] sm:rounded-[30px] lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none"
+          >
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#F0ECE2]/80 px-5 pb-3 pt-5 sm:px-6 sm:pt-6">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge tone={isSale ? "success" : "warning"}>{operationDisplayLabel(item, lang)}</Badge>
+                  {voided && <Badge tone="warning">{text(lang, "voided")}</Badge>}
+                  {!voided && entryWasRestored(item) && <Badge tone="success">{text(lang, "restored")}</Badge>}
+                  <CloseoutOwnerEditBadge
+                    lang={lang}
+                    source={ownerEditSource || {
+                      ownerEditedAt: item.closeoutOwnerEditedAt,
+                      ownerEditedByUserId: item.closeoutOwnerEditedByUserId,
+                      ownerEditedByName: item.closeoutOwnerEditedByName,
+                    }}
+                  />
+                </div>
+                <h3 className="mt-2 break-words text-lg font-black">{noteLabel(item, lang)}</h3>
               </div>
-              <button type="button" onClick={onClose}><X className="h-5 w-5" /></button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]"
+                aria-label={text(lang, "close")}
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
+            <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
             <div className="mb-4 rounded-2xl bg-white p-4 text-sm">
-              <div className="mb-2 flex justify-between"><span>{text(lang, "amount")}</span><strong className={`${voided ? "line-through opacity-60" : ""} ${isSale ? "text-[#257844]" : "text-[#B44747]"}`}>{money(signedEntryAmount(item), lang)}</strong></div>
-              <div className="mb-2 flex justify-between"><span>{text(lang, "time")}</span><strong>{opDate(item, lang)} {opTime(item, lang)}</strong></div>
-              <div className="flex justify-between"><span>{text(lang, "enteredBy")}</span><strong>{employeeDisplayName(item, lang)}</strong></div>
+              <div className="mb-2 flex justify-between gap-3"><span className="shrink-0">{text(lang, "amount")}</span><strong className={`text-end ${voided ? "line-through opacity-60" : ""} ${isSale ? "text-[#257844]" : "text-[#B44747]"}`}>{money(signedEntryAmount(item), lang)}</strong></div>
+              <div className="mb-2 flex justify-between gap-3"><span className="shrink-0">{text(lang, "time")}</span><strong className="text-end">{opDate(item, lang)} {opTime(item, lang)}</strong></div>
+              <div className="flex justify-between gap-3"><span className="shrink-0">{text(lang, "enteredBy")}</span><strong className="min-w-0 break-words text-end">{employeeDisplayName(item, lang)}</strong></div>
               {voided && (
                 <div className="mt-3 border-t border-[#F0ECE2] pt-3">
                   <div className="flex justify-between text-[#B44747]"><span>{text(lang, "status")}</span><strong>{text(lang, "voidedByOwner")}</strong></div>
@@ -123,15 +144,15 @@ export function OperationModal({
                 <div className="space-y-2">
                   {item.auditTrail.filter((action) => action.action !== "reviewed").map((action, index) => (
                     <div key={`${action.action}-${action.at}-${index}`} className="flex items-start justify-between gap-3 text-taq-meta font-bold">
-                      <div className="flex items-start gap-2">
-                        <span className={`mt-1 h-2 w-2 rounded-full ${action.action === "voided" ? "bg-[#B44747]" : action.action === "restored" || action.action === "reviewed" || action.action === "duplicate_approved" ? "bg-[#257844]" : "bg-[#806528]"}`} />
-                        <div>
-                          <p>{text(lang, action.action === "created" ? "actionCreated" : action.action === "voided" ? "actionVoided" : action.action === "restored" ? "actionRestored" : action.action === "reviewed" ? "actionReviewed" : "actionDuplicateApproved")}</p>
-                          <p className="mt-0.5 font-medium text-[#827762]">{action.by ? (lang === "ar" ? action.by.nameAr : action.by.nameEn) : "-"}</p>
-                          {action.reason && <p className="mt-0.5 font-medium text-[#827762]">{action.reason}</p>}
+                      <div className="flex min-w-0 items-start gap-2">
+                        <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${action.action === "voided" ? "bg-[#B44747]" : action.action === "restored" || action.action === "reviewed" || action.action === "duplicate_approved" ? "bg-[#257844]" : "bg-[#806528]"}`} />
+                        <div className="min-w-0">
+                          <p className="break-words">{text(lang, action.action === "created" ? "actionCreated" : action.action === "voided" ? "actionVoided" : action.action === "restored" ? "actionRestored" : action.action === "reviewed" ? "actionReviewed" : "actionDuplicateApproved")}</p>
+                          <p className="mt-0.5 break-words font-medium text-[#827762]">{action.by ? (lang === "ar" ? action.by.nameAr : action.by.nameEn) : "-"}</p>
+                          {action.reason && <p className="mt-0.5 break-words font-medium text-[#827762]">{action.reason}</p>}
                         </div>
                       </div>
-                      <span className="shrink-0 text-end text-[#827762]">{auditDateTime(action.at, lang)}</span>
+                      <span className="max-w-[42%] shrink-0 text-end text-[#827762]">{auditDateTime(action.at, lang)}</span>
                     </div>
                   ))}
                 </div>
@@ -176,7 +197,8 @@ export function OperationModal({
             )}
             {canRestore && voided && <button onClick={() => onRestore(item.id)} className="w-full rounded-2xl bg-[#E6F5E9] py-4 text-sm font-extrabold text-[#257844]">{text(lang, "restoreEntry")}</button>}
             {canVoid && !voided && <button onClick={() => onVoid(item.id)} className="w-full rounded-2xl bg-[#FFF1EE] py-4 text-sm font-extrabold text-[#B44747]">{text(lang, "voidEntry")}</button>}
-          </div>
+            </div>
+          </motion.div>
         </motion.div>
       </AnimatePresence>
       <AttachmentLightbox
