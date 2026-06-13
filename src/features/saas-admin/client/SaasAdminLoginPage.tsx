@@ -9,7 +9,6 @@ import {
 } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 import type { SaasAdminLocale } from "@/features/saas-admin/i18n/translations";
 import { loginOwnerSessionViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
-import { usePasswordResetEnabled } from "@/features/auth/client/use-password-reset-enabled";
 import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import "@/features/saas-admin/components/admin-theme.css";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
@@ -21,7 +20,6 @@ type SaasAdminLoginPageProps = {
 
 function LoginForm({ nextPath }: { nextPath: string }) {
   const { locale, t, dir } = useSaasAdminLocale();
-  const { enabled: passwordResetEnabled, loading: passwordResetLoading } = usePasswordResetEnabled();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -90,13 +88,11 @@ function LoginForm({ nextPath }: { nextPath: string }) {
               {isSubmitting ? t.auth.signingIn : t.auth.signIn}
             </button>
           </form>
-          {!passwordResetLoading && passwordResetEnabled ? (
-            <p className="mt-3 text-center text-sm">
-              <Link href="/saas-admin/forgot-password" className="font-semibold text-[var(--admin-primary)]">
-                {t.auth.forgotPasswordLink}
-              </Link>
-            </p>
-          ) : null}
+          <p className="mt-3 text-center text-sm">
+            <Link href="/saas-admin/forgot-password" className="font-semibold text-[var(--admin-primary)]">
+              {t.auth.forgotPasswordLink}
+            </Link>
+          </p>
           {error ? <p className="mt-3 text-sm text-[var(--admin-danger)]">{error}</p> : null}
           <p className="mt-4 text-center text-sm text-[var(--admin-muted)]">
             <Link href="/app" className="font-semibold text-[var(--admin-primary)]">

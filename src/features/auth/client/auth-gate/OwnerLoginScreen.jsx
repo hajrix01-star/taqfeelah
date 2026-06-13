@@ -8,14 +8,12 @@ import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import { useOwnerLoginForm } from "@/features/auth/client/auth-gate/use-owner-login-form";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 import { APP_IN_PRODUCTION_MODE } from "@/components/prototype-runtime/prototype-runtime-boot";
-import { usePasswordResetEnabled } from "@/features/auth/client/use-password-reset-enabled";
 import { LanguageSwitch, Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
 import { AppLoginPhoneField } from "@/core/phone/AppLoginPhoneField";
 import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 
 export function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
   const form = useOwnerLoginForm({ lang, onOwnerLogin });
-  const { enabled: passwordResetEnabled, loading: passwordResetLoading } = usePasswordResetEnabled();
 
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter flex min-h-[800px] flex-col pb-8 pt-10">
@@ -78,7 +76,7 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
               <span className="text-taq-meta font-black text-[#716753]">{text(lang, "rememberMe")}</span>
             </label>
             <button type="button" onClick={() => { void form.submitPassword(); }} disabled={form.submitting} className="mt-4 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white disabled:bg-[#B8C0B7]">{text(lang, "verifyContinue")}</button>
-            {APP_IN_PRODUCTION_MODE && !passwordResetLoading && passwordResetEnabled ? (
+            {APP_IN_PRODUCTION_MODE ? (
               <Link href="/auth/forgot-password" className="mt-3 block text-center text-taq-meta font-black text-[#9A823E]">
                 {lang === "ar" ? "نسيت كلمة المرور؟" : "Forgot password?"}
               </Link>

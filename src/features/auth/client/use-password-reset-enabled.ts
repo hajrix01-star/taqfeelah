@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 type PasswordResetStatus = {
-  enabled: boolean;
+  enabled?: boolean;
+  data?: { enabled?: boolean };
 };
 
 export function usePasswordResetEnabled() {
@@ -15,9 +16,9 @@ export function usePasswordResetEnabled() {
 
     fetch("/api/v1/auth/password-reset/status", { credentials: "include" })
       .then((response) => response.json())
-      .then((payload: { data?: PasswordResetStatus }) => {
+      .then((payload: PasswordResetStatus) => {
         if (cancelled) return;
-        setEnabled(payload?.data?.enabled === true);
+        setEnabled(payload?.enabled === true || payload?.data?.enabled === true);
       })
       .catch(() => {
         if (!cancelled) setEnabled(false);
