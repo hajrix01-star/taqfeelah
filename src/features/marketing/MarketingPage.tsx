@@ -106,7 +106,7 @@ export default function MarketingPage() {
             الداخل − الخارج = الناتج
           </h1>
           <p className={`max-w-xl ${marketingMutedTextClassName()} sm:text-base`} style={{ color: marketingColors.soft }}>
-            {PWA_APP_NAME} يحوّل يومك في المحل إلى صورة واضحة: مبيعات، خارج، تقفيلات
+            {PWA_APP_NAME} يحوّل يومك في المحل إلى صورة واضحة: داخل، خارج، تقفيلات
             موظفين، وتقارير — بنفس روح الدفتر المعتمدة في التطبيق.
           </p>
           <div className="flex flex-wrap gap-3">

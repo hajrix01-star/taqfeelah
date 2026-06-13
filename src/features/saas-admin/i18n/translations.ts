@@ -105,7 +105,7 @@ export const translations = {
       legacy: "قديم",
     },
     operationType: {
-      summary: "ملخص مبيعات",
+      summary: "ملخص داخل",
       purchases: "مشتريات",
       expense: "مصروف",
       withdrawal: "سحب",

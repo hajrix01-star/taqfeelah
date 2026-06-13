@@ -11,7 +11,7 @@ export type MarketingPlan = {
 
 export const MARKETING_FEATURES = [
   {
-    title: "ملخص مبيعات يومي",
+    title: "ملخص داخل يومي",
     description: "سجّل الداخل حسب قنوات البيع في دقائق — بدون تعقيد محاسبي.",
   },
   {

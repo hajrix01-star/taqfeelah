@@ -11,7 +11,7 @@ import { buildEmployeeShareCaption, shareEmployeeCloseoutImage } from "./employe
 import { resolveCloseoutStoreName } from "./store-name-resolver";
 
 const shareLabels = (lang) => ({
-  sales: lang === "ar" ? "المبيعات" : "Sales",
+  sales: lang === "ar" ? "الداخل" : "Sales",
   purchasesExpenses: lang === "ar" ? "الخارج" : "Outflow",
   outflowRatio: lang === "ar" ? "نسبة الخارج" : "Outflow ratio",
   netMovement: lang === "ar" ? "صافي الحركة" : "Net movement",
