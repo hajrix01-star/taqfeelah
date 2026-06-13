@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Camera, Check, Image as ImageIcon, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Camera, Check, Image as ImageIcon, Plus, Send } from "lucide-react";
 import {
   prepareAttachment,
 } from "@/features/attachments/client/prototype-attachment-storage";
@@ -156,6 +156,135 @@ export function EntryAttachmentShareButton({
 }
 
 const attachmentSourceButtonClass = "flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-3 py-3 text-xs font-extrabold text-[#112A46] ring-1 ring-black/[0.05] transition enabled:hover:bg-[#FFF4D2] disabled:cursor-not-allowed disabled:opacity-60";
+const attachmentSourceMenuItemClass = "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-start text-xs font-extrabold text-[#112A46] transition hover:bg-[#FFF4D2] disabled:cursor-not-allowed disabled:opacity-60";
+
+export function ProofAddButton({
+  lang,
+  onSelect,
+  multiple = false,
+  disabled = false,
+  processing = false,
+  className = "",
+  menuAlign = "start",
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    const closeEscape = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeEscape);
+    };
+  }, [open]);
+
+  const handleChange = (event) => {
+    onSelect(event);
+    event.target.value = "";
+    setOpen(false);
+  };
+
+  const menuPositionClass = menuAlign === "end" ? "end-0" : "start-0";
+
+  return (
+    <div ref={containerRef} className={`relative inline-flex ${className}`}>
+      <button
+        type="button"
+        disabled={disabled || processing}
+        onClick={() => setOpen((current) => !current)}
+        className="inline-flex items-center gap-1 rounded-xl bg-[#FFF4D2] px-2.5 py-1.5 text-taq-nav font-black text-[#806528] ring-1 ring-[#E4B84A]/40 transition enabled:hover:bg-[#FFE9A8] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
+        <span>{text(lang, "addProof")}</span>
+      </button>
+      {open && !processing && (
+        <div className={`absolute top-[calc(100%+6px)] z-30 min-w-[168px] rounded-2xl bg-white p-2 shadow-lg ring-1 ring-[#E8E1D4] ${menuPositionClass}`}>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => cameraInputRef.current?.click()}
+            className={attachmentSourceMenuItemClass}
+          >
+            <Camera className="h-4 w-4 text-[#B99844]" />
+            <span>{text(lang, "openCamera")}</span>
+          </button>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => galleryInputRef.current?.click()}
+            className={attachmentSourceMenuItemClass}
+          >
+            <ImageIcon className="h-4 w-4 text-[#806528]" />
+            <span>{text(lang, "openGallery")}</span>
+          </button>
+        </div>
+      )}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        multiple={multiple || undefined}
+        onChange={handleChange}
+        className="sr-only"
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        multiple={multiple || undefined}
+        onChange={handleChange}
+        className="sr-only"
+      />
+    </div>
+  );
+}
+
+export function ProofAttachmentPreview({
+  lang,
+  src,
+  onOpen,
+  onRemove,
+  compact = false,
+}) {
+  if (!src) return null;
+  const image = (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img src={src} alt="" className={`object-cover ${compact ? "h-10 w-10" : "h-12 w-12"} ${onOpen ? "" : "rounded-xl ring-1 ring-black/[0.06]"}`} />
+  );
+  return (
+    <div className={`flex items-center gap-2 ${compact ? "" : "mt-2"}`}>
+      {onOpen ? (
+        <button
+          type="button"
+          onClick={() => onOpen(src)}
+          className="overflow-hidden rounded-xl ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50"
+        >
+          {image}
+        </button>
+      ) : (
+        <div className="overflow-hidden rounded-xl ring-1 ring-black/[0.06]">{image}</div>
+      )}
+      {onRemove ? (
+        <button type="button" onClick={onRemove} className="text-taq-nav font-black text-[#B44747]">
+          {text(lang, "removePhoto")}
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 export function AttachmentImageSourcePicker({
   lang,

@@ -5,7 +5,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
 import {
-  AttachmentCapture,
+  ProofAddButton,
+  ProofAttachmentPreview,
   useAttachmentCapture,
 } from "./prototype-runtime-attachment-ui";
 import { BackTitle } from "./prototype-runtime-chrome";
@@ -25,12 +26,12 @@ import {
   text,
 } from "./prototype-runtime-demo-data";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
-import {
-  formatCalendarMonth,
+import { formatCalendarMonth,
   isoCalendarDate,
   MoneyValue,
   todayIsoDate,
 } from "./prototype-runtime-notebook";
+import { resolveAttachmentPreviewSrc } from "@/features/employee-closeouts/daily-closeout-entry-helpers";
 
 function EntryDatePicker({ lang, value, onChange, showSuggestion = false }) {
   const [open, setOpen] = useState(false);
@@ -147,12 +148,27 @@ export function OwnerSummaryScreen({
           <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
           <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseStoreForSummary")}</p>
         </div>
-        <div>
+        <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.05]">
           <p className="mb-3 text-xs font-bold text-[#716753]">{text(lang, "salesChannels")}</p>
-          {!selectedStore ? <div className="rounded-3xl bg-white p-5 text-xs font-bold text-[#827762] ring-1 ring-black/[0.05]">{text(lang, "chooseStoreForSummary")}</div> : salesChannels.length === 0 ? <div className="rounded-3xl bg-white p-5 text-xs font-bold text-[#B44747] ring-1 ring-black/[0.05]">{text(lang, "noSalesChannels")}</div> : <div className="grid grid-cols-3 gap-2">{salesChannels.map((channel) => <label key={channel.id} className="rounded-2xl bg-white px-2 py-3 text-center ring-1 ring-black/[0.05]"><span className="mb-2 block min-h-[30px] text-taq-meta font-bold leading-4 text-[#716753]">{channelName(channel, lang)}</span><div dir="ltr" className="flex items-center justify-center gap-1"><input inputMode="decimal" value={values[channel.id] || ""} onChange={(event) => setValues((current) => ({ ...current, [channel.id]: sanitizeAmountInput(event.target.value) }))} className="min-w-0 w-full bg-[#F7F5EF] px-1 py-2 text-center text-sm font-black outline-none" /><span className="text-taq-nav font-bold text-[#827762]">{lang === "ar" ? "ر.س" : "SAR"}</span></div></label>)}</div>}
+          {!selectedStore ? <div className="rounded-2xl bg-[#F7F5EF] p-5 text-xs font-bold text-[#827762]">{text(lang, "chooseStoreForSummary")}</div> : salesChannels.length === 0 ? <div className="rounded-2xl bg-[#FFF1EE] p-5 text-xs font-bold text-[#B44747]">{text(lang, "noSalesChannels")}</div> : <div className="grid grid-cols-3 gap-2">{salesChannels.map((channel) => <label key={channel.id} className="rounded-2xl bg-[#F7F5EF] px-2 py-3 text-center ring-1 ring-black/[0.05]"><span className="mb-2 block min-h-[30px] text-taq-meta font-bold leading-4 text-[#716753]">{channelName(channel, lang)}</span><div dir="ltr" className="flex items-center justify-center gap-1"><input inputMode="decimal" value={values[channel.id] || ""} onChange={(event) => setValues((current) => ({ ...current, [channel.id]: sanitizeAmountInput(event.target.value) }))} className="min-w-0 w-full bg-white px-1 py-2 text-center text-sm font-black outline-none" /><span className="text-taq-nav font-bold text-[#827762]">{lang === "ar" ? "ر.س" : "SAR"}</span></div></label>)}</div>}
+          <div className="mt-4 rounded-2xl bg-[#112A46] p-4 text-white">
+            <div className="flex items-center justify-between"><span className="text-sm font-bold text-white/70">{text(lang, "totalSales")}</span><strong><MoneyValue value={money(total, lang)} /></strong></div>
+            {total > 0 ? (
+              <div className="mt-3 border-t border-white/15 pt-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-taq-nav font-bold text-white/75">{text(lang, "salesSummaryPhoto")} ({text(lang, "optional")})</p>
+                  <ProofAddButton lang={lang} onSelect={selectAttachment} disabled={processing || Boolean(attachment)} processing={processing} menuAlign="end" />
+                </div>
+                {error ? <p className="mt-2 text-taq-nav font-black text-[#FFB4B4]">{error}</p> : null}
+                <ProofAttachmentPreview
+                  lang={lang}
+                  src={resolveAttachmentPreviewSrc(attachment)}
+                  onRemove={clearAttachment}
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
-        <div className="flex justify-between rounded-3xl bg-[#112A46] p-5 text-white"><span className="text-sm font-bold text-white/70">{text(lang, "totalSales")}</span><strong><MoneyValue value={money(total, lang)} /></strong></div>
-        <AttachmentCapture lang={lang} attachment={attachment} processing={processing} error={error} onSelect={selectAttachment} onClear={clearAttachment} />
         <button type="button" disabled={!canSave || processing || saving} onClick={submit} className={`w-full rounded-2xl py-4 text-sm font-extrabold text-white ${canSave && !processing && !saving ? "bg-[#39A160]" : "bg-[#B8C0B7]"}`}>{text(lang, saving ? "saving" : "save")}</button>
       </div>
     </motion.section>
@@ -209,10 +225,31 @@ export function OwnerExpenseScreen({
           <div className="grid grid-cols-3 gap-2">{["expense", "purchases", "withdrawal"].map((item) => <Choice key={item} active={kind === item} onClick={() => setKind(item)}>{text(lang, item)}</Choice>)}</div>
         </div>
         {kind === "expense" && <div><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "category")}</p>{activeCategories.length ? <div className="grid grid-cols-3 gap-2">{activeCategories.map((item) => <Choice key={item.id} active={category === item.id} onClick={() => setCategory(item.id)}>{text(lang, item.label)}</Choice>)}</div> : <p className="rounded-xl bg-[#FFF1EE] p-3 text-taq-meta font-bold text-[#B44747]">{text(lang, "atLeastOneCategory")}</p>}</div>}
-        <div className="rounded-3xl bg-white p-5 ring-1 ring-black/[0.05]"><p className="text-xs font-bold text-[#716753]">{text(lang, "amount")}</p><div className="mt-2 flex items-center gap-2" dir="ltr"><input inputMode="decimal" value={amount} onChange={(event) => setAmount(sanitizeAmountInput(event.target.value))} placeholder="0" className="w-full min-w-0 bg-transparent text-4xl font-black outline-none" /><span className="mt-3 text-sm font-bold text-[#786D58]">{lang === "ar" ? "ر.س" : "SAR"}</span></div></div>
+        <div className="rounded-3xl bg-white p-5 ring-1 ring-black/[0.05]">
+          <p className="text-xs font-bold text-[#716753]">{text(lang, "amount")}</p>
+          <div className="mt-2 flex items-center gap-2" dir="ltr">
+            <input inputMode="decimal" value={amount} onChange={(event) => setAmount(sanitizeAmountInput(event.target.value))} placeholder="0" className="w-full min-w-0 bg-transparent text-4xl font-black outline-none" />
+            <span className="mt-3 text-sm font-bold text-[#786D58]">{lang === "ar" ? "ر.س" : "SAR"}</span>
+          </div>
+          {toAmount(amount) > 0 ? (
+            <div className="mt-4 border-t border-[#E8E1D4] pt-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-taq-nav font-bold text-[#827762]">{text(lang, "captureAttachment")} ({text(lang, "optional")})</p>
+                {!resolveAttachmentPreviewSrc(attachment) ? (
+                  <ProofAddButton lang={lang} onSelect={selectAttachment} disabled={processing} processing={processing} menuAlign="end" />
+                ) : null}
+              </div>
+              {error ? <p className="mt-2 text-taq-nav font-black text-[#B44747]">{error}</p> : null}
+              <ProofAttachmentPreview
+                lang={lang}
+                src={resolveAttachmentPreviewSrc(attachment)}
+                onRemove={clearAttachment}
+              />
+            </div>
+          ) : null}
+        </div>
         <div><SmallInfo label={text(lang, "category")} value={categoryLabel} /></div>
         <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.05]"><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "note")} <span className="font-normal">({text(lang, "optional")})</span></p><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder={text(lang, "notePlaceholder")} className="min-h-[52px] w-full resize-none rounded-2xl bg-[#F7F5EF] px-4 py-3 text-sm outline-none" /></div>
-        <AttachmentCapture lang={lang} attachment={attachment} processing={processing} error={error} onSelect={selectAttachment} onClear={clearAttachment} />
         <button type="button" disabled={!canSave || processing || saving} onClick={submit} className={`w-full rounded-2xl py-4 text-sm font-extrabold text-white transition ${canSave && !processing && !saving ? "bg-[#112A46]" : "cursor-not-allowed bg-[#B8C0B7]"}`}>{text(lang, saving ? "saving" : "saveOutflow")}</button>
       </div>
     </motion.section>

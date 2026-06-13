@@ -13,8 +13,8 @@ import {
 } from "./daily-closeout-entry-helpers";
 import { EntrySection } from "./daily-closeout-entry-ui-primitives";
 import {
-  AttachmentCapture,
-  AttachmentImageSourcePicker,
+  ProofAddButton,
+  ProofAttachmentPreview,
 } from "@/components/prototype-runtime/prototype-runtime-attachment-ui";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 
@@ -41,11 +41,8 @@ export function DailyCloseoutEntryFormBody({
   outflows,
   removeOutflow,
   removeOutflowAttachment,
-  outflowAttachment,
-  outflowAttachmentProcessing,
-  outflowAttachmentError,
-  selectOutflowAttachment,
-  clearOutflowAttachment,
+  addOutflowAttachment,
+  outflowAttachmentProcessingId,
   attachments,
   attachmentProcessing,
   attachmentError,
@@ -127,9 +124,55 @@ export function DailyCloseoutEntryFormBody({
             ))}
           </div>
         )}
-        <div className="flex items-center justify-between rounded-xl border border-[#E8E1D4] bg-[#FAF3E3] px-3 py-3 font-extrabold">
-          <span className="text-sm">{lang === "ar" ? "إجمالي الداخل" : "Total sales"}</span>
-          <span className="tabular-nums text-[#112A46]">{formatCloseoutMoney(totals.totalSales, lang)} ر.س</span>
+        <div className="rounded-2xl border border-[#E8E1D4] bg-[#FAF3E3] px-3 py-3">
+          <div className="flex items-center justify-between font-extrabold">
+            <span className="text-sm">{lang === "ar" ? "إجمالي الداخل" : "Total sales"}</span>
+            <span className="tabular-nums text-[#112A46]">{formatCloseoutMoney(totals.totalSales, lang)} ر.س</span>
+          </div>
+          {totals.totalSales > 0 ? (
+            <div className="mt-3 border-t border-[#E8E1D4]/80 pt-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-taq-nav font-bold leading-5 text-[#827762]">{titles.inflowProofHint}</p>
+                <ProofAddButton
+                  lang={lang}
+                  onSelect={onFiles}
+                  multiple
+                  disabled={attachmentProcessing || attachments.length >= 6}
+                  processing={attachmentProcessing}
+                  menuAlign="end"
+                />
+              </div>
+              {attachmentProcessing ? (
+                <p className="mt-2 text-taq-nav font-bold text-[#827762]">
+                  {lang === "ar" ? "جاري ضغط الصور..." : "Compressing images..."}
+                </p>
+              ) : null}
+              {attachmentError ? (
+                <p className="mt-2 text-taq-nav font-black text-[#B44747]">{attachmentError}</p>
+              ) : null}
+              {attachments.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {attachments.map((item, index) => {
+                    const src = resolveAttachmentPreviewSrc(item);
+                    if (!src) return null;
+                    return (
+                      <div key={`thumb-${index}`} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewAttachment(src)}
+                          className="rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={src} alt="" className="h-16 w-16 rounded-xl object-cover" />
+                        </button>
+                        <button type="button" onClick={() => removeAttachment(index)} className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#B44747] text-taq-meta text-white">×</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </EntrySection>
       <EntrySection number={2} title={titles.outflows} lang={lang}>
@@ -184,84 +227,53 @@ export function DailyCloseoutEntryFormBody({
           </button>
         </div>
         <input value={outNote} onChange={(event) => setOutNote(event.target.value)} placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"} className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-bold ring-1 ring-black/[0.06]" />
-        <p className="text-taq-nav font-bold leading-5 text-[#827762]">{titles.outflowProofHint}</p>
-        <AttachmentCapture
-          lang={lang}
-          attachment={outflowAttachment}
-          processing={outflowAttachmentProcessing}
-          error={outflowAttachmentError}
-          onSelect={selectOutflowAttachment}
-          onClear={clearOutflowAttachment}
-        />
-        <div className="space-y-2">
-          {outflows.map((row) => {
-            const proofSrc = row.attachments?.find((item) => typeof item === "string" && item.startsWith("data:"))
-              || row.attachments?.find((item) => item?.dataUrl)?.dataUrl
-              || "";
-            return (
-            <div key={row.id} className="rounded-2xl bg-white px-3 py-2 ring-1 ring-black/[0.05]">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-bold">{row.typeLabel || row.type}{row.category ? ` · ${row.category}` : ""}</span>
-                <div className="flex items-center gap-2">
-                  <strong className="text-sm font-black tabular-nums text-[#B44747]">{formatCloseoutMoney(row.amount, lang)}</strong>
-                  <button type="button" onClick={() => removeOutflow(row.id)} className="text-[#B44747]">×</button>
-                </div>
-              </div>
-              {proofSrc ? (
-                <div className="mt-2 flex items-center gap-2">
-                  <button type="button" onClick={() => setPreviewAttachment(proofSrc)} className="overflow-hidden rounded-xl ring-1 ring-black/[0.06]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={proofSrc} alt="" className="h-12 w-12 object-cover" />
-                  </button>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-taq-nav font-black text-[#806528]">{lang === "ar" ? "إثبات الخارج" : "Outflow proof"}</p>
-                    <p className="truncate text-taq-nav font-bold text-[#827762]">{row.typeLabel || row.type}</p>
+        {outflows.length > 0 ? (
+          <div className="space-y-2">
+            {outflows.map((row) => {
+              const proofSrc = row.attachments?.find((item) => typeof item === "string" && item.startsWith("data:"))
+                || row.attachments?.find((item) => item?.dataUrl)?.dataUrl
+                || "";
+              const processingProof = outflowAttachmentProcessingId === row.id;
+              return (
+                <div key={row.id} className="rounded-2xl bg-white px-3 py-2 ring-1 ring-black/[0.05]">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 flex-1 text-xs font-bold">{row.typeLabel || row.type}{row.category ? ` · ${row.category}` : ""}</span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {!proofSrc ? (
+                        <ProofAddButton
+                          lang={lang}
+                          onSelect={(event) => addOutflowAttachment(row.id, event)}
+                          processing={processingProof}
+                          menuAlign="end"
+                        />
+                      ) : null}
+                      <strong className="text-sm font-black tabular-nums text-[#B44747]">{formatCloseoutMoney(row.amount, lang)}</strong>
+                      <button type="button" onClick={() => removeOutflow(row.id)} className="text-[#B44747]">×</button>
+                    </div>
                   </div>
-                  <button type="button" onClick={() => removeOutflowAttachment(row.id)} className="text-taq-nav font-black text-[#B44747]">
-                    {lang === "ar" ? "حذف الصورة" : "Remove"}
-                  </button>
+                  {proofSrc ? (
+                    <div className="mt-2 flex items-center gap-2">
+                      <ProofAttachmentPreview
+                        lang={lang}
+                        src={proofSrc}
+                        onOpen={setPreviewAttachment}
+                        onRemove={() => removeOutflowAttachment(row.id)}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-taq-nav font-black text-[#806528]">{lang === "ar" ? "إثبات الخارج" : "Outflow proof"}</p>
+                        <p className="truncate text-taq-nav font-bold text-[#827762]">{row.typeLabel || row.type}</p>
+                      </div>
+                    </div>
+                  ) : processingProof ? (
+                    <p className="mt-2 text-taq-nav font-bold text-[#827762]">{text(lang, "processingPhoto")}</p>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
-            );
-          })}
-        </div>
-      </EntrySection>
-      <EntrySection number={3} title={titles.photos} lang={lang}>
-        <p className="mb-3 text-taq-nav font-bold leading-5 text-[#827762]">{titles.inflowProofHint}</p>
-        <div className="rounded-2xl border border-dashed border-[#C9B896] bg-white px-4 py-4">
-          <p className="mb-3 text-center text-xs font-bold text-[#827762]">{text(lang, "cameraOrGallery")}</p>
-          <AttachmentImageSourcePicker lang={lang} onSelect={onFiles} multiple disabled={attachmentProcessing || attachments.length >= 6} />
-        </div>
-        {attachmentProcessing ? (
-          <p className="mt-2 text-center text-taq-nav font-bold text-[#827762]">
-            {lang === "ar" ? "جاري ضغط الصور..." : "Compressing images..."}
-          </p>
+              );
+            })}
+          </div>
         ) : null}
-        {attachmentError ? (
-          <p className="mt-2 text-center text-taq-nav font-black text-[#B44747]">{attachmentError}</p>
-        ) : null}
-        <div className="flex flex-wrap gap-2">
-          {attachments.map((item, index) => {
-            const src = resolveAttachmentPreviewSrc(item);
-            if (!src) return null;
-            return (
-            <div key={`thumb-${index}`} className="relative">
-              <button
-                type="button"
-                onClick={() => setPreviewAttachment(src)}
-                className="rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt="" className="h-16 w-16 rounded-xl object-cover" />
-              </button>
-              <button type="button" onClick={() => removeAttachment(index)} className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#B44747] text-taq-meta text-white">×</button>
-            </div>
-            );
-          })}
-        </div>
       </EntrySection>
-      <EntrySection number={4} title={titles.review} lang={lang}>
+      <EntrySection number={3} title={titles.review} lang={lang}>
         <div className="space-y-2 rounded-2xl bg-white p-4 ring-1 ring-black/[0.05]">
           <div className="flex justify-between text-sm font-bold"><span>{lang === "ar" ? "إجمالي الداخل" : "Total in"}</span><span className="tabular-nums">{formatCloseoutMoney(totals.totalSales, lang)} ر.س</span></div>
           <div className="flex justify-between text-sm font-bold text-[#B44747]"><span>{lang === "ar" ? "إجمالي الخارج" : "Total out"}</span><span className="tabular-nums">{formatCloseoutMoney(totals.totalOutflow, lang)} ر.س</span></div>
