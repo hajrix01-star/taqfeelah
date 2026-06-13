@@ -131,17 +131,17 @@ export function DailyCloseoutEntryFormBody({
           </div>
           {totals.totalSales > 0 ? (
             <div className="mt-3 border-t border-[#E8E1D4]/80 pt-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-taq-nav font-bold leading-5 text-[#827762]">{titles.inflowProofHint}</p>
+              <p className="text-taq-nav font-bold leading-5 text-[#827762]">{titles.inflowProofHint}</p>
+              {attachments.length < 6 ? (
                 <ProofAddButton
                   lang={lang}
                   onSelect={onFiles}
                   multiple
-                  disabled={attachmentProcessing || attachments.length >= 6}
+                  disabled={attachmentProcessing}
                   processing={attachmentProcessing}
-                  menuAlign="end"
+                  className="mt-2"
                 />
-              </div>
+              ) : null}
               {attachmentProcessing ? (
                 <p className="mt-2 text-taq-nav font-bold text-[#827762]">
                   {lang === "ar" ? "جاري ضغط الصور..." : "Compressing images..."}
@@ -228,45 +228,42 @@ export function DailyCloseoutEntryFormBody({
         </div>
         <input value={outNote} onChange={(event) => setOutNote(event.target.value)} placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"} className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-bold ring-1 ring-black/[0.06]" />
         {outflows.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {outflows.map((row) => {
               const proofSrc = row.attachments?.find((item) => typeof item === "string" && item.startsWith("data:"))
                 || row.attachments?.find((item) => item?.dataUrl)?.dataUrl
                 || "";
               const processingProof = outflowAttachmentProcessingId === row.id;
               return (
-                <div key={row.id} className="rounded-2xl bg-white px-3 py-2 ring-1 ring-black/[0.05]">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="min-w-0 flex-1 text-xs font-bold">{row.typeLabel || row.type}{row.category ? ` · ${row.category}` : ""}</span>
-                    <div className="flex shrink-0 items-center gap-2">
-                      {!proofSrc ? (
-                        <ProofAddButton
-                          lang={lang}
-                          onSelect={(event) => addOutflowAttachment(row.id, event)}
-                          processing={processingProof}
-                          menuAlign="end"
-                        />
-                      ) : null}
-                      <strong className="text-sm font-black tabular-nums text-[#B44747]">{formatCloseoutMoney(row.amount, lang)}</strong>
-                      <button type="button" onClick={() => removeOutflow(row.id)} className="text-[#B44747]">×</button>
+                <div key={row.id} className="space-y-2">
+                  <div className="rounded-2xl bg-white px-3 py-2 ring-1 ring-black/[0.05]">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 flex-1 text-xs font-bold">{row.typeLabel || row.type}{row.category ? ` · ${row.category}` : ""}</span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <strong className="text-sm font-black tabular-nums text-[#B44747]">{formatCloseoutMoney(row.amount, lang)}</strong>
+                        <button type="button" onClick={() => removeOutflow(row.id)} className="text-[#B44747]">×</button>
+                      </div>
                     </div>
                   </div>
                   {proofSrc ? (
-                    <div className="mt-2 flex items-center gap-2">
-                      <ProofAttachmentPreview
+                    <ProofAttachmentPreview
+                      lang={lang}
+                      src={proofSrc}
+                      onOpen={setPreviewAttachment}
+                      onRemove={() => removeOutflowAttachment(row.id)}
+                    />
+                  ) : (
+                    <>
+                      <ProofAddButton
                         lang={lang}
-                        src={proofSrc}
-                        onOpen={setPreviewAttachment}
-                        onRemove={() => removeOutflowAttachment(row.id)}
+                        onSelect={(event) => addOutflowAttachment(row.id, event)}
+                        processing={processingProof}
                       />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-taq-nav font-black text-[#806528]">{lang === "ar" ? "إثبات الخارج" : "Outflow proof"}</p>
-                        <p className="truncate text-taq-nav font-bold text-[#827762]">{row.typeLabel || row.type}</p>
-                      </div>
-                    </div>
-                  ) : processingProof ? (
-                    <p className="mt-2 text-taq-nav font-bold text-[#827762]">{text(lang, "processingPhoto")}</p>
-                  ) : null}
+                      {processingProof ? (
+                        <p className="text-taq-nav font-bold text-[#827762]">{text(lang, "processingPhoto")}</p>
+                      ) : null}
+                    </>
+                  )}
                 </div>
               );
             })}

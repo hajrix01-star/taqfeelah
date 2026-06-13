@@ -155,10 +155,10 @@ export function OwnerSummaryScreen({
             <div className="flex items-center justify-between"><span className="text-sm font-bold text-white/70">{text(lang, "totalSales")}</span><strong><MoneyValue value={money(total, lang)} /></strong></div>
             {total > 0 ? (
               <div className="mt-3 border-t border-white/15 pt-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-taq-nav font-bold text-white/75">{text(lang, "salesSummaryPhoto")} ({text(lang, "optional")})</p>
-                  <ProofAddButton lang={lang} onSelect={selectAttachment} disabled={processing || Boolean(attachment)} processing={processing} menuAlign="end" />
-                </div>
+                <p className="text-taq-nav font-bold text-white/75">{text(lang, "salesSummaryPhoto")} ({text(lang, "optional")})</p>
+                {!resolveAttachmentPreviewSrc(attachment) ? (
+                  <ProofAddButton lang={lang} onSelect={selectAttachment} disabled={processing} processing={processing} className="mt-2" />
+                ) : null}
                 {error ? <p className="mt-2 text-taq-nav font-black text-[#FFB4B4]">{error}</p> : null}
                 <ProofAttachmentPreview
                   lang={lang}
@@ -233,12 +233,10 @@ export function OwnerExpenseScreen({
           </div>
           {toAmount(amount) > 0 ? (
             <div className="mt-4 border-t border-[#E8E1D4] pt-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-taq-nav font-bold text-[#827762]">{text(lang, "captureAttachment")} ({text(lang, "optional")})</p>
-                {!resolveAttachmentPreviewSrc(attachment) ? (
-                  <ProofAddButton lang={lang} onSelect={selectAttachment} disabled={processing} processing={processing} menuAlign="end" />
-                ) : null}
-              </div>
+              <p className="text-taq-nav font-bold text-[#827762]">{text(lang, "captureAttachment")} ({text(lang, "optional")})</p>
+              {!resolveAttachmentPreviewSrc(attachment) ? (
+                <ProofAddButton lang={lang} onSelect={selectAttachment} disabled={processing} processing={processing} className="mt-2" />
+              ) : null}
               {error ? <p className="mt-2 text-taq-nav font-black text-[#B44747]">{error}</p> : null}
               <ProofAttachmentPreview
                 lang={lang}
