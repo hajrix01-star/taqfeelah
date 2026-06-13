@@ -11,6 +11,8 @@ import {
   moneyInputClass,
 } from "./daily-closeout-entry-helpers";
 import { EntrySection } from "./daily-closeout-entry-ui-primitives";
+import { AttachmentImageSourcePicker } from "@/components/prototype-runtime/prototype-runtime-attachment-ui";
+import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 
 export function DailyCloseoutEntryFormBody({
   lang,
@@ -183,10 +185,10 @@ export function DailyCloseoutEntryFormBody({
         </div>
       </EntrySection>
       <EntrySection number={3} title={titles.photos} lang={lang}>
-        <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-[#C9B896] bg-white px-4 py-8 text-center">
-          <span className="text-xs font-bold text-[#827762]">{lang === "ar" ? "رفع صورة أو أكثر" : "Upload one or more photos"}</span>
-          <input type="file" accept="image/*" multiple className="hidden" onChange={onFiles} />
-        </label>
+        <div className="rounded-2xl border border-dashed border-[#C9B896] bg-white px-4 py-4">
+          <p className="mb-3 text-center text-xs font-bold text-[#827762]">{text(lang, "cameraOrGallery")}</p>
+          <AttachmentImageSourcePicker lang={lang} onSelect={onFiles} multiple />
+        </div>
         <div className="flex flex-wrap gap-2">
           {attachments.filter(Boolean).map((src, index) => (
             <div key={`thumb-${index}`} className="relative">
