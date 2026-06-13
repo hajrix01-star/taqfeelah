@@ -58,5 +58,5 @@ export function resolvePullToRefreshUsesNotebookSurface({
   if (employee) {
     return employeePage === "closeouts";
   }
-  return ownerPage === "home" || ownerPage === "notebook" || ownerPage === "closeouts";
+  return ownerPage === "home" || ownerPage === "notebook" || ownerPage === "register" || ownerPage === "closeouts";
 }
