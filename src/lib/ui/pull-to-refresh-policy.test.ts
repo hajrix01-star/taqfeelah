@@ -77,8 +77,8 @@ describe("resolvePullToRefreshTarget", () => {
 });
 
 describe("resolvePullToRefreshUsesNotebookSurface", () => {
-  it("uses notebook surface on owner home, notebook, and closeouts", () => {
-    for (const ownerPage of ["home", "notebook", "closeouts"]) {
+  it("uses notebook surface on owner home, notebook, register, and closeouts", () => {
+    for (const ownerPage of ["home", "notebook", "register", "closeouts"]) {
       expect(resolvePullToRefreshUsesNotebookSurface({
         employee: false,
         ownerPage,
@@ -87,10 +87,10 @@ describe("resolvePullToRefreshUsesNotebookSurface", () => {
     }
   });
 
-  it("uses shell surface on owner register", () => {
+  it("uses shell surface on owner settings", () => {
     expect(resolvePullToRefreshUsesNotebookSurface({
       employee: false,
-      ownerPage: "register",
+      ownerPage: "settings",
       employeePage: "closeouts",
     })).toBe(false);
   });
