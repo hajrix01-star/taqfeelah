@@ -156,7 +156,7 @@ export function EntryAttachmentShareButton({
 }
 
 const attachmentSourceButtonClass = "flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-3 py-3 text-xs font-extrabold text-[#112A46] ring-1 ring-black/[0.05] transition enabled:hover:bg-[#FFF4D2] disabled:cursor-not-allowed disabled:opacity-60";
-const attachmentSourceMenuItemClass = "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-start text-xs font-extrabold text-[#112A46] transition hover:bg-[#FFF4D2] disabled:cursor-not-allowed disabled:opacity-60";
+const proofSourceCardClass = "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-black/[0.06] transition enabled:hover:bg-[#FFF4D2] disabled:cursor-not-allowed disabled:opacity-60";
 
 export function ProofAddButton({
   lang,
@@ -165,7 +165,6 @@ export function ProofAddButton({
   disabled = false,
   processing = false,
   className = "",
-  menuAlign = "start",
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -196,10 +195,8 @@ export function ProofAddButton({
     setOpen(false);
   };
 
-  const menuPositionClass = menuAlign === "end" ? "end-0" : "start-0";
-
   return (
-    <div ref={containerRef} className={`relative inline-flex ${className}`}>
+    <div ref={containerRef} className={`min-w-0 ${className}`}>
       <button
         type="button"
         disabled={disabled || processing}
@@ -210,24 +207,26 @@ export function ProofAddButton({
         <span>{text(lang, "addProof")}</span>
       </button>
       {open && !processing && (
-        <div className={`absolute top-[calc(100%+6px)] z-30 min-w-[168px] rounded-2xl bg-white p-2 shadow-lg ring-1 ring-[#E8E1D4] ${menuPositionClass}`}>
+        <div className="mt-2 flex items-center gap-2">
           <button
             type="button"
             disabled={disabled}
             onClick={() => cameraInputRef.current?.click()}
-            className={attachmentSourceMenuItemClass}
+            className={proofSourceCardClass}
+            aria-label={text(lang, "openCamera")}
+            title={text(lang, "openCamera")}
           >
-            <Camera className="h-4 w-4 text-[#B99844]" />
-            <span>{text(lang, "openCamera")}</span>
+            <Camera className="h-5 w-5 text-[#B99844]" />
           </button>
           <button
             type="button"
             disabled={disabled}
             onClick={() => galleryInputRef.current?.click()}
-            className={attachmentSourceMenuItemClass}
+            className={proofSourceCardClass}
+            aria-label={text(lang, "openGallery")}
+            title={text(lang, "openGallery")}
           >
-            <ImageIcon className="h-4 w-4 text-[#806528]" />
-            <span>{text(lang, "openGallery")}</span>
+            <ImageIcon className="h-5 w-5 text-[#806528]" />
           </button>
         </div>
       )}
