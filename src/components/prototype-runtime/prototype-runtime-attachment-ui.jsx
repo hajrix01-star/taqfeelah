@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Camera, Check } from "lucide-react";
+import { useRef, useState } from "react";
+import { Camera, Check, Image as ImageIcon } from "lucide-react";
 import {
   prepareAttachment,
 } from "@/features/attachments/client/prototype-attachment-storage";
@@ -95,6 +95,66 @@ export function AttachmentThumbButton({
   );
 }
 
+const attachmentSourceButtonClass = "flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-3 py-3 text-xs font-extrabold text-[#112A46] ring-1 ring-black/[0.05] transition enabled:hover:bg-[#FFF4D2] disabled:cursor-not-allowed disabled:opacity-60";
+
+export function AttachmentImageSourcePicker({
+  lang,
+  onSelect,
+  multiple = false,
+  disabled = false,
+  className = "",
+}) {
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
+
+  const handleChange = (event) => {
+    onSelect(event);
+    event.target.value = "";
+  };
+
+  return (
+    <div className={className}>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => cameraInputRef.current?.click()}
+          className={attachmentSourceButtonClass}
+        >
+          <Camera className="h-5 w-5 text-[#B99844]" />
+          <span>{text(lang, "openCamera")}</span>
+        </button>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => galleryInputRef.current?.click()}
+          className={attachmentSourceButtonClass}
+        >
+          <ImageIcon className="h-5 w-5 text-[#806528]" />
+          <span>{text(lang, "openGallery")}</span>
+        </button>
+      </div>
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        multiple={multiple || undefined}
+        onChange={handleChange}
+        className="sr-only"
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        multiple={multiple || undefined}
+        onChange={handleChange}
+        className="sr-only"
+      />
+    </div>
+  );
+}
+
 export function AttachmentCapture({
   lang,
   attachment,
@@ -104,19 +164,20 @@ export function AttachmentCapture({
   onClear,
   tall = false,
 }) {
+  const iconSize = tall ? "h-8 w-8" : "h-6 w-6";
+
   return (
     <div>
-      <label className={`relative flex w-full cursor-pointer items-center justify-center gap-3 overflow-hidden rounded-3xl border-2 border-dashed border-[#D7CBAF] bg-[#FFFDF7] ${tall ? "h-40 flex-col" : "min-h-24 px-4 py-3"}`}>
-        <input type="file" accept="image/*" onChange={onSelect} className="sr-only" />
+      <div className={`relative flex w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-3xl border-2 border-dashed border-[#D7CBAF] bg-[#FFFDF7] ${tall ? "h-40 px-4 py-4" : "min-h-24 px-4 py-3"}`}>
         {attachment ? (
           <>
             <AttachmentPreview attachment={attachment} className="absolute inset-0 h-full w-full opacity-25" />
-            <Check className={`${tall ? "h-8 w-8" : "h-6 w-6"} relative text-[#39A160]`} />
+            <Check className={`${iconSize} relative text-[#39A160]`} />
           </>
         ) : (
-          <Camera className={`${tall ? "h-8 w-8" : "h-6 w-6"} text-[#B99844]`} />
+          <Camera className={`${iconSize} text-[#B99844]`} />
         )}
-        <div className={`relative ${tall ? "text-center" : "text-start"}`}>
+        <div className={`relative w-full ${tall ? "text-center" : "text-start"}`}>
           <p className="text-sm font-extrabold">
             {processing ? text(lang, "processingPhoto") : attachment ? text(lang, "replacePhoto") : text(lang, "cameraOrGallery")}
           </p>
@@ -124,7 +185,15 @@ export function AttachmentCapture({
             {attachment ? text(lang, "attachmentStoredLocally") : text(lang, "optional")}
           </p>
         </div>
-      </label>
+        {!processing && (
+          <AttachmentImageSourcePicker
+            lang={lang}
+            onSelect={onSelect}
+            disabled={processing}
+            className="relative w-full"
+          />
+        )}
+      </div>
       {attachment && (
         <button type="button" onClick={onClear} className="mt-2 text-taq-meta font-bold text-[#B44747]">
           {text(lang, "removePhoto")}
