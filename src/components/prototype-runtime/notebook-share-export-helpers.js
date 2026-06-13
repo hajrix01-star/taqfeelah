@@ -1,4 +1,4 @@
-import { shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
+import { shareOwnerCloseoutImage } from "@/features/owner-notebook/owner-closeout-share";
 import { text } from "./prototype-runtime-demo-data";
 
 export function downloadBlobFile(blob, filename) {
@@ -18,12 +18,7 @@ export async function captureNotebookPreviewBlob(element, backgroundColor = "#FF
 }
 
 export async function shareNotebookImageToWhatsApp(file, caption, lang) {
-  return shareImageThroughWhatsApp({
-    file,
-    caption,
-    lang,
-    pasteHint: text(lang, "shareImagePasteHint"),
-  });
+  return shareOwnerCloseoutImage({ file, caption, lang });
 }
 
 const csvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
