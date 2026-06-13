@@ -209,7 +209,7 @@ export function PrototypeRuntimePageContent({
           onSave={saveOwnerSummary}
         />
       )}
-      {!employee && ownerPage === "add-expense" && !entriesApiDbSource && (
+      {!employee && ownerPage === "add-expense" && (
         <OwnerExpenseScreen
           lang={lang}
           saving={saving}

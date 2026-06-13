@@ -13,6 +13,11 @@ import {
   persistOperationalEntryThroughApi,
   resolveSummaryLastCloseoutUpdate,
 } from "@/features/operations/operational-entry-persist-helpers";
+import {
+  buildOwnerOutflowCloseoutDraft,
+  isOwnerStandaloneOutflowPayload,
+} from "@/features/operations/client/build-owner-outflow-closeout-draft";
+import { buildCloseoutSubmitFailureMessage, diagnoseCloseoutSubmitFailure } from "@/features/closeouts/client/closeouts-api-client";
 import { text } from "./prototype-runtime-demo-data";
 import {
   buildEntry,
@@ -36,8 +41,77 @@ export function usePrototypeRuntimeOwnerSaveActions({
   setSavedOutflowShareTarget,
   setSaved,
   setOperationalEntries,
+  closeoutsApiEnabled = false,
+  closeoutsApiOrganizationId = "",
+  ownerCloseoutChannelConfig = { channels: [] },
+  syncSubmitCloseoutToApi = async () => null,
 }) {
   const saveOwner = async (payload) => {
+    if (entriesApiDbSource && isOwnerStandaloneOutflowPayload(payload)) {
+      if (!closeoutsApiEnabled) {
+        window.alert(lang === "ar"
+          ? "مسار API للتقفيلات غير مفعّل."
+          : "Closeouts API is disabled.");
+        return;
+      }
+      if (!canPersistOperationalEntry({
+        saving: savingRef.current,
+        payload,
+        allowedBusinessIds: activeBusinessIds,
+      })) return;
+      if (isFutureOperationalEntryDate(payload.date, todayDate)) {
+        window.alert(text(lang, "futureDateNotAllowed"));
+        return;
+      }
+
+      const closeout = buildOwnerOutflowCloseoutDraft(payload, lang);
+      if (!closeout) return;
+
+      const submitFailure = diagnoseCloseoutSubmitFailure({
+        organizationId: closeoutsApiOrganizationId,
+        actorUserId: ownerApiUserId,
+        closeout,
+        storeChannels: ownerCloseoutChannelConfig.channels || [],
+      });
+      if (submitFailure) {
+        window.alert(buildCloseoutSubmitFailureMessage(submitFailure, lang));
+        return;
+      }
+
+      savingRef.current = true;
+      setSaving(true);
+      try {
+        const result = await syncSubmitCloseoutToApi({
+          action: "submit",
+          closeout,
+          employee: {
+            id: ownerApiUserId,
+            apiUserId: ownerApiUserId,
+            submitActorRole: "owner",
+          },
+        });
+        if (!result) {
+          window.alert(lang === "ar"
+            ? "تعذر حفظ الخارج على الخادم."
+            : "Failed to save outflow on server.");
+          return;
+        }
+        const refreshed = await loadOperationalEntriesFromApi();
+        const createdOutflowId = Array.isArray(result.outflowEntryIds) ? result.outflowEntryIds[0] : null;
+        setOwnerPage("home");
+        setSavedOutflowShareTarget(findCreatedEntryInRefreshedList(refreshed, createdOutflowId));
+      } catch (error) {
+        const message = error instanceof Error && error.message
+          ? error.message
+          : (lang === "ar" ? "تعذر حفظ الخارج على الخادم." : "Failed to save outflow on server.");
+        window.alert(message);
+      } finally {
+        savingRef.current = false;
+        setSaving(false);
+      }
+      return;
+    }
+
     if (entriesApiDbSource) {
       window.alert(text(lang, "closeoutRequiredForEntry"));
       return;

@@ -85,11 +85,15 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
     input.salesChannels.filter((row) => row.amountHalalas > 0),
   );
   const totalSalesHalalas = normalizedChannels.reduce((sum, row) => sum + row.amountHalalas, 0);
-  if (totalSalesHalalas <= 0) {
+  const totalOutflowHalalas = input.outflows.reduce((sum, row) => sum + row.amountHalalas, 0);
+  const ownerOutflowOnly = totalSalesHalalas <= 0
+    && totalOutflowHalalas > 0
+    && (input.actorRole === "owner" || input.actorRole === "manager");
+
+  if (totalSalesHalalas <= 0 && !ownerOutflowOnly) {
     throw new ValidationError("Closeout must include at least one positive sales channel amount.");
   }
 
-  const totalOutflowHalalas = input.outflows.reduce((sum, row) => sum + row.amountHalalas, 0);
   const reviewedAt = new Date();
 
   const txResult = await db.transaction(async (tx) => {

@@ -453,6 +453,24 @@ export function usePrototypeRuntimeAppState() {
     applyNotebookThemeCssVariables(employee ? employeeNotebookTheme : notebookTheme);
   }, [employee, employeeNotebookTheme, notebookTheme]);
 
+  const closeoutsApi = usePrototypeRuntimeCloseoutsApi({
+    lang,
+    closeoutsApiEnabled,
+    closeoutsApiStrictMode,
+    closeoutsApiOrganizationId,
+    ownerApiUserId,
+    apiActorUserId,
+    apiActorRole,
+    apiTargetStoreIdsKey,
+    employee,
+    storeOperationalSettings,
+    entriesApiEnabled,
+    loadOperationalEntriesFromApi,
+    currentEmployeeChannelConfig,
+    ownerCloseoutBusiness: ownerCloseout.ownerCloseoutBusiness,
+    ownerCloseoutChannelConfig: ownerCloseout.ownerCloseoutChannelConfig,
+  });
+
   const { saveOwner, saveOwnerSummary } = usePrototypeRuntimeOwnerSaveActions({
     lang,
     savingRef,
@@ -470,8 +488,10 @@ export function usePrototypeRuntimeAppState() {
     setSavedOutflowShareTarget,
     setSaved,
     setOperationalEntries,
-    operationalEntries,
-    setPendingDuplicateSummary,
+    closeoutsApiEnabled,
+    closeoutsApiOrganizationId,
+    ownerCloseoutChannelConfig: ownerCloseout.ownerCloseoutChannelConfig,
+    syncSubmitCloseoutToApi: closeoutsApi.syncSubmitCloseoutToApi,
   });
 
   const { persistEmployeeEntry } = useEmployeeEntryActions({
@@ -535,24 +555,6 @@ export function usePrototypeRuntimeAppState() {
     persistEmployeeEntry,
     savingRef,
     setSaving,
-  });
-
-  const closeoutsApi = usePrototypeRuntimeCloseoutsApi({
-    lang,
-    closeoutsApiEnabled,
-    closeoutsApiStrictMode,
-    closeoutsApiOrganizationId,
-    ownerApiUserId,
-    apiActorUserId,
-    apiActorRole,
-    apiTargetStoreIdsKey,
-    employee,
-    storeOperationalSettings,
-    entriesApiEnabled,
-    loadOperationalEntriesFromApi,
-    currentEmployeeChannelConfig,
-    ownerCloseoutBusiness: ownerCloseout.ownerCloseoutBusiness,
-    ownerCloseoutChannelConfig: ownerCloseout.ownerCloseoutChannelConfig,
   });
 
   const ownerNotebookApiEnabled = useMemo(

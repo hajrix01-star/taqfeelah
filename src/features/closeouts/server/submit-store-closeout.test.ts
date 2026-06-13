@@ -134,6 +134,28 @@ describe("submitStoreCloseout", () => {
     expect((audits[0]?.values as { action: string }).action).toBe("closeout_submitted");
   });
 
+  it("allows owner outflow-only closeout without sales", async () => {
+    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
+
+    const result = await submitStoreCloseout({
+      ...baseInput,
+      actorRole: "owner",
+      salesChannels: [],
+      outflows: [
+        {
+          type: "expense",
+          amountHalalas: 8000,
+          categoryName: "صيانة",
+          typeLabel: "مصروف",
+          note: "خارج فقط",
+        },
+      ],
+    });
+
+    expect(result.summaryEntryId).toBeTruthy();
+    expect(result.outflowEntryIds?.length).toBe(1);
+  });
+
   it("persists outflow entries linked to the closeout row", async () => {
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 
