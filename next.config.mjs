@@ -12,6 +12,10 @@ const releaseMajor = releaseVersion.split(".")[0]?.trim() || "0";
 const releaseLabel = `V${releaseMajor}`;
 
 const revision =
+  process.env.RELEASE_BUILD?.trim() ||
+  process.env.NEXT_PUBLIC_RELEASE_BUILD?.trim() ||
+  process.env.GITHUB_SHA?.trim() ||
+  process.env.DEPLOY_COMMIT?.trim() ||
   spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf-8" }).stdout?.trim() ||
   `build-${Date.now()}`;
 

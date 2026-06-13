@@ -13,14 +13,7 @@ function readReleaseLabel(): string {
 }
 
 function readReleaseBuild(): string {
-  return (
-    process.env.RELEASE_BUILD
-    || process.env.NEXT_PUBLIC_RELEASE_BUILD
-    || process.env.VERCEL_GIT_COMMIT_SHA
-    || process.env.GITHUB_SHA
-    || process.env.DEPLOY_COMMIT
-    || "dev"
-  );
+  return process.env.RELEASE_BUILD || process.env.NEXT_PUBLIC_RELEASE_BUILD || "dev";
 }
 
 export function releaseLabelFromVersion(version: string): string {

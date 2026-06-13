@@ -46,6 +46,12 @@ PRODUCTION_ENV_KEYS = [
     "NEXT_PUBLIC_APP_MODE",
     "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE",
     "ALLOW_HEADER_AUTH_CONTEXT",
+    "RELEASE_VERSION",
+    "RELEASE_LABEL",
+    "RELEASE_BUILD",
+    "NEXT_PUBLIC_RELEASE_VERSION",
+    "NEXT_PUBLIC_RELEASE_LABEL",
+    "NEXT_PUBLIC_RELEASE_BUILD",
     "DATABASE_URL",
     "AUTH_SESSION_SECRET",
     "AUTH_SESSION_COOKIE_NAME",
@@ -1593,6 +1599,13 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
     )
 
     print_section("Install dependencies and build app")
+    deploy_commit = os.environ.get("DEPLOY_COMMIT", "").strip() or os.environ.get("GITHUB_SHA", "").strip()
+    release_build_export = (
+        f'export RELEASE_BUILD={shlex.quote(deploy_commit)} '
+        f'NEXT_PUBLIC_RELEASE_BUILD={shlex.quote(deploy_commit)}; '
+        if deploy_commit
+        else ""
+    )
     vps.run(
         textwrap.dedent(
             f"""
@@ -1600,7 +1613,7 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             cd {shlex.quote(app_dir)}
             npm install -g pnpm@9.15.9
             pnpm install --frozen-lockfile
-            pnpm run build
+            {release_build_export}pnpm run build
             """
         ).strip()
     )
