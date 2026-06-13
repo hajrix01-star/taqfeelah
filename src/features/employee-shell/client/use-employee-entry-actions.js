@@ -3,7 +3,6 @@
 import { useCallback } from "react";
 import {
   buildCloseoutAlertRecord,
-  findDuplicateSummaryEntries,
   isFutureOperationalEntryDate,
   mergeLastCloseoutDateForStore,
   resolveOperationalEntriesRefreshWarningMessage,
@@ -11,12 +10,10 @@ import {
 } from "@/features/operations/operational-entry-save-helpers";
 import {
   buildEmployeeEntryActor,
-  buildPendingDuplicateSummaryState,
   canPersistOperationalEntry,
   persistOperationalEntryLocally,
   persistOperationalEntryThroughApi,
   resolveSummaryLastCloseoutUpdate,
-  shouldGateSummarySaveOnDuplicates,
 } from "@/features/operations/operational-entry-persist-helpers";
 import { resolveStandaloneEntryBlockedMessage } from "@/features/operations/client/closeout-required-entry-message";
 
@@ -39,8 +36,6 @@ export function useEmployeeEntryActions({
   closeoutAlertEnabledForBusiness,
   setEmployeePage,
   setSaved,
-  setPendingDuplicateSummary,
-  operationalEntries,
   entryIsActive,
   todayDate,
 }) {
@@ -160,28 +155,8 @@ export function useEmployeeEntryActions({
   ]);
 
   const saveEmployee = useCallback(async (payload) => {
-    if (!canPersistOperationalEntry({
-      saving: savingRef.current,
-      payload,
-      allowedBusinessIds: assignedEmployeeBusinessIds,
-    }) || !activeEmployee) return;
-    if (shouldGateSummarySaveOnDuplicates(payload)) {
-      const previousEntries = findDuplicateSummaryEntries(operationalEntries, payload, entryIsActive);
-      if (previousEntries.length > 0) {
-        setPendingDuplicateSummary(buildPendingDuplicateSummaryState(payload, previousEntries));
-        return;
-      }
-    }
     await persistEmployeeEntry(payload);
-  }, [
-    activeEmployee,
-    assignedEmployeeBusinessIds,
-    entryIsActive,
-    operationalEntries,
-    persistEmployeeEntry,
-    savingRef,
-    setPendingDuplicateSummary,
-  ]);
+  }, [persistEmployeeEntry]);
 
   return {
     persistEmployeeEntry,

@@ -30,10 +30,12 @@ export function buildEmployeeEntryActor(employee) {
 }
 
 /**
- * @param {Record<string, unknown>} payload
+ * Zero-review policy: duplicate summary approval/ack workflows are removed.
+ * @param {Record<string, unknown> | undefined} [_payload]
  */
-export function shouldGateSummarySaveOnDuplicates(payload) {
-  return payload?.type === "summary";
+export function shouldGateSummarySaveOnDuplicates(_payload) {
+  void _payload;
+  return false;
 }
 
 /**

@@ -51,15 +51,10 @@ export function dismissCloseoutAlertRecord(alertId, apply) {
 }
 
 export function handleOwnerNotificationsClick({
-  duplicateSalesAlerts,
   unseenCloseoutAlerts,
   apply,
 }) {
   apply.setArchivedReadOnlyBusinessId?.(null);
-  if (duplicateSalesAlerts.length > 0) {
-    openDuplicateSummaryInRegister(duplicateSalesAlerts[0], apply);
-    return;
-  }
   if (unseenCloseoutAlerts[0]) {
     openCloseoutAlertInRegister(unseenCloseoutAlerts[0], apply);
   }

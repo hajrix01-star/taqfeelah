@@ -6,18 +6,10 @@ import {
 } from "./owner-shell-notifications";
 
 describe("owner shell notifications", () => {
-  it("builds duplicate sales alerts for unacknowledged groups", () => {
-    const alerts = buildDuplicateSalesAlerts({
-      operationalEntries: [
-        { id: "a1", type: "summary", status: "active", businessId: "shami", date: "2026-06-01" },
-        { id: "a2", type: "summary", status: "active", businessId: "shami", date: "2026-06-01" },
-      ],
-      activeBusinesses: [{ id: "shami" }],
-      acknowledgedDuplicateSales: {},
-    });
+  it("does not build duplicate sales alerts under zero-review policy", () => {
+    const alerts = buildDuplicateSalesAlerts();
 
-    expect(alerts).toHaveLength(1);
-    expect(alerts[0]?.entries).toHaveLength(2);
+    expect(alerts).toEqual([]);
   });
 
   it("resolves active view business for single-store owners", () => {
@@ -27,9 +19,8 @@ describe("owner shell notifications", () => {
     })).toBe("shami");
   });
 
-  it("builds owner notification visibility state", () => {
+  it("builds owner notification visibility state from closeout alerts only", () => {
     const state = buildOwnerNotificationState({
-      duplicateSalesAlerts: [{ businessId: "shami", date: "2026-06-01", entries: [] }] as Array<{ businessId: string; date: string; entries: unknown[] }>,
       closeoutAlerts: [{ id: "c1", businessId: "shami", seen: false }] as Array<{ id: string; businessId: string; seen: boolean }>,
       closeoutAlertEnabledForBusiness: () => true,
     });

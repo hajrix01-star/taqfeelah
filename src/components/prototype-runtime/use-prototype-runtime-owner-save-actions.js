@@ -2,19 +2,16 @@
 
 import { storeAttachmentPayload } from "@/features/attachments/client/prototype-attachment-storage";
 import {
-  findDuplicateSummaryEntries,
   isFutureOperationalEntryDate,
   mergeLastCloseoutDateForStore,
   resolveOperationalEntriesRefreshWarningMessage,
 } from "@/features/operations/operational-entry-save-helpers";
 import {
-  buildPendingDuplicateSummaryState,
   canPersistOperationalEntry,
   findCreatedEntryInRefreshedList,
   persistOperationalEntryLocally,
   persistOperationalEntryThroughApi,
   resolveSummaryLastCloseoutUpdate,
-  shouldGateSummarySaveOnDuplicates,
 } from "@/features/operations/operational-entry-persist-helpers";
 import { text } from "./prototype-runtime-demo-data";
 import {
@@ -39,8 +36,6 @@ export function usePrototypeRuntimeOwnerSaveActions({
   setSavedOutflowShareTarget,
   setSaved,
   setOperationalEntries,
-  operationalEntries,
-  setPendingDuplicateSummary,
 }) {
   const saveOwner = async (payload) => {
     if (entriesApiDbSource) {
@@ -129,18 +124,6 @@ export function usePrototypeRuntimeOwnerSaveActions({
   };
 
   const saveOwnerSummary = async (payload) => {
-    if (entriesApiDbSource) {
-      window.alert(text(lang, "closeoutRequiredForEntry"));
-      return;
-    }
-    if (savingRef.current || !payload?.businessId) return;
-    if (shouldGateSummarySaveOnDuplicates(payload)) {
-      const previousEntries = findDuplicateSummaryEntries(operationalEntries, payload, entryIsActive);
-      if (previousEntries.length > 0) {
-        setPendingDuplicateSummary(buildPendingDuplicateSummaryState(payload, previousEntries, "owner"));
-        return;
-      }
-    }
     await saveOwner(payload);
   };
 
