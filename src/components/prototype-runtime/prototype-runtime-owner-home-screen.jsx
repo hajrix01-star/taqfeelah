@@ -14,7 +14,7 @@ import {
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import { businesses, businessName, channelName, channels, money, opTime, text } from "./prototype-runtime-demo-data";
 import AttachmentLightbox from "../AttachmentLightbox";
-import { AttachmentThumbButton, EntryAttachmentShareButton } from "./prototype-runtime-attachment-ui";
+import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
 import {
   entryDateMatches,
   entryHasAttachment,
@@ -380,7 +380,7 @@ function DayAttachments({
           };
           return (
           <div key={item.id} className="min-w-[78px] text-center">
-            <div className="mb-1 flex h-14 justify-center gap-1">
+            <div className="mb-1 flex h-14 justify-center">
               <AttachmentThumbButton
                 attachment={item.attachment}
                 onOpen={(src) => onPreviewAttachment(src, shareContext)}
@@ -392,25 +392,6 @@ function DayAttachments({
                   actorUserId: entryAttachmentsApiActorUserId,
                   actorRole: entryAttachmentsApiActorRole,
                 }}
-              />
-              <EntryAttachmentShareButton
-                lang={lang}
-                attachment={item.attachment}
-                entry={item.entry}
-                storeName={storeLabel}
-                operationLabel={operationLabel}
-                entryTime={opTime(item.entry, lang)}
-                daySequence={item.entry?.daySequence ?? null}
-                sameDayCloseoutCount={1}
-                storeId={item.businessId}
-                attachmentApiContext={{
-                  attachmentsApiEnabled: entryAttachmentsApiEnabled,
-                  organizationId: entryAttachmentsApiOrganizationId,
-                  actorUserId: entryAttachmentsApiActorUserId,
-                  actorRole: entryAttachmentsApiActorRole,
-                }}
-                compact
-                className="h-14 w-10 shrink-0"
               />
             </div>
             <button type="button" onClick={() => onOpenOperation(item.entry)} className="w-full text-center">
