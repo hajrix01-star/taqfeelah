@@ -57,15 +57,16 @@ function LoginForm({ nextPath }: { nextPath: string }) {
           <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.auth.loginDescription}</p>
           <form onSubmit={(event) => { void handleSubmit(event); }} className="mt-6 space-y-4">
             <label className="block space-y-1 text-sm">
-              <span className="text-[var(--admin-muted)]">{t.auth.email}</span>
+              <span className="text-[var(--admin-muted)]">{t.auth.username}</span>
               <input
                 required
-                type="email"
+                type="text"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
                 dir="ltr"
                 autoComplete="username"
+                inputMode="email"
               />
             </label>
             <label className="block space-y-1 text-sm">

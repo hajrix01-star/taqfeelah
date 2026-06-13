@@ -80,6 +80,17 @@ PRODUCTION_ENV_KEYS = [
     "APP_PUBLIC_ORIGIN",
 ]
 
+# Written to .env.production when present on VPS (or via CI secrets). Not in wave defaults.
+PRESERVED_REMOTE_ENV_KEYS = (
+    "AUTH_PASSWORD_RESET_ENABLED",
+    "AUTH_EMAIL_FROM",
+    "RESEND_API_KEY",
+    "SMTP_HOST",
+    "SMTP_PORT",
+    "SMTP_USER",
+    "SMTP_PASS",
+)
+
 # Opt-in flags: wave defaults must not overwrite explicit CI or VPS values once enabled.
 SAAS_OPT_IN_ENV_KEYS = (
     "SAAS_ADMIN_API_ENABLED",
@@ -694,7 +705,11 @@ def log_production_env_sources(
 
 def build_production_env_payload(merged_env: dict[str, str]) -> str:
     lines: list[str] = []
-    for key in PRODUCTION_ENV_KEYS:
+    keys_to_write = list(PRODUCTION_ENV_KEYS)
+    for key in PRESERVED_REMOTE_ENV_KEYS:
+        if merged_env.get(key) and key not in keys_to_write:
+            keys_to_write.append(key)
+    for key in keys_to_write:
         value = merged_env.get(key)
         if not value:
             continue

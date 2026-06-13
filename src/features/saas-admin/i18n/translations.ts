@@ -126,7 +126,7 @@ export const translations = {
     },
     auth: {
       loginTitle: "دخول لوحة إدارة المنصة",
-      loginDescription: "سجّل الدخول ببريد مسؤول المنصة أو الدعم وكلمة المرور.",
+      loginDescription: "سجّل الدخول ببريد مسؤول المنصة (أو اسم المستخدم الحالي) وكلمة المرور.",
       email: "البريد الإلكتروني",
       username: "اسم المستخدم",
       password: "كلمة المرور",
@@ -611,7 +611,7 @@ export const translations = {
     },
     auth: {
       loginTitle: "SaaS Admin sign in",
-      loginDescription: "Sign in with your platform admin or support email and password.",
+      loginDescription: "Sign in with your platform admin email (or current username) and password.",
       email: "Email",
       username: "Username",
       password: "Password",
