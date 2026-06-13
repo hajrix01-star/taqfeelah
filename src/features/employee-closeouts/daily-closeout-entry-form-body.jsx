@@ -11,7 +11,10 @@ import {
   moneyInputClass,
 } from "./daily-closeout-entry-helpers";
 import { EntrySection } from "./daily-closeout-entry-ui-primitives";
-import { AttachmentImageSourcePicker } from "@/components/prototype-runtime/prototype-runtime-attachment-ui";
+import {
+  AttachmentCapture,
+  AttachmentImageSourcePicker,
+} from "@/components/prototype-runtime/prototype-runtime-attachment-ui";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 
 export function DailyCloseoutEntryFormBody({
@@ -36,6 +39,12 @@ export function DailyCloseoutEntryFormBody({
   pushOutflow,
   outflows,
   removeOutflow,
+  removeOutflowAttachment,
+  outflowAttachment,
+  outflowAttachmentProcessing,
+  outflowAttachmentError,
+  selectOutflowAttachment,
+  clearOutflowAttachment,
   attachments,
   onFiles,
   setPreviewAttachment,
@@ -172,19 +181,51 @@ export function DailyCloseoutEntryFormBody({
           </button>
         </div>
         <input value={outNote} onChange={(event) => setOutNote(event.target.value)} placeholder={lang === "ar" ? "ملاحظة (اختياري)" : "Note (optional)"} className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-bold ring-1 ring-black/[0.06]" />
+        <p className="text-taq-nav font-bold leading-5 text-[#827762]">{titles.outflowProofHint}</p>
+        <AttachmentCapture
+          lang={lang}
+          attachment={outflowAttachment}
+          processing={outflowAttachmentProcessing}
+          error={outflowAttachmentError}
+          onSelect={selectOutflowAttachment}
+          onClear={clearOutflowAttachment}
+        />
         <div className="space-y-2">
-          {outflows.map((row) => (
-            <div key={row.id} className="flex items-center justify-between rounded-2xl bg-white px-3 py-2 ring-1 ring-black/[0.05]">
-              <span className="text-xs font-bold">{row.typeLabel || row.type}{row.category ? ` · ${row.category}` : ""}</span>
-              <div className="flex items-center gap-2">
-                <strong className="text-sm font-black tabular-nums text-[#B44747]">{formatCloseoutMoney(row.amount, lang)}</strong>
-                <button type="button" onClick={() => removeOutflow(row.id)} className="text-[#B44747]">×</button>
+          {outflows.map((row) => {
+            const proofSrc = row.attachments?.find((item) => typeof item === "string" && item.startsWith("data:"))
+              || row.attachments?.find((item) => item?.dataUrl)?.dataUrl
+              || "";
+            return (
+            <div key={row.id} className="rounded-2xl bg-white px-3 py-2 ring-1 ring-black/[0.05]">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold">{row.typeLabel || row.type}{row.category ? ` · ${row.category}` : ""}</span>
+                <div className="flex items-center gap-2">
+                  <strong className="text-sm font-black tabular-nums text-[#B44747]">{formatCloseoutMoney(row.amount, lang)}</strong>
+                  <button type="button" onClick={() => removeOutflow(row.id)} className="text-[#B44747]">×</button>
+                </div>
               </div>
+              {proofSrc ? (
+                <div className="mt-2 flex items-center gap-2">
+                  <button type="button" onClick={() => setPreviewAttachment(proofSrc)} className="overflow-hidden rounded-xl ring-1 ring-black/[0.06]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={proofSrc} alt="" className="h-12 w-12 object-cover" />
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-taq-nav font-black text-[#806528]">{lang === "ar" ? "إثبات الخارج" : "Outflow proof"}</p>
+                    <p className="truncate text-taq-nav font-bold text-[#827762]">{row.typeLabel || row.type}</p>
+                  </div>
+                  <button type="button" onClick={() => removeOutflowAttachment(row.id)} className="text-taq-nav font-black text-[#B44747]">
+                    {lang === "ar" ? "حذف الصورة" : "Remove"}
+                  </button>
+                </div>
+              ) : null}
             </div>
-          ))}
+            );
+          })}
         </div>
       </EntrySection>
       <EntrySection number={3} title={titles.photos} lang={lang}>
+        <p className="mb-3 text-taq-nav font-bold leading-5 text-[#827762]">{titles.inflowProofHint}</p>
         <div className="rounded-2xl border border-dashed border-[#C9B896] bg-white px-4 py-4">
           <p className="mb-3 text-center text-xs font-bold text-[#827762]">{text(lang, "cameraOrGallery")}</p>
           <AttachmentImageSourcePicker lang={lang} onSelect={onFiles} multiple />

@@ -111,7 +111,15 @@ function hasPositiveOutflows(closeout) {
 
 function extractAttachmentPayloads(rawList) {
   if (!Array.isArray(rawList)) return [];
-  return rawList.filter((item) => typeof item === "string" && item.startsWith("data:"));
+  return rawList
+    .map((item) => {
+      if (typeof item === "string" && item.startsWith("data:")) return item;
+      if (item && typeof item === "object" && typeof item.dataUrl === "string" && item.dataUrl.startsWith("data:")) {
+        return item.dataUrl;
+      }
+      return "";
+    })
+    .filter(Boolean);
 }
 
 function extractOutflows(closeout) {

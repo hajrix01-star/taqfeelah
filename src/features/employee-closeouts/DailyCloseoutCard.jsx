@@ -4,7 +4,11 @@ import { ChevronDown } from "lucide-react";
 import { computeCloseoutTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
 import { closeoutStatusLabel, closeoutStatusTone } from "../daily-closeouts/closeout-status";
 import CloseoutAttachmentThumbs from "../closeouts/client/CloseoutAttachmentThumbs";
-import { countCloseoutAttachments } from "../closeouts/client/closeout-attachment-utils";
+import {
+  countAllCloseoutProofAttachments,
+  countCloseoutAttachments,
+  countOutflowAttachments,
+} from "../closeouts/client/closeout-attachment-utils";
 import { formatCloseoutDayLabel } from "../closeouts/client/closeout-day-label";
 
 function money(value, lang) {
@@ -38,7 +42,9 @@ export default function DailyCloseoutCard({
     autoRecorded: !closeout.reviewedByName && closeout.status === "reviewed",
   });
   const tone = closeoutStatusTone(closeout.status);
-  const attachmentCount = countCloseoutAttachments(closeout.attachments);
+  const attachmentCount = countAllCloseoutProofAttachments(closeout);
+  const closeoutLevelAttachmentCount = countCloseoutAttachments(closeout.attachments);
+  const outflowAttachmentCount = countOutflowAttachments(closeout.outflows);
   const closeoutDateLabel = formatCloseoutDayLabel({
     formattedDate: formatDate(closeout.date),
     daySequence,
@@ -116,25 +122,51 @@ export default function DailyCloseoutCard({
             </div>
             <div>
               <p className="mb-2 text-xs font-black text-[#806528]">{lang === "ar" ? "تفاصيل الخارج" : "Outflows"}</p>
-              {(closeout.outflows || []).length ? (closeout.outflows || []).map((row) => (
-                <div key={row.id} className="flex justify-between gap-2 py-1 text-sm font-bold">
-                  <span className="min-w-0 truncate">{row.typeLabel || row.type}{row.category ? ` · ${row.category}` : ""}{row.note ? ` — ${row.note}` : ""}</span>
-                  <span className="shrink-0 tabular-nums text-[#B44747]">-{money(row.amount, lang)} ر.س</span>
+              {(closeout.outflows || []).length ? (closeout.outflows || []).map((row) => {
+                const rowProofCount = countCloseoutAttachments(row.attachments);
+                return (
+                <div key={row.id} className="py-1">
+                  <div className="flex justify-between gap-2 text-sm font-bold">
+                    <span className="min-w-0 truncate">{row.typeLabel || row.type}{row.category ? ` · ${row.category}` : ""}{row.note ? ` — ${row.note}` : ""}</span>
+                    <span className="shrink-0 tabular-nums text-[#B44747]">-{money(row.amount, lang)} ر.س</span>
+                  </div>
+                  {rowProofCount > 0 ? (
+                    <div className="mt-2">
+                      <CloseoutAttachmentThumbs
+                        lang={lang}
+                        closeoutId={closeout.id}
+                        storeId={closeout.storeId}
+                        attachments={row.attachments}
+                        thumbClassName="h-12 w-12"
+                        enabled={expanded}
+                        attachmentsApiEnabled={attachmentsApiEnabled}
+                        organizationId={attachmentsApiOrganizationId}
+                        actorUserId={attachmentsApiActorUserId}
+                        actorRole={attachmentsApiActorRole}
+                      />
+                    </div>
+                  ) : null}
                 </div>
-              )) : <p className="text-xs font-bold text-[#827762]">{lang === "ar" ? "لا يوجد" : "None"}</p>}
+                );
+              }) : <p className="text-xs font-bold text-[#827762]">{lang === "ar" ? "لا يوجد" : "None"}</p>}
             </div>
-            {attachmentCount > 0 && (
-              <CloseoutAttachmentThumbs
-                lang={lang}
-                closeoutId={closeout.id}
-                storeId={closeout.storeId}
-                attachments={closeout.attachments}
-                enabled={expanded}
-                attachmentsApiEnabled={attachmentsApiEnabled}
-                organizationId={attachmentsApiOrganizationId}
-                actorUserId={attachmentsApiActorUserId}
-                actorRole={attachmentsApiActorRole}
-              />
+            {closeoutLevelAttachmentCount > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-black text-[#806528]">
+                  {lang === "ar" ? "إثبات الداخل / صور التقفيلة" : "Inflow / closeout proofs"}
+                </p>
+                <CloseoutAttachmentThumbs
+                  lang={lang}
+                  closeoutId={closeout.id}
+                  storeId={closeout.storeId}
+                  attachments={closeout.attachments}
+                  enabled={expanded}
+                  attachmentsApiEnabled={attachmentsApiEnabled}
+                  organizationId={attachmentsApiOrganizationId}
+                  actorUserId={attachmentsApiActorUserId}
+                  actorRole={attachmentsApiActorRole}
+                />
+              </div>
             )}
           </div>
         )}
