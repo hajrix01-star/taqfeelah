@@ -7,6 +7,7 @@ import {
   summaryMonthFromEntries,
 } from "@/features/operations/operational-analytics";
 import { formatCalendarDate, formatSelectedMonth } from "@/features/reports/client/report-period-labels";
+import { buildOwnerCloseoutShareCaption } from "@/features/owner-notebook/owner-closeout-share";
 import {
   channels,
   businesses,
@@ -188,63 +189,51 @@ export function buildNotebookShareModel({
       tone: "text-[#B44747]",
     }))
     : [];
-  const homeDetailCaptionLines = detailedSummary && snapshot.screen === "home"
-    ? [
-      ...salesDetailRows.map((row) => `${row.label}: ${row.value}`),
-      ...outflowDetailRows.map((row) => `${row.label}: ${row.value}`),
-    ]
-    : [];
   const shareCaption = combined
-    ? [
-        lang === "ar" ? "تقفيلة - مقارنة المحلات" : "Taqfeelah - Shops comparison",
-        periodLabel,
-        ...shareBusinessRows.map((row) => lang === "ar"
-          ? `${businessName(row.business, lang)} | المبيعات: ${money(row.sales, lang)} | الخارج: ${money(row.expense, lang)} | النتيجة: ${money(row.net, lang)}`
-          : `${businessName(row.business, lang)} | Sales: ${money(row.sales, lang)} | Outflow: ${money(row.expense, lang)} | Result: ${money(row.net, lang)}`),
-        lang === "ar"
-          ? `الإجمالي | المبيعات: ${money(record.sales, lang)} | الخارج: ${money(record.expense, lang)} | النتيجة: ${money(record.net, lang)}`
-          : `Total | Sales: ${money(record.sales, lang)} | Outflow: ${money(record.expense, lang)} | Result: ${money(record.net, lang)}`,
-      ].join(String.fromCharCode(10))
+    ? buildOwnerCloseoutShareCaption({
+      lang,
+      period: sharePeriod,
+      periodLabel,
+      combined: true,
+    })
     : isOutflowReport
-      ? [
-          lang === "ar" ? "تقفيلة - تقرير الخارج" : "Taqfeelah - Outflow report",
-          title,
-          periodLabel,
-          lang === "ar" ? `التصنيف: ${outflowCategoryLabel}` : `Category: ${outflowCategoryLabel}`,
-          lang === "ar" ? `إجمالي الخارج: ${money(outflowTotal, lang)}` : `Total outflow: ${money(outflowTotal, lang)}`,
-          lang === "ar" ? `عدد العمليات: ${filteredOutflowEntries.length}` : `Transactions: ${filteredOutflowEntries.length}`,
-        ].join(String.fromCharCode(10))
+      ? buildOwnerCloseoutShareCaption({
+        lang,
+        storeName: title,
+        period: sharePeriod,
+        periodLabel,
+        reportKind: "outflow",
+      })
       : isChannelsReport
-        ? [
-            lang === "ar" ? "تقفيلة - تقرير القنوات" : "Taqfeelah - Channels report",
-            title,
-            periodLabel,
-            ...shareChannelRows.map((row) => `${row.label}: ${money(row.amount, lang)}`),
-          ].join(String.fromCharCode(10))
+        ? buildOwnerCloseoutShareCaption({
+          lang,
+          storeName: title,
+          period: sharePeriod,
+          periodLabel,
+          reportKind: "channels",
+        })
         : isDaysReport
-          ? [
-              lang === "ar" ? "تقفيلة - تقرير الأيام" : "Taqfeelah - Days report",
-              title,
-              periodLabel,
-              ...shareDayRows.map((row) => lang === "ar"
-                ? `${formatCalendarDate(row.date, lang)} | المبيعات: ${money(row.sales, lang)} | الخارج: ${money(row.expense, lang)}`
-                : `${formatCalendarDate(row.date, lang)} | Sales: ${money(row.sales, lang)} | Outflow: ${money(row.expense, lang)}`),
-            ].join(String.fromCharCode(10))
+          ? buildOwnerCloseoutShareCaption({
+            lang,
+            storeName: title,
+            period: sharePeriod,
+            periodLabel,
+            reportKind: "days",
+          })
           : isProofsReport
-            ? [
-                lang === "ar" ? "تقفيلة - تقرير المرفقات" : "Taqfeelah - Attachments report",
-                title,
-                periodLabel,
-                lang === "ar" ? `إجمالي المرفقات: ${shareProofEntries.length}` : `Total attachments: ${shareProofEntries.length}`,
-              ].join(String.fromCharCode(10))
-            : [
-                lang === "ar" ? `تقفيلة - ${title}` : `Taqfeelah - ${title}`,
-                periodLabel,
-                lang === "ar" ? `المبيعات: ${money(record.sales, lang)}` : `Sales: ${money(record.sales, lang)}`,
-                lang === "ar" ? `الخارج: ${money(record.expense, lang)}` : `Outflow: ${money(record.expense, lang)}`,
-                lang === "ar" ? `النتيجة: ${money(record.net, lang)}` : `Result: ${money(record.net, lang)}`,
-                ...homeDetailCaptionLines,
-              ].join(String.fromCharCode(10));
+            ? buildOwnerCloseoutShareCaption({
+              lang,
+              storeName: title,
+              period: sharePeriod,
+              periodLabel,
+              reportKind: "proofs",
+            })
+            : buildOwnerCloseoutShareCaption({
+              lang,
+              storeName: title,
+              period: sharePeriod,
+              periodLabel,
+            });
 
   const showOutflowOperations = isOutflowReport && snapshot.showOutflowTransactions && !combined;
   const shareOutflowOperations = showOutflowOperations ? newestEntries(filteredOutflowEntries) : [];

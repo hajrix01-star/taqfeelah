@@ -159,7 +159,13 @@ export function NotebookShareModal({ lang, snapshot, onClose, businessesList = b
       try {
         const file = await resolveNotebookImageFile();
         const result = await shareNotebookImageToWhatsApp(file, shareCaption, lang);
-        if (result.method === "clipboard") setShareHint(text(lang, "shareImagePasteHint"));
+        if (result.method === "share") {
+          setShareHint(
+            lang === "ar"
+              ? "تم فتح نافذة المشاركة. اختر واتساب لإرسال الصورة مع النص."
+              : "Share sheet opened. Choose WhatsApp to send the image with the caption.",
+          );
+        } else if (result.method === "clipboard") setShareHint(text(lang, "shareImagePasteHint"));
         else if (result.method === "text-only") setShareHint(text(lang, "shareImageWhatsAppUnavailable"));
       } catch (error) {
         if (error?.name === "AbortError") return;
