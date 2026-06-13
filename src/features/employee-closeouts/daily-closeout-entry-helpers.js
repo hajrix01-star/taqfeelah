@@ -29,14 +29,16 @@ export function todayIsoDate() {
 export function attachmentDataUrlsFromList(rawList) {
   if (!Array.isArray(rawList)) return [];
   return rawList
-    .map((item) => {
-      if (typeof item === "string" && item.startsWith("data:")) return item;
-      if (item && typeof item === "object" && typeof item.dataUrl === "string" && item.dataUrl.startsWith("data:")) {
-        return item.dataUrl;
-      }
-      return "";
-    })
+    .map((item) => resolveAttachmentPreviewSrc(item))
     .filter(Boolean);
+}
+
+export function resolveAttachmentPreviewSrc(item) {
+  if (typeof item === "string" && item.startsWith("data:")) return item;
+  if (item && typeof item === "object" && typeof item.dataUrl === "string" && item.dataUrl.startsWith("data:")) {
+    return item.dataUrl;
+  }
+  return "";
 }
 
 /**

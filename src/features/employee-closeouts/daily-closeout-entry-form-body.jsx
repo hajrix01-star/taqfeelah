@@ -9,6 +9,7 @@ import {
   OUTFLOW_TYPES,
   formatCloseoutMoney,
   moneyInputClass,
+  resolveAttachmentPreviewSrc,
 } from "./daily-closeout-entry-helpers";
 import { EntrySection } from "./daily-closeout-entry-ui-primitives";
 import {
@@ -46,6 +47,8 @@ export function DailyCloseoutEntryFormBody({
   selectOutflowAttachment,
   clearOutflowAttachment,
   attachments,
+  attachmentProcessing,
+  attachmentError,
   onFiles,
   setPreviewAttachment,
   removeAttachment,
@@ -228,10 +231,21 @@ export function DailyCloseoutEntryFormBody({
         <p className="mb-3 text-taq-nav font-bold leading-5 text-[#827762]">{titles.inflowProofHint}</p>
         <div className="rounded-2xl border border-dashed border-[#C9B896] bg-white px-4 py-4">
           <p className="mb-3 text-center text-xs font-bold text-[#827762]">{text(lang, "cameraOrGallery")}</p>
-          <AttachmentImageSourcePicker lang={lang} onSelect={onFiles} multiple />
+          <AttachmentImageSourcePicker lang={lang} onSelect={onFiles} multiple disabled={attachmentProcessing || attachments.length >= 6} />
         </div>
+        {attachmentProcessing ? (
+          <p className="mt-2 text-center text-taq-nav font-bold text-[#827762]">
+            {lang === "ar" ? "جاري ضغط الصور..." : "Compressing images..."}
+          </p>
+        ) : null}
+        {attachmentError ? (
+          <p className="mt-2 text-center text-taq-nav font-black text-[#B44747]">{attachmentError}</p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
-          {attachments.filter(Boolean).map((src, index) => (
+          {attachments.map((item, index) => {
+            const src = resolveAttachmentPreviewSrc(item);
+            if (!src) return null;
+            return (
             <div key={`thumb-${index}`} className="relative">
               <button
                 type="button"
@@ -243,7 +257,8 @@ export function DailyCloseoutEntryFormBody({
               </button>
               <button type="button" onClick={() => removeAttachment(index)} className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#B44747] text-taq-meta text-white">×</button>
             </div>
-          ))}
+            );
+          })}
         </div>
       </EntrySection>
       <EntrySection number={4} title={titles.review} lang={lang}>

@@ -115,6 +115,15 @@ function extractAttachmentPayloads(rawList) {
     .map((item) => {
       if (typeof item === "string" && item.startsWith("data:")) return item;
       if (item && typeof item === "object" && typeof item.dataUrl === "string" && item.dataUrl.startsWith("data:")) {
+        if (item.kind === "image" && typeof item.sizeBytes === "number") {
+          return {
+            kind: "image",
+            name: typeof item.name === "string" ? item.name : undefined,
+            mimeType: typeof item.mimeType === "string" ? item.mimeType : "image/jpeg",
+            sizeBytes: item.sizeBytes,
+            dataUrl: item.dataUrl,
+          };
+        }
         return item.dataUrl;
       }
       return "";
@@ -171,7 +180,7 @@ export async function submitCloseoutViaApi({
       attachments: extractAttachmentPayloads(closeout?.attachments),
       note: closeout?.note || "",
     },
-    errorMessage: "closeout submit api failed.",
+    errorMessage: "تعذر إرسال التقفيلة. تحقق من الصور وحاول مرة أخرى.",
   });
 }
 
