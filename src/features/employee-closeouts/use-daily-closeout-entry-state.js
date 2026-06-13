@@ -21,7 +21,6 @@ export function useDailyCloseoutEntryState({
   channelLabel,
 }) {
   const labelChannel = channelLabel || ((channel) => (lang === "ar" ? channel.nameAr || channel.nameEn : channel.nameEn || channel.nameAr) || channel.id);
-  const [phase, setPhase] = useState(isOwnerEdit ? "form" : "date");
   const [date, setDate] = useState(initialCloseout?.date || todayIsoDate());
   const [salesValues, setSalesValues] = useState(() => {
     const record = initialCloseout?.sales || {};
@@ -111,12 +110,8 @@ export function useDailyCloseoutEntryState({
     return true;
   }, [date, lang]);
 
-  const continueToForm = useCallback(() => {
-    if (!validateDate()) return;
-    setPhase("form");
-  }, [validateDate]);
-
   const handleSubmit = useCallback(async () => {
+    if (!validateDate()) return;
     if (salesChannels.length === 0) {
       window.alert(lang === "ar" ? "لا توجد قنوات بيع مفعّلة لهذا المحل." : "No active sales channels for this store.");
       return;
@@ -134,7 +129,7 @@ export function useDailyCloseoutEntryState({
       return;
     }
     await onSubmit(closeout, { isOwnerEdit });
-  }, [buildCloseout, buildOutflowRow, isOwnerEdit, lang, onSubmit, outAmount, outflows, salesChannels.length]);
+  }, [buildCloseout, buildOutflowRow, isOwnerEdit, lang, onSubmit, outAmount, outflows, salesChannels.length, validateDate]);
 
   const updateSalesValue = useCallback((channelId, value) => {
     setSalesValues((current) => ({
@@ -148,8 +143,6 @@ export function useDailyCloseoutEntryState({
   }, []);
 
   return {
-    phase,
-    setPhase,
     date,
     setDate,
     salesValues,
@@ -171,7 +164,6 @@ export function useDailyCloseoutEntryState({
     pushOutflow,
     removeOutflow,
     onFiles,
-    continueToForm,
     handleSubmit,
     updateSalesValue,
     removeAttachment,
