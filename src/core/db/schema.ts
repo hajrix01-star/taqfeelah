@@ -89,21 +89,27 @@ export const organizationMembers = pgTable(
   }),
 );
 
-export const stores = pgTable("stores", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  organizationId: uuid("organization_id")
-    .notNull()
-    .references(() => organizations.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  location: text("location"),
-  status: text("status").notNull().default("active"),
-  operationalSettings: jsonb("operational_settings")
-    .$type<StoreOperationalSettings>()
-    .notNull()
-    .default({} as StoreOperationalSettings),
-  createdAt,
-  updatedAt,
-});
+export const stores = pgTable(
+  "stores",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    location: text("location"),
+    status: text("status").notNull().default("active"),
+    operationalSettings: jsonb("operational_settings")
+      .$type<StoreOperationalSettings>()
+      .notNull()
+      .default({} as StoreOperationalSettings),
+    createdAt,
+    updatedAt,
+  },
+  (table) => ({
+    organizationIdx: index("stores_organization_id_idx").on(table.organizationId),
+  }),
+);
 
 export const memberStoreAccess = pgTable(
   "member_store_access",

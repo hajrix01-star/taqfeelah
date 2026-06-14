@@ -340,6 +340,50 @@ async function fetchStoresAndChannelsBundleViaApi({
   actorUserId,
   actorRole,
 }) {
+  const { storeIdMap, salesChannelIdMap } = getMaps();
+  const search = new URLSearchParams({
+    storeStatus: "all",
+    channelStatus: "all",
+  });
+
+  try {
+    const payload = await fetchApiJsonWithPrototypeContext(
+      `/api/v1/org-config/stores-channels-bundle?${search.toString()}`,
+      {
+        organizationId,
+        actorUserId,
+        actorRole,
+        errorMessage: "stores/channels bundle api failed",
+        errorStyle: "status",
+      },
+    );
+
+    const stores = Array.isArray(payload?.stores) ? payload.stores : [];
+    const channelsByStoreIdRaw = payload?.channelsByStoreId && typeof payload.channelsByStoreId === "object"
+      ? payload.channelsByStoreId
+      : {};
+
+    const mappedStores = stores.map((store) => ({
+      ...store,
+      legacyId: reverseLookupKeyByUuid(store.id, storeIdMap) || store.id,
+    }));
+
+    const channelsByStoreId = {};
+    mappedStores.forEach((store) => {
+      const rawChannels = Array.isArray(channelsByStoreIdRaw[store.id])
+        ? channelsByStoreIdRaw[store.id]
+        : [];
+      channelsByStoreId[store.id] = rawChannels.map((channel) => ({
+        ...channel,
+        legacyId: reverseLookupKeyByUuid(channel.id, salesChannelIdMap) || channel.id,
+      }));
+    });
+
+    return { stores: mappedStores, channelsByStoreId };
+  } catch (error) {
+    console.warn("stores/channels bundle API unavailable, falling back to per-store channel fetch", error);
+  }
+
   const { stores } = await fetchOrganizationStoresViaApi({
     organizationId,
     actorUserId,
