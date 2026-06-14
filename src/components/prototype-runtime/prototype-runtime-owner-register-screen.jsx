@@ -62,7 +62,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
   const [logFilters, setLogFilters] = useState(DEFAULT_REGISTER_LOG_FILTERS);
   const [draftLogFilters, setDraftLogFilters] = useState(DEFAULT_REGISTER_LOG_FILTERS);
   const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
-  const [logView, setLogView] = useState("closeouts");
+  const [logView, setLogView] = useState("report");
   const [expandedEntryId, setExpandedEntryId] = useState(null);
   const [expandedCloseoutKey, setExpandedCloseoutKey] = useState(null);
   const [registerAttachmentPreview, setRegisterAttachmentPreview] = useState(null);

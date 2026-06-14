@@ -36,7 +36,7 @@ describe("buildNotebookShareModel", () => {
     expect(model.shareBusinessRows[0]).toMatchObject({ sales: 300, expense: 50, net: 250 });
     expect(model.shareBusinessRows[1]).toMatchObject({ sales: 200, expense: 0, net: 200 });
     expect(model.record).toMatchObject({ sales: 500, expense: 50, net: 450 });
-    expect(model.shareCaption).toBe("تقفيلة مقارنة المحلات ليوم 7 يونيو 2026");
+    expect(model.shareCaption).toBe("تقفيلة مقارنة المحلات ليوم 07-06-2026");
   });
 
   it("includes channel and outflow details in caption and image rows when showDetails is enabled", () => {
@@ -63,7 +63,7 @@ describe("buildNotebookShareModel", () => {
     expect(model.salesDetailRows).toHaveLength(1);
     expect(model.salesDetailRows[0].label).toBe("كاش");
     expect(model.outflowDetailRows).toHaveLength(1);
-    expect(model.shareCaption).toBe("تقفيلة محل مشويات المعلم الشامي ليوم 7 يونيو 2026");
+    expect(model.shareCaption).toBe("تقفيلة محل مشويات المعلم الشامي ليوم 07-06-2026");
   });
 
   it("prefers API channel rows for detail breakdown when snapshot rows are absent", () => {

@@ -23,8 +23,9 @@ describe("buildEntryAttachmentShareCaption", () => {
     expect(caption).toContain("فاتورة مشتريات");
     expect(caption).toContain("لمحل الشامي");
     expect(caption).toContain("بتاريخ");
-    expect(caption).toContain("ويوم");
+    expect(caption).toContain("13-06-2026");
     expect(caption).toContain("تقفيلة B");
+    expect(caption).not.toContain("ويوم");
   });
 
   it("uses operation time when closeout letter is unavailable", () => {

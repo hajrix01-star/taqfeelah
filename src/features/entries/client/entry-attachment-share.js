@@ -1,15 +1,6 @@
 import { closeoutSequenceLetter } from "@/features/closeouts/client/closeout-day-label";
 import { shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
-
-function formatDateParts(isoDate, lang) {
-  if (!isoDate) return { dateLabel: "", weekdayLabel: "" };
-  const parsed = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(parsed.getTime())) return { dateLabel: isoDate, weekdayLabel: "" };
-  const locale = lang === "ar" ? "ar-SA-u-nu-latn" : "en-US";
-  const dateLabel = new Intl.DateTimeFormat(locale, { year: "numeric", month: "long", day: "numeric" }).format(parsed);
-  const weekdayLabel = new Intl.DateTimeFormat(locale, { weekday: "long" }).format(parsed);
-  return { dateLabel, weekdayLabel };
-}
+import { formatNumericDate } from "@/features/reports/client/report-period-labels";
 
 function normalizedStoreLabel(storeName, lang) {
   const normalized = String(storeName || "").trim();
@@ -30,7 +21,7 @@ function closeoutReferenceLabel(lang, daySequence, sameDayCloseoutCount) {
 
 /**
  * WhatsApp caption for sharing an operation/invoice attachment at full resolution.
- * Example (ar): فاتورة مشتريات لمحل الشامي بتاريخ 13 يونيو 2026 ويوم السبت — تقفيلة B
+ * Example (ar): فاتورة مشتريات لمحل الشامي بتاريخ 13-06-2026 — تقفيلة B
  * @param {{
  *   lang?: string,
  *   storeName?: string,
@@ -50,7 +41,7 @@ export function buildEntryAttachmentShareCaption({
   daySequence = null,
   sameDayCloseoutCount = 1,
 }) {
-  const { dateLabel, weekdayLabel } = formatDateParts(entryDate, lang);
+  const dateLabel = formatNumericDate(entryDate);
   const storeLabel = normalizedStoreLabel(storeName, lang);
   const closeoutRef = closeoutReferenceLabel(lang, daySequence, sameDayCloseoutCount);
 
@@ -60,10 +51,7 @@ export function buildEntryAttachmentShareCaption({
       operationLabel || "عملية",
       storeLabel ? `لمحل ${storeLabel}` : "",
     ].filter(Boolean).join(" ");
-    const datePart = [
-      dateLabel ? `بتاريخ ${dateLabel}` : "",
-      weekdayLabel ? `ويوم ${weekdayLabel}` : "",
-    ].filter(Boolean).join(" و");
+    const datePart = dateLabel ? `بتاريخ ${dateLabel}` : "";
     const refPart = closeoutRef || (entryTime ? `الساعة ${entryTime}` : "");
     return [header, datePart, refPart ? `— ${refPart}` : ""].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
   }
@@ -73,10 +61,7 @@ export function buildEntryAttachmentShareCaption({
     operationLabel || "operation",
     storeLabel ? `for ${storeLabel}` : "",
   ].filter(Boolean).join(" ");
-  const datePart = [
-    dateLabel ? `on ${dateLabel}` : "",
-    weekdayLabel ? `(${weekdayLabel})` : "",
-  ].filter(Boolean).join(" ");
+  const datePart = dateLabel ? `on ${dateLabel}` : "";
   const refPart = closeoutRef || (entryTime ? `at ${entryTime}` : "");
   return [header, datePart, refPart ? `— ${refPart}` : ""].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 }
