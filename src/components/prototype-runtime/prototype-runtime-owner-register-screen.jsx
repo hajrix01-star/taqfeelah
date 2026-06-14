@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
 import { notebookCardBackground } from "@/features/daily-closeouts/notebook-themes";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
+import { resolveCloseoutFromRegisterSummary } from "@/features/operations/client/register-closeout-summary-actions";
 import { employeeDisplayName } from "@/features/employee-closeouts/employee-entries-display";
 import {
   buildRegisterCloseoutDayContext,
@@ -52,7 +53,7 @@ import { OwnerRegisterOperationsList } from "./owner-register-operations-list";
 import { RegisterStoreChips } from "./owner-register-store-filter";
 import { RegisterDashboardCard } from "./owner-register-ui-primitives";
 
-export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onShareRegister = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesSyncError = "", closeoutsSyncError = "", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
+export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOperation = () => {}, onRestoreOperation = () => {}, onEditCloseout = () => {}, onDeleteCloseout = () => {}, onShareRegister = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesSyncError = "", closeoutsSyncError = "", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
   const [period, setPeriod] = useState("month");
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
@@ -457,7 +458,12 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onShareR
             entryAttachmentApiContext={entryAttachmentApiContext}
             expandedCloseoutKey={expandedCloseoutKey}
             setExpandedCloseoutKey={setExpandedCloseoutKey}
+            archivedBusinessIds={archivedBusinessIds}
             onOpenOperation={onOpenOperation}
+            onVoidOperation={onVoidOperation}
+            onRestoreOperation={onRestoreOperation}
+            onEditCloseout={onEditCloseout}
+            onDeleteCloseout={onDeleteCloseout}
             onPreviewAttachment={openRegisterAttachmentPreview}
             registerScrollId={registerScrollId}
             loadError={closeoutsLoadError}
@@ -489,7 +495,66 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onShareR
 }
 
 
-export function OwnerRegisterConnected(props) {
-  const { events, syncError } = useDailyCloseouts();
-  return <OwnerRegisterScreen {...props} closeoutEvents={events} closeoutsSyncError={syncError} />;
+export function OwnerRegisterConnected({
+  setOwnerEditCloseout = () => {},
+  onCloseoutDeleted = async () => {},
+  onVoidOperation = () => {},
+  onRestoreOperation = () => {},
+  lang = "ar",
+  ...props
+}) {
+  const { events, syncError, closeouts, reloadCloseoutsFromApi, deleteCloseout } = useDailyCloseouts();
+
+  const resolveSummaryCloseout = useCallback(async (summary) => {
+    let closeout = resolveCloseoutFromRegisterSummary(summary, closeouts);
+    if (!closeout && typeof reloadCloseoutsFromApi === "function") {
+      try {
+        const remoteCloseouts = await reloadCloseoutsFromApi();
+        closeout = resolveCloseoutFromRegisterSummary(summary, remoteCloseouts);
+      } catch {
+        // fall through
+      }
+    }
+    return closeout;
+  }, [closeouts, reloadCloseoutsFromApi]);
+
+  const handleEditCloseout = useCallback(async (summary) => {
+    const closeout = await resolveSummaryCloseout(summary);
+    if (!closeout) {
+      window.alert(lang === "ar"
+        ? "تعذر العثور على التقفيلة المرتبطة."
+        : "Could not find the linked closeout.");
+      return;
+    }
+    setOwnerEditCloseout(closeout);
+  }, [lang, resolveSummaryCloseout, setOwnerEditCloseout]);
+
+  const handleDeleteCloseout = useCallback(async (summary) => {
+    const closeout = await resolveSummaryCloseout(summary);
+    if (!closeout) {
+      window.alert(lang === "ar"
+        ? "تعذر العثور على التقفيلة المرتبطة."
+        : "Could not find the linked closeout.");
+      return;
+    }
+    const confirmed = window.confirm(lang === "ar"
+      ? "هل تريد حذف هذه التقفيلة نهائيًا؟"
+      : "Delete this closeout permanently?");
+    if (!confirmed) return;
+    await deleteCloseout(closeout.id, closeout);
+    await onCloseoutDeleted(closeout);
+  }, [deleteCloseout, lang, onCloseoutDeleted, resolveSummaryCloseout]);
+
+  return (
+    <OwnerRegisterScreen
+      {...props}
+      lang={lang}
+      closeoutEvents={events}
+      closeoutsSyncError={syncError}
+      onVoidOperation={onVoidOperation}
+      onRestoreOperation={onRestoreOperation}
+      onEditCloseout={handleEditCloseout}
+      onDeleteCloseout={handleDeleteCloseout}
+    />
+  );
 }

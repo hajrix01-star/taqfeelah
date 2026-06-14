@@ -61,6 +61,10 @@ export function PrototypeRuntimePageContent({
   openDuplicateSummaryInRegister,
   acknowledgeDuplicateSales,
   handleOpenOwnerOperation,
+  requestVoidOperation,
+  requestRestoreOperation,
+  setOwnerEditCloseout,
+  handleOwnerCloseoutDeleted,
   setShareSnapshot,
   activeViewBusiness,
   homeReportChannelConfig,
@@ -254,6 +258,10 @@ export function PrototypeRuntimePageContent({
         <OwnerRegisterConnected
           lang={lang}
           onOpenOperation={handleOpenOwnerOperation}
+          onVoidOperation={requestVoidOperation}
+          onRestoreOperation={requestRestoreOperation}
+          setOwnerEditCloseout={setOwnerEditCloseout}
+          onCloseoutDeleted={handleOwnerCloseoutDeleted}
           onShareRegister={setShareSnapshot}
           duplicateSummaryFocus={duplicateSummaryFocus}
           archivedReadOnlyBusinessId={archivedReadOnlyBusinessId}
