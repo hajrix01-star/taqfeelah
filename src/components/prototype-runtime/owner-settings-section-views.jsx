@@ -45,6 +45,7 @@ import {
   countEmployeeSeats,
   resolveStoreLimitMessage,
 } from "@/features/billing/client/entitlement-guards";
+import { ownerPasswordInputProps } from "@/features/auth/client/auth-gate/owner-password-input-props";
 import { text } from "./prototype-runtime-demo-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";
 import {
@@ -84,7 +85,7 @@ export function OwnerSettingsAccountSection({
       <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
         <p className="mb-2 text-xs font-bold text-[#716753]">{lang === "ar" ? "بيانات دخول المالك" : "Owner login credentials"}</p>
         <input dir="ltr" value={draftAuthOwnerUsername} onChange={(event) => setDraftAuthOwnerUsername(event.target.value)} placeholder={lang === "ar" ? "اسم المستخدم" : "Username"} className="mb-2 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
-        <input dir="ltr" type="password" value={draftAuthOwnerPassword} onChange={(event) => setDraftAuthOwnerPassword(event.target.value)} placeholder={lang === "ar" ? "كلمة المرور" : "Password"} className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
+        <input dir="ltr" type="password" value={draftAuthOwnerPassword} onChange={(event) => setDraftAuthOwnerPassword(event.target.value)} placeholder={lang === "ar" ? "كلمة المرور" : "Password"} {...ownerPasswordInputProps} className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
         <p className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{lang === "ar" ? "يتم حفظها في إعدادات التشغيل على الخادم ويمكن تعديلها لاحقًا." : "Stored in server runtime settings and can be changed later."}</p>
         <button disabled={!authDirty && !ownerProfileDirty} onClick={saveAuthCredentials} className={`mt-5 w-full rounded-2xl py-3.5 text-xs font-black text-white ${authDirty || ownerProfileDirty ? "bg-[#112A46]" : "bg-[#B8C0B7]"}`}>{lang === "ar" ? "حفظ بيانات الدخول" : "Save login credentials"}</button>
         {settingsNotice && <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{settingsNotice}</p>}

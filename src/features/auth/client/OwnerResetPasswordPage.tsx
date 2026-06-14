@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { ownerPasswordInputProps } from "@/features/auth/client/auth-gate/owner-password-input-props";
 import {
   confirmOwnerPasswordResetViaApi,
   validateOwnerPasswordResetTokenViaApi,
@@ -85,6 +86,7 @@ export default function OwnerResetPasswordPage({ token }: OwnerResetPasswordPage
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
               placeholder="كلمة المرور الجديدة"
+              {...ownerPasswordInputProps}
               className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
             />
             <input
@@ -95,6 +97,7 @@ export default function OwnerResetPasswordPage({ token }: OwnerResetPasswordPage
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder="تأكيد كلمة المرور"
+              {...ownerPasswordInputProps}
               className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
             />
             <button
