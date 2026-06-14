@@ -35,6 +35,8 @@ export async function createOrganizationStore(rawInput: z.infer<typeof inputSche
   const now = new Date();
 
   return db.transaction(async (tx) => {
+    await assertOrganizationEntitlement(input.organizationId, "add_store", { usageExecutor: tx });
+
     const [created] = await tx
       .insert(stores)
       .values({

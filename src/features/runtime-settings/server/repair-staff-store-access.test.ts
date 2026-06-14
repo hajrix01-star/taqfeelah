@@ -2,6 +2,10 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const provisionCalls: unknown[] = [];
 
+vi.mock("@/core/config/org-config-api-mode", () => ({
+  isOrgConfigApiEnabled: vi.fn(() => false),
+}));
+
 vi.mock("@/features/runtime-settings/server/runtime-settings-service", () => ({
   getRuntimeSettingsByOrganizationId: vi.fn(async () => ({
     settings: {
@@ -45,7 +49,21 @@ describe("repairStaffStoreAccess", () => {
     provisionCalls.length = 0;
   });
 
+  it("skips legacy provisioning when org-config API is enabled", async () => {
+    const { isOrgConfigApiEnabled } = await import("@/core/config/org-config-api-mode");
+    vi.mocked(isOrgConfigApiEnabled).mockReturnValueOnce(true);
+
+    const { repairStaffStoreAccess } = await import("./repair-staff-store-access");
+    const result = await repairStaffStoreAccess("8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1");
+
+    expect(result).toEqual({ staffCount: 0, activeStaffCount: 0, skipped: true });
+    expect(provisionCalls).toHaveLength(0);
+  });
+
   it("re-provisions staff with merged custom store map", async () => {
+    const { isOrgConfigApiEnabled } = await import("@/core/config/org-config-api-mode");
+    vi.mocked(isOrgConfigApiEnabled).mockReturnValue(false);
+
     const { repairStaffStoreAccess } = await import("./repair-staff-store-access");
 
     const result = await repairStaffStoreAccess("8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1");

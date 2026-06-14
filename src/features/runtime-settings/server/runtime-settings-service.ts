@@ -3,6 +3,7 @@ import { z } from "zod";
 import { assertOrganizationAccess } from "@/core/auth/assert-organization-access";
 import { getDb } from "@/core/db/client";
 import { auditEvents, memberStoreAccess, organizationMembers, stores, users } from "@/core/db/schema";
+import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
 import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { ValidationError } from "@/core/errors/app-error";
@@ -189,10 +190,13 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
     envUserIdMap: envAuth.userIdMap,
     envSalesChannelIdMap: envAuth.salesChannelIdMap,
   });
-  const provisionedStaff = await provisionStaffMembers(input.organizationId, input.settings.staff, {
-    storeIdMap: runtimeApiMaps.storeIdMap,
-    userIdMap: runtimeApiMaps.userIdMap,
-  });
+  const staffInput = Array.isArray(input.settings.staff) ? input.settings.staff : [];
+  const provisionedStaff = isOrgConfigApiEnabled()
+    ? enrichStaffWithApiUserIds(staffInput, envAuth.userIdMap)
+    : await provisionStaffMembers(input.organizationId, staffInput, {
+      storeIdMap: runtimeApiMaps.storeIdMap,
+      userIdMap: runtimeApiMaps.userIdMap,
+    });
   const provisionedStoreChannelSettings = await provisionSalesChannels(
     input.organizationId,
     storeChannelSettings,
@@ -201,11 +205,16 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
       salesChannelIdMap: runtimeApiMaps.salesChannelIdMap,
     },
   );
-  const normalizedSettings = {
+  const normalizedSettings: Record<string, unknown> = {
     ...input.settings,
     staff: provisionedStaff,
     storeChannelSettings: provisionedStoreChannelSettings,
   };
+  if (isOrgConfigApiEnabled() && normalizedSettings.authConfig && typeof normalizedSettings.authConfig === "object") {
+    const authConfig = { ...(normalizedSettings.authConfig as Record<string, unknown>) };
+    delete authConfig.employeePins;
+    normalizedSettings.authConfig = authConfig;
+  }
 
   const db = getDb();
   const [saved] = await db

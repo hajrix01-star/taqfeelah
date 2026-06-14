@@ -301,7 +301,17 @@ export function OwnerSettingsTeamSection({
                 </div>
                 <div className="mt-3">
                   <p className="mb-2 text-xs font-black text-[#716753]">{lang === "ar" ? "الرقم السري للموظف" : "Employee PIN"}</p>
-                  <input dir="ltr" value={draftAuthEmployeePins?.[person.id] || ""} onChange={(event) => updateDraftEmployeePin(person.id, event.target.value)} placeholder={lang === "ar" ? "PIN أو كلمة مرور قصيرة" : "PIN or short passcode"} className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
+                  <input
+                    dir="ltr"
+                    value={draftAuthEmployeePins?.[person.id] || ""}
+                    onChange={(event) => updateDraftEmployeePin(person.id, event.target.value)}
+                    placeholder={
+                      person.pinConfigured && !draftAuthEmployeePins?.[person.id]
+                        ? (lang === "ar" ? "مُعرَّف — أدخل PIN جديدًا للتغيير" : "Set — enter a new PIN to change")
+                        : (lang === "ar" ? "PIN أو كلمة مرور قصيرة" : "PIN or short passcode")
+                    }
+                    className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none"
+                  />
                 </div>
               </>
             )}

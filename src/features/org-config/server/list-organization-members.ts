@@ -50,9 +50,10 @@ export async function listOrganizationMembers(rawInput: z.infer<typeof inputSche
   const memberIds = memberRows.map((row) => row.memberId);
   const userIds = memberRows.map((row) => row.userId);
   const loginPhoneByUserId = new Map<string, string>();
+  const pinConfiguredByUserId = new Set<string>();
 
   if (userIds.length) {
-    const phoneRows = await db
+    const identityRows = await db
       .select({
         userId: authIdentities.userId,
         loginPhone: authIdentities.loginPhone,
@@ -62,10 +63,12 @@ export async function listOrganizationMembers(rawInput: z.infer<typeof inputSche
         and(
           inArray(authIdentities.userId, userIds),
           eq(authIdentities.provider, "employee_pin"),
+          eq(authIdentities.status, "active"),
         ),
       );
 
-    phoneRows.forEach((row) => {
+    identityRows.forEach((row) => {
+      pinConfiguredByUserId.add(row.userId);
       if (row.loginPhone) loginPhoneByUserId.set(row.userId, row.loginPhone);
     });
   }
@@ -107,6 +110,7 @@ export async function listOrganizationMembers(rawInput: z.infer<typeof inputSche
       role: row.role,
       status: row.status,
       loginPhone: loginPhoneByUserId.get(row.userId) ?? null,
+      pinConfigured: pinConfiguredByUserId.has(row.userId),
       storeAccess: storeAccessByMemberId.get(row.memberId) || [],
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),

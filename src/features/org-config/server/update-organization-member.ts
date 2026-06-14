@@ -11,6 +11,7 @@ import {
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import { assertValidLoginPhone } from "@/core/phone/normalize-login-phone";
+import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
 import { ensureEmployeeLoginPhoneAvailable } from "@/features/auth/server/employee-login-phone-availability";
 import {
   updateEmployeeLoginPhone,
@@ -116,6 +117,14 @@ export async function updateOrganizationMember(rawInput: z.infer<typeof inputSch
   const now = new Date();
 
   return db.transaction(async (tx) => {
+    if (
+      member.status === "inactive"
+      && nextStatus === "active"
+      && (nextRole === "employee" || nextRole === "manager")
+    ) {
+      await assertOrganizationEntitlement(input.organizationId, "invite_employee", { usageExecutor: tx });
+    }
+
     if (input.name) {
       await tx.update(users).set({ name: input.name, updatedAt: now }).where(eq(users.id, member.userId));
     }
