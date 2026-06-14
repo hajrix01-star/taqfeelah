@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import { organizationMembers, users } from "@/core/db/schema";
 import { isAuthDbCredentialsEnabled } from "@/core/config/auth-api-mode";
-import { getProductionAuthRuntimeConfig } from "@/core/config/env";
+import { getProductionAuthRuntimeConfig, isServerProductionMode } from "@/core/config/env";
 import { UnauthorizedError, ValidationError } from "@/core/errors/app-error";
 import {
   verifyEmployeePinIdentity,
@@ -258,11 +258,14 @@ export async function createAuthSession(rawInput: LoginInput) {
     envAuth.ownerUsername
     || runtimeAuthConfig.ownerUsername
     || BOOTSTRAP_OWNER_USERNAME;
-  const ownerPassword =
-    envAuth.ownerPassword
-    || runtimeAuthConfig.ownerPassword
-    || BOOTSTRAP_OWNER_PASSWORD
-    || "";
+  const ownerPassword = isAuthDbCredentialsEnabled() && isServerProductionMode()
+    ? ""
+    : (
+      envAuth.ownerPassword
+      || runtimeAuthConfig.ownerPassword
+      || BOOTSTRAP_OWNER_PASSWORD
+      || ""
+    );
   const employeePinMap = {
     ...BOOTSTRAP_EMPLOYEE_PINS,
     ...envAuth.employeePinMap,

@@ -74,17 +74,16 @@ export async function toPersistableCloseoutAttachment(
   input: CloseoutAttachmentInput,
   scope: { organizationId: string; storeId: string },
 ): Promise<PersistableCloseoutAttachment> {
-  const normalized = input.storageKey
-    ? input
-    : await registerAttachment({
-      organizationId: scope.organizationId,
-      storeId: scope.storeId,
-      kind: input.kind,
-      name: input.name,
-      mimeType: input.mimeType,
-      sizeBytes: input.sizeBytes,
-      dataUrl: input.dataUrl!,
-    });
+  const normalized = await registerAttachment({
+    organizationId: scope.organizationId,
+    storeId: scope.storeId,
+    kind: input.kind,
+    name: input.name,
+    mimeType: input.mimeType,
+    sizeBytes: input.sizeBytes,
+    dataUrl: input.dataUrl,
+    storageKey: input.storageKey,
+  });
   const storageKey = normalized.storageKey;
   if (!storageKey) {
     throw new ValidationError("Attachment requires dataUrl or storageKey.");

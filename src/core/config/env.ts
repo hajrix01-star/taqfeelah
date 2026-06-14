@@ -81,11 +81,13 @@ function parseJsonMap(rawValue: string | undefined): Record<string, string> {
 export function getProductionAuthRuntimeConfig(env = readEnv()) {
   const organizationId = env.AUTH_ORGANIZATION_ID || env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
   const ownerUserId = env.AUTH_OWNER_USER_ID || env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";
+  const authDbCredentialsEnabled = env.AUTH_DB_CREDENTIALS_ENABLED === "true";
+  const stripLegacyPasswordFallback = isServerProductionMode(env) && authDbCredentialsEnabled;
   return {
     organizationId,
     ownerUserId,
     ownerUsername: env.AUTH_OWNER_USERNAME || "",
-    ownerPassword: env.AUTH_OWNER_PASSWORD || "",
+    ownerPassword: stripLegacyPasswordFallback ? "" : (env.AUTH_OWNER_PASSWORD || ""),
     employeePinMap: parseJsonMap(env.AUTH_EMPLOYEE_PIN_MAP),
     userIdMap: parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP),
     storeIdMap: parseJsonMap(env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP),

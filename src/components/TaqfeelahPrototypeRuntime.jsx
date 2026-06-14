@@ -191,6 +191,7 @@ export default function TaqfeelahPrototypeRuntime() {
 
   const {
     syncSubmitCloseoutToApi,
+    syncDeleteCloseoutToApi,
     loadCloseoutsFromApi,
   } = closeoutsApi;
 
@@ -245,6 +246,7 @@ export default function TaqfeelahPrototypeRuntime() {
       ownerName={ownerDisplayName}
       onSyncToOperationalEntries={syncCloseoutToOperationalEntries}
       onSubmitCloseoutToApi={syncSubmitCloseoutToApi}
+      onDeleteCloseoutToApi={syncDeleteCloseoutToApi}
       loadCloseoutsFromApi={
         closeoutsApiEnabled
         && closeoutsApiOrganizationId

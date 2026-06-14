@@ -45,6 +45,19 @@ describe("registerAttachment", () => {
     await expect(resolveAttachmentDataUrl(registered.storageKey)).resolves.toBe(tinyPng);
   });
 
+  it("rejects client-provided storage keys", async () => {
+    process.env.ATTACHMENT_STORAGE_MODE = "local";
+
+    await expect(registerAttachment({
+      organizationId: TEST_ORG_ID,
+      storeId: TEST_STORE_ID,
+      kind: "image",
+      mimeType: "image/png",
+      sizeBytes: 120,
+      storageKey: `local:v1:${TEST_ORG_ID}/${TEST_STORE_ID}/deadbeef.jpg`,
+    })).rejects.toThrow(/Client-provided attachment storage keys are not allowed/);
+  });
+
   it("uses inline storage when mode is inline", async () => {
     process.env.ATTACHMENT_STORAGE_MODE = "inline";
 

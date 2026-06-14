@@ -10,6 +10,7 @@ import {
   registerLocalVpsAttachment,
 } from "@/core/attachments/local-vps-attachment-storage";
 import { registerInlineAttachment } from "@/features/entries/server/inline-attachment";
+import { rejectClientAttachmentStorageKey } from "@/core/attachments/reject-client-attachment-storage-key";
 
 const registerAttachmentSchema = z.object({
   organizationId: z.string().uuid(),
@@ -42,15 +43,7 @@ export async function registerAttachment(rawInput: RegisterAttachmentInput): Pro
   }
 
   const input = parsed.data;
-  if (input.storageKey) {
-    return {
-      kind: "image",
-      name: input.name || "attachment.jpg",
-      mimeType: input.mimeType,
-      sizeBytes: input.sizeBytes,
-      storageKey: input.storageKey,
-    };
-  }
+  rejectClientAttachmentStorageKey(input.storageKey);
 
   if (!input.dataUrl) {
     throw new ValidationError("Attachment requires dataUrl or storageKey.");

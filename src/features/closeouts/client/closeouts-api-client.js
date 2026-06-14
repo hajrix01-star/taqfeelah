@@ -260,3 +260,36 @@ export async function fetchStoreCloseoutsViaApi({
   });
 }
 
+export async function deleteCloseoutViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  storeId,
+  closeoutId,
+}) {
+  const { userIdMap, storeIdMap } = getMaps();
+  const mappedStoreId = mapToUuid(storeId, storeIdMap);
+  const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
+  if (!mappedActorUserId || !isUuid(organizationId) || !mappedStoreId) {
+    throw buildCloseoutFetchContextError({
+      organizationId,
+      mappedActorUserId,
+      mappedStoreId,
+    });
+  }
+  if (!closeoutId) {
+    throw new Error("closeout delete API requires closeoutId.");
+  }
+
+  return fetchApiJsonWithPrototypeContext(
+    `/api/v1/stores/${mappedStoreId}/closeouts/${encodeURIComponent(closeoutId)}`,
+    {
+      method: "DELETE",
+      organizationId,
+      actorUserId,
+      actorRole,
+      errorMessage: "closeout delete api failed.",
+    },
+  );
+}
+
