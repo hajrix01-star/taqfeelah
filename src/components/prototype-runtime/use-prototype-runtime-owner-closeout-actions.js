@@ -64,11 +64,11 @@ export function usePrototypeRuntimeOwnerCloseoutActions({
         : "Store settings are still loading from the server… wait a moment and try again.");
       return;
     }
-    if (!ownerCloseoutBusiness?.id) {
+    if (!ownerCloseoutBusiness?.id && activeBusinesses.length <= 1) {
       window.alert(text(lang, "chooseStoreForSummary"));
       return;
     }
-    if (activeViewBusiness === "all" && activeBusinesses.length > 1) {
+    if (activeBusinesses.length === 0) {
       window.alert(text(lang, "chooseStoreForSummary"));
       return;
     }
@@ -79,7 +79,6 @@ export function usePrototypeRuntimeOwnerCloseoutActions({
     });
   }, [
     activeBusinesses.length,
-    activeViewBusiness,
     lang,
     ownerCloseoutBusiness?.id,
     runtimeApiStoresReady,

@@ -7,6 +7,15 @@ import { resolveCloseoutStoreName } from "./store-name-resolver";
 import { EmployeeCloseoutsListPanel } from "./employee-closeouts-list-panel";
 import { resolveEmployeeDisplayName } from "./employee-portal-session";
 import { useEmployeeCloseoutsViewState } from "./use-employee-closeouts-view-state";
+import { resolveStoreChannelConfig, channelName } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+
+function resolveSalesChannelsForStore(storeChannelSettings, storeId, lang) {
+  if (!storeId) return [];
+  const config = resolveStoreChannelConfig(storeChannelSettings, storeId);
+  return config.channels
+    .filter((channel) => config.activeIds.includes(channel.id) && !channel.retired)
+    .map((channel) => ({ ...channel, displayName: channelName(channel, lang) }));
+}
 
 export default function EmployeeCloseoutsView({
   lang,
@@ -36,12 +45,15 @@ export default function EmployeeCloseoutsView({
   attachmentsApiActorUserId = "",
   attachmentsApiActorRole = "employee",
   sessionDisplayName = "",
+  storeChannelSettings = {},
 }) {
   const employeeDisplayName = resolveEmployeeDisplayName(employee, lang, sessionDisplayName);
   const state = useEmployeeCloseoutsViewState({
     lang,
     employee,
     currentStore,
+    assignedStores,
+    onSelectStore,
     notebookTheme,
     employeeHistoryVisibility,
     findForStoreDate: findForStoreDateProp,
@@ -78,10 +90,23 @@ export default function EmployeeCloseoutsView({
     handleSubmit,
     handleCancelEntry,
     resolveStoreDate,
+    handleEntryStoreSelect,
     setShareTarget,
     setShareNewlySubmitted,
     closeShareModal,
   } = state;
+
+  const entrySalesChannels = entryCloseout?.storeId
+    ? resolveSalesChannelsForStore(storeChannelSettings, entryCloseout.storeId, lang)
+    : salesChannels;
+  const entryStoreLabel = entryCloseout?.storeId
+    ? (resolveCloseoutStoreName({
+      preferredStoreName: entryCloseout.storeName,
+      closeout: entryCloseout,
+      currentStore,
+      lang,
+    }) || storeLabel)
+    : storeLabel;
 
   if (viewGate === "loading") {
     return (
@@ -110,11 +135,15 @@ export default function EmployeeCloseoutsView({
         style={{ top: "calc(70px + env(safe-area-inset-top, 0px))" }}
       >
         <DailyCloseoutEntryFlow
+          key={`${entryCloseout.id}-${entryCloseout.storeId || "pending"}`}
           lang={lang}
           notebookTheme={notebookTheme}
           closeout={entryCloseout}
-          salesChannels={salesChannels}
-          storeName={storeLabel}
+          salesChannels={entrySalesChannels}
+          storeName={entryStoreLabel}
+          assignedStores={assignedStores}
+          selectedStoreId={entryCloseout.storeId || ""}
+          onSelectEntryStore={handleEntryStoreSelect}
           isOwnerEdit={entryOwnerEdit}
           fullScreenOverlay={false}
           saving={saving}
@@ -143,7 +172,7 @@ export default function EmployeeCloseoutsView({
             hasOlderHiddenCloseouts={hasOlderHiddenCloseouts}
             historyScopeLabel={historyScopeLabel}
             hiddenCloseoutCount={hiddenCloseoutCount}
-            showStorePicker={showStorePicker}
+            showStorePicker={assignedStores.length <= 1}
             assignedStores={assignedStores}
             currentStore={currentStore}
             onSelectStore={onSelectStore}

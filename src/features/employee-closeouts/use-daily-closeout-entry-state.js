@@ -164,6 +164,10 @@ export function useDailyCloseoutEntryState({
   }, [date, lang]);
 
   const handleSubmit = useCallback(async () => {
+    if (!initialCloseout?.storeId) {
+      window.alert(text(lang, "chooseStoreToStartEntry"));
+      return;
+    }
     if (!validateDate()) return;
     if (attachmentProcessing || outflowAttachmentProcessingId) {
       window.alert(lang === "ar" ? "انتظر اكتمال معالجة الصور." : "Wait for images to finish processing.");
@@ -190,6 +194,7 @@ export function useDailyCloseoutEntryState({
     attachmentProcessing,
     buildCloseout,
     buildOutflowRow,
+    initialCloseout?.storeId,
     isOwnerEdit,
     lang,
     onSubmit,

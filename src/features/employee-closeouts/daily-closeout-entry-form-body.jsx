@@ -17,12 +17,17 @@ import {
   ProofAttachmentPreview,
 } from "@/components/prototype-runtime/prototype-runtime-attachment-ui";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { CloseoutEntryStorePicker } from "./closeout-entry-store-picker";
 
 export function DailyCloseoutEntryFormBody({
   lang,
   date,
   setDate,
   storeName,
+  assignedStores = [],
+  selectedStoreId = "",
+  onSelectEntryStore = () => {},
+  formEnabled = true,
   titles,
   salesChannels,
   labelChannel,
@@ -68,6 +73,13 @@ export function DailyCloseoutEntryFormBody({
 
   return (
     <>
+      <CloseoutEntryStorePicker
+        lang={lang}
+        stores={assignedStores}
+        selectedStoreId={selectedStoreId}
+        onSelectStore={onSelectEntryStore}
+      />
+      <fieldset disabled={!formEnabled} className="min-w-0 border-0 p-0 m-0 disabled:opacity-55">
       <div className="mb-4 rounded-2xl border border-[#E8E1D4] bg-[rgba(255,253,248,0.9)] px-4 py-3">
         {dateEditing ? (
           <div className="space-y-3">
@@ -92,7 +104,9 @@ export function DailyCloseoutEntryFormBody({
             <div>
               <p className="text-taq-meta font-bold text-[#827762]">{lang === "ar" ? "تاريخ التقفيلة" : "Closeout date"}</p>
               <p className="text-sm font-black tabular-nums text-[#112A46]">{formatCalendarDate(date, lang)}</p>
-              <p className="mt-1 text-taq-nav font-bold text-[#827762]">{storeName}</p>
+              {assignedStores.length <= 1 && storeName ? (
+                <p className="mt-1 text-taq-nav font-bold text-[#827762]">{storeName}</p>
+              ) : null}
             </div>
             <button
               type="button"
@@ -277,6 +291,7 @@ export function DailyCloseoutEntryFormBody({
           <div className="flex justify-between text-base font-black text-[#257844]"><span>{lang === "ar" ? "الناتج" : "Net"}</span><span className="tabular-nums">{formatCloseoutMoney(totals.netMovement, lang)} ر.س</span></div>
         </div>
       </EntrySection>
+      </fieldset>
     </>
   );
 }
