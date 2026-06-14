@@ -6,6 +6,7 @@ import {
   buildOrgConfigPersistBaseline,
   isClientGeneratedId,
   mapApiChannelToUi,
+  mapApiMemberToStaff,
   mapApiStoreToBusiness,
   mapOrgConfigBundleToRuntime,
   validateOrgConfigDbChannelMappings,
@@ -57,6 +58,75 @@ describe("org config runtime mapper", () => {
     expect(mapped.staff[0].id).toBe("4cf1450d-08d8-4ca1-b180-1c2642174a79");
     expect(mapped.staff[0].legacyId).toBe("ahmed");
     expect(mapped.staff[0].storeIds).toEqual(["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"]);
+    expect(mapped.staff[0].pin).toBe("");
+  });
+
+  it("does not fabricate pins when auth identity is configured", () => {
+    const staff = mapApiMemberToStaff({
+      memberId: "11111111-1111-4111-8111-111111111111",
+      userId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+      name: "Ahmed",
+      role: "employee",
+      status: "active",
+      pinConfigured: true,
+      storeAccess: [],
+    });
+
+    expect(staff.pin).toBe("");
+    expect(staff.pinConfigured).toBe(true);
+  });
+
+  it("uses draft pin overrides for configured employees", () => {
+    const staff = mapApiMemberToStaff({
+      memberId: "11111111-1111-4111-8111-111111111111",
+      userId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+      name: "Ahmed",
+      role: "employee",
+      status: "active",
+      pinConfigured: true,
+      storeAccess: [],
+    }, { employeePins: { "4cf1450d-08d8-4ca1-b180-1c2642174a79": "9876" } });
+
+    expect(staff.pin).toBe("9876");
+  });
+
+  it("maps store operational settings from API rows", () => {
+    const mapped = mapOrgConfigBundleToRuntime({
+      stores: [{
+        id: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        legacyId: "shami",
+        name: "Shami",
+        location: "Riyadh",
+        status: "active",
+        operationalSettings: {
+          closeoutReviewEnabled: true,
+          reviewEnabled: false,
+          activeCategories: ["rent", "salary", "utility", "phone", "maintenance", "other"],
+          employeeHistoryVisibility: "all",
+          closeoutAlert: false,
+          attachmentAlert: false,
+          notebookTheme: null,
+        },
+      }],
+      channelsByStoreId: {
+        "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c": [{
+          id: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+          legacyId: "cash",
+          name: "Cash",
+          status: "active",
+        }],
+      },
+      members: [{
+        memberId: "11111111-1111-4111-8111-111111111111",
+        userId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+        legacyStaffId: "ahmed",
+        name: "Ahmed",
+        role: "employee",
+        status: "active",
+        storeAccess: [{ storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c", legacyStoreId: "shami" }],
+      }],
+    } as Parameters<typeof mapOrgConfigBundleToRuntime>[0]);
+
     const operationalSettings = mapped.storeOperationalSettings as Record<string, { closeoutAlert?: boolean }>;
     expect(operationalSettings["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"]?.closeoutAlert).toBe(false);
   });

@@ -202,9 +202,13 @@ export async function persistOrgConfigSnapshot({
   for (let index = 0; index < remappedStaff.length; index += 1) {
     const person = remappedStaff[index];
     const previous = baselineStaffById.get(person.id);
-    const pin = employeePins[person.id] || person.pin;
+    const draftPin = typeof employeePins[person.id] === "string" ? employeePins[person.id].trim() : "";
 
     if (!previous?.memberId && (isClientGeneratedId(person.id) || !isUuid(person.memberId))) {
+      const pin = draftPin || (typeof person.pin === "string" ? person.pin.trim() : "");
+      if (!pin) {
+        throw new Error("employee pin is required when creating a team member");
+      }
       const created = await createOrganizationMemberViaApi({
         ...authArgs,
         name: person.nameAr || person.nameEn || "Employee",
@@ -250,7 +254,7 @@ export async function persistOrgConfigSnapshot({
       || nextMobile !== prevMobile
       || nextStoreIds !== prevStoreIds
       || nextActive !== prevActive
-      || (pin && pin !== previous?.pin)
+      || Boolean(draftPin)
     ) {
       await updateOrganizationMemberViaApi({
         ...authArgs,
@@ -258,7 +262,7 @@ export async function persistOrgConfigSnapshot({
         name: nextName,
         status: nextActive ? "active" : "inactive",
         storeIds: person.storeIds || [],
-        pin,
+        ...(draftPin ? { pin: draftPin } : {}),
         loginPhone: nextMobile || undefined,
         reason: nextActive ? "owner_updated_member" : "owner_removed_member",
       });

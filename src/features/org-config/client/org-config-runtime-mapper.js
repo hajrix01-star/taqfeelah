@@ -95,7 +95,8 @@ export function mapApiMemberToStaff(member, { employeePins = {} } = {}) {
   const userId = member?.userId || "";
   assertCanonicalUuidId("staff", userId);
   const legacyStaffId = member?.legacyStaffId || userId || memberId;
-  const pin = employeePins[legacyStaffId] || employeePins[userId] || employeePins[memberId] || "1234";
+  const draftPin = employeePins[legacyStaffId] || employeePins[userId] || employeePins[memberId] || "";
+  const pin = draftPin || (member?.pinConfigured ? "" : "");
   return {
     id: userId || legacyStaffId,
     legacyId: legacyStaffId && legacyStaffId !== userId ? legacyStaffId : "",
@@ -108,6 +109,7 @@ export function mapApiMemberToStaff(member, { employeePins = {} } = {}) {
     removed: member?.status === "inactive",
     storeIds,
     pin,
+    pinConfigured: Boolean(member?.pinConfigured),
     role: member?.role || "employee",
   };
 }

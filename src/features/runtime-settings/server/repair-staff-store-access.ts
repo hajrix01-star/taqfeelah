@@ -1,3 +1,4 @@
+import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
 import { getProductionAuthRuntimeConfig } from "@/core/config/env";
 import { enrichRuntimeStoreIdMap } from "@/features/runtime-settings/server/enrich-runtime-store-id-map";
@@ -12,6 +13,10 @@ type RuntimeBusiness = { id?: string };
  * Safe to run on every deploy — idempotent.
  */
 export async function repairStaffStoreAccess(organizationId: string) {
+  if (isOrgConfigApiEnabled()) {
+    return { staffCount: 0, activeStaffCount: 0, skipped: true };
+  }
+
   const envelope = await getRuntimeSettingsByOrganizationId(organizationId);
   const settings = envelope?.settings && typeof envelope.settings === "object"
     ? envelope.settings as Record<string, unknown>

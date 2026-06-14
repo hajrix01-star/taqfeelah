@@ -25,23 +25,44 @@ export function cloneStaffDraft(staff) {
  * @param {Record<string, string>} [options.draftAuthEmployeePins]
  * @param {Record<string, string>} [options.authEmployeePins]
  * @param {string} [options.defaultPin]
+ * @param {boolean} [options.pinsFromAuthIdentitiesOnly]
  */
 export function prepareSavedTeamDraft(
   draftStaff,
-  { draftAuthEmployeePins = {}, authEmployeePins = {}, defaultPin = "1234" } = {},
+  {
+    draftAuthEmployeePins = {},
+    authEmployeePins = {},
+    defaultPin = "1234",
+    pinsFromAuthIdentitiesOnly = false,
+  } = {},
 ) {
-  const staff = draftStaff.map((person) => ({
-    ...person,
-    pin: draftAuthEmployeePins?.[person.id] || person.pin || defaultPin,
-  }));
+  const staff = draftStaff.map((person) => {
+    const draftPin = draftAuthEmployeePins?.[person.id]?.trim();
+    if (pinsFromAuthIdentitiesOnly) {
+      return {
+        ...person,
+        pin: draftPin || person.pin || "",
+      };
+    }
+    return {
+      ...person,
+      pin: draftPin || person.pin || defaultPin,
+    };
+  });
 
   return {
     staff,
-    employeePins: normalizeTeamEmployeePins({
-      authEmployeePins,
-      draftAuthEmployeePins,
-      staff,
-    }),
+    employeePins: pinsFromAuthIdentitiesOnly
+      ? Object.fromEntries(
+        staff
+          .map((person) => [person.id, draftAuthEmployeePins?.[person.id]?.trim() || ""])
+          .filter(([, pin]) => Boolean(pin)),
+      )
+      : normalizeTeamEmployeePins({
+        authEmployeePins,
+        draftAuthEmployeePins,
+        staff,
+      }),
   };
 }
 

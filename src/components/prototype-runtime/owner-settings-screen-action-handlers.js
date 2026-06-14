@@ -332,6 +332,7 @@ export function createOwnerSettingsScreenHandlers(ctx) {
       draftAuthEmployeePins,
       authEmployeePins,
       defaultPin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT || "1234",
+      pinsFromAuthIdentitiesOnly: isOrgConfigApiEnabled(),
     });
 
     if (isOrgConfigApiEnabled() && typeof orgConfigApiContext?.flushPersist === "function") {
@@ -343,7 +344,7 @@ export function createOwnerSettingsScreenHandlers(ctx) {
       setters.setSettingsNotice("");
       try {
         await orgConfigApiContext.flushPersist({ staff: nextStaff }, { employeePins: nextPins });
-        setters.setAuthEmployeePins(nextPins);
+        setters.setAuthEmployeePins({});
         cancelManagingTeam();
         if (typeof reloadEntitlements === "function") {
           await reloadEntitlements();
@@ -353,8 +354,8 @@ export function createOwnerSettingsScreenHandlers(ctx) {
             staff: nextStaff,
             authOwnerUsername,
             authOwnerPassword,
-            authEmployeePins: nextPins,
             omitStaff: true,
+            omitEmployeePins: true,
           }));
         }
         showSettingsSaved();

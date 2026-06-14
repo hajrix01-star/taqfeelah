@@ -34,6 +34,21 @@ describe("owner settings team actions", () => {
     expect(result.employeePins).toEqual({ sara: "2222" });
   });
 
+  it("keeps only draft pins when auth identities are the source of truth", () => {
+    const result = prepareSavedTeamDraft(
+      [{ id: "ahmed" }, { id: "sara" }],
+      {
+        draftAuthEmployeePins: { sara: "2222" },
+        authEmployeePins: { ahmed: "1111", old: "0000" },
+        pinsFromAuthIdentitiesOnly: true,
+      },
+    );
+
+    expect(result.staff[0].pin).toBe("");
+    expect(result.staff[1].pin).toBe("2222");
+    expect(result.employeePins).toEqual({ sara: "2222" });
+  });
+
   it("validates add staff prerequisites", () => {
     expect(canAddStaffMember({ name: "Ali", storeIds: ["shami"], managingTeam: true })).toBe(true);
     expect(canAddStaffMember({ name: "", storeIds: ["shami"], managingTeam: true })).toBe(false);

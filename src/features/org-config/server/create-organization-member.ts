@@ -12,6 +12,7 @@ import {
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import { assertValidLoginPhone } from "@/core/phone/normalize-login-phone";
+import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
 import { ensureEmployeeLoginPhoneAvailable } from "@/features/auth/server/employee-login-phone-availability";
 import {
   upsertEmployeePinIdentity,
@@ -90,6 +91,10 @@ export async function createOrganizationMember(rawInput: z.infer<typeof inputSch
   }
 
   return db.transaction(async (tx) => {
+    if (input.role !== "owner") {
+      await assertOrganizationEntitlement(input.organizationId, "invite_employee", { usageExecutor: tx });
+    }
+
     await tx.insert(users).values({
       id: userId,
       name: input.name,
