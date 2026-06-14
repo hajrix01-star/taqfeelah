@@ -8,6 +8,10 @@ import { MoneyValue } from "./prototype-runtime-notebook";
 
 const GRID_CLASS = "grid grid-cols-[1.25fr_0.72fr_0.72fr_0.8fr] items-center gap-1";
 
+function dayColumnAlignClass(lang) {
+  return lang === "ar" ? "text-right" : "text-left";
+}
+
 function NetValue({ lang, value }) {
   const amount = Number(value) || 0;
   const positive = amount >= 0;
@@ -66,7 +70,7 @@ export function OwnerRegisterGeneralReportList({
     <article className="overflow-hidden rounded-[18px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
       <div className="border-b border-[#F0EBE0] px-3 py-2">
         <div className={`${GRID_CLASS} text-taq-nav font-bold text-[#806528]`}>
-          <span>{text(lang, "day")}</span>
+          <span className={dayColumnAlignClass(lang)}>{text(lang, "day")}</span>
           <span className="text-center">{text(lang, "salesShort")}</span>
           <span className="text-center">{text(lang, "outflowShort")}</span>
           <span className="text-center">{text(lang, "result")}</span>
@@ -78,7 +82,12 @@ export function OwnerRegisterGeneralReportList({
             key={row.id || row.date}
             className={`${GRID_CLASS} min-h-[44px] py-2 text-taq-meta ${index < rows.length - 1 ? "border-b border-[#F0EBE0]" : ""}`}
           >
-            <span className="truncate font-bold text-[#112A46]" dir="ltr">{formatCalendarDate(row.date, lang)}</span>
+            <span
+              className={`block w-full truncate font-bold text-[#112A46] ${dayColumnAlignClass(lang)}`}
+              dir="ltr"
+            >
+              {formatCalendarDate(row.date, lang)}
+            </span>
             <strong className="text-center tabular-nums text-[#257844]">
               <MoneyValue value={money(row.sales, lang)} />
             </strong>
@@ -91,7 +100,7 @@ export function OwnerRegisterGeneralReportList({
       </div>
       <div className="border-t-2 border-[#112A46]/15 bg-[#F6F8FB] px-3 py-2">
         <div className={`${GRID_CLASS} min-h-[44px] text-taq-meta font-bold`}>
-          <span className="text-[#112A46]">{text(lang, "combinedTotal")}</span>
+          <span className={`text-[#112A46] ${dayColumnAlignClass(lang)}`}>{text(lang, "combinedTotal")}</span>
           <strong className="text-center tabular-nums text-[#257844]">
             <MoneyValue value={money(totals.sales, lang)} />
           </strong>
