@@ -174,7 +174,7 @@ export function useDailyCloseoutEntryState({
       return;
     }
     if (salesChannels.length === 0) {
-      window.alert(lang === "ar" ? "لا توجد قنوات بيع مفعّلة لهذا المحل." : "No active sales channels for this store.");
+      window.alert(text(lang, "noSalesChannels"));
       return;
     }
     const pendingOutflow = buildOutflowRow(outAmount);

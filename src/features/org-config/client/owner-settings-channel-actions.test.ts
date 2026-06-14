@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  addCatalogIncomeSource,
   addCustomSalesChannel,
   canRequestRetireSalesChannel,
   cloneStoreChannelDraft,
+  listAddableCatalogSources,
   restoreRetiredSalesChannel,
   retireSalesChannelInDraft,
   toggleSalesChannelActive,
@@ -51,5 +53,21 @@ describe("owner settings channel actions", () => {
     expect(result.added).toBe(true);
     expect(result.config.channels).toHaveLength(3);
     expect(result.config.activeIds).toContain("channel-test");
+  });
+
+  it("adds catalog payment method and sales channel presets", () => {
+    const withBank = addCatalogIncomeSource(baseConfig, "bank");
+    expect(withBank.added).toBe(true);
+    expect(withBank.config.activeIds).toContain("bank");
+
+    const withKeeta = addCatalogIncomeSource(withBank.config, "keeta");
+    expect(withKeeta.added).toBe(true);
+    expect(withKeeta.config.channels.find((item) => item.legacyId === "keeta")?.kind).toBe("sales_channel");
+  });
+
+  it("lists only missing catalog entries for picker", () => {
+    expect(listAddableCatalogSources(baseConfig, "payment_method").map((entry) => entry.legacyId)).toContain("bank");
+    expect(listAddableCatalogSources(baseConfig, "sales_channel").map((entry) => entry.legacyId)).toContain("keeta");
+    expect(listAddableCatalogSources(baseConfig, "payment_method").map((entry) => entry.legacyId)).not.toContain("cash");
   });
 });

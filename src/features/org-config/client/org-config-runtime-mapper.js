@@ -11,14 +11,15 @@ export function assertCanonicalUuidId(entityName, value) {
 }
 
 const CHANNEL_TEMPLATES = {
-  cash: { id: "cash", text: "cash", icon: Wallet },
-  bank: { id: "bank", text: "bank", icon: Landmark },
-  mada: { id: "mada", text: "mada", icon: CreditCard },
-  apple: { id: "apple", text: "apple", icon: Smartphone },
-  jahez: { id: "jahez", text: "jahez", icon: ShoppingBag },
-  hunger: { id: "hunger", text: "hunger", icon: ShoppingBag },
-  card: { id: "card", text: "card", icon: CreditCard },
-  online: { id: "online", text: "online", icon: CreditCard },
+  cash: { id: "cash", text: "cash", kind: "payment_method", icon: Wallet },
+  bank: { id: "bank", text: "bank", kind: "payment_method", icon: Landmark },
+  mada: { id: "mada", text: "mada", kind: "payment_method", icon: CreditCard },
+  apple: { id: "apple", text: "apple", kind: "payment_method", icon: Smartphone },
+  card: { id: "card", text: "card", kind: "payment_method", icon: CreditCard },
+  online: { id: "online", text: "online", kind: "payment_method", icon: CreditCard },
+  jahez: { id: "jahez", text: "jahez", kind: "sales_channel", icon: ShoppingBag },
+  hunger: { id: "hunger", text: "hunger", kind: "sales_channel", icon: ShoppingBag },
+  keeta: { id: "keeta", text: "keeta", kind: "sales_channel", icon: ShoppingBag },
 };
 
 const CHANNEL_NAME_TO_LEGACY = {
@@ -26,10 +27,13 @@ const CHANNEL_NAME_TO_LEGACY = {
   bank: "bank",
   بنك: "bank",
   نقد: "cash",
+  بطاقة: "card",
   mada: "mada",
   "apple pay": "apple",
   jahez: "jahez",
   hungerstation: "hunger",
+  keeta: "keeta",
+  كيتا: "keeta",
   card: "card",
   online: "online",
 };

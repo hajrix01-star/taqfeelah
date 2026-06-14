@@ -4,6 +4,12 @@
  * @property {string[]} activeIds
  */
 
+import {
+  getCatalogEntry,
+  listCatalogByKind,
+  resolveIncomeSourceKind,
+} from "@/core/client/income-source-catalog";
+
 /**
  * @param {StoreChannelConfig} config
  * @returns {StoreChannelConfig}
@@ -14,6 +20,26 @@ export function cloneStoreChannelDraft(config) {
     channels: config.channels.map((channel) => ({ ...channel })),
     activeIds: [...config.activeIds],
   };
+}
+
+/**
+ * @param {StoreChannelConfig} config
+ * @param {string} legacyId
+ */
+function channelExistsInConfig(config, legacyId) {
+  return config.channels.some((channel) => (
+    channel.legacyId === legacyId
+    || channel.id === legacyId
+    || channel.text === legacyId
+  ));
+}
+
+/**
+ * @param {StoreChannelConfig} config
+ * @param {"payment_method" | "sales_channel"} kind
+ */
+export function listAddableCatalogSources(config, kind) {
+  return listCatalogByKind(kind).filter((entry) => !channelExistsInConfig(config, entry.legacyId));
 }
 
 /**
@@ -83,8 +109,40 @@ export function retireSalesChannelInDraft(config, channel) {
 
 /**
  * @param {StoreChannelConfig} config
+ * @param {string} legacyId
+ * @param {{ icon?: unknown }} [options]
+ */
+export function addCatalogIncomeSource(config, legacyId, options = {}) {
+  const entry = getCatalogEntry(legacyId);
+  if (!entry || channelExistsInConfig(config, entry.legacyId)) {
+    return { config, added: false, channelId: "" };
+  }
+
+  const channelId = entry.legacyId;
+  return {
+    config: {
+      channels: [
+        ...config.channels,
+        {
+          id: channelId,
+          legacyId: entry.legacyId,
+          text: entry.legacyId,
+          kind: entry.kind,
+          icon: options.icon,
+          retired: false,
+        },
+      ],
+      activeIds: [...config.activeIds, channelId],
+    },
+    added: true,
+    channelId,
+  };
+}
+
+/**
+ * @param {StoreChannelConfig} config
  * @param {string} name
- * @param {{ id?: string, icon?: unknown }} [options]
+ * @param {{ id?: string, icon?: unknown, kind?: "payment_method" | "sales_channel" }} [options]
  */
 export function addCustomSalesChannel(config, name, options = {}) {
   const trimmed = name.trim();
@@ -93,6 +151,7 @@ export function addCustomSalesChannel(config, name, options = {}) {
   }
 
   const channelId = options.id || `channel-${Date.now()}`;
+  const kind = options.kind === "sales_channel" ? "sales_channel" : "payment_method";
   return {
     config: {
       channels: [
@@ -100,6 +159,7 @@ export function addCustomSalesChannel(config, name, options = {}) {
         {
           id: channelId,
           custom: true,
+          kind,
           nameAr: trimmed,
           nameEn: trimmed,
           icon: options.icon,
@@ -110,4 +170,20 @@ export function addCustomSalesChannel(config, name, options = {}) {
     added: true,
     channelId,
   };
+}
+
+/**
+ * @param {StoreChannelConfig} config
+ * @param {"payment_method" | "sales_channel"} kind
+ */
+export function listConfiguredChannelsByKind(config, kind) {
+  return config.channels.filter((channel) => !channel.retired && resolveIncomeSourceKind(channel) === kind);
+}
+
+/**
+ * @param {StoreChannelConfig} config
+ * @param {"payment_method" | "sales_channel"} kind
+ */
+export function listVisibleChannelsByKind(config, visibleChannels, kind) {
+  return visibleChannels.filter((channel) => resolveIncomeSourceKind(channel) === kind);
 }

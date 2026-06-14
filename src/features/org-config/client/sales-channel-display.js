@@ -5,6 +5,7 @@ const KNOWN_CHANNEL_TEXT_KEYS = new Set([
   "apple",
   "jahez",
   "hunger",
+  "keeta",
   "card",
   "online",
 ]);
@@ -18,15 +19,18 @@ const CHANNEL_ALIAS_TO_TEXT_KEY = {
   jahez: "jahez",
   hunger: "hunger",
   hungerstation: "hunger",
+  keeta: "keeta",
   card: "card",
   online: "online",
   نقد: "cash",
   نقدي: "cash",
   بنك: "bank",
   حساب: "bank",
+  بطاقة: "card",
   مدى: "mada",
   جاهز: "jahez",
   هنقرستيشن: "hunger",
+  كيتا: "keeta",
 };
 
 function normalizeChannelAlias(value) {

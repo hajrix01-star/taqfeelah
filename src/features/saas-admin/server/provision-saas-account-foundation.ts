@@ -1,5 +1,6 @@
 import { getDb } from "@/core/db/client";
 import { auditEvents } from "@/core/db/schema";
+import { buildCatalogUuidMap } from "@/core/client/income-source-catalog";
 import { buildDefaultStoreChannelSettings } from "@/features/org-config/server/build-default-store-channel-settings";
 import { provisionSalesChannels } from "@/features/runtime-settings/server/provision-sales-channels";
 
@@ -21,7 +22,7 @@ export async function provisionSaasAccountFoundation(
     buildDefaultStoreChannelSettings(input.storeId),
     {
       storeIdMap: { [input.storeId]: input.storeId },
-      salesChannelIdMap: {},
+      salesChannelIdMap: buildCatalogUuidMap(),
       executor,
     },
   );

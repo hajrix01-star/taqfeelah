@@ -17,7 +17,35 @@ import {
   ProofAttachmentPreview,
 } from "@/components/prototype-runtime/prototype-runtime-attachment-ui";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { resolveIncomeSourceKind } from "@/core/client/income-source-catalog";
 import { CloseoutEntryStorePicker } from "./closeout-entry-store-picker";
+
+function groupSalesChannels(salesChannels) {
+  const paymentMethods = salesChannels.filter((channel) => resolveIncomeSourceKind(channel) === "payment_method");
+  const salesChannelItems = salesChannels.filter((channel) => resolveIncomeSourceKind(channel) === "sales_channel");
+  return { paymentMethods, salesChannelItems };
+}
+
+function ChannelAmountGrid({ channels, labelChannel, salesValues, updateSalesValue, moneyInputClass }) {
+  if (channels.length === 0) return null;
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      {channels.map((channel) => (
+        <label key={channel.id} className="flex flex-col items-center rounded-2xl bg-white px-2 py-3 text-center ring-1 ring-black/[0.05]">
+          <span className="mb-2 block w-full text-taq-meta font-bold text-[#827762]">{labelChannel(channel)}</span>
+          <input
+            inputMode="decimal"
+            dir="ltr"
+            value={salesValues[channel.id] || ""}
+            onChange={(event) => updateSalesValue(channel.id, event.target.value)}
+            className={moneyInputClass}
+            placeholder="0"
+          />
+        </label>
+      ))}
+    </div>
+  );
+}
 
 export function DailyCloseoutEntryFormBody({
   lang,
@@ -57,6 +85,7 @@ export function DailyCloseoutEntryFormBody({
   todayIso,
 }) {
   const [dateEditing, setDateEditing] = useState(false);
+  const { paymentMethods, salesChannelItems } = groupSalesChannels(salesChannels);
 
   const confirmDateEdit = (nextDate) => {
     if (!nextDate) {
@@ -120,22 +149,33 @@ export function DailyCloseoutEntryFormBody({
       </div>
       <EntrySection number={1} title={titles.sales} lang={lang}>
         {salesChannels.length === 0 ? (
-          <p className="rounded-2xl bg-[#FFF1EE] p-3 text-xs font-bold text-[#B44747]">{lang === "ar" ? "لا توجد قنوات بيع مفعّلة." : "No active sales channels."}</p>
+          <p className="rounded-2xl bg-[#FFF1EE] p-3 text-xs font-bold text-[#B44747]">{text(lang, "noSalesChannels")}</p>
         ) : (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {salesChannels.map((channel) => (
-              <label key={channel.id} className="flex flex-col items-center rounded-2xl bg-white px-2 py-3 text-center ring-1 ring-black/[0.05]">
-                <span className="mb-2 block w-full text-taq-meta font-bold text-[#827762]">{labelChannel(channel)}</span>
-                <input
-                  inputMode="decimal"
-                  dir="ltr"
-                  value={salesValues[channel.id] || ""}
-                  onChange={(event) => updateSalesValue(channel.id, event.target.value)}
-                  className={moneyInputClass}
-                  placeholder="0"
+          <div className="space-y-4">
+            {paymentMethods.length > 0 ? (
+              <div>
+                <p className="mb-2 text-taq-nav font-black text-[#806528]">{text(lang, "paymentMethods")}</p>
+                <ChannelAmountGrid
+                  channels={paymentMethods}
+                  labelChannel={labelChannel}
+                  salesValues={salesValues}
+                  updateSalesValue={updateSalesValue}
+                  moneyInputClass={moneyInputClass}
                 />
-              </label>
-            ))}
+              </div>
+            ) : null}
+            {salesChannelItems.length > 0 ? (
+              <div>
+                <p className="mb-2 text-taq-nav font-black text-[#806528]">{text(lang, "salesChannelsTitle")}</p>
+                <ChannelAmountGrid
+                  channels={salesChannelItems}
+                  labelChannel={labelChannel}
+                  salesValues={salesValues}
+                  updateSalesValue={updateSalesValue}
+                  moneyInputClass={moneyInputClass}
+                />
+              </div>
+            ) : null}
           </div>
         )}
         <div className="rounded-2xl border border-[#E8E1D4] bg-[#FAF3E3] px-3 py-3">

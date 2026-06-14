@@ -19,17 +19,19 @@ const IDS = {
     hunger: "af6d4b5c-1e7a-4b2d-a4f5-6a7b8c9d0e1f",
     card: "bb16ea8f-8abf-4ca9-ab0d-e3a8f69f8db1",
     online: "f0f8dd28-4fbe-4bf2-9074-2be703f10ccd",
+    keeta: "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
   },
 };
 
 const CHANNELS = [
   ["cash", "Cash"],
+  ["card", "Card"],
   ["mada", "Mada"],
   ["apple", "Apple Pay"],
   ["jahez", "Jahez"],
   ["hunger", "HungerStation"],
-  ["card", "Card"],
   ["online", "Online"],
+  ["keeta", "Keeta"],
 ];
 
 const OUTFLOW_CATEGORIES = [

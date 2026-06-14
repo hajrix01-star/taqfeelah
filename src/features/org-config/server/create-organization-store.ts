@@ -5,6 +5,7 @@ import { getDb } from "@/core/db/client";
 import { auditEvents, stores } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
+import { buildCatalogUuidMap } from "@/core/client/income-source-catalog";
 import { buildDefaultStoreChannelSettings } from "@/features/org-config/server/build-default-store-channel-settings";
 import { provisionSalesChannels } from "@/features/runtime-settings/server/provision-sales-channels";
 
@@ -75,7 +76,7 @@ export async function createOrganizationStore(rawInput: z.infer<typeof inputSche
       buildDefaultStoreChannelSettings(created.id),
       {
         storeIdMap: { [created.id]: created.id },
-        salesChannelIdMap: {},
+        salesChannelIdMap: buildCatalogUuidMap(),
         executor: tx,
       },
     );
