@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import {
+  assertAllowedAttachmentMimeType,
+  normalizeAttachmentMimeType,
+} from "@/core/attachments/attachment-mime";
+import {
   INLINE_ATTACHMENT_MAX_BYTES,
   INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH,
 } from "@/core/attachments/inline-attachment-limits";
@@ -14,8 +18,7 @@ const inlineAttachmentSchema = z.object({
   dataUrl: z.string().trim().min(32).max(INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH),
 });
 
-const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
-const INLINE_STORAGE_PREFIX = "inline:v1:";
+export const INLINE_STORAGE_PREFIX = "inline:v1:";
 
 export function registerInlineAttachment(rawInput: unknown) {
   const parsed = inlineAttachmentSchema.safeParse(rawInput);
@@ -23,8 +26,10 @@ export function registerInlineAttachment(rawInput: unknown) {
     throw new ValidationError("Invalid inline attachment input.", parsed.error.flatten());
   }
   const input = parsed.data;
-  const mimeType = input.mimeType.toLowerCase();
-  if (!ALLOWED_MIME_TYPES.has(mimeType)) {
+  const mimeType = normalizeAttachmentMimeType(input.mimeType);
+  try {
+    assertAllowedAttachmentMimeType(mimeType);
+  } catch {
     throw new ValidationError("Unsupported attachment mime type.");
   }
   if (!input.dataUrl.startsWith("data:")) {

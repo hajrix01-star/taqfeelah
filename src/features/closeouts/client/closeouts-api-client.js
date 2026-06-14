@@ -206,22 +206,42 @@ export async function fetchStoreCloseoutsViaApi({
   const search = new URLSearchParams();
   if (typeof dateFrom === "string" && dateFrom) search.set("dateFrom", dateFrom);
   if (typeof dateTo === "string" && dateTo) search.set("dateTo", dateTo);
-  const query = search.toString();
+  search.set("paginated", "1");
+  search.set("limit", "50");
 
-  const payload = await fetchApiJsonWithPrototypeContext(
-    `/api/v1/stores/${mappedStoreId}/closeouts${query ? `?${query}` : ""}`,
-    {
-      organizationId,
-      actorUserId,
-      actorRole,
-      errorMessage: "closeout fetch api failed.",
-    },
-  );
+  const mergedItems = [];
+  let cursor = "";
 
-  if (!Array.isArray(payload)) {
-    throw new Error("closeouts fetch API returned invalid payload.");
+  while (true) {
+    const pageSearch = new URLSearchParams(search);
+    if (cursor) pageSearch.set("cursor", cursor);
+    const query = pageSearch.toString();
+
+    const payload = await fetchApiJsonWithPrototypeContext(
+      `/api/v1/stores/${mappedStoreId}/closeouts?${query}`,
+      {
+        organizationId,
+        actorUserId,
+        actorRole,
+        errorMessage: "closeout fetch api failed.",
+      },
+    );
+
+    if (Array.isArray(payload)) {
+      mergedItems.push(...payload);
+      break;
+    }
+
+    if (!payload || typeof payload !== "object" || !Array.isArray(payload.items)) {
+      throw new Error("closeouts fetch API returned invalid payload.");
+    }
+
+    mergedItems.push(...payload.items);
+    cursor = typeof payload.nextCursor === "string" ? payload.nextCursor : "";
+    if (!cursor) break;
   }
-  return payload.map((item) => {
+
+  return mergedItems.map((item) => {
     if (!item || typeof item !== "object") return item;
     const mappedStoreLegacyId = reverseLookupKeyByUuid(item.storeId, storeIdMap) || storeId;
     const salesRows = Array.isArray(item.sales)

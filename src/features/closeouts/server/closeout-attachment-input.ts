@@ -4,7 +4,7 @@ import {
   INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH,
 } from "@/core/attachments/inline-attachment-limits";
 import { ValidationError } from "@/core/errors/app-error";
-import { registerInlineAttachment } from "@/features/entries/server/inline-attachment";
+import { registerAttachment } from "@/core/attachments/register-attachment";
 
 export const closeoutAttachmentSchema = z.object({
   kind: z.literal("image").default("image"),
@@ -12,7 +12,7 @@ export const closeoutAttachmentSchema = z.object({
   mimeType: z.string().trim().min(1).max(120).default("image/jpeg"),
   sizeBytes: z.number().int().positive().max(INLINE_ATTACHMENT_MAX_BYTES),
   dataUrl: z.string().trim().min(32).max(INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH).optional(),
-  storageKey: z.string().trim().min(8).max(INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH).optional(),
+  storageKey: z.string().trim().min(8).max(512).optional(),
 }).refine((value) => Boolean(value.dataUrl || value.storageKey), {
   message: "Attachment requires dataUrl or storageKey.",
 });
@@ -70,12 +70,15 @@ export type PersistableCloseoutAttachment = {
   sizeBytes: number;
 };
 
-export function toPersistableCloseoutAttachment(
+export async function toPersistableCloseoutAttachment(
   input: CloseoutAttachmentInput,
-): PersistableCloseoutAttachment {
+  scope: { organizationId: string; storeId: string },
+): Promise<PersistableCloseoutAttachment> {
   const normalized = input.storageKey
     ? input
-    : registerInlineAttachment({
+    : await registerAttachment({
+      organizationId: scope.organizationId,
+      storeId: scope.storeId,
       kind: input.kind,
       name: input.name,
       mimeType: input.mimeType,

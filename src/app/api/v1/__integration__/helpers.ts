@@ -1,5 +1,6 @@
 import { vi } from "vitest";
 import { __resetEnvCacheForTests } from "@/core/config/env";
+import { __resetAttachmentStorageConfigForTests } from "@/core/attachments/attachment-storage-mode";
 
 export const TEST_ORGANIZATION_ID = "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1";
 export const TEST_STORE_ID = "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c";
@@ -10,14 +11,18 @@ export const TEST_MEMBER_ID = "d4e5f6a7-b8c9-4012-d345-6789abcdef01";
 export function setupRouteIntegrationEnv() {
   process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
   process.env.ALLOW_HEADER_AUTH_CONTEXT = "true";
+  process.env.ATTACHMENT_STORAGE_MODE = "inline";
   delete process.env.AUTH_SESSION_SECRET;
   delete process.env.AUTH_SESSION_COOKIE_NAME;
   __resetEnvCacheForTests();
+  __resetAttachmentStorageConfigForTests();
 }
 
 export function teardownRouteIntegrationEnv() {
   vi.unstubAllEnvs();
+  delete process.env.ATTACHMENT_STORAGE_MODE;
   __resetEnvCacheForTests();
+  __resetAttachmentStorageConfigForTests();
 }
 
 export function ownerRequest(url: string, init: RequestInit = {}) {

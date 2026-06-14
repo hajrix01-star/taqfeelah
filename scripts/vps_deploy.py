@@ -78,6 +78,8 @@ PRODUCTION_ENV_KEYS = [
     "USAGE_TRACKING_ENABLED",
     "SAAS_PLATFORM_ADMIN_USER_IDS",
     "APP_PUBLIC_ORIGIN",
+    "ATTACHMENT_STORAGE_MODE",
+    "ATTACHMENT_STORAGE_ROOT",
 ]
 
 # Written to .env.production when present on VPS (or via CI secrets). Not in wave defaults.
@@ -141,6 +143,8 @@ WAVE_5_ENV_OVERRIDES: dict[str, str] = {
     "DEPLOYMENT_WAVE": "5",
     "NEXT_PUBLIC_PHASE9_API_ENABLED": "true",
     "NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE": "true",
+    "ATTACHMENT_STORAGE_MODE": "local",
+    "ATTACHMENT_STORAGE_ROOT": "/opt/taqfeelah/data/attachments",
 }
 
 # Wave 6 enables real auth (Phase 10). Requires auth_identities seed before deploy.
@@ -1643,6 +1647,7 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             . ./.env.production
             set +a
             node scripts/cleanup-orphan-entries.mjs --apply || true
+            node scripts/cleanup-inline-attachments.mjs --apply --vacuum || true
             pnpm exec drizzle-kit migrate || pnpm exec drizzle-kit push --force
             node scripts/baseline-drizzle-migrations.mjs
             """

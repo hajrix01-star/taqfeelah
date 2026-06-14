@@ -136,8 +136,10 @@ export function usePrototypeRuntimeOperationalEntries({
     });
   }, [closeoutsApiOrganizationId, entriesApiEnabled, entriesApiStrictMode, phase9ApiEnabled]);
 
-  const loadOperationalEntriesFromApi = useCallback(async () => {
-    await invalidateOperationalData(queryClient);
+  const loadOperationalEntriesFromApi = useCallback(async (options = {}) => {
+    await invalidateOperationalData(queryClient, {
+      scopes: options.invalidateScopes ?? "all",
+    });
 
     if (shouldDeferOwnerBulkEntriesLoad) {
       if (!duplicateWatchEnabled) return [];

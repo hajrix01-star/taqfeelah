@@ -3,7 +3,7 @@ import { ServiceUnavailableError } from "@/core/errors/app-error";
 import { readEnv } from "@/core/config/env";
 import { resolveRequestContext } from "@/core/auth/request-context";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
-import { registerInlineAttachment } from "@/features/entries/server/inline-attachment";
+import { registerAttachment } from "@/core/attachments/register-attachment";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +30,11 @@ export async function POST(request: Request, context: RouteContext) {
       minimumRole: "employee",
     });
 
-    const registered = registerInlineAttachment(body?.attachment || body);
+    const registered = await registerAttachment({
+      ...(body?.attachment || body),
+      organizationId: requestContext.organizationId,
+      storeId: params.storeId,
+    });
     return ok(registered, { status: 201 });
   } catch (error) {
     return fail(error);

@@ -64,6 +64,15 @@ export async function GET(request: Request, context: RouteContext) {
     const dateFrom = searchParams.get("dateFrom") || undefined;
     const dateTo = searchParams.get("dateTo") || undefined;
 
+    const limitRaw = searchParams.get("limit");
+    const parsedLimit = limitRaw ? Number(limitRaw) : undefined;
+    if (typeof parsedLimit === "number" && (!Number.isInteger(parsedLimit) || parsedLimit <= 0)) {
+      throw new ValidationError("Query param 'limit' must be a positive integer.");
+    }
+
+    const cursor = searchParams.get("cursor") || undefined;
+    const paginated = searchParams.get("paginated") === "1" || Boolean(cursor);
+
     const result = await listStoreCloseouts({
       organizationId: requestContext.organizationId,
       storeId: params.storeId,
@@ -71,9 +80,16 @@ export async function GET(request: Request, context: RouteContext) {
       actorRole: requestContext.role!,
       dateFrom,
       dateTo,
+      limit: parsedLimit ?? (paginated ? 50 : 200),
+      cursor,
+      paginated,
     });
 
-    return ok(result);
+    if (paginated) {
+      return ok(result);
+    }
+
+    return ok(result.items);
   } catch (error) {
     return fail(error);
   }

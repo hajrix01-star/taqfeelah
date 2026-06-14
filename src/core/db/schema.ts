@@ -89,21 +89,27 @@ export const organizationMembers = pgTable(
   }),
 );
 
-export const stores = pgTable("stores", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  organizationId: uuid("organization_id")
-    .notNull()
-    .references(() => organizations.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  location: text("location"),
-  status: text("status").notNull().default("active"),
-  operationalSettings: jsonb("operational_settings")
-    .$type<StoreOperationalSettings>()
-    .notNull()
-    .default({} as StoreOperationalSettings),
-  createdAt,
-  updatedAt,
-});
+export const stores = pgTable(
+  "stores",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    location: text("location"),
+    status: text("status").notNull().default("active"),
+    operationalSettings: jsonb("operational_settings")
+      .$type<StoreOperationalSettings>()
+      .notNull()
+      .default({} as StoreOperationalSettings),
+    createdAt,
+    updatedAt,
+  },
+  (table) => ({
+    organizationIdx: index("stores_organization_id_idx").on(table.organizationId),
+  }),
+);
 
 export const memberStoreAccess = pgTable(
   "member_store_access",
@@ -194,6 +200,13 @@ export const dailyCloseouts = pgTable(
       table.date,
       table.status,
     ),
+    orgStoreDateCreatedIdIdx: index("daily_closeouts_org_store_date_created_id_idx").on(
+      table.organizationId,
+      table.storeId,
+      table.date,
+      table.createdAt,
+      table.id,
+    ),
   }),
 );
 
@@ -281,23 +294,33 @@ export const entrySalesChannels = pgTable(
   }),
 );
 
-export const attachments = pgTable("attachments", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  organizationId: uuid("organization_id")
-    .notNull()
-    .references(() => organizations.id, { onDelete: "cascade" }),
-  storeId: uuid("store_id")
-    .notNull()
-    .references(() => stores.id, { onDelete: "cascade" }),
-  entryId: uuid("entry_id")
-    .notNull()
-    .references(() => entries.id, { onDelete: "cascade" }),
-  storageKey: text("storage_key").notNull(),
-  originalFileName: text("original_file_name"),
-  mimeType: text("mime_type").notNull(),
-  sizeBytes: integer("size_bytes").notNull(),
-  createdAt,
-});
+export const attachments = pgTable(
+  "attachments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id, { onDelete: "cascade" }),
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => entries.id, { onDelete: "cascade" }),
+    storageKey: text("storage_key").notNull(),
+    originalFileName: text("original_file_name"),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    createdAt,
+  },
+  (table) => ({
+    orgStoreEntryIdx: index("attachments_org_store_entry_idx").on(
+      table.organizationId,
+      table.storeId,
+      table.entryId,
+    ),
+  }),
+);
 
 export const auditEvents = pgTable(
   "audit_events",
@@ -321,6 +344,12 @@ export const auditEvents = pgTable(
       table.organizationId,
       table.storeId,
       table.entryId,
+      table.createdAt,
+    ),
+    orgStoreActionCreatedIdx: index("audit_events_org_store_action_created_idx").on(
+      table.organizationId,
+      table.storeId,
+      table.action,
       table.createdAt,
     ),
   }),

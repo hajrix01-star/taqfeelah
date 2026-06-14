@@ -1,3 +1,5 @@
+import { OPERATIONAL_SCOPES_AFTER_FINANCIAL_WRITE } from "@/core/client/invalidate-operational-data";
+
 /**
  * Post-write refresh must not fail the user-facing save/submit when the write already succeeded.
  */
@@ -6,7 +8,9 @@ export async function refreshOperationalEntriesBestEffort(loadOperationalEntries
     return { refreshed: [], refreshFailed: false };
   }
   try {
-    const refreshed = await loadOperationalEntriesFromApi();
+    const refreshed = await loadOperationalEntriesFromApi({
+      invalidateScopes: OPERATIONAL_SCOPES_AFTER_FINANCIAL_WRITE,
+    });
     return {
       refreshed: Array.isArray(refreshed) ? refreshed : [],
       refreshFailed: false,

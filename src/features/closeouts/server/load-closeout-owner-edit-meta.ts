@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import type { getDb } from "@/core/db/client";
 import { auditEvents, users } from "@/core/db/schema";
 
@@ -18,6 +18,19 @@ function readMetadataCloseoutKeys(metadata: unknown): { dailyCloseoutId: string 
   const dailyCloseoutId = typeof record.dailyCloseoutId === "string" ? record.dailyCloseoutId : null;
   const clientCloseoutId = typeof record.closeoutId === "string" ? record.closeoutId : null;
   return { dailyCloseoutId, clientCloseoutId };
+}
+
+function buildCloseoutMetadataMatch(
+  closeoutRowIds: string[],
+  clientCloseoutIds: string[],
+): SQL | undefined {
+  const parts: SQL[] = [
+    ...closeoutRowIds.map((id) => sql`${auditEvents.metadata}->>'dailyCloseoutId' = ${id}`),
+    ...clientCloseoutIds.map((id) => sql`${auditEvents.metadata}->>'closeoutId' = ${id}`),
+  ];
+  if (parts.length === 0) return undefined;
+  if (parts.length === 1) return parts[0];
+  return or(...parts);
 }
 
 /**
@@ -44,6 +57,7 @@ export async function loadCloseoutOwnerEditMetaByCloseoutId(
     return { byDailyCloseoutId, byClientCloseoutId };
   }
 
+  const metadataMatch = buildCloseoutMetadataMatch(closeoutRowIds, clientCloseoutIds);
   const auditRows = await db
     .select({
       actorUserId: auditEvents.actorUserId,
@@ -56,6 +70,7 @@ export async function loadCloseoutOwnerEditMetaByCloseoutId(
         eq(auditEvents.organizationId, input.organizationId),
         eq(auditEvents.storeId, input.storeId),
         eq(auditEvents.action, "closeout_resubmitted"),
+        metadataMatch,
       ),
     )
     .orderBy(desc(auditEvents.createdAt));
