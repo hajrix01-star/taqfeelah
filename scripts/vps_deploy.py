@@ -208,18 +208,42 @@ TAQFEELAH_APP_PORT = 3010
 BOOTSTRAP_SESSION_SECRET = "taqfeelah-prod-bootstrap-session-secret-v1"
 
 
-def validate_production_auth_secrets(merged_env: dict[str, str]) -> None:
+def validate_production_auth_secrets(
+    merged_env: dict[str, str],
+    existing_remote_env: dict[str, str] | None = None,
+) -> None:
     if not deployment_wave_requires_auth_verify():
         return
     secret = merged_env.get("AUTH_SESSION_SECRET", "").strip()
     if len(secret) < 16:
+        source = (
+            "GitHub Actions secret AUTH_SESSION_SECRET"
+            if os.environ.get("AUTH_SESSION_SECRET")
+            else "VPS .env.production or GitHub Actions secret AUTH_SESSION_SECRET"
+        )
         raise RuntimeError(
             "AUTH_SESSION_SECRET must be at least 16 characters for production deploy. "
-            "Set the GitHub Actions secret AUTH_SESSION_SECRET."
+            f"Set a strong value in {source}."
         )
     if secret == BOOTSTRAP_SESSION_SECRET:
+        existing_secret = (existing_remote_env or {}).get("AUTH_SESSION_SECRET", "").strip()
+        if existing_secret == BOOTSTRAP_SESSION_SECRET:
+            safe_print(
+                "WARNING: AUTH_SESSION_SECRET still uses the legacy bootstrap value already on VPS. "
+                "Deploy continues for production continuity. Rotate to a strong unique secret in "
+                "GitHub Actions when ready (existing sessions will require re-login after rotation)."
+            )
+            return
+        if os.environ.get("AUTH_SESSION_SECRET"):
+            source = "GitHub Actions secret AUTH_SESSION_SECRET"
+        elif existing_remote_env and existing_remote_env.get("AUTH_SESSION_SECRET"):
+            source = "VPS .env.production"
+        else:
+            source = "deploy bootstrap defaults"
         raise RuntimeError(
-            "AUTH_SESSION_SECRET must not use the bootstrap default. "
+            "AUTH_SESSION_SECRET must not use the bootstrap default "
+            f"({BOOTSTRAP_SESSION_SECRET!r}). "
+            f"Detected source: {source}. "
             "Set a strong unique secret in GitHub Actions secrets."
         )
 
@@ -696,7 +720,7 @@ def resolve_production_env(existing_remote_env: dict[str, str] | None = None) ->
             "Set the GitHub secret DATABASE_URL or ensure /opt/taqfeelah/.env.production "
             "already exists on the VPS with a valid DATABASE_URL."
         )
-    validate_production_auth_secrets(merged)
+    validate_production_auth_secrets(merged, existing_remote_env)
     return merged
 
 
