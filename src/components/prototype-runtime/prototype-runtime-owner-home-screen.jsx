@@ -37,6 +37,7 @@ import { InkTab } from "./prototype-runtime-shell-ui";
 import { isOwnerApiSummaryPending } from "@/features/reports/client/owner-summary-loading";
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
+import { formatNetMarginOfSalesRatio } from "@/features/entries/client/register-log-display";
 import { useHomeDayAttachments } from "@/features/entries/client/use-home-day-attachments";
 import { SummaryReportDetails } from "./owner-summary-details";
 
@@ -136,6 +137,7 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     : monthly
       ? resolveOwnerSingleStoreTotals(localMonthResult, apiStoreResult, preferEntrySummaries)
       : resolveOwnerSingleStoreTotals(daySummary, apiStoreResult, preferEntrySummaries);
+  const netMarginRatio = formatNetMarginOfSalesRatio(result.sales, result.net);
   const selectedBusinessEntries = currentBusiness ? operationalEntries.filter((entry) => entry.businessId === currentBusiness.id && entryDateMatches(entry, "day", selectedDate, selectedMonth, "2026", "2026-01-01", "2026-12-31")) : [];
   const useApiDetailRows = summaryApiActive
     && showReportDetails
@@ -273,8 +275,17 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
                     </p>
                   </NotebookRow>
                 )}
-                <NotebookRow><div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]"><span>{text(lang, "outflowRatio")}</span><strong className="text-[#B44747]">{result.ratio}</strong></div></NotebookRow>
-                <NotebookRow strong lines={2}><div className="flex w-full items-end justify-between"><span className="text-sm font-extrabold">{monthly ? text(lang, "recordedMonthResult") : text(lang, "netMovement")}</span><strong className={`tabular-nums text-2xl font-extrabold ${result.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(result.net, lang)} /></strong></div></NotebookRow>
+                {netMarginRatio !== "—" ? (
+                  <NotebookRow>
+                    <div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]">
+                      <span>{text(lang, "netMarginRatio")}</span>
+                      <strong className="text-[#827762]">
+                        {netMarginRatio} {text(lang, "netMarginOfSales")}
+                      </strong>
+                    </div>
+                  </NotebookRow>
+                ) : null}
+                <NotebookRow strong lines={2}><div className="flex w-full items-end justify-between"><span className="text-sm font-extrabold">{text(lang, "result")}</span><strong className={`tabular-nums text-2xl font-extrabold ${result.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(result.net, lang)} /></strong></div></NotebookRow>
                 {!monthly && (
                   <NotebookRow>
                     <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]">

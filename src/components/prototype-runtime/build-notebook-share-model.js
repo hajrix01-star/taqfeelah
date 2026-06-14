@@ -7,6 +7,7 @@ import {
   summaryMonthFromEntries,
 } from "@/features/operations/operational-analytics";
 import { formatCalendarDate, formatSelectedMonth } from "@/features/reports/client/report-period-labels";
+import { formatNetMarginOfSalesRatio } from "@/features/entries/client/register-log-display";
 import { buildOwnerCloseoutShareCaption } from "@/features/owner-notebook/owner-closeout-share";
 import {
   channels,
@@ -112,7 +113,7 @@ export function buildNotebookShareModel({
           ? summaryMonthFromEntries(operationalEntries, business.id, snapshot.selectedMonth)
           : selectedDayItem;
   const record = isOutflowReport ? { sales: 0, expense: outflowTotal, net: -outflowTotal, ratio: "—" } : normalRecord;
-  const ratio = record.ratio || (record.sales > 0 ? `${((record.expense / record.sales) * 100).toFixed(1)}%` : record.expense > 0 ? "—" : "0.0%");
+  const netMarginRatio = formatNetMarginOfSalesRatio(record.sales, record.net);
   const title = combined ? text(lang, snapshot.screen === "reports" ? "combinedReport" : "combinedCloseout") : businessName(business, lang);
   const periodLabel = sharePeriod === "year" ? shareYear : sharePeriod === "custom" ? `${formatCalendarDate(shareFrom, lang)} — ${formatCalendarDate(shareTo, lang)}` : monthly ? selectedMonthItem : fullDate(selectedDayItem, lang);
   const outflowCategoryLabel = outflowCategory === "all" ? text(lang, "allCategories") : text(lang, outflowReportCategories.find((item) => item.id === outflowCategory)?.label || "other");
@@ -242,7 +243,14 @@ export function buildNotebookShareModel({
     ...(detailedSummary ? salesDetailRows : []),
     { label: text(lang, "purchasesExpenses"), value: money(record.expense, lang), tone: "text-[#B44747]", heading: true },
     ...(detailedSummary ? outflowDetailRows : []),
-    { label: text(lang, "outflowRatio"), value: ratio, tone: "text-[#B44747]", heading: true },
+    ...(netMarginRatio !== "—"
+      ? [{
+          label: text(lang, "netMarginRatio"),
+          value: `${netMarginRatio} ${text(lang, "netMarginOfSales")}`,
+          tone: "text-[#827762]",
+          heading: true,
+        }]
+      : []),
     { label: text(lang, "result"), value: money(record.net, lang), tone: record.net < 0 ? "text-[#B44747]" : "text-[#257844]", heading: true },
   ];
   const exportTitle = snapshot.screen === "reports" ? text(lang, "reportNotebook") : monthly ? text(lang, "monthlySummary") : text(lang, "dailySummary");
@@ -291,7 +299,7 @@ export function buildNotebookShareModel({
     combined,
     shareDate,
     record,
-    ratio,
+    netMarginRatio,
     title,
     periodLabel,
     outflowCategoryLabel,

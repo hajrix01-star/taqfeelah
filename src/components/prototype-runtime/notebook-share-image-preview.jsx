@@ -28,7 +28,7 @@ export function NotebookShareImagePreview({
     isProofsReport,
     periodLabel,
     record,
-    ratio,
+    netMarginRatio,
     outflowCategoryLabel,
     outflowTotal,
     filteredOutflowEntries,
@@ -123,8 +123,13 @@ export function NotebookShareImagePreview({
                 <strong className="tabular-nums text-[#B44747]"><MoneyValue value={row.value} /></strong>
               </div>
             ))}
-            <div className="flex h-[44px] items-end justify-between pb-2 text-xs text-[#806528]"><span>{text(lang, "outflowRatio")}</span><strong className="text-[#B44747]">{ratio}</strong></div>
-            <div className="mt-1 flex h-[55px] items-end justify-between border-t-2 border-[#112A46]/55 pb-2"><span className="text-sm font-bold">{snapshot.screen === "home" ? (monthly ? text(lang, "recordedMonthResult") : text(lang, "netMovement")) : text(lang, "result")}</span><strong className={`tabular-nums text-xl font-extrabold ${record.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(record.net, lang)} /></strong></div>
+            {netMarginRatio !== "—" ? (
+              <div className="flex h-[44px] items-end justify-between pb-2 text-xs text-[#806528]">
+                <span>{text(lang, "netMarginRatio")}</span>
+                <strong className="text-[#827762]">{netMarginRatio} {text(lang, "netMarginOfSales")}</strong>
+              </div>
+            ) : null}
+            <div className="mt-1 flex h-[55px] items-end justify-between border-t-2 border-[#112A46]/55 pb-2"><span className="text-sm font-bold">{text(lang, "result")}</span><strong className={`tabular-nums text-xl font-extrabold ${record.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(record.net, lang)} /></strong></div>
           </>}
         </div>
       </div>
