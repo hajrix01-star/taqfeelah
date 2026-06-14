@@ -1,10 +1,10 @@
 import { halalasToSar } from "@/features/billing/client/plan-price-utils";
 
-export function formatSubscriptionStatusLabel(status, lang) {
+export function formatSubscriptionStatusLabel(status, lang, { isTrialPlan = false } = {}) {
   const normalized = typeof status === "string" ? status.trim().toLowerCase() : "";
   const labels = {
     ar: {
-      trialing: "تجريبي",
+      trialing: isTrialPlan ? "تجريبي" : "فترة تجريبية",
       active: "نشط",
       inactive: "غير نشط",
       canceled: "ملغى",
@@ -14,7 +14,7 @@ export function formatSubscriptionStatusLabel(status, lang) {
       archived: "مؤرشف",
     },
     en: {
-      trialing: "Trial",
+      trialing: isTrialPlan ? "Trial" : "Trial period",
       active: "Active",
       inactive: "Inactive",
       canceled: "Canceled",
@@ -79,6 +79,28 @@ export function formatTrialDaysRemainingLabel(daysRemaining, lang) {
     return lang === "ar" ? "يوم واحد متبقٍ" : "1 day left";
   }
   return lang === "ar" ? `${daysRemaining} يوم متبقٍ` : `${daysRemaining} days left`;
+}
+
+export function formatPlanSubscriptionHomeLabel(entitlements, lang) {
+  if (!entitlements) return "";
+  const planName = pickLocalizedPlanName(entitlements, lang);
+  if (entitlements.isTrialPlan) {
+    return lang === "ar" ? "تجربة مجانية" : "Free trial";
+  }
+  const status = entitlements.subscriptionStatus?.trim().toLowerCase();
+  if (status === "trialing") {
+    return lang === "ar" ? `${planName} — فترة تجريبية` : `${planName} — trial period`;
+  }
+  return planName;
+}
+
+export function formatPaidPlanTrialPeriodHint(entitlements, lang) {
+  if (!entitlements || entitlements.isTrialPlan) return "";
+  if (entitlements.subscriptionStatus?.trim().toLowerCase() !== "trialing") return "";
+  const planName = pickLocalizedPlanName(entitlements, lang);
+  return lang === "ar"
+    ? `أنت على الخطة «${planName}» ضمن فترة تجريبية قبل أول فاتورة — وليست خطة التجربة المجانية.`
+    : `You are on the "${planName}" plan in a pre-billing trial period — not the free trial plan.`;
 }
 
 export function pickLocalizedPlanName(entitlements, lang) {
