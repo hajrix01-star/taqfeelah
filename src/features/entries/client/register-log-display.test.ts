@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_REGISTER_LOG_FILTERS,
   buildRegisterCloseoutSummaries,
+  buildRegisterDayReportRows,
   filterRegisterLogEntries,
+  formatNetMarginOfSalesRatio,
   registerLogFilterCount,
   resolveRegisterCloseoutActorLabel,
   summarizeRegisterPeriod,
@@ -90,6 +92,25 @@ describe("register-log-display", () => {
       enteredByOwnerLabel: "المالك",
     });
     expect(label).toBe("خالد");
+  });
+
+  it("builds register day report rows sorted by newest date", () => {
+    const rows = buildRegisterDayReportRows([
+      { id: "1", type: "summary", status: "active", date: "2026-06-10", amount: 100, salesChannels: [] },
+      { id: "2", type: "expense", status: "active", date: "2026-06-10", amount: 20 },
+      { id: "3", type: "summary", status: "active", date: "2026-06-12", amount: 50, salesChannels: [] },
+    ]);
+    expect(rows).toHaveLength(2);
+    expect(rows[0].date).toBe("2026-06-12");
+    expect(rows[0].sales).toBe(50);
+    expect(rows[1].sales).toBe(100);
+    expect(rows[1].expense).toBe(20);
+    expect(rows[1].net).toBe(80);
+  });
+
+  it("formats net margin of sales ratio", () => {
+    expect(formatNetMarginOfSalesRatio(100, 30)).toBe("30.0%");
+    expect(formatNetMarginOfSalesRatio(0, 10)).toBe("—");
   });
 
   it("carries owner edit metadata into closeout summaries", () => {

@@ -81,6 +81,32 @@ export function filterRegisterLogEntries(entries, filters, resolveExpenseCategor
   );
 }
 
+/** Net margin as % of sales (نسبة الناتج من الداخل). */
+export function formatNetMarginOfSalesRatio(sales, net) {
+  const salesAmount = Number(sales) || 0;
+  const netAmount = Number(net) || 0;
+  if (salesAmount <= 0) return "—";
+  return `${((netAmount / salesAmount) * 100).toFixed(1)}%`;
+}
+
+/** Daily in/out/net rows for register general report (unfiltered period entries). */
+export function buildRegisterDayReportRows(entries) {
+  const activeEntries = (Array.isArray(entries) ? entries : []).filter(entryIsActive);
+  const dates = [...new Set(activeEntries.map((entry) => entry.date).filter(Boolean))].sort().reverse();
+  return dates
+    .map((date) => {
+      const dayTotals = summarizeEntries(activeEntries.filter((entry) => entry.date === date));
+      return {
+        id: date,
+        date,
+        sales: dayTotals.sales,
+        expense: dayTotals.expense,
+        net: dayTotals.net,
+      };
+    })
+    .filter((row) => row.sales > 0 || row.expense > 0);
+}
+
 export function summarizeRegisterPeriod(entries, salesChannelFilter, channelOptions = [], channelLabelFallback = "Channel") {
   const activeEntries = (Array.isArray(entries) ? entries : []).filter(entryIsActive);
   if (salesChannelFilter !== "all") {
