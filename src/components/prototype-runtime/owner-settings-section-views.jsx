@@ -25,6 +25,8 @@ import {
   openBillingUpgradeToPaidSupport,
 } from "@/features/billing/client/billing-upgrade-support";
 import {
+  formatPlanSubscriptionHomeLabel,
+  formatPaidPlanTrialPeriodHint,
   formatPeriodEndLabel,
   formatPlanPriceLabel,
   formatSubscriptionStatusLabel,
@@ -35,7 +37,11 @@ import {
   pickLocalizedFeatureLabel,
   pickLocalizedPlanName,
 } from "@/features/billing/client/subscription-display";
-import { countEmployeeSeats } from "@/features/billing/client/entitlement-guards";
+import {
+  canAddStore,
+  countEmployeeSeats,
+  resolveStoreLimitMessage,
+} from "@/features/billing/client/entitlement-guards";
 import { text } from "./prototype-runtime-demo-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";
 import {
@@ -105,8 +111,13 @@ export function OwnerSettingsStoresSection({
   deleteDialogProps,
   orgConfigLoading = false,
   storeSaving = false,
+  settingsNotice = "",
+  settingsSuccess = false,
+  entitlements = null,
 }) {
   const Arrow = lang === "ar" ? ChevronLeft : ChevronRight;
+  const atStoreLimit = entitlements ? !canAddStore(entitlements) : false;
+  const storeLimitMessage = atStoreLimit ? resolveStoreLimitMessage(entitlements, lang) : "";
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "المحلات" : "Shops"} onBack={() => setSection("home")} lang={lang} />
@@ -122,13 +133,28 @@ export function OwnerSettingsStoresSection({
       </div>
       {showAddStore && (
         <div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
-          <input value={newStoreName} onChange={(event) => setNewStoreName(event.target.value)} placeholder={text(lang, "newStoreName")} className="mb-2 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" />
-          <input value={newStoreLocation} onChange={(event) => setNewStoreLocation(event.target.value)} placeholder={text(lang, "newStoreLocation")} className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" />
-          <button type="button" onClick={() => { void addStore(); }} disabled={storeSaving} className="w-full rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white disabled:opacity-60">
+          {atStoreLimit ? (
+            <p className="mb-4 rounded-2xl bg-[#FFF1EE] p-3 text-center text-taq-meta font-bold leading-6 text-[#B44747]">
+              {storeLimitMessage}
+            </p>
+          ) : null}
+          <input value={newStoreName} onChange={(event) => setNewStoreName(event.target.value)} placeholder={text(lang, "newStoreName")} disabled={atStoreLimit} className="mb-2 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none disabled:opacity-60" />
+          <input value={newStoreLocation} onChange={(event) => setNewStoreLocation(event.target.value)} placeholder={text(lang, "newStoreLocation")} disabled={atStoreLimit} className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none disabled:opacity-60" />
+          <button type="button" onClick={() => { void addStore(); }} disabled={storeSaving || atStoreLimit} className="w-full rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white disabled:opacity-60">
             {storeSaving ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : text(lang, "confirmAddStore")}
           </button>
         </div>
       )}
+      {(settingsNotice || settingsSuccess) ? (
+        <div className="mb-4">
+          {settingsNotice ? (
+            <p className="rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{settingsNotice}</p>
+          ) : null}
+          {settingsSuccess ? (
+            <div className="mt-2 rounded-xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">{text(lang, "changesSaved")}</div>
+          ) : null}
+        </div>
+      ) : null}
       <div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
         {activeStoredBusinesses.length ? activeStoredBusinesses.map((business, index) => (
           <button key={business.id} onClick={() => openStore(business.id)} className={`flex w-full items-center justify-between px-4 py-4 text-start ${index < activeStoredBusinesses.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}>
@@ -196,10 +222,14 @@ export function OwnerSettingsTeamSection({
   deleteDialogProps,
   inviteApiContext,
   orgConfigLoading = false,
+  settingsNotice = "",
 }) {
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "الفريق والصلاحيات" : "Team & access"} onBack={() => { cancelManagingTeam(); setSection("home"); }} lang={lang} />
+      {settingsNotice ? (
+        <div className="mb-4 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{settingsNotice}</div>
+      ) : null}
       {orgConfigLoading ? (
         <div className="rounded-3xl bg-white p-5 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-black/[0.045]">
           {lang === "ar" ? "جارٍ تحميل الفريق من السيرفر..." : "Loading team from server..."}
@@ -386,7 +416,9 @@ export function OwnerSettingsSubscriptionSection({
   const statusLabel = formatSubscriptionStatusLabel(
     entitlements?.subscriptionStatus || entitlements?.organizationStatus,
     lang,
+    { isTrialPlan: Boolean(entitlements?.isTrialPlan) },
   );
+  const paidTrialHint = formatPaidPlanTrialPeriodHint(entitlements, lang);
   const statusTone = formatSubscriptionStatusTone(
     entitlements?.subscriptionStatus,
     entitlements?.organizationStatus,
@@ -438,6 +470,11 @@ export function OwnerSettingsSubscriptionSection({
               <Badge tone={statusTone}>{statusLabel}</Badge>
             </div>
             <h3 className="mt-4 text-lg font-black">{planName}</h3>
+            {paidTrialHint ? (
+              <p className="mt-2 rounded-2xl bg-[#F7F5EF] p-3 text-taq-meta font-bold leading-6 text-[#716753]">
+                {paidTrialHint}
+              </p>
+            ) : null}
             <p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">
               {formatPlanPriceLabel(entitlements.priceMonthlyHalalas, lang, { isTrialPlan: entitlements.isTrialPlan })}
             </p>
@@ -579,9 +616,7 @@ export function OwnerSettingsHomeSection({
           value={
             entitlementsLoading
               ? text(lang, "subscriptionLoading")
-              : (entitlements?.isTrialPlan
-                ? text(lang, "trialPlanBadge")
-                : (pickLocalizedPlanName(entitlements, lang) || text(lang, "subscription")))
+              : (formatPlanSubscriptionHomeLabel(entitlements, lang) || text(lang, "subscription"))
           }
           onClick={() => setSection("subscription")}
           border={false}
@@ -649,6 +684,9 @@ export function renderOwnerSettingsSection(section, state, callbacks) {
         deleteDialogProps={state.deleteDialogProps}
         orgConfigLoading={state.orgConfigApiContext?.loading}
         storeSaving={state.storeSaving}
+        settingsNotice={state.settingsNotice}
+        settingsSuccess={state.settingsSuccess}
+        entitlements={state.entitlements}
       />
     );
   }
@@ -681,6 +719,7 @@ export function renderOwnerSettingsSection(section, state, callbacks) {
         deleteDialogProps={state.deleteDialogProps}
         inviteApiContext={state.inviteApiContext}
         orgConfigLoading={state.orgConfigApiContext?.loading}
+        settingsNotice={state.settingsNotice}
       />
     );
   }
