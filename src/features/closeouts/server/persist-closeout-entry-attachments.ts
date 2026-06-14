@@ -24,8 +24,11 @@ export async function persistCloseoutEntryAttachments(
 ) {
   if (!input.attachments.length) return;
 
-  const rows = input.attachments.map((attachment) => {
-    const persistable = toPersistableCloseoutAttachment(attachment);
+  const rows = await Promise.all(input.attachments.map(async (attachment) => {
+    const persistable = await toPersistableCloseoutAttachment(attachment, {
+      organizationId: input.organizationId,
+      storeId: input.storeId,
+    });
     return {
       organizationId: input.organizationId,
       storeId: input.storeId,
@@ -35,7 +38,7 @@ export async function persistCloseoutEntryAttachments(
       mimeType: persistable.mimeType,
       sizeBytes: persistable.sizeBytes,
     };
-  });
+  }));
 
   await tx.insert(attachments).values(rows);
 }

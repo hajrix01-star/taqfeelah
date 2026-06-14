@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import type { getDb } from "@/core/db/client";
 import { attachments } from "@/core/db/schema";
-import { resolveInlineAttachmentDataUrl } from "@/features/entries/server/inline-attachment";
+import { resolveAttachmentDataUrl } from "@/core/attachments/resolve-attachment-data-url";
 
 type AttachmentDb = ReturnType<typeof getDb>;
 
@@ -30,13 +30,13 @@ export async function loadEntryAttachmentUrlsByEntryId(
     )
     .orderBy(attachments.createdAt);
 
-  rows.forEach((row) => {
-    const dataUrl = resolveInlineAttachmentDataUrl(row.storageKey);
-    if (!dataUrl) return;
+  for (const row of rows) {
+    const dataUrl = await resolveAttachmentDataUrl(row.storageKey);
+    if (!dataUrl) continue;
     const current = result.get(row.entryId) || [];
     current.push(dataUrl);
     result.set(row.entryId, current);
-  });
+  }
 
   return result;
 }

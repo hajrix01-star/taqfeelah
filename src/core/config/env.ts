@@ -34,6 +34,8 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).optional(),
+  ATTACHMENT_STORAGE_MODE: z.enum(["inline", "local"]).optional(),
+  ATTACHMENT_STORAGE_ROOT: z.string().min(1).optional(),
   APP_PUBLIC_ORIGIN: z.string().url().optional(),
   NEXT_PUBLIC_APP_ORIGIN: z.string().url().optional(),
   AUTH_PASSWORD_RESET_ENABLED: z.enum(["true", "false"]).optional(),

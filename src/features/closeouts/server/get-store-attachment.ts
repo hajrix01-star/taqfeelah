@@ -5,7 +5,7 @@ import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { attachments } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
-import { resolveInlineAttachmentDataUrl } from "@/features/entries/server/inline-attachment";
+import { resolveAttachmentDataUrl } from "@/core/attachments/resolve-attachment-data-url";
 
 const inputSchema = z.object({
   organizationId: z.string().uuid(),
@@ -55,7 +55,7 @@ export async function getStoreAttachment(rawInput: GetStoreAttachmentInput) {
     throw new ValidationError("Attachment not found.");
   }
 
-  const dataUrl = resolveInlineAttachmentDataUrl(row.storageKey);
+  const dataUrl = await resolveAttachmentDataUrl(row.storageKey);
   if (!dataUrl) {
     throw new ValidationError("Attachment content is unavailable.");
   }
