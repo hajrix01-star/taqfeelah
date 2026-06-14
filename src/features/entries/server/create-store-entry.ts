@@ -10,7 +10,7 @@ import {
   INLINE_ATTACHMENT_MAX_BYTES,
   INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH,
 } from "@/core/attachments/inline-attachment-limits";
-import { registerInlineAttachment } from "@/features/entries/server/inline-attachment";
+import { registerAttachment } from "@/core/attachments/register-attachment";
 import { resolveStoreSalesChannelsForWrite } from "@/features/org-config/server/resolve-store-sales-channels-for-write";
 
 const salesChannelSchema = z.object({
@@ -38,7 +38,7 @@ const createEntryInputSchema = z.object({
       mimeType: z.string().trim().min(1).max(120).default("image/jpeg"),
       sizeBytes: z.number().int().positive().max(INLINE_ATTACHMENT_MAX_BYTES),
       dataUrl: z.string().trim().min(32).max(INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH).optional(),
-      storageKey: z.string().trim().min(8).max(INLINE_ATTACHMENT_MAX_DATA_URL_LENGTH).optional(),
+      storageKey: z.string().trim().min(8).max(512).optional(),
     })
     .refine((value) => Boolean(value.dataUrl || value.storageKey), {
       message: "Attachment requires dataUrl or storageKey.",
@@ -133,7 +133,9 @@ export async function createStoreEntry(rawInput: CreateEntryInput) {
     if (input.attachment) {
       const normalizedAttachment = input.attachment.storageKey
         ? input.attachment
-        : registerInlineAttachment({
+        : await registerAttachment({
+          organizationId: input.organizationId,
+          storeId: input.storeId,
           kind: input.attachment.kind,
           name: input.attachment.name,
           mimeType: input.attachment.mimeType,
