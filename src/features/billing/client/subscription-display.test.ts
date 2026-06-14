@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatPlanSubscriptionHomeLabel,
   formatSubscriptionStatusLabel,
+  resolveSubscriptionRenewalBanner,
 } from "@/features/billing/client/subscription-display";
 
 describe("subscription-display", () => {
@@ -18,5 +19,18 @@ describe("subscription-display", () => {
       subscriptionStatus: "trialing",
     }, "ar");
     expect(label).toBe("أساسية — فترة تجريبية");
+  });
+
+  it("surfaces renewal banner within reminder window", () => {
+    const banner = resolveSubscriptionRenewalBanner({
+      renewalDaysRemaining: 7,
+      subscriptionPeriodPhase: "active",
+      isTrialPlan: false,
+      currentPeriodEnd: "2026-06-21T00:00:00.000Z",
+      planDisplayNameAr: "نمو",
+      planDisplayNameEn: "Growth",
+      billingCycle: "yearly",
+    });
+    expect(banner?.key).toBe("soon7");
   });
 });

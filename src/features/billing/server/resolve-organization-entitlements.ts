@@ -12,44 +12,25 @@ import {
 } from "@/features/billing/server/plan-catalog-repository";
 import { buildPlanFeatureLabels } from "@/features/billing/server/plan-feature-labels";
 import { DEFAULT_PLAN_CODE, isTrialPlanCode } from "@/features/billing/plan-codes";
+import {
+  resolveDaysUntilPeriodEnd,
+  resolveRenewalReminderTier,
+  resolveSubscriptionBillingAllowed,
+  resolveSubscriptionGracePeriodDays,
+  resolveSubscriptionPeriodPhase,
+} from "@/features/billing/server/subscription-billing-policy";
 import type {
   OwnerPlanSummary,
   PlanCode,
   ResolvedOrganizationEntitlements,
 } from "@/features/billing/types";
 
-function resolveTrialDaysRemaining(periodEnd: Date | null | undefined): number | null {
-  if (!periodEnd) return null;
-  const diffMs = periodEnd.getTime() - Date.now();
-  if (diffMs <= 0) return 0;
-  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-}
-
-function isBillingAllowed(input: {
-  organizationStatus: string;
-  subscriptionStatus: string | null;
-  periodEnd: Date | null;
-}): boolean {
-  if (input.organizationStatus === "suspended") return false;
-  if (input.organizationStatus === "archived") return false;
-  if (input.organizationStatus === "pending_activation") return false;
-
-  if (!input.subscriptionStatus) return true;
-
-  if (input.subscriptionStatus === "active" || input.subscriptionStatus === "trialing") {
-    if (input.periodEnd && input.periodEnd.getTime() < Date.now()) {
-      return input.subscriptionStatus === "trialing" ? false : true;
-    }
-    return true;
-  }
-
-  return false;
-}
-
 export async function resolveOrganizationEntitlements(
   organizationId: string,
 ): Promise<ResolvedOrganizationEntitlements> {
   const db = getDb();
+  const now = new Date();
+  const gracePeriodDays = resolveSubscriptionGracePeriodDays();
 
   const [organization] = await db
     .select({ status: organizations.status })
@@ -65,6 +46,7 @@ export async function resolveOrganizationEntitlements(
     .select({
       planCode: subscriptions.planCode,
       status: subscriptions.status,
+      billingCycle: subscriptions.billingCycle,
       currentPeriodEnd: subscriptions.currentPeriodEnd,
     })
     .from(subscriptions)
@@ -97,6 +79,18 @@ export async function resolveOrganizationEntitlements(
 
   const catalogRows = await listPlanCatalogRows();
   const isTrialPlan = isTrialPlanCode(planCode) || plan.features.isTrialPlan === true;
+  const billingCycle = subscription?.billingCycle === "yearly" ? "yearly" : "monthly";
+  const periodEnd = subscription?.currentPeriodEnd ?? null;
+  const renewalDaysRemaining = resolveDaysUntilPeriodEnd(periodEnd, now);
+  const subscriptionPeriodPhase = resolveSubscriptionPeriodPhase({
+    subscriptionStatus: subscription?.status ?? null,
+    periodEnd,
+    isTrialPlan,
+    gracePeriodDays,
+    now,
+  });
+  const renewalReminderTier = resolveRenewalReminderTier(renewalDaysRemaining);
+
   const upgradePlans: OwnerPlanSummary[] = catalogRows
     .filter((row) => row.isActive && (
       isTrialPlan
@@ -123,10 +117,14 @@ export async function resolveOrganizationEntitlements(
     planDisplayNameEn: plan.displayNameEn,
     subscriptionStatus: subscription?.status ?? null,
     organizationStatus: organization.status,
-    billingAllowed: isBillingAllowed({
+    billingCycle,
+    billingAllowed: resolveSubscriptionBillingAllowed({
       organizationStatus: organization.status,
       subscriptionStatus: subscription?.status ?? null,
-      periodEnd: subscription?.currentPeriodEnd ?? null,
+      periodEnd,
+      isTrialPlan,
+      gracePeriodDays,
+      now,
     }),
     maxStores,
     maxEmployees,
@@ -134,10 +132,12 @@ export async function resolveOrganizationEntitlements(
     priceYearlyHalalas: plan.priceYearlyHalalas,
     trialDays: plan.trialDays,
     isTrialPlan,
-    trialDaysRemaining: resolveTrialDaysRemaining(subscription?.currentPeriodEnd),
-    currentPeriodEnd: subscription?.currentPeriodEnd
-      ? subscription.currentPeriodEnd.toISOString()
-      : null,
+    trialDaysRemaining: isTrialPlan ? renewalDaysRemaining : null,
+    renewalDaysRemaining,
+    subscriptionPeriodPhase,
+    renewalReminderTier,
+    gracePeriodDays,
+    currentPeriodEnd: periodEnd ? periodEnd.toISOString() : null,
     features: buildPlanFeatureLabels(effectivePlanForLabels),
     upgradePlans,
     usage,

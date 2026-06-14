@@ -37,15 +37,30 @@ export function formatSubscriptionStatusTone(status, organizationStatus) {
   return "neutral";
 }
 
-export function formatPlanPriceLabel(priceMonthlyHalalas, lang, { isTrialPlan = false } = {}) {
+export function formatPlanPriceLabel(priceMonthlyHalalas, lang, {
+  isTrialPlan = false,
+  billingCycle = "monthly",
+  priceYearlyHalalas = null,
+} = {}) {
   if (isTrialPlan) {
     return lang === "ar" ? "مجاني — خطة تجريبية" : "Free — trial plan";
+  }
+  if (billingCycle === "yearly" && priceYearlyHalalas) {
+    const yearlyAmount = halalasToSar(priceYearlyHalalas);
+    return lang === "ar" ? `${yearlyAmount} ر.س / سنة` : `SAR ${yearlyAmount} / year`;
   }
   if (!priceMonthlyHalalas) {
     return lang === "ar" ? "حسب الطلب" : "Custom pricing";
   }
   const amount = halalasToSar(priceMonthlyHalalas);
   return lang === "ar" ? `${amount} ر.س / شهر` : `SAR ${amount} / month`;
+}
+
+export function formatBillingCycleLabel(billingCycle, lang) {
+  if (billingCycle === "yearly") {
+    return lang === "ar" ? "اشتراك سنوي" : "Yearly billing";
+  }
+  return lang === "ar" ? "اشتراك شهري" : "Monthly billing";
 }
 
 export function formatUsageRatio(used, max) {
@@ -69,16 +84,61 @@ export function formatPeriodEndLabel(isoValue, lang) {
 }
 
 export function formatTrialDaysRemainingLabel(daysRemaining, lang) {
+  return formatRenewalDaysRemainingLabel(daysRemaining, lang, { trialContext: true });
+}
+
+export function formatRenewalDaysRemainingLabel(daysRemaining, lang, { trialContext = false } = {}) {
   if (daysRemaining == null) {
     return lang === "ar" ? "غير محدد" : "Not set";
   }
   if (daysRemaining <= 0) {
-    return lang === "ar" ? "انتهت التجربة" : "Trial ended";
+    return trialContext
+      ? (lang === "ar" ? "انتهت التجربة" : "Trial ended")
+      : (lang === "ar" ? "انتهى الاشتراك" : "Subscription ended");
   }
   if (daysRemaining === 1) {
     return lang === "ar" ? "يوم واحد متبقٍ" : "1 day left";
   }
   return lang === "ar" ? `${daysRemaining} يوم متبقٍ` : `${daysRemaining} days left`;
+}
+
+export function resolveSubscriptionRenewalBanner(entitlements) {
+  if (!entitlements) return null;
+
+  const days = entitlements.renewalDaysRemaining;
+  const phase = entitlements.subscriptionPeriodPhase;
+  const isTrial = Boolean(entitlements.isTrialPlan);
+
+  if (phase === "expired" || days === 0) {
+    return {
+      tone: "danger",
+      key: "expired",
+      daysRemaining: 0,
+    };
+  }
+
+  if (phase === "grace") {
+    return {
+      tone: "warning",
+      key: "grace",
+      daysRemaining: days ?? 0,
+      gracePeriodDays: entitlements.gracePeriodDays,
+    };
+  }
+
+  if (days == null) return null;
+
+  if (days <= 3) {
+    return { tone: "danger", key: "soon3", daysRemaining: days, isTrial };
+  }
+  if (days <= 7) {
+    return { tone: "warning", key: "soon7", daysRemaining: days, isTrial };
+  }
+  if (days <= 14) {
+    return { tone: "info", key: "soon14", daysRemaining: days, isTrial };
+  }
+
+  return null;
 }
 
 export function formatPlanSubscriptionHomeLabel(entitlements, lang) {

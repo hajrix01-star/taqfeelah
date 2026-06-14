@@ -38,9 +38,11 @@ import { isOwnerApiSummaryPending } from "@/features/reports/client/owner-summar
 import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { useHomeDayAttachments } from "@/features/entries/client/use-home-day-attachments";
+import { useOrganizationEntitlements } from "@/features/billing/client/use-organization-entitlements";
+import { SubscriptionRenewalBanner } from "@/features/billing/client/SubscriptionRenewalBanner";
 import { SummaryReportDetails } from "./owner-summary-details";
 
-export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], onOpenCloseoutAlertInRegister = () => {}, onDismissCloseout = () => {}, onOpenDuplicateSummaryInRegister = () => {}, onAcknowledgeDuplicate = () => {}, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, configuredChannels = channels, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
+export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], onOpenCloseoutAlertInRegister = () => {}, onDismissCloseout = () => {}, onOpenDuplicateSummaryInRegister = () => {}, onAcknowledgeDuplicate = () => {}, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, configuredChannels = channels, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner", ownerProfile = null, onOpenSubscriptionSettings = () => {} }) {
   const [period, setPeriod] = useState("day");
   const [selectedDay, setSelectedDay] = useState(() => todayIsoDate());
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
@@ -169,8 +171,29 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
     setShowReportDetails(false);
     setShowAttachments(false);
   };
+  const billingEntitlementsEnabled = summaryApiEnabled
+    && Boolean(summaryApiOrganizationId)
+    && Boolean(summaryApiActorUserId);
+  const { entitlements: homeEntitlements } = useOrganizationEntitlements({
+    enabled: billingEntitlementsEnabled,
+    auth: {
+      organizationId: summaryApiOrganizationId,
+      actorUserId: summaryApiActorUserId,
+      actorRole: summaryApiActorRole,
+    },
+  });
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-6 pt-1">
+      {homeEntitlements ? (
+        <div className="mx-2 mb-3">
+          <SubscriptionRenewalBanner
+            lang={lang}
+            entitlements={homeEntitlements}
+            ownerName={ownerProfile?.name || ""}
+            onOpenSubscriptionSettings={onOpenSubscriptionSettings}
+          />
+        </div>
+      ) : null}
       {closeoutAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#E6F5E9] p-3 ring-1 ring-[#39A160]/15"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#257844]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#257844]">{text(lang, "closeoutInAppAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === closeoutAlerts[0].businessId), lang)} · {formatCalendarDate(closeoutAlerts[0].date, lang)} · {lang === "ar" ? closeoutAlerts[0].employeeNameAr : closeoutAlerts[0].employeeNameEn}</p><p className="mt-1 text-taq-meta font-bold text-[#827762]">{text(lang, "closeoutInAppHint")}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onOpenCloseoutAlertInRegister(closeoutAlerts[0])} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#257844] ring-1 ring-[#39A160]/15">{text(lang, "openCloseoutInRegister")}</button><button type="button" onClick={() => onDismissCloseout(closeoutAlerts[0].id)} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "dismissAlert")}</button></div></div>}
       <Notebook fullPage theme={notebookTheme} lang={lang}>
         <NotebookHeading lang={lang} label={monthly ? text(lang, "monthlySummary") : text(lang, "dailySummary")} onShare={() => onShareNotebook({

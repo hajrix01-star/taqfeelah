@@ -60,6 +60,7 @@ export function useOwnerSettingsScreenState({
   onPersistSettingsNow = null,
   billingApiContext = null,
   orgConfigApiContext = null,
+  initialSettingsSection = "home",
 }) {
   const billingEnabled = Boolean(
     billingApiContext?.organizationId
@@ -76,7 +77,11 @@ export function useOwnerSettingsScreenState({
     auth: billingApiContext || {},
   });
 
-  const [section, setSection] = useState("home");
+  const [section, setSection] = useState(initialSettingsSection);
+  useEffect(() => {
+    setSection(initialSettingsSection);
+  }, [initialSettingsSection]);
+
   const [settingsStoreId, setSettingsStoreId] = useState(null);
   const [storePanel, setStorePanel] = useState("overview");
   const [showAddStore, setShowAddStore] = useState(false);
