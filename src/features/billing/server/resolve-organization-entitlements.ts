@@ -89,6 +89,11 @@ export async function resolveOrganizationEntitlements(
   const maxStores = overrides?.maxStoresOverride ?? plan.maxStores;
   const maxEmployees = overrides?.maxEmployeesOverride ?? plan.maxEmployees;
   const priceMonthlyHalalas = overrides?.priceMonthlyOverrideHalalas ?? plan.priceMonthlyHalalas;
+  const effectivePlanForLabels = {
+    ...plan,
+    maxStores,
+    maxEmployees,
+  };
 
   const catalogRows = await listPlanCatalogRows();
   const isTrialPlan = isTrialPlanCode(planCode) || plan.features.isTrialPlan === true;
@@ -133,7 +138,7 @@ export async function resolveOrganizationEntitlements(
     currentPeriodEnd: subscription?.currentPeriodEnd
       ? subscription.currentPeriodEnd.toISOString()
       : null,
-    features: buildPlanFeatureLabels(plan),
+    features: buildPlanFeatureLabels(effectivePlanForLabels),
     upgradePlans,
     usage,
     overrides: {

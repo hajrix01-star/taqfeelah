@@ -43,6 +43,12 @@ import {
   removeEmployeePinForPerson,
   storeHasOperationalRecords,
 } from "@/features/org-config/client/owner-settings-delete-actions";
+import {
+  canAddEmployeeSeat,
+  canAddStore,
+  resolveEmployeeLimitMessage,
+  resolveStoreLimitMessage,
+} from "@/features/billing/client/entitlement-guards";
 import { emptyStoreRecord, text } from "./prototype-runtime-demo-data";
 import { APP_IN_PRODUCTION_MODE, PROTOTYPE_EMPLOYEE_PIN_DEFAULT } from "./prototype-runtime-boot";
 
@@ -84,6 +90,7 @@ export function createOwnerSettingsScreenHandlers(ctx) {
     activeStoredBusinesses,
     visibleStaff,
     deleteTarget,
+    entitlements,
     onPersistSettingsNow,
     setters,
     showSettingsSaved,
@@ -245,6 +252,10 @@ export function createOwnerSettingsScreenHandlers(ctx) {
   };
 
   const addStore = () => {
+    if (!canAddStore(entitlements)) {
+      setters.setSettingsNotice(resolveStoreLimitMessage(entitlements, lang));
+      return;
+    }
     const business = buildNewConfiguredBusiness({
       name: newStoreName,
       location: newStoreLocation,
@@ -304,6 +315,10 @@ export function createOwnerSettingsScreenHandlers(ctx) {
   };
 
   const addStaff = () => {
+    if (!canAddEmployeeSeat(entitlements)) {
+      setters.setSettingsNotice(resolveEmployeeLimitMessage(entitlements, lang));
+      return;
+    }
     if (!canAddStaffMember({ name: newEmployeeName, storeIds: newEmployeeStoreIds, managingTeam })) return;
     const created = buildNewStaffMember({
       name: newEmployeeName,

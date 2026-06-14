@@ -31,9 +31,11 @@ import {
   formatSubscriptionStatusTone,
   formatTrialDaysRemainingLabel,
   formatUsageRatio,
+  isUsageOverLimit,
   pickLocalizedFeatureLabel,
   pickLocalizedPlanName,
 } from "@/features/billing/client/subscription-display";
+import { countEmployeeSeats } from "@/features/billing/client/entitlement-guards";
 import { text } from "./prototype-runtime-demo-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";
 import {
@@ -325,17 +327,26 @@ export function OwnerSettingsAppearanceSection({
   );
 }
 
-function SubscriptionUsageMeter({ label, used, max }) {
+function SubscriptionUsageMeter({ label, used, max, lang }) {
+  const overLimit = isUsageOverLimit(used, max);
   const percent = formatUsageRatio(used, max);
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-taq-meta font-bold text-[#716753]">
         <span>{label}</span>
-        <span>{used} / {max}</span>
+        <span className={overLimit ? "text-[#B44747]" : ""}>{used} / {max}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-[#F0ECE2]">
-        <div className="h-full rounded-full bg-[#112A46] transition-all" style={{ width: `${percent}%` }} />
+        <div
+          className={`h-full rounded-full transition-all ${overLimit ? "bg-[#B44747]" : "bg-[#112A46]"}`}
+          style={{ width: `${percent}%` }}
+        />
       </div>
+      {overLimit ? (
+        <p className="text-taq-meta font-bold text-[#B44747]">
+          {lang === "ar" ? "تجاوزت حد الخطة الحالية" : "Over current plan limit"}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -359,8 +370,7 @@ export function OwnerSettingsSubscriptionSection({
     entitlements?.subscriptionStatus,
     entitlements?.organizationStatus,
   );
-  const employeeSeatsUsed = (entitlements?.usage?.activeEmployees || 0)
-    + (entitlements?.usage?.pendingInvitations || 0);
+  const employeeSeatsUsed = countEmployeeSeats(entitlements?.usage);
 
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
@@ -420,11 +430,13 @@ export function OwnerSettingsSubscriptionSection({
                 label={lang === "ar" ? "المحلات" : "Stores"}
                 used={entitlements.usage.activeStores}
                 max={entitlements.maxStores}
+                lang={lang}
               />
               <SubscriptionUsageMeter
                 label={lang === "ar" ? "الموظفون والدعوات" : "Employees & invites"}
                 used={employeeSeatsUsed}
                 max={entitlements.maxEmployees}
+                lang={lang}
               />
             </div>
           </div>
@@ -515,6 +527,12 @@ export function OwnerSettingsHomeSection({
   entitlementsLoading,
 }) {
   const Arrow = lang === "ar" ? ChevronLeft : ChevronRight;
+  const storeCountLabel = entitlements
+    ? String(entitlements.usage.activeStores)
+    : String(activeStoredBusinesses.length);
+  const teamCountLabel = entitlements
+    ? String(countEmployeeSeats(entitlements.usage))
+    : String(visibleStaff.length);
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <div className="mb-5">
@@ -531,8 +549,8 @@ export function OwnerSettingsHomeSection({
       </button>
       <p className="mb-2 text-xs font-bold text-[#716753]">{lang === "ar" ? "المنشأة" : "Organization"}</p>
       <div className="mb-5 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
-        <SettingsLink lang={lang} icon={Building2} title={lang === "ar" ? "المحلات" : "Shops"} value={`${activeStoredBusinesses.length}`} onClick={() => setSection("stores")} />
-        <SettingsLink lang={lang} icon={UserRound} title={lang === "ar" ? "الفريق والصلاحيات" : "Team & access"} value={`${visibleStaff.length}`} onClick={() => setSection("team")} />
+        <SettingsLink lang={lang} icon={Building2} title={lang === "ar" ? "المحلات" : "Shops"} value={storeCountLabel} onClick={() => setSection("stores")} />
+        <SettingsLink lang={lang} icon={UserRound} title={lang === "ar" ? "الفريق والصلاحيات" : "Team & access"} value={teamCountLabel} onClick={() => setSection("team")} />
         <SettingsLink
           lang={lang}
           icon={CreditCard}

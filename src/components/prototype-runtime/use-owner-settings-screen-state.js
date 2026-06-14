@@ -192,6 +192,7 @@ export function useOwnerSettingsScreenState({
     activeStoredBusinesses,
     visibleStaff,
     deleteTarget,
+    entitlements,
     onPersistSettingsNow,
     showSettingsSaved,
     setters: {
@@ -262,6 +263,7 @@ export function useOwnerSettingsScreenState({
     activeStoredBusinesses,
     visibleStaff,
     deleteTarget,
+    entitlements,
     onPersistSettingsNow,
     displayBusinessName,
     displayLocation,
