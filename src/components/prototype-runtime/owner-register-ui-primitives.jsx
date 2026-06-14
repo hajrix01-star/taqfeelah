@@ -18,9 +18,9 @@ export function LogFilterChip({ active, children, onClick, tone = "default" }) {
 
 export function RegisterViewSwitch({ lang, value, onChange, counts }) {
   const items = [
+    { id: "report", label: text(lang, "generalReportTab"), count: counts.report ?? 0, hideCount: true },
     { id: "closeouts", label: lang === "ar" ? "التقفيلات" : "Closeouts", count: counts.closeouts ?? 0 },
     { id: "operations", label: lang === "ar" ? "العمليات" : "Operations", count: counts.operations ?? 0 },
-    { id: "report", label: text(lang, "generalReportTab"), count: counts.report ?? 0, hideCount: true },
   ];
 
   return (

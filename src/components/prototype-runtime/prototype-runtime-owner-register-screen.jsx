@@ -62,7 +62,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
   const [logFilters, setLogFilters] = useState(DEFAULT_REGISTER_LOG_FILTERS);
   const [draftLogFilters, setDraftLogFilters] = useState(DEFAULT_REGISTER_LOG_FILTERS);
   const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
-  const [logView, setLogView] = useState("closeouts");
+  const [logView, setLogView] = useState("report");
   const [expandedEntryId, setExpandedEntryId] = useState(null);
   const [expandedCloseoutKey, setExpandedCloseoutKey] = useState(null);
   const [registerAttachmentPreview, setRegisterAttachmentPreview] = useState(null);
@@ -398,10 +398,10 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
         <div className="mb-3 flex items-center justify-between">
           <span className="text-taq-meta font-black text-[#112A46]">{text(lang, "logResults")}</span>
           <span className="rounded-lg bg-white px-2.5 py-1 text-[10px] font-black tabular-nums text-[#827762] ring-1 ring-[#E8E1D4]">
-            {logView === "operations"
-              ? `${visibleEntries.length} ${text(lang, "operations")}`
-              : logView === "report"
-                ? `${generalReportRows.length} ${lang === "ar" ? "يوم" : "days"}`
+            {logView === "report"
+              ? `${generalReportRows.length} ${lang === "ar" ? "يوم" : "days"}`
+              : logView === "operations"
+                ? `${visibleEntries.length} ${text(lang, "operations")}`
                 : `${closeoutSummaries.length} ${lang === "ar" ? "تقفيلات" : "Closeouts"}`}
           </span>
         </div>
