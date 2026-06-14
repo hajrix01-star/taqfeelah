@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolveStorePanelOpenDrafts } from "./owner-settings-store-panel-actions";
+import {
+  resolveStoreFlattenedOpenDrafts,
+  resolveStorePanelOpenDrafts,
+} from "./owner-settings-store-panel-actions";
 
 describe("owner settings store panel actions", () => {
   const selectedStore = { id: "shami", displayName: "Shami" };
@@ -39,5 +42,31 @@ describe("owner settings store panel actions", () => {
 
     expect(channelDrafts.channelConfig?.activeIds).toEqual(["cash", "mada"]);
     expect(operationalDrafts.operationalConfig?.activeCategories).toEqual(["rent", "salary", "utility"]);
+  });
+
+  it("clones operational drafts for alerts panel", () => {
+    const drafts = resolveStorePanelOpenDrafts("alerts", {
+      selectedStore,
+      displayBusinessName,
+      displayLocation,
+      savedChannelConfig: { channels: [], activeIds: [] },
+      savedOperationalConfig: { activeCategories: ["rent"] },
+    });
+
+    expect(drafts.operationalConfig?.activeCategories).toEqual(["rent"]);
+  });
+
+  it("prepares all store drafts for flattened layout", () => {
+    const drafts = resolveStoreFlattenedOpenDrafts({
+      selectedStore,
+      displayBusinessName,
+      displayLocation,
+      savedChannelConfig: { channels: [{ id: "cash" }], activeIds: ["cash"] },
+      savedOperationalConfig: { activeCategories: ["rent"] },
+    });
+
+    expect(drafts.profile).toEqual({ name: "Shami", location: "Riyadh" });
+    expect(drafts.channelConfig?.activeIds).toEqual(["cash"]);
+    expect(drafts.operationalConfig?.activeCategories).toEqual(["rent"]);
   });
 });

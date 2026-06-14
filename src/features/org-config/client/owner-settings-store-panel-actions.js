@@ -31,9 +31,34 @@ export function resolveStorePanelOpenDrafts(panel, {
     return { channelConfig: cloneStoreChannelDraft(savedChannelConfig) };
   }
 
-  if (panel === "expenses" || panel === "review") {
+  if (panel === "expenses" || panel === "alerts" || panel === "review") {
     return { operationalConfig: cloneStoreOperationalDraft(savedOperationalConfig) };
   }
 
   return {};
+}
+
+/**
+ * @param {Object} input
+ * @param {Record<string, unknown> | null | undefined} input.selectedStore
+ * @param {(store: Record<string, unknown>) => string} input.displayBusinessName
+ * @param {(store: Record<string, unknown>) => string} input.displayLocation
+ * @param {Record<string, unknown>} input.savedChannelConfig
+ * @param {Record<string, unknown>} input.savedOperationalConfig
+ */
+export function resolveStoreFlattenedOpenDrafts({
+  selectedStore,
+  displayBusinessName,
+  displayLocation,
+  savedChannelConfig,
+  savedOperationalConfig,
+}) {
+  return {
+    profile: buildStoreProfileDraft(selectedStore, {
+      displayName: selectedStore ? displayBusinessName(selectedStore) : "",
+      location: selectedStore ? displayLocation(selectedStore) : "",
+    }),
+    channelConfig: cloneStoreChannelDraft(savedChannelConfig),
+    operationalConfig: cloneStoreOperationalDraft(savedOperationalConfig),
+  };
 }
