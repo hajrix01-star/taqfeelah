@@ -298,17 +298,19 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
                     </p>
                   </NotebookRow>
                 )}
-                {netMarginRatio !== "—" ? (
-                  <NotebookRow>
-                    <div className="flex w-full items-end justify-between text-xs font-bold text-[#806528]">
-                      <span>{text(lang, "netMarginRatio")}</span>
-                      <strong className="text-[#827762]">
-                        {netMarginRatio} {text(lang, "netMarginOfSales")}
-                      </strong>
-                    </div>
-                  </NotebookRow>
-                ) : null}
-                <NotebookRow strong lines={2}><div className="flex w-full items-end justify-between"><span className="text-sm font-extrabold">{text(lang, "result")}</span><strong className={`tabular-nums text-2xl font-extrabold ${result.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}><MoneyValue value={money(result.net, lang)} /></strong></div></NotebookRow>
+                <NotebookRow strong lines={2}>
+                  <div className="flex w-full items-end justify-between gap-3">
+                    <span className="text-sm font-extrabold">{text(lang, "result")}</span>
+                    <strong className={`inline-flex items-baseline gap-2 tabular-nums text-2xl font-extrabold ${result.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}>
+                      <MoneyValue value={money(result.net, lang)} />
+                      {netMarginRatio !== "—" ? (
+                        <span className="text-sm font-bold text-[#827762]">
+                          ({netMarginRatio})
+                        </span>
+                      ) : null}
+                    </strong>
+                  </div>
+                </NotebookRow>
                 {!monthly && (
                   <NotebookRow>
                     <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]">
