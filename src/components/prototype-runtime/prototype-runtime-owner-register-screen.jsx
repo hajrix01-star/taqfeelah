@@ -52,7 +52,7 @@ import { OwnerRegisterOperationsList } from "./owner-register-operations-list";
 import { RegisterStoreChips } from "./owner-register-store-filter";
 import { RegisterDashboardCard } from "./owner-register-ui-primitives";
 
-export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesSyncError = "", closeoutsSyncError = "", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
+export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onShareRegister = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesSyncError = "", closeoutsSyncError = "", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
   const [period, setPeriod] = useState("month");
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
@@ -324,6 +324,25 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
     : "Failed to load the days report from the server. Showing available local data.";
   const dashboardSummary = logView === "report" ? generalReportDashboardSummary : registerPeriodSummary;
   const dashboardShowFilters = logView !== "report";
+  const openRegisterExport = () => onShareRegister({
+    screen: "register",
+    registerView: logView,
+    theme: notebookTheme,
+    period,
+    selectedBusiness: safeBusinessId,
+    includedBusinessIds: registerTargetStoreIds,
+    selectedDate,
+    selectedMonth,
+    selectedYear,
+    customFrom,
+    customTo,
+    exportData: {
+      visibleEntries,
+      closeoutSummaries,
+      generalReportRows,
+      periodEntries,
+    },
+  });
 
   return (
     <NotebookScrollSurface theme={notebookTheme} lang={lang}>
@@ -332,6 +351,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
         <NotebookHeading
           lang={lang}
           label={text(lang, "operationsLog")}
+          onShare={openRegisterExport}
           dateSelector={(
             <DateSelector
               compact

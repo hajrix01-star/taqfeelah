@@ -254,6 +254,7 @@ export function PrototypeRuntimePageContent({
         <OwnerRegisterConnected
           lang={lang}
           onOpenOperation={handleOpenOwnerOperation}
+          onShareRegister={setShareSnapshot}
           duplicateSummaryFocus={duplicateSummaryFocus}
           archivedReadOnlyBusinessId={archivedReadOnlyBusinessId}
           operationalEntries={operationalEntries}
