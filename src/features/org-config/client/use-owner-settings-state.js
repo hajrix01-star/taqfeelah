@@ -177,7 +177,7 @@ export function useOwnerSettingsState({
     [isEmployee, sessionOrganizationId, sessionUserId],
   );
 
-  const { error: orgConfigSyncError, loading: orgConfigLoading, hydrated: orgConfigHydrated } = useOrgConfigRuntimeBridge({
+  const { error: orgConfigSyncError, loading: orgConfigLoading, hydrated: orgConfigHydrated, reload: reloadOrgConfig, flushPersist: flushOrgConfigPersist } = useOrgConfigRuntimeBridge({
     enabled: orgConfigApiEnabled && loggedIn && !isEmployee,
     auth: ownerSettingsApiAuth,
     loggedIn,
@@ -283,6 +283,8 @@ export function useOwnerSettingsState({
     orgConfigSyncError,
     orgConfigLoading,
     orgConfigHydrated,
+    reloadOrgConfig,
+    flushOrgConfigPersist,
     resolveStoreSalesChannels,
   };
 }

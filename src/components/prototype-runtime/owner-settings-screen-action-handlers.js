@@ -1,5 +1,5 @@
 import { CreditCard } from "lucide-react";
-import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
+import { createOrganizationStoreViaApi } from "@/features/org-config/client/org-config-api-client";
 import {
   buildOwnerProfileUpdate,
   validateOwnerAuthCredentials,
@@ -49,6 +49,7 @@ import {
   resolveEmployeeLimitMessage,
   resolveStoreLimitMessage,
 } from "@/features/billing/client/entitlement-guards";
+import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { emptyStoreRecord, text } from "./prototype-runtime-demo-data";
 import { APP_IN_PRODUCTION_MODE, PROTOTYPE_EMPLOYEE_PIN_DEFAULT } from "./prototype-runtime-boot";
 
@@ -91,6 +92,8 @@ export function createOwnerSettingsScreenHandlers(ctx) {
     visibleStaff,
     deleteTarget,
     entitlements,
+    reloadEntitlements,
+    orgConfigApiContext,
     onPersistSettingsNow,
     setters,
     showSettingsSaved,
@@ -251,11 +254,52 @@ export function createOwnerSettingsScreenHandlers(ctx) {
     }));
   };
 
-  const addStore = () => {
+  const resolveOrgConfigNotReadyMessage = () => (
+    lang === "ar" ? "جارٍ تحميل بيانات المنشأة من السيرفر..." : "Loading organization data from server..."
+  );
+
+  const addStore = async () => {
     if (!canAddStore(entitlements)) {
       setters.setSettingsNotice(resolveStoreLimitMessage(entitlements, lang));
       return;
     }
+    const name = newStoreName.trim();
+    const location = newStoreLocation.trim();
+    if (!name) return;
+
+    if (isOrgConfigApiEnabled() && orgConfigApiContext?.enabled) {
+      if (!orgConfigApiContext.hydrated || orgConfigApiContext.loading) {
+        setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
+        return;
+      }
+      setters.setStoreSaving(true);
+      setters.setSettingsNotice("");
+      try {
+        await createOrganizationStoreViaApi({
+          organizationId: orgConfigApiContext.organizationId,
+          actorUserId: orgConfigApiContext.actorUserId,
+          actorRole: orgConfigApiContext.actorRole || "owner",
+          name,
+          location,
+        });
+        await orgConfigApiContext.reload();
+        if (typeof reloadEntitlements === "function") {
+          await reloadEntitlements();
+        }
+        setters.setNewStoreName("");
+        setters.setNewStoreLocation("");
+        setters.setShowAddStore(false);
+        showSettingsSaved();
+      } catch (failure) {
+        setters.setSettingsNotice(
+          failure instanceof Error ? failure.message : (lang === "ar" ? "تعذر إضافة المحل." : "Failed to add store."),
+        );
+      } finally {
+        setters.setStoreSaving(false);
+      }
+      return;
+    }
+
     const business = buildNewConfiguredBusiness({
       name: newStoreName,
       location: newStoreLocation,
@@ -289,6 +333,39 @@ export function createOwnerSettingsScreenHandlers(ctx) {
       authEmployeePins,
       defaultPin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT || "1234",
     });
+
+    if (isOrgConfigApiEnabled() && typeof orgConfigApiContext?.flushPersist === "function") {
+      if (!orgConfigApiContext.hydrated || orgConfigApiContext.loading) {
+        setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
+        return;
+      }
+      setters.setTeamSaving(true);
+      setters.setSettingsNotice("");
+      try {
+        await orgConfigApiContext.flushPersist({ staff: nextStaff }, { employeePins: nextPins });
+        setters.setAuthEmployeePins(nextPins);
+        cancelManagingTeam();
+        if (typeof reloadEntitlements === "function") {
+          await reloadEntitlements();
+        }
+        if (APP_IN_PRODUCTION_MODE && typeof onPersistSettingsNow === "function") {
+          await onPersistSettingsNow(buildOwnerSettingsTeamPersistPayload({
+            staff: nextStaff,
+            authOwnerUsername,
+            authOwnerPassword,
+            authEmployeePins: nextPins,
+            omitStaff: true,
+          }));
+        }
+        showSettingsSaved();
+      } catch (failure) {
+        setters.setSettingsNotice(resolveTeamSaveFailureMessage(failure, lang));
+      } finally {
+        setters.setTeamSaving(false);
+      }
+      return;
+    }
+
     setters.setStaff(nextStaff);
     setters.setAuthEmployeePins(nextPins);
     cancelManagingTeam();

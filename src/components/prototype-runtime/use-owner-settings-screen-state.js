@@ -59,6 +59,7 @@ export function useOwnerSettingsScreenState({
   setLastCloseoutDates,
   onPersistSettingsNow = null,
   billingApiContext = null,
+  orgConfigApiContext = null,
 }) {
   const billingEnabled = Boolean(
     billingApiContext?.organizationId
@@ -102,6 +103,7 @@ export function useOwnerSettingsScreenState({
   const [draftAuthOwnerPassword, setDraftAuthOwnerPassword] = useState(authOwnerPassword || "");
   const [draftAuthEmployeePins, setDraftAuthEmployeePins] = useState(() => ({ ...(authEmployeePins || {}) }));
   const [teamSaving, setTeamSaving] = useState(false);
+  const [storeSaving, setStoreSaving] = useState(false);
 
   const { active: activeStoredBusinesses, archived: archivedStoredBusinesses } = partitionConfiguredBusinesses(
     configuredBusinesses,
@@ -193,6 +195,8 @@ export function useOwnerSettingsScreenState({
     visibleStaff,
     deleteTarget,
     entitlements,
+    reloadEntitlements,
+    orgConfigApiContext,
     onPersistSettingsNow,
     showSettingsSaved,
     setters: {
@@ -224,6 +228,7 @@ export function useOwnerSettingsScreenState({
       setAuthEmployeePins,
       setDraftAuthEmployeePins,
       setTeamSaving,
+      setStoreSaving,
       setSelectedBusiness,
       setArchivedReadOnlyBusinessId,
       setLastCloseoutDates,
@@ -264,6 +269,8 @@ export function useOwnerSettingsScreenState({
     visibleStaff,
     deleteTarget,
     entitlements,
+    reloadEntitlements,
+    orgConfigApiContext,
     onPersistSettingsNow,
     displayBusinessName,
     displayLocation,
@@ -328,6 +335,7 @@ export function useOwnerSettingsScreenState({
     setNewEmployeeMobile,
     newEmployeeStoreIds,
     teamSaving,
+    storeSaving,
     settingsNotice,
     draftOwnerName,
     setDraftOwnerName,
@@ -367,5 +375,6 @@ export function useOwnerSettingsScreenState({
     entitlementsLoading,
     entitlementsError,
     reloadEntitlements,
+    orgConfigApiContext,
   };
 }

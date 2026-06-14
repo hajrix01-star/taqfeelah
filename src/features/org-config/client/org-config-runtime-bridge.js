@@ -85,10 +85,6 @@ export function useOrgConfigRuntimeBridge({
     applyOrgConfigMappedState(mapped, setters);
   }, [setters]);
 
-  const onPersistApplied = useCallback((applied) => {
-    applyOrgConfigMappedState(applied, setters);
-  }, [setters]);
-
   const sync = useOrgConfigFromApi({
     enabled,
     auth,
@@ -97,7 +93,6 @@ export function useOrgConfigRuntimeBridge({
     snapshot,
     employeePins,
     onHydrate,
-    onPersistApplied,
   });
 
   return {

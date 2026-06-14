@@ -19,6 +19,23 @@ function tryBuildOrgConfigPersistBaseline(snapshot) {
   }
 }
 
+function buildPersistArgsFromBaselineJson(baseline) {
+  return {
+    configuredBusinesses: baseline.businesses.map((business) => ({
+      id: business.id,
+      dbStoreId: business.dbStoreId,
+      displayName: business.displayName,
+      nameAr: business.displayName,
+      nameEn: business.displayName,
+      customLocation: business.customLocation,
+    })),
+    archivedBusinessIds: baseline.archivedBusinessIds,
+    storeChannelSettings: baseline.storeChannelSettings,
+    storeOperationalSettings: baseline.storeOperationalSettings,
+    staff: baseline.staff,
+  };
+}
+
 export function useOrgConfigFromApi({
   enabled = false,
   auth = {},
@@ -27,7 +44,6 @@ export function useOrgConfigFromApi({
   snapshot = {},
   employeePins = {},
   onHydrate = () => {},
-  onPersistApplied = () => {},
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -35,23 +51,26 @@ export function useOrgConfigFromApi({
   const hydratedRef = useRef(false);
   const applyingRef = useRef(false);
   const baselineRef = useRef("");
+  const snapshotRef = useRef(snapshot);
   const persistTimerRef = useRef(null);
   const loadedAuthKeyRef = useRef("");
+  snapshotRef.current = snapshot;
 
   const authKey = useMemo(
     () => `${auth?.organizationId || ""}|${auth?.actorUserId || ""}|${auth?.actorRole || ""}`,
     [auth?.actorRole, auth?.actorUserId, auth?.organizationId],
   );
 
-  const loadOrgConfig = useCallback(async () => {
+  const loadOrgConfig = useCallback(async (options = {}) => {
     if (!enabled || !loggedIn) return;
+    const pins = options.employeePins ?? employeePins;
     setLoading(true);
     setError("");
     try {
       const bundle = await fetchOrgConfigBundleViaApi(auth);
       const mapped = mapOrgConfigBundleToRuntime({
         ...bundle,
-        employeePins,
+        employeePins: pins,
       });
       validateOrgConfigDbChannelMappings(mapped, { strict: bindsToServerAuth() });
       applyingRef.current = true;
@@ -59,6 +78,7 @@ export function useOrgConfigFromApi({
       baselineRef.current = tryBuildOrgConfigPersistBaseline(mapped);
       hydratedRef.current = true;
       setHydrated(true);
+      setError("");
     } catch (failure) {
       console.warn("org config load failed", failure);
       setError(failure instanceof Error ? failure.message : "org config load failed");
@@ -67,6 +87,23 @@ export function useOrgConfigFromApi({
       setLoading(false);
     }
   }, [auth, employeePins, enabled, loggedIn, onHydrate]);
+
+  const flushPersist = useCallback(async (overrides = {}, options = {}) => {
+    if (!enabled || !loggedIn || isEmployee || !hydratedRef.current || !baselineRef.current) {
+      throw new Error("org config is not ready to save");
+    }
+
+    const pins = options.employeePins ?? employeePins;
+    const next = { ...snapshotRef.current, ...overrides };
+    const baseline = JSON.parse(baselineRef.current);
+    await persistOrgConfigSnapshot({
+      auth,
+      baseline: buildPersistArgsFromBaselineJson(baseline),
+      next,
+      employeePins: pins,
+    });
+    await loadOrgConfig({ employeePins: pins });
+  }, [auth, employeePins, enabled, isEmployee, loadOrgConfig, loggedIn]);
 
   useEffect(() => {
     if (!enabled || !loggedIn) {
@@ -96,34 +133,14 @@ export function useOrgConfigFromApi({
     }
 
     persistTimerRef.current = window.setTimeout(() => {
-      const baseline = JSON.parse(baselineRef.current);
-      persistOrgConfigSnapshot({
-        auth,
-        baseline: {
-          configuredBusinesses: baseline.businesses.map((business) => ({
-            id: business.id,
-            dbStoreId: business.dbStoreId,
-            displayName: business.displayName,
-            nameAr: business.displayName,
-            nameEn: business.displayName,
-            customLocation: business.customLocation,
-          })),
-          archivedBusinessIds: baseline.archivedBusinessIds,
-          storeChannelSettings: baseline.storeChannelSettings,
-          storeOperationalSettings: baseline.storeOperationalSettings,
-          staff: baseline.staff,
-        },
-        next: snapshot,
-        employeePins,
-      })
-        .then((applied) => {
-          onPersistApplied(applied);
-          baselineRef.current = tryBuildOrgConfigPersistBaseline(applied);
+      flushPersist()
+        .then(() => {
           setError("");
         })
         .catch((failure) => {
           console.warn("org config save failed", failure);
           setError(failure instanceof Error ? failure.message : "org config save failed");
+          void loadOrgConfig();
         });
     }, 450);
 
@@ -132,12 +149,13 @@ export function useOrgConfigFromApi({
         window.clearTimeout(persistTimerRef.current);
       }
     };
-  }, [auth, employeePins, enabled, isEmployee, loggedIn, onPersistApplied, snapshot]);
+  }, [auth, employeePins, enabled, flushPersist, isEmployee, loadOrgConfig, loggedIn, snapshot]);
 
   return {
     loading,
     error,
     hydrated,
     reload: loadOrgConfig,
+    flushPersist,
   };
 }

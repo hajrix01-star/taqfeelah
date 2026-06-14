@@ -103,11 +103,19 @@ export function OwnerSettingsStoresSection({
   openStore,
   setSection,
   deleteDialogProps,
+  orgConfigLoading = false,
+  storeSaving = false,
 }) {
   const Arrow = lang === "ar" ? ChevronLeft : ChevronRight;
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "المحلات" : "Shops"} onBack={() => setSection("home")} lang={lang} />
+      {orgConfigLoading ? (
+        <div className="rounded-3xl bg-white p-5 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-black/[0.045]">
+          {lang === "ar" ? "جارٍ تحميل المحلات من السيرفر..." : "Loading stores from server..."}
+        </div>
+      ) : (
+        <>
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs font-bold text-[#716753]">{text(lang, "activeStores")}</p>
         <button onClick={() => setShowAddStore(!showAddStore)} className="flex items-center gap-1 text-taq-meta font-black text-[#9A823E]"><Plus className="h-3.5 w-3.5" />{text(lang, "addStore")}</button>
@@ -116,7 +124,9 @@ export function OwnerSettingsStoresSection({
         <div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
           <input value={newStoreName} onChange={(event) => setNewStoreName(event.target.value)} placeholder={text(lang, "newStoreName")} className="mb-2 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" />
           <input value={newStoreLocation} onChange={(event) => setNewStoreLocation(event.target.value)} placeholder={text(lang, "newStoreLocation")} className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" />
-          <button onClick={addStore} className="w-full rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">{text(lang, "confirmAddStore")}</button>
+          <button type="button" onClick={() => { void addStore(); }} disabled={storeSaving} className="w-full rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white disabled:opacity-60">
+            {storeSaving ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : text(lang, "confirmAddStore")}
+          </button>
         </div>
       )}
       <div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
@@ -151,6 +161,8 @@ export function OwnerSettingsStoresSection({
           )}
         </>
       )}
+        </>
+      )}
       <OwnerSettingsDeleteDialog {...deleteDialogProps} />
     </motion.section>
   );
@@ -183,10 +195,17 @@ export function OwnerSettingsTeamSection({
   setSection,
   deleteDialogProps,
   inviteApiContext,
+  orgConfigLoading = false,
 }) {
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "الفريق والصلاحيات" : "Team & access"} onBack={() => { cancelManagingTeam(); setSection("home"); }} lang={lang} />
+      {orgConfigLoading ? (
+        <div className="rounded-3xl bg-white p-5 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-black/[0.045]">
+          {lang === "ar" ? "جارٍ تحميل الفريق من السيرفر..." : "Loading team from server..."}
+        </div>
+      ) : (
+        <>
       {inviteApiContext?.organizationId && inviteApiContext?.actorUserId ? (
         <OwnerSettingsTeamInvites
           lang={lang}
@@ -290,6 +309,8 @@ export function OwnerSettingsTeamSection({
           <button onClick={cancelManagingTeam} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button>
           <button type="button" disabled={teamSaving} onClick={() => { void saveManagingTeam(); }} className={`rounded-2xl py-3.5 text-xs font-black text-white ${teamSaving ? "bg-[#B8C0B7]" : "bg-[#112A46]"}`}>{text(lang, "saveTeamChanges")}</button>
         </div>
+      )}
+        </>
       )}
       <OwnerSettingsDeleteDialog {...deleteDialogProps} />
     </motion.section>
@@ -626,6 +647,8 @@ export function renderOwnerSettingsSection(section, state, callbacks) {
         displayLocation={state.displayLocation}
         openStore={state.openStore}
         deleteDialogProps={state.deleteDialogProps}
+        orgConfigLoading={state.orgConfigApiContext?.loading}
+        storeSaving={state.storeSaving}
       />
     );
   }
@@ -657,6 +680,7 @@ export function renderOwnerSettingsSection(section, state, callbacks) {
         saveManagingTeam={state.saveManagingTeam}
         deleteDialogProps={state.deleteDialogProps}
         inviteApiContext={state.inviteApiContext}
+        orgConfigLoading={state.orgConfigApiContext?.loading}
       />
     );
   }
