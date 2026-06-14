@@ -144,6 +144,41 @@ export async function updateSaasAccount(
   });
 }
 
+export type UpdateSaasAccountSubscriptionPayload = {
+  planCode?: "trial" | "starter" | "growth" | "enterprise";
+  status?: "trialing" | "active" | "past_due" | "canceled";
+  billingCycle?: "monthly" | "yearly";
+  extendPeriodDays?: number;
+  activatePaid?: boolean;
+  acknowledgeUsageExceedsLimits?: boolean;
+};
+
+export type UpdateSaasAccountSubscriptionResponse = {
+  organizationId: string;
+  subscriptionId: string;
+  planCode: string;
+  status: string;
+  billingCycle: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  changeType: "upgrade" | "downgrade" | "renewal" | "status" | "mixed";
+  updatedAt: string;
+};
+
+export async function updateSaasAccountSubscription(
+  organizationId: string,
+  payload: UpdateSaasAccountSubscriptionPayload,
+) {
+  return fetchSaasAdminJson<UpdateSaasAccountSubscriptionResponse>(
+    `/api/v1/saas-admin/accounts/${organizationId}/subscription`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
 export async function createSaasAccountStore(
   organizationId: string,
   payload: {

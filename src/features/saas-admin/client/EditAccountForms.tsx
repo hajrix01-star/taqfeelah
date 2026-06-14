@@ -6,7 +6,6 @@ import {
   updateSaasAccount,
   updateSaasAccountOwner,
 } from "@/features/saas-admin/client/saas-admin-api-client";
-import { parsePlanCode, type PlanCode } from "@/features/billing/plan-codes";
 import { mapSaasAdminApiError } from "@/features/saas-admin/client/api-error";
 import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
@@ -14,7 +13,6 @@ import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocalePr
 type EditAccountFormsProps = {
   organizationId: string;
   organizationName: string;
-  planCode: string | null;
   ownerName: string | null;
   ownerUsername?: string | null;
   ownerPhone?: string | null;
@@ -29,14 +27,9 @@ function trimOptional(value: string): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function resolvePlanCode(value: string | null | undefined): PlanCode {
-  return parsePlanCode(value) ?? "starter";
-}
-
 export function EditAccountForms({
   organizationId,
   organizationName,
-  planCode,
   ownerName,
   ownerUsername = null,
   ownerPhone = null,
@@ -53,7 +46,6 @@ export function EditAccountForms({
   }
   const feedbackRef = useRef<HTMLDivElement>(null);
   const [accountName, setAccountName] = useState(organizationName);
-  const [accountPlan, setAccountPlan] = useState<PlanCode>(resolvePlanCode(planCode));
   const [editOwnerName, setEditOwnerName] = useState(ownerName || "");
   const [editOwnerUsername, setEditOwnerUsername] = useState(ownerUsername || "");
   const [editOwnerPhone, setEditOwnerPhone] = useState(ownerPhone || "");
@@ -70,8 +62,7 @@ export function EditAccountForms({
 
   useEffect(() => {
     setAccountName(organizationName);
-    setAccountPlan(resolvePlanCode(planCode));
-  }, [organizationName, planCode]);
+  }, [organizationName]);
 
   useEffect(() => {
     setEditOwnerName(ownerName || "");
@@ -93,7 +84,6 @@ export function EditAccountForms({
     try {
       await updateSaasAccount(organizationId, {
         organizationName: trimOptional(accountName),
-        planCode: accountPlan,
       });
       setAccountSuccess(t.editAccount.accountSaved);
       onUpdated();
@@ -164,19 +154,6 @@ export function EditAccountForms({
             onChange={(e) => setAccountName(e.target.value)}
             className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
           />
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="text-[var(--admin-muted)]">{t.common.plan}</span>
-          <select
-            value={accountPlan}
-            onChange={(e) => setAccountPlan(e.target.value as typeof accountPlan)}
-            className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
-          >
-            <option value="trial">{t.plans.trial}</option>
-            <option value="starter">{t.plans.starter}</option>
-            <option value="growth">{t.plans.growth}</option>
-            <option value="enterprise">{t.plans.enterprise}</option>
-          </select>
         </label>
         {accountError ? <p className="text-sm text-[var(--admin-danger)]">{accountError}</p> : null}
         {accountSuccess ? <p className="text-sm text-green-700">{accountSuccess}</p> : null}

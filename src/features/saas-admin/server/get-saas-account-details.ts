@@ -17,6 +17,7 @@ import {
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import type { SaasAccountDetails } from "@/features/saas-admin/types";
+import { resolveOrganizationEntitlements } from "@/features/billing/server/resolve-organization-entitlements";
 import { resolveOrganizationOwnerMember } from "@/features/saas-admin/server/resolve-organization-owner-member";
 import { currentMonthRangeUtc, resolveAccountStatus } from "@/features/saas-admin/server/saas-admin-utils";
 
@@ -294,6 +295,13 @@ export async function getSaasAccountDetails(
     .orderBy(desc(orgEngagementSnapshots.snapshotDate))
     .limit(1);
 
+  let entitlements: Awaited<ReturnType<typeof resolveOrganizationEntitlements>> | null = null;
+  try {
+    entitlements = await resolveOrganizationEntitlements(input.organizationId);
+  } catch {
+    entitlements = null;
+  }
+
   return {
     id: org.id,
     name: org.name,
@@ -307,6 +315,18 @@ export async function getSaasAccountDetails(
     }),
     organizationStatus: org.status as "active" | "suspended" | "archived" | "pending_activation",
     planCode: subscription?.planCode ?? null,
+    subscription: subscription
+      ? {
+          id: subscription.id,
+          planCode: subscription.planCode,
+          status: subscription.status,
+          billingCycle: subscription.billingCycle,
+          currentPeriodStart: subscription.currentPeriodStart.toISOString(),
+          currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
+          cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+        }
+      : null,
+    entitlements,
     createdAt: org.createdAt.toISOString(),
     lastActivityAt: engagement?.lastCoreActivityAt?.toISOString() ?? org.updatedAt.toISOString(),
     storesCount: storeRows.length,
