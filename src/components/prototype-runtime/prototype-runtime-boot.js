@@ -1,4 +1,5 @@
 import { resolveRuntimeCapabilities } from "@/core/config/runtime-capabilities";
+import { resolveSupportWhatsAppNumber } from "@/core/config/marketing-support";
 import { createMigrateSavedSettings, createReadSavedSettings } from "@/features/org-config/client/owner-settings-bootstrap";
 import { OWNER_SETTINGS_STORAGE_KEY } from "@/features/runtime-settings/client/migrate-local-saved-settings";
 import { CLOSEOUT_ALERTS_STORAGE_KEY } from "@/features/owner-shell/client/owner-shell-storage";
@@ -17,7 +18,7 @@ const {
   orgConfigApiEnabled: ORG_CONFIG_API_ENABLED,
 } = resolveRuntimeCapabilities();
 
-const PROTOTYPE_SUPPORT_WHATSAPP = "966501234567";
+const PROTOTYPE_SUPPORT_WHATSAPP = resolveSupportWhatsAppNumber();
 const PROTOTYPE_DEMO_OTP = process.env.NEXT_PUBLIC_DEMO_OTP || (APP_IN_PRODUCTION_MODE ? "" : "1234");
 const PROTOTYPE_OWNER_USERNAME = (
   process.env.NEXT_PUBLIC_DEMO_OWNER_USERNAME || (APP_IN_PRODUCTION_MODE ? "hajri" : "owner")

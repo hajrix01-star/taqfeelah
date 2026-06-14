@@ -131,17 +131,16 @@ export async function createStoreEntry(rawInput: CreateEntryInput) {
     }
 
     if (input.attachment) {
-      const normalizedAttachment = input.attachment.storageKey
-        ? input.attachment
-        : await registerAttachment({
-          organizationId: input.organizationId,
-          storeId: input.storeId,
-          kind: input.attachment.kind,
-          name: input.attachment.name,
-          mimeType: input.attachment.mimeType,
-          sizeBytes: input.attachment.sizeBytes,
-          dataUrl: input.attachment.dataUrl,
-        });
+      const normalizedAttachment = await registerAttachment({
+        organizationId: input.organizationId,
+        storeId: input.storeId,
+        kind: input.attachment.kind,
+        name: input.attachment.name,
+        mimeType: input.attachment.mimeType,
+        sizeBytes: input.attachment.sizeBytes,
+        dataUrl: input.attachment.dataUrl,
+        storageKey: input.attachment.storageKey,
+      });
       const storageKey = normalizedAttachment.storageKey;
       if (!storageKey) {
         throw new ValidationError("Attachment requires dataUrl or storageKey.");

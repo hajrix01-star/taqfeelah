@@ -180,7 +180,6 @@ PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
     "NEXT_PUBLIC_APP_MODE": "production",
     "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE": "false",
     "ALLOW_HEADER_AUTH_CONTEXT": "false",
-    "AUTH_SESSION_SECRET": "taqfeelah-prod-bootstrap-session-secret-v1",
     "AUTH_SESSION_COOKIE_NAME": "taqfeelah_session",
     "AUTH_ORGANIZATION_ID": "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
     "AUTH_OWNER_USER_ID": "e8f3e35b-6051-4da3-8b10-979700c2f00f",
@@ -206,6 +205,23 @@ VPS_POSTGRES_DB = "taqfeelah"
 VPS_POSTGRES_PORT = 5433
 TAQFEELAH_APP_DIR = "/opt/taqfeelah"
 TAQFEELAH_APP_PORT = 3010
+BOOTSTRAP_SESSION_SECRET = "taqfeelah-prod-bootstrap-session-secret-v1"
+
+
+def validate_production_auth_secrets(merged_env: dict[str, str]) -> None:
+    if not deployment_wave_requires_auth_verify():
+        return
+    secret = merged_env.get("AUTH_SESSION_SECRET", "").strip()
+    if len(secret) < 16:
+        raise RuntimeError(
+            "AUTH_SESSION_SECRET must be at least 16 characters for production deploy. "
+            "Set the GitHub Actions secret AUTH_SESSION_SECRET."
+        )
+    if secret == BOOTSTRAP_SESSION_SECRET:
+        raise RuntimeError(
+            "AUTH_SESSION_SECRET must not use the bootstrap default. "
+            "Set a strong unique secret in GitHub Actions secrets."
+        )
 
 
 def safe_print(value: str) -> None:
@@ -670,7 +686,8 @@ def resolve_production_env(existing_remote_env: dict[str, str] | None = None) ->
     if deployment_wave_requires_auth_verify():
         if not merged.get("AUTH_OWNER_USERNAME", "").strip():
             merged["AUTH_OWNER_USERNAME"] = "hajri"
-        if not merged.get("AUTH_OWNER_PASSWORD"):
+        db_credentials_enabled = merged.get("AUTH_DB_CREDENTIALS_ENABLED", "").strip().lower() == "true"
+        if not db_credentials_enabled and not merged.get("AUTH_OWNER_PASSWORD"):
             merged["AUTH_OWNER_PASSWORD"] = "123"
 
     if not merged.get("DATABASE_URL"):
@@ -679,6 +696,7 @@ def resolve_production_env(existing_remote_env: dict[str, str] | None = None) ->
             "Set the GitHub secret DATABASE_URL or ensure /opt/taqfeelah/.env.production "
             "already exists on the VPS with a valid DATABASE_URL."
         )
+    validate_production_auth_secrets(merged)
     return merged
 
 

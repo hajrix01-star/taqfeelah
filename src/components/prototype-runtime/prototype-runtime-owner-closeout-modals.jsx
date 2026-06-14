@@ -78,7 +78,7 @@ export function OwnerCloseoutModals({
       onDelete={async () => {
         const confirmed = window.confirm(lang === "ar" ? "هل تريد حذف هذه التقفيلة نهائيًا؟" : "Delete this closeout permanently?");
         if (!confirmed) return;
-        deleteCloseout(ownerManageCloseout.id);
+        deleteCloseout(ownerManageCloseout.id, ownerManageCloseout);
         await onCloseoutDeleted(ownerManageCloseout);
         onClose();
       }}

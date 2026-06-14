@@ -40,6 +40,7 @@ export function DailyCloseoutsProvider({
   ownerName = "",
   onSyncToOperationalEntries = async () => {},
   onSubmitCloseoutToApi = null,
+  onDeleteCloseoutToApi = null,
   loadCloseoutsFromApi = null,
   closeoutsAutoLoadQueryKey = "",
   apiStrictMode = false,
@@ -75,9 +76,13 @@ export function DailyCloseoutsProvider({
     setEvents((current) => (skipLocalPersistence ? current : appendCloseoutEvent(current, payload)));
   }, [skipLocalPersistence]);
 
-  const deleteCloseout = useCallback((closeoutId) => {
+  const deleteCloseout = useCallback(async (closeoutId, closeoutMeta = null) => {
+    const target = closeoutMeta || closeouts.find((item) => item.id === closeoutId) || null;
+    if (typeof onDeleteCloseoutToApi === "function" && useApiWrites && target) {
+      await onDeleteCloseoutToApi({ closeout: target });
+    }
     persistCloseouts((current) => current.filter((item) => item.id !== closeoutId));
-  }, [persistCloseouts]);
+  }, [closeouts, onDeleteCloseoutToApi, persistCloseouts, useApiWrites]);
 
   const upsertCloseout = useCallback((nextCloseout) => {
     const normalized = withCloseoutTotals(nextCloseout);

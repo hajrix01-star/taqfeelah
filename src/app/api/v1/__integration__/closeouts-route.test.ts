@@ -10,6 +10,7 @@ import {
 
 const listStoreCloseouts = vi.fn();
 const submitStoreCloseout = vi.fn();
+const deleteStoreCloseout = vi.fn();
 
 vi.mock("@/features/closeouts/server/list-store-closeouts", () => ({
   listStoreCloseouts,
@@ -19,11 +20,16 @@ vi.mock("@/features/closeouts/server/submit-store-closeout", () => ({
   submitStoreCloseout,
 }));
 
+vi.mock("@/features/closeouts/server/delete-store-closeout", () => ({
+  deleteStoreCloseout,
+}));
+
 describe("closeouts route integration", () => {
   beforeEach(() => {
     setupRouteIntegrationEnv();
     listStoreCloseouts.mockReset();
     submitStoreCloseout.mockReset();
+    deleteStoreCloseout.mockReset();
   });
 
   afterEach(() => {
@@ -141,5 +147,33 @@ describe("closeouts route integration", () => {
     expect(typeof submittedCloseoutId).toBe("string");
     expect(submittedCloseoutId).not.toBe(`closeout-${TEST_STORE_ID}-2026-06-06`);
     expect(submittedCloseoutId.length).toBeGreaterThan(10);
+  });
+
+  it("DELETE removes closeout for owner", async () => {
+    deleteStoreCloseout.mockResolvedValueOnce({
+      deleted: true,
+      clientCloseoutId: "client-closeout-1",
+      date: "2026-06-05",
+    });
+
+    const { DELETE } = await import("../stores/[storeId]/closeouts/[closeoutId]/route");
+    const response = await DELETE(
+      ownerRequest(`http://localhost/api/v1/stores/${TEST_STORE_ID}/closeouts/client-closeout-1`, {
+        method: "DELETE",
+      }),
+      {
+        params: Promise.resolve({
+          storeId: TEST_STORE_ID,
+          closeoutId: "client-closeout-1",
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(deleteStoreCloseout).toHaveBeenCalledWith(expect.objectContaining({
+      storeId: TEST_STORE_ID,
+      clientCloseoutId: "client-closeout-1",
+      actorRole: "owner",
+    }));
   });
 });

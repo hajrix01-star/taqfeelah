@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import {
   buildCloseoutSubmitFailureMessage,
   diagnoseCloseoutSubmitFailure,
+  deleteCloseoutViaApi,
   fetchStoreCloseoutsViaApi,
   hasCloseoutApiActorMapping,
   hasCloseoutApiStoreMapping,
@@ -161,8 +162,45 @@ export function usePrototypeRuntimeCloseoutsApi({
     storeOperationalSettings,
   ]);
 
+  const syncDeleteCloseoutToApi = useCallback(async ({ closeout }) => {
+    if (!closeoutsApiEnabled) {
+      throw new Error(lang === "ar"
+        ? "مسار API للتقفيلات غير مفعّل."
+        : "Closeouts API is disabled.");
+    }
+    if (
+      !isUuid(closeoutsApiOrganizationId)
+      || !hasCloseoutApiActorMapping(apiActorUserId)
+      || !hasCloseoutApiStoreMapping(closeout?.storeId)
+    ) {
+      throw new Error(lang === "ar"
+        ? "تعذر حذف التقفيلة: سياق API غير مكتمل (منظمة/مستخدم/محل)."
+        : "Closeout delete blocked: API context is incomplete (organization/user/store).");
+    }
+    const result = await deleteCloseoutViaApi({
+      organizationId: closeoutsApiOrganizationId,
+      actorUserId: apiActorUserId,
+      actorRole: apiActorRole,
+      storeId: closeout.storeId,
+      closeoutId: closeout.id,
+    });
+    if (entriesApiEnabled) {
+      await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
+    }
+    return result;
+  }, [
+    apiActorRole,
+    apiActorUserId,
+    closeoutsApiEnabled,
+    closeoutsApiOrganizationId,
+    entriesApiEnabled,
+    lang,
+    loadOperationalEntriesFromApi,
+  ]);
+
   return {
     syncSubmitCloseoutToApi,
+    syncDeleteCloseoutToApi,
     loadCloseoutsFromApi,
   };
 }
