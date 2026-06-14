@@ -9,7 +9,7 @@ import {
   notebookLinesBackground,
   notebookThemes,
 } from "@/features/daily-closeouts/notebook-themes";
-import { formatCalendarDate, formatSelectedMonth } from "@/features/reports/client/report-period-labels";
+import { formatCalendarDate, formatCalendarMonth, formatSelectedMonth } from "@/features/reports/client/report-period-labels";
 import {
   businessLocation,
   businessName,
@@ -139,9 +139,6 @@ function FinancialRows({ lang, rows = [] }) {
   );
 }
 
-function formatCalendarMonth(year, month, lang) {
-  return new Intl.DateTimeFormat(lang === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-US", { month: "long", year: "numeric" }).format(new Date(year, month, 1));
-}
 function isoCalendarDate(year, month, day) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
@@ -183,14 +180,24 @@ function DateSelector({ lang, period, setPeriod, allowedPeriods = ["day", "month
   }, [open]);
   const modes = allowedPeriods.map((id) => ({ id, label: id === "day" ? "day" : id === "month" ? "month" : id === "year" ? "year" : "custom" }));
   const activeDate = selectedDate || todayIsoDate();
-  const selectedLabel = period === "day" ? formatCalendarDate(activeDate, lang) : period === "month" ? formatSelectedMonth(selectedMonth, lang) : period === "year" ? selectedYear : `${customFrom} â€” ${customTo}`;
+  const selectedLabel = period === "day"
+    ? formatCalendarDate(activeDate, lang)
+    : period === "month"
+      ? formatSelectedMonth(selectedMonth, lang)
+      : period === "year"
+        ? selectedYear
+        : `${formatCalendarDate(customFrom, lang)} — ${formatCalendarDate(customTo, lang)}`;
   const promptKey = period === "day" ? "selectDay" : period === "month" ? "selectMonth" : period === "year" ? "selectYear" : "selectRange";
   const invalidCustomRange = period === "custom" && draftCustomFrom > draftCustomTo;
   const weekDays = lang === "ar" ? ["ح", "ن", "ث", "ر", "خ", "ج", "س"] : ["S", "M", "T", "W", "T", "F", "S"];
   const firstWeekday = new Date(calendarView.year, calendarView.month, 1).getDay();
   const numberOfDays = new Date(calendarView.year, calendarView.month + 1, 0).getDate();
   const calendarDates = Array.from({ length: firstWeekday }, (_, index) => ({ key: `blank-${index}` })).concat(Array.from({ length: numberOfDays }, (_, index) => ({ key: `${index + 1}`, day: index + 1, iso: isoCalendarDate(calendarView.year, calendarView.month, index + 1) })));
-  const yearMonths = Array.from({ length: 12 }, (_, index) => ({ month: index, value: `${monthPickerYear}-${String(index + 1).padStart(2, "0")}`, label: formatCalendarMonth(monthPickerYear, index, lang).replace(String(monthPickerYear), "").trim() }));
+  const yearMonths = Array.from({ length: 12 }, (_, index) => ({
+    month: index,
+    value: `${monthPickerYear}-${String(index + 1).padStart(2, "0")}`,
+    label: String(index + 1).padStart(2, "0"),
+  }));
   const previousMonth = () => setCalendarView((current) => current.month === 0 ? { year: current.year - 1, month: 11 } : { year: current.year, month: current.month - 1 });
   const nextMonth = () => setCalendarView((current) => current.month === 11 ? { year: current.year + 1, month: 0 } : { year: current.year, month: current.month + 1 });
   const openCalendar = () => {

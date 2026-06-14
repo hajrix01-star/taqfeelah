@@ -78,7 +78,7 @@ export function OwnerRegisterGeneralReportList({
             key={row.id || row.date}
             className={`${GRID_CLASS} min-h-[44px] py-2 text-taq-meta ${index < rows.length - 1 ? "border-b border-[#F0EBE0]" : ""}`}
           >
-            <span className="truncate font-bold text-[#112A46]">{formatCalendarDate(row.date, lang)}</span>
+            <span className="truncate font-bold text-[#112A46]" dir="ltr">{formatCalendarDate(row.date, lang)}</span>
             <strong className="text-center tabular-nums text-[#257844]">
               <MoneyValue value={money(row.sales, lang)} />
             </strong>

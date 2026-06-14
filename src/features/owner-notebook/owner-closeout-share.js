@@ -26,7 +26,7 @@ function periodScopePhrase(lang, period, periodLabel) {
 
 /**
  * WhatsApp caption for owner closeout image share.
- * Example (ar/day): تقفيلة محل ARZ ليوم 13 يونيو 2026
+ * Example (ar/day): تقفيلة محل ARZ ليوم 13-06-2026
  */
 export function buildOwnerCloseoutShareCaption({
   lang = "ar",

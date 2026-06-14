@@ -1,4 +1,5 @@
 import { countCloseoutAttachments } from "@/features/closeouts/client/closeout-attachment-utils";
+import { formatNumericDate } from "@/features/reports/client/report-period-labels";
 import { closeoutStatusLabel } from "./closeout-status";
 import { computeCloseoutTotals, salesArrayFromRecord } from "./closeout-calculations";
 
@@ -6,11 +7,8 @@ function money(value) {
   return Number(value || 0).toLocaleString("en-US");
 }
 
-function formatArabicDate(isoDate) {
-  if (!isoDate) return "";
-  const [year, month, day] = isoDate.split("-").map(Number);
-  const months = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
-  return `${day} ${months[month - 1]} ${year}`;
+function formatShareDate(isoDate) {
+  return formatNumericDate(isoDate);
 }
 
 function outflowLineLabel(item, lang) {
@@ -111,7 +109,7 @@ export async function createCloseoutShareImage(closeout, options = {}) {
 
   y = topMargin + lineStep * 1.25;
   tx(storeName, labelX, y, 32, "700", navy);
-  tx(formatArabicDate(closeout.date), valueX, y, 25, "700", muted, "left");
+  tx(formatShareDate(closeout.date), valueX, y, 25, "700", muted, "left");
 
   y += lineStep * 1.4;
   tx(lang === "ar" ? "ملخص اليوم" : "Day summary", width / 2, y, 30, "800", navy, "center");
