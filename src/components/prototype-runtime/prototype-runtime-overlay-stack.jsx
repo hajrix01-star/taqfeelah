@@ -186,6 +186,7 @@ export function PrototypeRuntimeOverlayStack({
         archivedBusinessIds={archivedBusinessIds}
         notebookExportApiEnabled={phase9ApiEnabled && entriesApiEnabled}
         notebookExportAuth={runtimeApiAuth}
+        allowedFormats={shareSnapshot?.screen === "register" ? ["excel", "pdf"] : ["image", "pdf", "excel"]}
       />
       <OwnerCloseoutModals
         lang={lang}
