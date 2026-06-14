@@ -1643,6 +1643,7 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
             . ./.env.production
             set +a
             node scripts/cleanup-orphan-entries.mjs --apply || true
+            node scripts/cleanup-inline-attachments.mjs --apply --vacuum || true
             pnpm exec drizzle-kit migrate || pnpm exec drizzle-kit push --force
             node scripts/baseline-drizzle-migrations.mjs
             """
