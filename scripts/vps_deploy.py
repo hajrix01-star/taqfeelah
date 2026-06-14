@@ -19,6 +19,7 @@ Environment variables:
   VPS_PROBE_RETRY_DELAY_SECONDS (optional seconds, default: 12)
   VPS_PREFLIGHT_WAIT_SECONDS (optional seconds, default: 0)
   VPS_SSH_COMMAND_TIMEOUT (optional seconds, default: 0 = no limit)
+  VPS_SKIP_REMOTE_BUILD (optional, default: false — skip pnpm build when CI artifact includes .next)
   VPS_RUN_REMOTE_REPAIR_SCRIPTS (optional, default: false — skip legacy seed/repair on routine deploy)
   POST_DEPLOY_BASELINE_VERIFY (optional, default: true on verify)
 """
@@ -816,6 +817,24 @@ def remote_repair_scripts_enabled() -> bool:
     return env_flag_enabled("VPS_RUN_REMOTE_REPAIR_SCRIPTS")
 
 
+def skip_remote_build_enabled() -> bool:
+    return env_flag_enabled("VPS_SKIP_REMOTE_BUILD")
+
+
+def resolve_deploy_archive(
+    local_path: str,
+    artifact_path: str | None = None,
+) -> tuple[str, bool]:
+    """Return (archive_path, delete_after_upload)."""
+    if artifact_path:
+        resolved = Path(artifact_path).resolve()
+        if not resolved.is_file():
+            raise RuntimeError(f"Deploy artifact not found: {resolved}")
+        safe_print(f"Using CI production artifact: {resolved}")
+        return str(resolved), False
+    return build_source_archive(local_path), True
+
+
 def cmd_audit(vps: VPS) -> None:
     checks: Iterable[str] = [
         "hostname && whoami && uptime",
@@ -1100,10 +1119,17 @@ def run_tcp_connectivity_preflight(host: str, port: int, tcp_probe_timeout: floa
         )
 
 
-def cmd_deploy_production(vps: VPS, domain: str, www_domain: str, local_path: str) -> None:
+def cmd_deploy_production(
+    vps: VPS,
+    domain: str,
+    www_domain: str,
+    local_path: str,
+    *,
+    artifact_path: str | None = None,
+) -> None:
     """Preflight + deploy + verify in one SSH session (fewer connection storms)."""
     cmd_preflight(vps, domain, www_domain)
-    cmd_deploy_pm2(vps, domain, www_domain, local_path)
+    cmd_deploy_pm2(vps, domain, www_domain, local_path, artifact_path=artifact_path)
     cmd_verify(vps, domain, www_domain)
 
 
@@ -1641,7 +1667,14 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
         run_post_deploy_baseline(vps)
 
 
-def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> None:
+def cmd_deploy_pm2(
+    vps: VPS,
+    domain: str,
+    www_domain: str,
+    local_path: str,
+    *,
+    artifact_path: str | None = None,
+) -> None:
     app_dir = "/opt/taqfeelah"
     remote_archive = "/tmp/taqfeelah-src.tar.gz"
     nginx_conf = f"/etc/nginx/sites-available/{domain}.conf"
@@ -1671,14 +1704,15 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
         existing_env["DATABASE_URL"] = ensure_vps_postgres(vps)
 
     print_section("Upload application source")
-    archive_path = build_source_archive(local_path)
+    archive_path, delete_archive = resolve_deploy_archive(local_path, artifact_path)
     try:
         vps.upload(archive_path, remote_archive)
     finally:
-        try:
-            os.remove(archive_path)
-        except OSError:
-            pass
+        if delete_archive:
+            try:
+                os.remove(archive_path)
+            except OSError:
+                pass
 
     print_section("Extract application source")
     vps.run(
@@ -1706,25 +1740,45 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
         ).strip()
     )
 
-    print_section("Install dependencies and build app")
-    deploy_commit = os.environ.get("DEPLOY_COMMIT", "").strip() or os.environ.get("GITHUB_SHA", "").strip()
-    release_build_export = (
-        f'export RELEASE_BUILD={shlex.quote(deploy_commit)} '
-        f'NEXT_PUBLIC_RELEASE_BUILD={shlex.quote(deploy_commit)}; '
-        if deploy_commit
-        else ""
-    )
-    vps.run(
-        textwrap.dedent(
-            f"""
-            set -euo pipefail
-            cd {shlex.quote(app_dir)}
-            npm install -g pnpm@9.15.9
-            pnpm install --frozen-lockfile
-            {release_build_export}pnpm run build
-            """
+    skip_remote_build = skip_remote_build_enabled()
+    if skip_remote_build:
+        print_section("Install dependencies (CI build artifact — skip remote build)")
+        vps.run(
+            textwrap.dedent(
+                f"""
+                set -euo pipefail
+                cd {shlex.quote(app_dir)}
+                npm install -g pnpm@9.15.9
+                pnpm install --frozen-lockfile
+                if [ ! -f .next/BUILD_ID ]; then
+                  echo "Missing .next/BUILD_ID — CI artifact must include a production build" >&2
+                  exit 1
+                fi
+                """
+            ).strip()
+        )
+    else:
+        print_section("Install dependencies and build app")
+        deploy_commit = os.environ.get("DEPLOY_COMMIT", "").strip() or os.environ.get(
+            "GITHUB_SHA", ""
         ).strip()
-    )
+        release_build_export = (
+            f'export RELEASE_BUILD={shlex.quote(deploy_commit)} '
+            f'NEXT_PUBLIC_RELEASE_BUILD={shlex.quote(deploy_commit)}; '
+            if deploy_commit
+            else ""
+        )
+        vps.run(
+            textwrap.dedent(
+                f"""
+                set -euo pipefail
+                cd {shlex.quote(app_dir)}
+                npm install -g pnpm@9.15.9
+                pnpm install --frozen-lockfile
+                {release_build_export}pnpm run build
+                """
+            ).strip()
+        )
 
     print_section("Apply database schema")
     vps.run(
@@ -2203,6 +2257,11 @@ def main() -> int:
     p_deploy_pm2.add_argument("--domain", required=True)
     p_deploy_pm2.add_argument("--www-domain", required=True)
     p_deploy_pm2.add_argument("--local-path", default=".")
+    p_deploy_pm2.add_argument(
+        "--artifact-path",
+        default="",
+        help="Pre-built tar.gz from CI (includes .next). Skips remote pnpm build.",
+    )
 
     p_deploy_production = sub.add_parser(
         "deploy-production",
@@ -2211,6 +2270,11 @@ def main() -> int:
     p_deploy_production.add_argument("--domain", required=True)
     p_deploy_production.add_argument("--www-domain", required=True)
     p_deploy_production.add_argument("--local-path", default=".")
+    p_deploy_production.add_argument(
+        "--artifact-path",
+        default="",
+        help="Pre-built tar.gz from CI (includes .next). Skips remote pnpm build.",
+    )
 
     sub.add_parser("repair-docker")
     sub.add_parser("docker-debug")
@@ -2225,6 +2289,7 @@ def main() -> int:
     p_reset_owner.add_argument("--password", default=os.environ.get("AUTH_OWNER_PASSWORD", "123"))
 
     args = parser.parse_args()
+    artifact_path = getattr(args, "artifact_path", "").strip() or None
 
     host = get_required_env("VPS_HOST")
     get_required_env("VPS_USER")
@@ -2259,9 +2324,21 @@ def main() -> int:
         elif args.action == "preflight":
             cmd_preflight(vps, args.domain, args.www_domain)
         elif args.action == "deploy-pm2":
-            cmd_deploy_pm2(vps, args.domain, args.www_domain, args.local_path)
+            cmd_deploy_pm2(
+                vps,
+                args.domain,
+                args.www_domain,
+                args.local_path,
+                artifact_path=artifact_path,
+            )
         elif args.action == "deploy-production":
-            cmd_deploy_production(vps, args.domain, args.www_domain, args.local_path)
+            cmd_deploy_production(
+                vps,
+                args.domain,
+                args.www_domain,
+                args.local_path,
+                artifact_path=artifact_path,
+            )
         elif args.action == "repair-docker":
             cmd_repair_docker(vps)
         elif args.action == "docker-debug":

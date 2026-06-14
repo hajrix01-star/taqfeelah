@@ -36,6 +36,9 @@ jobs:
   validate:
     name: Validate build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -70,13 +73,46 @@ jobs:
         run: pnpm smoke:browser
 
       - name: Build
+        env:
+          DEPLOY_COMMIT: ${{ github.sha }}
+          RELEASE_BUILD: ${{ github.sha }}
+          NEXT_PUBLIC_RELEASE_BUILD: ${{ github.sha }}
+          APP_MODE: production
+          NEXT_PUBLIC_APP_MODE: production
+          ALLOW_HEADER_AUTH_CONTEXT: "false"
+          AUTH_DB_CREDENTIALS_ENABLED: "true"
+          NEXT_PUBLIC_AUTH_API_ENABLED: "true"
+          SAAS_ADMIN_API_ENABLED: "true"
+          NEXT_PUBLIC_SAAS_ADMIN_ENABLED: "true"
+          NEXT_PUBLIC_CLOSEOUTS_API_ENABLED: "true"
+          NEXT_PUBLIC_ENTRIES_API_ENABLED: "true"
+          NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED: "true"
+          NEXT_PUBLIC_ORG_CONFIG_API_ENABLED: "true"
+          NEXT_PUBLIC_PHASE9_API_ENABLED: "true"
+          NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE: "true"
+          NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID: ${{ secrets.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID }}
+          NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID: ${{ secrets.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID }}
         run: pnpm build
+
+      - name: Package production artifact
+        run: node scripts/package-production-artifact.mjs
+
+      - name: Upload production artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-build-${{ github.sha }}
+          path: taqfeelah-production-artifact.tar.gz
+          retention-days: 7
+          if-no-files-found: error
 
   deploy:
     name: Deploy to VPS
     needs: [validate]
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -154,6 +190,11 @@ jobs:
           echo "VPS_RUN_REMOTE_REPAIR_SCRIPTS=${run_repairs}" >> "$GITHUB_ENV"
           echo "Repair scripts on VPS: ${run_repairs} (opt-in via workflow input or [run-repairs] in commit message)"
 
+      - name: Download production artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: production-build-${{ github.sha }}
+
       - name: Deploy to VPS (single SSH session)
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -168,7 +209,8 @@ jobs:
           VPS_PROBE_RETRIES: "3"
           VPS_PROBE_RETRY_DELAY_SECONDS: "20"
           VPS_PREFLIGHT_WAIT_SECONDS: ${{ env.VPS_PREFLIGHT_WAIT_SECONDS }}
-          VPS_SSH_COMMAND_TIMEOUT: "2400"
+          VPS_SSH_COMMAND_TIMEOUT: "1200"
+          VPS_SKIP_REMOTE_BUILD: "true"
           VPS_RUN_REMOTE_REPAIR_SCRIPTS: ${{ env.VPS_RUN_REMOTE_REPAIR_SCRIPTS }}
           POST_DEPLOY_BASELINE_VERIFY: "false"
           RESET_FOUNDATION_ON_DEPLOY: ${{ contains(github.event.head_commit.message, '[reset-foundation]') }}
@@ -209,7 +251,8 @@ jobs:
             if python scripts/vps_deploy.py deploy-production \
               --domain taqfeelah.com \
               --www-domain www.taqfeelah.com \
-              --local-path .; then
+              --local-path . \
+              --artifact-path taqfeelah-production-artifact.tar.gz; then
               exit 0
             fi
             if [ "$workflow_attempt" -eq "$max_workflow_attempts" ]; then

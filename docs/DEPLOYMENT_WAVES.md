@@ -195,6 +195,10 @@ pnpm saas:aggregate    # اختياري — لملء engagement snapshots
 
 ## استكشاف مشاكل النشر (SSH من GitHub)
 
+**نموذج النشر الحالي:** CI يبني مرة واحدة → يرفع artifact (يشمل `.next`) → VPS يثبت الاعتماديات ويشغّل migrate فقط (بدون `pnpm build`).
+
+**الوقت المتوقع:** ~6–10 دقائق إجمالاً (validate ~4–6 د + deploy ~2–4 د).
+
 إذا فشل **Preflight VPS connectivity** وظهر `TCP *:22 — blocked or timed out`:
 
 1. **الموقع قد يبقى شغالاً** — هذا يعني أن Nginx والتطبيق يعملان، لكن GitHub لا يستطيع الدخول عبر SSH للنشر.
