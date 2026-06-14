@@ -14,6 +14,7 @@ import { newestEntries } from "@/features/operations/operational-analytics";
 import {
   DEFAULT_REGISTER_LOG_FILTERS,
   buildRegisterCloseoutSummaries,
+  buildRegisterDayReportRows,
   buildRegisterSalesChannelOptions,
   filterRegisterLogEntries,
   registerLogFilterCount,
@@ -23,6 +24,8 @@ import {
 import {
   logPeriodScopeLabel,
 } from "@/features/reports/client/report-period-labels";
+import { useStoreReports } from "@/features/reports/client/use-store-reports";
+import { entryIsActive, summarizeEntries } from "@/features/operations/operational-analytics";
 import { ENTRIES_API_DB_SOURCE } from "./prototype-runtime-boot";
 import {
   channels,
@@ -44,6 +47,7 @@ import { Badge } from "./prototype-runtime-shell-ui";
 import AttachmentLightbox from "../AttachmentLightbox";
 import { RegisterFiltersSheet } from "./owner-register-filters-sheet";
 import { OwnerRegisterCloseoutsList } from "./owner-register-closeouts-list";
+import { OwnerRegisterGeneralReportList } from "./owner-register-general-report-list";
 import { OwnerRegisterOperationsList } from "./owner-register-operations-list";
 import { RegisterStoreChips } from "./owner-register-store-filter";
 import { RegisterDashboardCard } from "./owner-register-ui-primitives";
@@ -247,6 +251,79 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
     [filteredEntries, lang, logFilters.salesChannel, salesChannelOptions],
   );
   const registerPeriodLabel = logPeriodScopeLabel(lang, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo);
+  const generalReportNeedsStore = safeBusinessId === "all";
+  const generalReportPeriodEntries = useMemo(
+    () => periodEntries.filter(entryIsActive),
+    [periodEntries],
+  );
+  const localGeneralReportRows = useMemo(
+    () => buildRegisterDayReportRows(generalReportPeriodEntries),
+    [generalReportPeriodEntries],
+  );
+  const localGeneralReportTotals = useMemo(
+    () => summarizeEntries(generalReportPeriodEntries),
+    [generalReportPeriodEntries],
+  );
+  const generalReportApiEnabled = registerEntriesApiEnabled
+    && !generalReportNeedsStore
+    && logView === "report";
+  const {
+    daysRows: apiGeneralReportRows,
+    singleStoreTotals: apiGeneralReportTotals,
+    loading: generalReportApiLoading,
+    loaded: generalReportApiLoaded,
+    error: generalReportApiError,
+  } = useStoreReports({
+    enabled: generalReportApiEnabled,
+    organizationId: registerEntriesApiOrganizationId,
+    actorUserId: registerEntriesApiActorUserId,
+    actorRole: registerEntriesApiActorRole,
+    businesses: businessesList,
+    selectedStoreId: safeBusinessId,
+    period,
+    selectedDate,
+    selectedMonth,
+    selectedYear,
+    customFrom,
+    customTo,
+    configuredChannels: channels,
+    includeOutflowTransactions: false,
+  });
+  const generalReportRows = generalReportApiEnabled && generalReportApiLoaded && !generalReportApiError
+    ? apiGeneralReportRows.map((row) => ({
+      id: row.id || row.date,
+      date: row.date || row.id,
+      sales: row.sales,
+      expense: row.expense,
+      net: row.net,
+    }))
+    : localGeneralReportRows;
+  const generalReportTotals = generalReportApiEnabled && generalReportApiLoaded && !generalReportApiError && apiGeneralReportTotals
+    ? {
+      sales: apiGeneralReportTotals.sales,
+      expense: apiGeneralReportTotals.expense,
+      net: apiGeneralReportTotals.net,
+    }
+    : {
+      sales: localGeneralReportTotals.sales,
+      expense: localGeneralReportTotals.expense,
+      net: localGeneralReportTotals.net,
+    };
+  const generalReportDashboardSummary = useMemo(
+    () => ({
+      mode: "totals",
+      sales: generalReportTotals.sales,
+      expense: generalReportTotals.expense,
+      net: generalReportTotals.net,
+    }),
+    [generalReportTotals.expense, generalReportTotals.net, generalReportTotals.sales],
+  );
+  const generalReportLoadError = generalReportApiEnabled && generalReportApiLoaded && generalReportApiError;
+  const generalReportLoadErrorMessage = lang === "ar"
+    ? "تعذر تحميل تقرير الأيام من الخادم. تم عرض البيانات المحلية المتاحة."
+    : "Failed to load the days report from the server. Showing available local data.";
+  const dashboardSummary = logView === "report" ? generalReportDashboardSummary : registerPeriodSummary;
+  const dashboardShowFilters = logView !== "report";
 
   return (
     <NotebookScrollSurface theme={notebookTheme} lang={lang}>
@@ -295,11 +372,13 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
             tabCounts={{
               closeouts: closeoutSummaries.length,
               operations: visibleEntries.length,
+              report: generalReportRows.length,
             }}
             activeFilterCount={activeFilterCount}
             onOpenFilters={openFiltersSheet}
             periodLabel={registerPeriodLabel}
-            summary={registerPeriodSummary}
+            summary={dashboardSummary}
+            showFilters={dashboardShowFilters}
           />
         </div>
 
@@ -321,7 +400,9 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
           <span className="rounded-lg bg-white px-2.5 py-1 text-[10px] font-black tabular-nums text-[#827762] ring-1 ring-[#E8E1D4]">
             {logView === "operations"
               ? `${visibleEntries.length} ${text(lang, "operations")}`
-              : `${closeoutSummaries.length} ${lang === "ar" ? "تقفيلات" : "Closeouts"}`}
+              : logView === "report"
+                ? `${generalReportRows.length} ${lang === "ar" ? "يوم" : "days"}`
+                : `${closeoutSummaries.length} ${lang === "ar" ? "تقفيلات" : "Closeouts"}`}
           </span>
         </div>
 
@@ -361,6 +442,18 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, operatio
             registerScrollId={registerScrollId}
             loadError={closeoutsLoadError}
             loadErrorMessage={closeoutsLoadErrorMessage}
+          />
+        )}
+
+        {logView === "report" && (
+          <OwnerRegisterGeneralReportList
+            lang={lang}
+            rows={generalReportRows}
+            totals={generalReportTotals}
+            loading={generalReportApiEnabled && generalReportApiLoading && !generalReportApiLoaded && !localGeneralReportRows.length}
+            loadError={generalReportLoadError && !localGeneralReportRows.length}
+            loadErrorMessage={generalReportLoadErrorMessage}
+            needsStoreSelection={generalReportNeedsStore}
           />
         )}
       </motion.section>

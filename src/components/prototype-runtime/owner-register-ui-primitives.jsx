@@ -20,6 +20,7 @@ export function RegisterViewSwitch({ lang, value, onChange, counts }) {
   const items = [
     { id: "closeouts", label: lang === "ar" ? "التقفيلات" : "Closeouts", count: counts.closeouts ?? 0 },
     { id: "operations", label: lang === "ar" ? "العمليات" : "Operations", count: counts.operations ?? 0 },
+    { id: "report", label: text(lang, "generalReportTab"), count: counts.report ?? 0, hideCount: true },
   ];
 
   return (
@@ -38,12 +39,14 @@ export function RegisterViewSwitch({ lang, value, onChange, counts }) {
             }`}
           >
             <span className="truncate">{item.label}</span>
-            <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-              active ? "bg-[#112A46] text-white" : "bg-[#112A46]/[0.07] text-[#827762]"
-            }`}
-            >
-              {item.count}
-            </span>
+            {!item.hideCount ? (
+              <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                active ? "bg-[#112A46] text-white" : "bg-[#112A46]/[0.07] text-[#827762]"
+              }`}
+              >
+                {item.count}
+              </span>
+            ) : null}
           </button>
         );
       })}
@@ -98,6 +101,7 @@ export function RegisterDashboardCard({
   onOpenFilters,
   periodLabel,
   summary,
+  showFilters = true,
 }) {
   const netPositive = summary.mode !== "channel" && Number(summary.net) >= 0;
 
@@ -108,7 +112,9 @@ export function RegisterDashboardCard({
           <div className="min-w-0 flex-1">
             <RegisterViewSwitch lang={lang} value={logView} onChange={setLogView} counts={tabCounts} />
           </div>
-          <RegisterFilterButton lang={lang} activeCount={activeFilterCount} onClick={onOpenFilters} />
+          {showFilters ? (
+            <RegisterFilterButton lang={lang} activeCount={activeFilterCount} onClick={onOpenFilters} />
+          ) : null}
         </div>
       </div>
 
