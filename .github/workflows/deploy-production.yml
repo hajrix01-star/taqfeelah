@@ -8,7 +8,7 @@ on:
       preflight_wait_minutes:
         description: "Minutes to wait before SSH probe (use after fail2ban blocks)"
         required: false
-        default: "3"
+        default: "0"
         type: choice
         options:
           - "0"
@@ -16,10 +16,18 @@ on:
           - "5"
           - "10"
           - "15"
+      run_repair_scripts:
+        description: "Run legacy seed/repair scripts on VPS (slow; use only when needed)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 concurrency:
   group: production-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -68,7 +76,7 @@ jobs:
     name: Deploy to VPS
     needs: [validate]
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -116,24 +124,35 @@ jobs:
           echo "Intermittent SSH timeout: GitHub runner IP may be blocked — re-run uses a different IP."
           echo "Set VPS_HOST to the VPS public IP (e.g. 77.37.51.67), not a hostname."
 
-      - name: Configure SSH cooldown
+      - name: Configure deploy timing and repair flags
         env:
-          DISPATCH_WAIT_MINUTES: ${{ github.event.inputs.preflight_wait_minutes || '3' }}
+          DISPATCH_WAIT_MINUTES: ${{ github.event.inputs.preflight_wait_minutes || '0' }}
+          DISPATCH_RUN_REPAIRS: ${{ github.event.inputs.run_repair_scripts || 'false' }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
           if [ "$RUN_ATTEMPT" -gt 1 ]; then
             wait_seconds=$((DISPATCH_WAIT_MINUTES * 60))
-            if [ "$wait_seconds" -lt 300 ]; then wait_seconds=300; fi
-            echo "Re-run attempt ${RUN_ATTEMPT}: cooldown ${wait_seconds}s (applied in deploy script)…"
+            if [ "$wait_seconds" -lt 180 ]; then wait_seconds=180; fi
+            echo "Re-run attempt ${RUN_ATTEMPT}: cooldown ${wait_seconds}s before SSH…"
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$DISPATCH_WAIT_MINUTES" != "0" ]; then
             wait_seconds=$((DISPATCH_WAIT_MINUTES * 60))
             echo "Manual deploy: cooldown ${wait_seconds}s before SSH…"
           else
-            wait_seconds=300
-            echo "Push deploy: cooldown ${wait_seconds}s before SSH (fail2ban tolerance)…"
+            wait_seconds=0
+            echo "Routine deploy: no preflight cooldown (VPS_PREFLIGHT_WAIT_SECONDS=0)."
           fi
           echo "VPS_PREFLIGHT_WAIT_SECONDS=${wait_seconds}" >> "$GITHUB_ENV"
+
+          run_repairs="false"
+          if [ "$DISPATCH_RUN_REPAIRS" = "true" ]; then
+            run_repairs="true"
+          elif printf '%s' "$COMMIT_MESSAGE" | grep -q '\[run-repairs\]'; then
+            run_repairs="true"
+          fi
+          echo "VPS_RUN_REMOTE_REPAIR_SCRIPTS=${run_repairs}" >> "$GITHUB_ENV"
+          echo "Repair scripts on VPS: ${run_repairs} (opt-in via workflow input or [run-repairs] in commit message)"
 
       - name: Deploy to VPS (single SSH session)
         env:
@@ -149,7 +168,9 @@ jobs:
           VPS_PROBE_RETRIES: "3"
           VPS_PROBE_RETRY_DELAY_SECONDS: "20"
           VPS_PREFLIGHT_WAIT_SECONDS: ${{ env.VPS_PREFLIGHT_WAIT_SECONDS }}
-          POST_DEPLOY_BASELINE_VERIFY: "true"
+          VPS_SSH_COMMAND_TIMEOUT: "2400"
+          VPS_RUN_REMOTE_REPAIR_SCRIPTS: ${{ env.VPS_RUN_REMOTE_REPAIR_SCRIPTS }}
+          POST_DEPLOY_BASELINE_VERIFY: "false"
           RESET_FOUNDATION_ON_DEPLOY: ${{ contains(github.event.head_commit.message, '[reset-foundation]') }}
           RESET_FOUNDATION_CONFIRM: "reset-modern-foundation"
           DEPLOYMENT_WAVE: "7"

@@ -17,6 +17,9 @@ Environment variables:
   VPS_RETRY_DELAY_SECONDS (optional seconds, default: 8)
   VPS_PROBE_RETRIES (optional, default: 2)
   VPS_PROBE_RETRY_DELAY_SECONDS (optional seconds, default: 12)
+  VPS_PREFLIGHT_WAIT_SECONDS (optional seconds, default: 0)
+  VPS_SSH_COMMAND_TIMEOUT (optional seconds, default: 0 = no limit)
+  VPS_RUN_REMOTE_REPAIR_SCRIPTS (optional, default: false — skip legacy seed/repair on routine deploy)
   POST_DEPLOY_BASELINE_VERIFY (optional, default: true on verify)
 """
 
@@ -326,6 +329,7 @@ class VPS:
         connect_timeout: float = 20,
         connect_retries: int = 2,
         retry_delay_seconds: float = 8,
+        command_timeout: float = 0,
     ) -> None:
         self.host = host
         self.user = user
@@ -335,6 +339,7 @@ class VPS:
         self.connect_timeout = connect_timeout
         self.connect_retries = max(1, connect_retries)
         self.retry_delay_seconds = max(0.0, retry_delay_seconds)
+        self.command_timeout = max(0.0, command_timeout)
         self.client: paramiko.SSHClient | None = None
 
     def _new_client(self) -> paramiko.SSHClient:
@@ -439,9 +444,36 @@ class VPS:
         if self.client is None:
             raise RuntimeError("VPS SSH client is not connected")
         stdin, stdout, stderr = self.client.exec_command(command, get_pty=True)
-        out = stdout.read().decode("utf-8", errors="ignore")
-        err = stderr.read().decode("utf-8", errors="ignore")
-        code = stdout.channel.recv_exit_status()
+        channel = stdout.channel
+        out_chunks: list[str] = []
+        err_chunks: list[str] = []
+        deadline = (
+            time.monotonic() + self.command_timeout if self.command_timeout > 0 else None
+        )
+
+        while True:
+            if channel.recv_ready():
+                out_chunks.append(channel.recv(65535).decode("utf-8", errors="ignore"))
+            if channel.recv_stderr_ready():
+                err_chunks.append(channel.recv_stderr(65535).decode("utf-8", errors="ignore"))
+            if channel.exit_status_ready():
+                while channel.recv_ready():
+                    out_chunks.append(channel.recv(65535).decode("utf-8", errors="ignore"))
+                while channel.recv_stderr_ready():
+                    err_chunks.append(channel.recv_stderr(65535).decode("utf-8", errors="ignore"))
+                break
+            if deadline is not None and time.monotonic() > deadline:
+                channel.close()
+                preview = command.replace("\n", " ")[:240]
+                raise RuntimeError(
+                    "Remote command timed out after "
+                    f"{self.command_timeout:.0f}s: {preview}"
+                )
+            time.sleep(0.1)
+
+        out = "".join(out_chunks)
+        err = "".join(err_chunks)
+        code = channel.recv_exit_status()
         if check and code != 0:
             raise RuntimeError(
                 f"Remote command failed ({code}): {command}\nSTDOUT:\n{out}\nSTDERR:\n{err}"
@@ -463,6 +495,13 @@ def parse_env_int(name: str, default: int) -> int:
     if raw is None or not str(raw).strip():
         return default
     return int(str(raw).strip())
+
+
+def parse_env_float(name: str, default: float) -> float:
+    raw = os.environ.get(name, "")
+    if raw is None or not str(raw).strip():
+        return default
+    return float(str(raw).strip())
 
 
 def get_required_env(name: str) -> str:
@@ -492,6 +531,7 @@ def open_vps_client(
     connect_timeout: float | None = None,
     connect_retries: int | None = None,
     retry_delay_seconds: float | None = None,
+    command_timeout: float | None = None,
 ) -> VPS:
     host = get_required_env("VPS_HOST")
     user = get_required_env("VPS_USER")
@@ -512,6 +552,9 @@ def open_vps_client(
         retry_delay_seconds=retry_delay_seconds
         if retry_delay_seconds is not None
         else float(os.environ.get("VPS_RETRY_DELAY_SECONDS", "8")),
+        command_timeout=command_timeout
+        if command_timeout is not None
+        else parse_env_float("VPS_SSH_COMMAND_TIMEOUT", 0),
     )
 
 
@@ -767,6 +810,10 @@ def build_production_env_payload(merged_env: dict[str, str]) -> str:
 
 def env_flag_enabled(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() == "true"
+
+
+def remote_repair_scripts_enabled() -> bool:
+    return env_flag_enabled("VPS_RUN_REMOTE_REPAIR_SCRIPTS")
 
 
 def cmd_audit(vps: VPS) -> None:
@@ -1737,6 +1784,11 @@ def cmd_deploy_pm2(vps: VPS, domain: str, www_domain: str, local_path: str) -> N
 
     if reset_foundation_on_deploy:
         safe_print("Skipping legacy seed/repair scripts after modern foundation reset.")
+    elif not remote_repair_scripts_enabled():
+        safe_print(
+            "Skipping legacy seed/repair scripts "
+            "(VPS_RUN_REMOTE_REPAIR_SCRIPTS is not true)."
+        )
     else:
         print_section("Seed closeouts foundation when DATABASE_URL is configured")
         _, seed_out, seed_err = vps.run(
