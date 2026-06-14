@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { PROTOTYPE_SALES_CHANNEL_IDS } from "@/core/client/sales-channel-catalog";
 import { getDb } from "@/core/db/client";
 import { auditEvents, organizations, stores } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import { ERROR_CODES } from "@/core/errors/error-codes";
 import { catalogAppError } from "@/core/errors/normalize-error";
 import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
+import { buildDefaultStoreChannelSettings } from "@/features/org-config/server/build-default-store-channel-settings";
 import { provisionSalesChannels } from "@/features/runtime-settings/server/provision-sales-channels";
 
 const inputSchema = z.object({
@@ -16,20 +16,6 @@ const inputSchema = z.object({
   name: z.string().trim().min(1).max(120),
   location: z.string().trim().max(240).optional(),
 });
-
-function buildDefaultStoreChannelSettings(storeId: string) {
-  const channels = PROTOTYPE_SALES_CHANNEL_IDS.map((id) => ({
-    id,
-    text: id,
-    retired: false,
-  }));
-  return {
-    [storeId]: {
-      channels,
-      activeIds: [...PROTOTYPE_SALES_CHANNEL_IDS],
-    },
-  };
-}
 
 export async function createSaasAccountStore(rawInput: z.infer<typeof inputSchema>) {
   const parsed = inputSchema.safeParse(rawInput);

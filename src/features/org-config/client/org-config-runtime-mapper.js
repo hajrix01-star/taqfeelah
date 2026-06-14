@@ -1,4 +1,4 @@
-import { CreditCard, ShoppingBag, Smartphone, Wallet } from "lucide-react";
+import { CreditCard, Landmark, ShoppingBag, Smartphone, Wallet } from "lucide-react";
 import { normalizeStoreOperationalSettings } from "@/domain/store-operational-settings/normalize";
 import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
 
@@ -12,6 +12,7 @@ export function assertCanonicalUuidId(entityName, value) {
 
 const CHANNEL_TEMPLATES = {
   cash: { id: "cash", text: "cash", icon: Wallet },
+  bank: { id: "bank", text: "bank", icon: Landmark },
   mada: { id: "mada", text: "mada", icon: CreditCard },
   apple: { id: "apple", text: "apple", icon: Smartphone },
   jahez: { id: "jahez", text: "jahez", icon: ShoppingBag },
@@ -22,6 +23,9 @@ const CHANNEL_TEMPLATES = {
 
 const CHANNEL_NAME_TO_LEGACY = {
   cash: "cash",
+  bank: "bank",
+  بنك: "bank",
+  نقد: "cash",
   mada: "mada",
   "apple pay": "apple",
   jahez: "jahez",
