@@ -1,4 +1,5 @@
 import { formatOutflowRatio } from "@/core/money/halalas";
+import { resolveAggregatedChannelShape } from "@/features/org-config/client/sales-channel-display";
 import { mapDaySummaryToUiTotals } from "./map-day-summary-to-ui";
 
 export function mapPeriodSummaryToTotals(apiSummary) {
@@ -42,13 +43,10 @@ export function mapChannelsReportToUiRows(channels = [], configuredChannels = []
   (Array.isArray(channels) ? channels : []).forEach((row) => {
     const mappedId = reverseChannelMap[row?.salesChannelId] || row?.salesChannelId;
     const configured = configuredById.get(mappedId);
-    const current = merged.get(mappedId) || configured || {
-      id: mappedId,
-      custom: !configured,
-      nameAr: row?.channelName || mappedId,
-      nameEn: row?.channelName || mappedId,
-      amount: 0,
-    };
+    const current = merged.get(mappedId) || configured || resolveAggregatedChannelShape({
+      channelId: mappedId,
+      name: row?.channelName || mappedId,
+    }, configuredChannels);
     merged.set(mappedId, {
       ...current,
       amount: Number(row?.amount?.amountHalalas || 0) / 100,

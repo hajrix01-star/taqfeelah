@@ -3,6 +3,7 @@ import { z } from "zod";
 /** Stable DB UUIDs for prototype/UI legacy sales channel ids. */
 export const DEFAULT_SALES_CHANNEL_UUIDS: Record<string, string> = {
   cash: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+  bank: "b1a2c3d4-e5f6-4789-a012-3456789abcde",
   card: "bb16ea8f-8abf-4ca9-ab0d-e3a8f69f8db1",
   online: "f0f8dd28-4fbe-4bf2-9074-2be703f10ccd",
   mada: "7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c",
@@ -11,16 +12,32 @@ export const DEFAULT_SALES_CHANNEL_UUIDS: Record<string, string> = {
   hunger: "af6d4b5c-1e7a-4b2d-a4f5-6a7b8c9d0e1f",
 };
 
-export const PROTOTYPE_SALES_CHANNEL_IDS = ["cash", "mada", "apple", "jahez", "hunger"] as const;
+/** Default active sales channels for every newly provisioned store. */
+export const DEFAULT_NEW_STORE_SALES_CHANNEL_IDS = ["cash", "bank"] as const;
+
+/** @deprecated Use DEFAULT_NEW_STORE_SALES_CHANNEL_IDS */
+export const PROTOTYPE_SALES_CHANNEL_IDS = DEFAULT_NEW_STORE_SALES_CHANNEL_IDS;
 
 const CHANNEL_LABELS: Record<string, string> = {
   cash: "Cash",
+  bank: "Bank",
   card: "Card",
   online: "Online",
   mada: "Mada",
   apple: "Apple Pay",
   jahez: "Jahez",
   hunger: "HungerStation",
+};
+
+const CHANNEL_ARABIC_LABELS: Record<string, string> = {
+  cash: "نقد",
+  bank: "بنك",
+  card: "بطاقة",
+  online: "أونلاين",
+  mada: "مدى",
+  apple: "Apple Pay",
+  jahez: "جاهز",
+  hunger: "هنقرستيشن",
 };
 
 export function isUuid(value: string): boolean {
@@ -48,6 +65,29 @@ export function salesChannelDisplayName(channel: {
         ? channel.id.trim()
         : "";
   return CHANNEL_LABELS[legacyId] || legacyId || "Channel";
+}
+
+export function defaultSalesChannelDbName(channel: {
+  id?: string;
+  legacyId?: string;
+  custom?: boolean;
+  nameEn?: string;
+  nameAr?: string;
+  text?: string;
+}): string {
+  if (channel.custom) {
+    const nameAr = typeof channel.nameAr === "string" ? channel.nameAr.trim() : "";
+    const nameEn = typeof channel.nameEn === "string" ? channel.nameEn.trim() : "";
+    return nameAr || nameEn || String(channel.id || "Channel");
+  }
+  const legacyId = typeof channel.legacyId === "string" && channel.legacyId.trim()
+    ? channel.legacyId.trim()
+    : typeof channel.text === "string" && channel.text.trim()
+      ? channel.text.trim()
+      : typeof channel.id === "string"
+        ? channel.id.trim()
+        : "";
+  return CHANNEL_ARABIC_LABELS[legacyId] || CHANNEL_LABELS[legacyId] || legacyId || "Channel";
 }
 
 export function resolveLegacySalesChannelUuid(

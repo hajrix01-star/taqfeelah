@@ -1,21 +1,7 @@
-import { PROTOTYPE_SALES_CHANNEL_IDS } from "@/core/client/sales-channel-catalog";
 import { getDb } from "@/core/db/client";
 import { auditEvents } from "@/core/db/schema";
+import { buildDefaultStoreChannelSettings } from "@/features/org-config/server/build-default-store-channel-settings";
 import { provisionSalesChannels } from "@/features/runtime-settings/server/provision-sales-channels";
-
-function buildDefaultStoreChannelSettings(storeId: string) {
-  const channels = PROTOTYPE_SALES_CHANNEL_IDS.map((id) => ({
-    id,
-    text: id,
-    retired: false,
-  }));
-  return {
-    [storeId]: {
-      channels,
-      activeIds: [...PROTOTYPE_SALES_CHANNEL_IDS],
-    },
-  };
-}
 
 type ProvisionSaasAccountFoundationInput = {
   organizationId: string;

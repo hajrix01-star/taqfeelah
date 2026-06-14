@@ -1,24 +1,25 @@
-import { Wallet, CreditCard, Smartphone, ShoppingBag } from "lucide-react";
+import { Wallet, Landmark } from "lucide-react";
+import { DEFAULT_NEW_STORE_SALES_CHANNEL_IDS } from "@/core/client/sales-channel-catalog";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import {
   createDefaultStoreChannelConfig,
   resolveStoreChannelConfig as readStoreChannelConfig,
 } from "@/features/org-config/client/store-channel-config";
+import { resolveSalesChannelLabel } from "@/features/org-config/client/sales-channel-display";
 import copy from "./prototype-runtime-copy";
 
-const channels = [
-  { id: "cash", text: "cash", icon: Wallet },
-  { id: "mada", text: "mada", icon: CreditCard },
-  { id: "apple", text: "apple", icon: Smartphone },
-  { id: "jahez", text: "jahez", icon: ShoppingBag },
-  { id: "hunger", text: "hunger", icon: ShoppingBag },
-];
+const channelCatalog = {
+  cash: { id: "cash", text: "cash", icon: Wallet },
+  bank: { id: "bank", text: "bank", icon: Landmark },
+};
+
+const channels = DEFAULT_NEW_STORE_SALES_CHANNEL_IDS.map((id) => channelCatalog[id]);
 const DEFAULT_STORE_CHANNEL_CONFIG = createDefaultStoreChannelConfig(channels);
 const resolveStoreChannelConfig = (settings, storeId) => (
   readStoreChannelConfig(settings, storeId, DEFAULT_STORE_CHANNEL_CONFIG)
 );
 
-const channelName = (channel, lang) => channel.custom ? (lang === "ar" ? channel.nameAr : channel.nameEn) : text(lang, channel.text);
+const channelName = (channel, lang) => resolveSalesChannelLabel(channel, lang, text);
 
 const expenseCategories = [
   { id: "rent", label: "rent", amount: 8000 },

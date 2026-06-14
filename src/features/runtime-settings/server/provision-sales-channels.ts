@@ -3,8 +3,8 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import {
+  defaultSalesChannelDbName,
   resolveLegacySalesChannelUuid,
-  salesChannelDisplayName,
 } from "@/core/client/sales-channel-catalog";
 import { salesChannels } from "@/core/db/schema";
 
@@ -115,7 +115,7 @@ async function provisionStoreChannels(
         organizationId,
         storeUuid,
         channelUuid,
-        salesChannelDisplayName(channel),
+        defaultSalesChannelDbName(channel),
         executor,
       );
     }

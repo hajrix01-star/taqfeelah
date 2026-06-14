@@ -5,6 +5,8 @@ import { getDb } from "@/core/db/client";
 import { auditEvents, stores } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
+import { buildDefaultStoreChannelSettings } from "@/features/org-config/server/build-default-store-channel-settings";
+import { provisionSalesChannels } from "@/features/runtime-settings/server/provision-sales-channels";
 
 const inputSchema = z.object({
   organizationId: z.string().uuid(),
@@ -67,6 +69,16 @@ export async function createOrganizationStore(rawInput: z.infer<typeof inputSche
         location: created.location || "",
       },
     });
+
+    await provisionSalesChannels(
+      input.organizationId,
+      buildDefaultStoreChannelSettings(created.id),
+      {
+        storeIdMap: { [created.id]: created.id },
+        salesChannelIdMap: {},
+        executor: tx,
+      },
+    );
 
     return {
       id: created.id,
