@@ -39,6 +39,7 @@ body {
   padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   -webkit-text-size-adjust: 100%;
   touch-action: manipulation;
+  font-family: var(--font-noto-sans-arabic), var(--font-noto-sans), system-ui, sans-serif;
   font-size: var(--text-taq-body-sm);
   line-height: 1.4;
 }

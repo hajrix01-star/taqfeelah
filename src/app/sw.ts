@@ -22,6 +22,11 @@ const serwist = new Serwist({
       matcher: ({ url }) => url.pathname.startsWith("/api/"),
       handler: new NetworkOnly(),
     },
+    {
+      matcher: ({ url }) =>
+        url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com",
+      handler: new NetworkOnly(),
+    },
     ...defaultCache,
   ],
   fallbacks: {

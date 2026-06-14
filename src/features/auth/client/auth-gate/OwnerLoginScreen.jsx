@@ -33,14 +33,25 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
       <div className="mt-4 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-black/[0.045]">
         {form.method === "phone" && form.canUsePhoneOtp ? (
           form.stage === "phone" ? (
-            <>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                form.setStage("code");
+                form.setError("");
+              }}
+            >
               <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "mobileNumber")}</p>
               <AppLoginPhoneField value={form.phone} onChange={form.setPhone} />
               <p className="mt-2 text-taq-meta font-bold text-[#827762]">{text(lang, "mobileHint")}</p>
-              <button type="button" onClick={() => { form.setStage("code"); form.setError(""); }} className="mt-5 w-full rounded-2xl bg-[#112A46] py-4 text-sm font-black text-white">{text(lang, "sendCode")}</button>
-            </>
+              <button type="submit" className="mt-5 w-full rounded-2xl bg-[#112A46] py-4 text-sm font-black text-white">{text(lang, "sendCode")}</button>
+            </form>
           ) : (
-            <>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                form.submitOtp();
+              }}
+            >
               <p className="text-xs font-bold text-[#716753]">{text(lang, "verificationCode")}</p>
               <p className="mt-2 text-taq-meta font-bold text-[#827762]">{text(lang, "codeSentTo")} <span dir="ltr" className="text-[#112A46]">{formatLoginPhoneForDisplay(form.phone) || `+966 ${form.phone}`}</span></p>
               <input
@@ -51,23 +62,31 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
                 value={form.code}
                 onChange={(event) => form.setCode(event.target.value.replace(/\D/g, "").slice(0, 4))}
                 placeholder="• • • •"
+                autoComplete="one-time-code"
                 className="mt-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]"
               />
-              <button type="button" onClick={form.submitOtp} className="mt-5 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white">{text(lang, "verifyContinue")}</button>
+              <button type="submit" className="mt-5 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white">{text(lang, "verifyContinue")}</button>
               <button type="button" onClick={() => { form.setStage("phone"); form.setError(""); }} className="mt-4 w-full text-xs font-black text-[#9A823E]">{text(lang, "changeNumber")}</button>
-            </>
+            </form>
           )
         ) : (
-          <>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void form.submitPassword();
+            }}
+            autoComplete="on"
+          >
             <p className="mb-2 text-xs font-bold text-[#716753]">{APP_IN_PRODUCTION_MODE ? text(lang, "mobileNumber") : text(lang, "username")}</p>
             {APP_IN_PRODUCTION_MODE ? (
               <AppLoginPhoneField value={form.ownerPhone} onChange={form.setOwnerPhone} className="mb-3" />
             ) : (
-              <input dir="ltr" value={form.username} onChange={(event) => form.setUsername(event.target.value)} autoComplete="username" className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
+              <input dir="ltr" name="username" value={form.username} onChange={(event) => form.setUsername(event.target.value)} autoComplete="username" className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
             )}
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "password")}</p>
             <input
               dir="ltr"
+              name="password"
               type="password"
               value={form.password}
               onChange={(event) => form.setPassword(event.target.value)}
@@ -84,13 +103,13 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
               />
               <span className="text-taq-meta font-black text-[#716753]">{text(lang, "rememberMe")}</span>
             </label>
-            <button type="button" onClick={() => { void form.submitPassword(); }} disabled={form.submitting} className="mt-4 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white disabled:bg-[#B8C0B7]">{text(lang, "verifyContinue")}</button>
+            <button type="submit" disabled={form.submitting} className="mt-4 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white disabled:bg-[#B8C0B7]">{text(lang, "verifyContinue")}</button>
             {APP_IN_PRODUCTION_MODE ? (
               <Link href="/auth/forgot-password" className="mt-3 block text-center text-taq-meta font-black text-[#9A823E]">
                 {lang === "ar" ? "نسيت كلمة المرور؟" : "Forgot password?"}
               </Link>
             ) : null}
-          </>
+          </form>
         )}
         {form.error ? <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{form.error}</p> : null}
       </div>
