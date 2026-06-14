@@ -686,9 +686,37 @@ Body (optional): `{ "snapshotDate": "YYYY-MM-DD" }` — rebuilds engagement snap
 
 ### Planned (not implemented)
 
-- `PATCH /api/v1/saas-admin/accounts/:id/subscription` — subscription lifecycle writes
 - `GET /api/v1/saas-admin/exports/investor.csv` — CSV export
 - Billing provider webhooks
+
+### `PATCH /api/v1/saas-admin/accounts/:id/subscription` (implemented — gated)
+
+Updates subscription lifecycle for an organization: plan change, status, billing cycle, period extension, and paid activation.
+
+Body (at least one field required):
+
+```json
+{
+  "planCode": "growth",
+  "status": "active",
+  "billingCycle": "monthly",
+  "extendPeriodDays": 14,
+  "activatePaid": true,
+  "acknowledgeUsageExceedsLimits": false
+}
+```
+
+- `activatePaid: true` moves trial accounts to paid `active` status and resets the billing period.
+- Downgrades that exceed current store/seat usage require `acknowledgeUsageExceedsLimits: true`.
+- Writes audit event `saas_subscription_updated`.
+
+Returns updated subscription snapshot plus resolved entitlements.
+
+---
+
+### Previously planned (now implemented above)
+
+- ~~`PATCH /api/v1/saas-admin/accounts/:id/subscription` — subscription lifecycle writes~~
 
 ---
 

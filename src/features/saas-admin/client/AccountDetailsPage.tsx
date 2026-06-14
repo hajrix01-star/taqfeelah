@@ -35,6 +35,7 @@ import { AccountSetupLinkPanel } from "@/features/saas-admin/client/AccountSetup
 import { AccountStoreChannelsSection } from "@/features/saas-admin/client/AccountStoreChannelsSection";
 import { AccountStoresSection } from "@/features/saas-admin/client/AccountStoresSection";
 import { AccountTeamSection } from "@/features/saas-admin/client/AccountTeamSection";
+import { AccountSubscriptionPanel } from "@/features/saas-admin/client/AccountSubscriptionPanel";
 import { EditAccountForms } from "@/features/saas-admin/client/EditAccountForms";
 import { fetchSaasAccountDetails } from "@/features/saas-admin/client/saas-admin-api-client";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
@@ -185,18 +186,28 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
         ) : null}
 
         {activeTab === "settings" && (canWriteAccount || canRepair) ? (
-          <EditAccountForms
-            organizationId={accountId}
-            organizationName={data.name}
-            planCode={data.planCode}
-            ownerName={data.ownerName}
-            ownerUsername={data.ownerUsername}
-            ownerPhone={data.ownerPhone}
-            onUpdated={() => { void refetch(); }}
-            showAccountForm={canWriteAccount}
-            showOwnerForm={canWriteAccount}
-            showRepairForm={canRepair}
-          />
+          <div className="space-y-4">
+            {canWriteAccount ? (
+              <AccountSubscriptionPanel
+                organizationId={accountId}
+                subscription={data.subscription}
+                entitlements={data.entitlements}
+                displayStatus={data.status}
+                onUpdated={() => { void refetch(); }}
+              />
+            ) : null}
+            <EditAccountForms
+              organizationId={accountId}
+              organizationName={data.name}
+              ownerName={data.ownerName}
+              ownerUsername={data.ownerUsername}
+              ownerPhone={data.ownerPhone}
+              onUpdated={() => { void refetch(); }}
+              showAccountForm={canWriteAccount}
+              showOwnerForm={canWriteAccount}
+              showRepairForm={canRepair}
+            />
+          </div>
         ) : null}
 
         {activeTab === "stores" ? (

@@ -1,3 +1,5 @@
+import type { ResolvedOrganizationEntitlements } from "@/features/billing/types";
+
 export type AccountStatus = "trial" | "active" | "inactive" | "suspended" | "archived";
 
 export type OrganizationLifecycleStatus = "active" | "suspended" | "archived" | "pending_activation";
@@ -79,6 +81,16 @@ export type SaasAccountsList = {
   pageSize: number;
 };
 
+export type SaasAccountSubscriptionSnapshot = {
+  id: string;
+  planCode: string;
+  status: string;
+  billingCycle: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+};
+
 export type SaasAccountDetails = {
   id: string;
   name: string;
@@ -89,6 +101,8 @@ export type SaasAccountDetails = {
   status: AccountStatus;
   organizationStatus: OrganizationLifecycleStatus;
   planCode: PlanCode;
+  subscription: SaasAccountSubscriptionSnapshot | null;
+  entitlements: ResolvedOrganizationEntitlements | null;
   createdAt: string;
   lastActivityAt: string | null;
   storesCount: number;

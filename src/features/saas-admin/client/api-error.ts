@@ -54,6 +54,7 @@ const MESSAGE_CODE_MAP: Record<string, keyof SaasAdminTranslations["apiErrors"]>
   "Owner username is required when setting credentials.": "ownerUsernameRequired",
   "Member was not found for this organization.": "memberNotFound",
   "Subscription was not found for this organization.": "subscriptionNotFound",
+  "Current usage exceeds the selected plan limits. Confirm downgrade or reduce usage first.": "usageExceedsLimits",
   "At least one field must be provided to update.": "noChanges",
   "At least one owner field must be provided to update.": "noChanges",
   "Invalid owner phone number.": "invalidOwnerPhone",
