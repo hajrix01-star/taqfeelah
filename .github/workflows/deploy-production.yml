@@ -130,8 +130,8 @@ jobs:
             wait_seconds=$((DISPATCH_WAIT_MINUTES * 60))
             echo "Manual deploy: cooldown ${wait_seconds}s before SSH…"
           else
-            wait_seconds=45
-            echo "Push deploy: cooldown ${wait_seconds}s before SSH…"
+            wait_seconds=300
+            echo "Push deploy: cooldown ${wait_seconds}s before SSH (fail2ban tolerance)…"
           fi
           echo "VPS_PREFLIGHT_WAIT_SECONDS=${wait_seconds}" >> "$GITHUB_ENV"
 
