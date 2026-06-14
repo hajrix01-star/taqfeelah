@@ -87,7 +87,7 @@ describe("listStoreCloseouts attachments", () => {
 
   it("returns persisted summary-entry attachments after refresh", async () => {
     const { listStoreCloseouts } = await import("./list-store-closeouts");
-    const closeouts = await listStoreCloseouts({
+    const { items: closeouts } = await listStoreCloseouts({
       organizationId: ORG_ID,
       storeId: STORE_ID,
       actorUserId: ACTOR_ID,

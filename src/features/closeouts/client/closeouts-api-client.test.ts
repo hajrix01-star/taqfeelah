@@ -341,19 +341,22 @@ describe("closeouts api client", () => {
   it("fetches mapped closeouts list for store", async () => {
     setMapsEnv();
     const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
-      async () => new Response(JSON.stringify([{
-        id: "c-1",
-        storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
-        openedByUserId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
-        submittedByUserId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
-        sales: [
-          {
-            channelId: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
-            name: "Cash",
-            amount: 120,
-          },
-        ],
-      }]), { status: 200 }),
+      async () => new Response(JSON.stringify({
+        items: [{
+          id: "c-1",
+          storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+          openedByUserId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+          submittedByUserId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+          sales: [
+            {
+              channelId: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+              name: "Cash",
+              amount: 120,
+            },
+          ],
+        }],
+        nextCursor: null,
+      }), { status: 200 }),
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -385,16 +388,71 @@ describe("closeouts api client", () => {
     expect(String(url)).toContain("/api/v1/stores/302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c/closeouts");
     expect(String(url)).toContain("dateFrom=2026-06-01");
     expect(String(url)).toContain("dateTo=2026-06-30");
+    expect(String(url)).toContain("paginated=1");
+    expect(String(url)).toContain("limit=50");
     expect(init?.headers).toMatchObject({
       "x-organization-id": "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       "x-member-role": "owner",
     });
   });
 
+  it("loads all paginated closeout pages", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async (input) => {
+        const url = String(input);
+        if (url.includes("cursor=page-2")) {
+          return new Response(JSON.stringify({
+            items: [{ id: "c-2", storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c" }],
+            nextCursor: null,
+          }), { status: 200 });
+        }
+        return new Response(JSON.stringify({
+          items: [{ id: "c-1", storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c" }],
+          nextCursor: "page-2",
+        }), { status: 200 });
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client.js");
+    const result = await fetchStoreCloseoutsViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      storeId: "shami",
+    });
+
+    expect(result.map((item) => item.id)).toEqual(["c-1", "c-2"]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("accepts legacy array payloads for backward compatibility", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => new Response(JSON.stringify([{
+        id: "c-legacy",
+        storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+      }]), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client.js");
+    const result = await fetchStoreCloseoutsViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      storeId: "shami",
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.id).toBe("c-legacy");
+  });
+
   it("throws when closeouts payload is invalid instead of returning an empty list", async () => {
     setMapsEnv();
     const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
-      async () => new Response(JSON.stringify({ items: [] }), { status: 200 }),
+      async () => new Response(JSON.stringify({ invalid: true }), { status: 200 }),
     );
     vi.stubGlobal("fetch", fetchMock);
 

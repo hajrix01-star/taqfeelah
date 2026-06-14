@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
@@ -13,6 +13,10 @@ import {
   closeoutTotalsFromHalalas,
   closeoutTotalsFromRiyalRows,
 } from "@/features/closeouts/server/closeout-summary-totals";
+import {
+  decodeCloseoutListCursor,
+  encodeCloseoutListCursor,
+} from "@/features/closeouts/server/closeout-list-cursor";
 
 const closeoutDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD");
 
@@ -23,9 +27,12 @@ const listCloseoutsInputSchema = z.object({
   actorRole: z.enum(["owner", "manager", "employee"]),
   dateFrom: closeoutDateSchema.optional(),
   dateTo: closeoutDateSchema.optional(),
+  limit: z.number().int().min(1).max(500).default(200),
+  cursor: z.string().trim().min(1).optional(),
+  paginated: z.boolean().default(false),
 });
 
-type ListCloseoutsInput = z.infer<typeof listCloseoutsInputSchema>;
+type ListCloseoutsInput = z.input<typeof listCloseoutsInputSchema>;
 
 type CloseoutOutflowRow = {
   id: string;
@@ -38,68 +45,47 @@ type CloseoutOutflowRow = {
   attachments: CloseoutAttachmentRef[];
 };
 
+type CloseoutRow = {
+  id: string;
+  clientCloseoutId: string;
+  date: string;
+  daySequence: number;
+  status: string;
+  submittedByUserId: string;
+  reviewedByUserId: string | null;
+  reviewedAt: Date | null;
+  returnReason: string | null;
+  note: string | null;
+  createdAt: Date;
+};
+
 /** Maps any persisted DB status to UI `reviewed` (= sent/approved; zero-review policy). */
 export function mapCloseoutStatus(status: string): "reviewed" {
   void status;
   return "reviewed";
 }
 
-export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
-  const parsed = listCloseoutsInputSchema.safeParse(rawInput);
-  if (!parsed.success) {
-    throw new ValidationError("Invalid closeout list input.", parsed.error.flatten());
-  }
+function cursorBeforeClause(cursor: ReturnType<typeof decodeCloseoutListCursor>) {
+  return or(
+    sql`${dailyCloseouts.date} < ${cursor.date}`,
+    and(
+      eq(dailyCloseouts.date, cursor.date),
+      sql`${dailyCloseouts.createdAt} < ${cursor.createdAt}`,
+    ),
+    and(
+      eq(dailyCloseouts.date, cursor.date),
+      sql`${dailyCloseouts.createdAt} = ${cursor.createdAt}`,
+      sql`${dailyCloseouts.id} < ${cursor.id}`,
+    ),
+  );
+}
 
-  const input = parsed.data;
-  if (input.dateFrom && input.dateTo && input.dateFrom > input.dateTo) {
-    throw new ValidationError("dateFrom must be earlier than or equal to dateTo.");
-  }
-
-  await assertStoreAccess({
-    organizationId: input.organizationId,
-    storeId: input.storeId,
-    actorUserId: input.actorUserId,
-    actorRole: input.actorRole as MemberRole,
-    minimumRole: "employee",
-  });
-
-  const db = getDb();
-  const [storeRow] = await db
-    .select({ name: stores.name })
-    .from(stores)
-    .where(
-      and(
-        eq(stores.id, input.storeId),
-        eq(stores.organizationId, input.organizationId),
-      ),
-    )
-    .limit(1);
-
-  const closeoutRows = await db
-    .select({
-      id: dailyCloseouts.id,
-      clientCloseoutId: dailyCloseouts.clientCloseoutId,
-      date: dailyCloseouts.date,
-      daySequence: dailyCloseouts.daySequence,
-      status: dailyCloseouts.status,
-      submittedByUserId: dailyCloseouts.submittedByUserId,
-      reviewedByUserId: dailyCloseouts.reviewedByUserId,
-      reviewedAt: dailyCloseouts.reviewedAt,
-      returnReason: dailyCloseouts.returnReason,
-      note: dailyCloseouts.note,
-      createdAt: dailyCloseouts.createdAt,
-    })
-    .from(dailyCloseouts)
-    .where(
-      and(
-        eq(dailyCloseouts.organizationId, input.organizationId),
-        eq(dailyCloseouts.storeId, input.storeId),
-        input.dateFrom ? sql`${dailyCloseouts.date} >= ${input.dateFrom}` : undefined,
-        input.dateTo ? sql`${dailyCloseouts.date} <= ${input.dateTo}` : undefined,
-      ),
-    )
-    .orderBy(desc(dailyCloseouts.date), desc(dailyCloseouts.createdAt));
-
+async function hydrateCloseoutRows(
+  db: ReturnType<typeof getDb>,
+  input: Pick<ListCloseoutsInput, "organizationId" | "storeId">,
+  closeoutRows: CloseoutRow[],
+  storeName: string,
+) {
   if (closeoutRows.length === 0) return [];
 
   const closeoutIds = closeoutRows.map((row) => row.id);
@@ -110,6 +96,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
     closeoutRowIds: closeoutIds,
     clientCloseoutIds,
   });
+
   const entryRows = await db
     .select({
       id: entries.id,
@@ -244,7 +231,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
     return {
       id: row.clientCloseoutId,
       storeId: input.storeId,
-      storeName: storeRow?.name || "",
+      storeName,
       date: row.date,
       daySequence: row.daySequence,
       status,
@@ -270,4 +257,89 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
       totals,
     };
   });
+}
+
+export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
+  const parsed = listCloseoutsInputSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    throw new ValidationError("Invalid closeout list input.", parsed.error.flatten());
+  }
+
+  const input = parsed.data;
+  if (input.dateFrom && input.dateTo && input.dateFrom > input.dateTo) {
+    throw new ValidationError("dateFrom must be earlier than or equal to dateTo.");
+  }
+
+  await assertStoreAccess({
+    organizationId: input.organizationId,
+    storeId: input.storeId,
+    actorUserId: input.actorUserId,
+    actorRole: input.actorRole as MemberRole,
+    minimumRole: "employee",
+  });
+
+  const effectiveLimit = input.paginated
+    ? Math.min(input.limit, 100)
+    : input.limit;
+
+  const decodedCursor = input.cursor ? decodeCloseoutListCursor(input.cursor) : null;
+
+  const db = getDb();
+  const [storeRow] = await db
+    .select({ name: stores.name })
+    .from(stores)
+    .where(
+      and(
+        eq(stores.id, input.storeId),
+        eq(stores.organizationId, input.organizationId),
+      ),
+    )
+    .limit(1);
+
+  const closeoutRows = await db
+    .select({
+      id: dailyCloseouts.id,
+      clientCloseoutId: dailyCloseouts.clientCloseoutId,
+      date: dailyCloseouts.date,
+      daySequence: dailyCloseouts.daySequence,
+      status: dailyCloseouts.status,
+      submittedByUserId: dailyCloseouts.submittedByUserId,
+      reviewedByUserId: dailyCloseouts.reviewedByUserId,
+      reviewedAt: dailyCloseouts.reviewedAt,
+      returnReason: dailyCloseouts.returnReason,
+      note: dailyCloseouts.note,
+      createdAt: dailyCloseouts.createdAt,
+    })
+    .from(dailyCloseouts)
+    .where(
+      and(
+        eq(dailyCloseouts.organizationId, input.organizationId),
+        eq(dailyCloseouts.storeId, input.storeId),
+        input.dateFrom ? sql`${dailyCloseouts.date} >= ${input.dateFrom}` : undefined,
+        input.dateTo ? sql`${dailyCloseouts.date} <= ${input.dateTo}` : undefined,
+        decodedCursor ? cursorBeforeClause(decodedCursor) : undefined,
+      ),
+    )
+    .orderBy(desc(dailyCloseouts.date), desc(dailyCloseouts.createdAt), desc(dailyCloseouts.id))
+    .limit(effectiveLimit + 1);
+
+  const hasMore = closeoutRows.length > effectiveLimit;
+  const pageRows = hasMore ? closeoutRows.slice(0, effectiveLimit) : closeoutRows;
+  const items = await hydrateCloseoutRows(
+    db,
+    input,
+    pageRows,
+    storeRow?.name || "",
+  );
+
+  const lastRow = pageRows[pageRows.length - 1];
+  const nextCursor = hasMore && lastRow
+    ? encodeCloseoutListCursor({
+      date: lastRow.date,
+      createdAt: lastRow.createdAt,
+      id: lastRow.id,
+    })
+    : null;
+
+  return { items, nextCursor };
 }

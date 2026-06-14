@@ -32,8 +32,8 @@ describe("closeouts route integration", () => {
 
   it("GET lists closeouts for store", async () => {
     listStoreCloseouts.mockResolvedValueOnce({
-      storeId: TEST_STORE_ID,
-      closeouts: [{ id: "closeout-1", date: "2026-06-05", status: "active" }],
+      items: [{ id: "closeout-1", date: "2026-06-05", status: "reviewed" }],
+      nextCursor: null,
     });
 
     const { GET } = await import("../stores/[storeId]/closeouts/route");
@@ -43,11 +43,34 @@ describe("closeouts route integration", () => {
     );
 
     expect(response.status).toBe(200);
-    const body = await readJsonBody<{ closeouts: Array<{ id: string }> }>(response);
-    expect(body.closeouts).toHaveLength(1);
+    const body = await readJsonBody<Array<{ id: string }>>(response);
+    expect(body).toHaveLength(1);
     expect(listStoreCloseouts).toHaveBeenCalledWith(expect.objectContaining({
       storeId: TEST_STORE_ID,
       actorRole: "owner",
+      paginated: false,
+    }));
+  });
+
+  it("GET returns paginated closeouts payload when paginated=1", async () => {
+    listStoreCloseouts.mockResolvedValueOnce({
+      items: [{ id: "closeout-1", date: "2026-06-05", status: "reviewed" }],
+      nextCursor: "cursor-1",
+    });
+
+    const { GET } = await import("../stores/[storeId]/closeouts/route");
+    const response = await GET(
+      ownerRequest(`http://localhost/api/v1/stores/${TEST_STORE_ID}/closeouts?paginated=1&limit=25`),
+      routeStoreContext(),
+    );
+
+    expect(response.status).toBe(200);
+    const body = await readJsonBody<{ items: Array<{ id: string }>; nextCursor: string }>(response);
+    expect(body.items).toHaveLength(1);
+    expect(body.nextCursor).toBe("cursor-1");
+    expect(listStoreCloseouts).toHaveBeenCalledWith(expect.objectContaining({
+      paginated: true,
+      limit: 25,
     }));
   });
 
