@@ -8,6 +8,7 @@ import {
   entryIsActive,
   entryIsOutflow,
 } from "@/features/operations/operational-analytics";
+import { resolveSalesChannelRowLabel } from "@/features/org-config/client/sales-channel-display";
 import {
   channelName,
   channels,
@@ -22,8 +23,7 @@ const noteLabel = (entry, lang) => {
 };
 const entryCategory = (entry) => entry.type === "purchases" ? "purchases" : entry.type === "withdrawal" ? "withdrawal" : (entry.categoryId || "other");
 function resolveSummaryChannelName(row, lang) {
-  const fallback = channels.find((channel) => channel.id === row.channelId);
-  return row.name || (fallback ? channelName(fallback, lang) : row.channelId);
+  return resolveSalesChannelRowLabel(row, channels, lang, channelName);
 }
 function summarySalesChannelLabel(entry, lang, salesChannelFilter = "all") {
   return buildSummarySalesChannelLabel(
@@ -47,8 +47,7 @@ function expandRegisterCloseoutOperationRows(item, lang, salesChannelFilter = "a
     return [{ key: item.id, item, label: summarySalesChannelLabel(item, lang, salesChannelFilter), amount: summaryEntryDisplayAmount(item, salesChannelFilter), isSale: true }];
   }
   return rows.map((row, index) => {
-    const fallback = channels.find((channel) => channel.id === row.channelId);
-    const label = row.name || (fallback ? channelName(fallback, lang) : row.channelId);
+    const label = resolveSalesChannelRowLabel(row, channels, lang, channelName);
     return { key: `${item.id}-${row.channelId}-${index}`, item, label, amount: Number(row.amount), isSale: true };
   });
 }

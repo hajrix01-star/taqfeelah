@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  aggregateChannels,
   aggregateSalesChannelsFromGroupEntries,
   buildBusinessesWithEntrySummaries,
   entryTotalsHaveActivity,
@@ -130,5 +131,30 @@ describe("operational analytics summary helpers", () => {
 
     expect(businesses[0].day).toMatchObject({ sales: 300, expense: 50, net: 250 });
     expect(businesses[1].day).toMatchObject({ sales: 200, expense: 0, net: 200 });
+  });
+
+  it("maps Arabic channel snapshots to built-in channel shapes for translation", () => {
+    const rows = aggregateChannels(
+      [{
+        type: "summary",
+        status: "active",
+        businessId: "arz",
+        date: "2026-06-14",
+        salesChannels: [
+          { channelId: "bank-uuid", name: "بنك", amount: 351 },
+          { channelId: "cash-uuid", name: "نقد", amount: 50 },
+        ],
+      }],
+      "arz",
+      "day",
+      "2026-06-14",
+      "2026-06",
+      [],
+    );
+
+    expect(rows).toEqual([
+      { id: "bank-uuid", text: "bank", custom: false, amount: 351 },
+      { id: "cash-uuid", text: "cash", custom: false, amount: 50 },
+    ]);
   });
 });

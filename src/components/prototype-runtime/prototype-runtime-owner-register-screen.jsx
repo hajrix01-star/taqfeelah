@@ -27,7 +27,7 @@ import {
 } from "@/features/reports/client/report-period-labels";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { entryIsActive, summarizeEntries } from "@/features/operations/operational-analytics";
-import { ENTRIES_API_DB_SOURCE } from "./prototype-runtime-boot";
+import { resolveSalesChannelRowLabel } from "@/features/org-config/client/sales-channel-display";
 import {
   channels,
   businesses,
@@ -173,10 +173,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
   const salesChannelOptions = useMemo(
     () => buildRegisterSalesChannelOptions(
       periodEntries,
-      (row) => {
-        const fallback = channels.find((channel) => channel.id === row.channelId);
-        return row.name || (fallback ? channelName(fallback, lang) : row.channelId);
-      },
+      (row) => resolveSalesChannelRowLabel(row, channels, lang, channelName),
       lang === "ar" ? "كل القنوات" : "All channels",
     ),
     [periodEntries, lang],
@@ -197,10 +194,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
     () => buildRegisterCloseoutSummaries({
       filteredEntries,
       salesChannelFilter: logFilters.salesChannel,
-      resolveChannelName: (row) => {
-        const fallback = channels.find((channel) => channel.id === row.channelId);
-        return row.name || (fallback ? channelName(fallback, lang) : row.channelId);
-      },
+      resolveChannelName: (row) => resolveSalesChannelRowLabel(row, channels, lang, channelName),
       resolveStore: (businessId) => businessesList.find((business) => business.id === businessId) || null,
       resolveActorLabel: (group) => resolveRegisterCloseoutActorLabel(group, {
         ownerUserId: registerEntriesApiEnabled ? registerEntriesApiActorUserId : "",

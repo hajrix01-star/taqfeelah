@@ -66,6 +66,22 @@ describe("mapChannelsReportToUiRows", () => {
     expect(rows[0].id).toBe("walkin");
     expect(rows[0].amount).toBe(250);
   });
+
+  it("maps Arabic SQL channel names to built-in channel shapes", () => {
+    const rows = mapChannelsReportToUiRows(
+      [
+        { salesChannelId: "bank-uuid", channelName: "بنك", amount: { amountHalalas: 35100 } },
+        { salesChannelId: "cash-uuid", channelName: "نقد", amount: { amountHalalas: 5000 } },
+      ],
+      [],
+      {},
+    );
+
+    expect(rows).toEqual([
+      { id: "bank-uuid", text: "bank", custom: false, amount: 351 },
+      { id: "cash-uuid", text: "cash", custom: false, amount: 50 },
+    ]);
+  });
 });
 
 describe("mapOutflowCategoriesToUi", () => {

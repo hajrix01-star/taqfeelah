@@ -8,6 +8,7 @@ import {
   rowsFromUiEntries,
 } from "@/domain/cash-movement/calculations";
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
+import { resolveAggregatedChannelShape } from "@/features/org-config/client/sales-channel-display";
 
 export const OUTFLOW_ENTRY_TYPES = new Set(["purchases", "expense", "withdrawal"]);
 
@@ -123,14 +124,10 @@ export function aggregateChannels(entries, businessId, period, selectedDate, sel
   );
   const mapped = new Map(baseChannels.map((channel) => [channel.id, { ...channel, amount: 0 }]));
   relevant.forEach((entry) => (entry.salesChannels || []).forEach((row) => {
-    const current = mapped.get(row.channelId) || {
-      id: row.channelId,
-      custom: true,
-      nameAr: row.name || row.channelId,
-      nameEn: row.name || row.channelId,
-      amount: 0,
-    };
-    mapped.set(row.channelId, {
+    const configured = resolveAggregatedChannelShape(row, baseChannels);
+    const mapKey = configured.id || row.channelId;
+    const current = mapped.get(mapKey) || mapped.get(row.channelId) || configured;
+    mapped.set(mapKey, {
       ...current,
       amount: addUiAmounts(current.amount, row.amount),
     });
