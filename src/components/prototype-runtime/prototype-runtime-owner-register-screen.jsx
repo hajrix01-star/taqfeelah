@@ -35,6 +35,7 @@ import {
   expenseCategories,
   text,
 } from "./prototype-runtime-demo-data";
+import { ENTRIES_API_DB_SOURCE } from "./prototype-runtime-boot";
 import {
   entryCategory,
   entryDateMatches,
