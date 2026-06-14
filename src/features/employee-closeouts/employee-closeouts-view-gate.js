@@ -1,9 +1,10 @@
-/** @param {{ employeeRuntimeReady?: boolean, currentStore?: object | null }} input */
+/** @param {{ employeeRuntimeReady?: boolean, currentStore?: object | null, assignedStores?: object[] }} input */
 export function resolveEmployeeCloseoutsViewGate({
   employeeRuntimeReady = true,
   currentStore = null,
+  assignedStores = [],
 } = {}) {
   if (!employeeRuntimeReady) return "loading";
-  if (!currentStore) return "no-store";
+  if (!currentStore && assignedStores.length === 0) return "no-store";
   return "ready";
 }

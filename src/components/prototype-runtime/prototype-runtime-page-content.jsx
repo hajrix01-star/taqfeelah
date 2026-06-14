@@ -157,6 +157,7 @@ export function PrototypeRuntimePageContent({
           onRegisterSettingsOpener={(handler) => { employeeSettingsOpenerRef.current = handler || (() => {}); }}
           saving={saving}
           trustServerDaySequenceOnly={closeoutsApiDbSource}
+          storeChannelSettings={storeChannelSettings}
           {...closeoutAttachmentsApiProps}
         />
       )}
@@ -165,7 +166,11 @@ export function PrototypeRuntimePageContent({
           lang={lang}
           employee={ownerCloseoutActor}
           employeeRuntimeReady={runtimeApiStoresReady}
-          currentStore={ownerCloseoutBusiness}
+          currentStore={
+            activeBusinesses.length > 1 && activeViewBusiness === "all"
+              ? null
+              : ownerCloseoutBusiness
+          }
           assignedStores={activeBusinesses}
           onSelectStore={setSelectedBusiness}
           salesChannels={ownerCloseoutChannelConfig.channels
@@ -181,6 +186,7 @@ export function PrototypeRuntimePageContent({
           trustServerDaySequenceOnly={closeoutsApiDbSource}
           pageTitle={lang === "ar" ? "تسجيل تقفيلة" : "Record closeout"}
           onCloseoutSubmitted={() => setOwnerPage("home")}
+          storeChannelSettings={storeChannelSettings}
           {...closeoutAttachmentsApiProps}
         />
       )}

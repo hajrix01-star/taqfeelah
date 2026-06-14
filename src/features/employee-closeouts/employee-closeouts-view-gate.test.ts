@@ -16,6 +16,14 @@ describe("resolveEmployeeCloseoutsViewGate", () => {
     })).toBe("no-store");
   });
 
+  it("is ready when multiple assigned stores exist even without currentStore", () => {
+    expect(resolveEmployeeCloseoutsViewGate({
+      employeeRuntimeReady: true,
+      currentStore: null,
+      assignedStores: [{ id: "store-1" }, { id: "store-2" }],
+    })).toBe("ready");
+  });
+
   it("is ready when hydration completed and store exists", () => {
     expect(resolveEmployeeCloseoutsViewGate({
       employeeRuntimeReady: true,

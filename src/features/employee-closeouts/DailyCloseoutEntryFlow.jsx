@@ -13,6 +13,9 @@ export default function DailyCloseoutEntryFlow({
   closeout: initialCloseout,
   salesChannels,
   storeName,
+  assignedStores = [],
+  selectedStoreId = "",
+  onSelectEntryStore = () => {},
   isOwnerEdit = false,
   fullScreenOverlay = true,
   onCancel,
@@ -46,6 +49,9 @@ export default function DailyCloseoutEntryFlow({
     ? "relative z-[2] flex shrink-0 items-center justify-between border-b border-[#ECE6DA]/80 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]"
     : "relative z-[2] flex shrink-0 items-center justify-between border-b border-[#ECE6DA]/80 px-4 pb-3 pt-3";
 
+  const storeSelectionRequired = assignedStores.length > 1;
+  const formEnabled = !storeSelectionRequired || Boolean(selectedStoreId);
+
   return (
     <div className={rootClassName} style={notebookLinesBackground(notebookTheme)}>
       <header
@@ -65,6 +71,10 @@ export default function DailyCloseoutEntryFlow({
               lang={lang}
               storeName={storeName}
               salesChannels={salesChannels}
+              assignedStores={assignedStores}
+              selectedStoreId={selectedStoreId}
+              onSelectEntryStore={onSelectEntryStore}
+              formEnabled={formEnabled}
               {...state}
             />
           </div>
@@ -73,7 +83,7 @@ export default function DailyCloseoutEntryFlow({
       <div className="shrink-0 border-t border-[#ECE6DA]/80 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
-          disabled={saving || totals.totalSales <= 0}
+          disabled={saving || !formEnabled || totals.totalSales <= 0}
           onClick={handleSubmit}
           className="w-full rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white disabled:opacity-50"
         >

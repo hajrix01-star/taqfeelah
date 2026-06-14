@@ -6,6 +6,7 @@ import {
   createDraftCloseout,
   isCloseoutWorkflowFailure,
   sortCloseoutsNewestFirst,
+  withCloseoutTotals,
 } from "../daily-closeouts/daily-closeouts-demo-store";
 import { CLOSEOUT_STATUS } from "../daily-closeouts/closeout-status";
 import {
@@ -31,10 +32,20 @@ function resolveScrollContainer(node) {
   return null;
 }
 
+function closeoutDraftHasEntryData(closeout) {
+  if (!closeout) return false;
+  const sales = Object.values(closeout.sales || {}).some((row) => Number(row?.amount) > 0);
+  const outflows = Array.isArray(closeout.outflows) && closeout.outflows.length > 0;
+  const attachments = Array.isArray(closeout.attachments) && closeout.attachments.length > 0;
+  return sales || outflows || attachments;
+}
+
 export function useEmployeeCloseoutsViewState({
   lang,
   employee,
   currentStore,
+  assignedStores = [],
+  onSelectStore,
   notebookTheme,
   employeeHistoryVisibility = "month",
   findForStoreDate: findForStoreDateProp,
@@ -107,9 +118,13 @@ export function useEmployeeCloseoutsViewState({
 
   const myStoreCloseouts = useMemo(
     () => closeouts.filter(
-      (item) => closeoutMatchesStore(item, currentStore) && closeoutBelongsToEmployee(item, employee),
+      (item) => closeoutBelongsToEmployee(item, employee) && (
+        assignedStores.length > 1
+          ? assignedStores.some((store) => closeoutMatchesStore(item, store))
+          : closeoutMatchesStore(item, currentStore)
+      ),
     ),
-    [closeouts, currentStore, employee],
+    [assignedStores, closeouts, currentStore, employee],
   );
 
   const historyScopedCloseouts = useMemo(
@@ -180,19 +195,53 @@ export function useEmployeeCloseoutsViewState({
         : "Store settings are still loading from the server… wait a moment and try again.");
       return;
     }
-    if (!currentStoreId) return;
+    const stores = assignedStores.length > 0
+      ? assignedStores
+      : currentStore ? [currentStore] : [];
+    if (!stores.length) return;
+
     const today = new Date();
     const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     setEntryOwnerEdit(false);
+
+    const autoStore = stores.length === 1 ? stores[0] : null;
     const draft = createDraftCloseout({
-      storeId: currentStoreId,
-      storeName: storeLabel,
+      storeId: autoStore?.id || "",
+      storeName: autoStore ? resolveEmployeeStoreName(autoStore, lang) : "",
       date: todayIso,
       employee: { id: employee.id, nameAr: employee.nameAr, nameEn: employee.nameEn },
       notebookTheme,
     });
     setEntryCloseout(upsertCloseout(draft));
-  }, [currentStoreId, employee, employeeRuntimeReady, lang, storeLabel, notebookTheme, upsertCloseout]);
+  }, [assignedStores, currentStore, employee, employeeRuntimeReady, lang, notebookTheme, upsertCloseout]);
+
+  const handleEntryStoreSelect = useCallback((storeId) => {
+    if (!entryCloseout || !storeId) return;
+    if (entryCloseout.storeId === storeId) return;
+
+    const store = assignedStores.find((item) => item.id === storeId)
+      || (currentStore?.id === storeId ? currentStore : null);
+    if (!store) return;
+
+    if (closeoutDraftHasEntryData(entryCloseout) && !window.confirm(
+      lang === "ar"
+        ? "تغيير المحل سيمسح ما أدخلته في هذه التقفيلة."
+        : "Changing the shop will clear what you entered in this closeout.",
+    )) {
+      return;
+    }
+
+    const nextCloseout = withCloseoutTotals({
+      ...entryCloseout,
+      storeId: store.id,
+      storeName: resolveEmployeeStoreName(store, lang),
+      sales: {},
+      outflows: [],
+      attachments: [],
+    });
+    setEntryCloseout(upsertCloseout(nextCloseout));
+    onSelectStore?.(store.id);
+  }, [assignedStores, currentStore, entryCloseout, lang, onSelectStore, upsertCloseout]);
 
   useEffect(() => {
     onRegisterAdd?.(() => {
@@ -213,9 +262,10 @@ export function useEmployeeCloseoutsViewState({
   }, [entryCloseout, showSettings, onEntryActiveChange]);
 
   const resolveStoreDate = useCallback((date) => {
-    if (!currentStoreId) return null;
-    return (findForStoreDateProp || findForStoreDate)(currentStoreId, date);
-  }, [currentStoreId, findForStoreDateProp, findForStoreDate]);
+    const storeId = entryCloseout?.storeId || currentStoreId;
+    if (!storeId) return null;
+    return (findForStoreDateProp || findForStoreDate)(storeId, date);
+  }, [currentStoreId, entryCloseout?.storeId, findForStoreDateProp, findForStoreDate]);
 
   const handleSubmit = async (closeout, { isOwnerEdit }) => {
     const fn = isOwnerEdit ? ownerEditCloseout : submitCloseout;
@@ -247,7 +297,11 @@ export function useEmployeeCloseoutsViewState({
     setEntryOwnerEdit(false);
   };
 
-  const viewGate = resolveEmployeeCloseoutsViewGate({ employeeRuntimeReady, currentStore });
+  const viewGate = resolveEmployeeCloseoutsViewGate({
+    employeeRuntimeReady,
+    currentStore,
+    assignedStores,
+  });
   const channelsReady = salesChannels.length > 0;
   const closeoutsLoadFailed = usesCloseoutsApi && Boolean(syncError) && !closeoutsLoaded && !closeoutsHasData;
   const closeoutsListPending = isEmployeeCloseoutsListPending({
@@ -285,6 +339,7 @@ export function useEmployeeCloseoutsViewState({
     handleSubmit,
     handleCancelEntry,
     resolveStoreDate,
+    handleEntryStoreSelect,
     setShareTarget,
     setShareNewlySubmitted,
     closeShareModal,

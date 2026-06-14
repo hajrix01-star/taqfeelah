@@ -110,7 +110,10 @@ export function OwnerSummaryScreen({
   businessesList = businesses,
   storeChannelSettings = {},
 }) {
-  const [businessId, setBusinessId] = useState(selectedBusiness === "all" ? "" : selectedBusiness);
+  const [businessId, setBusinessId] = useState(() => {
+    if (businessesList.length === 1) return businessesList[0].id;
+    return selectedBusiness === "all" ? "" : selectedBusiness;
+  });
   const [summaryDate, setSummaryDate] = useState(() => todayIsoDate());
   const { attachment, processing, error, selectAttachment, clearAttachment } = useAttachmentCapture(lang);
   const selectedStore = businessesList.find((business) => business.id === businessId) || null;
@@ -126,6 +129,8 @@ export function OwnerSummaryScreen({
   }, [businessId, channelSignature]);
   const total = useMemo(() => salesChannels.reduce((sum, channel) => sum + toAmount(values[channel.id]), 0), [salesChannels, values]);
   const canSave = Boolean(selectedStore && salesChannels.length > 0 && total > 0 && summaryDate <= todayIsoDate());
+  const formEnabled = Boolean(selectedStore);
+  const showStorePicker = businessesList.length > 1;
   const changeStore = (nextBusinessId) => {
     if (nextBusinessId !== businessId && draftNeedsConfirmation(values, attachment) && !window.confirm(text(lang, "discardDraftOnStoreChange"))) return;
     setBusinessId(nextBusinessId);
@@ -142,15 +147,27 @@ export function OwnerSummaryScreen({
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px] lg:max-w-none">
       <BackTitle lang={lang} title={text(lang, "dailySummary")} onBack={onBack} />
       <div className="space-y-5 taq-page-gutter">
+        {showStorePicker ? (
+          <div>
+            <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
+            <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
+            <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>
+              {selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseStoreToStartEntry")}
+            </p>
+          </div>
+        ) : null}
+        <fieldset disabled={!formEnabled} className="min-w-0 space-y-5 border-0 p-0 m-0 disabled:opacity-55">
         <EntryDatePicker lang={lang} value={summaryDate} onChange={setSummaryDate} />
-        <div>
-          <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
-          <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
-          <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseStoreForSummary")}</p>
-        </div>
+        {!showStorePicker ? (
+          <div>
+            <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
+            <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
+            <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseStoreForSummary")}</p>
+          </div>
+        ) : null}
         <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.05]">
           <p className="mb-3 text-xs font-bold text-[#716753]">{text(lang, "salesChannels")}</p>
-          {!selectedStore ? <div className="rounded-2xl bg-[#F7F5EF] p-5 text-xs font-bold text-[#827762]">{text(lang, "chooseStoreForSummary")}</div> : salesChannels.length === 0 ? <div className="rounded-2xl bg-[#FFF1EE] p-5 text-xs font-bold text-[#B44747]">{text(lang, "noSalesChannels")}</div> : <div className="grid grid-cols-3 gap-2">{salesChannels.map((channel) => <label key={channel.id} className="rounded-2xl bg-[#F7F5EF] px-2 py-3 text-center ring-1 ring-black/[0.05]"><span className="mb-2 block min-h-[30px] text-taq-meta font-bold leading-4 text-[#716753]">{channelName(channel, lang)}</span><div dir="ltr" className="flex items-center justify-center gap-1"><input inputMode="decimal" value={values[channel.id] || ""} onChange={(event) => setValues((current) => ({ ...current, [channel.id]: sanitizeAmountInput(event.target.value) }))} className="min-w-0 w-full bg-white px-1 py-2 text-center text-sm font-black outline-none" /><span className="text-taq-nav font-bold text-[#827762]">{lang === "ar" ? "ر.س" : "SAR"}</span></div></label>)}</div>}
+          {salesChannels.length === 0 ? <div className="rounded-2xl bg-[#FFF1EE] p-5 text-xs font-bold text-[#B44747]">{text(lang, "noSalesChannels")}</div> : <div className="grid grid-cols-3 gap-2">{salesChannels.map((channel) => <label key={channel.id} className="rounded-2xl bg-[#F7F5EF] px-2 py-3 text-center ring-1 ring-black/[0.05]"><span className="mb-2 block min-h-[30px] text-taq-meta font-bold leading-4 text-[#716753]">{channelName(channel, lang)}</span><div dir="ltr" className="flex items-center justify-center gap-1"><input inputMode="decimal" value={values[channel.id] || ""} onChange={(event) => setValues((current) => ({ ...current, [channel.id]: sanitizeAmountInput(event.target.value) }))} className="min-w-0 w-full bg-white px-1 py-2 text-center text-sm font-black outline-none" /><span className="text-taq-nav font-bold text-[#827762]">{lang === "ar" ? "ر.س" : "SAR"}</span></div></label>)}</div>}
           <div className="mt-4 rounded-2xl bg-[#112A46] p-4 text-white">
             <div className="flex items-center justify-between"><span className="text-sm font-bold text-white/70">{text(lang, "totalSales")}</span><strong><MoneyValue value={money(total, lang)} /></strong></div>
             {total > 0 ? (
@@ -170,6 +187,7 @@ export function OwnerSummaryScreen({
           </div>
         </div>
         <button type="button" disabled={!canSave || processing || saving} onClick={submit} className={`w-full rounded-2xl py-4 text-sm font-extrabold text-white ${canSave && !processing && !saving ? "bg-[#39A160]" : "bg-[#B8C0B7]"}`}>{text(lang, saving ? "saving" : "save")}</button>
+        </fieldset>
       </div>
     </motion.section>
   );
@@ -184,7 +202,10 @@ export function OwnerExpenseScreen({
   businessesList = businesses,
   storeOperationalSettings = {},
 }) {
-  const [businessId, setBusinessId] = useState(selectedBusiness === "all" ? "" : selectedBusiness);
+  const [businessId, setBusinessId] = useState(() => {
+    if (businessesList.length === 1) return businessesList[0].id;
+    return selectedBusiness === "all" ? "" : selectedBusiness;
+  });
   const [kind, setKind] = useState("expense");
   const [category, setCategory] = useState("other");
   const [amount, setAmount] = useState("");
@@ -201,6 +222,8 @@ export function OwnerExpenseScreen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessId, category, activeCategoryIds]);
   const canSave = Boolean(selectedStore && toAmount(amount) > 0 && (kind !== "expense" || activeCategories.length > 0));
+  const formEnabled = Boolean(selectedStore);
+  const showStorePicker = businessesList.length > 1;
   const changeStore = (nextBusinessId) => {
     if (nextBusinessId !== businessId && draftNeedsConfirmation(amount, note, attachment) && !window.confirm(text(lang, "discardDraftOnStoreChange"))) return;
     if (nextBusinessId !== businessId) { setAmount(""); setNote(""); clearAttachment(); }
@@ -213,13 +236,25 @@ export function OwnerExpenseScreen({
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px] lg:max-w-none">
       <BackTitle lang={lang} title={text(lang, "addOutflow")} onBack={onBack} />
       <div className="space-y-5 taq-page-gutter">
+        {showStorePicker ? (
+          <div>
+            <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
+            <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
+            <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>
+              {selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseStoreToStartEntry")}
+            </p>
+          </div>
+        ) : null}
+        <fieldset disabled={!formEnabled} className="min-w-0 space-y-5 border-0 p-0 m-0 disabled:opacity-55">
         <div className="rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "ownerOutflowNotice")}</div>
         <EntryDatePicker lang={lang} value={operationDate} onChange={setOperationDate} />
-        <div>
-          <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
-          <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
-          <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseOperationStore")}</p>
-        </div>
+        {!showStorePicker ? (
+          <div>
+            <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
+            <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
+            <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseOperationStore")}</p>
+          </div>
+        ) : null}
         <div>
           <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "transactionType")}</p>
           <div className="grid grid-cols-3 gap-2">{["expense", "purchases", "withdrawal"].map((item) => <Choice key={item} active={kind === item} onClick={() => setKind(item)}>{text(lang, item)}</Choice>)}</div>
@@ -249,6 +284,7 @@ export function OwnerExpenseScreen({
         <div><SmallInfo label={text(lang, "category")} value={categoryLabel} /></div>
         <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.05]"><p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "note")} <span className="font-normal">({text(lang, "optional")})</span></p><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder={text(lang, "notePlaceholder")} className="min-h-[52px] w-full resize-none rounded-2xl bg-[#F7F5EF] px-4 py-3 text-sm outline-none" /></div>
         <button type="button" disabled={!canSave || processing || saving} onClick={submit} className={`w-full rounded-2xl py-4 text-sm font-extrabold text-white transition ${canSave && !processing && !saving ? "bg-[#112A46]" : "cursor-not-allowed bg-[#B8C0B7]"}`}>{text(lang, saving ? "saving" : "saveOutflow")}</button>
+        </fieldset>
       </div>
     </motion.section>
   );
