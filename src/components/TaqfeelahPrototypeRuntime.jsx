@@ -331,6 +331,10 @@ export default function TaqfeelahPrototypeRuntime() {
                 openDuplicateSummaryInRegister={openDuplicateSummaryInRegister}
                 acknowledgeDuplicateSales={acknowledgeDuplicateSales}
                 handleOpenOwnerOperation={handleOpenOwnerOperation}
+                requestVoidOperation={requestVoidOperation}
+                requestRestoreOperation={requestRestoreOperation}
+                setOwnerEditCloseout={setOwnerEditCloseout}
+                handleOwnerCloseoutDeleted={handleOwnerCloseoutDeleted}
                 setShareSnapshot={setShareSnapshot}
                 activeViewBusiness={activeViewBusiness}
                 homeReportChannelConfig={homeReportChannelConfig}
