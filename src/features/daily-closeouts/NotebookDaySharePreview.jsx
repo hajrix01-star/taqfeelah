@@ -1,6 +1,7 @@
 "use client";
 
 import { TAQFEELAH_LOGO_SRC } from "@/lib/brand/taqfeelah-logo";
+import { resolveAppFontFamily } from "@/core/fonts/app-font-family";
 import { notebookLinesBackground, notebookThemes } from "./notebook-themes";
 
 
@@ -47,7 +48,7 @@ export default function NotebookDaySharePreview({
 }) {
   const activeTheme = notebookThemes[theme] || notebookThemes.yellow;
   const lines = notebookLinesBackground(theme);
-  const fontFamily = lang === "ar" ? "'Noto Sans Arabic', sans-serif" : "'Noto Sans', sans-serif";
+  const fontFamily = resolveAppFontFamily(lang);
   const captionLines = captionFooter ? captionFooter.split("\n").filter(Boolean) : [];
 
   return (

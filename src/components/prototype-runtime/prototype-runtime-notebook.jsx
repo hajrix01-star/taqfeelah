@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Share2 } from "lucide-react";
+import { resolveAppFontFamily } from "@/core/fonts/app-font-family";
 import {
   NOTEBOOK_THEME_IDS,
   notebookCardBackground,
@@ -37,7 +38,7 @@ function Notebook({ children, theme = "yellow", lang = "ar", fullPage = false })
       style={{
         backgroundColor: fullPage ? "transparent" : activeTheme.paper,
         boxShadow: fullPage ? "none" : activeTheme.shadow,
-        fontFamily: lang === "ar" ? "'Noto Sans Arabic', sans-serif" : "'Noto Sans', sans-serif",
+        fontFamily: resolveAppFontFamily(lang),
       }}
     >
       {!fullPage && <div className="pointer-events-none absolute inset-0 opacity-70" style={lines} />}

@@ -2,7 +2,7 @@
 
 export function AppFontStyles() {
   return (
-    <style>{`@import url('https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&family=Caveat:wght@700&family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap');
+    <style>{`
       :root { --taq-page-gutter: 16px; }
       @media (min-width: 640px) and (max-width: 1023px) {
         :root { --taq-page-gutter: 18px; }

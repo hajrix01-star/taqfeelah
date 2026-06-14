@@ -2,6 +2,7 @@
 
 import React from "react";
 import { CalendarDays, ChevronDown } from "lucide-react";
+import { resolveAppFontFamily } from "@/core/fonts/app-font-family";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import { businessName, money, opTime, text } from "./prototype-runtime-demo-data";
 import {
@@ -48,7 +49,7 @@ export function NotebookShareImagePreview({
 
   return (
     <div ref={previewRef} className="mb-4 overflow-hidden rounded-[24px] p-0 shadow-lg" style={{ backgroundColor: activeTheme.paper }}>
-      <div className="relative px-5 pb-4 pt-3" style={{ ...lines, fontFamily: lang === "ar" ? "'Noto Sans Arabic', sans-serif" : "'Noto Sans', sans-serif" }}>
+      <div className="relative px-5 pb-4 pt-3" style={{ ...lines, fontFamily: resolveAppFontFamily(lang) }}>
         <div>
           <div className="flex h-[54px] items-center justify-center">
             <Logo compact centered />

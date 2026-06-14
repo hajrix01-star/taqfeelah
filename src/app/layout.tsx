@@ -4,6 +4,7 @@ import {
   PWA_DESCRIPTION,
   PWA_THEME_COLOR,
 } from "@/core/config/pwa";
+import { appFontClassNames, notoSansArabic } from "@/core/fonts/app-fonts";
 import PwaLifecycle from "@/features/pwa/PwaLifecycle";
 import "./globals.css";
 
@@ -45,8 +46,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" suppressHydrationWarning>
-      <body>
+    <html lang="ar" className={appFontClassNames} suppressHydrationWarning>
+      <body className={notoSansArabic.className}>
         {children}
         <PwaLifecycle />
       </body>
