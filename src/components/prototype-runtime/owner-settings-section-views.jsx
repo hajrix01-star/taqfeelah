@@ -25,10 +25,12 @@ import {
   openBillingUpgradeToPaidSupport,
 } from "@/features/billing/client/billing-upgrade-support";
 import {
+  formatBillingCycleLabel,
   formatPlanSubscriptionHomeLabel,
   formatPaidPlanTrialPeriodHint,
   formatPeriodEndLabel,
   formatPlanPriceLabel,
+  formatRenewalDaysRemainingLabel,
   formatSubscriptionStatusLabel,
   formatSubscriptionStatusTone,
   formatTrialDaysRemainingLabel,
@@ -37,6 +39,7 @@ import {
   pickLocalizedFeatureLabel,
   pickLocalizedPlanName,
 } from "@/features/billing/client/subscription-display";
+import { SubscriptionRenewalBanner } from "@/features/billing/client/SubscriptionRenewalBanner";
 import {
   canAddStore,
   countEmployeeSeats,
@@ -438,6 +441,14 @@ export function OwnerSettingsSubscriptionSection({
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={text(lang, "subscriptionDetails")} onBack={() => setSection("home")} lang={lang} />
+      {entitlements ? (
+        <SubscriptionRenewalBanner
+          lang={lang}
+          entitlements={entitlements}
+          ownerName={ownerProfile?.name || ""}
+          className="mb-4"
+        />
+      ) : null}
       {entitlementsLoading ? (
         <div className="rounded-3xl bg-white p-5 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-black/[0.045]">
           {text(lang, "subscriptionLoading")}
@@ -486,7 +497,19 @@ export function OwnerSettingsSubscriptionSection({
               </p>
             ) : null}
             <p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">
-              {formatPlanPriceLabel(entitlements.priceMonthlyHalalas, lang, { isTrialPlan: entitlements.isTrialPlan })}
+              {formatPlanPriceLabel(entitlements.priceMonthlyHalalas, lang, {
+                isTrialPlan: entitlements.isTrialPlan,
+                billingCycle: entitlements.billingCycle,
+                priceYearlyHalalas: entitlements.priceYearlyHalalas,
+              })}
+            </p>
+            <p className="mt-2 text-taq-meta font-bold text-[#827762]">
+              {text(lang, "billingCycleLabel")}: {formatBillingCycleLabel(entitlements.billingCycle, lang)}
+            </p>
+            <p className="mt-2 text-taq-meta font-bold text-[#827762]">
+              {entitlements.isTrialPlan
+                ? `${text(lang, "trialDaysRemaining")}: ${formatTrialDaysRemainingLabel(entitlements.trialDaysRemaining, lang)}`
+                : `${text(lang, "renewalDaysRemaining")}: ${formatRenewalDaysRemainingLabel(entitlements.renewalDaysRemaining, lang)}`}
             </p>
             <p className="mt-3 text-taq-meta font-bold text-[#827762]">
               {entitlements.isTrialPlan

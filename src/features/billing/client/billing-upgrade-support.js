@@ -1,5 +1,6 @@
 import { buildWhatsAppShareUrl } from "@/core/whatsapp/share-link";
 import {
+  buildRenewalReminderWhatsAppMessage,
   buildUpgradeRequestWhatsAppMessage,
   buildUpgradeToPaidWhatsAppMessage,
 } from "@/core/messaging/whatsapp-billing-messages";
@@ -28,6 +29,28 @@ export function openBillingUpgradeSupport({
     organizationName,
     currentPlanName,
     targetPlanName,
+  });
+  const url = buildWhatsAppShareUrl(message, PROTOTYPE_SUPPORT_WHATSAPP);
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+export function openBillingRenewalSupport({
+  ownerName,
+  organizationName,
+  planDisplayNameAr,
+  planDisplayNameEn,
+  billingCycle,
+  daysUntilEnd,
+  periodEndIso,
+}) {
+  const message = buildRenewalReminderWhatsAppMessage({
+    ownerName,
+    organizationName,
+    planDisplayNameAr,
+    planDisplayNameEn,
+    billingCycle,
+    daysUntilEnd,
+    periodEndIso,
   });
   const url = buildWhatsAppShareUrl(message, PROTOTYPE_SUPPORT_WHATSAPP);
   window.open(url, "_blank", "noopener,noreferrer");

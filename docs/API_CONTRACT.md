@@ -677,6 +677,26 @@ Returns database/API health probes for the admin console.
 
 Body (optional): `{ "snapshotDate": "YYYY-MM-DD" }` — rebuilds engagement snapshots (`pnpm saas:aggregate` uses the same server function).
 
+### `POST /api/v1/saas-admin/subscriptions/scan` (implemented — gated)
+
+Permission: `analytics:aggregate`.
+
+Runs the daily subscription renewal scan (`pnpm saas:subscription-scan` uses the same server function):
+
+- Records reminder tiers **14 / 7 / 3** days before `currentPeriodEnd` in `subscription_renewal_reminders` (deduped per org + tier + period end).
+- After grace expires for paid `active` subscriptions, sets status to `past_due` and records tier `0` with WhatsApp message metadata for ops follow-up.
+
+Response `200`:
+
+```json
+{
+  "scanned": 12,
+  "remindersRecorded": 3,
+  "markedPastDue": 1,
+  "skippedOrganizations": 0
+}
+```
+
 ### Removed (superseded by dashboard routes above)
 
 - `GET /api/v1/saas-admin/kpis/overview`

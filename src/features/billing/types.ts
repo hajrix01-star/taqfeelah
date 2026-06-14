@@ -46,6 +46,7 @@ export type ResolvedOrganizationEntitlements = {
   planDisplayNameEn: string;
   subscriptionStatus: string | null;
   organizationStatus: string;
+  billingCycle: "monthly" | "yearly";
   billingAllowed: boolean;
   maxStores: number;
   maxEmployees: number;
@@ -54,6 +55,10 @@ export type ResolvedOrganizationEntitlements = {
   trialDays: number;
   isTrialPlan: boolean;
   trialDaysRemaining: number | null;
+  renewalDaysRemaining: number | null;
+  subscriptionPeriodPhase: "active" | "grace" | "expired";
+  renewalReminderTier: 14 | 7 | 3 | null;
+  gracePeriodDays: number;
   currentPeriodEnd: string | null;
   features: PlanFeatureLabel[];
   upgradePlans: OwnerPlanSummary[];

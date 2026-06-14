@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import EmployeeCloseoutsView from "@/features/employee-closeouts/EmployeeCloseoutsView";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
 import { EmployeeSettingsScreen } from "./prototype-runtime-employee-settings-screen";
@@ -106,6 +107,13 @@ export function PrototypeRuntimePageContent({
   logout,
   saved,
 }) {
+  const [ownerSettingsSection, setOwnerSettingsSection] = useState("home");
+
+  const openOwnerSubscriptionSettings = () => {
+    setOwnerSettingsSection("subscription");
+    setOwnerPage("settings");
+  };
+
   return (
     <>
       {employee && !activeEmployee && (
@@ -180,6 +188,8 @@ export function PrototypeRuntimePageContent({
         <NotebookScrollSurface theme={notebookTheme} lang={lang}>
           <OwnerHomeConnected
             lang={lang}
+            ownerProfile={ownerProfile}
+            onOpenSubscriptionSettings={openOwnerSubscriptionSettings}
             operationalEntries={operationalEntries}
             operationalEntriesLoading={operationalEntriesLoading}
             duplicateSalesAlerts={duplicateSalesAlerts}
@@ -256,6 +266,7 @@ export function PrototypeRuntimePageContent({
       {!employee && ownerPage === "settings" && (
         <OwnerSettingsScreen
           lang={lang}
+          initialSettingsSection={ownerSettingsSection}
           operationalEntries={operationalEntries}
           selectedBusiness={selectedBusiness}
           setSelectedBusiness={setSelectedBusiness}

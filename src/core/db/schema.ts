@@ -454,6 +454,32 @@ export const subscriptions = pgTable(
   }),
 );
 
+export const subscriptionRenewalReminders = pgTable(
+  "subscription_renewal_reminders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    subscriptionId: uuid("subscription_id")
+      .notNull()
+      .references(() => subscriptions.id, { onDelete: "cascade" }),
+    reminderTier: integer("reminder_tier").notNull(),
+    channel: text("channel").notNull(),
+    periodEnd: timestamp("period_end", { withTimezone: true }).notNull(),
+    metadata: jsonb("metadata"),
+    createdAt,
+  },
+  (table) => ({
+    orgTierPeriodUq: uniqueIndex("subscription_renewal_reminders_org_tier_period_uq").on(
+      table.organizationId,
+      table.reminderTier,
+      table.periodEnd,
+    ),
+    periodEndIdx: index("subscription_renewal_reminders_period_end_idx").on(table.periodEnd),
+  }),
+);
+
 export const invoices = pgTable(
   "invoices",
   {

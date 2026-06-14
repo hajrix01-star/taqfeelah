@@ -38,12 +38,14 @@ Layout guards: disabled → unauthenticated → unauthorized → `AdminShell`.
 - `GET /api/v1/saas-admin/investor-metrics`
 - `GET /api/v1/saas-admin/system-health`
 - `POST /api/v1/saas-admin/analytics/aggregate` (snapshot rebuild)
+- `POST /api/v1/saas-admin/subscriptions/scan` (renewal reminders + `past_due` transitions)
 
 See `docs/API_CONTRACT.md` for query params and response shapes.
 
 ## Schema already present
 
 - `subscriptions`, `invoices`, `payment_events`
+- `subscription_renewal_reminders` (Wave A renewal scan dedupe + WhatsApp metadata)
 - `usage_events`, `daily_org_metrics`, `daily_saas_metrics`
 
 ## Activation sequence (production)
@@ -56,6 +58,7 @@ See `docs/API_CONTRACT.md` for query params and response shapes.
 6. Redeploy or restart PM2 so Next.js picks up env changes
 7. Sign in as the allowlisted user, then open `https://taqfeelah.com/saas-admin`
 8. Optional: `USAGE_TRACKING_ENABLED=true` and run `pnpm saas:aggregate` (cron daily)
+9. Optional: `pnpm saas:subscription-scan` daily for renewal reminders and `past_due` transitions
 
 While flags stay `false`, deploy verify expects `GET /api/v1/saas-admin/overview` → `503` and `GET /saas-admin` → `200` (disabled shell).
 

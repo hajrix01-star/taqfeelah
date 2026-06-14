@@ -120,6 +120,13 @@
       "when": 1781021800000,
       "tag": "0016_stores_organization_index",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1781021900000,
+      "tag": "0017_subscription_renewal_reminders",
+      "breakpoints": true
     }
   ]
 }

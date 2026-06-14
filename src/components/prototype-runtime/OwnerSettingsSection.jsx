@@ -42,6 +42,7 @@ function OwnerSettingsScreen({
   inviteApiContext = null,
   billingApiContext = null,
   orgConfigApiContext = null,
+  initialSettingsSection = "home",
 }) {
   const state = useOwnerSettingsScreenState({
     lang,
@@ -76,6 +77,7 @@ function OwnerSettingsScreen({
     onPersistSettingsNow,
     billingApiContext,
     orgConfigApiContext,
+    initialSettingsSection,
   });
 
   const viewState = { ...state, lang, inviteApiContext };
