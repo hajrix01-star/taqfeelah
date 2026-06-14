@@ -11,6 +11,7 @@ import { APP_IN_PRODUCTION_MODE } from "@/components/prototype-runtime/prototype
 import { LanguageSwitch, Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
 import { AppLoginPhoneField } from "@/core/phone/AppLoginPhoneField";
 import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
+import { ownerPasswordInputProps } from "@/features/auth/client/auth-gate/owner-password-input-props";
 
 export function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
   const form = useOwnerLoginForm({ lang, onOwnerLogin });
@@ -65,7 +66,15 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
               <input dir="ltr" value={form.username} onChange={(event) => form.setUsername(event.target.value)} autoComplete="username" className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
             )}
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "password")}</p>
-            <input dir="ltr" type="password" value={form.password} onChange={(event) => form.setPassword(event.target.value)} autoComplete="current-password" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
+            <input
+              dir="ltr"
+              type="password"
+              value={form.password}
+              onChange={(event) => form.setPassword(event.target.value)}
+              autoComplete="current-password"
+              {...ownerPasswordInputProps}
+              className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
+            />
             <label className="mt-3 flex cursor-pointer items-center gap-2.5">
               <input
                 type="checkbox"
