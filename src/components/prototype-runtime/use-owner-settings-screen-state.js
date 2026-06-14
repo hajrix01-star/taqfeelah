@@ -11,6 +11,8 @@ import {
   isOwnerAuthDirty,
   isOwnerProfileDirty,
 } from "@/features/org-config/client/owner-settings-account-actions";
+import { resolveStoreFlattenedOpenDrafts } from "@/features/org-config/client/owner-settings-store-panel-actions";
+import { isFlattenedStoreSettingsEnabled } from "@/core/config/owner-settings-store-layout-mode";
 import { partitionConfiguredBusinesses } from "@/features/org-config/client/owner-settings-store-actions";
 import {
   businessName,
@@ -134,6 +136,32 @@ export function useOwnerSettingsScreenState({
   const linkedStaff = selectedStore ? visibleStaff.filter((person) => employeeStoreIds(person).includes(selectedStore.id)) : [];
   const activeCategoryCount = operationalConfig.activeCategories.length;
   const activeChannelCount = channelConfig.activeIds.length;
+
+  useEffect(() => {
+    if (!isFlattenedStoreSettingsEnabled() || !settingsStoreId) return;
+    const store = configuredBusinesses.find((business) => business.id === settingsStoreId);
+    if (!store) return;
+    const channelConfigForStore = resolveStoreChannelConfig(
+      storeChannelSettings,
+      settingsStoreId,
+      DEFAULT_STORE_CHANNEL_CONFIG,
+    );
+    const operationalConfigForStore = getStoreOperationalConfig(storeOperationalSettings, settingsStoreId);
+    const drafts = resolveStoreFlattenedOpenDrafts({
+      selectedStore: store,
+      displayBusinessName,
+      displayLocation,
+      savedChannelConfig: channelConfigForStore,
+      savedOperationalConfig: operationalConfigForStore,
+    });
+    setDraftStoreName(drafts.profile.name);
+    setDraftStoreLocation(drafts.profile.location);
+    setDraftStoreChannelConfig(drafts.channelConfig);
+    setDraftStoreOperationalConfig(drafts.operationalConfig);
+    setNewChannelName("");
+    setSettingsNotice("");
+    // Only re-init when switching stores; including settings deps would wipe unsaved edits.
+  }, [settingsStoreId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     persistOwnerSettingsToLocalStorage(

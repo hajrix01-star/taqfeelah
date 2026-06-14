@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { BackTitle } from "./prototype-runtime-chrome";
 
 export function Badge({ children, tone = "neutral" }) {
@@ -66,4 +66,36 @@ export function SettingsLink({ lang, icon: Icon, title, desc = "", value = "", o
 
 export function SettingsPageHeader({ lang, title, onBack }) {
   return <BackTitle lang={lang} title={title} onBack={onBack} />;
+}
+
+export function SettingsAccordionSection({
+  lang,
+  icon: Icon,
+  title,
+  subtitle = "",
+  value = "",
+  expanded,
+  onToggle,
+  children,
+}) {
+  const Chevron = expanded ? ChevronUp : ChevronDown;
+  return (
+    <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
+      <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 px-4 py-4 text-start">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F7F5EF] text-[#806528]">
+          <Icon className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-taq-body-sm font-black text-[#112A46]">{title}</span>
+          {(subtitle || value) && (
+            <span className="mt-0.5 block truncate text-taq-meta font-bold text-[#827762]">
+              {value || subtitle}
+            </span>
+          )}
+        </span>
+        <Chevron className="h-4 w-4 shrink-0 text-[#B99844]" />
+      </button>
+      {expanded && <div className="border-t border-[#F0ECE2] px-4 pb-4 pt-3">{children}</div>}
+    </div>
+  );
 }

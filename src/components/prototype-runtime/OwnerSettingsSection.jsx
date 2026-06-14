@@ -2,7 +2,8 @@
 
 import { ActionRow, SettingToggle } from "./owner-settings-ui-primitives";
 import { renderOwnerSettingsSection } from "./owner-settings-section-views";
-import { renderOwnerSettingsStorePanel } from "./owner-settings-store-views";
+import { renderOwnerSettingsStorePanel, OwnerSettingsStoreFlattenedPanel } from "./owner-settings-store-views";
+import { isFlattenedStoreSettingsEnabled } from "@/core/config/owner-settings-store-layout-mode";
 import { useOwnerSettingsScreenState } from "./use-owner-settings-screen-state";
 
 function OwnerSettingsScreen({
@@ -83,6 +84,23 @@ function OwnerSettingsScreen({
   const viewState = { ...state, lang, inviteApiContext };
 
   if (state.settingsStoreId && state.selectedStore) {
+    if (isFlattenedStoreSettingsEnabled()) {
+      return (
+        <OwnerSettingsStoreFlattenedPanel
+          {...viewState}
+          selectedStore={state.selectedStore}
+          archived={state.archived}
+          activeChannelCount={state.activeChannelCount}
+          activeCategoryCount={state.activeCategoryCount}
+          operationalConfig={state.operationalConfig}
+          linkedStaff={state.linkedStaff}
+          visibleChannels={state.visibleChannels}
+          channelConfig={state.channelConfig}
+          retiredChannels={state.retiredChannels}
+          notebookTheme={state.notebookTheme}
+        />
+      );
+    }
     return renderOwnerSettingsStorePanel(state.storePanel, viewState);
   }
 

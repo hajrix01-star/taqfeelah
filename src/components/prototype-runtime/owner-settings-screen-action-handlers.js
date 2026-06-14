@@ -18,11 +18,13 @@ import { resolveStorePanelOpenDrafts } from "@/features/org-config/client/owner-
 import {
   addCustomSalesChannel,
   canRequestRetireSalesChannel,
+  cloneStoreChannelDraft,
   restoreRetiredSalesChannel,
   retireSalesChannelInDraft,
   toggleSalesChannelActive,
 } from "@/features/org-config/client/owner-settings-channel-actions";
 import {
+  cloneStoreOperationalDraft,
   mergeOperationalDraft,
   toggleOperationalCategory,
 } from "@/features/org-config/client/owner-settings-operational-actions";
@@ -50,6 +52,7 @@ import {
   resolveStoreLimitMessage,
 } from "@/features/billing/client/entitlement-guards";
 import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
+import { isFlattenedStoreSettingsEnabled } from "@/core/config/owner-settings-store-layout-mode";
 import { emptyStoreRecord, text } from "./prototype-runtime-demo-data";
 import { APP_IN_PRODUCTION_MODE, PROTOTYPE_EMPLOYEE_PIN_DEFAULT } from "./prototype-runtime-boot";
 
@@ -179,6 +182,20 @@ export function createOwnerSettingsScreenHandlers(ctx) {
     setters.setStorePanel("overview");
   };
 
+  const leaveStorePanelAfterSave = () => {
+    if (!isFlattenedStoreSettingsEnabled()) backFromStorePanel();
+  };
+
+  const cancelChannelDraft = () => {
+    setters.setDraftStoreChannelConfig(cloneStoreChannelDraft(savedChannelConfig));
+    setters.setSettingsNotice("");
+  };
+
+  const cancelOperationalDraft = () => {
+    setters.setDraftStoreOperationalConfig(cloneStoreOperationalDraft(savedOperationalConfig));
+    setters.setSettingsNotice("");
+  };
+
   const saveStoreProfile = () => {
     if (!settingsStoreId || !draftStoreName.trim()) return;
     setters.setConfiguredBusinesses((current) => applyStoreProfileUpdate(current, settingsStoreId, {
@@ -186,21 +203,21 @@ export function createOwnerSettingsScreenHandlers(ctx) {
       location: draftStoreLocation,
     }));
     showSettingsSaved();
-    backFromStorePanel();
+    leaveStorePanelAfterSave();
   };
 
   const saveChannelSettings = () => {
     if (!settingsStoreId || !draftStoreChannelConfig) return;
     setters.setStoreChannelSettings((current) => applyPersistedStoreChannelSettings(current, settingsStoreId, draftStoreChannelConfig));
     showSettingsSaved();
-    backFromStorePanel();
+    leaveStorePanelAfterSave();
   };
 
   const saveOperationalSettings = () => {
     if (!settingsStoreId || !draftStoreOperationalConfig) return;
     setters.setStoreOperationalSettings((current) => applyPersistedStoreOperationalSettings(current, settingsStoreId, draftStoreOperationalConfig));
     showSettingsSaved();
-    backFromStorePanel();
+    leaveStorePanelAfterSave();
   };
 
   const toggleChannel = (id) => {
@@ -504,6 +521,8 @@ export function createOwnerSettingsScreenHandlers(ctx) {
     closeStore,
     openStorePanel,
     backFromStorePanel,
+    cancelChannelDraft,
+    cancelOperationalDraft,
     saveStoreProfile,
     saveChannelSettings,
     saveOperationalSettings,
