@@ -195,18 +195,25 @@ pnpm saas:aggregate    # اختياري — لملء engagement snapshots
 
 ## استكشاف مشاكل النشر (SSH من GitHub)
 
+**نموذج النشر الحالي:** CI يبني مرة واحدة → يرفع artifact (يشمل `.next`) → VPS يثبت الاعتماديات ويشغّل migrate فقط (بدون `pnpm build`).
+
+**الوقت المتوقع:** ~6–10 دقائق إجمالاً (validate ~4–6 د + deploy ~2–4 د).
+
 إذا فشل **Preflight VPS connectivity** وظهر `TCP *:22 — blocked or timed out`:
 
 1. **الموقع قد يبقى شغالاً** — هذا يعني أن Nginx والتطبيق يعملان، لكن GitHub لا يستطيع الدخول عبر SSH للنشر.
-2. **جرّب أولاً:** من GitHub Actions → **Production Deploy** → **Run workflow** واختر `preflight_wait_minutes` = 10 أو 15 (ينتظر قبل فحص SSH). أو اضغط **Re-run failed jobs** (أحياناً الحظر مؤقت). النشر التلقائي ينتظر 3 دقائق قبل فحص SSH لتقليل حظر fail2ban بعد دفعات متتالية.
-3. **مرة واحدة على VPS** (root): `bash scripts/vps-harden-github-deploy.sh` — يعيد تشغيل SSH، يفتح OpenSSH في UFW، ويرفع `maxretry` في fail2ban لتقليل حظر GitHub Actions.
-4. **على VPS (Hostinger hPanel أو SSH يدوي):**
+2. **جرّب أولاً:** من GitHub Actions → **Production Deploy** → **Run workflow** واختر `preflight_wait_minutes` = 10 أو 15 (ينتظر قبل فحص SSH). أو اضغط **Re-run failed jobs** (ينتظر 3 دقائق تلقائياً). النشر الروتيني (push إلى `main`) **لا ينتظر** قبل SSH — فقط إعادة التشغيل اليدوية أو بعد فشل.
+3. **سكربتات الإصلاح البطيئة:** افتراضياً **لا تُشغَّل** عند كل نشر (`VPS_RUN_REMOTE_REPAIR_SCRIPTS=false`). لتشغيلها: **Run workflow** مع `run_repair_scripts=true`، أو أضف `[run-repairs]` في رسالة commit.
+4. **نشرات متتالية:** workflow يلغي النشر القديم إذا بدأ نشر أحدث (`cancel-in-progress: true`) — لا تتراكم طوابير 30+ دقيقة.
+5. **مرة واحدة على VPS** (root): `bash scripts/vps-harden-github-deploy.sh` — يعيد تشغيل SSH، يفتح OpenSSH في UFW، ويرفع `maxretry` في fail2ban لتقليل حظر GitHub Actions.
+6. **على VPS (Hostinger hPanel أو SSH يدوي):**
    - تأكد أن خدمة SSH تعمل: `systemctl status ssh`
    - راجع fail2ban: `fail2ban-client status sshd` — إن وُجد حظر، انتظر أو أزل الحظر
    - راجع الجدار الناري: `ufw status` — المنفذ 22 (أو `VPS_PORT`) مفتوح
-5. **تحقق من سر GitHub `VPS_PORT`:** إن كان SSH على منفذ غير 22، يجب أن يطابق المنفذ الفعلي.
-6. **اختياري:** أضف سر `VPS_SSH_PRIVATE_KEY` (مفتاح deploy) بدل الاعتماد على `VPS_PASS` فقط.
-7. بعد الإصلاح: أعد تشغيل workflow **Production Deploy** (أو انتظر النشر التالي مع push).
+7. **تحقق من سر GitHub `VPS_PORT`:** إن كان SSH على منفذ غير 22، يجب أن يطابق المنفذ الفعلي.
+8. **اختياري:** أضف سر `VPS_SSH_PRIVATE_KEY` (مفتاح deploy) بدل الاعتماد على `VPS_PASS` فقط.
+9. **تعليق SSH:** كل أمر بعيد له مهلة (`VPS_SSH_COMMAND_TIMEOUT=2400` ث ≈ 40 د) — يفشل بسرعة بدل التعليق 90 دقيقة.
+10. بعد الإصلاح: أعد تشغيل workflow **Production Deploy** (أو انتظر النشر التالي مع push).
 
 ### تحقق baseline بعد النشر
 
