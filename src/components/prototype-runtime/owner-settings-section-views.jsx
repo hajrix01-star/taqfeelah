@@ -31,9 +31,11 @@ import {
   formatSubscriptionStatusTone,
   formatTrialDaysRemainingLabel,
   formatUsageRatio,
+  isUsageOverLimit,
   pickLocalizedFeatureLabel,
   pickLocalizedPlanName,
 } from "@/features/billing/client/subscription-display";
+import { countEmployeeSeats } from "@/features/billing/client/entitlement-guards";
 import { text } from "./prototype-runtime-demo-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";
 import {
@@ -101,11 +103,19 @@ export function OwnerSettingsStoresSection({
   openStore,
   setSection,
   deleteDialogProps,
+  orgConfigLoading = false,
+  storeSaving = false,
 }) {
   const Arrow = lang === "ar" ? ChevronLeft : ChevronRight;
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "المحلات" : "Shops"} onBack={() => setSection("home")} lang={lang} />
+      {orgConfigLoading ? (
+        <div className="rounded-3xl bg-white p-5 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-black/[0.045]">
+          {lang === "ar" ? "جارٍ تحميل المحلات من السيرفر..." : "Loading stores from server..."}
+        </div>
+      ) : (
+        <>
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs font-bold text-[#716753]">{text(lang, "activeStores")}</p>
         <button onClick={() => setShowAddStore(!showAddStore)} className="flex items-center gap-1 text-taq-meta font-black text-[#9A823E]"><Plus className="h-3.5 w-3.5" />{text(lang, "addStore")}</button>
@@ -114,7 +124,9 @@ export function OwnerSettingsStoresSection({
         <div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
           <input value={newStoreName} onChange={(event) => setNewStoreName(event.target.value)} placeholder={text(lang, "newStoreName")} className="mb-2 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" />
           <input value={newStoreLocation} onChange={(event) => setNewStoreLocation(event.target.value)} placeholder={text(lang, "newStoreLocation")} className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" />
-          <button onClick={addStore} className="w-full rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">{text(lang, "confirmAddStore")}</button>
+          <button type="button" onClick={() => { void addStore(); }} disabled={storeSaving} className="w-full rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white disabled:opacity-60">
+            {storeSaving ? (lang === "ar" ? "جارٍ الحفظ..." : "Saving...") : text(lang, "confirmAddStore")}
+          </button>
         </div>
       )}
       <div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
@@ -149,6 +161,8 @@ export function OwnerSettingsStoresSection({
           )}
         </>
       )}
+        </>
+      )}
       <OwnerSettingsDeleteDialog {...deleteDialogProps} />
     </motion.section>
   );
@@ -181,10 +195,17 @@ export function OwnerSettingsTeamSection({
   setSection,
   deleteDialogProps,
   inviteApiContext,
+  orgConfigLoading = false,
 }) {
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "الفريق والصلاحيات" : "Team & access"} onBack={() => { cancelManagingTeam(); setSection("home"); }} lang={lang} />
+      {orgConfigLoading ? (
+        <div className="rounded-3xl bg-white p-5 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-black/[0.045]">
+          {lang === "ar" ? "جارٍ تحميل الفريق من السيرفر..." : "Loading team from server..."}
+        </div>
+      ) : (
+        <>
       {inviteApiContext?.organizationId && inviteApiContext?.actorUserId ? (
         <OwnerSettingsTeamInvites
           lang={lang}
@@ -289,6 +310,8 @@ export function OwnerSettingsTeamSection({
           <button type="button" disabled={teamSaving} onClick={() => { void saveManagingTeam(); }} className={`rounded-2xl py-3.5 text-xs font-black text-white ${teamSaving ? "bg-[#B8C0B7]" : "bg-[#112A46]"}`}>{text(lang, "saveTeamChanges")}</button>
         </div>
       )}
+        </>
+      )}
       <OwnerSettingsDeleteDialog {...deleteDialogProps} />
     </motion.section>
   );
@@ -325,17 +348,26 @@ export function OwnerSettingsAppearanceSection({
   );
 }
 
-function SubscriptionUsageMeter({ label, used, max }) {
+function SubscriptionUsageMeter({ label, used, max, lang }) {
+  const overLimit = isUsageOverLimit(used, max);
   const percent = formatUsageRatio(used, max);
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-taq-meta font-bold text-[#716753]">
         <span>{label}</span>
-        <span>{used} / {max}</span>
+        <span className={overLimit ? "text-[#B44747]" : ""}>{used} / {max}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-[#F0ECE2]">
-        <div className="h-full rounded-full bg-[#112A46] transition-all" style={{ width: `${percent}%` }} />
+        <div
+          className={`h-full rounded-full transition-all ${overLimit ? "bg-[#B44747]" : "bg-[#112A46]"}`}
+          style={{ width: `${percent}%` }}
+        />
       </div>
+      {overLimit ? (
+        <p className="text-taq-meta font-bold text-[#B44747]">
+          {lang === "ar" ? "تجاوزت حد الخطة الحالية" : "Over current plan limit"}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -359,8 +391,7 @@ export function OwnerSettingsSubscriptionSection({
     entitlements?.subscriptionStatus,
     entitlements?.organizationStatus,
   );
-  const employeeSeatsUsed = (entitlements?.usage?.activeEmployees || 0)
-    + (entitlements?.usage?.pendingInvitations || 0);
+  const employeeSeatsUsed = countEmployeeSeats(entitlements?.usage);
 
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
@@ -420,11 +451,13 @@ export function OwnerSettingsSubscriptionSection({
                 label={lang === "ar" ? "المحلات" : "Stores"}
                 used={entitlements.usage.activeStores}
                 max={entitlements.maxStores}
+                lang={lang}
               />
               <SubscriptionUsageMeter
                 label={lang === "ar" ? "الموظفون والدعوات" : "Employees & invites"}
                 used={employeeSeatsUsed}
                 max={entitlements.maxEmployees}
+                lang={lang}
               />
             </div>
           </div>
@@ -515,6 +548,12 @@ export function OwnerSettingsHomeSection({
   entitlementsLoading,
 }) {
   const Arrow = lang === "ar" ? ChevronLeft : ChevronRight;
+  const storeCountLabel = entitlements
+    ? String(entitlements.usage.activeStores)
+    : String(activeStoredBusinesses.length);
+  const teamCountLabel = entitlements
+    ? String(countEmployeeSeats(entitlements.usage))
+    : String(visibleStaff.length);
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <div className="mb-5">
@@ -531,8 +570,8 @@ export function OwnerSettingsHomeSection({
       </button>
       <p className="mb-2 text-xs font-bold text-[#716753]">{lang === "ar" ? "المنشأة" : "Organization"}</p>
       <div className="mb-5 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
-        <SettingsLink lang={lang} icon={Building2} title={lang === "ar" ? "المحلات" : "Shops"} value={`${activeStoredBusinesses.length}`} onClick={() => setSection("stores")} />
-        <SettingsLink lang={lang} icon={UserRound} title={lang === "ar" ? "الفريق والصلاحيات" : "Team & access"} value={`${visibleStaff.length}`} onClick={() => setSection("team")} />
+        <SettingsLink lang={lang} icon={Building2} title={lang === "ar" ? "المحلات" : "Shops"} value={storeCountLabel} onClick={() => setSection("stores")} />
+        <SettingsLink lang={lang} icon={UserRound} title={lang === "ar" ? "الفريق والصلاحيات" : "Team & access"} value={teamCountLabel} onClick={() => setSection("team")} />
         <SettingsLink
           lang={lang}
           icon={CreditCard}
@@ -608,6 +647,8 @@ export function renderOwnerSettingsSection(section, state, callbacks) {
         displayLocation={state.displayLocation}
         openStore={state.openStore}
         deleteDialogProps={state.deleteDialogProps}
+        orgConfigLoading={state.orgConfigApiContext?.loading}
+        storeSaving={state.storeSaving}
       />
     );
   }
@@ -639,6 +680,7 @@ export function renderOwnerSettingsSection(section, state, callbacks) {
         saveManagingTeam={state.saveManagingTeam}
         deleteDialogProps={state.deleteDialogProps}
         inviteApiContext={state.inviteApiContext}
+        orgConfigLoading={state.orgConfigApiContext?.loading}
       />
     );
   }

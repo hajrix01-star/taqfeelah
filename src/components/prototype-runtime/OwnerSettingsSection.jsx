@@ -41,6 +41,7 @@ function OwnerSettingsScreen({
   onOpenHelp = () => {},
   inviteApiContext = null,
   billingApiContext = null,
+  orgConfigApiContext = null,
 }) {
   const state = useOwnerSettingsScreenState({
     lang,
@@ -74,6 +75,7 @@ function OwnerSettingsScreen({
     setLastCloseoutDates,
     onPersistSettingsNow,
     billingApiContext,
+    orgConfigApiContext,
   });
 
   const viewState = { ...state, lang, inviteApiContext };

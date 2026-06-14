@@ -53,6 +53,10 @@ export function formatUsageRatio(used, max) {
   return Math.min(100, Math.round((used / max) * 100));
 }
 
+export function isUsageOverLimit(used, max) {
+  return Number.isFinite(used) && Number.isFinite(max) && max > 0 && used > max;
+}
+
 export function formatPeriodEndLabel(isoValue, lang) {
   if (!isoValue) return lang === "ar" ? "غير محدد" : "Not set";
   const date = new Date(isoValue);

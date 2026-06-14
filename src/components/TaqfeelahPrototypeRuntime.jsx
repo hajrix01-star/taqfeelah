@@ -92,6 +92,10 @@ export default function TaqfeelahPrototypeRuntime() {
     authEmployeePins,
     setAuthEmployeePins,
     setLastCloseoutDates,
+    reloadOrgConfig,
+    flushOrgConfigPersist,
+    orgConfigLoading,
+    orgConfigHydrated,
     ownerDisplayName,
   } = ownerSettings;
 
@@ -364,6 +368,10 @@ export default function TaqfeelahPrototypeRuntime() {
                 setArchivedReadOnlyBusinessId={setArchivedReadOnlyBusinessId}
                 setLastCloseoutDates={setLastCloseoutDates}
                 persistRuntimeSettingsNow={persistRuntimeSettingsNow}
+                reloadOrgConfig={reloadOrgConfig}
+                flushOrgConfigPersist={flushOrgConfigPersist}
+                orgConfigLoading={orgConfigLoading}
+                orgConfigHydrated={orgConfigHydrated}
                 logout={auth.logout}
                 saved={saved}
               />

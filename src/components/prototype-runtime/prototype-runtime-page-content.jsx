@@ -9,6 +9,7 @@ import {
 } from "./prototype-runtime-owner-entry-screens";
 import { openWhatsAppSupport } from "./prototype-runtime-support";
 import { OwnerSettingsScreen } from "./OwnerSettingsSection";
+import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { OwnerNotebookScreen } from "./prototype-runtime-owner-notebook-screen";
 import { OwnerHomeConnected } from "./prototype-runtime-owner-home-screen";
 import { OwnerRegisterConnected } from "./prototype-runtime-owner-register-screen";
@@ -98,6 +99,10 @@ export function PrototypeRuntimePageContent({
   setArchivedReadOnlyBusinessId,
   setLastCloseoutDates,
   persistRuntimeSettingsNow,
+  reloadOrgConfig,
+  flushOrgConfigPersist,
+  orgConfigLoading = false,
+  orgConfigHydrated = false,
   logout,
   saved,
 }) {
@@ -298,6 +303,20 @@ export function PrototypeRuntimePageContent({
                 organizationId: closeoutsApiOrganizationId,
                 actorUserId: ownerApiUserId,
                 actorRole: "owner",
+              }
+              : null
+          }
+          orgConfigApiContext={
+            closeoutsApiOrganizationId && ownerApiUserId && isOrgConfigApiEnabled()
+              ? {
+                enabled: true,
+                organizationId: closeoutsApiOrganizationId,
+                actorUserId: ownerApiUserId,
+                actorRole: "owner",
+                loading: orgConfigLoading,
+                hydrated: orgConfigHydrated,
+                reload: reloadOrgConfig,
+                flushPersist: flushOrgConfigPersist,
               }
               : null
           }
