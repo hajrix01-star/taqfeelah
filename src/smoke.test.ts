@@ -50,7 +50,10 @@ describe("prototype runtime module boundary smoke", () => {
   it("loads closeout display helpers used by the register", async () => {
     const display = await import("@/features/entries/client/register-operation-display");
     const labels = await import("@/features/closeouts/client/closeout-day-label");
-    const context = display.buildRegisterCloseoutDayContext([]);
+    const boot = await import("@/components/prototype-runtime/prototype-runtime-boot");
+    const context = display.buildRegisterCloseoutDayContext([], {
+      trustServerDaySequenceOnly: boot.ENTRIES_API_DB_SOURCE,
+    });
     expect(context.daySequenceByCloseoutId).toBeInstanceOf(Map);
     expect(labels.closeoutSequenceLetter(1)).toBe("A");
     expect(labels.formatCloseoutDayLabel({
@@ -59,6 +62,12 @@ describe("prototype runtime module boundary smoke", () => {
       sameDayCloseoutCount: 2,
     })).toBe("8 يونيو · B");
   });
+
+  it("loads owner register screen exports", async () => {
+    const register = await import("@/components/prototype-runtime/prototype-runtime-owner-register-screen");
+    expect(register.OwnerRegisterScreen).toBeTypeOf("function");
+    expect(register.OwnerRegisterConnected).toBeTypeOf("function");
+  }, SMOKE_IMPORT_TIMEOUT_MS);
 
   it("loads owner entry screen exports", async () => {
     const screens = await import("@/components/prototype-runtime/prototype-runtime-owner-entry-screens");
