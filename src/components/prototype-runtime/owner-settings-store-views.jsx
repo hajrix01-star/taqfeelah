@@ -14,6 +14,7 @@ import {
   SettingsLink,
   SettingsPageHeader,
 } from "./owner-settings-ui-primitives";
+import { OwnerSettingsIncomeSourcesEditor } from "./owner-settings-income-sources-editor";
 import { ThemePicker } from "./prototype-runtime-notebook";
 
 export function OwnerSettingsStoreProfilePanel({
@@ -47,12 +48,16 @@ export function OwnerSettingsStoreChannelsPanel({
   visibleChannels,
   channelConfig,
   retiredChannels,
-  newChannelName,
-  setNewChannelName,
+  newPaymentMethodName,
+  setNewPaymentMethodName,
+  newSalesChannelName,
+  setNewSalesChannelName,
   toggleChannel,
   requestRetireChannel,
   restoreSalesChannel,
-  addSalesChannel,
+  addCustomPaymentMethod,
+  addCustomSalesChannel,
+  addCatalogChannel,
   settingsNotice,
   backFromStorePanel,
   saveChannelSettings,
@@ -60,40 +65,25 @@ export function OwnerSettingsStoreChannelsPanel({
 }) {
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
-      <SettingsPageHeader title={text(lang, "salesChannels")} onBack={backFromStorePanel} lang={lang} />
-      <p className="mb-3 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "channelControlHint")}</p>
-      <div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
-        {visibleChannels.map((channel, index) => (
-          <div key={channel.id} className={`flex items-center justify-between gap-3 px-4 py-4 ${index < visibleChannels.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}>
-            <div className="min-w-0">
-              <p className="text-xs font-black">{channelName(channel, lang)}</p>
-              <p className="mt-1 text-taq-meta font-bold text-[#827762]">{channelConfig.activeIds.includes(channel.id) ? text(lang, "active") : text(lang, "stopChannel")}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <SettingToggle enabled={channelConfig.activeIds.includes(channel.id)} onToggle={() => toggleChannel(channel.id)} />
-              <button onClick={() => requestRetireChannel(channel)} className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFF1EE] text-[#B44747]"><Trash2 className="h-3.5 w-3.5" /></button>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
-        <p className="mb-3 text-xs font-black">{text(lang, "addChannel")}</p>
-        <div className="flex gap-2">
-          <input value={newChannelName} onChange={(event) => setNewChannelName(event.target.value)} placeholder={text(lang, "newChannelName")} className="min-w-0 flex-1 rounded-2xl bg-[#F7F5EF] px-3 py-3 text-xs font-bold outline-none" />
-          <button onClick={addSalesChannel} className="rounded-2xl bg-[#112A46] px-4 text-xs font-black text-white"><Plus className="h-4 w-4" /></button>
-        </div>
-        {retiredChannels.length > 0 && (
-          <div className="mt-4 border-t border-[#F0ECE2] pt-4">
-            <p className="mb-2 text-taq-meta font-bold text-[#827762]">{text(lang, "stoppedChannels")}</p>
-            {retiredChannels.map((channel) => (
-              <button key={channel.id} onClick={() => restoreSalesChannel(channel)} className="mb-2 flex w-full items-center justify-between rounded-xl bg-[#F7F5EF] px-3 py-3 text-taq-meta font-black text-[#257844]">
-                <span>{channelName(channel, lang)}</span>
-                <span>{text(lang, "restoreChannel")}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <SettingsPageHeader title={text(lang, "incomingChannelsSettings")} onBack={backFromStorePanel} lang={lang} />
+      <OwnerSettingsIncomeSourcesEditor
+        lang={lang}
+        visibleChannels={visibleChannels}
+        channelConfig={channelConfig}
+        retiredChannels={retiredChannels}
+        newPaymentMethodName={newPaymentMethodName}
+        setNewPaymentMethodName={setNewPaymentMethodName}
+        newSalesChannelName={newSalesChannelName}
+        setNewSalesChannelName={setNewSalesChannelName}
+        toggleChannel={toggleChannel}
+        requestRetireChannel={requestRetireChannel}
+        restoreSalesChannel={restoreSalesChannel}
+        addCustomPaymentMethod={addCustomPaymentMethod}
+        addCustomSalesChannel={addCustomSalesChannel}
+        addCatalogChannel={addCatalogChannel}
+        text={text}
+        channelName={channelName}
+      />
       {settingsNotice && <p className="mb-3 rounded-xl bg-[#FFF1EE] p-3 text-taq-meta font-bold text-[#B44747]">{settingsNotice}</p>}
       <div className="grid grid-cols-[0.9fr_1.35fr] gap-3">
         <button onClick={backFromStorePanel} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button>
@@ -224,7 +214,7 @@ export function OwnerSettingsStoreOverviewPanel({
       </div>
       <div className="mb-5 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
         <SettingsLink lang={lang} icon={Building2} title={lang === "ar" ? "بيانات المحل" : "Shop details"} desc={displayLocation(selectedStore)} onClick={() => openStorePanel("profile")} />
-        <SettingsLink lang={lang} icon={CreditCard} title={text(lang, "salesChannels")} value={`${activeChannelCount}`} onClick={() => openStorePanel("channels")} />
+        <SettingsLink lang={lang} icon={CreditCard} title={text(lang, "incomingChannelsSettings")} value={`${activeChannelCount}`} onClick={() => openStorePanel("channels")} />
         <SettingsLink lang={lang} icon={ReceiptText} title={text(lang, "outflowCategories")} value={`${activeCategoryCount}`} onClick={() => openStorePanel("expenses")} />
         <SettingsLink lang={lang} icon={Bell} title={lang === "ar" ? "التنبيهات والتفضيلات" : "Alerts & preferences"} value={operationalConfig.closeoutAlert ? text(lang, "active") : text(lang, "stopChannel")} onClick={() => openStorePanel("alerts")} />
         <SettingsLink lang={lang} icon={UserRound} title={text(lang, "linkedEmployees")} value={`${linkedStaff.length}`} onClick={() => openStorePanel("staff")} border={false} />
@@ -272,12 +262,16 @@ export function OwnerSettingsStoreFlattenedPanel({
   visibleChannels,
   channelConfig,
   retiredChannels,
-  newChannelName,
-  setNewChannelName,
+  newPaymentMethodName,
+  setNewPaymentMethodName,
+  newSalesChannelName,
+  setNewSalesChannelName,
   toggleChannel,
   requestRetireChannel,
   restoreSalesChannel,
-  addSalesChannel,
+  addCustomPaymentMethod,
+  addCustomSalesChannel,
+  addCatalogChannel,
   saveChannelSettings,
   cancelChannelDraft,
   toggleCategory,
@@ -340,44 +334,29 @@ export function OwnerSettingsStoreFlattenedPanel({
         <SettingsAccordionSection
           lang={lang}
           icon={CreditCard}
-          title={text(lang, "salesChannels")}
+          title={text(lang, "incomingChannelsSettings")}
           value={`${activeChannelCount}`}
           expanded={expandedSection === "channels"}
           onToggle={() => toggleSection("channels")}
         >
-          <p className="mb-3 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "channelControlHint")}</p>
-          <div className="mb-4 overflow-hidden rounded-3xl bg-[#F7F5EF] ring-1 ring-black/[0.03]">
-            {visibleChannels.map((channel, index) => (
-              <div key={channel.id} className={`flex items-center justify-between gap-3 bg-white px-4 py-4 ${index < visibleChannels.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}>
-                <div className="min-w-0">
-                  <p className="text-xs font-black">{channelName(channel, lang)}</p>
-                  <p className="mt-1 text-taq-meta font-bold text-[#827762]">{channelConfig.activeIds.includes(channel.id) ? text(lang, "active") : text(lang, "stopChannel")}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <SettingToggle enabled={channelConfig.activeIds.includes(channel.id)} onToggle={() => toggleChannel(channel.id)} />
-                  <button onClick={() => requestRetireChannel(channel)} className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFF1EE] text-[#B44747]"><Trash2 className="h-3.5 w-3.5" /></button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mb-4 rounded-3xl bg-[#F7F5EF] p-4 ring-1 ring-black/[0.03]">
-            <p className="mb-3 text-xs font-black">{text(lang, "addChannel")}</p>
-            <div className="flex gap-2">
-              <input value={newChannelName} onChange={(event) => setNewChannelName(event.target.value)} placeholder={text(lang, "newChannelName")} className="min-w-0 flex-1 rounded-2xl bg-white px-3 py-3 text-xs font-bold outline-none" />
-              <button onClick={addSalesChannel} className="rounded-2xl bg-[#112A46] px-4 text-xs font-black text-white"><Plus className="h-4 w-4" /></button>
-            </div>
-            {retiredChannels.length > 0 && (
-              <div className="mt-4 border-t border-[#F0ECE2] pt-4">
-                <p className="mb-2 text-taq-meta font-bold text-[#827762]">{text(lang, "stoppedChannels")}</p>
-                {retiredChannels.map((channel) => (
-                  <button key={channel.id} onClick={() => restoreSalesChannel(channel)} className="mb-2 flex w-full items-center justify-between rounded-xl bg-white px-3 py-3 text-taq-meta font-black text-[#257844]">
-                    <span>{channelName(channel, lang)}</span>
-                    <span>{text(lang, "restoreChannel")}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <OwnerSettingsIncomeSourcesEditor
+            lang={lang}
+            visibleChannels={visibleChannels}
+            channelConfig={channelConfig}
+            retiredChannels={retiredChannels}
+            newPaymentMethodName={newPaymentMethodName}
+            setNewPaymentMethodName={setNewPaymentMethodName}
+            newSalesChannelName={newSalesChannelName}
+            setNewSalesChannelName={setNewSalesChannelName}
+            toggleChannel={toggleChannel}
+            requestRetireChannel={requestRetireChannel}
+            restoreSalesChannel={restoreSalesChannel}
+            addCustomPaymentMethod={addCustomPaymentMethod}
+            addCustomSalesChannel={addCustomSalesChannel}
+            addCatalogChannel={addCatalogChannel}
+            text={text}
+            channelName={channelName}
+          />
           {settingsNotice && expandedSection === "channels" && <p className="mb-3 rounded-xl bg-[#FFF1EE] p-3 text-taq-meta font-bold text-[#B44747]">{settingsNotice}</p>}
           <div className="grid grid-cols-[0.9fr_1.35fr] gap-3">
             <button onClick={cancelChannelDraft} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button>
@@ -502,12 +481,16 @@ export function renderOwnerSettingsStorePanel(storePanel, state) {
         visibleChannels={state.visibleChannels}
         channelConfig={state.channelConfig}
         retiredChannels={state.retiredChannels}
-        newChannelName={state.newChannelName}
-        setNewChannelName={state.setNewChannelName}
+        newPaymentMethodName={state.newPaymentMethodName}
+        setNewPaymentMethodName={state.setNewPaymentMethodName}
+        newSalesChannelName={state.newSalesChannelName}
+        setNewSalesChannelName={state.setNewSalesChannelName}
         toggleChannel={state.toggleChannel}
         requestRetireChannel={state.requestRetireChannel}
         restoreSalesChannel={state.restoreSalesChannel}
-        addSalesChannel={state.addSalesChannel}
+        addCustomPaymentMethod={state.addCustomPaymentMethod}
+        addCustomSalesChannel={state.addCustomSalesChannel}
+        addCatalogChannel={state.addCatalogChannel}
         settingsNotice={state.settingsNotice}
         backFromStorePanel={state.backFromStorePanel}
         saveChannelSettings={state.saveChannelSettings}

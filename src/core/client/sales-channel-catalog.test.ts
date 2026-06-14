@@ -5,12 +5,12 @@ import {
 } from "./sales-channel-catalog";
 
 describe("sales-channel-catalog defaults", () => {
-  it("uses cash and bank for new stores", () => {
-    expect(DEFAULT_NEW_STORE_SALES_CHANNEL_IDS).toEqual(["cash", "bank"]);
+  it("uses cash and card for new stores", () => {
+    expect(DEFAULT_NEW_STORE_SALES_CHANNEL_IDS).toEqual(["cash", "card"]);
   });
 
   it("stores Arabic names for built-in default channels", () => {
     expect(defaultSalesChannelDbName({ id: "cash", text: "cash" })).toBe("نقد");
-    expect(defaultSalesChannelDbName({ id: "bank", text: "bank" })).toBe("بنك");
+    expect(defaultSalesChannelDbName({ id: "card", text: "card" })).toBe("بطاقة");
   });
 });

@@ -1,4 +1,4 @@
-import { Wallet, Landmark } from "lucide-react";
+import { Wallet, CreditCard } from "lucide-react";
 import { DEFAULT_NEW_STORE_SALES_CHANNEL_IDS } from "@/core/client/sales-channel-catalog";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import {
@@ -9,8 +9,8 @@ import { resolveSalesChannelLabel } from "@/features/org-config/client/sales-cha
 import copy from "./prototype-runtime-copy";
 
 const channelCatalog = {
-  cash: { id: "cash", text: "cash", icon: Wallet },
-  bank: { id: "bank", text: "bank", icon: Landmark },
+  cash: { id: "cash", text: "cash", kind: "payment_method", icon: Wallet },
+  card: { id: "card", text: "card", kind: "payment_method", icon: CreditCard },
 };
 
 const channels = DEFAULT_NEW_STORE_SALES_CHANNEL_IDS.map((id) => channelCatalog[id]);

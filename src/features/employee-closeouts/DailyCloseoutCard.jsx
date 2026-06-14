@@ -10,6 +10,7 @@ import {
   countOutflowAttachments,
 } from "../closeouts/client/closeout-attachment-utils";
 import { formatCloseoutDayLabel } from "../closeouts/client/closeout-day-label";
+import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 
 function money(value, lang) {
   return Number(value || 0).toLocaleString(lang === "ar" ? "en-US" : "en-US");
@@ -83,7 +84,7 @@ export default function DailyCloseoutCard({
         </p>
         {expanded && salesRows.length > 0 ? (
           <div className="mx-3.5 mb-2 space-y-1 border-t border-dashed border-[#E8E1D4] pt-2">
-            <p className="text-taq-nav font-black text-[#806528]">{lang === "ar" ? "قنوات الداخل" : "Sales channels"}</p>
+            <p className="text-taq-nav font-black text-[#806528]">{text(lang, "incomingChannels")}</p>
             {salesRows.map((row) => (
               <div key={row.channelId} className="flex items-center justify-between gap-2 text-taq-meta font-bold">
                 <span className="truncate text-[#716753]">{row.name}</span>

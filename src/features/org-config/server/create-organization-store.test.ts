@@ -55,8 +55,9 @@ describe("createOrganizationStore", () => {
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
-  it("provisions default cash and bank channels for new stores", async () => {
+  it("provisions default cash and card channels for new stores", async () => {
     const { createOrganizationStore } = await import("./create-organization-store");
+    const { buildCatalogUuidMap } = await import("@/core/client/income-source-catalog");
 
     const created = await createOrganizationStore({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -73,14 +74,14 @@ describe("createOrganizationStore", () => {
         "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c": {
           channels: [
             { id: "cash", text: "cash", retired: false },
-            { id: "bank", text: "bank", retired: false },
+            { id: "card", text: "card", retired: false },
           ],
-          activeIds: ["cash", "bank"],
+          activeIds: ["cash", "card"],
         },
       },
       expect.objectContaining({
         storeIdMap: { "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c": "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c" },
-        salesChannelIdMap: {},
+        salesChannelIdMap: buildCatalogUuidMap(),
       }),
     );
   });

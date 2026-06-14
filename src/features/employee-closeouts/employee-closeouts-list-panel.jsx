@@ -44,12 +44,12 @@ export function EmployeeCloseoutsListPanel({
       ) : null}
       {!employeeRuntimeReady && (
         <div className="mb-4 rounded-2xl bg-[#FFF4D2]/95 p-3 text-taq-meta font-bold text-[#806528] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
-          {lang === "ar" ? "جاري تحميل إعدادات المحل وقنوات البيع من الخادم…" : "Loading store settings and sales channels from the server…"}
+          {lang === "ar" ? "جاري تحميل إعدادات المحل وقنوات الداخل من الخادم…" : "Loading store settings and incoming channels from the server…"}
         </div>
       )}
       {employeeRuntimeReady && !channelsReady && (
         <div className="mb-4 rounded-2xl bg-[#FFF1EE]/90 p-3 text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10 backdrop-blur-sm">
-          {lang === "ar" ? "لا توجد قنوات بيع مفعّلة لهذا المحل. اطلب من المالك تفعيلها من الإعدادات." : "No active sales channels for this store. Ask the owner to enable them in settings."}
+          {text(lang, "noSalesChannels")}
         </div>
       )}
       {syncError ? (

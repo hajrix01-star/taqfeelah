@@ -7,6 +7,7 @@ import { ValidationError } from "@/core/errors/app-error";
 import { ERROR_CODES } from "@/core/errors/error-codes";
 import { catalogAppError } from "@/core/errors/normalize-error";
 import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
+import { buildCatalogUuidMap } from "@/core/client/income-source-catalog";
 import { buildDefaultStoreChannelSettings } from "@/features/org-config/server/build-default-store-channel-settings";
 import { provisionSalesChannels } from "@/features/runtime-settings/server/provision-sales-channels";
 
@@ -66,7 +67,7 @@ export async function createSaasAccountStore(rawInput: z.infer<typeof inputSchem
       buildDefaultStoreChannelSettings(storeId),
       {
         storeIdMap: { [storeId]: storeId },
-        salesChannelIdMap: {},
+        salesChannelIdMap: buildCatalogUuidMap(),
         executor: tx,
       },
     );

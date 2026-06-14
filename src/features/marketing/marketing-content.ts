@@ -12,7 +12,7 @@ export type MarketingPlan = {
 export const MARKETING_FEATURES = [
   {
     title: "ملخص داخل يومي",
-    description: "سجّل الداخل حسب قنوات البيع في دقائق — بدون تعقيد محاسبي.",
+    description: "سجّل الداخل حسب طرق الدفع وقنوات البيع في دقائق — بدون تعقيد محاسبي.",
   },
   {
     title: "الخارج منفصل وواضح",
