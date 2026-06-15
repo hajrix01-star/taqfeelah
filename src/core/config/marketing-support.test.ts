@@ -12,6 +12,12 @@ describe("marketing support", () => {
     ).toBe("966509998888");
   });
 
+  it("normalizes saudi local whatsapp number", () => {
+    expect(
+      resolveSupportWhatsAppNumber({ NEXT_PUBLIC_SUPPORT_WHATSAPP: "0533507223" }),
+    ).toBe("966533507223");
+  });
+
   it("builds a whatsapp contact url", () => {
     expect(buildSupportWhatsAppUrl("مرحبًا")).toContain("https://wa.me/");
     expect(buildSupportWhatsAppUrl("مرحبًا")).toContain(encodeURIComponent("مرحبًا"));
