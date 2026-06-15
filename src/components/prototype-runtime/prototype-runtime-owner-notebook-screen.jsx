@@ -14,6 +14,7 @@ import {
   NoteComposerPanel,
   NotebookEmptyState,
   NotebookViewTabs,
+  resolveNotebookViewItem,
 } from "./owner-notebook-ui-primitives";
 
 export function OwnerNotebookScreen({
@@ -72,6 +73,11 @@ export function OwnerNotebookScreen({
     setEditingId(null);
   };
 
+  const activeView = useMemo(
+    () => resolveNotebookViewItem(lang, tabCounts, filter),
+    [lang, tabCounts, filter],
+  );
+
   const showGlobalEmpty = hydrated && filter === "active" && notes.length === 0 && !composerOpen;
   const showTabEmpty = hydrated && visibleNotes.length === 0 && !showGlobalEmpty;
 
@@ -114,8 +120,7 @@ export function OwnerNotebookScreen({
             />
 
             <div
-              className="overflow-hidden rounded-b-[16px] border border-[#E8E1D4]/90 border-t-0 bg-white px-2.5 py-2.5 shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]"
-              style={cardStyle}
+              className={`overflow-hidden rounded-b-[16px] border border-[#E8E1D4]/90 border-t-0 px-2.5 py-2.5 shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)] ${activeView.contentSurfaceClass} ${activeView.contentAccentClass}`}
               role="tabpanel"
             >
               {!hydrated ? (

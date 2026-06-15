@@ -32,6 +32,8 @@ export const OWNER_NOTEBOOK_VIEW_TABS = [
   { id: "done", label: "ownerNotebookDone" },
 ];
 
+const NOTEBOOK_VIEW_NEUTRAL_INACTIVE = "bg-[#F0ECE2] text-[#827762]";
+
 function buildNotebookViewTabItems(lang, counts) {
   return [
     {
@@ -39,38 +41,51 @@ function buildNotebookViewTabItems(lang, counts) {
       label: text(lang, "ownerNotebookActive"),
       count: counts.active ?? 0,
       activeClass: "bg-[#E4B84A] text-[#112A46]",
-      inactiveClass: "bg-[#E4B84A]/80 text-[#112A46]",
+      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[#957D43]/80`,
       badgeActiveClass: "bg-[#112A46] text-white",
-      badgeInactiveClass: "bg-[#112A46]/10 text-[#112A46]",
+      badgeInactiveClass: "bg-[#112A46]/[0.08] text-[#827762]",
+      contentSurfaceClass: "bg-[#FFFBF0]",
+      contentAccentClass: "border-t-2 border-[#E4B84A]/45",
     },
     {
       id: "tasks",
       label: text(lang, "ownerNotebookTasks"),
       count: counts.tasks ?? 0,
       activeClass: "bg-[#257844] text-white",
-      inactiveClass: "bg-[#257844]/82 text-white",
+      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[#257844]/75`,
       badgeActiveClass: "bg-white/20 text-white",
-      badgeInactiveClass: "bg-white/15 text-white",
+      badgeInactiveClass: "bg-[#257844]/10 text-[#257844]",
+      contentSurfaceClass: "bg-[#F4FAF6]",
+      contentAccentClass: "border-t-2 border-[#257844]/40",
     },
     {
       id: "notes",
       label: text(lang, "ownerNotebookNotes"),
       count: counts.notes ?? 0,
       activeClass: "bg-[#214B7B] text-white",
-      inactiveClass: "bg-[#214B7B]/82 text-white",
+      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[#214B7B]/75`,
       badgeActiveClass: "bg-white/20 text-white",
-      badgeInactiveClass: "bg-white/15 text-white",
+      badgeInactiveClass: "bg-[#214B7B]/10 text-[#214B7B]",
+      contentSurfaceClass: "bg-[#F5F8FC]",
+      contentAccentClass: "border-t-2 border-[#214B7B]/40",
     },
     {
       id: "done",
       label: text(lang, "ownerNotebookDone"),
       count: counts.done ?? 0,
       activeClass: "bg-[#806528] text-white",
-      inactiveClass: "bg-[#806528]/82 text-white",
+      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[#806528]/75`,
       badgeActiveClass: "bg-white/20 text-white",
-      badgeInactiveClass: "bg-white/15 text-white",
+      badgeInactiveClass: "bg-[#806528]/10 text-[#806528]",
+      contentSurfaceClass: "bg-[#FAF7F0]",
+      contentAccentClass: "border-t-2 border-[#806528]/40",
     },
   ];
+}
+
+export function resolveNotebookViewItem(lang, counts, viewId) {
+  const items = buildNotebookViewTabItems(lang, counts);
+  return items.find((item) => item.id === viewId) || items[0];
 }
 
 export function NotebookViewTabs({ lang, active, onChange, tabCounts = {} }) {
@@ -91,15 +106,15 @@ export function NotebookViewTabs({ lang, active, onChange, tabCounts = {} }) {
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(item.id)}
-            className={`flex h-9 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-black transition-all duration-200 ${
+            className={`flex h-9 min-w-0 flex-1 items-center justify-center gap-1 px-1.5 text-[10px] font-black transition-all duration-200 ${
               isActive ? item.activeClass : item.inactiveClass
-            } ${isActive ? "z-10 ring-2 ring-inset ring-[#112A46]" : "opacity-95"} ${
-              index > 0 ? "border-s border-white/25" : ""
+            } ${isActive ? "z-10 ring-2 ring-inset ring-[#112A46]/85" : ""} ${
+              index > 0 ? "border-s border-[#E8E1D4]/80" : ""
             }`}
           >
-            <span className="w-full truncate text-center leading-4">{item.label}</span>
+            <span className="truncate leading-4">{item.label}</span>
             <span
-              className={`rounded-md px-1.5 py-px text-[9px] font-bold tabular-nums leading-none ${
+              className={`shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-bold tabular-nums ${
                 isActive ? item.badgeActiveClass : item.badgeInactiveClass
               }`}
             >
