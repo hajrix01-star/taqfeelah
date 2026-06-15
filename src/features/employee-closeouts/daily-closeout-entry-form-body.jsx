@@ -17,14 +17,7 @@ import {
   ProofAttachmentPreview,
 } from "@/components/prototype-runtime/prototype-runtime-attachment-ui";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
-import { resolveIncomeSourceKind } from "@/core/client/income-source-catalog";
 import { CloseoutEntryStorePicker } from "./closeout-entry-store-picker";
-
-function groupSalesChannels(salesChannels) {
-  const paymentMethods = salesChannels.filter((channel) => resolveIncomeSourceKind(channel) === "payment_method");
-  const salesChannelItems = salesChannels.filter((channel) => resolveIncomeSourceKind(channel) === "sales_channel");
-  return { paymentMethods, salesChannelItems };
-}
 
 function ChannelAmountGrid({ channels, labelChannel, salesValues, updateSalesValue, moneyInputClass }) {
   if (channels.length === 0) return null;
@@ -85,7 +78,6 @@ export function DailyCloseoutEntryFormBody({
   todayIso,
 }) {
   const [dateEditing, setDateEditing] = useState(false);
-  const { paymentMethods, salesChannelItems } = groupSalesChannels(salesChannels);
 
   const confirmDateEdit = (nextDate) => {
     if (!nextDate) {
@@ -151,31 +143,15 @@ export function DailyCloseoutEntryFormBody({
         {salesChannels.length === 0 ? (
           <p className="rounded-2xl bg-[#FFF1EE] p-3 text-xs font-bold text-[#B44747]">{text(lang, "noSalesChannels")}</p>
         ) : (
-          <div className="space-y-4">
-            {paymentMethods.length > 0 ? (
-              <div>
-                <p className="mb-2 text-taq-nav font-black text-[#806528]">{text(lang, "paymentMethods")}</p>
-                <ChannelAmountGrid
-                  channels={paymentMethods}
-                  labelChannel={labelChannel}
-                  salesValues={salesValues}
-                  updateSalesValue={updateSalesValue}
-                  moneyInputClass={moneyInputClass}
-                />
-              </div>
-            ) : null}
-            {salesChannelItems.length > 0 ? (
-              <div>
-                <p className="mb-2 text-taq-nav font-black text-[#806528]">{text(lang, "salesChannelsTitle")}</p>
-                <ChannelAmountGrid
-                  channels={salesChannelItems}
-                  labelChannel={labelChannel}
-                  salesValues={salesValues}
-                  updateSalesValue={updateSalesValue}
-                  moneyInputClass={moneyInputClass}
-                />
-              </div>
-            ) : null}
+          <div>
+            <p className="mb-2 text-taq-nav font-black text-[#806528]">{text(lang, "paymentMethods")}</p>
+            <ChannelAmountGrid
+              channels={salesChannels}
+              labelChannel={labelChannel}
+              salesValues={salesValues}
+              updateSalesValue={updateSalesValue}
+              moneyInputClass={moneyInputClass}
+            />
           </div>
         )}
         <div className="rounded-2xl border border-[#E8E1D4] bg-[#FAF3E3] px-3 py-3">

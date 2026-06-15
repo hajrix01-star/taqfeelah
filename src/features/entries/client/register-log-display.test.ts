@@ -3,6 +3,7 @@ import {
   DEFAULT_REGISTER_LOG_FILTERS,
   buildRegisterCloseoutSummaries,
   buildRegisterDayReportRows,
+  buildRegisterSalesChannelOptions,
   filterRegisterLogEntries,
   formatNetMarginOfSalesRatio,
   registerLogFilterCount,
@@ -111,6 +112,80 @@ describe("register-log-display", () => {
   it("formats net margin of sales ratio", () => {
     expect(formatNetMarginOfSalesRatio(100, 30)).toBe("30.0%");
     expect(formatNetMarginOfSalesRatio(0, 10)).toBe("—");
+  });
+
+  it("dedupes register payment method filter options by canonical key", () => {
+    const cashUuid = "9bc40d4f-c773-4ba3-87db-b8bb1467dafb";
+    const configuredChannels = [
+      { id: "cash", legacyId: "cash", text: "cash", custom: false },
+      { id: cashUuid, legacyId: "cash", text: "cash", custom: false },
+    ];
+    const options = buildRegisterSalesChannelOptions(
+      [
+        {
+          type: "summary",
+          salesChannels: [
+            { channelId: "cash", amount: 100 },
+            { channelId: cashUuid, amount: 50 },
+          ],
+        },
+      ],
+      (row: { channelId: string }) => row.channelId,
+      "All",
+      configuredChannels,
+    );
+    expect(options).toHaveLength(2);
+    expect(options[1]).toEqual({ id: "cash", label: "cash" });
+  });
+
+  it("filters register entries by canonical payment method key", () => {
+    const cashUuid = "9bc40d4f-c773-4ba3-87db-b8bb1467dafb";
+    const configuredChannels = [{ id: cashUuid, legacyId: "cash", text: "cash", custom: false }];
+    const entries = [
+      {
+        id: "1",
+        type: "summary",
+        status: "active",
+        salesChannels: [{ channelId: cashUuid, amount: 100 }],
+      },
+      {
+        id: "2",
+        type: "summary",
+        status: "active",
+        salesChannels: [{ channelId: "jahez", amount: 50 }],
+      },
+    ];
+    const filtered = filterRegisterLogEntries(
+      entries,
+      { ...DEFAULT_REGISTER_LOG_FILTERS, type: "summary", salesChannel: "cash" },
+      undefined,
+      configuredChannels,
+    );
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].id).toBe("1");
+  });
+
+  it("summarizes register period by canonical payment method key", () => {
+    const cashUuid = "9bc40d4f-c773-4ba3-87db-b8bb1467dafb";
+    const configuredChannels = [{ id: cashUuid, legacyId: "cash", text: "cash", custom: false }];
+    const summary = summarizeRegisterPeriod(
+      [
+        {
+          id: "1",
+          type: "summary",
+          status: "active",
+          salesChannels: [
+            { channelId: "cash", amount: 0.1 },
+            { channelId: cashUuid, amount: 0.2 },
+          ],
+        },
+      ],
+      "cash",
+      [{ id: "cash", label: "Cash" }],
+      "Channel",
+      configuredChannels,
+    );
+    expect(summary).toEqual({ mode: "channel", label: "Cash", amount: 0.3 });
   });
 
   it("carries owner edit metadata into closeout summaries", () => {

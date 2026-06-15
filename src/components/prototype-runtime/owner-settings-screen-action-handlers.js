@@ -232,7 +232,7 @@ export function createOwnerSettingsScreenHandlers(ctx) {
       } catch {
         setters.setSettingsNotice(
           lang === "ar"
-            ? "تعذر حفظ قنوات الدخل على الخادم. أعد المحاولة."
+            ? "تعذر حفظ طرق الدفع على الخادم. أعد المحاولة."
             : "Could not save income channels on the server. Please retry.",
         );
         return;

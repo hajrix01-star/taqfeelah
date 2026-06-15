@@ -137,7 +137,7 @@ export function OwnerRegisterCloseoutsList({
                       ))}
                     </div>
                   ) : (
-                    <p className="mt-2 text-taq-nav font-bold text-[#8B8274]">{lang === "ar" ? "لا توجد قنوات داخل" : "No sales channels"}</p>
+                    <p className="mt-2 text-taq-nav font-bold text-[#8B8274]">{text(lang, "noPaymentMethodsPeriod")}</p>
                   )
                 )}
                 <p className="mt-2 text-taq-meta font-black text-[#806528]">

@@ -126,10 +126,39 @@ export function resolveSalesChannelRowLabel(row, configuredChannels = [], lang, 
 }
 
 /**
- * Prefer configured channel metadata over entry snapshot names when aggregating totals.
+ * Stable key for register filters / exports — merges legacy UUID rows with catalog ids (cash, jahez, …).
  * @param {Record<string, unknown>} row
  * @param {Array<Record<string, unknown>>} configuredChannels
  */
+export function resolveRegisterIncomeSourceFilterKey(row, configuredChannels = []) {
+  const shape = resolveAggregatedChannelShape(row, configuredChannels);
+  const textKey = resolveSalesChannelTextKey(shape);
+  if (textKey) return textKey;
+  if (shape.custom === true) {
+    const customId = typeof shape.id === "string" && shape.id.trim()
+      ? shape.id.trim()
+      : typeof row?.channelId === "string"
+        ? row.channelId.trim()
+        : "";
+    return customId ? `custom:${customId}` : "";
+  }
+  return typeof shape.id === "string" && shape.id.trim()
+    ? shape.id.trim()
+    : typeof row?.channelId === "string"
+      ? row.channelId.trim()
+      : "";
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {string} filterKey
+ * @param {Array<Record<string, unknown>>} configuredChannels
+ */
+export function entryRowMatchesIncomeSourceFilter(row, filterKey, configuredChannels = []) {
+  if (filterKey === "all") return true;
+  return resolveRegisterIncomeSourceFilterKey(row, configuredChannels) === filterKey;
+}
+
 export function resolveAggregatedChannelShape(row, configuredChannels = []) {
   const channelId = typeof row?.channelId === "string" ? row.channelId : "";
   const configured = configuredChannels.find((channel) => (

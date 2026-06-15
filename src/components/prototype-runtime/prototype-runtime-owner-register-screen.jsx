@@ -175,12 +175,13 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
     () => buildRegisterSalesChannelOptions(
       periodEntries,
       (row) => resolveSalesChannelRowLabel(row, channels, lang, channelName),
-      lang === "ar" ? "كل القنوات" : "All channels",
+      text(lang, "allPaymentMethods"),
+      channels,
     ),
     [periodEntries, lang],
   );
   const filteredEntries = useMemo(
-    () => filterRegisterLogEntries(periodEntries, logFilters, entryCategory),
+    () => filterRegisterLogEntries(periodEntries, logFilters, entryCategory, channels),
     [periodEntries, logFilters],
   );
   const visibleEntries = newestEntries(filteredEntries);
@@ -195,6 +196,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
     () => buildRegisterCloseoutSummaries({
       filteredEntries,
       salesChannelFilter: logFilters.salesChannel,
+      configuredChannels: channels,
       resolveChannelName: (row) => resolveSalesChannelRowLabel(row, channels, lang, channelName),
       resolveStore: (businessId) => businessesList.find((business) => business.id === businessId) || null,
       resolveActorLabel: (group) => resolveRegisterCloseoutActorLabel(group, {
@@ -242,7 +244,8 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
       filteredEntries,
       logFilters.salesChannel,
       salesChannelOptions,
-      lang === "ar" ? "قناة" : "Channel",
+      text(lang, "paymentMethods"),
+      channels,
     ),
     [filteredEntries, lang, logFilters.salesChannel, salesChannelOptions],
   );

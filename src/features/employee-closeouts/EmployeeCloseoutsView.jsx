@@ -112,7 +112,7 @@ export default function EmployeeCloseoutsView({
     return (
       <section className="taq-page-gutter pb-28">
         <div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">
-          {lang === "ar" ? "جاري تحميل إعدادات المحل وقنوات الداخل من الخادم…" : "Loading store settings and incoming channels from the server…"}
+          {lang === "ar" ? "جاري تحميل إعدادات المحل وطرق الدفع من الخادم…" : "Loading store settings and payment methods from the server…"}
         </div>
       </section>
     );

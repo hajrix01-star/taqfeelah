@@ -60,7 +60,7 @@ export function OwnerSettingsStoreChannelsPanel({
 }) {
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
-      <SettingsPageHeader title={text(lang, "incomingChannelsSettings")} onBack={backFromStorePanel} lang={lang} />
+      <SettingsPageHeader title={text(lang, "paymentMethods")} onBack={backFromStorePanel} lang={lang} />
       <OwnerSettingsIncomeSourcesEditor
         lang={lang}
         channelConfig={channelConfig}
@@ -204,7 +204,7 @@ export function OwnerSettingsStoreOverviewPanel({
       </div>
       <div className="mb-5 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
         <SettingsLink lang={lang} icon={Building2} title={lang === "ar" ? "بيانات المحل" : "Shop details"} desc={displayLocation(selectedStore)} onClick={() => openStorePanel("profile")} />
-        <SettingsLink lang={lang} icon={CreditCard} title={text(lang, "incomingChannelsSettings")} value={`${activeChannelCount}`} onClick={() => openStorePanel("channels")} />
+        <SettingsLink lang={lang} icon={CreditCard} title={text(lang, "paymentMethods")} value={`${activeChannelCount}`} onClick={() => openStorePanel("channels")} />
         <SettingsLink lang={lang} icon={ReceiptText} title={text(lang, "outflowCategories")} value={`${activeCategoryCount}`} onClick={() => openStorePanel("expenses")} />
         <SettingsLink lang={lang} icon={Bell} title={lang === "ar" ? "التنبيهات والتفضيلات" : "Alerts & preferences"} value={operationalConfig.closeoutAlert ? text(lang, "active") : text(lang, "stopChannel")} onClick={() => openStorePanel("alerts")} />
         <SettingsLink lang={lang} icon={UserRound} title={text(lang, "linkedEmployees")} value={`${linkedStaff.length}`} onClick={() => openStorePanel("staff")} border={false} />
@@ -319,7 +319,7 @@ export function OwnerSettingsStoreFlattenedPanel({
         <SettingsAccordionSection
           lang={lang}
           icon={CreditCard}
-          title={text(lang, "incomingChannelsSettings")}
+          title={text(lang, "paymentMethods")}
           value={`${activeChannelCount}`}
           expanded={expandedSection === "channels"}
           onToggle={() => toggleSection("channels")}
