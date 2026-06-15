@@ -19,6 +19,8 @@ import { resolveEmployeeStoreName } from "./store-name-resolver";
 import { countSentCloseoutsByDate } from "../closeouts/client/closeout-day-label";
 import { isEmployeeCloseoutsListPending } from "./employee-closeouts-loading";
 import { resolveEmployeeCloseoutsViewGate } from "./employee-closeouts-view-gate";
+import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { appAlert, appConfirm } from "@/lib/ui/app-dialog/app-dialog-bridge";
 
 function resolveScrollContainer(node) {
   if (typeof window === "undefined" || !node) return null;
@@ -188,11 +190,9 @@ export function useEmployeeCloseoutsViewState({
 
   const openSettings = useCallback(() => setShowSettings(true), []);
 
-  const startNewCloseout = useCallback(() => {
+  const startNewCloseout = useCallback(async () => {
     if (!employeeRuntimeReady) {
-      window.alert(lang === "ar"
-        ? "جاري تحميل إعدادات المحل من الخادم… انتظر لحظة ثم أعد المحاولة."
-        : "Store settings are still loading from the server… wait a moment and try again.");
+      await appAlert({ lang, title: text(lang, "storeSettingsLoadingRetry"), variant: "info" });
       return;
     }
     const stores = assignedStores.length > 0
@@ -215,7 +215,7 @@ export function useEmployeeCloseoutsViewState({
     setEntryCloseout(upsertCloseout(draft));
   }, [assignedStores, currentStore, employee, employeeRuntimeReady, lang, notebookTheme, upsertCloseout]);
 
-  const handleEntryStoreSelect = useCallback((storeId) => {
+  const handleEntryStoreSelect = useCallback(async (storeId) => {
     if (!entryCloseout || !storeId) return;
     if (entryCloseout.storeId === storeId) return;
 
@@ -223,11 +223,13 @@ export function useEmployeeCloseoutsViewState({
       || (currentStore?.id === storeId ? currentStore : null);
     if (!store) return;
 
-    if (closeoutDraftHasEntryData(entryCloseout) && !window.confirm(
-      lang === "ar"
-        ? "تغيير المحل سيمسح ما أدخلته في هذه التقفيلة."
-        : "Changing the shop will clear what you entered in this closeout.",
-    )) {
+    if (closeoutDraftHasEntryData(entryCloseout) && !(await appConfirm({
+      lang,
+      title: text(lang, "discardCloseoutDraftOnStoreChange"),
+      confirmLabel: text(lang, "dialogOk"),
+      cancelLabel: text(lang, "cancel"),
+      variant: "warning",
+    }))) {
       return;
     }
 
@@ -274,11 +276,11 @@ export function useEmployeeCloseoutsViewState({
       const fallback = next.phase === "save"
         ? (lang === "ar" ? "تعذر الحفظ." : "Failed to save.")
         : (lang === "ar" ? "تعذر الإرسال." : "Failed to send.");
-      window.alert(syncError || fallback);
+      await appAlert({ lang, title: syncError || fallback, variant: "danger" });
       return;
     }
     if (!next) {
-      window.alert(syncError || (lang === "ar" ? "تعذر الإرسال." : "Failed to send."));
+      await appAlert({ lang, title: syncError || text(lang, "closeoutSendFailed"), variant: "danger" });
       return;
     }
     setEntryCloseout(null);

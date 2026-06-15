@@ -32,6 +32,7 @@ import { formatCalendarMonth,
   todayIsoDate,
 } from "./prototype-runtime-notebook";
 import { resolveAttachmentPreviewSrc } from "@/features/employee-closeouts/daily-closeout-entry-helpers";
+import { appAlert, appConfirm } from "@/lib/ui/app-dialog/app-dialog-bridge";
 
 function EntryDatePicker({ lang, value, onChange, showSuggestion = false }) {
   const [open, setOpen] = useState(false);
@@ -131,8 +132,8 @@ export function OwnerSummaryScreen({
   const canSave = Boolean(selectedStore && salesChannels.length > 0 && total > 0 && summaryDate <= todayIsoDate());
   const formEnabled = Boolean(selectedStore);
   const showStorePicker = businessesList.length > 1;
-  const changeStore = (nextBusinessId) => {
-    if (nextBusinessId !== businessId && draftNeedsConfirmation(values, attachment) && !window.confirm(text(lang, "discardDraftOnStoreChange"))) return;
+  const changeStore = async (nextBusinessId) => {
+    if (nextBusinessId !== businessId && draftNeedsConfirmation(values, attachment) && !(await appConfirm({ lang, title: text(lang, "discardDraftOnStoreChange"), confirmLabel: text(lang, "dialogOk"), cancelLabel: text(lang, "cancel"), variant: "warning" }))) return;
     setBusinessId(nextBusinessId);
   };
   const submit = () => canSave && !processing && !saving && onSave({
@@ -224,8 +225,8 @@ export function OwnerExpenseScreen({
   const canSave = Boolean(selectedStore && toAmount(amount) > 0 && (kind !== "expense" || activeCategories.length > 0));
   const formEnabled = Boolean(selectedStore);
   const showStorePicker = businessesList.length > 1;
-  const changeStore = (nextBusinessId) => {
-    if (nextBusinessId !== businessId && draftNeedsConfirmation(amount, note, attachment) && !window.confirm(text(lang, "discardDraftOnStoreChange"))) return;
+  const changeStore = async (nextBusinessId) => {
+    if (nextBusinessId !== businessId && draftNeedsConfirmation(amount, note, attachment) && !(await appConfirm({ lang, title: text(lang, "discardDraftOnStoreChange"), confirmLabel: text(lang, "dialogOk"), cancelLabel: text(lang, "cancel"), variant: "warning" }))) return;
     if (nextBusinessId !== businessId) { setAmount(""); setNote(""); clearAttachment(); }
     setBusinessId(nextBusinessId);
   };

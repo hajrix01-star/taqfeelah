@@ -5,6 +5,7 @@ import {
   restoreStoreEntryViaApi,
   voidStoreEntryViaApi,
 } from "@/features/entries/client/store-entries-api-client";
+import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import {
   applyRestoreToEntry,
   applyVoidToEntry,
@@ -52,7 +53,7 @@ export function useRegisterVoidRestoreHandlers({
           reason: reason.trim(),
         });
         if (!voided) {
-          window.alert(resolveOperationalEntryVoidFailureMessage(lang));
+          await appAlert({ lang, title: resolveOperationalEntryVoidFailureMessage(lang), variant: "danger" });
           return;
         }
         const refreshed = await loadOperationalEntriesFromApi();
@@ -68,7 +69,7 @@ export function useRegisterVoidRestoreHandlers({
         setSelected(null);
       } catch (error) {
         console.warn("entry void api failed", error);
-        window.alert(resolveOperationalEntryVoidFailureMessage(lang));
+        await appAlert({ lang, title: resolveOperationalEntryVoidFailureMessage(lang), variant: "danger" });
       }
       return;
     }
@@ -128,7 +129,7 @@ export function useRegisterVoidRestoreHandlers({
           reason: reason.trim(),
         });
         if (!restored) {
-          window.alert(resolveOperationalEntryRestoreFailureMessage(lang));
+          await appAlert({ lang, title: resolveOperationalEntryRestoreFailureMessage(lang), variant: "danger" });
           return;
         }
         const refreshed = await loadOperationalEntriesFromApi();
@@ -145,7 +146,7 @@ export function useRegisterVoidRestoreHandlers({
         setSelected(null);
       } catch (error) {
         console.warn("entry restore api failed", error);
-        window.alert(resolveOperationalEntryRestoreFailureMessage(lang));
+        await appAlert({ lang, title: resolveOperationalEntryRestoreFailureMessage(lang), variant: "danger" });
       }
       return;
     }

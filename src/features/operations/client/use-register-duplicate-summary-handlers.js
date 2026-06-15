@@ -15,6 +15,7 @@ import {
   resolveDuplicateSummaryApproveFailureMessage,
 } from "@/features/operations/operational-entry-mutation-helpers";
 import { duplicateSummaryBlockedInDbSourceMessage } from "@/features/operations/client/closeout-required-entry-message";
+import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 
 export function useRegisterDuplicateSummaryHandlers({
   lang,
@@ -46,7 +47,7 @@ export function useRegisterDuplicateSummaryHandlers({
     if (!pending?.payload) return;
     setPendingDuplicateSummary(null);
     if (entriesApiDbSource) {
-      window.alert(duplicateSummaryBlockedInDbSourceMessage(lang));
+      await appAlert({ lang, title: duplicateSummaryBlockedInDbSourceMessage(lang), variant: "warning" });
       return;
     }
     if (phase9ApiEnabled && entriesApiEnabled) {
@@ -74,7 +75,7 @@ export function useRegisterDuplicateSummaryHandlers({
           payload: apiPayload,
         });
         if (!created) {
-          window.alert(resolveDuplicateSummaryApproveFailureMessage(lang));
+          await appAlert({ lang, title: resolveDuplicateSummaryApproveFailureMessage(lang), variant: "danger" });
           return;
         }
         const refreshed = await loadOperationalEntriesFromApi();
@@ -109,9 +110,7 @@ export function useRegisterDuplicateSummaryHandlers({
         }
       } catch (error) {
         console.warn("duplicate summary approve api failed", error);
-        window.alert(lang === "ar"
-          ? "تعذر حفظ الملخص المكرر على الخادم."
-          : "Failed to save duplicate summary on server.");
+        await appAlert({ lang, title: text(lang, "duplicateSummarySaveFailed"), variant: "danger" });
       } finally {
         savingRef.current = false;
         setSaving(false);
@@ -156,7 +155,7 @@ export function useRegisterDuplicateSummaryHandlers({
           entryIds: alert.entries.map((entry) => entry.id),
         });
         if (!acknowledged) {
-          window.alert(resolveDuplicateSummaryAcknowledgeFailureMessage(lang));
+          await appAlert({ lang, title: resolveDuplicateSummaryAcknowledgeFailureMessage(lang), variant: "danger" });
           return;
         }
         setAcknowledgedDuplicateSales((current) => ({
@@ -165,7 +164,7 @@ export function useRegisterDuplicateSummaryHandlers({
         }));
       } catch (error) {
         console.warn("duplicate summary acknowledge api failed", error);
-        window.alert(resolveDuplicateSummaryAcknowledgeFailureMessage(lang));
+        await appAlert({ lang, title: resolveDuplicateSummaryAcknowledgeFailureMessage(lang), variant: "danger" });
       }
       return;
     }

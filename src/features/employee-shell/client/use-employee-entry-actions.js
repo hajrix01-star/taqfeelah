@@ -16,6 +16,7 @@ import {
   resolveSummaryLastCloseoutUpdate,
 } from "@/features/operations/operational-entry-persist-helpers";
 import { resolveStandaloneEntryBlockedMessage } from "@/features/operations/client/closeout-required-entry-message";
+import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 
 export function useEmployeeEntryActions({
   lang,
@@ -46,12 +47,12 @@ export function useEmployeeEntryActions({
       allowedBusinessIds: assignedEmployeeBusinessIds,
     }) || !activeEmployee) return;
     if (isFutureOperationalEntryDate(payload.date, todayDate)) {
-      window.alert(text(lang, "futureDateNotAllowed"));
+      await appAlert({ lang, title: text(lang, "futureDateNotAllowed"), variant: "info" });
       return;
     }
     const blockedMessage = resolveStandaloneEntryBlockedMessage(entriesApiDbSource, lang);
     if (blockedMessage) {
-      window.alert(blockedMessage);
+      await appAlert({ lang, title: blockedMessage, variant: "warning" });
       return;
     }
     savingRef.current = true;
@@ -69,11 +70,11 @@ export function useEmployeeEntryActions({
           entriesApiDbSource,
         });
         if (!result.ok) {
-          window.alert(result.failureMessage);
+          await appAlert({ lang, title: result.failureMessage, variant: "danger" });
           return;
         }
         if (result.refreshFailed) {
-          window.alert(resolveOperationalEntriesRefreshWarningMessage(lang));
+          await appAlert({ lang, title: resolveOperationalEntriesRefreshWarningMessage(lang), variant: "warning" });
         }
         if (payload.type === "summary") {
           const summaryUpdate = resolveSummaryLastCloseoutUpdate(
@@ -107,7 +108,7 @@ export function useEmployeeEntryActions({
         storeAttachmentPayload,
       });
       if (!local.ok) {
-        if (local.attachmentFailed) window.alert(text(lang, "attachmentSaveFailed"));
+        if (local.attachmentFailed) await appAlert({ lang, title: text(lang, "attachmentSaveFailed"), variant: "info" });
         return;
       }
       setOperationalEntries((current) => [local.entry, ...current]);

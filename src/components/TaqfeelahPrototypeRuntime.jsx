@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { DailyCloseoutsProvider } from "@/features/daily-closeouts/DailyCloseoutsProvider";
+import { AppDialogProvider } from "@/lib/ui/app-dialog/AppDialogProvider";
 import { TopBar } from "./prototype-runtime/prototype-runtime-chrome";
 import { AppFontStyles } from "./prototype-runtime/prototype-runtime-app-font-styles";
 import { PrototypeRuntimePullScroll } from "./prototype-runtime/prototype-runtime-pull-scroll";
@@ -241,6 +242,7 @@ export default function TaqfeelahPrototypeRuntime() {
   }
 
   return (
+    <AppDialogProvider lang={lang}>
     <DailyCloseoutsProvider
       lang={lang}
       ownerName={ownerDisplayName}
@@ -441,5 +443,6 @@ export default function TaqfeelahPrototypeRuntime() {
         </main>
       </div>
     </DailyCloseoutsProvider>
+    </AppDialogProvider>
   );
 }

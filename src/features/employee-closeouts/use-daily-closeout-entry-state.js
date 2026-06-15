@@ -6,6 +6,7 @@ import { prepareAttachment } from "@/features/attachments/client/prototype-attac
 import { sanitizeAmountInput, toAmount } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
 import { computeCloseoutTotals, salesRecordFromChannels } from "../daily-closeouts/closeout-calculations";
 import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-demo-store";
+import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import {
   attachmentDataUrlsFromList,
   buildCloseoutEntryTitles,
@@ -113,10 +114,7 @@ export function useDailyCloseoutEntryState({
           : item
       )));
     } catch (failure) {
-      window.alert(text(
-        lang,
-        failure?.message === "invalid" ? "invalidAttachment" : "attachmentTooLarge",
-      ));
+      await appAlert({ lang, title: text(lang, failure?.message === "invalid" ? "invalidAttachment" : "attachmentTooLarge"), variant: "warning" });
     } finally {
       setOutflowAttachmentProcessingId("");
     }
@@ -151,13 +149,13 @@ export function useDailyCloseoutEntryState({
     }
   }, [attachments.length, lang]);
 
-  const validateDate = useCallback(() => {
+  const validateDate = useCallback(async () => {
     if (!date) {
-      window.alert(lang === "ar" ? "اختر تاريخ التقفيلة" : "Pick a closeout date");
+      await appAlert({ lang, title: text(lang, "chooseCloseoutDate"), variant: "warning" });
       return false;
     }
     if (date > todayIsoDate()) {
-      window.alert(lang === "ar" ? "لا يمكن اختيار تاريخ مستقبلي" : "Future dates are not allowed");
+      await appAlert({ lang, title: text(lang, "futureDateNotAllowed"), variant: "warning" });
       return false;
     }
     return true;
@@ -165,16 +163,16 @@ export function useDailyCloseoutEntryState({
 
   const handleSubmit = useCallback(async () => {
     if (!initialCloseout?.storeId) {
-      window.alert(text(lang, "chooseStoreToStartEntry"));
+      await appAlert({ lang, title: text(lang, "chooseStoreToStartEntry"), variant: "info" });
       return;
     }
-    if (!validateDate()) return;
+    if (!(await validateDate())) return;
     if (attachmentProcessing || outflowAttachmentProcessingId) {
-      window.alert(lang === "ar" ? "انتظر اكتمال معالجة الصور." : "Wait for images to finish processing.");
+      await appAlert({ lang, title: text(lang, "waitForImageProcessing"), variant: "warning" });
       return;
     }
     if (salesChannels.length === 0) {
-      window.alert(text(lang, "noSalesChannels"));
+      await appAlert({ lang, title: text(lang, "noSalesChannels"), variant: "info" });
       return;
     }
     const pendingOutflow = buildOutflowRow(outAmount);
@@ -186,7 +184,7 @@ export function useDailyCloseoutEntryState({
     }
     const closeout = buildCloseout(nextOutflows);
     if ((closeout.totals?.totalSales || 0) <= 0) {
-      window.alert(lang === "ar" ? "أدخل مبلغ الداخل" : "Enter sales amount");
+      await appAlert({ lang, title: text(lang, "enterSalesAmount"), variant: "warning" });
       return;
     }
     await onSubmit(closeout, { isOwnerEdit });

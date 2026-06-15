@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { resolveStoreChannelConfig } from "@/features/org-config/client/store-channel-config";
 import { text } from "./prototype-runtime-demo-data";
+import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 
 export function usePrototypeRuntimeOwnerCloseoutActions({
   lang,
@@ -57,19 +58,17 @@ export function usePrototypeRuntimeOwnerCloseoutActions({
     [activeBusinesses, activeViewBusiness, storeChannelSettings],
   );
 
-  const openOwnerCloseoutEntry = useCallback(() => {
+  const openOwnerCloseoutEntry = useCallback(async () => {
     if (!runtimeApiStoresReady) {
-      window.alert(lang === "ar"
-        ? "جاري تحميل إعدادات المحل من الخادم… انتظر لحظة ثم أعد المحاولة."
-        : "Store settings are still loading from the server… wait a moment and try again.");
+      await appAlert({ lang, title: text(lang, "storeSettingsLoadingRetry"), variant: "info" });
       return;
     }
     if (!ownerCloseoutBusiness?.id && activeBusinesses.length <= 1) {
-      window.alert(text(lang, "chooseStoreForSummary"));
+      await appAlert({ lang, title: text(lang, "chooseStoreForSummary"), variant: "info" });
       return;
     }
     if (activeBusinesses.length === 0) {
-      window.alert(text(lang, "chooseStoreForSummary"));
+      await appAlert({ lang, title: text(lang, "chooseStoreForSummary"), variant: "info" });
       return;
     }
     setQuickAddOpen(false);
