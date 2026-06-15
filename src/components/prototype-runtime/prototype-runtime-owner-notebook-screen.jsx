@@ -14,7 +14,6 @@ import {
   NoteComposerPanel,
   NotebookEmptyState,
   NotebookViewTabs,
-  OWNER_NOTEBOOK_VIEW_TABS,
 } from "./owner-notebook-ui-primitives";
 
 export function OwnerNotebookScreen({
@@ -106,16 +105,19 @@ export function OwnerNotebookScreen({
             </button>
           )}
 
-          <div className="overflow-hidden rounded-[18px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
+          <article className="mb-0">
             <NotebookViewTabs
               lang={lang}
               active={filter}
-              tabs={OWNER_NOTEBOOK_VIEW_TABS}
               tabCounts={tabCounts}
               onChange={handleTabChange}
             />
 
-            <div className="px-2.5 py-2.5" style={cardStyle} role="tabpanel">
+            <div
+              className="overflow-hidden rounded-b-[16px] border border-[#E8E1D4]/90 border-t-0 bg-white px-2.5 py-2.5 shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]"
+              style={cardStyle}
+              role="tabpanel"
+            >
               {!hydrated ? (
                 <div className="px-2 py-8 text-center text-taq-meta font-bold text-[#827762]">
                   {text(lang, "loading")}
@@ -152,7 +154,7 @@ export function OwnerNotebookScreen({
                 </div>
               )}
             </div>
-          </div>
+          </article>
         </div>
       </motion.section>
       <OwnerNotebookShareModal lang={lang} note={shareNote} onClose={() => setShareNote(null)} />
