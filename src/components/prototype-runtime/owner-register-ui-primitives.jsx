@@ -184,17 +184,19 @@ export function RegisterFilterButton({ lang, activeCount, onClick }) {
   );
 }
 
-export function RegisterMetricTile({ label, value, tone = "neutral", emphasize = false }) {
+export function RegisterMetricTile({ label, value, tone = "neutral", size = "md" }) {
   const valueTone = {
     neutral: "text-[#112A46]",
     in: "text-[#257844]",
     out: "text-[#B44747]",
   }[tone] || "text-[#112A46]";
 
+  const valueSize = size === "lg" ? "text-lg" : size === "sm" ? "text-xs" : "text-base";
+
   return (
-    <div className="min-w-0 text-center">
-      <p className="text-[9px] font-bold text-[#827762]">{label}</p>
-      <p className={`mt-1 tabular-nums font-extrabold leading-none ${valueTone} ${emphasize ? "text-sm" : "text-xs"}`}>
+    <div className="min-w-0 px-1 text-center">
+      <p className="text-[9px] font-bold text-[#A99D87]">{label}</p>
+      <p className={`mt-1.5 tabular-nums font-black leading-none ${valueTone} ${valueSize}`}>
         <MoneyValue value={value} />
       </p>
     </div>
@@ -210,15 +212,11 @@ function RegisterPeriodSummary({
 
   if (summary.mode === "channel") {
     return (
-      <div className="rounded-xl bg-white/85 px-3 py-2.5 ring-1 ring-[#ECE6DA]/90">
-        <p className="text-[10px] font-bold text-[#827762]">
-          <span className="font-black text-[#957D43]">{text(lang, "registerPeriodSummary")}</span>
-          {" · "}
-          {periodLabel}
-        </p>
-        <div className="mt-2 flex items-end justify-between gap-2">
-          <p className="truncate text-[10px] font-bold text-[#716753]">{summary.label}</p>
-          <p className="shrink-0 tabular-nums text-sm font-extrabold leading-none text-[#257844]">
+      <div className="rounded-2xl bg-gradient-to-b from-white to-[#FDFBF7] px-4 py-3 ring-1 ring-[#ECE6DA]/90">
+        <p className="text-center text-[10px] font-bold text-[#A99D87]">{periodLabel}</p>
+        <div className="mt-3 flex items-end justify-between gap-3 border-t border-[#F0EBE0] pt-3">
+          <p className="min-w-0 truncate text-[11px] font-bold text-[#716753]">{summary.label}</p>
+          <p className="shrink-0 tabular-nums text-lg font-black leading-none text-[#257844]">
             <MoneyValue value={money(summary.amount, lang)} />
           </p>
         </div>
@@ -227,30 +225,25 @@ function RegisterPeriodSummary({
   }
 
   return (
-    <div className="rounded-xl bg-white/85 px-3 py-2.5 ring-1 ring-[#ECE6DA]/90">
-      <p className="text-center text-[10px] font-bold text-[#827762]">
-        <span className="font-black text-[#957D43]">{text(lang, "registerPeriodSummary")}</span>
-        {" · "}
-        {periodLabel}
-      </p>
-      <div className="mt-2.5 grid grid-cols-3 gap-2">
+    <div className="rounded-2xl bg-gradient-to-b from-white to-[#FDFBF7] px-3 py-3 ring-1 ring-[#ECE6DA]/90">
+      <p className="text-center text-[10px] font-bold text-[#A99D87]">{periodLabel}</p>
+      <div className="mt-3 grid grid-cols-3 divide-x divide-[#E8E1D4]/80">
         <RegisterMetricTile
           label={lang === "ar" ? "الداخل" : "In"}
           value={money(summary.sales, lang)}
           tone="in"
+          size="lg"
         />
         <RegisterMetricTile
           label={lang === "ar" ? "الخارج" : "Out"}
           value={money(summary.expense, lang)}
           tone="out"
+          size="lg"
         />
-        <div className="min-w-0 text-center">
-          <p className="text-[9px] font-bold text-[#827762]">{lang === "ar" ? "الناتج" : "Net"}</p>
-          <p className={`mt-1 tabular-nums text-sm font-extrabold leading-none ${netPositive ? "text-[#257844]" : "text-[#B44747]"}`}>
+        <div className="min-w-0 px-1 text-center">
+          <p className="text-[9px] font-bold text-[#A99D87]">{lang === "ar" ? "الناتج" : "Net"}</p>
+          <p className={`mt-1.5 tabular-nums text-lg font-black leading-none ${netPositive ? "text-[#257844]" : "text-[#B44747]"}`}>
             <MoneyValue value={money(summary.net, lang)} />
-          </p>
-          <p className={`mt-0.5 text-[8px] font-black ${netPositive ? "text-[#257844]/75" : "text-[#B44747]/75"}`}>
-            {netPositive ? (lang === "ar" ? "ربح" : "Profit") : (lang === "ar" ? "خسارة" : "Loss")}
           </p>
         </div>
       </div>
