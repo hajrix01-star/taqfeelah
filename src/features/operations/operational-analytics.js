@@ -8,7 +8,10 @@ import {
   rowsFromUiEntries,
 } from "@/domain/cash-movement/calculations";
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
-import { resolveAggregatedChannelShape } from "@/features/org-config/client/sales-channel-display";
+import {
+  entryRowMatchesIncomeSourceFilter,
+  resolveAggregatedChannelShape,
+} from "@/features/org-config/client/sales-channel-display";
 
 export const OUTFLOW_ENTRY_TYPES = new Set(["purchases", "expense", "withdrawal"]);
 
@@ -97,7 +100,12 @@ export function newestEntries(entries) {
   );
 }
 
-export function aggregateSalesChannelsFromGroupEntries(entries, channelFilter = "all", resolveChannelName = (row) => row.name || row.channelId) {
+export function aggregateSalesChannelsFromGroupEntries(
+  entries,
+  channelFilter = "all",
+  resolveChannelName = (row) => row.name || row.channelId,
+  configuredChannels = [],
+) {
   const map = new Map();
   (Array.isArray(entries) ? entries : []).filter(entryIsActive).forEach((entry) => {
     if (entry.type !== "summary") return;
@@ -113,7 +121,9 @@ export function aggregateSalesChannelsFromGroupEntries(entries, channelFilter = 
   });
   let result = [...map.values()].sort((a, b) => b.amount - a.amount);
   if (channelFilter !== "all") {
-    result = result.filter((row) => row.channelId === channelFilter);
+    result = result.filter(
+      (row) => entryRowMatchesIncomeSourceFilter(row, channelFilter, configuredChannels),
+    );
   }
   return result;
 }

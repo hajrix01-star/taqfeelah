@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  entryRowMatchesIncomeSourceFilter,
   resolveAggregatedChannelShape,
+  resolveRegisterIncomeSourceFilterKey,
   resolveSalesChannelLabel,
   resolveSalesChannelRowLabel,
   resolveSalesChannelTextKey,
@@ -57,6 +59,22 @@ describe("resolveSalesChannelRowLabel", () => {
       channelName,
     );
     expect(label).toBe("Bank");
+  });
+});
+
+describe("resolveRegisterIncomeSourceFilterKey", () => {
+  it("merges legacy uuid and catalog ids for the same preset", () => {
+    const cashUuid = "9bc40d4f-c773-4ba3-87db-b8bb1467dafb";
+    const configured = [{ id: cashUuid, legacyId: "cash", text: "cash", custom: false }];
+    expect(resolveRegisterIncomeSourceFilterKey({ channelId: "cash" }, configured)).toBe("cash");
+    expect(resolveRegisterIncomeSourceFilterKey({ channelId: cashUuid }, configured)).toBe("cash");
+  });
+
+  it("matches rows against canonical filter keys", () => {
+    const cashUuid = "9bc40d4f-c773-4ba3-87db-b8bb1467dafb";
+    const configured = [{ id: cashUuid, legacyId: "cash", text: "cash", custom: false }];
+    expect(entryRowMatchesIncomeSourceFilter({ channelId: cashUuid, amount: 10 }, "cash", configured)).toBe(true);
+    expect(entryRowMatchesIncomeSourceFilter({ channelId: "jahez", amount: 10 }, "cash", configured)).toBe(false);
   });
 });
 

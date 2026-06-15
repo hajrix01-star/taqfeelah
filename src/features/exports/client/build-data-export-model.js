@@ -120,7 +120,7 @@ function buildHomeExportSheets(snapshot, lang, businessesList, operationalEntrie
 
   if (shareModel.shareChannelRows?.length) {
     sheets.push({
-      name: lang === "ar" ? "قنوات الداخل" : "Incoming channels",
+      name: text(lang, "paymentMethods"),
       columns: [
         { key: "channel", label: text(lang, "channels"), type: "text" },
         { key: "amount", label: lang === "ar" ? "المبلغ" : "Amount", type: "number", sum: true },

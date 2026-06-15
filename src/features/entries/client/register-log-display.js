@@ -1,5 +1,9 @@
 import { sumUiAmounts } from "@/domain/cash-movement/calculations";
 import { resolveCloseoutOwnerEditMetaFromEntries } from "@/features/closeouts/client/closeout-owner-edit-display";
+import {
+  entryRowMatchesIncomeSourceFilter,
+  resolveRegisterIncomeSourceFilterKey,
+} from "@/features/org-config/client/sales-channel-display";
 import { employeeDisplayName } from "@/features/employee-closeouts/employee-entries-display";
 import {
   aggregateSalesChannelsFromGroupEntries,
@@ -52,7 +56,12 @@ export function entryCategoryForLogFilter(entry) {
       : (entry.categoryId || "other");
 }
 
-export function entryMatchesRegisterLogFilters(entry, filters, resolveExpenseCategory = entryCategoryForLogFilter) {
+export function entryMatchesRegisterLogFilters(
+  entry,
+  filters,
+  resolveExpenseCategory = entryCategoryForLogFilter,
+  configuredChannels = [],
+) {
   const matchesStatus = filters.status === "all"
     || (filters.status === "active" ? entryIsActive(entry) : entryIsVoided(entry));
   const matchesType = filters.type === "all" || entry.type === filters.type;
@@ -63,7 +72,8 @@ export function entryMatchesRegisterLogFilters(entry, filters, resolveExpenseCat
   const matchesSalesChannel = filters.salesChannel === "all"
     || (entry.type === "summary"
       && (entry.salesChannels || []).some(
-        (row) => row.channelId === filters.salesChannel && Number(row.amount) > 0,
+        (row) => Number(row.amount) > 0
+          && entryRowMatchesIncomeSourceFilter(row, filters.salesChannel, configuredChannels),
       ));
   const matchesAttachment = !filters.attachmentOnly || entryHasAttachment(entry);
 
@@ -75,9 +85,14 @@ export function entryMatchesRegisterLogFilters(entry, filters, resolveExpenseCat
     && matchesAttachment;
 }
 
-export function filterRegisterLogEntries(entries, filters, resolveExpenseCategory = entryCategoryForLogFilter) {
+export function filterRegisterLogEntries(
+  entries,
+  filters,
+  resolveExpenseCategory = entryCategoryForLogFilter,
+  configuredChannels = [],
+) {
   return (Array.isArray(entries) ? entries : []).filter(
-    (entry) => entryMatchesRegisterLogFilters(entry, filters, resolveExpenseCategory),
+    (entry) => entryMatchesRegisterLogFilters(entry, filters, resolveExpenseCategory, configuredChannels),
   );
 }
 
@@ -107,7 +122,13 @@ export function buildRegisterDayReportRows(entries) {
     .filter((row) => row.sales > 0 || row.expense > 0);
 }
 
-export function summarizeRegisterPeriod(entries, salesChannelFilter, channelOptions = [], channelLabelFallback = "Channel") {
+export function summarizeRegisterPeriod(
+  entries,
+  salesChannelFilter,
+  channelOptions = [],
+  channelLabelFallback = "Channel",
+  configuredChannels = [],
+) {
   const activeEntries = (Array.isArray(entries) ? entries : []).filter(entryIsActive);
   if (salesChannelFilter !== "all") {
     const option = channelOptions.find((item) => item.id === salesChannelFilter);
@@ -115,7 +136,7 @@ export function summarizeRegisterPeriod(entries, salesChannelFilter, channelOpti
     activeEntries.forEach((entry) => {
       if (entry.type !== "summary") return;
       (entry.salesChannels || []).forEach((row) => {
-        if (row.channelId === salesChannelFilter) {
+        if (entryRowMatchesIncomeSourceFilter(row, salesChannelFilter, configuredChannels)) {
           channelAmounts.push(Number(row.amount) || 0);
         }
       });
@@ -130,16 +151,23 @@ export function summarizeRegisterPeriod(entries, salesChannelFilter, channelOpti
   return { mode: "totals", sales: totals.sales, expense: totals.expense, net: totals.net };
 }
 
-export function buildRegisterSalesChannelOptions(periodEntries, resolveChannelLabel, allChannelsLabel) {
+export function buildRegisterSalesChannelOptions(
+  periodEntries,
+  resolveChannelLabel,
+  allChannelsLabel,
+  configuredChannels = [],
+) {
   const seen = new Set();
   const options = [{ id: "all", label: allChannelsLabel }];
   (Array.isArray(periodEntries) ? periodEntries : []).forEach((entry) => {
     if (entry.type !== "summary") return;
     (entry.salesChannels || []).forEach((row) => {
-      if (!row?.channelId || seen.has(row.channelId)) return;
-      seen.add(row.channelId);
+      if (!row?.channelId || Number(row.amount) <= 0) return;
+      const filterKey = resolveRegisterIncomeSourceFilterKey(row, configuredChannels);
+      if (!filterKey || seen.has(filterKey)) return;
+      seen.add(filterKey);
       options.push({
-        id: row.channelId,
+        id: filterKey,
         label: resolveChannelLabel(row),
       });
     });
@@ -147,10 +175,11 @@ export function buildRegisterSalesChannelOptions(periodEntries, resolveChannelLa
   return options;
 }
 
-/** @param {{ filteredEntries?: object[], salesChannelFilter?: string, resolveChannelName?: (row: object) => string, resolveStore?: (businessId: string) => object | null, resolveActorLabel?: (group: object) => string }} params */
+/** @param {{ filteredEntries?: object[], salesChannelFilter?: string, configuredChannels?: object[], resolveChannelName?: (row: object) => string, resolveStore?: (businessId: string) => object | null, resolveActorLabel?: (group: object) => string }} params */
 export function buildRegisterCloseoutSummaries({
   filteredEntries = [],
   salesChannelFilter = "all",
+  configuredChannels = [],
   resolveChannelName,
   resolveStore,
   resolveActorLabel = () => "",
@@ -179,6 +208,7 @@ export function buildRegisterCloseoutSummaries({
       group.entries,
       salesChannelFilter,
       resolveChannelName,
+      configuredChannels,
     );
     const channelSalesTotal = sumUiAmounts(salesChannels.map((row) => row.amount));
     const daySequence = group.entries.find((entry) => Number.isInteger(entry.daySequence))?.daySequence ?? null;

@@ -84,7 +84,7 @@ export default function DailyCloseoutCard({
         </p>
         {expanded && salesRows.length > 0 ? (
           <div className="mx-3.5 mb-2 space-y-1 border-t border-dashed border-[#E8E1D4] pt-2">
-            <p className="text-taq-nav font-black text-[#806528]">{text(lang, "incomingChannels")}</p>
+            <p className="text-taq-nav font-black text-[#806528]">{text(lang, "paymentMethods")}</p>
             {salesRows.map((row) => (
               <div key={row.channelId} className="flex items-center justify-between gap-2 text-taq-meta font-bold">
                 <span className="truncate text-[#716753]">{row.name}</span>
