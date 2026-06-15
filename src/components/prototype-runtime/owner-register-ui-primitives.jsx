@@ -137,6 +137,18 @@ export function RegisterIndexTabs({ lang, value, onChange, counts }) {
   );
 }
 
+function RegisterFilterToolbar({ lang, showFilters, activeFilterCount, onOpenFilters }) {
+  return (
+    <div className="flex h-12 shrink-0 items-center border-b border-[#F0EBE0] px-3">
+      {showFilters ? (
+        <RegisterFilterButton lang={lang} activeCount={activeFilterCount} onClick={onOpenFilters} />
+      ) : (
+        <span className="inline-flex h-8 w-8 shrink-0" aria-hidden="true" />
+      )}
+    </div>
+  );
+}
+
 export function RegisterFilterButton({ lang, activeCount, onClick }) {
   return (
     <button
@@ -242,11 +254,12 @@ export function RegisterDashboardCard({
       <article className="mb-3">
         <RegisterIndexTabs lang={lang} value={logView} onChange={setLogView} counts={tabCounts} />
         <div className="overflow-hidden rounded-b-[16px] border border-[#E8E1D4]/90 border-t-0 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
-          {showFilters ? (
-            <div className="flex items-center justify-start border-b border-[#F0EBE0] px-3 py-2">
-              <RegisterFilterButton lang={lang} activeCount={activeFilterCount} onClick={onOpenFilters} />
-            </div>
-          ) : null}
+          <RegisterFilterToolbar
+            lang={lang}
+            showFilters={showFilters}
+            activeFilterCount={activeFilterCount}
+            onOpenFilters={onOpenFilters}
+          />
           <div className="px-3 py-2">
             {summaryBody}
           </div>
@@ -262,9 +275,13 @@ export function RegisterDashboardCard({
           <div className="min-w-0 flex-1">
             <RegisterViewSwitch lang={lang} value={logView} onChange={setLogView} counts={tabCounts} />
           </div>
-          {showFilters ? (
-            <RegisterFilterButton lang={lang} activeCount={activeFilterCount} onClick={onOpenFilters} />
-          ) : null}
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+            {showFilters ? (
+              <RegisterFilterButton lang={lang} activeCount={activeFilterCount} onClick={onOpenFilters} />
+            ) : (
+              <span className="inline-flex h-8 w-8 shrink-0" aria-hidden="true" />
+            )}
+          </div>
         </div>
       </div>
 
