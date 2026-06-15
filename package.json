@@ -53,7 +53,9 @@
     "db:seed:saas": "node scripts/seed-saas-foundation.mjs",
     "saas:aggregate": "node --experimental-strip-types scripts/aggregate-saas-analytics.ts",
     "saas:subscription-scan": "node --experimental-strip-types scripts/scan-subscription-renewals.ts",
-    "pwa:icons": "node scripts/generate-pwa-icons.mjs"
+    "pwa:icons": "node scripts/generate-pwa-icons.mjs",
+    "pwa:screenshots": "node scripts/generate-pwa-screenshots.mjs",
+    "pwa:assets": "pnpm pwa:icons && pnpm pwa:screenshots"
   },
   "dependencies": {
     "@serwist/next": "^9.5.11",

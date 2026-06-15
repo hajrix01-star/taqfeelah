@@ -15,6 +15,7 @@ import {
 } from "@/features/pwa/pwa-update-storage";
 import { getClientReleaseBuild } from "@/release/client-release";
 import type { ReleaseMeta } from "@/release/version";
+import PwaInstallPrompt from "@/features/pwa/PwaInstallPrompt";
 
 type UpdatePhase = "idle" | "available";
 
@@ -117,10 +118,13 @@ export default function PwaLifecycle() {
     };
   }, []);
 
-  if (updatePhase !== "available" || !pendingServerBuild) return null;
+  if (updatePhase !== "available" || !pendingServerBuild) {
+    return <PwaInstallPrompt />;
+  }
 
   return (
-    <div
+    <>
+      <div
       className="fixed inset-x-0 bottom-0 z-[500] border-t border-[#ECE6DA] bg-[#112A46] px-4 py-3 text-white shadow-[0_-12px_40px_rgba(17,42,70,0.25)]"
       dir="rtl"
       style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
@@ -128,7 +132,7 @@ export default function PwaLifecycle() {
       aria-live="polite"
     >
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-bold">نسخة جديدة من تقفيلة جاهزة للتثبيت.</p>
+        <p className="text-sm font-bold">نسخة جديدة من تقفيلة جاهزة للتحديث.</p>
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -155,7 +159,8 @@ export default function PwaLifecycle() {
             تحديث الآن
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
