@@ -40,6 +40,7 @@ export function useRegisterOperationsState({
   persistEmployeeEntry = async () => {},
   savingRef,
   setSaving = () => {},
+  notifyOperationalSyncWrite = null,
 }) {
   const {
     handleOpenOwnerOperation,
@@ -79,6 +80,7 @@ export function useRegisterOperationsState({
     setOperationalEntries,
     setLastCloseoutDates,
     setSelected,
+    notifyOperationalSyncWrite,
   });
 
   const {

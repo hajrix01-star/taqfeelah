@@ -4,6 +4,7 @@ import { readEnv } from "@/core/config/env";
 import { resolveRequestContext } from "@/core/auth/request-context";
 import { createStoreEntry } from "@/features/entries/server/create-store-entry";
 import { listStoreEntries } from "@/features/entries/server/list-store-entries";
+import { publishOperationalSyncEventSafe } from "@/core/sync/publish-operational-sync-event";
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +84,19 @@ export async function POST(request: Request, context: RouteContext) {
       closeoutId: body?.closeoutId,
       salesChannels: Array.isArray(body?.salesChannels) ? body.salesChannels : [],
       attachment: body?.attachment,
+    });
+
+    publishOperationalSyncEventSafe({
+      type: "entry.created",
+      organizationId: requestContext.organizationId,
+      storeId: params.storeId,
+      actorUserId: requestContext.userId!,
+      actorRole: requestContext.role!,
+      payload: {
+        entryId: result.id,
+        date: result.date,
+        entryType: result.type,
+      },
     });
 
     return ok(result, { status: 201 });

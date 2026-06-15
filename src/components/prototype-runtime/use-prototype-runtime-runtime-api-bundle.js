@@ -35,8 +35,10 @@ export function usePrototypeRuntimeRuntimeApiBundle({
       });
       return `employee|${apiTargetStoreIdsKey}|${windowParts.join(",")}`;
     }
-    const ownerNeedsCloseouts = ownerPage === "register"
+    const ownerNeedsCloseouts = ownerPage === "home"
+      || ownerPage === "register"
       || ownerPage === "closeouts"
+      || ownerPage === "notebook"
       || Boolean(ownerManageCloseout);
     if (!ownerNeedsCloseouts) return "";
     const ownerWindow = resolveOwnerCloseoutsFetchWindow();

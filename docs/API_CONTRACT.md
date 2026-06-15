@@ -1,6 +1,6 @@
 # تقفيلة — API Contract (planned + partial implementation)
 
-> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day|month|period`, `GET /reports/days|channels|outflow|attachments` (wired to owner reports when entries API is enabled), snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, `GET /stores/:storeId/entries`, Phase 8 org config routes, and Phase 9 duplicate-summary / notebook export / inline attachments are implemented; remaining endpoints are planned. Closeout owner-review (`POST .../closeouts/:closeoutId/review`) was removed under zero-review policy.  
+> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day|month|period`, `GET /reports/days|channels|outflow|attachments` (wired to owner reports when entries API is enabled), snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, `GET /stores/:storeId/entries`, `GET /operational-events/stream` (SSE hybrid sync), Phase 8 org config routes, and Phase 9 duplicate-summary / notebook export / inline attachments are implemented; remaining endpoints are planned. Closeout owner-review (`POST .../closeouts/:closeoutId/review`) was removed under zero-review policy.  
 > **Auth:** Session rollout in progress. Preferred source is signed session cookie (`AUTH_SESSION_COOKIE_NAME`), with optional temporary header fallback controlled by `ALLOW_HEADER_AUTH_CONTEXT`.  
 > **Source-unification period:** Until auth launch, Prototype Access Mode remains ON and server APIs may accept `x-organization-id` / `x-user-id` / `x-member-role` when `ALLOW_HEADER_AUTH_CONTEXT=true`. Signed session cookies become required only in the explicit auth launch phase.  
 > **UI:** Must not require design changes — responses feed existing approved screens.
@@ -737,6 +737,46 @@ Returns updated subscription snapshot plus resolved entitlements.
 ### Previously planned (now implemented above)
 
 - ~~`PATCH /api/v1/saas-admin/accounts/:id/subscription` — subscription lifecycle writes~~
+
+---
+
+## Operational sync (hybrid realtime)
+
+### `GET /operational-events/stream`
+
+Server-Sent Events (SSE) stream scoped to the authenticated session `organizationId`.
+
+Headers: same auth as other `/api/v1` routes (session cookie preferred; optional prototype headers when `ALLOW_HEADER_AUTH_CONTEXT=true`).
+
+Events:
+
+| Event | When |
+|-------|------|
+| `closeout.submitted` | After successful `POST /stores/:storeId/closeouts` |
+| `closeout.deleted` | After successful `DELETE /stores/:storeId/closeouts/:closeoutId` |
+| `entry.created` | After successful `POST /stores/:storeId/entries` |
+| `entry.voided` | After successful `POST /stores/:storeId/entries/:entryId/void` |
+| `entry.restored` | After successful `POST /stores/:storeId/entries/:entryId/restore` |
+
+Payload shape:
+
+```json
+{
+  "type": "closeout.submitted",
+  "organizationId": "uuid",
+  "storeId": "uuid",
+  "actorUserId": "uuid",
+  "actorRole": "employee",
+  "occurredAt": "2026-06-15T12:00:00.000Z",
+  "payload": { "closeoutId": "client-id", "date": "2026-06-15" }
+}
+```
+
+Client contract:
+
+- Other tabs/users invalidate React Query operational scopes and reload closeouts/entries on relevant events.
+- Fallback: owner focus refetch + 45s visible-tab polling on home/register/closeouts/notebook.
+- Cross-tab `BroadcastChannel` propagates sync signals on the same device.
 
 ---
 
