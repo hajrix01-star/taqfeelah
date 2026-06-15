@@ -7,7 +7,7 @@ import { buildStaffDeleteTarget } from "@/features/org-config/client/owner-setti
 import { resolveStaffInviteUserKey } from "@/features/member-invitations/client/group-team-invitations";
 import { SettingToggle } from "./OwnerSettingsSection";
 import { OwnerSettingsStaffInviteLine } from "./owner-settings-staff-invite-line";
-import { text } from "./prototype-runtime-copy";
+import { text } from "./prototype-runtime-demo-data";
 
 export function OwnerSettingsTeamRoster({
   lang,
