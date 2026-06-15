@@ -34,6 +34,7 @@ export async function listStoreSalesChannels(rawInput: z.infer<typeof inputSchem
     .select({
       id: salesChannels.id,
       name: salesChannels.name,
+      kind: salesChannels.kind,
       status: salesChannels.status,
       retiredAt: salesChannels.retiredAt,
       createdAt: salesChannels.createdAt,
@@ -53,6 +54,7 @@ export async function listStoreSalesChannels(rawInput: z.infer<typeof inputSchem
     channels: rows.map((row) => ({
       id: row.id,
       name: row.name,
+      kind: row.kind,
       status: row.status,
       retiredAt: row.retiredAt ? row.retiredAt.toISOString() : null,
       createdAt: row.createdAt.toISOString(),

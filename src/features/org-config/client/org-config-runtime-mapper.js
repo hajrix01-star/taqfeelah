@@ -65,14 +65,18 @@ export function mapApiChannelToUi(channel) {
     };
   }
   const label = typeof channel?.name === "string" ? channel.name.trim() : legacyId;
+  const kind = channel?.kind === "sales_channel" || channel?.kind === "payment_method"
+    ? channel.kind
+    : "payment_method";
   return {
     id: channel.id,
     legacyId,
     apiChannelId: channel.id,
     custom: true,
+    kind,
     nameAr: label,
     nameEn: label,
-    icon: CreditCard,
+    icon: kind === "sales_channel" ? ShoppingBag : CreditCard,
     retired,
   };
 }

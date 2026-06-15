@@ -5,6 +5,7 @@
  */
 
 import {
+  catalogDisplayName,
   getCatalogEntry,
   listCatalogByKind,
   resolveIncomeSourceKind,
@@ -128,6 +129,8 @@ export function addCatalogIncomeSource(config, legacyId, options = {}) {
           legacyId: entry.legacyId,
           text: entry.legacyId,
           kind: entry.kind,
+          nameAr: entry.nameAr,
+          nameEn: entry.nameEn,
           icon: options.icon,
           retired: false,
         },
@@ -186,4 +189,32 @@ export function listConfiguredChannelsByKind(config, kind) {
  */
 export function listVisibleChannelsByKind(config, visibleChannels, kind) {
   return visibleChannels.filter((channel) => resolveIncomeSourceKind(channel) === kind);
+}
+
+/**
+ * @param {Record<string, unknown>} channel
+ * @param {"ar" | "en"} [lang]
+ */
+export function resolveChannelPersistName(channel, lang = "ar") {
+  const directName = String(channel?.nameAr || channel?.nameEn || "").trim();
+  if (directName) return directName;
+
+  const legacyId = String(
+    channel?.legacyId
+    || channel?.text
+    || (typeof channel?.id === "string" ? channel.id : ""),
+  ).trim();
+  const catalogEntry = legacyId ? getCatalogEntry(legacyId) : undefined;
+  if (catalogEntry) {
+    return catalogDisplayName(catalogEntry.legacyId, lang);
+  }
+
+  return "";
+}
+
+/**
+ * @param {Record<string, unknown>} channel
+ */
+export function resolveChannelPersistKind(channel) {
+  return resolveIncomeSourceKind(channel);
 }

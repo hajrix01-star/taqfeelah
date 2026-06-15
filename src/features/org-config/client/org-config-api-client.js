@@ -195,6 +195,7 @@ export async function createStoreSalesChannelViaApi({
   actorRole,
   storeId,
   name,
+  kind = "payment_method",
   status = "active",
   reason,
 }) {
@@ -211,6 +212,7 @@ export async function createStoreSalesChannelViaApi({
       method: "POST",
       body: {
         name: name.trim(),
+        kind,
         status,
         reason,
       },

@@ -8,6 +8,8 @@ import {
   restoreRetiredSalesChannel,
   retireSalesChannelInDraft,
   toggleSalesChannelActive,
+  resolveChannelPersistKind,
+  resolveChannelPersistName,
 } from "./owner-settings-channel-actions";
 
 const baseConfig = {
@@ -62,7 +64,18 @@ describe("owner settings channel actions", () => {
 
     const withKeeta = addCatalogIncomeSource(withBank.config, "keeta");
     expect(withKeeta.added).toBe(true);
-    expect(withKeeta.config.channels.find((item) => item.legacyId === "keeta")?.kind).toBe("sales_channel");
+    expect(withKeeta.config.channels.find((item) => item.legacyId === "keeta")).toMatchObject({
+      kind: "sales_channel",
+      nameAr: "كيتا",
+      nameEn: "Keeta",
+    });
+  });
+
+  it("resolves persist names for catalog channels without custom labels", () => {
+    const keeta = addCatalogIncomeSource(baseConfig, "keeta").config.channels.find((item) => item.legacyId === "keeta");
+    expect(keeta).toBeTruthy();
+    expect(resolveChannelPersistName(keeta!, "ar")).toBe("كيتا");
+    expect(resolveChannelPersistKind(keeta!)).toBe("sales_channel");
   });
 
   it("lists only missing catalog entries for picker", () => {

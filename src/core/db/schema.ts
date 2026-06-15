@@ -138,6 +138,7 @@ export const salesChannels = pgTable("sales_channels", {
     .notNull()
     .references(() => stores.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  kind: text("kind").notNull().default("payment_method"),
   status: text("status").notNull().default("active"),
   createdAt,
   retiredAt: timestamp("retired_at", { withTimezone: true }),
