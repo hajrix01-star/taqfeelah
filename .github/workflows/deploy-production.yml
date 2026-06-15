@@ -176,9 +176,12 @@ jobs:
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$DISPATCH_WAIT_MINUTES" != "0" ]; then
             wait_seconds=$((DISPATCH_WAIT_MINUTES * 60))
             echo "Manual deploy: cooldown ${wait_seconds}s before SSH…"
+          elif printf '%s' "$COMMIT_MESSAGE" | grep -qiE 'chore\(deploy\)|deploy-retry|\[deploy-retry\]'; then
+            wait_seconds=600
+            echo "Deploy retry commit: cooldown ${wait_seconds}s before SSH (fail2ban recovery)…"
           else
-            wait_seconds=0
-            echo "Routine deploy: no preflight cooldown (VPS_PREFLIGHT_WAIT_SECONDS=0)."
+            wait_seconds=180
+            echo "Routine deploy: minimum ${wait_seconds}s preflight before SSH…"
           fi
           echo "VPS_PREFLIGHT_WAIT_SECONDS=${wait_seconds}" >> "$GITHUB_ENV"
 
@@ -207,8 +210,8 @@ jobs:
           VPS_CONNECT_TIMEOUT: "25"
           VPS_CONNECT_RETRIES: "2"
           VPS_RETRY_DELAY_SECONDS: "15"
-          VPS_PROBE_RETRIES: "3"
-          VPS_PROBE_RETRY_DELAY_SECONDS: "20"
+          VPS_PROBE_RETRIES: "5"
+          VPS_PROBE_RETRY_DELAY_SECONDS: "30"
           VPS_PREFLIGHT_WAIT_SECONDS: ${{ env.VPS_PREFLIGHT_WAIT_SECONDS }}
           VPS_SSH_COMMAND_TIMEOUT: "1200"
           VPS_SKIP_REMOTE_BUILD: "true"
@@ -261,8 +264,8 @@ jobs:
               echo "::error::Deploy failed after ${max_workflow_attempts} full attempts"
               exit 1
             fi
-            sleep_seconds=$((workflow_attempt * 60))
-            echo "Waiting ${sleep_seconds}s before retry (next GitHub runner may use a different IP)…"
+            sleep_seconds=$((workflow_attempt * 120))
+            echo "Waiting ${sleep_seconds}s before retry (allow fail2ban cooldown / new runner IP)…"
             sleep "$sleep_seconds"
             workflow_attempt=$((workflow_attempt + 1))
           done
