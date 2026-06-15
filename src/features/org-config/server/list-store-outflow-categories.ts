@@ -27,6 +27,7 @@ export async function listStoreOutflowCategories(rawInput: z.infer<typeof inputS
     actorUserId: input.actorUserId,
     actorRole: input.actorRole as MemberRole,
     minimumRole: "employee",
+    scope: "read",
   });
 
   const db = getDb();

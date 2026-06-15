@@ -4,31 +4,47 @@ import { hasAtLeastRole, type MemberRole } from "@/core/auth/roles";
 import { ForbiddenError } from "@/core/errors/app-error";
 import { memberStoreAccess, organizationMembers, stores } from "@/core/db/schema";
 
+export type StoreAccessScope = "read" | "write";
+
 type AssertStoreAccessInput = {
   organizationId: string;
   storeId: string;
   actorUserId: string;
   actorRole: MemberRole;
   minimumRole?: MemberRole;
+  /** write = active stores only (default). read = active + archived history. */
+  scope?: StoreAccessScope;
 };
 
 export async function assertStoreAccess(input: AssertStoreAccessInput) {
   const db = getDb();
   const minimumRole = input.minimumRole || "employee";
+  const scope = input.scope ?? "write";
 
   const [storeRow] = await db
-    .select({ id: stores.id })
+    .select({ id: stores.id, status: stores.status })
     .from(stores)
     .where(
       and(
         eq(stores.id, input.storeId),
         eq(stores.organizationId, input.organizationId),
-        eq(stores.status, "active"),
       ),
     )
     .limit(1);
 
   if (!storeRow) {
+    throw new ForbiddenError("Store is not accessible for this organization.");
+  }
+
+  if (scope === "write") {
+    if (storeRow.status !== "active") {
+      throw new ForbiddenError(
+        storeRow.status === "archived"
+          ? "Archived stores cannot accept new entries."
+          : "Store is not accessible for this organization.",
+      );
+    }
+  } else if (storeRow.status !== "active" && storeRow.status !== "archived") {
     throw new ForbiddenError("Store is not accessible for this organization.");
   }
 
@@ -55,6 +71,10 @@ export async function assertStoreAccess(input: AssertStoreAccessInput) {
 
   if (!hasAtLeastRole(memberRole, minimumRole)) {
     throw new ForbiddenError("Insufficient role for this operation.");
+  }
+
+  if (storeRow.status === "archived" && memberRole === "employee") {
+    throw new ForbiddenError("Employee has no access to this store.");
   }
 
   if (memberRole === "employee") {

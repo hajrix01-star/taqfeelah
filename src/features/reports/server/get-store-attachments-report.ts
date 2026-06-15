@@ -32,6 +32,7 @@ export async function getStoreAttachmentsReport(rawInput: z.infer<typeof inputSc
     actorUserId: input.actorUserId,
     actorRole: input.actorRole as MemberRole,
     minimumRole: "employee",
+    scope: "read",
   });
 
   const db = getDb();

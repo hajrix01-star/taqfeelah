@@ -13,6 +13,7 @@ import {
   writeDailyCloseouts,
 } from "./daily-closeouts-demo-store";
 import { resolveEmployeeDisplayName } from "@/features/employee-closeouts/employee-portal-session";
+import { mapCloseoutSyncErrorToUserMessage } from "@/features/closeouts/client/closeout-sync-errors";
 import { CLOSEOUT_STATUS } from "./closeout-status";
 
 const CLOSEOUT_SAVE_ERROR_AR = "تعذر الحفظ.";
@@ -190,7 +191,9 @@ export function DailyCloseoutsProvider({
       const fallback = lang === "ar"
         ? "تعذر تحديث التقفيلات من الخادم."
         : "Failed to refresh closeouts from server.";
-      const detail = error instanceof Error && error.message.trim() ? error.message.trim() : "";
+      const detail = error instanceof Error && error.message.trim()
+        ? mapCloseoutSyncErrorToUserMessage(error, lang)
+        : "";
       setSyncError(detail || fallback);
     });
   }, [closeoutsAutoLoadQueryKey, lang, loadCloseoutsFromApi, reloadCloseoutsFromApi]);

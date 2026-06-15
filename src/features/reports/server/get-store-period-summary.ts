@@ -35,6 +35,7 @@ export async function getStorePeriodSummary(rawInput: z.infer<typeof inputSchema
     actorUserId: input.actorUserId,
     actorRole: input.actorRole as MemberRole,
     minimumRole: "employee",
+    scope: "read",
   });
 
   const db = getDb();
