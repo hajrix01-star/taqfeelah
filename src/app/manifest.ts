@@ -4,7 +4,9 @@ import {
   PWA_BACKGROUND_COLOR,
   PWA_DESCRIPTION,
   PWA_ICONS,
+  PWA_MANIFEST_ID,
   PWA_SCOPE,
+  PWA_SCREENSHOTS,
   PWA_SHORTCUTS,
   PWA_SHORT_NAME,
   PWA_START_URL,
@@ -13,6 +15,7 @@ import {
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: PWA_MANIFEST_ID,
     name: PWA_APP_NAME,
     short_name: PWA_SHORT_NAME,
     description: PWA_DESCRIPTION,
@@ -26,6 +29,7 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: PWA_THEME_COLOR,
     categories: ["business", "finance"],
     icons: [...PWA_ICONS],
+    screenshots: PWA_SCREENSHOTS.map((screenshot) => ({ ...screenshot })),
     shortcuts: PWA_SHORTCUTS.map((shortcut) => ({
       ...shortcut,
       icons: shortcut.icons.map((icon) => ({ ...icon })),

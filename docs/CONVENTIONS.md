@@ -287,7 +287,8 @@ OrganizationMember
 
 ## 10. المنصة والمسارات العامة
 
-- الإصدار الأول: **Responsive Web** (جوال + كمبيوتر) + **PWA لاحقًا**.
+- الإصدار الأول: **Responsive Web** (جوال + كمبيوتر) + **PWA للتثبيت** (Serwist + manifest + تحديثات آمنة).
+- **PWA مفعّل:** تثبيت على الشاشة الرئيسية، بانر تثبيت، screenshots في manifest، وإدارة تحديثات — **بدون** Offline Sync للبيانات التشغيلية.
 - **لا** تطبيق Native الآن.
 - التطبيق التشغيلي (`/app`) يحافظ على هوية الجوال/التابلت (لا إعادة تصميم سطح مكتب منفصلة له).
 - **استثناء معتمد (مرحلة أخيرة):** لوحة إدارة SaaS (`/saas-admin`) تكون **Desktop-first** وموجهة لإدارة الاشتراكات وتقارير المستثمرين.
@@ -326,7 +327,7 @@ OrganizationMember
 
 **ما يبقى مؤجلًا بعد النسخة الأولى التشغيلية:**
 
-مزود دفع · Feature Flags · Sentry · PDF/Excel سيرفري · PWA/Offline · جدول `daily_store_summaries` (تحسين لاحق — `docs/PERFORMANCE_RULES.md`)
+مزود دفع · Feature Flags · Sentry · PDF/Excel سيرفري · Offline Sync / طابور عمليات · جدول `daily_store_summaries` (تحسين لاحق — `docs/PERFORMANCE_RULES.md`)
 
 ---
 
@@ -351,7 +352,7 @@ pnpm build
 | العملة | `SAR` فقط؛ تخزين بالهللات |
 | التقفيلة | `summary` فقط — الخارج منفصل |
 | الموظف | إدخال لمحلاته فقط — بلا تقارير كاملة |
-| المنصة | Web متجاوب + PWA لاحقًا |
+| المنصة | Web متجاوب + PWA للتثبيت (بدون Offline Sync) |
 
 ---
 
