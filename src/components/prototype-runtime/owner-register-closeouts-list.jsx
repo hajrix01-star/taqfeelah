@@ -19,12 +19,6 @@ import { MoneyValue } from "./prototype-runtime-notebook";
 import CloseoutOwnerEditBadge from "@/features/closeouts/client/CloseoutOwnerEditBadge";
 import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
 
-const OPERATIONS_GRID_CLASS = "grid grid-cols-[minmax(0,1.35fr)_0.78fr_0.72fr_0.42fr_1.05fr] items-center gap-1";
-
-function operationColumnAlignClass(lang) {
-  return lang === "ar" ? "text-right" : "text-left";
-}
-
 function RegisterCloseoutOperationActions({
   lang,
   item,
@@ -38,7 +32,7 @@ function RegisterCloseoutOperationActions({
   const canRestore = canRestoreOperationalEntry(item, archivedBusinessIds, entryIsVoided);
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-1">
+    <div className="flex flex-wrap items-center gap-1">
       <button
         type="button"
         onClick={() => onOpenOperation(item)}
@@ -153,47 +147,40 @@ export function OwnerRegisterCloseoutsList({
             </button>
             {isExpanded && (
               <div className="border-t border-[#E8E1D4] px-3.5 py-2.5" style={registerCardInsetStyle}>
-                <div className="overflow-x-auto">
-                  <div className="min-w-[320px]">
-                    <div className={`${OPERATIONS_GRID_CLASS} border-b border-[#F0EBE0] px-1 pb-2 text-taq-nav font-bold text-[#806528]`}>
-                      <span className={operationColumnAlignClass(lang)}>{lang === "ar" ? "العملية" : "Operation"}</span>
-                      <span className="text-center">{lang === "ar" ? "المبلغ" : "Amount"}</span>
-                      <span className="text-center">{lang === "ar" ? "الوقت" : "Time"}</span>
-                      <span className="text-center">{lang === "ar" ? "مرفق" : "File"}</span>
-                      <span className="text-end">{lang === "ar" ? "إجراء" : "Action"}</span>
-                    </div>
-                    <div className="space-y-0">
-                      {operationRows.map((row, index) => (
-                        <div
-                          key={row.key}
-                          className={`${OPERATIONS_GRID_CLASS} min-h-[44px] px-1 py-2 text-taq-meta ${index < operationRows.length - 1 ? "border-b border-[#F0EBE0]" : ""}`}
+                <div className="divide-y divide-[#F0EBE0]">
+                  {operationRows.map((row) => (
+                    <div key={row.key} className="py-2.5 text-taq-meta first:pt-0 last:pb-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="min-w-0 flex-1 font-bold text-[#112A46]">{row.label}</span>
+                        <strong
+                          dir="ltr"
+                          className={`shrink-0 tabular-nums text-end font-black ${entryIsVoided(row.item) ? "text-[#A99D87] line-through" : row.isSale ? "text-[#257844]" : "text-[#B44747]"}`}
                         >
-                          <span className={`truncate font-bold text-[#112A46] ${operationColumnAlignClass(lang)}`}>{row.label}</span>
-                          <strong dir="ltr" className={`text-center tabular-nums font-black ${entryIsVoided(row.item) ? "text-[#A99D87] line-through" : row.isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
-                            <MoneyValue value={money(row.amount, lang)} />
-                          </strong>
-                          <span className="text-center text-taq-nav font-bold text-[#8A816F]">{opTime(row.item, lang)}</span>
-                          <div className="flex justify-center">
-                            {entryHasAttachment(row.item) ? (
-                              <AttachmentThumbButton
-                                attachment={row.item.attachment}
-                                storeId={row.item.businessId}
-                                attachmentApiContext={entryAttachmentApiContext}
-                                className="h-10 w-10"
-                                buttonClassName="shrink-0 overflow-hidden rounded-lg ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50 disabled:opacity-70"
-                                onOpen={(src) => onPreviewAttachment(src, {
-                                  entry: row.item,
-                                  storeName: storeLabel,
-                                  operationLabel: row.label,
-                                  entryTime: opTime(row.item, lang),
-                                  daySequence: summary.daySequence,
-                                  sameDayCloseoutCount: summary.sameDayCloseoutCount,
-                                })}
-                              />
-                            ) : (
-                              <span className="text-taq-nav font-bold text-[#C8BCA4]">—</span>
-                            )}
-                          </div>
+                          <MoneyValue value={money(row.amount, lang)} />
+                        </strong>
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                        <span className="text-taq-nav font-bold text-[#8A816F]">{opTime(row.item, lang)}</span>
+                        {entryHasAttachment(row.item) ? (
+                          <AttachmentThumbButton
+                            attachment={row.item.attachment}
+                            storeId={row.item.businessId}
+                            attachmentApiContext={entryAttachmentApiContext}
+                            className="h-8 w-8"
+                            buttonClassName="shrink-0 overflow-hidden rounded-lg ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50 disabled:opacity-70"
+                            onOpen={(src) => onPreviewAttachment(src, {
+                              entry: row.item,
+                              storeName: storeLabel,
+                              operationLabel: row.label,
+                              entryTime: opTime(row.item, lang),
+                              daySequence: summary.daySequence,
+                              sameDayCloseoutCount: summary.sameDayCloseoutCount,
+                            })}
+                          />
+                        ) : (
+                          <span className="text-taq-nav font-bold text-[#C8BCA4]">—</span>
+                        )}
+                        <div className="ms-auto min-w-0">
                           <RegisterCloseoutOperationActions
                             lang={lang}
                             item={row.item}
@@ -203,9 +190,9 @@ export function OwnerRegisterCloseoutsList({
                             onRestoreOperation={onRestoreOperation}
                           />
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
                 {canManageCloseout ? (
                   <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[#E8E1D4] pt-3">
