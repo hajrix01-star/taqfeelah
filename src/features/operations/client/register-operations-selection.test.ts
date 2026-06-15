@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   resolveCloseoutForOperationalEntry,
+  resolveOperationTargetFromCatalogs,
   resolveOwnerOperationOpenAction,
   resolveRestoreOperationTarget,
   resolveVoidOperationTarget,
@@ -12,6 +13,14 @@ describe("register operations selection", () => {
     const entryIsVoided = (entry: object) => (entry as { status: string }).status === "voided";
     expect(resolveVoidOperationTarget(entries, "e1", [], entryIsVoided)).toEqual(entries[0]);
     expect(resolveVoidOperationTarget(entries, "e1", ["shami"], entryIsVoided)).toBeNull();
+  });
+
+  it("resolves void target from register entries catalog when absent from operational entries", () => {
+    const summaryOnly = [{ id: "s1", businessId: "shami", type: "summary", status: "active" }];
+    const registerCatalog = [{ id: "p1", businessId: "shami", type: "purchases", status: "active" }];
+    const entryIsVoided = (entry: object) => (entry as { status: string }).status === "voided";
+    expect(resolveVoidOperationTarget([summaryOnly, registerCatalog], "p1", [], entryIsVoided)).toEqual(registerCatalog[0]);
+    expect(resolveOperationTargetFromCatalogs([summaryOnly, registerCatalog], "p1")).toEqual(registerCatalog[0]);
   });
 
   it("resolves closeout linked to an operational entry", () => {

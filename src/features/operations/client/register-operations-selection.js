@@ -4,25 +4,41 @@ import {
 } from "@/features/operations/operational-entry-mutation-helpers";
 
 /**
- * @param {Array<{ id?: string }>} operationalEntries
+ * @param {Array<Array<{ id?: string }>>} catalogs
+ * @param {string} entryId
+ */
+export function resolveOperationTargetFromCatalogs(catalogs, entryId) {
+  if (!entryId) return null;
+  for (const catalog of catalogs) {
+    if (!Array.isArray(catalog)) continue;
+    const target = catalog.find((entry) => entry.id === entryId);
+    if (target) return target;
+  }
+  return null;
+}
+
+/**
+ * @param {Array<{ id?: string }> | Array<Array<{ id?: string }>>} entryCatalogs
  * @param {string} entryId
  * @param {string[]} archivedBusinessIds
  * @param {(entry: object) => boolean} entryIsVoided
  */
-export function resolveVoidOperationTarget(operationalEntries, entryId, archivedBusinessIds, entryIsVoided) {
-  const target = operationalEntries.find((entry) => entry.id === entryId);
+export function resolveVoidOperationTarget(entryCatalogs, entryId, archivedBusinessIds, entryIsVoided) {
+  const catalogs = Array.isArray(entryCatalogs?.[0]) ? entryCatalogs : [entryCatalogs];
+  const target = resolveOperationTargetFromCatalogs(catalogs, entryId);
   if (!canVoidOperationalEntry(target, archivedBusinessIds, entryIsVoided)) return null;
   return target;
 }
 
 /**
- * @param {Array<{ id?: string }>} operationalEntries
+ * @param {Array<{ id?: string }> | Array<Array<{ id?: string }>>} entryCatalogs
  * @param {string} entryId
  * @param {string[]} archivedBusinessIds
  * @param {(entry: object) => boolean} entryIsVoided
  */
-export function resolveRestoreOperationTarget(operationalEntries, entryId, archivedBusinessIds, entryIsVoided) {
-  const target = operationalEntries.find((entry) => entry.id === entryId);
+export function resolveRestoreOperationTarget(entryCatalogs, entryId, archivedBusinessIds, entryIsVoided) {
+  const catalogs = Array.isArray(entryCatalogs?.[0]) ? entryCatalogs : [entryCatalogs];
+  const target = resolveOperationTargetFromCatalogs(catalogs, entryId);
   if (!canRestoreOperationalEntry(target, archivedBusinessIds, entryIsVoided)) return null;
   return target;
 }
