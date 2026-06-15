@@ -110,7 +110,8 @@ export function createOwnerSettingsScreenHandlers(ctx) {
     setters.setDraftStoreLocation("");
     setters.setDraftStoreChannelConfig(null);
     setters.setDraftStoreOperationalConfig(null);
-    setters.setNewChannelName("");
+    setters.setNewPaymentMethodName("");
+    setters.setNewSalesChannelName("");
     setters.setSettingsNotice("");
   };
 
