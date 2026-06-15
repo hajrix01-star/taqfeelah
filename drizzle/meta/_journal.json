@@ -127,6 +127,13 @@
       "when": 1781021900000,
       "tag": "0017_subscription_renewal_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1781022000000,
+      "tag": "0018_sales_channels_income_kind",
+      "breakpoints": true
     }
   ]
 }
