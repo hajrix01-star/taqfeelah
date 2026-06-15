@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
-import { notebookCardBackground } from "@/features/daily-closeouts/notebook-themes";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
 import { resolveCloseoutFromRegisterSummary } from "@/features/operations/client/register-closeout-summary-actions";
 import { employeeDisplayName } from "@/features/employee-closeouts/employee-entries-display";
@@ -101,6 +100,19 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
   const archivedReadOnlyBusiness = archivedReadOnlyBusinessId && archivedBusinessIds.includes(archivedReadOnlyBusinessId) ? businessesList.find((business) => business.id === archivedReadOnlyBusinessId) : null;
   const availableBusinesses = archivedReadOnlyBusiness ? [archivedReadOnlyBusiness] : activeBusinesses;
   const safeBusinessId = archivedReadOnlyBusiness ? archivedReadOnlyBusiness.id : activeBusinesses.length === 1 ? activeBusinesses[0].id : selectedBusiness === "all" || activeBusinesses.some((business) => business.id === selectedBusiness) ? selectedBusiness : "all";
+  const showAllStores = safeBusinessId === "all";
+  const changeRegisterPeriod = useCallback((nextPeriod) => {
+    const today = todayIsoDate();
+    setPeriod(nextPeriod);
+    if (nextPeriod === "day") {
+      setSelectedDate(today);
+      setLogView((current) => (current === "report" && safeBusinessId === "all" ? "closeouts" : current));
+    } else if (nextPeriod === "month") {
+      setSelectedMonth(today.slice(0, 7));
+    } else if (nextPeriod === "year") {
+      setSelectedYear(String(new Date().getFullYear()));
+    }
+  }, [safeBusinessId]);
   const registerTargetStoreIds = useMemo(
     () => (safeBusinessId === "all" ? activeBusinesses.map((business) => business.id) : [safeBusinessId]),
     [activeBusinesses, safeBusinessId],
@@ -238,7 +250,6 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
   const typeItems = [{ id: "all", label: "allTypes" }, { id: "summary", label: "summary" }, { id: "purchases", label: "purchases" }, { id: "expense", label: "expense" }, { id: "withdrawal", label: "withdrawal" }];
   const expenseCategoryItems = [{ id: "all", label: "allCategories" }, ...expenseCategories];
   const activeFilterCount = registerLogFilterCount(logFilters);
-  const registerCardInsetStyle = useMemo(() => ({ backgroundColor: notebookCardBackground(notebookTheme, "inset") }), [notebookTheme]);
   const registerPeriodSummary = useMemo(
     () => summarizeRegisterPeriod(
       filteredEntries,
@@ -356,7 +367,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
               compact
               lang={lang}
               period={period}
-              setPeriod={setPeriod}
+              setPeriod={changeRegisterPeriod}
               allowedPeriods={["day", "month", "year", "custom"]}
               selectedDay={selectedDate}
               setSelectedDay={() => {}}
@@ -433,7 +444,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
             logFilters={logFilters}
             daySequenceByCloseoutId={daySequenceByCloseoutId}
             sameDayCloseoutCountByStoreDate={sameDayCloseoutCountByStoreDate}
-            registerCardInsetStyle={registerCardInsetStyle}
+            showStoreBadge={showAllStores}
             entryAttachmentApiContext={entryAttachmentApiContext}
             expandedEntryId={expandedEntryId}
             setExpandedEntryId={setExpandedEntryId}
@@ -452,7 +463,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
             lang={lang}
             closeoutSummaries={closeoutSummaries}
             logFilters={logFilters}
-            registerCardInsetStyle={registerCardInsetStyle}
+            showStoreBadge={showAllStores}
             entryAttachmentApiContext={entryAttachmentApiContext}
             expandedCloseoutKey={expandedCloseoutKey}
             setExpandedCloseoutKey={setExpandedCloseoutKey}

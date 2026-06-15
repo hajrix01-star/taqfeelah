@@ -16,6 +16,7 @@ import {
   expandRegisterCloseoutOperationRows,
 } from "./prototype-runtime-entry-helpers";
 import { MoneyValue } from "./prototype-runtime-notebook";
+import { RegisterStoreBadge } from "./owner-register-ui-primitives";
 import CloseoutOwnerEditBadge from "@/features/closeouts/client/CloseoutOwnerEditBadge";
 import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
 
@@ -71,7 +72,7 @@ export function OwnerRegisterCloseoutsList({
   lang,
   closeoutSummaries,
   logFilters,
-  registerCardInsetStyle,
+  showStoreBadge = false,
   entryAttachmentApiContext,
   expandedCloseoutKey,
   setExpandedCloseoutKey,
@@ -115,13 +116,19 @@ export function OwnerRegisterCloseoutsList({
               <ChevronDown className={`mt-0.5 h-5 w-5 shrink-0 text-[#112A46] transition ${isExpanded ? "rotate-180" : ""}`} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                  <p className="text-taq-meta font-black text-[#112A46]">{formatCloseoutDayLabel({ formattedDate: formatCalendarDate(summary.date, lang), daySequence: summary.daySequence, sameDayCloseoutCount: summary.sameDayCloseoutCount })}</p>
+                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                    <p className="text-taq-meta font-black text-[#112A46]">{formatCloseoutDayLabel({ formattedDate: formatCalendarDate(summary.date, lang), daySequence: summary.daySequence, sameDayCloseoutCount: summary.sameDayCloseoutCount })}</p>
+                    {showStoreBadge ? <RegisterStoreBadge label={storeLabel} /> : null}
+                  </div>
                   <div className="flex flex-wrap items-center justify-end gap-1.5">
                     <CloseoutOwnerEditBadge lang={lang} source={summary} />
                     <p className="rounded-full border border-[#8EA1C4] px-2.5 py-1 text-taq-meta font-black text-[#214B7B]">{lang === "ar" ? `بواسطة ${summary.actorLabel}` : `By ${summary.actorLabel}`}</p>
                   </div>
                 </div>
-                <p className="mt-1 text-taq-meta font-bold text-[#716753]">{formatRegisterCloseoutTypeLabel(summary.date, lang)} {storeLabel}</p>
+                <p className="mt-1 text-taq-meta font-bold text-[#716753]">
+                  {formatRegisterCloseoutTypeLabel(summary.date, lang)}
+                  {!showStoreBadge && storeLabel ? ` ${storeLabel}` : ""}
+                </p>
                 <div className="mt-2 grid grid-cols-3 gap-2 border-t border-dashed border-[#DDD3C0] pt-2">
                   <p className="text-taq-meta font-black text-[#112A46]">{lang === "ar" ? "الدخل" : "In"} <span className="tabular-nums"><MoneyValue value={money(summary.displaySales, lang)} /></span></p>
                   <p className="text-taq-meta font-black text-[#B44747]">{lang === "ar" ? "الخارج" : "Out"} <span className="tabular-nums"><MoneyValue value={money(-summary.totals.expense, lang)} /></span></p>
@@ -146,7 +153,7 @@ export function OwnerRegisterCloseoutsList({
               </div>
             </button>
             {isExpanded && (
-              <div className="border-t border-[#E8E1D4] px-3.5 py-2.5" style={registerCardInsetStyle}>
+              <div className="border-t border-[#E8E1D4] bg-white px-3.5 py-2.5">
                 <div className="divide-y divide-[#F0EBE0]">
                   {operationRows.map((row) => (
                     <div key={row.key} className="py-2.5 text-taq-meta first:pt-0 last:pb-0">
