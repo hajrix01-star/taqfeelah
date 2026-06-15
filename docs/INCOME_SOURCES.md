@@ -30,6 +30,10 @@ All other catalog entries are optional and added by the owner from settings.
 - `buildCatalogUuidMap()` used during store provisioning
 - `keeta` UUID: `c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f`
 
+## Owner settings UI
+
+Owner income-source settings show **one unified list** (payment methods + sales channels together). Each catalog preset appears with an on/off toggle; **cash** and **card** are active by default for new stores. Custom names can be added at the bottom of the same section.
+
 ## Owner rules
 
 1. At least **one** active income source must remain (payment method or sales channel).

@@ -1,4 +1,4 @@
-import { CreditCard, ShoppingBag } from "lucide-react";
+import { CreditCard } from "lucide-react";
 import { createOrganizationStoreViaApi } from "@/features/org-config/client/org-config-api-client";
 import {
   buildOwnerProfileUpdate,
@@ -16,15 +16,13 @@ import {
 } from "@/features/org-config/client/owner-settings-store-actions";
 import { resolveStorePanelOpenDrafts } from "@/features/org-config/client/owner-settings-store-panel-actions";
 import {
-  addCatalogIncomeSource,
   addCustomSalesChannel,
   canRequestRetireSalesChannel,
   cloneStoreChannelDraft,
   restoreRetiredSalesChannel,
   retireSalesChannelInDraft,
-  toggleSalesChannelActive,
+  toggleIncomeSourceActive,
 } from "@/features/org-config/client/owner-settings-channel-actions";
-import { getCatalogEntry } from "@/core/client/income-source-catalog";
 import {
   cloneStoreOperationalDraft,
   mergeOperationalDraft,
@@ -87,8 +85,7 @@ export function createOwnerSettingsScreenHandlers(ctx) {
     ownerProfile,
     newStoreName,
     newStoreLocation,
-    newPaymentMethodName,
-    newSalesChannelName,
+    newCustomIncomeSourceName,
     draftStoreName,
     draftStoreLocation,
     draftStoreChannelConfig,
@@ -110,8 +107,7 @@ export function createOwnerSettingsScreenHandlers(ctx) {
     setters.setDraftStoreLocation("");
     setters.setDraftStoreChannelConfig(null);
     setters.setDraftStoreOperationalConfig(null);
-    setters.setNewPaymentMethodName("");
-    setters.setNewSalesChannelName("");
+    setters.setNewCustomIncomeSourceName("");
     setters.setSettingsNotice("");
   };
 
@@ -255,7 +251,7 @@ export function createOwnerSettingsScreenHandlers(ctx) {
   };
 
   const toggleChannel = (id) => {
-    const result = toggleSalesChannelActive(channelConfig, id);
+    const result = toggleIncomeSourceActive(channelConfig, id);
     if (result.blocked) {
       setters.setSettingsNotice(text(lang, "atLeastOneChannel"));
       return;
@@ -274,33 +270,14 @@ export function createOwnerSettingsScreenHandlers(ctx) {
 
   const restoreSalesChannel = (channel) => updateChannelDraft((config) => restoreRetiredSalesChannel(config, channel));
 
-  const addCatalogChannel = (legacyId) => {
-    const entry = getCatalogEntry(legacyId);
-    const icon = entry?.kind === "sales_channel" ? ShoppingBag : CreditCard;
-    const result = addCatalogIncomeSource(channelConfig, legacyId, { icon });
-    if (!result.added) return;
-    updateChannelDraft(() => result.config);
-    setters.setSettingsNotice("");
-  };
-
-  const addCustomPaymentMethod = () => {
-    const result = addCustomSalesChannel(channelConfig, newPaymentMethodName, {
+  const addCustomIncomeSource = () => {
+    const result = addCustomSalesChannel(channelConfig, newCustomIncomeSourceName, {
       icon: CreditCard,
       kind: "payment_method",
     });
     if (!result.added) return;
     setters.setDraftStoreChannelConfig(result.config);
-    setters.setNewPaymentMethodName("");
-  };
-
-  const addCustomSalesChannelEntry = () => {
-    const result = addCustomSalesChannel(channelConfig, newSalesChannelName, {
-      icon: ShoppingBag,
-      kind: "sales_channel",
-    });
-    if (!result.added) return;
-    setters.setDraftStoreChannelConfig(result.config);
-    setters.setNewSalesChannelName("");
+    setters.setNewCustomIncomeSourceName("");
   };
 
   const toggleCategory = (id) => {
@@ -586,9 +563,7 @@ export function createOwnerSettingsScreenHandlers(ctx) {
     toggleChannel,
     requestRetireChannel,
     restoreSalesChannel,
-    addCatalogChannel,
-    addCustomPaymentMethod,
-    addCustomSalesChannel: addCustomSalesChannelEntry,
+    addCustomIncomeSource,
     toggleCategory,
     toggleArchive,
     requestArchiveStore,

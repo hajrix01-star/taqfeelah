@@ -5,6 +5,7 @@
  */
 
 import {
+  INCOME_SOURCE_CATALOG,
   catalogDisplayName,
   getCatalogEntry,
   listCatalogByKind,
@@ -28,11 +29,97 @@ export function cloneStoreChannelDraft(config) {
  * @param {string} legacyId
  */
 function channelExistsInConfig(config, legacyId) {
-  return config.channels.some((channel) => (
+  return Boolean(findConfiguredChannelByLegacyId(config, legacyId));
+}
+
+/**
+ * @param {StoreChannelConfig} config
+ * @param {string} legacyId
+ */
+export function findConfiguredChannelByLegacyId(config, legacyId) {
+  return config.channels.find((channel) => (
     channel.legacyId === legacyId
     || channel.id === legacyId
     || channel.text === legacyId
   ));
+}
+
+/**
+ * @param {Record<string, unknown>} channel
+ */
+function isCatalogConfiguredChannel(channel) {
+  const legacyId = String(
+    channel?.legacyId
+    || channel?.text
+    || (typeof channel?.id === "string" ? channel.id : ""),
+  ).trim();
+  return Boolean(legacyId && getCatalogEntry(legacyId));
+}
+
+/**
+ * Unified owner-settings rows: full catalog (toggle-only) plus custom channels.
+ *
+ * @param {StoreChannelConfig} config
+ */
+export function listUnifiedIncomeSourceRows(config) {
+  /** @type {Array<{ rowId: string, toggleId: string, channel: Record<string, unknown>, isCatalog: boolean, isActive: boolean }>} */
+  const rows = [];
+
+  for (const entry of INCOME_SOURCE_CATALOG) {
+    const channel = findConfiguredChannelByLegacyId(config, entry.legacyId);
+    if (channel?.retired) continue;
+
+    rows.push({
+      rowId: String(channel?.id || entry.legacyId),
+      toggleId: String(channel?.id || entry.legacyId),
+      channel: channel || {
+        id: entry.legacyId,
+        legacyId: entry.legacyId,
+        kind: entry.kind,
+        nameAr: entry.nameAr,
+        nameEn: entry.nameEn,
+      },
+      isCatalog: true,
+      isActive: channel ? config.activeIds.includes(String(channel.id)) : false,
+    });
+  }
+
+  for (const channel of config.channels) {
+    if (channel.retired || isCatalogConfiguredChannel(channel)) continue;
+    rows.push({
+      rowId: String(channel.id),
+      toggleId: String(channel.id),
+      channel,
+      isCatalog: false,
+      isActive: config.activeIds.includes(String(channel.id)),
+    });
+  }
+
+  return rows;
+}
+
+/**
+ * @param {StoreChannelConfig} config
+ * @param {string} channelOrLegacyId
+ */
+export function toggleIncomeSourceActive(config, channelOrLegacyId) {
+  const configured = config.channels.find((channel) => channel.id === channelOrLegacyId)
+    || findConfiguredChannelByLegacyId(config, channelOrLegacyId);
+
+  if (configured) {
+    return toggleSalesChannelActive(config, String(configured.id));
+  }
+
+  const catalogEntry = getCatalogEntry(channelOrLegacyId);
+  if (!catalogEntry) {
+    return { config, blocked: false, added: false };
+  }
+
+  return {
+    ...addCatalogIncomeSource(config, catalogEntry.legacyId),
+    blocked: false,
+    added: true,
+  };
 }
 
 /**
