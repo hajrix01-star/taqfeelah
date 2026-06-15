@@ -135,9 +135,11 @@ describe("org config runtime mapper", () => {
     const channel = mapApiChannelToUi({
       id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
       name: "Talabat",
+      kind: "sales_channel",
       status: "active",
     });
     expect(channel.custom).toBe(true);
+    expect(channel.kind).toBe("sales_channel");
     expect(channel.nameEn).toBe("Talabat");
   });
 

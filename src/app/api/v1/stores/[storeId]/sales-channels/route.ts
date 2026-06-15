@@ -58,6 +58,13 @@ export async function POST(request: Request, context: RouteContext) {
     if (body?.status !== undefined && body.status !== "active" && body.status !== "retired") {
       throw new ValidationError("Body field 'status' must be 'active' or 'retired'.");
     }
+    if (
+      body?.kind !== undefined
+      && body.kind !== "payment_method"
+      && body.kind !== "sales_channel"
+    ) {
+      throw new ValidationError("Body field 'kind' must be 'payment_method' or 'sales_channel'.");
+    }
 
     const created = await createStoreSalesChannel({
       organizationId: requestContext.organizationId,
@@ -65,6 +72,7 @@ export async function POST(request: Request, context: RouteContext) {
       actorUserId: requestContext.userId!,
       actorRole: requestContext.role!,
       name,
+      kind: body?.kind === "sales_channel" ? "sales_channel" : "payment_method",
       status: body?.status === "retired" ? "retired" : "active",
       reason: typeof body?.reason === "string" ? body.reason : undefined,
     });

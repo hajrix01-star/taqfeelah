@@ -12,6 +12,7 @@ const inputSchema = z.object({
   actorUserId: z.string().uuid(),
   actorRole: z.enum(["owner", "manager", "employee"]),
   name: z.string().trim().min(1).max(120),
+  kind: z.enum(["payment_method", "sales_channel"]).default("payment_method"),
   status: z.enum(["active", "retired"]).default("active"),
   reason: z.string().trim().max(500).optional(),
 });
@@ -57,12 +58,14 @@ export async function createStoreSalesChannel(rawInput: z.infer<typeof inputSche
         organizationId: input.organizationId,
         storeId: input.storeId,
         name: input.name,
+        kind: input.kind,
         status: input.status,
         retiredAt: input.status === "retired" ? now : null,
       })
       .returning({
         id: salesChannels.id,
         name: salesChannels.name,
+        kind: salesChannels.kind,
         status: salesChannels.status,
         retiredAt: salesChannels.retiredAt,
         createdAt: salesChannels.createdAt,
@@ -84,6 +87,7 @@ export async function createStoreSalesChannel(rawInput: z.infer<typeof inputSche
     return {
       id: created.id,
       name: created.name,
+      kind: created.kind,
       status: created.status,
       retiredAt: created.retiredAt ? created.retiredAt.toISOString() : null,
       createdAt: created.createdAt.toISOString(),

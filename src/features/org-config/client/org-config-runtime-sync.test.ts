@@ -283,6 +283,7 @@ describe("org config runtime sync", () => {
     expect(createCall).toBeTruthy();
     expect(JSON.parse(String(createCall?.[1]?.body))).toMatchObject({
       name: "Delivery",
+      kind: "payment_method",
       status: "active",
       reason: "owner_added_channel",
     });
@@ -290,5 +291,94 @@ describe("org config runtime sync", () => {
     expect(remapped.channels.some((channel: { id: string }) => channel.id === createdChannelId)).toBe(true);
     expect(remapped.activeIds).toContain(createdChannelId);
     expect(remapped.activeIds).not.toContain("channel-1718040000000");
+  });
+
+  it("creates catalog sales channels even when only legacy preset metadata is present", async () => {
+    const createdChannelId = "33333333-3333-4333-8333-333333333333";
+    const fetchMock = vi.fn(async (url, init) => {
+      if (String(url).includes("/sales-channels") && init?.method === "POST") {
+        return new Response(JSON.stringify({
+          channel: {
+            id: createdChannelId,
+            name: "Keeta",
+            kind: "sales_channel",
+            status: "active",
+            retiredAt: null,
+            createdAt: "2026-06-12T00:00:00.000Z",
+          },
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync.js");
+    const applied = await persistOrgConfigSnapshot({
+      auth: {
+        organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+        actorUserId: "owner",
+        actorRole: "owner",
+      },
+      baseline: {
+        configuredBusinesses: [{
+          id: "shami",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {
+          shami: {
+            channels: [{
+              id: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+              apiChannelId: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+              nameAr: "Cash",
+              nameEn: "Cash",
+            }],
+            activeIds: ["9bc40d4f-c773-4ba3-87db-b8bb1467dafb"],
+          },
+        },
+        staff: [],
+      },
+      next: {
+        configuredBusinesses: [{
+          id: "shami",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {
+          shami: {
+            channels: [
+              {
+                id: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+                apiChannelId: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+                nameAr: "Cash",
+                nameEn: "Cash",
+              },
+              {
+                id: "keeta",
+                legacyId: "keeta",
+                text: "keeta",
+                kind: "sales_channel",
+              },
+            ],
+            activeIds: [
+              "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+              "keeta",
+            ],
+          },
+        },
+        staff: [],
+      },
+    });
+
+    const createCall = fetchMock.mock.calls.find(([url, init]) => (
+      String(url).includes("/sales-channels") && init?.method === "POST"
+    ));
+    expect(createCall).toBeTruthy();
+    expect(JSON.parse(String(createCall?.[1]?.body))).toMatchObject({
+      name: "كيتا",
+      kind: "sales_channel",
+      status: "active",
+    });
+    expect(applied.storeChannelSettings.shami.activeIds).toContain(createdChannelId);
   });
 });

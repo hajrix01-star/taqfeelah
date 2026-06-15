@@ -15,6 +15,10 @@ import {
   mapApiStoreToBusiness,
   mapApiMemberToStaff,
 } from "./org-config-runtime-mapper.js";
+import {
+  resolveChannelPersistKind,
+  resolveChannelPersistName,
+} from "./owner-settings-channel-actions.js";
 
 function resolveStoreUuid(business) {
   if (isUuid(business?.dbStoreId)) return business.dbStoreId;
@@ -158,7 +162,7 @@ export async function persistOrgConfigSnapshot({
       const apiId = channelApiId(afterChannel);
       if (apiId) continue;
 
-      const name = (afterChannel.nameAr || afterChannel.nameEn || "").trim();
+      const name = resolveChannelPersistName(afterChannel, "ar");
       if (!name) continue;
 
       const isActive = channelIsActive(afterChannel, afterConfig.activeIds);
@@ -166,6 +170,7 @@ export async function persistOrgConfigSnapshot({
         ...authArgs,
         storeId,
         name,
+        kind: resolveChannelPersistKind(afterChannel),
         status: isActive ? "active" : "retired",
         reason: "owner_added_channel",
       });

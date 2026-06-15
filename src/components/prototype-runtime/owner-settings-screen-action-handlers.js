@@ -210,9 +210,39 @@ export function createOwnerSettingsScreenHandlers(ctx) {
     leaveStorePanelAfterSave();
   };
 
-  const saveChannelSettings = () => {
+  const saveChannelSettings = async () => {
     if (!settingsStoreId || !draftStoreChannelConfig) return;
-    setters.setStoreChannelSettings((current) => applyPersistedStoreChannelSettings(current, settingsStoreId, draftStoreChannelConfig));
+
+    let nextStoreChannelSettings = null;
+    setters.setStoreChannelSettings((current) => {
+      nextStoreChannelSettings = applyPersistedStoreChannelSettings(
+        current,
+        settingsStoreId,
+        draftStoreChannelConfig,
+      );
+      return nextStoreChannelSettings;
+    });
+
+    if (
+      orgConfigApiContext?.enabled
+      && orgConfigApiContext.hydrated
+      && typeof orgConfigApiContext.flushPersist === "function"
+    ) {
+      try {
+        setters.setSettingsNotice("");
+        await orgConfigApiContext.flushPersist({
+          storeChannelSettings: nextStoreChannelSettings,
+        });
+      } catch {
+        setters.setSettingsNotice(
+          lang === "ar"
+            ? "تعذر حفظ قنوات الدخل على الخادم. أعد المحاولة."
+            : "Could not save income channels on the server. Please retry.",
+        );
+        return;
+      }
+    }
+
     showSettingsSaved();
     leaveStorePanelAfterSave();
   };
@@ -265,7 +295,7 @@ export function createOwnerSettingsScreenHandlers(ctx) {
 
   const addCustomSalesChannelEntry = () => {
     const result = addCustomSalesChannel(channelConfig, newSalesChannelName, {
-      icon: CreditCard,
+      icon: ShoppingBag,
       kind: "sales_channel",
     });
     if (!result.added) return;

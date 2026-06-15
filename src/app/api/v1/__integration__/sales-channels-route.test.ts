@@ -102,9 +102,39 @@ describe("sales channels route integration", () => {
     expect(createStoreSalesChannel).toHaveBeenCalledWith(expect.objectContaining({
       storeId: TEST_STORE_ID,
       name: "Delivery",
+      kind: "payment_method",
       status: "active",
       reason: "owner_added_channel",
       actorRole: "owner",
+    }));
+  });
+
+  it("POST accepts sales channel kind", async () => {
+    createStoreSalesChannel.mockResolvedValueOnce({
+      id: TEST_SALES_CHANNEL_ID,
+      name: "Jahez",
+      kind: "sales_channel",
+      status: "active",
+      retiredAt: null,
+      createdAt: "2026-06-12T00:00:00.000Z",
+    });
+
+    const { POST } = await import("../stores/[storeId]/sales-channels/route");
+    const response = await POST(
+      ownerRequest(`http://localhost/api/v1/stores/${TEST_STORE_ID}/sales-channels`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Jahez",
+          kind: "sales_channel",
+          status: "active",
+        }),
+      }),
+      routeStoreContext(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(createStoreSalesChannel).toHaveBeenCalledWith(expect.objectContaining({
+      kind: "sales_channel",
     }));
   });
 
