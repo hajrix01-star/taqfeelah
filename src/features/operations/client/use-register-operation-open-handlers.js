@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   resolveOwnerOperationOpenAction,
   resolveRestoreOperationTarget,
   resolveVoidOperationTarget,
 } from "./register-operations-selection.js";
+import { useRegisterEntriesCatalog } from "./use-register-entries-catalog";
 
 export function useRegisterOperationOpenHandlers({
   operationalEntries = [],
@@ -19,6 +20,11 @@ export function useRegisterOperationOpenHandlers({
   setRestoreTarget = () => {},
   setOwnerManageCloseout = () => {},
 }) {
+  const registerEntriesCatalog = useRegisterEntriesCatalog();
+  const entryCatalogs = useMemo(
+    () => [operationalEntries, registerEntriesCatalog],
+    [operationalEntries, registerEntriesCatalog],
+  );
   const handleOpenOwnerOperation = useCallback((entry) => {
     const action = resolveOwnerOperationOpenAction(entry, {
       bindsToServerAuth,
@@ -40,23 +46,23 @@ export function useRegisterOperationOpenHandlers({
 
   const requestVoidOperation = useCallback((entryId) => {
     const target = resolveVoidOperationTarget(
-      operationalEntries,
+      entryCatalogs,
       entryId,
       archivedBusinessIds,
       entryIsVoided,
     );
     if (target) setVoidTarget(target);
-  }, [archivedBusinessIds, entryIsVoided, operationalEntries, setVoidTarget]);
+  }, [archivedBusinessIds, entryCatalogs, entryIsVoided, setVoidTarget]);
 
   const requestRestoreOperation = useCallback((entryId) => {
     const target = resolveRestoreOperationTarget(
-      operationalEntries,
+      entryCatalogs,
       entryId,
       archivedBusinessIds,
       entryIsVoided,
     );
     if (target) setRestoreTarget(target);
-  }, [archivedBusinessIds, entryIsVoided, operationalEntries, setRestoreTarget]);
+  }, [archivedBusinessIds, entryCatalogs, entryIsVoided, setRestoreTarget]);
 
   return {
     handleOpenOwnerOperation,
