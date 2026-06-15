@@ -32,44 +32,82 @@ export const OWNER_NOTEBOOK_VIEW_TABS = [
   { id: "done", label: "ownerNotebookDone" },
 ];
 
-export function NotebookViewTabs({ lang, active, tabs, onChange, tabCounts = {} }) {
+function buildNotebookViewTabItems(lang, counts) {
+  return [
+    {
+      id: "active",
+      label: text(lang, "ownerNotebookActive"),
+      count: counts.active ?? 0,
+      activeClass: "bg-[#E4B84A] text-[#112A46]",
+      inactiveClass: "bg-[#E4B84A]/80 text-[#112A46]",
+      badgeActiveClass: "bg-[#112A46] text-white",
+      badgeInactiveClass: "bg-[#112A46]/10 text-[#112A46]",
+    },
+    {
+      id: "tasks",
+      label: text(lang, "ownerNotebookTasks"),
+      count: counts.tasks ?? 0,
+      activeClass: "bg-[#257844] text-white",
+      inactiveClass: "bg-[#257844]/82 text-white",
+      badgeActiveClass: "bg-white/20 text-white",
+      badgeInactiveClass: "bg-white/15 text-white",
+    },
+    {
+      id: "notes",
+      label: text(lang, "ownerNotebookNotes"),
+      count: counts.notes ?? 0,
+      activeClass: "bg-[#214B7B] text-white",
+      inactiveClass: "bg-[#214B7B]/82 text-white",
+      badgeActiveClass: "bg-white/20 text-white",
+      badgeInactiveClass: "bg-white/15 text-white",
+    },
+    {
+      id: "done",
+      label: text(lang, "ownerNotebookDone"),
+      count: counts.done ?? 0,
+      activeClass: "bg-[#806528] text-white",
+      inactiveClass: "bg-[#806528]/82 text-white",
+      badgeActiveClass: "bg-white/20 text-white",
+      badgeInactiveClass: "bg-white/15 text-white",
+    },
+  ];
+}
+
+export function NotebookViewTabs({ lang, active, onChange, tabCounts = {} }) {
+  const items = buildNotebookViewTabItems(lang, tabCounts);
+
   return (
-    <div className="border-b border-[#ECE6DA] bg-white px-2.5 py-2">
-      <div
-        role="tablist"
-        aria-label={text(lang, "ownerNotebook")}
-        className="grid grid-cols-4 gap-0.5 rounded-[11px] bg-[#EFEBE2] p-0.5"
-      >
-        {tabs.map((tab) => {
-          const isActive = active === tab.id;
-          const count = tabCounts[tab.id] ?? 0;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => onChange(tab.id)}
-              className={`flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-[9px] px-1 py-1.5 transition-all duration-200 ${
-                isActive
-                  ? "bg-white text-[#112A46] shadow-[0_1px_5px_rgba(17,42,70,0.08)]"
-                  : "text-[#8A8070] hover:text-[#112A46]"
+    <div
+      className="flex overflow-hidden rounded-t-[14px] shadow-[0_-1px_0_rgba(17,42,70,0.06)]"
+      role="tablist"
+      aria-label={text(lang, "ownerNotebook")}
+    >
+      {items.map((item, index) => {
+        const isActive = active === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(item.id)}
+            className={`flex h-9 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-black transition-all duration-200 ${
+              isActive ? item.activeClass : item.inactiveClass
+            } ${isActive ? "z-10 ring-2 ring-inset ring-[#112A46]" : "opacity-95"} ${
+              index > 0 ? "border-s border-white/25" : ""
+            }`}
+          >
+            <span className="w-full truncate text-center leading-4">{item.label}</span>
+            <span
+              className={`rounded-md px-1.5 py-px text-[9px] font-bold tabular-nums leading-none ${
+                isActive ? item.badgeActiveClass : item.badgeInactiveClass
               }`}
             >
-              <span className="w-full truncate text-center text-[10px] font-black leading-tight">
-                {text(lang, tab.label)}
-              </span>
-              <span
-                className={`rounded-md px-1.5 py-px text-[9px] font-bold tabular-nums leading-none ${
-                  isActive ? "bg-[#112A46] text-white" : "bg-[#112A46]/[0.07] text-[#827762]"
-                }`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+              {item.count}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
