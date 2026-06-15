@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 import {
   formatInviteStatus,
   getOwnerTeamInvitesLabels,
@@ -113,6 +114,17 @@ export function OwnerSettingsTeamInvites({
               <p className="text-xs font-black">{invite.displayName}</p>
               <span className="rounded-full bg-white px-2 py-1 text-taq-meta font-bold">{formatInviteStatus(invite.status, lang)}</span>
             </div>
+            {invite.invitationDisplayName
+              && invite.invitationDisplayName !== invite.displayName ? (
+                <p className="mt-1 text-taq-meta font-bold text-[#827762]">
+                  {labels.inviteAlias}: {invite.invitationDisplayName}
+                </p>
+              ) : null}
+            {invite.phoneNumber ? (
+              <p className="mt-1 text-taq-meta font-bold text-[#716753]" dir="ltr">
+                {labels.phoneLabel}: {formatLoginPhoneForDisplay(invite.phoneNumber)}
+              </p>
+            ) : null}
             <p className="mt-1 text-taq-meta font-bold text-[#827762]">{invite.storeName}</p>
             {invite.status === "pending" ? (
               <button

@@ -40,6 +40,8 @@ export function getOwnerTeamInvitesLabels(lang) {
       expiresAt: "تنتهي في",
       noInvites: "لا توجد دعوات بعد.",
       copied: "تم النسخ",
+      inviteAlias: "دعوة باسم",
+      phoneLabel: "الجوال",
     };
   }
 
@@ -63,5 +65,7 @@ export function getOwnerTeamInvitesLabels(lang) {
     expiresAt: "Expires at",
     noInvites: "No invitations yet.",
     copied: "Copied",
+    inviteAlias: "Invited as",
+    phoneLabel: "Mobile",
   };
 }
