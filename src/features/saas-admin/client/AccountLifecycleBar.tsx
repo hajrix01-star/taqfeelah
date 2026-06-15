@@ -8,6 +8,7 @@ import { StatusBadge } from "@/features/saas-admin/components/StatusBadge";
 import { formatPlanCode } from "@/features/saas-admin/components/admin-display-labels";
 import type { AccountStatus, OrganizationLifecycleStatus } from "@/features/saas-admin/types";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
+import { appConfirm } from "@/lib/ui/app-dialog/app-dialog-bridge";
 
 type AccountLifecycleBarProps = {
   organizationId: string;
@@ -24,13 +25,13 @@ export function AccountLifecycleBar({
   planCode,
   onUpdated,
 }: AccountLifecycleBarProps) {
-  const { t } = useSaasAdminLocale();
+  const { t, locale } = useSaasAdminLocale();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   async function applyStatus(nextStatus: "active" | "suspended" | "archived", confirmMessage: string) {
-    if (!window.confirm(confirmMessage)) return;
+    if (!(await appConfirm({ lang: locale, title: confirmMessage, confirmLabel: t.common.confirm, cancelLabel: t.common.cancel, variant: "danger" }))) return;
     setError(null);
     setSuccess(null);
     setIsProcessing(true);

@@ -23,6 +23,7 @@ import {
   buildEntry,
 } from "./prototype-runtime-demo-operational-entries";
 import { entryIsActive } from "./prototype-runtime-entry-helpers";
+import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 
 export function usePrototypeRuntimeOwnerSaveActions({
   lang,
@@ -49,9 +50,7 @@ export function usePrototypeRuntimeOwnerSaveActions({
   const saveOwner = async (payload) => {
     if (entriesApiDbSource && isOwnerStandaloneOutflowPayload(payload)) {
       if (!closeoutsApiEnabled) {
-        window.alert(lang === "ar"
-          ? "مسار API للتقفيلات غير مفعّل."
-          : "Closeouts API is disabled.");
+        await appAlert({ lang, title: text(lang, "closeoutsApiDisabled"), variant: "warning" });
         return;
       }
       if (!canPersistOperationalEntry({
@@ -60,7 +59,7 @@ export function usePrototypeRuntimeOwnerSaveActions({
         allowedBusinessIds: activeBusinessIds,
       })) return;
       if (isFutureOperationalEntryDate(payload.date, todayDate)) {
-        window.alert(text(lang, "futureDateNotAllowed"));
+        await appAlert({ lang, title: text(lang, "futureDateNotAllowed"), variant: "info" });
         return;
       }
 
@@ -74,7 +73,7 @@ export function usePrototypeRuntimeOwnerSaveActions({
         storeChannels: ownerCloseoutChannelConfig.channels || [],
       });
       if (submitFailure) {
-        window.alert(buildCloseoutSubmitFailureMessage(submitFailure, lang));
+        await appAlert({ lang, title: buildCloseoutSubmitFailureMessage(submitFailure, lang), variant: "danger" });
         return;
       }
 
@@ -91,9 +90,7 @@ export function usePrototypeRuntimeOwnerSaveActions({
           },
         });
         if (!result) {
-          window.alert(lang === "ar"
-            ? "تعذر حفظ الخارج على الخادم."
-            : "Failed to save outflow on server.");
+          await appAlert({ lang, title: text(lang, "outflowSaveFailed"), variant: "danger" });
           return;
         }
         const refreshed = await loadOperationalEntriesFromApi();
@@ -104,7 +101,7 @@ export function usePrototypeRuntimeOwnerSaveActions({
         const message = error instanceof Error && error.message
           ? error.message
           : (lang === "ar" ? "تعذر حفظ الخارج على الخادم." : "Failed to save outflow on server.");
-        window.alert(message);
+        await appAlert({ lang, title: message, variant: "danger" });
       } finally {
         savingRef.current = false;
         setSaving(false);
@@ -113,7 +110,7 @@ export function usePrototypeRuntimeOwnerSaveActions({
     }
 
     if (entriesApiDbSource) {
-      window.alert(text(lang, "closeoutRequiredForEntry"));
+      await appAlert({ lang, title: text(lang, "closeoutRequiredForEntry"), variant: "info" });
       return;
     }
     if (!canPersistOperationalEntry({
@@ -122,7 +119,7 @@ export function usePrototypeRuntimeOwnerSaveActions({
       allowedBusinessIds: activeBusinessIds,
     })) return;
     if (isFutureOperationalEntryDate(payload.date, todayDate)) {
-      window.alert(text(lang, "futureDateNotAllowed"));
+      await appAlert({ lang, title: text(lang, "futureDateNotAllowed"), variant: "info" });
       return;
     }
     savingRef.current = true;
@@ -139,11 +136,11 @@ export function usePrototypeRuntimeOwnerSaveActions({
           entriesApiDbSource,
         });
         if (!result.ok) {
-          window.alert(result.failureMessage);
+          await appAlert({ lang, title: result.failureMessage, variant: "danger" });
           return;
         }
         if (result.refreshFailed) {
-          window.alert(resolveOperationalEntriesRefreshWarningMessage(lang));
+          await appAlert({ lang, title: resolveOperationalEntriesRefreshWarningMessage(lang), variant: "warning" });
         }
         if (payload.type === "summary") {
           const summaryUpdate = resolveSummaryLastCloseoutUpdate(
@@ -173,7 +170,7 @@ export function usePrototypeRuntimeOwnerSaveActions({
         storeAttachmentPayload,
       });
       if (!local.ok) {
-        if (local.attachmentFailed) window.alert(text(lang, "attachmentSaveFailed"));
+        if (local.attachmentFailed) await appAlert({ lang, title: text(lang, "attachmentSaveFailed"), variant: "info" });
         return;
       }
       setOperationalEntries((current) => [local.entry, ...current]);
@@ -190,7 +187,7 @@ export function usePrototypeRuntimeOwnerSaveActions({
       const message = error instanceof Error && error.message
         ? error.message
         : (lang === "ar" ? "تعذر حفظ العملية على الخادم." : "Failed to save entry on server.");
-      window.alert(message);
+      await appAlert({ lang, title: message, variant: "danger" });
     } finally {
       savingRef.current = false;
       setSaving(false);

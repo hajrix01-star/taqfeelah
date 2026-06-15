@@ -5,6 +5,8 @@ import OwnerCloseoutManagePanel from "@/features/owner-closeouts/OwnerCloseoutMa
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import { formatDateTimeLabel } from "./prototype-runtime-date-helpers";
+import { text } from "./prototype-runtime-demo-data";
+import { confirmCloseoutDelete } from "@/lib/ui/app-dialog/app-dialog-helpers";
 
 export function OwnerCloseoutEditFlow({
   lang,
@@ -76,8 +78,7 @@ export function OwnerCloseoutModals({
       onClose={onClose}
       onEdit={() => onOwnerEditCloseout?.(ownerManageCloseout)}
       onDelete={async () => {
-        const confirmed = window.confirm(lang === "ar" ? "هل تريد حذف هذه التقفيلة نهائيًا؟" : "Delete this closeout permanently?");
-        if (!confirmed) return;
+        if (!(await confirmCloseoutDelete(lang, text))) return;
         deleteCloseout(ownerManageCloseout.id, ownerManageCloseout);
         await onCloseoutDeleted(ownerManageCloseout);
         onClose();

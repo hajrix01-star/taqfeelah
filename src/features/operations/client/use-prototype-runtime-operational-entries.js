@@ -37,6 +37,7 @@ import { entryIsActive } from "@/components/prototype-runtime/prototype-runtime-
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 import { invalidateOperationalData } from "@/core/client/invalidate-operational-data";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
+import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 
 export function usePrototypeRuntimeOperationalEntries({
   lang,
@@ -275,7 +276,7 @@ export function usePrototypeRuntimeOperationalEntries({
           await storeAttachmentPayload(attachmentPayload);
           entry.attachment = makeAttachment(entry.id, attachmentPayload);
         } catch {
-          window.alert(text(lang, "attachmentSaveFailed"));
+          await appAlert({ lang, title: text(lang, "attachmentSaveFailed"), variant: "info" });
         }
       }
       created.push(entry);

@@ -52,6 +52,7 @@ import { OwnerRegisterGeneralReportList } from "./owner-register-general-report-
 import { OwnerRegisterOperationsList } from "./owner-register-operations-list";
 import { RegisterStoreChips } from "./owner-register-store-filter";
 import { RegisterDashboardCard } from "./owner-register-ui-primitives";
+import { confirmCloseoutDelete, alertCloseoutNotFound } from "@/lib/ui/app-dialog/app-dialog-helpers";
 
 export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOperation = () => {}, onRestoreOperation = () => {}, onEditCloseout = () => {}, onDeleteCloseout = () => {}, onShareRegister = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesSyncError = "", closeoutsSyncError = "", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
   const [period, setPeriod] = useState("month");
@@ -530,9 +531,7 @@ export function OwnerRegisterConnected({
   const handleEditCloseout = useCallback(async (summary) => {
     const closeout = await resolveSummaryCloseout(summary);
     if (!closeout) {
-      window.alert(lang === "ar"
-        ? "تعذر العثور على التقفيلة المرتبطة."
-        : "Could not find the linked closeout.");
+      await alertCloseoutNotFound(lang, text);
       return;
     }
     setOwnerEditCloseout(closeout);
@@ -541,15 +540,10 @@ export function OwnerRegisterConnected({
   const handleDeleteCloseout = useCallback(async (summary) => {
     const closeout = await resolveSummaryCloseout(summary);
     if (!closeout) {
-      window.alert(lang === "ar"
-        ? "تعذر العثور على التقفيلة المرتبطة."
-        : "Could not find the linked closeout.");
+      await alertCloseoutNotFound(lang, text);
       return;
     }
-    const confirmed = window.confirm(lang === "ar"
-      ? "هل تريد حذف هذه التقفيلة نهائيًا؟"
-      : "Delete this closeout permanently?");
-    if (!confirmed) return;
+    if (!(await confirmCloseoutDelete(lang, text))) return;
     await deleteCloseout(closeout.id, closeout);
     await onCloseoutDeleted(closeout);
   }, [deleteCloseout, lang, onCloseoutDeleted, resolveSummaryCloseout]);

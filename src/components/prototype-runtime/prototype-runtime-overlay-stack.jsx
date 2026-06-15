@@ -18,6 +18,8 @@ import { BottomNav } from "./prototype-runtime-chrome";
 import { HelpCenterSheet } from "./AuthGateSection";
 import { NotebookShareModal } from "./prototype-runtime-notebook-share-modal";
 import { OwnerCloseoutEditFlow, OwnerCloseoutModals } from "./prototype-runtime-owner-closeout-modals";
+import { text } from "./prototype-runtime-demo-data";
+import { alertCloseoutNotFoundForEntry } from "@/lib/ui/app-dialog/app-dialog-helpers";
 
 export function PrototypeRuntimeOverlayStack({
   lang,
@@ -102,9 +104,7 @@ export function PrototypeRuntimeOverlayStack({
       }
     }
     if (!closeout) {
-      window.alert(lang === "ar"
-        ? "تعذر العثور على التقفيلة المرتبطة بهذه العملية."
-        : "Could not find the closeout linked to this entry.");
+      await alertCloseoutNotFoundForEntry(lang, text);
       return;
     }
     setSelected(null);

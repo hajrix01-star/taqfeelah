@@ -16,6 +16,7 @@ import {
   ProofAddButton,
   ProofAttachmentPreview,
 } from "@/components/prototype-runtime/prototype-runtime-attachment-ui";
+import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 import { DateSelector } from "@/components/prototype-runtime/prototype-runtime-notebook";
 import { CloseoutEntryStorePicker } from "./closeout-entry-store-picker";
@@ -80,13 +81,13 @@ export function DailyCloseoutEntryFormBody({
 }) {
   const [dateEditing, setDateEditing] = useState(false);
 
-  const confirmDateEdit = (nextDate) => {
+  const confirmDateEdit = async (nextDate) => {
     if (!nextDate) {
-      window.alert(lang === "ar" ? "اختر تاريخ التقفيلة" : "Pick a closeout date");
+      await appAlert({ lang, title: text(lang, "chooseCloseoutDate"), variant: "warning" });
       return;
     }
     if (nextDate > todayIso()) {
-      window.alert(lang === "ar" ? "لا يمكن اختيار تاريخ مستقبلي" : "Future dates are not allowed");
+      await appAlert({ lang, title: text(lang, "futureDateNotAllowed"), variant: "warning" });
       return;
     }
     setDate(nextDate);

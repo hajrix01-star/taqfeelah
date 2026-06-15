@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AppQueryProvider } from "@/core/client/app-query-provider";
+import { AppDialogProvider } from "@/lib/ui/app-dialog/AppDialogProvider";
 import { AdminMobileTopBar } from "@/features/saas-admin/components/AdminMobileTopBar";
 import { AdminSidebar } from "@/features/saas-admin/components/AdminSidebar";
 import { useAdminMobileNav } from "@/features/saas-admin/hooks/use-admin-mobile-nav";
@@ -28,7 +29,7 @@ function AdminShellFrame({
   children: ReactNode;
   session: SaasAdminSessionView;
 }) {
-  const { dir, t } = useSaasAdminLocale();
+  const { dir, t, locale } = useSaasAdminLocale();
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -59,6 +60,7 @@ function AdminShellFrame({
   });
 
   return (
+    <AppDialogProvider lang={locale}>
     <div className="saas-admin-root flex min-h-[100dvh]" dir={dir}>
       {navOpen ? (
         <button
@@ -86,6 +88,7 @@ function AdminShellFrame({
         </main>
       </div>
     </div>
+    </AppDialogProvider>
   );
 }
 
