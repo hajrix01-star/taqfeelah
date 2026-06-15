@@ -11,6 +11,7 @@ import {
   notebookThemes,
 } from "@/features/daily-closeouts/notebook-themes";
 import { formatCalendarDate, formatCalendarMonth, formatSelectedMonth } from "@/features/reports/client/report-period-labels";
+import { calendarViewFromIsoDate } from "./date-selector-calendar-view";
 import {
   businessLocation,
   businessName,
@@ -157,13 +158,23 @@ function monthSelectionParts(value) {
   return { year, month: month - 1, normalized };
 }
 function DateSelector({ lang, period, setPeriod, allowedPeriods = ["day", "month"], selectedDay, setSelectedDay, selectedDate = null, setSelectedDate = () => {}, fullCalendar = false, selectedMonth, setSelectedMonth, selectedYear = "2026", setSelectedYear = () => {}, customFrom = "2026-03-01", setCustomFrom = () => {}, customTo = "2026-05-31", setCustomTo = () => {}, compact = false, maxDate = "", initialOpen = false }) {
+  const activeDate = selectedDate || todayIsoDate();
   const [open, setOpen] = useState(initialOpen);
-  const [calendarView, setCalendarView] = useState({ year: 2026, month: 4 });
-  const [monthPickerYear, setMonthPickerYear] = useState(2026);
+  const [calendarView, setCalendarView] = useState(() => calendarViewFromIsoDate(activeDate));
+  const [monthPickerYear, setMonthPickerYear] = useState(() => monthSelectionParts(selectedMonth).year);
   const [draftCustomFrom, setDraftCustomFrom] = useState(customFrom);
   const [draftCustomTo, setDraftCustomTo] = useState(customTo);
   const selectorRef = useRef(null);
   useEffect(() => { if (!open) { setDraftCustomFrom(customFrom); setDraftCustomTo(customTo); } }, [open, customFrom, customTo]);
+  useEffect(() => {
+    if (!open) return;
+    if (period === "day") {
+      setCalendarView(calendarViewFromIsoDate(activeDate));
+    }
+    if (period === "month") {
+      setMonthPickerYear(monthSelectionParts(selectedMonth).year);
+    }
+  }, [activeDate, open, period, selectedMonth]);
   useEffect(() => {
     if (!open) return undefined;
     const closeOnOutside = (event) => {
@@ -182,7 +193,6 @@ function DateSelector({ lang, period, setPeriod, allowedPeriods = ["day", "month
   const modes = allowedPeriods.map((id) => ({ id, label: id === "day" ? "day" : id === "month" ? "month" : id === "year" ? "year" : "custom" }));
   const showPeriodModes = modes.length > 1;
   const maxSelectableDate = maxDate || "";
-  const activeDate = selectedDate || todayIsoDate();
   const selectedLabel = period === "day"
     ? formatCalendarDate(activeDate, lang)
     : period === "month"
@@ -203,15 +213,26 @@ function DateSelector({ lang, period, setPeriod, allowedPeriods = ["day", "month
   }));
   const previousMonth = () => setCalendarView((current) => current.month === 0 ? { year: current.year - 1, month: 11 } : { year: current.year, month: current.month - 1 });
   const nextMonth = () => setCalendarView((current) => current.month === 11 ? { year: current.year + 1, month: 0 } : { year: current.year, month: current.month + 1 });
-  const openCalendar = () => {
-    if (period === "day") {
-      const selected = new Date(`${activeDate}T12:00:00`);
-      setCalendarView({ year: selected.getFullYear(), month: selected.getMonth() });
+  const handleSelectPeriod = (modeId) => {
+    setPeriod(modeId);
+    if (modeId === "day") {
+      setCalendarView(calendarViewFromIsoDate(activeDate));
     }
-    if (period === "month") {
+    if (modeId === "month") {
       setMonthPickerYear(monthSelectionParts(selectedMonth).year);
     }
-    if (!open) { setDraftCustomFrom(customFrom); setDraftCustomTo(customTo); }
+  };
+  const openCalendar = () => {
+    if (!open) {
+      setDraftCustomFrom(customFrom);
+      setDraftCustomTo(customTo);
+      if (period === "day") {
+        setCalendarView(calendarViewFromIsoDate(activeDate));
+      }
+      if (period === "month") {
+        setMonthPickerYear(monthSelectionParts(selectedMonth).year);
+      }
+    }
     setOpen(!open);
   };
   return (
@@ -227,7 +248,7 @@ function DateSelector({ lang, period, setPeriod, allowedPeriods = ["day", "month
           <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className={`absolute z-40 w-[270px] rounded-2xl bg-[#FFFDF7] p-3 shadow-xl ring-1 ring-[#D8CCA8] ${compact ? "left-1/2 top-10 -translate-x-1/2" : "end-0 top-12"}`}>
             {showPeriodModes ? (
               <div className={`mb-3 grid gap-1 ${modes.length === 4 ? "grid-cols-4" : "grid-cols-2"}`}>
-                {modes.map((mode) => <button key={mode.id} onClick={() => setPeriod(mode.id)} className={`rounded-lg py-2 text-taq-meta font-bold ${period === mode.id ? "bg-[#112A46] text-white" : "text-[#806528]"}`}>{text(lang, mode.label)}</button>)}
+                {modes.map((mode) => <button key={mode.id} type="button" onClick={() => handleSelectPeriod(mode.id)} className={`rounded-lg py-2 text-taq-meta font-bold ${period === mode.id ? "bg-[#112A46] text-white" : "text-[#806528]"}`}>{text(lang, mode.label)}</button>)}
               </div>
             ) : null}
             {period === "day" && <div>
