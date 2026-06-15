@@ -8,6 +8,8 @@ import { MoneyValue } from "./prototype-runtime-notebook";
 
 const REGISTER_INDEX_TABS_ENABLED = isRegisterIndexTabsEnabled();
 
+const REGISTER_VIEW_NEUTRAL_INACTIVE = "bg-[#F0ECE2] text-[#827762]";
+
 function buildRegisterViewItems(lang, counts) {
   return [
     {
@@ -16,9 +18,11 @@ function buildRegisterViewItems(lang, counts) {
       count: counts.report ?? 0,
       hideCount: true,
       activeClass: "bg-[#E4B84A] text-[#112A46]",
-      inactiveClass: "bg-[#E4B84A]/80 text-[#112A46]",
+      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[#957D43]/80`,
       badgeActiveClass: "bg-[#112A46] text-white",
-      badgeInactiveClass: "bg-[#112A46]/10 text-[#112A46]",
+      badgeInactiveClass: "bg-[#112A46]/[0.08] text-[#827762]",
+      contentSurfaceClass: "bg-[#FFFBF0]",
+      contentAccentClass: "border-t-2 border-[#E4B84A]/45",
     },
     {
       id: "closeouts",
@@ -26,9 +30,11 @@ function buildRegisterViewItems(lang, counts) {
       count: counts.closeouts ?? 0,
       hideCount: false,
       activeClass: "bg-[#214B7B] text-white",
-      inactiveClass: "bg-[#214B7B]/82 text-white",
+      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[#214B7B]/75`,
       badgeActiveClass: "bg-white/20 text-white",
-      badgeInactiveClass: "bg-white/15 text-white",
+      badgeInactiveClass: "bg-[#214B7B]/10 text-[#214B7B]",
+      contentSurfaceClass: "bg-[#F5F8FC]",
+      contentAccentClass: "border-t-2 border-[#214B7B]/40",
     },
     {
       id: "operations",
@@ -36,11 +42,18 @@ function buildRegisterViewItems(lang, counts) {
       count: counts.operations ?? 0,
       hideCount: false,
       activeClass: "bg-[#257844] text-white",
-      inactiveClass: "bg-[#257844]/82 text-white",
+      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[#257844]/75`,
       badgeActiveClass: "bg-white/20 text-white",
-      badgeInactiveClass: "bg-white/15 text-white",
+      badgeInactiveClass: "bg-[#257844]/10 text-[#257844]",
+      contentSurfaceClass: "bg-[#F4FAF6]",
+      contentAccentClass: "border-t-2 border-[#257844]/40",
     },
   ];
+}
+
+function resolveRegisterViewItem(lang, counts, viewId) {
+  const items = buildRegisterViewItems(lang, counts);
+  return items.find((item) => item.id === viewId) || items[0];
 }
 
 export function RegisterStoreBadge({ label }) {
@@ -117,8 +130,8 @@ export function RegisterIndexTabs({ lang, value, onChange, counts }) {
             onClick={() => onChange(item.id)}
             className={`flex h-9 min-w-0 flex-1 items-center justify-center gap-1 px-1.5 text-[10px] font-black transition-all duration-200 ${
               active ? item.activeClass : item.inactiveClass
-            } ${active ? "z-10 ring-2 ring-inset ring-[#112A46]" : "opacity-95"} ${
-              index > 0 ? "border-s border-white/25" : ""
+            } ${active ? "z-10 ring-2 ring-inset ring-[#112A46]/85" : ""} ${
+              index > 0 ? "border-s border-[#E8E1D4]/80" : ""
             }`}
           >
             <span className="truncate leading-4">{item.label}</span>
@@ -172,17 +185,75 @@ export function RegisterFilterButton({ lang, activeCount, onClick }) {
 }
 
 export function RegisterMetricTile({ label, value, tone = "neutral", emphasize = false }) {
-  const tones = {
-    neutral: "bg-[#F6F8FB] text-[#112A46]",
-    in: "bg-[#EDF7F1] text-[#257844]",
-    out: "bg-[#FDF3F1] text-[#B44747]",
-  };
+  const valueTone = {
+    neutral: "text-[#112A46]",
+    in: "text-[#257844]",
+    out: "text-[#B44747]",
+  }[tone] || "text-[#112A46]";
+
   return (
-    <div className={`rounded-lg px-2 py-1.5 ${tones[tone] || tones.neutral}`}>
-      <p className="text-[9px] font-bold opacity-55">{label}</p>
-      <p className={`mt-0.5 tabular-nums font-extrabold leading-none ${emphasize ? "text-sm" : "text-xs"}`}>
+    <div className="min-w-0 text-center">
+      <p className="text-[9px] font-bold text-[#827762]">{label}</p>
+      <p className={`mt-1 tabular-nums font-extrabold leading-none ${valueTone} ${emphasize ? "text-sm" : "text-xs"}`}>
         <MoneyValue value={value} />
       </p>
+    </div>
+  );
+}
+
+function RegisterPeriodSummary({
+  lang,
+  periodLabel,
+  summary,
+}) {
+  const netPositive = summary.mode !== "channel" && Number(summary.net) >= 0;
+
+  if (summary.mode === "channel") {
+    return (
+      <div className="rounded-xl bg-white/85 px-3 py-2.5 ring-1 ring-[#ECE6DA]/90">
+        <p className="text-[10px] font-bold text-[#827762]">
+          <span className="font-black text-[#957D43]">{text(lang, "registerPeriodSummary")}</span>
+          {" · "}
+          {periodLabel}
+        </p>
+        <div className="mt-2 flex items-end justify-between gap-2">
+          <p className="truncate text-[10px] font-bold text-[#716753]">{summary.label}</p>
+          <p className="shrink-0 tabular-nums text-sm font-extrabold leading-none text-[#257844]">
+            <MoneyValue value={money(summary.amount, lang)} />
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl bg-white/85 px-3 py-2.5 ring-1 ring-[#ECE6DA]/90">
+      <p className="text-center text-[10px] font-bold text-[#827762]">
+        <span className="font-black text-[#957D43]">{text(lang, "registerPeriodSummary")}</span>
+        {" · "}
+        {periodLabel}
+      </p>
+      <div className="mt-2.5 grid grid-cols-3 gap-2">
+        <RegisterMetricTile
+          label={lang === "ar" ? "الداخل" : "In"}
+          value={money(summary.sales, lang)}
+          tone="in"
+        />
+        <RegisterMetricTile
+          label={lang === "ar" ? "الخارج" : "Out"}
+          value={money(summary.expense, lang)}
+          tone="out"
+        />
+        <div className="min-w-0 text-center">
+          <p className="text-[9px] font-bold text-[#827762]">{lang === "ar" ? "الناتج" : "Net"}</p>
+          <p className={`mt-1 tabular-nums text-sm font-extrabold leading-none ${netPositive ? "text-[#257844]" : "text-[#B44747]"}`}>
+            <MoneyValue value={money(summary.net, lang)} />
+          </p>
+          <p className={`mt-0.5 text-[8px] font-black ${netPositive ? "text-[#257844]/75" : "text-[#B44747]/75"}`}>
+            {netPositive ? (lang === "ar" ? "ربح" : "Profit") : (lang === "ar" ? "خسارة" : "Loss")}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -198,55 +269,29 @@ export function RegisterDashboardCard({
   summary,
   showFilters = true,
 }) {
-  const netPositive = summary.mode !== "channel" && Number(summary.net) >= 0;
   const useIndexTabs = REGISTER_INDEX_TABS_ENABLED;
+  const activeView = resolveRegisterViewItem(lang, tabCounts, logView);
 
   const summaryBody = (
-    <>
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <p className="min-w-0 truncate text-[10px] font-bold text-[#827762]">
-          <span className="font-black text-[#957D43]">{text(lang, "registerPeriodSummary")}</span>
-          {" · "}
-          {periodLabel}
-        </p>
-        {summary.mode !== "channel" ? (
-          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-black ${
-            netPositive ? "bg-[#E6F5E9] text-[#257844]" : "bg-[#FDF0ED] text-[#B44747]"
-          }`}
-          >
-            {netPositive ? (lang === "ar" ? "ربح" : "Profit") : (lang === "ar" ? "خسارة" : "Loss")}
-          </span>
-        ) : null}
-      </div>
+    <RegisterPeriodSummary
+      lang={lang}
+      periodLabel={periodLabel}
+      summary={summary}
+    />
+  );
 
-      {summary.mode === "channel" ? (
-        <div className="flex items-end justify-between gap-2 rounded-lg bg-[#F6F8FB] px-2 py-1.5">
-          <p className="truncate text-[10px] font-bold text-[#716753]">{summary.label}</p>
-          <p className="shrink-0 tabular-nums text-sm font-extrabold leading-none text-[#257844]">
-            <MoneyValue value={money(summary.amount, lang)} />
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-3 gap-1.5">
-          <RegisterMetricTile
-            label={lang === "ar" ? "الداخل" : "In"}
-            value={money(summary.sales, lang)}
-            tone="in"
-          />
-          <RegisterMetricTile
-            label={lang === "ar" ? "الخارج" : "Out"}
-            value={money(summary.expense, lang)}
-            tone="out"
-          />
-          <RegisterMetricTile
-            label={lang === "ar" ? "الناتج" : "Net"}
-            value={money(summary.net, lang)}
-            tone={netPositive ? "in" : "out"}
-            emphasize
-          />
-        </div>
-      )}
-    </>
+  const cardBody = (
+    <div className={`${activeView.contentSurfaceClass} ${activeView.contentAccentClass}`}>
+      <RegisterFilterToolbar
+        lang={lang}
+        showFilters={showFilters}
+        activeFilterCount={activeFilterCount}
+        onOpenFilters={onOpenFilters}
+      />
+      <div className="px-3 pb-2.5 pt-1">
+        {summaryBody}
+      </div>
+    </div>
   );
 
   if (useIndexTabs) {
@@ -254,15 +299,7 @@ export function RegisterDashboardCard({
       <article className="mb-3">
         <RegisterIndexTabs lang={lang} value={logView} onChange={setLogView} counts={tabCounts} />
         <div className="overflow-hidden rounded-b-[16px] border border-[#E8E1D4]/90 border-t-0 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
-          <RegisterFilterToolbar
-            lang={lang}
-            showFilters={showFilters}
-            activeFilterCount={activeFilterCount}
-            onOpenFilters={onOpenFilters}
-          />
-          <div className="px-3 py-2">
-            {summaryBody}
-          </div>
+          {cardBody}
         </div>
       </article>
     );
@@ -285,7 +322,7 @@ export function RegisterDashboardCard({
         </div>
       </div>
 
-      <div className="px-3 py-2">
+      <div className={`px-3 py-2 ${activeView.contentSurfaceClass}`}>
         {summaryBody}
       </div>
     </article>
