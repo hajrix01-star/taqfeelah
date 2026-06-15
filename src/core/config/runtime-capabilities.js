@@ -87,13 +87,30 @@ function readUuidEnvString(key, env = readRuntimeCapabilitiesEnv()) {
 }
 
 /**
+ * @param {string} apiTargetStoreIdsKey
+ * @param {string[]} extraStoreIds
+ */
+export function appendStoreIdsToApiKey(apiTargetStoreIdsKey, extraStoreIds = []) {
+  const ids = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
+  for (const storeId of extraStoreIds) {
+    const normalized = typeof storeId === "string" ? storeId.trim() : "";
+    if (normalized && !ids.includes(normalized)) {
+      ids.push(normalized);
+    }
+  }
+  return ids.join("|");
+}
+
+/**
  * @param {Object} input
  * @param {boolean} [input.employee]
  * @param {string} [input.sessionOrganizationId]
  * @param {string} [input.sessionUserId]
  * @param {{ apiUserId?: string, id?: string, storeIds?: string[] } | null | undefined} [input.activeEmployee]
  * @param {Array<{ id?: string }>} [input.assignedEmployeeBusinesses]
- * @param {Array<{ id?: string }>} [input.reportingBusinesses]
+ * @param {Array<{ id?: string }>} [input.operationalBusinesses] Active stores for API sync (closeouts, entries).
+ * @param {Array<{ id?: string }>} [input.reportingBusinesses] Deprecated fallback when operationalBusinesses is empty.
+ * @param {string[]} [input.readOnlyStoreIds] Extra store ids (e.g. archived read-only register view).
  * @param {Record<string, string | undefined>} [input.env]
  */
 export function resolveRuntimeApiActorContext({
@@ -102,7 +119,9 @@ export function resolveRuntimeApiActorContext({
   sessionUserId = "",
   activeEmployee = null,
   assignedEmployeeBusinesses = [],
+  operationalBusinesses = [],
   reportingBusinesses = [],
+  readOnlyStoreIds = [],
   env = readRuntimeCapabilitiesEnv(),
 } = {}) {
   const capabilities = resolveRuntimeCapabilities(env);
@@ -116,7 +135,10 @@ export function resolveRuntimeApiActorContext({
   const apiActorUserId = employee
     ? (sessionUserId || activeEmployee?.apiUserId || activeEmployee?.id || "")
     : ownerApiUserId;
-  const targetBusinesses = employee ? assignedEmployeeBusinesses : reportingBusinesses;
+  const ownerSyncBusinesses = operationalBusinesses.length > 0
+    ? operationalBusinesses
+    : reportingBusinesses;
+  const targetBusinesses = employee ? assignedEmployeeBusinesses : ownerSyncBusinesses;
   let apiTargetStoreIdsKey = targetBusinesses
     .map((store) => store.id)
     .filter(Boolean)
@@ -127,6 +149,8 @@ export function resolveRuntimeApiActorContext({
       .filter((storeId) => typeof storeId === "string" && storeId.trim())
       .join("|");
   }
+
+  apiTargetStoreIdsKey = appendStoreIdsToApiKey(apiTargetStoreIdsKey, readOnlyStoreIds);
 
   return {
     ...capabilities,

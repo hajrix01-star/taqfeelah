@@ -76,6 +76,7 @@ export async function listStoreEntries(rawInput: Input) {
     actorUserId: input.actorUserId,
     actorRole: input.actorRole as MemberRole,
     minimumRole: "employee",
+    scope: "read",
   });
 
   const decodedCursor = input.cursor ? decodeEntryListCursor(input.cursor) : null;

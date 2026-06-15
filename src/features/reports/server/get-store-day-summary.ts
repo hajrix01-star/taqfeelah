@@ -36,6 +36,7 @@ export async function getStoreDaySummary(rawInput: SummaryInput) {
       actorUserId: input.actorUserId,
       actorRole: input.actorRole as MemberRole,
       minimumRole: "employee",
+      scope: "read",
     });
   } else {
     const db = getDb();
@@ -46,7 +47,7 @@ export async function getStoreDaySummary(rawInput: SummaryInput) {
         and(
           eq(stores.id, input.storeId),
           eq(stores.organizationId, input.organizationId),
-          eq(stores.status, "active"),
+          inArray(stores.status, ["active", "archived"]),
         ),
       )
       .limit(1);

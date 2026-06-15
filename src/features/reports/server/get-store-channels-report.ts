@@ -31,6 +31,7 @@ export async function getStoreChannelsReport(rawInput: z.infer<typeof inputSchem
     actorUserId: input.actorUserId,
     actorRole: input.actorRole as MemberRole,
     minimumRole: "employee",
+    scope: "read",
   });
 
   const db = getDb();

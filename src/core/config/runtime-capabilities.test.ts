@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  appendStoreIdsToApiKey,
   resolveRuntimeApiActorContext,
   resolveRuntimeCapabilities,
 } from "./runtime-capabilities";
@@ -67,7 +68,7 @@ describe("runtime capabilities", () => {
     const owner = resolveRuntimeApiActorContext({
       employee: false,
       sessionUserId: "33333333-3333-4333-8333-333333333333",
-      reportingBusinesses: [{ id: "shami" }, { id: "arz" }],
+      operationalBusinesses: [{ id: "shami" }, { id: "arz" }],
       env: process.env,
     });
     expect(owner.apiActorRole).toBe("owner");
@@ -134,5 +135,10 @@ describe("runtime capabilities", () => {
     expect(employee.apiTargetStoreIdsKey).toBe(
       "22222222-2222-4222-8222-222222222222|33333333-3333-4333-8333-333333333333",
     );
+  });
+
+  it("appends read-only store ids for archived register views", () => {
+    expect(appendStoreIdsToApiKey("shami|arz", ["karak"])).toBe("shami|arz|karak");
+    expect(appendStoreIdsToApiKey("shami", ["shami"])).toBe("shami");
   });
 });

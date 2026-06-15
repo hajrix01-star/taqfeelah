@@ -28,6 +28,7 @@ export async function POST(request: Request, context: RouteContext) {
       actorUserId: requestContext.userId!,
       actorRole: requestContext.role!,
       minimumRole: "employee",
+    scope: "read",
     });
 
     const registered = await registerAttachment({

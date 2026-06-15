@@ -30,6 +30,7 @@ export async function getStoreAttachment(rawInput: GetStoreAttachmentInput) {
     actorUserId: input.actorUserId,
     actorRole: input.actorRole as MemberRole,
     minimumRole: "employee",
+    scope: "read",
   });
 
   const db = getDb();

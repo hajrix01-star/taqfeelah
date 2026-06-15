@@ -276,6 +276,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
     actorUserId: input.actorUserId,
     actorRole: input.actorRole as MemberRole,
     minimumRole: "employee",
+    scope: "read",
   });
 
   const effectiveLimit = input.paginated

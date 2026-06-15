@@ -6,7 +6,7 @@ import { readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-d
 import { applyNotebookThemeCssVariables } from "@/features/daily-closeouts/notebook-themes";
 import { readEmployeeNotebookTheme } from "@/features/employee-closeouts/employee-theme-storage";
 import { isUuid } from "@/core/client/api-id-utils";
-import { resolveRuntimeApiActorContext, usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
+import { resolveRuntimeApiActorContext, appendStoreIdsToApiKey, usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
 import { useEmployeeEntryActions } from "@/features/employee-shell/client/use-employee-entry-actions";
 import { useEmployeePortalState } from "@/features/employee-shell/client/use-employee-portal-state";
 import { useOwnerSettingsState } from "@/features/org-config/client/use-owner-settings-state";
@@ -217,7 +217,7 @@ export function usePrototypeRuntimeAppState() {
     sessionUserId,
     activeEmployee,
     assignedEmployeeBusinesses,
-    reportingBusinesses,
+    operationalBusinesses: activeBusinesses,
   });
 
   const runtimeApiStoresReady = useMemo(
@@ -307,10 +307,19 @@ export function usePrototypeRuntimeAppState() {
     setAcknowledgedDuplicateSales,
     activeViewBusiness,
     activeOwnerStoreId,
+    archivedReadOnlyBusinessId,
     pushCloseoutAlert,
     openQuickAddSummary,
     openQuickAddExpense,
   } = ownerShell;
+
+  const syncApiTargetStoreIdsKey = useMemo(
+    () => appendStoreIdsToApiKey(
+      apiTargetStoreIdsKey,
+      archivedReadOnlyBusinessId ? [archivedReadOnlyBusinessId] : [],
+    ),
+    [apiTargetStoreIdsKey, archivedReadOnlyBusinessId],
+  );
 
   usePrototypeRuntimeSessionSync({
     loggedIn,
@@ -461,7 +470,7 @@ export function usePrototypeRuntimeAppState() {
     ownerApiUserId,
     apiActorUserId,
     apiActorRole,
-    apiTargetStoreIdsKey,
+    apiTargetStoreIdsKey: syncApiTargetStoreIdsKey,
     employee,
     storeOperationalSettings,
     entriesApiEnabled,
@@ -570,7 +579,7 @@ export function usePrototypeRuntimeAppState() {
     entriesApiDbSource: ENTRIES_API_DB_SOURCE,
     entriesApiEnabled,
     runtimeApiStoresReady,
-    apiTargetStoreIdsKey,
+    apiTargetStoreIdsKey: syncApiTargetStoreIdsKey,
     employee,
     storeOperationalSettings,
     ownerPage,
