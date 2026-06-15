@@ -26,7 +26,7 @@ export function usePrototypeRuntimeSessionState() {
   const [sessionOrganizationId, setSessionOrganizationId] = useState("");
   const [sessionUserId, setSessionUserId] = useState("");
   const [loggedIn, setLoggedIn] = useState(() => prototypeAuthBoot.loggedIn);
-  const [authScreen, setAuthScreen] = useState("owner");
+  const [authScreen, setAuthScreen] = useState("gateway");
   const [employee, setEmployee] = useState(() => prototypeAuthBoot.employee);
   const [loggedInEmployeeId, setLoggedInEmployeeId] = useState(() => prototypeAuthBoot.loggedInEmployeeId);
   const [employeeRuntimeReady, setEmployeeRuntimeReady] = useState(() => !prototypeAuthBoot.employee);

@@ -1,5 +1,6 @@
 export {
   LoginScreen,
+  AuthGatewayScreen,
   EmployeeLoginScreen,
   OwnerPasswordChangeScreen,
   HelpCenterSheet,

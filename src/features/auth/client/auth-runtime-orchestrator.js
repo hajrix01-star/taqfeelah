@@ -140,13 +140,13 @@ export function applyServerSessionBootstrap(session, apply = {}) {
   return true;
 }
 
-export function applyLogoutReset({ bindsToServerAuth, apply = {} }) {
+export function applyLogoutReset({ bindsToServerAuth, apply = {}, nextAuthScreen = "gateway" }) {
   apply.setSessionOrganizationId?.("");
   apply.setSessionUserId?.("");
   apply.setLoggedIn?.(false);
   apply.setEmployee?.(false);
   apply.setLoggedInEmployeeId?.(null);
-  apply.setAuthScreen?.("owner");
+  apply.setAuthScreen?.(nextAuthScreen);
   apply.setEmployeePage?.("closeouts");
   apply.setOwnerPage?.("home");
   apply.setOwnerManageCloseout?.(null);
