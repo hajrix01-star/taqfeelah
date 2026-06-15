@@ -7,8 +7,7 @@ function buildHandlerContext(overrides: Record<string, unknown> = {}) {
     setDraftStoreLocation: vi.fn(),
     setDraftStoreChannelConfig: vi.fn(),
     setDraftStoreOperationalConfig: vi.fn(),
-    setNewPaymentMethodName: vi.fn(),
-    setNewSalesChannelName: vi.fn(),
+    setNewCustomIncomeSourceName: vi.fn(),
     setSettingsNotice: vi.fn(),
     setSettingsStoreId: vi.fn(),
     setStorePanel: vi.fn(),
@@ -66,8 +65,7 @@ function buildHandlerContext(overrides: Record<string, unknown> = {}) {
     ownerProfile: { name: "Owner" },
     newStoreName: "",
     newStoreLocation: "",
-    newPaymentMethodName: "",
-    newSalesChannelName: "",
+    newCustomIncomeSourceName: "",
     draftStoreName: "",
     draftStoreLocation: "",
     draftStoreChannelConfig: null,
@@ -93,8 +91,7 @@ describe("owner settings screen action handlers", () => {
 
     expect(() => openStore("arz")).not.toThrow();
 
-    expect(ctx.setters.setNewPaymentMethodName).toHaveBeenCalledWith("");
-    expect(ctx.setters.setNewSalesChannelName).toHaveBeenCalledWith("");
+    expect(ctx.setters.setNewCustomIncomeSourceName).toHaveBeenCalledWith("");
     expect(ctx.setters.setSettingsStoreId).toHaveBeenCalledWith("arz");
     expect(ctx.setters.setStorePanel).toHaveBeenCalledWith("overview");
   });

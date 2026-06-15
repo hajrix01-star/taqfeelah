@@ -45,19 +45,14 @@ export function OwnerSettingsStoreProfilePanel({
 
 export function OwnerSettingsStoreChannelsPanel({
   lang,
-  visibleChannels,
   channelConfig,
   retiredChannels,
-  newPaymentMethodName,
-  setNewPaymentMethodName,
-  newSalesChannelName,
-  setNewSalesChannelName,
+  newCustomIncomeSourceName,
+  setNewCustomIncomeSourceName,
   toggleChannel,
   requestRetireChannel,
   restoreSalesChannel,
-  addCustomPaymentMethod,
-  addCustomSalesChannel,
-  addCatalogChannel,
+  addCustomIncomeSource,
   settingsNotice,
   backFromStorePanel,
   saveChannelSettings,
@@ -68,19 +63,14 @@ export function OwnerSettingsStoreChannelsPanel({
       <SettingsPageHeader title={text(lang, "incomingChannelsSettings")} onBack={backFromStorePanel} lang={lang} />
       <OwnerSettingsIncomeSourcesEditor
         lang={lang}
-        visibleChannels={visibleChannels}
         channelConfig={channelConfig}
         retiredChannels={retiredChannels}
-        newPaymentMethodName={newPaymentMethodName}
-        setNewPaymentMethodName={setNewPaymentMethodName}
-        newSalesChannelName={newSalesChannelName}
-        setNewSalesChannelName={setNewSalesChannelName}
+        newCustomIncomeSourceName={newCustomIncomeSourceName}
+        setNewCustomIncomeSourceName={setNewCustomIncomeSourceName}
         toggleChannel={toggleChannel}
         requestRetireChannel={requestRetireChannel}
         restoreSalesChannel={restoreSalesChannel}
-        addCustomPaymentMethod={addCustomPaymentMethod}
-        addCustomSalesChannel={addCustomSalesChannel}
-        addCatalogChannel={addCatalogChannel}
+        addCustomIncomeSource={addCustomIncomeSource}
         text={text}
         channelName={channelName}
       />
@@ -259,19 +249,14 @@ export function OwnerSettingsStoreFlattenedPanel({
   draftStoreLocation,
   setDraftStoreLocation,
   saveStoreProfile,
-  visibleChannels,
   channelConfig,
   retiredChannels,
-  newPaymentMethodName,
-  setNewPaymentMethodName,
-  newSalesChannelName,
-  setNewSalesChannelName,
+  newCustomIncomeSourceName,
+  setNewCustomIncomeSourceName,
   toggleChannel,
   requestRetireChannel,
   restoreSalesChannel,
-  addCustomPaymentMethod,
-  addCustomSalesChannel,
-  addCatalogChannel,
+  addCustomIncomeSource,
   saveChannelSettings,
   cancelChannelDraft,
   toggleCategory,
@@ -341,19 +326,14 @@ export function OwnerSettingsStoreFlattenedPanel({
         >
           <OwnerSettingsIncomeSourcesEditor
             lang={lang}
-            visibleChannels={visibleChannels}
             channelConfig={channelConfig}
             retiredChannels={retiredChannels}
-            newPaymentMethodName={newPaymentMethodName}
-            setNewPaymentMethodName={setNewPaymentMethodName}
-            newSalesChannelName={newSalesChannelName}
-            setNewSalesChannelName={setNewSalesChannelName}
+            newCustomIncomeSourceName={newCustomIncomeSourceName}
+            setNewCustomIncomeSourceName={setNewCustomIncomeSourceName}
             toggleChannel={toggleChannel}
             requestRetireChannel={requestRetireChannel}
             restoreSalesChannel={restoreSalesChannel}
-            addCustomPaymentMethod={addCustomPaymentMethod}
-            addCustomSalesChannel={addCustomSalesChannel}
-            addCatalogChannel={addCatalogChannel}
+            addCustomIncomeSource={addCustomIncomeSource}
             text={text}
             channelName={channelName}
           />
@@ -478,19 +458,14 @@ export function renderOwnerSettingsStorePanel(storePanel, state) {
     return (
       <OwnerSettingsStoreChannelsPanel
         {...common}
-        visibleChannels={state.visibleChannels}
         channelConfig={state.channelConfig}
         retiredChannels={state.retiredChannels}
-        newPaymentMethodName={state.newPaymentMethodName}
-        setNewPaymentMethodName={state.setNewPaymentMethodName}
-        newSalesChannelName={state.newSalesChannelName}
-        setNewSalesChannelName={state.setNewSalesChannelName}
+        newCustomIncomeSourceName={state.newCustomIncomeSourceName}
+        setNewCustomIncomeSourceName={state.setNewCustomIncomeSourceName}
         toggleChannel={state.toggleChannel}
         requestRetireChannel={state.requestRetireChannel}
         restoreSalesChannel={state.restoreSalesChannel}
-        addCustomPaymentMethod={state.addCustomPaymentMethod}
-        addCustomSalesChannel={state.addCustomSalesChannel}
-        addCatalogChannel={state.addCatalogChannel}
+        addCustomIncomeSource={state.addCustomIncomeSource}
         settingsNotice={state.settingsNotice}
         backFromStorePanel={state.backFromStorePanel}
         saveChannelSettings={state.saveChannelSettings}

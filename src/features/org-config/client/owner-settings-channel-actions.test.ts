@@ -4,9 +4,12 @@ import {
   addCustomSalesChannel,
   canRequestRetireSalesChannel,
   cloneStoreChannelDraft,
+  findConfiguredChannelByLegacyId,
   listAddableCatalogSources,
+  listUnifiedIncomeSourceRows,
   restoreRetiredSalesChannel,
   retireSalesChannelInDraft,
+  toggleIncomeSourceActive,
   toggleSalesChannelActive,
   resolveChannelPersistKind,
   resolveChannelPersistName,
@@ -82,5 +85,42 @@ describe("owner settings channel actions", () => {
     expect(listAddableCatalogSources(baseConfig, "payment_method").map((entry) => entry.legacyId)).toContain("bank");
     expect(listAddableCatalogSources(baseConfig, "sales_channel").map((entry) => entry.legacyId)).toContain("keeta");
     expect(listAddableCatalogSources(baseConfig, "payment_method").map((entry) => entry.legacyId)).not.toContain("cash");
+  });
+
+  it("lists unified income source rows with full catalog and custom channels", () => {
+    const withCustom = addCustomSalesChannel(baseConfig, "Delivery", { id: "delivery" }).config;
+    const rows = listUnifiedIncomeSourceRows(withCustom);
+
+    expect(rows.filter((row) => row.isCatalog).map((row) => row.toggleId)).toEqual([
+      "cash",
+      "card",
+      "mada",
+      "bank",
+      "apple",
+      "online",
+      "jahez",
+      "hunger",
+      "keeta",
+    ]);
+    expect(rows.find((row) => row.rowId === "delivery")).toMatchObject({
+      isCatalog: false,
+      isActive: true,
+    });
+    expect(rows.find((row) => row.toggleId === "cash")?.isActive).toBe(true);
+    expect(rows.find((row) => row.toggleId === "keeta")?.isActive).toBe(false);
+  });
+
+  it("enables catalog income sources on first toggle", () => {
+    const enabled = toggleIncomeSourceActive(baseConfig, "keeta");
+    expect(enabled.blocked).toBe(false);
+    expect("added" in enabled && enabled.added).toBe(true);
+    expect(findConfiguredChannelByLegacyId(enabled.config, "keeta")).toBeTruthy();
+    expect(enabled.config.activeIds).toContain("keeta");
+  });
+
+  it("toggles configured income sources without re-adding", () => {
+    const disabled = toggleIncomeSourceActive(baseConfig, "mada");
+    expect("added" in disabled && disabled.added).toBe(false);
+    expect(disabled.config.activeIds).toEqual(["cash"]);
   });
 });

@@ -94,8 +94,7 @@ export function useOwnerSettingsScreenState({
   const [draftStoreLocation, setDraftStoreLocation] = useState("");
   const [draftStoreChannelConfig, setDraftStoreChannelConfig] = useState(null);
   const [draftStoreOperationalConfig, setDraftStoreOperationalConfig] = useState(null);
-  const [newPaymentMethodName, setNewPaymentMethodName] = useState("");
-  const [newSalesChannelName, setNewSalesChannelName] = useState("");
+  const [newCustomIncomeSourceName, setNewCustomIncomeSourceName] = useState("");
   const [draftNotebookTheme, setDraftNotebookTheme] = useState(notebookTheme);
   const [themeDirty, setThemeDirty] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
@@ -159,8 +158,7 @@ export function useOwnerSettingsScreenState({
     setDraftStoreLocation(drafts.profile.location);
     setDraftStoreChannelConfig(drafts.channelConfig);
     setDraftStoreOperationalConfig(drafts.operationalConfig);
-    setNewPaymentMethodName("");
-    setNewSalesChannelName("");
+    setNewCustomIncomeSourceName("");
     setSettingsNotice("");
     // Only re-init when switching stores; including settings deps would wipe unsaved edits.
   }, [settingsStoreId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -220,8 +218,7 @@ export function useOwnerSettingsScreenState({
     ownerProfile,
     newStoreName,
     newStoreLocation,
-    newPaymentMethodName,
-    newSalesChannelName,
+    newCustomIncomeSourceName,
     draftStoreName,
     draftStoreLocation,
     draftStoreChannelConfig,
@@ -242,8 +239,7 @@ export function useOwnerSettingsScreenState({
       setDraftStoreLocation,
       setDraftStoreChannelConfig,
       setDraftStoreOperationalConfig,
-      setNewPaymentMethodName,
-      setNewSalesChannelName,
+      setNewCustomIncomeSourceName,
       setSettingsStoreId,
       setStorePanel,
       setConfiguredBusinesses,
@@ -296,8 +292,7 @@ export function useOwnerSettingsScreenState({
     ownerProfile,
     newStoreName,
     newStoreLocation,
-    newPaymentMethodName,
-    newSalesChannelName,
+    newCustomIncomeSourceName,
     draftStoreName,
     draftStoreLocation,
     draftStoreChannelConfig,
@@ -359,10 +354,8 @@ export function useOwnerSettingsScreenState({
     setDraftStoreName,
     draftStoreLocation,
     setDraftStoreLocation,
-    newPaymentMethodName,
-    setNewPaymentMethodName,
-    newSalesChannelName,
-    setNewSalesChannelName,
+    newCustomIncomeSourceName,
+    setNewCustomIncomeSourceName,
     draftNotebookTheme,
     setDraftNotebookTheme,
     themeDirty,
