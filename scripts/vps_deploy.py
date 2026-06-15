@@ -84,6 +84,7 @@ PRODUCTION_ENV_KEYS = [
     "APP_PUBLIC_ORIGIN",
     "ATTACHMENT_STORAGE_MODE",
     "ATTACHMENT_STORAGE_ROOT",
+    "NEXT_PUBLIC_SUPPORT_WHATSAPP",
 ]
 
 # Written to .env.production when present on VPS (or via CI secrets). Not in wave defaults.

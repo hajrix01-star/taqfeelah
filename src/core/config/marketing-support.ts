@@ -1,3 +1,5 @@
+import { normalizeLoginPhone } from "@/core/phone/normalize-login-phone";
+
 const DEFAULT_SUPPORT_WHATSAPP = "966501234567";
 
 export function resolveSupportWhatsAppNumber(
@@ -7,7 +9,7 @@ export function resolveSupportWhatsAppNumber(
 ): string {
   const raw = env.NEXT_PUBLIC_SUPPORT_WHATSAPP?.trim();
   if (!raw) return DEFAULT_SUPPORT_WHATSAPP;
-  return raw.replace(/\D/g, "");
+  return normalizeLoginPhone(raw).replace(/^\+/, "");
 }
 
 export function buildSupportWhatsAppUrl(message: string): string {
