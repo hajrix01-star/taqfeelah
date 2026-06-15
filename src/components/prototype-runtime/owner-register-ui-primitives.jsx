@@ -101,8 +101,12 @@ export function RegisterIndexTabs({ lang, value, onChange, counts }) {
   const items = buildRegisterViewItems(lang, counts);
 
   return (
-    <div className="flex items-end gap-1" role="tablist" aria-label={text(lang, "operationsLog")}>
-      {items.map((item) => {
+    <div
+      className="flex overflow-hidden rounded-t-[14px] shadow-[0_-1px_0_rgba(17,42,70,0.06)]"
+      role="tablist"
+      aria-label={text(lang, "operationsLog")}
+    >
+      {items.map((item, index) => {
         const active = value === item.id;
         return (
           <button
@@ -111,13 +115,13 @@ export function RegisterIndexTabs({ lang, value, onChange, counts }) {
             role="tab"
             aria-selected={active}
             onClick={() => onChange(item.id)}
-            className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-t-[14px] px-1.5 text-[10px] font-black transition-all duration-200 ${
-              active
-                ? `${item.activeClass} z-10 -mb-px pt-2 pb-2.5 shadow-[0_-2px_10px_rgba(17,42,70,0.08)]`
-                : `${item.inactiveClass} pt-1.5 pb-1.5 opacity-90`
+            className={`flex h-9 min-w-0 flex-1 items-center justify-center gap-1 px-1.5 text-[10px] font-black transition-all duration-200 ${
+              active ? item.activeClass : item.inactiveClass
+            } ${active ? "z-10 ring-2 ring-inset ring-[#112A46]" : "opacity-95"} ${
+              index > 0 ? "border-s border-white/25" : ""
             }`}
           >
-            <span className="w-full truncate text-center leading-4">{item.label}</span>
+            <span className="truncate leading-4">{item.label}</span>
             {!item.hideCount ? (
               <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-bold tabular-nums ${
                 active ? item.badgeActiveClass : item.badgeInactiveClass
