@@ -51,16 +51,6 @@ export function RegisterFiltersSheet({ lang, open, onClose, onApply, draft, setD
               <p className="mb-1.5 text-taq-nav font-bold text-[#957D43]">{text(lang, "logType")}</p>
               <div className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-0.5">{typeItems.map((item) => <InkTab key={item.id} className="text-taq-meta pb-1.5" active={draft.type === item.id} onClick={() => selectDraftType(item.id)}>{text(lang, item.label)}</InkTab>)}</div>
             </div>
-            <div className="mb-4">
-              <p className="mb-1.5 text-taq-nav font-bold text-[#957D43]">{text(lang, "paymentMethods")}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {salesChannelOptions.map((item) => (
-                  <LogFilterChip key={item.id} active={draft.salesChannel === item.id} tone={draft.salesChannel === item.id ? "navy" : "default"} onClick={() => setDraft((current) => ({ ...current, salesChannel: item.id }))}>
-                    {item.label}
-                  </LogFilterChip>
-                ))}
-              </div>
-            </div>
             {draft.type === "expense" && (
               <div className="mb-4">
                 <p className="mb-1.5 text-taq-nav font-bold text-[#957D43]">{text(lang, "filterByCategory")}</p>
@@ -71,6 +61,16 @@ export function RegisterFiltersSheet({ lang, open, onClose, onApply, draft, setD
                 </div>
               </div>
             )}
+            <div className="mb-4">
+              <p className="mb-1.5 text-taq-nav font-bold text-[#957D43]">{text(lang, "paymentMethods")}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {salesChannelOptions.map((item) => (
+                  <LogFilterChip key={item.id} active={draft.salesChannel === item.id} tone={draft.salesChannel === item.id ? "navy" : "default"} onClick={() => setDraft((current) => ({ ...current, salesChannel: item.id }))}>
+                    {item.label}
+                  </LogFilterChip>
+                ))}
+              </div>
+            </div>
             <div>
               <p className="mb-1.5 text-taq-nav font-bold text-[#957D43]">{lang === "ar" ? "من قام بالإدخال" : "Entered by"}</p>
               <div className="flex flex-wrap gap-1.5">
