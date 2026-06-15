@@ -5,6 +5,15 @@ import { SlidersHorizontal } from "lucide-react";
 import { money, text } from "./prototype-runtime-demo-data";
 import { MoneyValue } from "./prototype-runtime-notebook";
 
+export function RegisterStoreBadge({ label }) {
+  if (!label) return null;
+  return (
+    <span className="max-w-[9.5rem] truncate rounded-full bg-[#112A46] px-2.5 py-1 text-taq-nav font-black text-white ring-1 ring-[#112A46]/15">
+      {label}
+    </span>
+  );
+}
+
 export function LogFilterChip({ active, children, onClick, tone = "default" }) {
   const toneClass = {
     default: active ? "bg-[#112A46] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",

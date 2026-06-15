@@ -13,6 +13,7 @@ import {
 } from "./prototype-runtime-entry-helpers";
 import { MoneyValue } from "./prototype-runtime-notebook";
 import { Badge } from "./prototype-runtime-shell-ui";
+import { RegisterStoreBadge } from "./owner-register-ui-primitives";
 import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
 
 export function OwnerRegisterOperationsList({
@@ -22,7 +23,7 @@ export function OwnerRegisterOperationsList({
   logFilters,
   daySequenceByCloseoutId,
   sameDayCloseoutCountByStoreDate,
-  registerCardInsetStyle,
+  showStoreBadge = false,
   entryAttachmentApiContext,
   expandedEntryId,
   setExpandedEntryId,
@@ -67,17 +68,23 @@ export function OwnerRegisterOperationsList({
           daySequence: registerDaySequence,
           sameDayCloseoutCount: registerSameDayCloseoutCount,
         });
+        const storeLabel = businessName(store, lang, true) || businessName(store, lang);
         return (
           <article id={`register-entry-${entry.id}`} key={entry.id} className="overflow-hidden rounded-[18px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
             <button type="button" onClick={() => setExpandedEntryId((current) => (current === entry.id ? null : entry.id))} className="flex w-full items-start gap-2.5 px-3.5 py-3 text-start">
               <span className={`mt-0.5 h-8 w-1 shrink-0 rounded-full ${isSale ? "bg-[#39A160]" : "bg-[#E4B84A]"}`} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
+                  {showStoreBadge ? <RegisterStoreBadge label={storeLabel} /> : null}
                   <p className="truncate text-taq-meta font-black text-[#112A46]">{operationDisplayLabel(entry, lang, logFilters.salesChannel)}</p>
                   {entryIsVoided(entry) && <Badge tone="warning">{text(lang, "voided")}</Badge>}
                   {entryHasAttachment(entry) && <Badge tone="navy">{text(lang, "attachmentExists")}</Badge>}
                 </div>
-                <p className="mt-1 truncate text-taq-nav font-bold text-[#827762]">{registerDateLabel} {opTime(entry, lang)} {businessName(store, lang, true) || businessName(store, lang)} {actorLabel}</p>
+                <p className="mt-1 truncate text-taq-nav font-bold text-[#827762]">
+                  {registerDateLabel} {opTime(entry, lang)}
+                  {!showStoreBadge && storeLabel ? ` ${storeLabel}` : ""}
+                  {` ${actorLabel}`}
+                </p>
               </div>
               <div className="shrink-0 text-end">
                 <strong className={`block tabular-nums text-taq-meta font-black ${entryIsVoided(entry) ? "text-[#A99D87] line-through" : isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
@@ -87,7 +94,7 @@ export function OwnerRegisterOperationsList({
               </div>
             </button>
             {isExpanded && (
-              <div className="border-t border-[#E8E1D4] px-3.5 py-3" style={registerCardInsetStyle}>
+              <div className="border-t border-[#E8E1D4] bg-white px-3.5 py-3">
                 {entry.note ? <p className="mb-2 text-taq-meta font-bold text-[#716753]">{entry.note}</p> : null}
                 {entryIsVoided(entry) && entry.voidReason ? <p className="mb-2 text-taq-meta font-bold text-[#B44747]">{text(lang, "voidReason")}: {entry.voidReason}</p> : null}
                 {entryHasAttachment(entry) ? (

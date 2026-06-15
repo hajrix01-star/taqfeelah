@@ -17,6 +17,7 @@ import {
   ProofAttachmentPreview,
 } from "@/components/prototype-runtime/prototype-runtime-attachment-ui";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { DateSelector } from "@/components/prototype-runtime/prototype-runtime-notebook";
 import { CloseoutEntryStorePicker } from "./closeout-entry-store-picker";
 
 function ChannelAmountGrid({ channels, labelChannel, salesValues, updateSalesValue, moneyInputClass }) {
@@ -105,12 +106,17 @@ export function DailyCloseoutEntryFormBody({
         {dateEditing ? (
           <div className="space-y-3">
             <p className="text-taq-meta font-bold text-[#827762]">{lang === "ar" ? "تاريخ التقفيلة" : "Closeout date"}</p>
-            <input
-              type="date"
-              max={todayIso()}
-              value={date}
-              onChange={(event) => confirmDateEdit(event.target.value)}
-              className="w-full rounded-2xl bg-white px-4 py-3 text-center text-sm font-bold text-[#112A46] ring-1 ring-black/[0.06] [color-scheme:light]"
+            <DateSelector
+              compact
+              lang={lang}
+              period="day"
+              setPeriod={() => {}}
+              allowedPeriods={["day"]}
+              selectedDate={date}
+              setSelectedDate={confirmDateEdit}
+              maxDate={todayIso()}
+              fullCalendar
+              initialOpen
             />
             <button
               type="button"

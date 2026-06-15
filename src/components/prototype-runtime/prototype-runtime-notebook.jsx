@@ -156,8 +156,8 @@ function monthSelectionParts(value) {
   const [year, month] = normalized.split("-").map(Number);
   return { year, month: month - 1, normalized };
 }
-function DateSelector({ lang, period, setPeriod, allowedPeriods = ["day", "month"], selectedDay, setSelectedDay, selectedDate = null, setSelectedDate = () => {}, fullCalendar = false, selectedMonth, setSelectedMonth, selectedYear = "2026", setSelectedYear = () => {}, customFrom = "2026-03-01", setCustomFrom = () => {}, customTo = "2026-05-31", setCustomTo = () => {}, compact = false }) {
-  const [open, setOpen] = useState(false);
+function DateSelector({ lang, period, setPeriod, allowedPeriods = ["day", "month"], selectedDay, setSelectedDay, selectedDate = null, setSelectedDate = () => {}, fullCalendar = false, selectedMonth, setSelectedMonth, selectedYear = "2026", setSelectedYear = () => {}, customFrom = "2026-03-01", setCustomFrom = () => {}, customTo = "2026-05-31", setCustomTo = () => {}, compact = false, maxDate = "", initialOpen = false }) {
+  const [open, setOpen] = useState(initialOpen);
   const [calendarView, setCalendarView] = useState({ year: 2026, month: 4 });
   const [monthPickerYear, setMonthPickerYear] = useState(2026);
   const [draftCustomFrom, setDraftCustomFrom] = useState(customFrom);
@@ -180,6 +180,8 @@ function DateSelector({ lang, period, setPeriod, allowedPeriods = ["day", "month
     };
   }, [open]);
   const modes = allowedPeriods.map((id) => ({ id, label: id === "day" ? "day" : id === "month" ? "month" : id === "year" ? "year" : "custom" }));
+  const showPeriodModes = modes.length > 1;
+  const maxSelectableDate = maxDate || "";
   const activeDate = selectedDate || todayIsoDate();
   const selectedLabel = period === "day"
     ? formatCalendarDate(activeDate, lang)
@@ -223,9 +225,11 @@ function DateSelector({ lang, period, setPeriod, allowedPeriods = ["day", "month
       <AnimatePresence>
         {open && (
           <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className={`absolute z-40 w-[270px] rounded-2xl bg-[#FFFDF7] p-3 shadow-xl ring-1 ring-[#D8CCA8] ${compact ? "left-1/2 top-10 -translate-x-1/2" : "end-0 top-12"}`}>
-            <div className={`mb-3 grid gap-1 ${modes.length === 4 ? "grid-cols-4" : "grid-cols-2"}`}>
-              {modes.map((mode) => <button key={mode.id} onClick={() => setPeriod(mode.id)} className={`rounded-lg py-2 text-taq-meta font-bold ${period === mode.id ? "bg-[#112A46] text-white" : "text-[#806528]"}`}>{text(lang, mode.label)}</button>)}
-            </div>
+            {showPeriodModes ? (
+              <div className={`mb-3 grid gap-1 ${modes.length === 4 ? "grid-cols-4" : "grid-cols-2"}`}>
+                {modes.map((mode) => <button key={mode.id} onClick={() => setPeriod(mode.id)} className={`rounded-lg py-2 text-taq-meta font-bold ${period === mode.id ? "bg-[#112A46] text-white" : "text-[#806528]"}`}>{text(lang, mode.label)}</button>)}
+              </div>
+            ) : null}
             {period === "day" && <div>
               <div className="mb-3 flex items-center justify-between">
                 <button onClick={previousMonth} title={text(lang, "previousMonth")} className="flex h-8 w-8 items-center justify-center rounded-xl text-[#806528] hover:bg-[#FFF0CB]"><ChevronRight className={`h-4 w-4 ${lang === "en" ? "rotate-180" : ""}`} /></button>
@@ -234,7 +238,21 @@ function DateSelector({ lang, period, setPeriod, allowedPeriods = ["day", "month
               </div>
               <div className="mb-2 grid grid-cols-7 text-center text-taq-meta font-bold text-[#957D43]">{weekDays.map((item, index) => <span key={`${item}-${index}`}>{item}</span>)}</div>
               <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold">
-                {calendarDates.map((date) => date.day ? <button key={date.key} onClick={() => { setSelectedDate(date.iso); setOpen(false); }} className={`relative flex h-8 items-center justify-center rounded-lg ${date.iso === activeDate ? "bg-[#B44747] text-white" : "text-[#112A46] hover:bg-[#FFF0CB]"}`}>{date.day}</button> : <span key={date.key} className="h-8" />)}
+                {calendarDates.map((date) => {
+                  if (!date.day) return <span key={date.key} className="h-8" />;
+                  const isFuture = maxSelectableDate && date.iso > maxSelectableDate;
+                  return (
+                    <button
+                      key={date.key}
+                      type="button"
+                      disabled={isFuture}
+                      onClick={() => { if (!isFuture) { setSelectedDate(date.iso); setOpen(false); } }}
+                      className={`relative flex h-8 items-center justify-center rounded-lg ${date.iso === activeDate ? "bg-[#B44747] text-white" : isFuture ? "cursor-not-allowed text-[#C8BCA4]" : "text-[#112A46] hover:bg-[#FFF0CB]"}`}
+                    >
+                      {date.day}
+                    </button>
+                  );
+                })}
               </div>
             </div>}
             {period === "month" && <div>
