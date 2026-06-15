@@ -13,7 +13,7 @@ import { AppLoginPhoneField } from "@/core/phone/AppLoginPhoneField";
 import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 import { ownerPasswordInputProps } from "@/features/auth/client/auth-gate/owner-password-input-props";
 
-export function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
+export function LoginScreen({ lang, setLang, onOwnerLogin, onBack }) {
   const form = useOwnerLoginForm({ lang, onOwnerLogin });
 
   return (
@@ -113,7 +113,9 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onEmployeePortal }) {
         )}
         {form.error ? <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{form.error}</p> : null}
       </div>
-      <button type="button" onClick={onEmployeePortal} className="mt-4 w-full rounded-2xl bg-white py-3.5 text-xs font-black text-[#112A46] ring-1 ring-black/[0.06]">{text(lang, "employeeLogin")}</button>
+      <button type="button" onClick={onBack} className="mt-4 w-full text-xs font-black text-[#9A823E]">
+        {text(lang, "backToLoginGateway")}
+      </button>
       {!APP_IN_PRODUCTION_MODE ? <LanHintBanner lang={lang} /> : null}
       {!APP_IN_PRODUCTION_MODE ? (
         <div className="mt-4 rounded-2xl bg-[#FFF4D2] p-4 text-center">

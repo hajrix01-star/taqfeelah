@@ -90,7 +90,7 @@ export function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin
         <button type="button" onClick={() => { void form.submit(); }} disabled={form.submitting} className="mt-4 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white disabled:bg-[#B8C0B7]">{text(lang, "verifyContinue")}</button>
         {form.error ? <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{form.error}</p> : null}
       </div>
-      <button type="button" onClick={onBack} className="mt-4 w-full text-xs font-black text-[#9A823E]">{text(lang, "backToOwnerLogin")}</button>
+      <button type="button" onClick={onBack} className="mt-4 w-full text-xs font-black text-[#9A823E]">{text(lang, "backToLoginGateway")}</button>
       <ReleaseVersionLine
         className="mt-4 text-center text-taq-meta font-bold text-[#A99D87]"
         lang={lang}

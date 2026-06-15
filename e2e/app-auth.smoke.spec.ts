@@ -5,7 +5,7 @@ function isRuntimeFailure(message: string): boolean {
 }
 
 test.describe("app auth shell smoke", () => {
-  test("shows real owner login and employee portal entry", async ({ page }) => {
+  test("shows login gateway with owner and employee entry points", async ({ page }) => {
     const runtimeFailures: string[] = [];
 
     page.on("pageerror", (error) => {
@@ -19,10 +19,21 @@ test.describe("app auth shell smoke", () => {
 
     await page.goto("/app");
 
-    await expect(page.getByRole("heading", { name: "ادخل إلى تقفيلة" })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "مرحبًا في تقفيلة" })).toBeVisible({
       timeout: 60_000,
     });
+    await expect(page.getByRole("button", { name: "تسجيل دخول المالك" })).toBeVisible();
     await expect(page.getByRole("button", { name: "دخول الموظف" })).toBeVisible();
+
+    await page.getByRole("button", { name: "تسجيل دخول المالك" }).click();
+
+    await expect(page.getByRole("heading", { name: "ادخل إلى تقفيلة" })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByRole("button", { name: "العودة لاختيار الدخول" })).toBeVisible();
+
+    await page.getByRole("button", { name: "العودة لاختيار الدخول" }).click();
+    await expect(page.getByRole("heading", { name: "مرحبًا في تقفيلة" })).toBeVisible();
 
     await page.getByRole("button", { name: "دخول الموظف" }).click();
 

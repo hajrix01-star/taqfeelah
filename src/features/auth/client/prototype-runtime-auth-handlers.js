@@ -120,7 +120,7 @@ export function createPrototypeRuntimeAuthHandlers({
     });
   };
 
-  const logout = async () => {
+  const logout = async ({ nextAuthScreen = "gateway" } = {}) => {
     try {
       await logoutViaSessionBridge({ useServerAuth: APP_IN_PRODUCTION_MODE });
     } catch (error) {
@@ -128,6 +128,7 @@ export function createPrototypeRuntimeAuthHandlers({
     }
     applyLogoutReset({
       bindsToServerAuth: BINDS_TO_SERVER_AUTH,
+      nextAuthScreen,
       apply: {
         setSessionOrganizationId,
         setSessionUserId,
@@ -161,9 +162,15 @@ export function createPrototypeRuntimeAuthHandlers({
     });
   };
 
+  const switchPortal = async (target) => {
+    const nextAuthScreen = target === "employee" ? "employee" : "owner";
+    await logout({ nextAuthScreen });
+  };
+
   return {
     completeOwnerLogin,
     completeEmployeeLogin,
     logout,
+    switchPortal,
   };
 }

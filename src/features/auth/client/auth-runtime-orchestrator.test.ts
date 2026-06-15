@@ -127,6 +127,7 @@ describe("auth runtime orchestrator", () => {
   it("resets runtime auth state on logout", () => {
     const apply = {
       setLoggedIn: vi.fn(),
+      setAuthScreen: vi.fn(),
       setOperationalEntries: vi.fn(),
       setStaff: vi.fn(),
       setConfiguredBusinesses: vi.fn(),
@@ -140,8 +141,19 @@ describe("auth runtime orchestrator", () => {
 
     applyLogoutReset({ bindsToServerAuth: true, apply });
     expect(apply.setLoggedIn).toHaveBeenCalledWith(false);
+    expect(apply.setAuthScreen).toHaveBeenCalledWith("gateway");
     expect(apply.setOperationalEntries).toHaveBeenCalledWith([]);
     expect(apply.setStaff).toHaveBeenCalledWith([]);
     expect(apply.setOwnerProfile).toHaveBeenCalledWith({ name: "" });
+  });
+
+  it("routes logout to a specific portal when requested", () => {
+    const apply = {
+      setLoggedIn: vi.fn(),
+      setAuthScreen: vi.fn(),
+    };
+
+    applyLogoutReset({ bindsToServerAuth: false, apply, nextAuthScreen: "employee" });
+    expect(apply.setAuthScreen).toHaveBeenCalledWith("employee");
   });
 });
