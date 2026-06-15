@@ -36,6 +36,7 @@ export function useRegisterVoidRestoreHandlers({
   setOperationalEntries = () => {},
   setLastCloseoutDates = () => {},
   setSelected = () => {},
+  notifyOperationalSyncWrite = null,
 }) {
   const confirmVoidOperation = useCallback(async (reason = "") => {
     if (entriesApiEnabled) {
@@ -67,6 +68,7 @@ export function useRegisterVoidRestoreHandlers({
         }
         setVoidTarget(null);
         setSelected(null);
+        notifyOperationalSyncWrite?.("entry.voided");
       } catch (error) {
         console.warn("entry void api failed", error);
         await appAlert({ lang, title: resolveOperationalEntryVoidFailureMessage(lang), variant: "danger" });
@@ -104,6 +106,7 @@ export function useRegisterVoidRestoreHandlers({
     entryIsVoided,
     lang,
     loadOperationalEntriesFromApi,
+    notifyOperationalSyncWrite,
     operationalEntries,
     ownerApiUserId,
     setLastCloseoutDates,
@@ -144,6 +147,7 @@ export function useRegisterVoidRestoreHandlers({
         }
         setRestoreTarget(null);
         setSelected(null);
+        notifyOperationalSyncWrite?.("entry.restored");
       } catch (error) {
         console.warn("entry restore api failed", error);
         await appAlert({ lang, title: resolveOperationalEntryRestoreFailureMessage(lang), variant: "danger" });
@@ -182,6 +186,7 @@ export function useRegisterVoidRestoreHandlers({
     entryIsVoided,
     lang,
     loadOperationalEntriesFromApi,
+    notifyOperationalSyncWrite,
     operationalEntries,
     ownerApiUserId,
     restoreTarget,

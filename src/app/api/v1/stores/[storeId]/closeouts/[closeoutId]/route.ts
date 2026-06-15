@@ -3,6 +3,7 @@ import { ServiceUnavailableError } from "@/core/errors/app-error";
 import { readEnv } from "@/core/config/env";
 import { resolveRequestContext } from "@/core/auth/request-context";
 import { deleteStoreCloseout } from "@/features/closeouts/server/delete-store-closeout";
+import { publishOperationalSyncEventSafe } from "@/core/sync/publish-operational-sync-event";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,18 @@ export async function DELETE(request: Request, context: RouteContext) {
       clientCloseoutId: params.closeoutId,
       actorUserId: requestContext.userId!,
       actorRole: requestContext.role!,
+    });
+
+    publishOperationalSyncEventSafe({
+      type: "closeout.deleted",
+      organizationId: requestContext.organizationId,
+      storeId: params.storeId,
+      actorUserId: requestContext.userId!,
+      actorRole: requestContext.role!,
+      payload: {
+        closeoutId: params.closeoutId,
+        date: result.date,
+      },
     });
 
     return ok(result);

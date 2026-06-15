@@ -14,6 +14,7 @@ import {
 } from "./prototype-runtime/prototype-runtime-auth-gates";
 import { PrototypeRuntimePageContent } from "./prototype-runtime/prototype-runtime-page-content";
 import { PrototypeRuntimeOverlayStack } from "./prototype-runtime/prototype-runtime-overlay-stack";
+import { OperationalSyncBridge } from "./prototype-runtime/OperationalSyncBridge";
 
 export default function TaqfeelahPrototypeRuntime() {
   const state = usePrototypeRuntimeAppState();
@@ -72,6 +73,7 @@ export default function TaqfeelahPrototypeRuntime() {
     channelName,
     text,
     formatCalendarDate,
+    operationalSync,
   } = state;
 
   const {
@@ -260,6 +262,21 @@ export default function TaqfeelahPrototypeRuntime() {
       apiStrictMode={closeoutsApiStrictMode}
       dbSourceMode={CLOSEOUTS_API_DB_SOURCE}
     >
+      <OperationalSyncBridge
+        enabled={operationalSync.enabled}
+        organizationId={operationalSync.organizationId}
+        actorUserId={operationalSync.actorUserId}
+        actorRole={operationalSync.actorRole}
+        employee={employee}
+        ownerPage={ownerPage}
+        employeePage={employeePage}
+        ownerEntryActive={ownerEntryActive}
+        employeeEntryActive={employeeEntryActive}
+        reloadOperationalEntries={loadOperationalEntriesFromApi}
+        closeoutsSyncEnabled={operationalSync.closeoutsSyncEnabled}
+        entriesSyncEnabled={operationalSync.entriesSyncEnabled}
+        notifyLocalWriteRef={operationalSync.notifyRef}
+      />
       <div dir={lang === "ar" ? "rtl" : "ltr"} className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
         <AppFontStyles />
         <main className="taq-shell relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#F8F6F0]">

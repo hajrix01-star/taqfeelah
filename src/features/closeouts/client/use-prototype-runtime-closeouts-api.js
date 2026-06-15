@@ -32,6 +32,7 @@ export function usePrototypeRuntimeCloseoutsApi({
   currentEmployeeChannelConfig,
   ownerCloseoutBusiness,
   ownerCloseoutChannelConfig,
+  notifyOperationalSyncWrite = null,
 }) {
   const syncSubmitCloseoutToApi = useCallback(async ({ action, closeout, employee }) => {
     if (!closeoutsApiEnabled) {
@@ -79,6 +80,7 @@ export function usePrototypeRuntimeCloseoutsApi({
     if (entriesApiEnabled) {
       await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
     }
+    notifyOperationalSyncWrite?.("closeout.submitted");
     return result;
   }, [
     closeoutsApiEnabled,
@@ -87,6 +89,7 @@ export function usePrototypeRuntimeCloseoutsApi({
     entriesApiEnabled,
     lang,
     loadOperationalEntriesFromApi,
+    notifyOperationalSyncWrite,
     ownerCloseoutBusiness?.id,
     ownerCloseoutChannelConfig?.channels,
   ]);
@@ -187,6 +190,7 @@ export function usePrototypeRuntimeCloseoutsApi({
     if (entriesApiEnabled) {
       await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
     }
+    notifyOperationalSyncWrite?.("closeout.deleted");
     return result;
   }, [
     apiActorRole,
@@ -196,6 +200,7 @@ export function usePrototypeRuntimeCloseoutsApi({
     entriesApiEnabled,
     lang,
     loadOperationalEntriesFromApi,
+    notifyOperationalSyncWrite,
   ]);
 
   return {

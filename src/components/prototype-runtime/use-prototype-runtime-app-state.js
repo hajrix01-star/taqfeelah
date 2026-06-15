@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { storeAttachmentPayload } from "@/features/attachments/client/prototype-attachment-storage";
 import { readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-demo-store";
 import { applyNotebookThemeCssVariables } from "@/features/daily-closeouts/notebook-themes";
@@ -87,6 +87,10 @@ export function usePrototypeRuntimeAppState() {
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [saved, setSaved] = useState(false);
+  const operationalSyncNotifyRef = useRef(null);
+  const notifyOperationalSyncWrite = useCallback((eventType) => {
+    operationalSyncNotifyRef.current?.(eventType);
+  }, []);
 
   const ownerSettings = useOwnerSettingsState({
     bindsToServerAuth: BINDS_TO_SERVER_AUTH,
@@ -278,6 +282,14 @@ export function usePrototypeRuntimeAppState() {
     syncCloseoutToOperationalEntries,
     removeOperationalEntriesForCloseout,
   } = operational;
+
+  const createOperationalEntryInApiWithSync = useCallback(async (args) => {
+    const created = await createOperationalEntryInApi(args);
+    if (created) {
+      notifyOperationalSyncWrite("entry.created");
+    }
+    return created;
+  }, [createOperationalEntryInApi, notifyOperationalSyncWrite]);
 
   const ownerShell = useOwnerShellState({
     bindsToServerAuth: BINDS_TO_SERVER_AUTH,
@@ -478,6 +490,7 @@ export function usePrototypeRuntimeAppState() {
     currentEmployeeChannelConfig,
     ownerCloseoutBusiness: ownerCloseout.ownerCloseoutBusiness,
     ownerCloseoutChannelConfig: ownerCloseout.ownerCloseoutChannelConfig,
+    notifyOperationalSyncWrite,
   });
 
   const { saveOwner, saveOwnerSummary } = usePrototypeRuntimeOwnerSaveActions({
@@ -488,7 +501,7 @@ export function usePrototypeRuntimeAppState() {
     entriesApiEnabled,
     activeBusinessIds,
     todayDate,
-    createOperationalEntryInApi,
+    createOperationalEntryInApi: createOperationalEntryInApiWithSync,
     loadOperationalEntriesFromApi,
     ownerApiUserId,
     currentOwnerActor,
@@ -512,7 +525,7 @@ export function usePrototypeRuntimeAppState() {
     assignedEmployeeBusinessIds,
     entriesApiEnabled,
     entriesApiDbSource: ENTRIES_API_DB_SOURCE,
-    createOperationalEntryInApi,
+    createOperationalEntryInApi: createOperationalEntryInApiWithSync,
     loadOperationalEntriesFromApi,
     buildEntry,
     storeAttachmentPayload,
@@ -564,6 +577,7 @@ export function usePrototypeRuntimeAppState() {
     persistEmployeeEntry,
     savingRef,
     setSaving,
+    notifyOperationalSyncWrite,
   });
 
   const ownerNotebookApiEnabled = useMemo(
@@ -592,6 +606,20 @@ export function usePrototypeRuntimeAppState() {
     runtimeSettingsSyncError,
     orgConfigSyncError,
   });
+
+  const operationalSyncEnabled = useMemo(
+    () => loggedIn
+      && runtimeApiStoresReady
+      && isUuid(closeoutsApiOrganizationId)
+      && (closeoutsApiEnabled || entriesApiEnabled),
+    [
+      closeoutsApiEnabled,
+      closeoutsApiOrganizationId,
+      entriesApiEnabled,
+      loggedIn,
+      runtimeApiStoresReady,
+    ],
+  );
 
   return {
     lang,
@@ -652,5 +680,14 @@ export function usePrototypeRuntimeAppState() {
     channelName,
     text,
     formatCalendarDate,
+    operationalSync: {
+      enabled: operationalSyncEnabled,
+      organizationId: closeoutsApiOrganizationId,
+      actorUserId: apiActorUserId,
+      actorRole: apiActorRole,
+      closeoutsSyncEnabled: closeoutsApiEnabled,
+      entriesSyncEnabled: entriesApiEnabled,
+      notifyRef: operationalSyncNotifyRef,
+    },
   };
 }

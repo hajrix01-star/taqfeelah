@@ -6,6 +6,7 @@ import { listStoreCloseouts } from "@/features/closeouts/server/list-store-close
 import { resolveSubmitCloseoutId } from "@/features/closeouts/server/resolve-submit-closeout-id";
 import { normalizeCloseoutSubmitMode } from "@/features/closeouts/closeout-submit-mode";
 import { submitStoreCloseout } from "@/features/closeouts/server/submit-store-closeout";
+import { publishOperationalSyncEventSafe } from "@/core/sync/publish-operational-sync-event";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,19 @@ export async function POST(request: Request, context: RouteContext) {
       outflows: Array.isArray(body?.outflows) ? body.outflows : [],
       attachments: Array.isArray(body?.attachments) ? body.attachments : [],
       note: typeof body?.note === "string" ? body.note : undefined,
+    });
+
+    publishOperationalSyncEventSafe({
+      type: "closeout.submitted",
+      organizationId: requestContext.organizationId,
+      storeId: params.storeId,
+      actorUserId: requestContext.userId!,
+      actorRole: requestContext.role!,
+      payload: {
+        closeoutId: result.closeoutId,
+        date: result.date,
+        mode,
+      },
     });
 
     return ok(result, { status: 201 });
