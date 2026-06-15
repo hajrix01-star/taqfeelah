@@ -21,8 +21,12 @@ export function formatInviteStatus(status, lang) {
 export function getOwnerTeamInvitesLabels(lang) {
   if (lang === "ar") {
     return {
+      createTitle: "دعوة موظف جديد",
       title: "دعوات الموظفين",
       hint: "كل موظف له دعوة مستقلة — جوال إلزامي وPIN تُرسله أنت عبر واتساب.",
+      pendingTitle: "بانتظار التفعيل",
+      pendingHint: "دعوات لم يُفعّلها الموظف بعد.",
+      activatedViaInvite: "مفعّل عبر دعوة",
       name: "اسم الموظف (للعرض فقط)",
       phone: "جوال الموظف",
       pin: "PIN للتفعيل (مرة واحدة)",
@@ -46,8 +50,12 @@ export function getOwnerTeamInvitesLabels(lang) {
   }
 
   return {
+    createTitle: "Invite new employee",
     title: "Employee invitations",
     hint: "Each employee gets a private invite — mobile is required and you send the PIN via WhatsApp.",
+    pendingTitle: "Awaiting activation",
+    pendingHint: "Invites that have not been activated yet.",
+    activatedViaInvite: "Activated via invite",
     name: "Employee display name",
     phone: "Employee mobile",
     pin: "Activation PIN (one-time)",
