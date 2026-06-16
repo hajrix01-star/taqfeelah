@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import NotebookScrollSurface from "../daily-closeouts/NotebookScrollSurface";
 import { notebookLinesBackground } from "../daily-closeouts/notebook-themes";
 import AttachmentLightbox from "../../components/AttachmentLightbox";
+import { text } from "../../components/prototype-runtime/prototype-runtime-demo-data";
 import { DailyCloseoutEntryFormBody } from "./daily-closeout-entry-form-body";
 import { useDailyCloseoutEntryState } from "./use-daily-closeout-entry-state";
 
@@ -85,9 +86,9 @@ export default function DailyCloseoutEntryFlow({
           type="button"
           disabled={saving || !formEnabled || totals.totalSales <= 0}
           onClick={handleSubmit}
-          className="w-full rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white disabled:opacity-50"
+          className="w-full rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white transition active:scale-[0.98] disabled:opacity-50"
         >
-          {lang === "ar" ? "حفظ وإرسال" : "Save & send"}
+          {text(lang, saving ? "saving" : (isOwnerEdit ? "saveCloseoutChanges" : "saveAndSend"))}
         </button>
       </div>
       <AttachmentLightbox

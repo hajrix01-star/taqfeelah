@@ -7,7 +7,7 @@ import { resolveCloseoutStoreName } from "./store-name-resolver";
 import { EmployeeCloseoutsListPanel } from "./employee-closeouts-list-panel";
 import { resolveEmployeeDisplayName } from "./employee-portal-session";
 import { useEmployeeCloseoutsViewState } from "./use-employee-closeouts-view-state";
-import { resolveStoreChannelConfig, channelName } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { resolveStoreChannelConfig, channelName, text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 
 function resolveSalesChannelsForStore(storeChannelSettings, storeId, lang) {
   if (!storeId) return [];
@@ -94,6 +94,7 @@ export default function EmployeeCloseoutsView({
     setShareTarget,
     setShareNewlySubmitted,
     closeShareModal,
+    submitting,
   } = state;
 
   const entrySalesChannels = entryCloseout?.storeId
@@ -130,29 +131,49 @@ export default function EmployeeCloseoutsView({
 
   if (entryCloseout) {
     return (
-      <div
-        className="fixed inset-x-0 bottom-0 z-[50]"
-        style={{ top: "calc(70px + env(safe-area-inset-top, 0px))" }}
-      >
-        <DailyCloseoutEntryFlow
-          key={`${entryCloseout.id}-${entryCloseout.storeId || "pending"}`}
+      <>
+        <div
+          className="fixed inset-x-0 bottom-0 z-[50]"
+          style={{ top: "calc(70px + env(safe-area-inset-top, 0px))" }}
+        >
+          <DailyCloseoutEntryFlow
+            key={`${entryCloseout.id}-${entryCloseout.storeId || "pending"}`}
+            lang={lang}
+            notebookTheme={notebookTheme}
+            closeout={entryCloseout}
+            salesChannels={entrySalesChannels}
+            storeName={entryStoreLabel}
+            assignedStores={assignedStores}
+            selectedStoreId={entryCloseout.storeId || ""}
+            onSelectEntryStore={handleEntryStoreSelect}
+            isOwnerEdit={entryOwnerEdit}
+            fullScreenOverlay={false}
+            saving={saving || submitting}
+            channelLabel={channelLabel}
+            onCancel={() => handleCancelEntry(entryCloseout)}
+            onSubmit={handleSubmit}
+            findForStoreDate={resolveStoreDate}
+          />
+        </div>
+        <CloseoutShareModal
           lang={lang}
+          open={Boolean(shareTarget)}
+          closeout={shareTarget}
+          storeName={resolveCloseoutStoreName({ preferredStoreName: shareTarget?.storeName, closeout: shareTarget, currentStore, lang }) || storeLabel}
+          employeeName={resolveEmployeeDisplayName(
+            employee,
+            lang,
+            sessionDisplayName
+              || shareTarget?.submittedByName
+              || shareTarget?.openedByName
+              || "",
+          )}
           notebookTheme={notebookTheme}
-          closeout={entryCloseout}
-          salesChannels={entrySalesChannels}
-          storeName={entryStoreLabel}
-          assignedStores={assignedStores}
-          selectedStoreId={entryCloseout.storeId || ""}
-          onSelectEntryStore={handleEntryStoreSelect}
-          isOwnerEdit={entryOwnerEdit}
-          fullScreenOverlay={false}
-          saving={saving}
-          channelLabel={channelLabel}
-          onCancel={() => handleCancelEntry(entryCloseout)}
-          onSubmit={handleSubmit}
-          findForStoreDate={resolveStoreDate}
+          formatCalendarDate={formatCalendarDate}
+          newlySubmitted={shareNewlySubmitted}
+          onClose={closeShareModal}
         />
-      </div>
+      </>
     );
   }
 

@@ -21,6 +21,7 @@ import { isEmployeeCloseoutsListPending } from "./employee-closeouts-loading";
 import { resolveEmployeeCloseoutsViewGate } from "./employee-closeouts-view-gate";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 import { appAlert, appConfirm } from "@/lib/ui/app-dialog/app-dialog-bridge";
+import { triggerSubmitSuccessHaptic } from "./submit-success-haptic";
 
 function resolveScrollContainer(node) {
   if (typeof window === "undefined" || !node) return null;
@@ -79,6 +80,7 @@ export function useEmployeeCloseoutsViewState({
   const [expandedId, setExpandedId] = useState(null);
   const [shareTarget, setShareTarget] = useState(null);
   const [shareNewlySubmitted, setShareNewlySubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const cardRefs = useRef(new Map());
   const pendingToggleAnchorRef = useRef(null);
@@ -270,25 +272,30 @@ export function useEmployeeCloseoutsViewState({
   }, [currentStoreId, entryCloseout?.storeId, findForStoreDateProp, findForStoreDate]);
 
   const handleSubmit = async (closeout, { isOwnerEdit }) => {
-    const fn = isOwnerEdit ? ownerEditCloseout : submitCloseout;
-    const next = await fn({ closeout, employee });
-    if (isCloseoutWorkflowFailure(next)) {
-      const fallback = next.phase === "save"
-        ? (lang === "ar" ? "تعذر الحفظ." : "Failed to save.")
-        : (lang === "ar" ? "تعذر الإرسال." : "Failed to send.");
-      await appAlert({ lang, title: syncError || fallback, variant: "danger" });
-      return;
+    setSubmitting(true);
+    try {
+      const fn = isOwnerEdit ? ownerEditCloseout : submitCloseout;
+      const next = await fn({ closeout, employee });
+      if (isCloseoutWorkflowFailure(next)) {
+        const fallback = next.phase === "save"
+          ? (lang === "ar" ? "تعذر الحفظ." : "Failed to save.")
+          : (lang === "ar" ? "تعذر الإرسال." : "Failed to send.");
+        await appAlert({ lang, title: syncError || fallback, variant: "danger" });
+        return;
+      }
+      if (!next) {
+        await appAlert({ lang, title: syncError || text(lang, "closeoutSendFailed"), variant: "danger" });
+        return;
+      }
+      triggerSubmitSuccessHaptic();
+      setEntryCloseout(null);
+      setEntryOwnerEdit(false);
+      setExpandedId(null);
+      setShareTarget(next);
+      setShareNewlySubmitted(true);
+    } finally {
+      setSubmitting(false);
     }
-    if (!next) {
-      await appAlert({ lang, title: syncError || text(lang, "closeoutSendFailed"), variant: "danger" });
-      return;
-    }
-    setEntryCloseout(null);
-    setEntryOwnerEdit(false);
-    setExpandedId(null);
-    setShareTarget(next);
-    setShareNewlySubmitted(true);
-    onCloseoutSubmitted?.(next);
   };
 
   const handleCancelEntry = (closeout) => {
@@ -314,9 +321,12 @@ export function useEmployeeCloseoutsViewState({
     loadFailed: closeoutsLoadFailed,
   });
   const closeShareModal = useCallback(() => {
+    setShareNewlySubmitted((wasNew) => {
+      if (wasNew) onCloseoutSubmitted?.();
+      return false;
+    });
     setShareTarget(null);
-    setShareNewlySubmitted(false);
-  }, []);
+  }, [onCloseoutSubmitted]);
 
   return {
     viewGate,
@@ -345,5 +355,6 @@ export function useEmployeeCloseoutsViewState({
     setShareTarget,
     setShareNewlySubmitted,
     closeShareModal,
+    submitting,
   };
 }

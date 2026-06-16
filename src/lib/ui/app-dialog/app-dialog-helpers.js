@@ -35,6 +35,22 @@ export async function confirmCloseoutDelete(lang, textFn) {
 /**
  * @param {"ar" | "en"} lang
  * @param {(lang: "ar" | "en", key: string) => string} textFn
+ * @param {{ isOwnerEdit?: boolean }} [options]
+ */
+export async function confirmCloseoutSubmit(lang, textFn, { isOwnerEdit = false } = {}) {
+  return appConfirm({
+    lang,
+    title: textFn(lang, isOwnerEdit ? "confirmCloseoutEditTitle" : "confirmCloseoutSubmitTitle"),
+    description: textFn(lang, isOwnerEdit ? "confirmCloseoutEditDesc" : "confirmCloseoutSubmitDesc"),
+    confirmLabel: textFn(lang, isOwnerEdit ? "saveCloseoutChanges" : "saveAndSend"),
+    cancelLabel: textFn(lang, "cancel"),
+    variant: "info",
+  });
+}
+
+/**
+ * @param {"ar" | "en"} lang
+ * @param {(lang: "ar" | "en", key: string) => string} textFn
  */
 export async function alertCloseoutNotFound(lang, textFn) {
   return appAlert({
