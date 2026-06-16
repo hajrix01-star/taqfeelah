@@ -48,15 +48,26 @@ export function useDailyCloseoutEntryState({
   const [outNote, setOutNote] = useState("");
   const submitInFlightRef = useRef(false);
 
+  const titles = useMemo(() => buildCloseoutEntryTitles(lang), [lang]);
+
+  const buildOutflowRow = useCallback((amountValue, noteValue = outNote) => buildCloseoutOutflowRow({
+    lang,
+    outType,
+    expenseCategory,
+    outNote: noteValue,
+    amountValue,
+    attachments: [],
+  }), [expenseCategory, lang, outNote, outType]);
+
   const totals = useMemo(() => {
     const salesRecord = salesRecordFromChannels(
       salesChannels,
       Object.fromEntries(salesChannels.map((ch) => [ch.id, toAmount(salesValues[ch.id])])),
     );
-    return computeCloseoutTotals(salesRecord, outflows);
-  }, [outflows, salesChannels, salesValues]);
-
-  const titles = useMemo(() => buildCloseoutEntryTitles(lang), [lang]);
+    const pendingOutflow = buildOutflowRow(outAmount);
+    const outflowsForTotals = pendingOutflow ? [...outflows, pendingOutflow] : outflows;
+    return computeCloseoutTotals(salesRecord, outflowsForTotals);
+  }, [buildOutflowRow, outAmount, outflows, salesChannels, salesValues]);
 
   const buildCloseout = useCallback((outflowRows = outflows) => {
     const salesRecord = salesRecordFromChannels(
@@ -74,15 +85,6 @@ export function useDailyCloseoutEntryState({
     };
     return withCloseoutTotals(base);
   }, [attachments, date, initialCloseout, notebookTheme, outflows, salesChannels, salesValues, storeName]);
-
-  const buildOutflowRow = useCallback((amountValue, noteValue = outNote) => buildCloseoutOutflowRow({
-    lang,
-    outType,
-    expenseCategory,
-    outNote: noteValue,
-    amountValue,
-    attachments: [],
-  }), [expenseCategory, lang, outNote, outType]);
 
   const pushOutflow = useCallback(() => {
     const row = buildOutflowRow(outAmount);
