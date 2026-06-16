@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   attachmentDataUrlsFromList,
   buildCloseoutOutflowRow,
-  hasUncommittedOutflowDraft,
   resolveAttachmentPreviewSrc,
 } from "./daily-closeout-entry-helpers";
 import { computeCloseoutTotals } from "../daily-closeouts/closeout-calculations";
@@ -43,14 +42,6 @@ describe("buildCloseoutOutflowRow", () => {
   });
 });
 
-describe("hasUncommittedOutflowDraft", () => {
-  it("detects typed outflow amounts that were not added with +", () => {
-    expect(hasUncommittedOutflowDraft("")).toBe(false);
-    expect(hasUncommittedOutflowDraft("0")).toBe(false);
-    expect(hasUncommittedOutflowDraft("50")).toBe(true);
-  });
-});
-
 describe("closeout review totals contract", () => {
   it("counts only committed outflow rows, not draft field values", () => {
     const totals = computeCloseoutTotals(
@@ -60,6 +51,12 @@ describe("closeout review totals contract", () => {
     expect(totals.totalSales).toBe(100);
     expect(totals.totalOutflow).toBe(25);
     expect(totals.netMovement).toBe(75);
+  });
+
+  it("ignores a typed outflow amount until pushOutflow adds a row", () => {
+    const committedOnly = computeCloseoutTotals({ cash: 500 }, []);
+    expect(committedOnly.totalOutflow).toBe(0);
+    expect(committedOnly.netMovement).toBe(500);
   });
 });
 
