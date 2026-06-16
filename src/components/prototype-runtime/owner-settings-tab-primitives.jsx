@@ -18,12 +18,19 @@ function SettingsTabList({
   onChange,
   ariaLabel,
   sub = false,
+  integrated = false,
 }) {
-  const rounding = sub ? "rounded-t-[12px]" : "rounded-t-[14px]";
+  const rounding = integrated
+    ? ""
+    : sub
+      ? "rounded-t-[12px]"
+      : "rounded-t-[14px]";
+  const shadow = integrated && sub ? "" : "shadow-[0_-1px_0_rgba(17,42,70,0.06)]";
+  const border = integrated && sub ? "border-t border-[#E8E1D4]/80" : "";
 
   return (
     <div
-      className={`flex overflow-hidden ${rounding} shadow-[0_-1px_0_rgba(17,42,70,0.06)]`}
+      className={`flex overflow-hidden ${rounding} ${shadow} ${border}`}
       role="tablist"
       aria-label={ariaLabel}
     >
@@ -191,18 +198,32 @@ export function resolveSettingsStoreSubTabItem(lang, panel) {
   return items.find((item) => item.id === normalized) || items[0];
 }
 
-export function SettingsMainTabs({ lang, value, onChange, ariaLabel }) {
+export function SettingsMainTabs({
+  lang,
+  value,
+  onChange,
+  ariaLabel,
+  integrated = false,
+}) {
   return (
     <SettingsTabList
       items={buildSettingsMainTabItems(lang)}
       value={value}
       onChange={onChange}
       ariaLabel={ariaLabel}
+      integrated={integrated}
     />
   );
 }
 
-export function SettingsOrgSubTabs({ lang, value, onChange, counts, ariaLabel }) {
+export function SettingsOrgSubTabs({
+  lang,
+  value,
+  onChange,
+  counts,
+  ariaLabel,
+  integrated = false,
+}) {
   return (
     <SettingsTabList
       items={buildSettingsOrgSubTabItems(lang, counts)}
@@ -210,11 +231,18 @@ export function SettingsOrgSubTabs({ lang, value, onChange, counts, ariaLabel })
       onChange={onChange}
       ariaLabel={ariaLabel}
       sub
+      integrated={integrated}
     />
   );
 }
 
-export function SettingsStoreSubTabs({ lang, value, onChange, ariaLabel }) {
+export function SettingsStoreSubTabs({
+  lang,
+  value,
+  onChange,
+  ariaLabel,
+  integrated = true,
+}) {
   const normalized = value === "overview" ? "profile" : value;
   return (
     <SettingsTabList
@@ -222,7 +250,8 @@ export function SettingsStoreSubTabs({ lang, value, onChange, ariaLabel }) {
       value={normalized}
       onChange={onChange}
       ariaLabel={ariaLabel}
-      sub
+      sub={!integrated}
+      integrated={integrated}
     />
   );
 }
@@ -234,5 +263,33 @@ export function SettingsTabContentCard({ surfaceClass, accentClass, children, cl
     >
       {children}
     </div>
+  );
+}
+
+export function SettingsTabbedPanel({
+  sticky = false,
+  className = "",
+  tabs,
+  subTabs = null,
+  surfaceClass,
+  accentClass,
+  children,
+}) {
+  const stickyClass = sticky
+    ? "sticky top-0 z-20 -mx-1 bg-[#F8F6F0]/95 px-1 pb-0 pt-0.5 backdrop-blur-sm supports-[backdrop-filter]:bg-[#F8F6F0]/88"
+    : "";
+
+  return (
+    <article className={`mb-3 ${className}`}>
+      <div className={stickyClass}>
+        <div className="overflow-hidden rounded-t-[14px] border border-b-0 border-[#E8E1D4]/90 shadow-[0_-1px_0_rgba(17,42,70,0.06)]">
+          {tabs}
+          {subTabs}
+        </div>
+      </div>
+      <SettingsTabContentCard surfaceClass={surfaceClass} accentClass={accentClass}>
+        {children}
+      </SettingsTabContentCard>
+    </article>
   );
 }

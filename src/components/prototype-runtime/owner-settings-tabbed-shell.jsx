@@ -19,7 +19,7 @@ import {
   resolveSettingsOrgSubTabItem,
   SettingsMainTabs,
   SettingsOrgSubTabs,
-  SettingsTabContentCard,
+  SettingsTabbedPanel,
 } from "./owner-settings-tab-primitives";
 
 export function OwnerSettingsTabbedShell({ state, callbacks }) {
@@ -32,7 +32,6 @@ export function OwnerSettingsTabbedShell({ state, callbacks }) {
     activeStoredBusinesses,
     visibleStaff,
     entitlements,
-    ownerProfile,
   } = state;
 
   const mainTab = resolveSettingsMainTab(section);
@@ -81,58 +80,45 @@ export function OwnerSettingsTabbedShell({ state, callbacks }) {
         </p>
       </div>
 
-      {mainTab === "account" ? (
-        <div className="mb-3 flex items-center gap-3 rounded-2xl bg-white/90 px-3 py-2.5 ring-1 ring-black/[0.045]">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#112A46] text-white">
-            <UserRound className="h-5 w-5" />
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-black text-[#112A46]">
-              {ownerProfile?.name || (lang === "ar" ? "المالك" : "Owner")}
-            </p>
-            <p className="text-[10px] font-bold text-[#827762]">{text(lang, "myAccountSecurity")}</p>
-          </div>
-        </div>
-      ) : null}
-
-      <article className="mb-3">
-        <SettingsMainTabs
-          lang={lang}
-          value={mainTab}
-          onChange={handleMainTabChange}
-          ariaLabel={text(lang, "settings")}
-        />
-
-        {mainTab === "organization" ? (
+      <SettingsTabbedPanel
+        sticky
+        surfaceClass={contentItem.contentSurfaceClass}
+        accentClass={contentItem.contentAccentClass}
+        tabs={(
+          <SettingsMainTabs
+            lang={lang}
+            value={mainTab}
+            onChange={handleMainTabChange}
+            ariaLabel={text(lang, "settings")}
+            integrated
+          />
+        )}
+        subTabs={mainTab === "organization" ? (
           <SettingsOrgSubTabs
             lang={lang}
             value={orgSubTab}
             onChange={handleOrgSubTabChange}
             counts={orgCounts}
             ariaLabel={lang === "ar" ? "أقسام المنشأة" : "Organization sections"}
+            integrated
           />
         ) : null}
+      >
+        {renderOwnerSettingsSection(panelSection, state, callbacks, { embedded: true })}
 
-        <SettingsTabContentCard
-          surfaceClass={contentItem.contentSurfaceClass}
-          accentClass={contentItem.contentAccentClass}
-        >
-          {renderOwnerSettingsSection(panelSection, state, callbacks, { embedded: true })}
-
-          {mainTab === "help" ? (
-            <div className="mt-3 overflow-hidden rounded-2xl bg-white/90 ring-1 ring-black/[0.045]">
-              <SettingsLink
-                lang={lang}
-                icon={UserRound}
-                title={text(lang, "logout")}
-                onClick={onLogout}
-                danger
-                border={false}
-              />
-            </div>
-          ) : null}
-        </SettingsTabContentCard>
-      </article>
+        {mainTab === "help" ? (
+          <div className="mt-3 overflow-hidden rounded-2xl bg-white/90 ring-1 ring-black/[0.045]">
+            <SettingsLink
+              lang={lang}
+              icon={UserRound}
+              title={text(lang, "logout")}
+              onClick={onLogout}
+              danger
+              border={false}
+            />
+          </div>
+        ) : null}
+      </SettingsTabbedPanel>
 
       <ReleaseVersionLine
         className="text-center text-taq-meta font-bold text-[#A99D87]"

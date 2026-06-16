@@ -18,7 +18,7 @@ import { ThemePicker } from "./prototype-runtime-notebook";
 import {
   resolveSettingsStoreSubTabItem,
   SettingsStoreSubTabs,
-  SettingsTabContentCard,
+  SettingsTabbedPanel,
 } from "./owner-settings-tab-primitives";
 import { normalizeStoreSettingsPanel } from "./owner-settings-tab-navigation";
 
@@ -292,33 +292,26 @@ export function OwnerSettingsStoreFlattenedPanel({
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader
         title={displayBusinessName(selectedStore)}
+        subtitle={displayLocation(selectedStore)}
+        badge={<Badge tone={archived ? "warning" : "success"}>{text(lang, archived ? "archivedStore" : "storeActive")}</Badge>}
         onBack={closeStore}
         lang={lang}
       />
-      <div className="mb-3 rounded-2xl bg-white p-3.5 ring-1 ring-black/[0.045]">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#112A46] text-[#E4B84A]">
-            <Building2 className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-black">{displayBusinessName(selectedStore)}</p>
-            <p className="mt-0.5 truncate text-taq-meta font-bold text-[#827762]">{displayLocation(selectedStore)}</p>
-          </div>
-          <Badge tone={archived ? "warning" : "success"}>{text(lang, archived ? "archivedStore" : "storeActive")}</Badge>
-        </div>
-      </div>
 
-      <article>
-        <SettingsStoreSubTabs
-          lang={lang}
-          value={activePanel}
-          onChange={handleStoreTabChange}
-          ariaLabel={text(lang, "storeSettings")}
-        />
-        <SettingsTabContentCard
-          surfaceClass={activeTab.contentSurfaceClass}
-          accentClass={activeTab.contentAccentClass}
-        >
+      <SettingsTabbedPanel
+        sticky
+        surfaceClass={activeTab.contentSurfaceClass}
+        accentClass={activeTab.contentAccentClass}
+        tabs={(
+          <SettingsStoreSubTabs
+            lang={lang}
+            value={activePanel}
+            onChange={handleStoreTabChange}
+            ariaLabel={text(lang, "storeSettings")}
+            integrated
+          />
+        )}
+      >
           {activePanel === "profile" ? (
             <>
               <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "shopName")}</p>
@@ -410,8 +403,7 @@ export function OwnerSettingsStoreFlattenedPanel({
           {settingsSuccess ? (
             <div className="mt-4 rounded-2xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">{text(lang, "changesSaved")}</div>
           ) : null}
-        </SettingsTabContentCard>
-      </article>
+      </SettingsTabbedPanel>
 
       {archived ? (
         <div className="mt-4 rounded-3xl bg-[#FFF4D2] p-4">
