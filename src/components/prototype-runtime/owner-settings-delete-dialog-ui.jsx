@@ -17,7 +17,6 @@ export function OwnerSettingsDeleteDialog({ lang, deleteTarget, onCancel, onConf
         variant="danger"
         title={deleteDialog.title}
         description={deleteDialog.desc}
-        notice={translate("safeDeleteNotice")}
         confirmLabel={deleteDialog.action}
         cancelLabel={translate("cancel")}
         onConfirm={onConfirm}

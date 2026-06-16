@@ -40,7 +40,6 @@ export function OwnerSettingsStoreProfilePanel({
         <input value={draftStoreName} onChange={(event) => setDraftStoreName(event.target.value)} maxLength={80} className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
         <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "newStoreLocation")}</p>
         <input value={draftStoreLocation} onChange={(event) => setDraftStoreLocation(event.target.value)} maxLength={100} className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
-        <p className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "renameStoreHint")}</p>
         <button disabled={!draftStoreName.trim()} onClick={saveStoreProfile} className={`mt-5 w-full rounded-2xl py-3.5 text-xs font-black text-white ${draftStoreName.trim() ? "bg-[#112A46]" : "bg-[#B8C0B7]"}`}>{text(lang, "saveSettings")}</button>
       </div>
       <OwnerSettingsDeleteDialog {...deleteDialogProps} />
@@ -100,7 +99,6 @@ export function OwnerSettingsStoreExpensesPanel({
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={text(lang, "outflowCategories")} onBack={backFromStorePanel} lang={lang} />
-      <p className="mb-3 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{lang === "ar" ? "تظهر هذه البنود عند اختيار نوع العملية: مصروف. إيقاف البند لا يغير التقارير السابقة." : "These items appear only for Expense entries. Disabling an item does not change historical reports."}</p>
       <div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
         {expenseCategories.map((item, index) => (
           <div key={item.id} className={`flex items-center justify-between px-4 py-4 ${index < expenseCategories.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}>
@@ -110,7 +108,6 @@ export function OwnerSettingsStoreExpensesPanel({
         ))}
       </div>
       {settingsNotice && <p className="mb-3 rounded-xl bg-[#FFF1EE] p-3 text-taq-meta font-bold text-[#B44747]">{settingsNotice}</p>}
-      <p className="mb-4 text-taq-meta font-bold leading-5 text-[#827762]">{lang === "ar" ? "إضافة بنود مخصصة ستنفذ في النسخة الإنتاجية بعد بناء نموذج البيانات الموحد." : "Custom expense items will be implemented in the production build with the unified data model."}</p>
       <div className="grid grid-cols-[0.9fr_1.35fr] gap-3">
         <button onClick={backFromStorePanel} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button>
         <button onClick={saveOperationalSettings} className="rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white">{text(lang, "saveSettings")}</button>
@@ -131,13 +128,12 @@ export function OwnerSettingsStoreAlertsPanel({
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <SettingsPageHeader title={lang === "ar" ? "التنبيهات والتفضيلات" : "Alerts & preferences"} onBack={backFromStorePanel} lang={lang} />
       <div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
-        <SettingRow title={text(lang, "dailyCloseoutAlert")} desc={text(lang, "dailyCloseoutAlertPrototype")} toggle={<SettingToggle enabled={operationalConfig.closeoutAlert} onToggle={() => updateOperationalDraft({ closeoutAlert: !operationalConfig.closeoutAlert })} />} />
+        <SettingRow title={text(lang, "dailyCloseoutAlert")} toggle={<SettingToggle enabled={operationalConfig.closeoutAlert} onToggle={() => updateOperationalDraft({ closeoutAlert: !operationalConfig.closeoutAlert })} />} />
       </div>
       <EmployeeHistoryVisibilityPicker lang={lang} value={operationalConfig.employeeHistoryVisibility || "all"} onChange={(next) => updateOperationalDraft({ employeeHistoryVisibility: next })} />
       <div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
         <p className="mb-2 text-xs font-black">{lang === "ar" ? "شكل دفتر هذا المحل" : "This store notebook theme"}</p>
         <ThemePicker lang={lang} theme={operationalConfig.notebookTheme || notebookTheme} onChange={(nextTheme) => updateOperationalDraft({ notebookTheme: nextTheme })} />
-        <p className="mt-3 text-taq-meta font-bold leading-5 text-[#806528]">{lang === "ar" ? "يُستخدم في واجهة الموظف لهذا المحل ما لم يغيّر الموظف لونه الشخصي." : "Used for this store's employee UI unless the employee picks a personal theme."}</p>
       </div>
       <div className="grid grid-cols-[0.9fr_1.35fr] gap-3">
         <button onClick={backFromStorePanel} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button>
@@ -217,7 +213,6 @@ export function OwnerSettingsStoreOverviewPanel({
       {archived && (
         <div className="mb-5 rounded-3xl bg-[#FFF4D2] p-4">
           <Badge tone="warning">{text(lang, "archivedReadOnly")}</Badge>
-          <p className="mt-3 text-taq-meta font-bold text-[#806528]">{text(lang, "archiveNotice")}</p>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <button onClick={() => { setArchivedReadOnlyBusinessId(selectedStore.id); setSelectedBusiness(selectedStore.id); setOwnerPage("reports"); }} className="rounded-xl bg-white py-3 text-taq-meta font-black">{text(lang, "viewPastReports")}</button>
             <button onClick={() => { setArchivedReadOnlyBusinessId(selectedStore.id); setSelectedBusiness(selectedStore.id); setOwnerPage("register"); }} className="rounded-xl bg-white py-3 text-taq-meta font-black">{text(lang, "viewPastAttachments")}</button>
@@ -318,7 +313,6 @@ export function OwnerSettingsStoreFlattenedPanel({
               <input value={draftStoreName} onChange={(event) => setDraftStoreName(event.target.value)} maxLength={80} className="mb-4 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
               <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "newStoreLocation")}</p>
               <input value={draftStoreLocation} onChange={(event) => setDraftStoreLocation(event.target.value)} maxLength={100} className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
-              <p className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "renameStoreHint")}</p>
               <button disabled={!draftStoreName.trim()} onClick={saveStoreProfile} className={`mt-5 w-full rounded-2xl py-3.5 text-xs font-black text-white ${draftStoreName.trim() ? "bg-[#112A46]" : "bg-[#B8C0B7]"}`}>{text(lang, "saveSettings")}</button>
             </>
           ) : null}
@@ -348,7 +342,6 @@ export function OwnerSettingsStoreFlattenedPanel({
 
           {activePanel === "expenses" ? (
             <>
-              <p className="mb-3 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{lang === "ar" ? "تظهر هذه البنود عند اختيار نوع العملية: مصروف. إيقاف البند لا يغير التقارير السابقة." : "These items appear only for Expense entries. Disabling an item does not change historical reports."}</p>
               <div className="mb-4 overflow-hidden rounded-3xl bg-[#F7F5EF] ring-1 ring-black/[0.03]">
                 {expenseCategories.map((item, index) => (
                   <div key={item.id} className={`flex items-center justify-between bg-white px-4 py-4 ${index < expenseCategories.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}>
@@ -367,7 +360,7 @@ export function OwnerSettingsStoreFlattenedPanel({
           {activePanel === "operations" ? (
             <>
               <div className="mb-4 overflow-hidden rounded-3xl bg-[#F7F5EF] ring-1 ring-black/[0.03]">
-                <SettingRow title={text(lang, "dailyCloseoutAlert")} desc={text(lang, "dailyCloseoutAlertPrototype")} toggle={<SettingToggle enabled={operationalConfig.closeoutAlert} onToggle={() => updateOperationalDraft({ closeoutAlert: !operationalConfig.closeoutAlert })} />} />
+                <SettingRow title={text(lang, "dailyCloseoutAlert")} toggle={<SettingToggle enabled={operationalConfig.closeoutAlert} onToggle={() => updateOperationalDraft({ closeoutAlert: !operationalConfig.closeoutAlert })} />} />
               </div>
               <EmployeeHistoryVisibilityPicker lang={lang} value={operationalConfig.employeeHistoryVisibility || "all"} onChange={(next) => updateOperationalDraft({ employeeHistoryVisibility: next })} />
               <div className="mb-4 rounded-3xl bg-[#F7F5EF] p-4 ring-1 ring-black/[0.03]">
@@ -408,7 +401,6 @@ export function OwnerSettingsStoreFlattenedPanel({
       {archived ? (
         <div className="mt-4 rounded-3xl bg-[#FFF4D2] p-4">
           <Badge tone="warning">{text(lang, "archivedReadOnly")}</Badge>
-          <p className="mt-3 text-taq-meta font-bold text-[#806528]">{text(lang, "archiveNotice")}</p>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <button type="button" onClick={() => { setArchivedReadOnlyBusinessId(selectedStore.id); setSelectedBusiness(selectedStore.id); setOwnerPage("reports"); }} className="rounded-xl bg-white py-3 text-taq-meta font-black">{text(lang, "viewPastReports")}</button>
             <button type="button" onClick={() => { setArchivedReadOnlyBusinessId(selectedStore.id); setSelectedBusiness(selectedStore.id); setOwnerPage("register"); }} className="rounded-xl bg-white py-3 text-taq-meta font-black">{text(lang, "viewPastAttachments")}</button>

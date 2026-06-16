@@ -15,11 +15,6 @@ export default function EmployeeHistoryVisibilityPicker({ lang, value = EMPLOYEE
       <p className="mb-1 text-xs font-black text-[#112A46]">
         {lang === "ar" ? "عرض التقفيلات السابقة للموظف" : "Employee past closeouts"}
       </p>
-      <p className="mb-3 text-taq-meta font-bold leading-5 text-[#827762]">
-        {lang === "ar"
-          ? "يحدد ما يظهر للموظف من تقفيلاته السابقة في هذا المحل (لا يحذف البيانات من النظام)."
-          : "Controls how far back this shop's employees can browse their own closeouts (data is not deleted)."}
-      </p>
       <div className="grid grid-cols-3 gap-2">
         {OPTIONS.map((option) => (
           <button

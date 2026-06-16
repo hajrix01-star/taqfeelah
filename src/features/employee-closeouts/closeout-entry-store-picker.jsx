@@ -19,9 +19,7 @@ export function CloseoutEntryStorePicker({
     <div className="mb-4 rounded-2xl border border-[#E8E1D4] bg-[rgba(255,253,248,0.95)] px-4 py-3">
       <p className="text-taq-meta font-bold text-[#806528]">{text(lang, "operationStore")}</p>
       <p className="mt-1 text-taq-nav font-bold text-[#827762]">
-        {selectedStoreId
-          ? text(lang, "operationStoreHint")
-          : text(lang, "chooseStoreToStartEntry")}
+        {!selectedStoreId ? text(lang, "chooseStoreToStartEntry") : null}
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {stores.map((store) => {

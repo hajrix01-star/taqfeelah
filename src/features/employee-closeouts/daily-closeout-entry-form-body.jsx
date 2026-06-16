@@ -168,7 +168,6 @@ export function DailyCloseoutEntryFormBody({
           </div>
           {totals.totalSales > 0 ? (
             <div className="mt-3 border-t border-[#E8E1D4]/80 pt-3">
-              <p className="text-taq-nav font-bold leading-5 text-[#827762]">{titles.inflowProofHint}</p>
               {attachments.length < 6 ? (
                 <ProofAddButton
                   lang={lang}

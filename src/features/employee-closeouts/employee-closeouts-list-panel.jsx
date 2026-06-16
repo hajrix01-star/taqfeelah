@@ -57,31 +57,6 @@ export function EmployeeCloseoutsListPanel({
           {syncError}
         </div>
       ) : null}
-      {hasOlderHiddenCloseouts && (
-        <div className="mb-4 rounded-2xl bg-[#FFF4D2]/95 p-3 text-taq-meta font-bold leading-5 text-[#806528] ring-1 ring-[#E8E1D4] backdrop-blur-sm">
-          {lang === "ar" ? (
-            <>
-              <p>
-                يعرض المالك للموظف تقفيلات <strong className="text-[#112A46]">{historyScopeLabel}</strong> فقط (
-                {hiddenCloseoutCount} تقفيلة أقدم مخفية).
-              </p>
-              <p className="mt-2 text-taq-nav">
-                لتوسيع العرض: الإعدادات → المحل → التنبيهات والتفضيلات → «عرض التقفيلات السابقة للموظف» → اختر «الكل» ثم احفظ.
-              </p>
-            </>
-          ) : (
-            <>
-              <p>
-                Owner limits visible history to <strong className="text-[#112A46]">{historyScopeLabel}</strong> (
-                {hiddenCloseoutCount} older closeout(s) hidden).
-              </p>
-              <p className="mt-2 text-taq-nav">
-                To expand: Settings → Shop → Alerts & preferences → Employee past closeouts → All → Save.
-              </p>
-            </>
-          )}
-        </div>
-      )}
       {showStorePicker && assignedStores.length > 1 && (
         <div className="mb-4 flex flex-wrap gap-2">
           {assignedStores.map((store) => (

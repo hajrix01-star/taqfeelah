@@ -15,7 +15,6 @@ export function OwnerSettingsTeamInviteCreate({
   return (
     <div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
       <p className="text-sm font-black">{labels.createTitle}</p>
-      <p className="mt-1 text-taq-meta font-bold text-[#827762]">{labels.hint}</p>
 
       <div className="mt-4 space-y-2">
         <input
