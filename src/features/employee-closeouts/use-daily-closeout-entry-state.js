@@ -190,9 +190,9 @@ export function useDailyCloseoutEntryState({
       await appAlert({ lang, title: text(lang, "enterSalesAmount"), variant: "warning" });
       return;
     }
-    if (!(await confirmCloseoutSubmit(lang, text, { isOwnerEdit }))) return;
     submitInFlightRef.current = true;
     try {
+      if (!(await confirmCloseoutSubmit(lang, text, { isOwnerEdit }))) return;
       await onSubmit(closeout, { isOwnerEdit });
     } finally {
       submitInFlightRef.current = false;

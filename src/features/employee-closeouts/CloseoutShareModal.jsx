@@ -227,7 +227,7 @@ export default function CloseoutShareModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={snapOpen ? { duration: 0.12 } : undefined}
-        className={`fixed inset-0 z-[220] flex flex-col justify-end sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0 ${snapOpen ? "bg-[#112A46]/92" : "bg-[#112A46]/45"}`}
+        className={`fixed inset-0 z-[220] flex flex-col justify-end sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0 ${snapOpen ? "bg-[#112A46]" : "bg-[#112A46]/45"}`}
         onClick={snapOpen ? undefined : onClose}
       >
         <motion.div
