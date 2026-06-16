@@ -252,7 +252,6 @@ export function NotebookShareModal({
               snapshot={snapshot}
               model={model}
             />
-            <p className="mb-2 text-center text-taq-meta font-bold text-[#827762]">{text(lang, "imageReadyToShare")}</p>
             {shareHint && <p className="mb-3 rounded-xl bg-[#E6F5E9] px-3 py-2 text-center text-taq-meta font-bold text-[#257844]">{shareHint}</p>}
             {imageError && <p className="mb-3 rounded-xl bg-[#FFF1EE] px-3 py-2 text-center text-taq-meta font-bold text-[#B44747]">{imageError}</p>}
           </>
