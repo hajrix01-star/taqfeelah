@@ -156,13 +156,14 @@ export function createOwnerSettingsScreenHandlers(ctx) {
   const openStore = (id) => {
     resetStoreDrafts();
     setters.setSettingsStoreId(id);
-    setters.setStorePanel("overview");
+    setters.setStorePanel("profile");
   };
 
   const openStorePanel = (panel) => {
     setters.setSettingsNotice("");
-    setters.setStorePanel(panel);
-    const drafts = resolveStorePanelOpenDrafts(panel, {
+    const normalizedPanel = panel === "operations" ? "alerts" : panel;
+    setters.setStorePanel(panel === "operations" ? "operations" : panel);
+    const drafts = resolveStorePanelOpenDrafts(normalizedPanel, {
       selectedStore,
       displayBusinessName,
       displayLocation,

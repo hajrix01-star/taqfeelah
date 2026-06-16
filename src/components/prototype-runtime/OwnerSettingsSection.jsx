@@ -1,10 +1,10 @@
 "use client";
 
 import { ActionRow, SettingToggle } from "./owner-settings-ui-primitives";
-import { renderOwnerSettingsSection } from "./owner-settings-section-views";
 import { renderOwnerSettingsStorePanel, OwnerSettingsStoreFlattenedPanel } from "./owner-settings-store-views";
 import { isFlattenedStoreSettingsEnabled } from "@/core/config/owner-settings-store-layout-mode";
 import { useOwnerSettingsScreenState } from "./use-owner-settings-screen-state";
+import { OwnerSettingsTabbedShell } from "./owner-settings-tabbed-shell";
 
 function OwnerSettingsScreen({
   lang,
@@ -104,11 +104,12 @@ function OwnerSettingsScreen({
     return renderOwnerSettingsStorePanel(state.storePanel, viewState);
   }
 
-  return renderOwnerSettingsSection(state.section, viewState, {
-    onLogout,
-    onOpenSupport,
-    onOpenHelp,
-  });
+  return (
+    <OwnerSettingsTabbedShell
+      state={viewState}
+      callbacks={{ onLogout, onOpenSupport, onOpenHelp }}
+    />
+  );
 }
 
 export { OwnerSettingsScreen, SettingToggle, ActionRow };

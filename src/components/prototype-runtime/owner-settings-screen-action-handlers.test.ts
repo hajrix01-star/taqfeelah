@@ -93,6 +93,6 @@ describe("owner settings screen action handlers", () => {
 
     expect(ctx.setters.setNewCustomIncomeSourceName).toHaveBeenCalledWith("");
     expect(ctx.setters.setSettingsStoreId).toHaveBeenCalledWith("arz");
-    expect(ctx.setters.setStorePanel).toHaveBeenCalledWith("overview");
+    expect(ctx.setters.setStorePanel).toHaveBeenCalledWith("profile");
   });
 });
