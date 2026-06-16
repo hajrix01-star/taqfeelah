@@ -81,7 +81,8 @@ export function useOwnerSettingsScreenState({
 
   const [section, setSection] = useState(initialSettingsSection);
   useEffect(() => {
-    setSection(initialSettingsSection);
+    const normalized = initialSettingsSection === "home" ? "stores" : initialSettingsSection;
+    setSection(normalized);
   }, [initialSettingsSection]);
 
   const [settingsStoreId, setSettingsStoreId] = useState(null);

@@ -54,6 +54,15 @@ import { ThemePicker } from "./prototype-runtime-notebook";
 import { OwnerSettingsTeamSectionWithInvites } from "./owner-settings-team-section-with-invites";
 import { OwnerSettingsTeamRoster } from "./owner-settings-team-roster";
 
+function SettingsSectionFrame({ embedded, children }) {
+  if (embedded) return children;
+  return (
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
+      {children}
+    </motion.section>
+  );
+}
+
 export function OwnerSettingsAccountSection({
   lang,
   draftOwnerName,
@@ -69,11 +78,14 @@ export function OwnerSettingsAccountSection({
   settingsNotice,
   settingsSuccess,
   setSection,
+  embedded = false,
 }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
-      <SettingsPageHeader title={text(lang, "myAccountSecurity")} onBack={() => setSection("home")} lang={lang} />
-      <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
+    <SettingsSectionFrame embedded={embedded}>
+      {!embedded ? (
+        <SettingsPageHeader title={text(lang, "myAccountSecurity")} onBack={() => setSection("home")} lang={lang} />
+      ) : null}
+      <div className={`${embedded ? "" : "mb-5 "}rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]`}>
         <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "ownerFullName")}</p>
         <input value={draftOwnerName} onChange={(event) => setDraftOwnerName(event.target.value)} maxLength={80} className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
         <p className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "ownerRenameProfileHint")}</p>
@@ -96,7 +108,7 @@ export function OwnerSettingsAccountSection({
           {settingsSuccess && <div className="mt-4 rounded-xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">{text(lang, "changesSaved")}</div>}
         </form>
       </div>
-    </motion.section>
+    </SettingsSectionFrame>
   );
 }
 
@@ -123,13 +135,16 @@ export function OwnerSettingsStoresSection({
   settingsNotice = "",
   settingsSuccess = false,
   entitlements = null,
+  embedded = false,
 }) {
   const Arrow = lang === "ar" ? ChevronLeft : ChevronRight;
   const atStoreLimit = entitlements ? !canAddStore(entitlements) : false;
   const storeLimitMessage = atStoreLimit ? resolveStoreLimitMessage(entitlements, lang) : "";
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
-      <SettingsPageHeader title={lang === "ar" ? "المحلات" : "Shops"} onBack={() => setSection("home")} lang={lang} />
+    <SettingsSectionFrame embedded={embedded}>
+      {!embedded ? (
+        <SettingsPageHeader title={lang === "ar" ? "المحلات" : "Shops"} onBack={() => setSection("home")} lang={lang} />
+      ) : null}
       {orgConfigLoading ? (
         <div className="rounded-3xl bg-white p-5 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-black/[0.045]">
           {lang === "ar" ? "جارٍ تحميل المحلات من السيرفر..." : "Loading stores from server..."}
@@ -199,7 +214,7 @@ export function OwnerSettingsStoresSection({
         </>
       )}
       <OwnerSettingsDeleteDialog {...deleteDialogProps} />
-    </motion.section>
+    </SettingsSectionFrame>
   );
 }
 
@@ -232,10 +247,17 @@ export function OwnerSettingsTeamSection({
   inviteApiContext,
   orgConfigLoading = false,
   settingsNotice = "",
+  embedded = false,
 }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
-      <SettingsPageHeader title={lang === "ar" ? "الفريق والصلاحيات" : "Team & access"} onBack={() => { cancelManagingTeam(); setSection("home"); }} lang={lang} />
+    <SettingsSectionFrame embedded={embedded}>
+      {!embedded ? (
+        <SettingsPageHeader
+          title={lang === "ar" ? "الفريق والصلاحيات" : "Team & access"}
+          onBack={() => { cancelManagingTeam(); setSection("home"); }}
+          lang={lang}
+        />
+      ) : null}
       {settingsNotice ? (
         <div className="mb-4 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{settingsNotice}</div>
       ) : null}
@@ -306,7 +328,7 @@ export function OwnerSettingsTeamSection({
         </>
       )}
       <OwnerSettingsDeleteDialog {...deleteDialogProps} />
-    </motion.section>
+    </SettingsSectionFrame>
   );
 }
 
@@ -321,10 +343,13 @@ export function OwnerSettingsAppearanceSection({
   showSettingsSaved,
   settingsSuccess,
   setSection,
+  embedded = false,
 }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
-      <SettingsPageHeader title={text(lang, "notebookAppearance")} onBack={() => setSection("home")} lang={lang} />
+    <SettingsSectionFrame embedded={embedded}>
+      {!embedded ? (
+        <SettingsPageHeader title={text(lang, "notebookAppearance")} onBack={() => setSection("home")} lang={lang} />
+      ) : null}
       <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
         <p className="mb-2 text-taq-meta font-bold text-[#827762]">{lang === "ar" ? "اختر شكل دفتر التقفيلة والتقارير وصور المشاركة." : "Choose the notebook style for closeouts, reports, and sharing."}</p>
         <ThemePicker lang={lang} theme={draftNotebookTheme} onChange={(nextTheme) => { setDraftNotebookTheme(nextTheme); setThemeDirty(isNotebookThemeDirty(nextTheme, notebookTheme)); }} />
@@ -337,7 +362,7 @@ export function OwnerSettingsAppearanceSection({
         )}
         {settingsSuccess && <div className="mt-4 rounded-xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">{text(lang, "changesSaved")}</div>}
       </div>
-    </motion.section>
+    </SettingsSectionFrame>
   );
 }
 
@@ -374,6 +399,7 @@ export function OwnerSettingsSubscriptionSection({
   reloadEntitlements,
   ownerProfile,
   onOpenSupport,
+  embedded = false,
 }) {
   const planName = pickLocalizedPlanName(entitlements, lang);
   const statusLabel = formatSubscriptionStatusLabel(
@@ -389,8 +415,10 @@ export function OwnerSettingsSubscriptionSection({
   const employeeSeatsUsed = countEmployeeSeats(entitlements?.usage);
 
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
-      <SettingsPageHeader title={text(lang, "subscriptionDetails")} onBack={() => setSection("home")} lang={lang} />
+    <SettingsSectionFrame embedded={embedded}>
+      {!embedded ? (
+        <SettingsPageHeader title={text(lang, "subscriptionDetails")} onBack={() => setSection("home")} lang={lang} />
+      ) : null}
       {entitlements ? (
         <SubscriptionRenewalBanner
           lang={lang}
@@ -540,19 +568,21 @@ export function OwnerSettingsSubscriptionSection({
           )}
         </>
       ) : null}
-    </motion.section>
+    </SettingsSectionFrame>
   );
 }
 
-export function OwnerSettingsSupportSection({ lang, setSection, onOpenSupport, onOpenHelp }) {
+export function OwnerSettingsSupportSection({ lang, setSection, onOpenSupport, onOpenHelp, embedded = false }) {
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
-      <SettingsPageHeader title={text(lang, "support")} onBack={() => setSection("home")} lang={lang} />
+    <SettingsSectionFrame embedded={embedded}>
+      {!embedded ? (
+        <SettingsPageHeader title={text(lang, "support")} onBack={() => setSection("home")} lang={lang} />
+      ) : null}
       <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
         <SettingsLink lang={lang} icon={Smartphone} title={text(lang, "whatsappSupport")} onClick={onOpenSupport} border />
         <SettingsLink lang={lang} icon={FileText} title={text(lang, "helpCenter")} onClick={onOpenHelp} border={false} />
       </div>
-    </motion.section>
+    </SettingsSectionFrame>
   );
 }
 
@@ -623,9 +653,10 @@ export function OwnerSettingsHomeSection({
   );
 }
 
-export function renderOwnerSettingsSection(section, state, callbacks) {
+export function renderOwnerSettingsSection(section, state, callbacks, options = {}) {
   const { onLogout, onOpenSupport, onOpenHelp } = callbacks;
-  const common = { lang: state.lang, setSection: state.setSection };
+  const { embedded = false } = options;
+  const common = { lang: state.lang, setSection: state.setSection, embedded };
 
   if (section === "account") {
     return (
@@ -740,6 +771,20 @@ export function renderOwnerSettingsSection(section, state, callbacks) {
         {...common}
         onOpenSupport={onOpenSupport}
         onOpenHelp={onOpenHelp}
+      />
+    );
+  }
+  if (!embedded && (section === "home" || !section)) {
+    return (
+      <OwnerSettingsHomeSection
+        {...common}
+        ownerProfile={state.ownerProfile}
+        activeStoredBusinesses={state.activeStoredBusinesses}
+        visibleStaff={state.visibleStaff}
+        notebookTheme={state.notebookTheme}
+        onLogout={onLogout}
+        entitlements={state.entitlements}
+        entitlementsLoading={state.entitlementsLoading}
       />
     );
   }
