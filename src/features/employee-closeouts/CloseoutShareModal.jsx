@@ -36,6 +36,8 @@ export default function CloseoutShareModal({
   const [imageBusy, setImageBusy] = useState(false);
   const [imageError, setImageError] = useState("");
   const [shareHint, setShareHint] = useState("");
+  const [imageReady, setImageReady] = useState(false);
+  const [preCaptureDone, setPreCaptureDone] = useState(false);
 
   const periodLabel = closeout && formatCalendarDate ? formatCalendarDate(closeout.date, lang) : "";
   const resolvedStoreName = resolveCloseoutStoreName({ preferredStoreName: storeName, closeout, lang });
@@ -86,11 +88,15 @@ export default function CloseoutShareModal({
       setImageBusy(false);
       setImageError("");
       setShareHint("");
+      setImageReady(false);
+      setPreCaptureDone(false);
       cachedImageFileRef.current = null;
       return undefined;
     }
     setImageError("");
     setShareHint("");
+    setImageReady(false);
+    setPreCaptureDone(false);
     cachedImageFileRef.current = null;
     return undefined;
   }, [open, closeout?.id]);
@@ -98,24 +104,40 @@ export default function CloseoutShareModal({
   useEffect(() => {
     if (!open || !closeout || !previewData) {
       cachedImageFileRef.current = null;
+      setImageReady(false);
+      setPreCaptureDone(false);
       return undefined;
     }
+    setImageReady(false);
+    setPreCaptureDone(false);
     const captureToken = ++preCaptureTokenRef.current;
     let cancelled = false;
     const filename = `taqfeelah-${closeout.date}.png`;
     let timeoutId = 0;
     const frameId = requestAnimationFrame(() => {
       timeoutId = window.setTimeout(async () => {
-        if (cancelled || captureToken !== preCaptureTokenRef.current || !previewRef.current) return;
+        if (cancelled || captureToken !== preCaptureTokenRef.current) return;
+        if (!previewRef.current) {
+          setPreCaptureDone(true);
+          return;
+        }
         try {
           const blob = await captureNotebookShareBlob(previewRef.current, paperColor);
           if (!cancelled && captureToken === preCaptureTokenRef.current) {
             cachedImageFileRef.current = new File([blob], filename, { type: "image/png" });
+            setImageReady(true);
           }
         } catch {
-          if (!cancelled && captureToken === preCaptureTokenRef.current) cachedImageFileRef.current = null;
+          if (!cancelled && captureToken === preCaptureTokenRef.current) {
+            cachedImageFileRef.current = null;
+            setImageReady(false);
+          }
+        } finally {
+          if (!cancelled && captureToken === preCaptureTokenRef.current) {
+            setPreCaptureDone(true);
+          }
         }
-      }, 400);
+      }, 150);
     });
     return () => {
       cancelled = true;
@@ -196,6 +218,7 @@ export default function CloseoutShareModal({
   if (!open) return null;
 
   const snapOpen = newlySubmitted;
+  const whatsAppDisabled = imageBusy || !previewData || !preCaptureDone;
 
   return (
     <AnimatePresence>
@@ -204,8 +227,8 @@ export default function CloseoutShareModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={snapOpen ? { duration: 0.12 } : undefined}
-        className={`fixed inset-0 z-[220] flex flex-col justify-end sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0 ${snapOpen ? "bg-[#112A46]/70" : "bg-[#112A46]/45"}`}
-        onClick={onClose}
+        className={`fixed inset-0 z-[220] flex flex-col justify-end sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0 ${snapOpen ? "bg-[#112A46]/92" : "bg-[#112A46]/45"}`}
+        onClick={snapOpen ? undefined : onClose}
       >
         <motion.div
           dir={lang === "ar" ? "rtl" : "ltr"}
@@ -263,7 +286,9 @@ export default function CloseoutShareModal({
             ) : null}
           </div>
           <p className="mb-2 text-center text-taq-meta font-bold text-[#827762]">
-            {lang === "ar" ? "الصورة جاهزة للمشاركة" : "Image ready to share"}
+            {imageReady
+              ? (lang === "ar" ? "الصورة جاهزة للمشاركة" : "Image ready to share")
+              : (lang === "ar" ? "جاري تجهيز الصورة للمشاركة…" : "Preparing image for share…")}
           </p>
           {shareHint && (
             <p className="mb-3 rounded-xl bg-[#E6F5E9] px-3 py-2 text-center text-taq-meta font-bold text-[#257844]">
@@ -282,8 +307,12 @@ export default function CloseoutShareModal({
             <button type="button" onClick={downloadImage} disabled={imageBusy || !previewData} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-50">
               {lang === "ar" ? "تنزيل PNG" : "Download PNG"}
             </button>
-            <button type="button" onClick={shareImage} disabled={imageBusy || !previewData} className="rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-50">
-              {imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…") : (lang === "ar" ? "واتساب" : "WhatsApp")}
+            <button type="button" onClick={shareImage} disabled={whatsAppDisabled} className="rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-50">
+              {imageBusy
+                ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…")
+                : !preCaptureDone
+                  ? (lang === "ar" ? "تجهيز الصورة…" : "Preparing image…")
+                  : (lang === "ar" ? "واتساب" : "WhatsApp")}
             </button>
           </div>
         </motion.div>

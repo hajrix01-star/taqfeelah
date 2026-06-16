@@ -170,7 +170,6 @@ export default function EmployeeCloseoutsView({
             isOwnerEdit={entryOwnerEdit}
             fullScreenOverlay={false}
             saving={saving || submitting}
-            sharePreviewOpen={Boolean(shareTarget)}
             channelLabel={channelLabel}
             onCancel={() => handleCancelEntry(entryCloseout)}
             onSubmit={handleSubmit}
