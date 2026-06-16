@@ -171,6 +171,7 @@ export default function EmployeeCloseoutsView({
             fullScreenOverlay={false}
             saving={saving || submitting}
             channelLabel={channelLabel}
+            sharePreviewOpen={Boolean(shareTarget && shareNewlySubmitted)}
             onCancel={() => handleCancelEntry(entryCloseout)}
             onSubmit={handleSubmit}
             findForStoreDate={resolveStoreDate}

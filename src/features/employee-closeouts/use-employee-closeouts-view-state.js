@@ -291,11 +291,13 @@ export function useEmployeeCloseoutsViewState({
         return;
       }
       triggerSubmitSuccessHaptic();
-      setEntryCloseout(null);
-      setEntryOwnerEdit(false);
-      setExpandedId(null);
       setShareTarget(next);
       setShareNewlySubmitted(true);
+      window.setTimeout(() => {
+        setEntryCloseout(null);
+        setEntryOwnerEdit(false);
+        setExpandedId(null);
+      }, 320);
     } finally {
       if (generation === submitGenerationRef.current) {
         setSubmitting(false);
