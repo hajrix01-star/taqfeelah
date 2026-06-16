@@ -288,7 +288,6 @@ export default function TaqfeelahPrototypeRuntime() {
               notebookMode={employee || (!employee && (ownerPage === "home" || ownerPage === "register" || ownerPage === "notebook" || ownerPage === "closeouts"))}
               notebookTheme={employee ? employeeNotebookTheme : notebookTheme}
               onLogout={auth.logout}
-              onSwitchPortal={(target) => { void auth.switchPortal(target); }}
               onEmployeeSettings={() => employeeSettingsOpenerRef.current?.()}
               onNotifications={openNotifications}
               showNotifications={ownerNotificationsVisible}
