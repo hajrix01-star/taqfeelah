@@ -12,6 +12,7 @@ import {
   attachmentDataUrlsFromList,
   buildCloseoutEntryTitles,
   buildCloseoutOutflowRow,
+  hasUncommittedOutflowDraft,
   todayIsoDate,
 } from "./daily-closeout-entry-helpers";
 
@@ -64,10 +65,8 @@ export function useDailyCloseoutEntryState({
       salesChannels,
       Object.fromEntries(salesChannels.map((ch) => [ch.id, toAmount(salesValues[ch.id])])),
     );
-    const pendingOutflow = buildOutflowRow(outAmount);
-    const outflowsForTotals = pendingOutflow ? [...outflows, pendingOutflow] : outflows;
-    return computeCloseoutTotals(salesRecord, outflowsForTotals);
-  }, [buildOutflowRow, outAmount, outflows, salesChannels, salesValues]);
+    return computeCloseoutTotals(salesRecord, outflows);
+  }, [outflows, salesChannels, salesValues]);
 
   const buildCloseout = useCallback((outflowRows = outflows) => {
     const salesRecord = salesRecordFromChannels(
@@ -180,9 +179,11 @@ export function useDailyCloseoutEntryState({
       await appAlert({ lang, title: text(lang, "noSalesChannels"), variant: "info" });
       return;
     }
-    const pendingOutflow = buildOutflowRow(outAmount);
-    const nextOutflows = pendingOutflow ? [...outflows, pendingOutflow] : outflows;
-    const closeout = buildCloseout(nextOutflows);
+    if (hasUncommittedOutflowDraft(outAmount)) {
+      await appAlert({ lang, title: text(lang, "outflowPressAddBeforeSave"), variant: "warning" });
+      return;
+    }
+    const closeout = buildCloseout();
     if ((closeout.totals?.totalSales || 0) <= 0) {
       await appAlert({ lang, title: text(lang, "enterSalesAmount"), variant: "warning" });
       return;
@@ -190,11 +191,6 @@ export function useDailyCloseoutEntryState({
     submitInFlightRef.current = true;
     try {
       if (!(await confirmCloseoutSubmit(lang, text, { isOwnerEdit }))) return;
-      if (pendingOutflow) {
-        setOutflows(nextOutflows);
-        setOutAmount("");
-        setOutNote("");
-      }
       await onSubmit(closeout, { isOwnerEdit });
     } finally {
       submitInFlightRef.current = false;
@@ -202,14 +198,12 @@ export function useDailyCloseoutEntryState({
   }, [
     attachmentProcessing,
     buildCloseout,
-    buildOutflowRow,
     initialCloseout?.storeId,
     isOwnerEdit,
     lang,
     onSubmit,
     outAmount,
     outflowAttachmentProcessingId,
-    outflows,
     salesChannels.length,
     validateDate,
   ]);

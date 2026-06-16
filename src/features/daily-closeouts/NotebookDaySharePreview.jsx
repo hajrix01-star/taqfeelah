@@ -45,6 +45,7 @@ export default function NotebookDaySharePreview({
   labels,
   record,
   operations = [],
+  showOutflowRatio = false,
 }) {
   const activeTheme = notebookThemes[theme] || notebookThemes.yellow;
   const lines = notebookLinesBackground(theme);
@@ -87,9 +88,11 @@ export default function NotebookDaySharePreview({
             <SummaryGridRow label={labels.purchasesExpenses} labelClass="text-[#B44747]">
               {formatAmount(record.expense, lang, "out")}
             </SummaryGridRow>
-            <SummaryGridRow label={labels.outflowRatio} labelClass="text-[#806528] text-xs">
-              <span className="text-xs font-bold text-[#B44747]">{record.ratio}</span>
-            </SummaryGridRow>
+            {showOutflowRatio && record.ratio ? (
+              <SummaryGridRow label={labels.outflowRatio} labelClass="text-[#806528] text-xs">
+                <span className="text-xs font-bold text-[#B44747]">{record.ratio}</span>
+              </SummaryGridRow>
+            ) : null}
           </div>
 
           <div className="mt-1 grid w-full grid-cols-[minmax(0,1fr)_max-content] items-end border-t-2 border-[#112A46]/55 pt-2">

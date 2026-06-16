@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   attachmentDataUrlsFromList,
   buildCloseoutOutflowRow,
+  hasUncommittedOutflowDraft,
   resolveAttachmentPreviewSrc,
 } from "./daily-closeout-entry-helpers";
+import { computeCloseoutTotals } from "../daily-closeouts/closeout-calculations";
 
 const proof = "data:image/jpeg;base64,/9j/4AAQ";
 
@@ -38,6 +40,26 @@ describe("buildCloseoutOutflowRow", () => {
 
     expect(row?.attachments).toEqual([proof]);
     expect(row?.typeLabel).toBe("Expense");
+  });
+});
+
+describe("hasUncommittedOutflowDraft", () => {
+  it("detects typed outflow amounts that were not added with +", () => {
+    expect(hasUncommittedOutflowDraft("")).toBe(false);
+    expect(hasUncommittedOutflowDraft("0")).toBe(false);
+    expect(hasUncommittedOutflowDraft("50")).toBe(true);
+  });
+});
+
+describe("closeout review totals contract", () => {
+  it("counts only committed outflow rows, not draft field values", () => {
+    const totals = computeCloseoutTotals(
+      { cash: 100 },
+      [{ id: "out-1", type: "purchases", amount: 25 }],
+    );
+    expect(totals.totalSales).toBe(100);
+    expect(totals.totalOutflow).toBe(25);
+    expect(totals.netMovement).toBe(75);
   });
 });
 

@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { buildCloseoutShareOperationRows, closeoutShareTotals } from "../daily-closeouts/closeout-share-operations";
 import NotebookDaySharePreview from "../daily-closeouts/NotebookDaySharePreview";
 import { captureNotebookShareBlob } from "../daily-closeouts/notebook-share-capture";
@@ -77,9 +78,10 @@ export default function CloseoutShareModal({
       title: labels.myCloseout,
       storeName: resolvedStoreName,
       employeeName: resolvedEmployeeName,
-      labels,
-      record: totals,
+      labels: { ...labels, outflowRatio: undefined },
+      record: { ...totals, ratio: undefined },
       operations,
+      showOutflowRatio: false,
     };
   }, [totals, closeout, lang, resolvedPeriodLabel, labels, resolvedStoreName, resolvedEmployeeName, shareCaption, operations, selectedTheme]);
 
@@ -137,7 +139,7 @@ export default function CloseoutShareModal({
             setPreCaptureDone(true);
           }
         }
-      }, 150);
+      }, 400);
     });
     return () => {
       cancelled = true;
@@ -215,30 +217,30 @@ export default function CloseoutShareModal({
     });
   };
 
-  if (!open) return null;
-
-  const snapOpen = newlySubmitted;
+  const sharePreparing = Boolean(previewData) && (!preCaptureDone || imageBusy);
   const whatsAppDisabled = imageBusy || !previewData || !preCaptureDone;
 
-  return (
+  const modal = (
     <AnimatePresence>
-      <motion.div
-        initial={snapOpen ? false : { opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={snapOpen ? { duration: 0.12 } : undefined}
-        className={`fixed inset-0 z-[220] flex flex-col justify-end sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0 ${snapOpen ? "bg-[#112A46]" : "bg-[#112A46]/45"}`}
-        onClick={snapOpen ? undefined : onClose}
-      >
+      {open ? (
         <motion.div
-          dir={lang === "ar" ? "rtl" : "ltr"}
-          initial={snapOpen ? false : { y: 18, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 18, opacity: 0 }}
-          transition={snapOpen ? { duration: 0.15, ease: "easeOut" } : undefined}
-          className="relative z-10 max-h-[92%] w-full overflow-y-auto rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[700px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"
-          onClick={(event) => event.stopPropagation()}
+          key="closeout-share-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+          className="fixed inset-0 z-[220] flex flex-col justify-end bg-[#112A46]/45 sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0"
+          onClick={newlySubmitted ? undefined : onClose}
         >
+          <motion.div
+            dir={lang === "ar" ? "rtl" : "ltr"}
+            initial={{ y: 28, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 28, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="relative z-10 max-h-[92%] w-full overflow-y-auto rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[700px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"
+            onClick={(event) => event.stopPropagation()}
+          >
           <div className="mb-4 flex items-start justify-between gap-3">
             <div className="min-w-0 text-start">
               <p className="text-taq-meta font-bold text-[#827762]">{lang === "ar" ? "خيارات المشاركة" : "Share options"}</p>
@@ -279,17 +281,17 @@ export default function CloseoutShareModal({
                 {lang === "ar" ? "لا توجد بيانات للمشاركة" : "Nothing to share"}
               </div>
             )}
-            {imageBusy ? (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#F8F6F0]/92 text-xs font-bold text-[#827762]">
+            {sharePreparing ? (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#F8F6F0]/94 text-xs font-bold text-[#827762]">
                 {lang === "ar" ? "جاري تجهيز الصورة…" : "Preparing image…"}
               </div>
             ) : null}
           </div>
-          <p className="mb-2 text-center text-taq-meta font-bold text-[#827762]">
-            {imageReady
-              ? (lang === "ar" ? "الصورة جاهزة للمشاركة" : "Image ready to share")
-              : (lang === "ar" ? "جاري تجهيز الصورة للمشاركة…" : "Preparing image for share…")}
-          </p>
+          {imageReady ? (
+            <p className="mb-2 text-center text-taq-meta font-bold text-[#257844]">
+              {lang === "ar" ? "الصورة جاهزة للمشاركة" : "Image ready to share"}
+            </p>
+          ) : null}
           {shareHint && (
             <p className="mb-3 rounded-xl bg-[#E6F5E9] px-3 py-2 text-center text-taq-meta font-bold text-[#257844]">
               {shareHint}
@@ -310,13 +312,15 @@ export default function CloseoutShareModal({
             <button type="button" onClick={shareImage} disabled={whatsAppDisabled} className="rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-50">
               {imageBusy
                 ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…")
-                : !preCaptureDone
-                  ? (lang === "ar" ? "تجهيز الصورة…" : "Preparing image…")
-                  : (lang === "ar" ? "واتساب" : "WhatsApp")}
+                : (lang === "ar" ? "واتساب" : "WhatsApp")}
             </button>
           </div>
         </motion.div>
       </motion.div>
+      ) : null}
     </AnimatePresence>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
 }
