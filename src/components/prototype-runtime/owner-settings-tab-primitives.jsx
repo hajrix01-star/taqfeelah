@@ -1,15 +1,16 @@
 "use client";
 
 import React from "react";
+import { buildIndexTabBorderClass } from "./index-tab-button-styles";
 
 const SETTINGS_TAB_NEUTRAL_INACTIVE = "bg-[#F0ECE2] text-[#827762]";
 
-function buildTabButtonClass(item, active, { sub = false }) {
+function buildTabButtonClass(item, active, { sub = false, index = 0, total = 1 }) {
   const height = sub ? "h-8" : "h-9";
   const textSize = sub ? "text-[9px]" : "text-[10px]";
   return `flex ${height} min-w-0 flex-1 items-center justify-center gap-1 px-1.5 ${textSize} font-black transition-all duration-200 ${
     active ? item.activeClass : item.inactiveClass
-  } ${active ? "z-10 ring-2 ring-inset ring-[#112A46]/85" : ""}`;
+  } ${buildIndexTabBorderClass(index, total, active, { tier: sub ? "sub" : "main" })}`;
 }
 
 function SettingsTabList({
@@ -43,7 +44,7 @@ function SettingsTabList({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(item.id)}
-            className={`${buildTabButtonClass(item, active, { sub })} ${
+            className={`${buildTabButtonClass(item, active, { sub, index, total: items.length })} ${
               index > 0 ? "border-s border-[#E8E1D4]/80" : ""
             }`}
           >

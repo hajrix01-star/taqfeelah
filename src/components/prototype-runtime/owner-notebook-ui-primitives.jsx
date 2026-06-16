@@ -9,6 +9,7 @@ import {
   normalizeChecklist,
 } from "@/features/owner-notebook/owner-notebook-checklist";
 import { text } from "./prototype-runtime-demo-data";
+import { buildIndexTabBorderClass } from "./index-tab-button-styles";
 import { Badge } from "./prototype-runtime-shell-ui";
 
 export function formatNoteTime(iso, lang) {
@@ -108,7 +109,7 @@ export function NotebookViewTabs({ lang, active, onChange, tabCounts = {} }) {
             onClick={() => onChange(item.id)}
             className={`flex h-9 min-w-0 flex-1 items-center justify-center gap-1 px-1.5 text-[10px] font-black transition-all duration-200 ${
               isActive ? item.activeClass : item.inactiveClass
-            } ${isActive ? "z-10 ring-2 ring-inset ring-[#112A46]/85" : ""} ${
+            } ${buildIndexTabBorderClass(index, items.length, isActive)} ${
               index > 0 ? "border-s border-[#E8E1D4]/80" : ""
             }`}
           >
