@@ -16,7 +16,6 @@ import {
 import EmployeeFooterNav from "@/features/employee-closeouts/EmployeeFooterNav";
 import { notebookLinesBackground } from "@/features/daily-closeouts/notebook-themes";
 import { TAQFEELAH_LOGO_SRC } from "@/lib/brand/taqfeelah-logo";
-import { useAppDialog } from "@/lib/ui/app-dialog/AppDialogProvider";
 import { text } from "./prototype-runtime-demo-data";
 
 function Logo({ compact = false, centered = false }) {
@@ -50,7 +49,6 @@ function TopBar({
   lang,
   setLang,
   employee,
-  onSwitchPortal = () => {},
   onLogout = () => {},
   onNotifications = () => {},
   onEmployeeSettings = () => {},
@@ -59,7 +57,6 @@ function TopBar({
   notebookMode = false,
   notebookTheme = "yellow",
 }) {
-  const dialog = useAppDialog();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef(null);
   useEffect(() => {
@@ -75,20 +72,6 @@ function TopBar({
     ...headerSurfaceStyle,
     minHeight: "calc(70px + env(safe-area-inset-top, 0px))",
     paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
-  };
-
-  const handleSwitchPortal = async () => {
-    const target = employee ? "owner" : "employee";
-    const confirmed = await dialog.confirm({
-      title: employee ? text(lang, "switchToOwnerLogin") : text(lang, "switchToEmployeeLogin"),
-      message: employee ? text(lang, "switchPortalConfirmOwner") : text(lang, "switchPortalConfirmEmployee"),
-      confirmLabel: employee ? text(lang, "switchToOwnerLogin") : text(lang, "switchToEmployeeLogin"),
-      cancelLabel: lang === "ar" ? "إلغاء" : "Cancel",
-      variant: "info",
-    });
-    if (!confirmed) return;
-    setAccountMenuOpen(false);
-    onSwitchPortal(target);
   };
 
   return (
@@ -127,15 +110,6 @@ function TopBar({
                 className={`absolute top-[44px] z-50 overflow-hidden rounded-xl bg-white p-1.5 shadow-lg ring-1 ring-black/[0.06] w-[min(92vw,188px)] ${lang === "ar" ? "right-0" : "left-0"}`}
               >
                 <div className="flex justify-center px-1 py-1.5"><LanguageSwitch lang={lang} setLang={setLang} /></div>
-                <div className="my-1 border-t border-[#F0ECE2]" />
-                <button
-                  role="menuitem"
-                  type="button"
-                  onClick={() => { void handleSwitchPortal(); }}
-                  className="flex w-full items-center justify-center rounded-lg px-2 py-2.5 text-taq-meta font-black text-[#112A46] transition hover:bg-[#F7F5EF]"
-                >
-                  {employee ? text(lang, "switchToOwnerLogin") : text(lang, "switchToEmployeeLogin")}
-                </button>
                 {employee ? (
                   <>
                     <div className="my-1 border-t border-[#F0ECE2]" />
