@@ -180,11 +180,6 @@ export function useDailyCloseoutEntryState({
     }
     const pendingOutflow = buildOutflowRow(outAmount);
     const nextOutflows = pendingOutflow ? [...outflows, pendingOutflow] : outflows;
-    if (pendingOutflow) {
-      setOutflows(nextOutflows);
-      setOutAmount("");
-      setOutNote("");
-    }
     const closeout = buildCloseout(nextOutflows);
     if ((closeout.totals?.totalSales || 0) <= 0) {
       await appAlert({ lang, title: text(lang, "enterSalesAmount"), variant: "warning" });
@@ -193,6 +188,11 @@ export function useDailyCloseoutEntryState({
     submitInFlightRef.current = true;
     try {
       if (!(await confirmCloseoutSubmit(lang, text, { isOwnerEdit }))) return;
+      if (pendingOutflow) {
+        setOutflows(nextOutflows);
+        setOutAmount("");
+        setOutNote("");
+      }
       await onSubmit(closeout, { isOwnerEdit });
     } finally {
       submitInFlightRef.current = false;
