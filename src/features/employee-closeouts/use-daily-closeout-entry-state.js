@@ -7,6 +7,7 @@ import { sanitizeAmountInput, toAmount } from "../../components/prototype-runtim
 import { computeCloseoutTotals, salesRecordFromChannels } from "../daily-closeouts/closeout-calculations";
 import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-demo-store";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
+import { confirmCloseoutSubmit } from "@/lib/ui/app-dialog/app-dialog-helpers";
 import {
   attachmentDataUrlsFromList,
   buildCloseoutEntryTitles,
@@ -187,6 +188,7 @@ export function useDailyCloseoutEntryState({
       await appAlert({ lang, title: text(lang, "enterSalesAmount"), variant: "warning" });
       return;
     }
+    if (!(await confirmCloseoutSubmit(lang, text, { isOwnerEdit }))) return;
     await onSubmit(closeout, { isOwnerEdit });
   }, [
     attachmentProcessing,
