@@ -23,7 +23,6 @@ import {
 import {
   formatBillingCycleLabel,
   formatPlanSubscriptionHomeLabel,
-  formatPaidPlanTrialPeriodHint,
   formatPeriodEndLabel,
   formatPlanPriceLabel,
   formatRenewalDaysRemainingLabel,
@@ -88,7 +87,6 @@ export function OwnerSettingsAccountSection({
       <div className={`${embedded ? "" : "mb-5 "}rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]`}>
         <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "ownerFullName")}</p>
         <input value={draftOwnerName} onChange={(event) => setDraftOwnerName(event.target.value)} maxLength={80} className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
-        <p className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "ownerRenameProfileHint")}</p>
         <button disabled={!ownerProfileDirty} onClick={saveOwnerProfile} className={`mt-5 w-full rounded-2xl py-3.5 text-xs font-black text-white ${ownerProfileDirty ? "bg-[#112A46]" : "bg-[#B8C0B7]"}`}>{text(lang, "saveAccountSettings")}</button>
       </div>
       <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
@@ -102,7 +100,6 @@ export function OwnerSettingsAccountSection({
           <p className="mb-2 text-xs font-bold text-[#716753]">{lang === "ar" ? "بيانات دخول المالك" : "Owner login credentials"}</p>
           <input dir="ltr" name="username" value={draftAuthOwnerUsername} onChange={(event) => setDraftAuthOwnerUsername(event.target.value)} autoComplete="username" placeholder={lang === "ar" ? "اسم المستخدم" : "Username"} className="mb-2 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
           <input dir="ltr" name="password" type="password" value={draftAuthOwnerPassword} onChange={(event) => setDraftAuthOwnerPassword(event.target.value)} autoComplete="new-password" placeholder={lang === "ar" ? "كلمة المرور" : "Password"} {...ownerPasswordInputProps} className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
-          <p className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{lang === "ar" ? "يتم حفظها في إعدادات التشغيل على الخادم ويمكن تعديلها لاحقًا." : "Stored in server runtime settings and can be changed later."}</p>
           <button type="submit" disabled={!authDirty && !ownerProfileDirty} className={`mt-5 w-full rounded-2xl py-3.5 text-xs font-black text-white ${authDirty || ownerProfileDirty ? "bg-[#112A46]" : "bg-[#B8C0B7]"}`}>{lang === "ar" ? "حفظ بيانات الدخول" : "Save login credentials"}</button>
           {settingsNotice && <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{settingsNotice}</p>}
           {settingsSuccess && <div className="mt-4 rounded-xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">{text(lang, "changesSaved")}</div>}
@@ -351,9 +348,7 @@ export function OwnerSettingsAppearanceSection({
         <SettingsPageHeader title={text(lang, "notebookAppearance")} onBack={() => setSection("home")} lang={lang} />
       ) : null}
       <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
-        <p className="mb-2 text-taq-meta font-bold text-[#827762]">{lang === "ar" ? "اختر شكل دفتر التقفيلة والتقارير وصور المشاركة." : "Choose the notebook style for closeouts, reports, and sharing."}</p>
         <ThemePicker lang={lang} theme={draftNotebookTheme} onChange={(nextTheme) => { setDraftNotebookTheme(nextTheme); setThemeDirty(isNotebookThemeDirty(nextTheme, notebookTheme)); }} />
-        <p className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "autoSavedAccount")}</p>
         {themeDirty && (
           <div className="mt-4 grid grid-cols-[0.9fr_1.35fr] gap-3">
             <button onClick={() => { setDraftNotebookTheme(notebookTheme); setThemeDirty(false); }} className="rounded-2xl bg-[#F7F5EF] py-3 text-xs font-black">{text(lang, "cancelChanges")}</button>
@@ -407,7 +402,6 @@ export function OwnerSettingsSubscriptionSection({
     lang,
     { isTrialPlan: Boolean(entitlements?.isTrialPlan) },
   );
-  const paidTrialHint = formatPaidPlanTrialPeriodHint(entitlements, lang);
   const statusTone = formatSubscriptionStatusTone(
     entitlements?.subscriptionStatus,
     entitlements?.organizationStatus,
@@ -446,7 +440,6 @@ export function OwnerSettingsSubscriptionSection({
             <div className="mb-4 rounded-3xl bg-[#FFF4D2] p-5 ring-1 ring-[#F0D9A2]">
               <Badge tone="warning">{text(lang, "trialPlanBadge")}</Badge>
               <p className="mt-3 text-sm font-black text-[#806528]">{text(lang, "trialPlanTitle")}</p>
-              <p className="mt-2 text-taq-meta font-bold leading-6 text-[#806528]">{text(lang, "trialPlanDescription")}</p>
               <p className="mt-3 text-taq-meta font-bold text-[#806528]">
                 {text(lang, "trialDaysRemaining")}: {formatTrialDaysRemainingLabel(entitlements.trialDaysRemaining, lang)}
               </p>
@@ -469,11 +462,6 @@ export function OwnerSettingsSubscriptionSection({
               <Badge tone={statusTone}>{statusLabel}</Badge>
             </div>
             <h3 className="mt-4 text-lg font-black">{planName}</h3>
-            {paidTrialHint ? (
-              <p className="mt-2 rounded-2xl bg-[#F7F5EF] p-3 text-taq-meta font-bold leading-6 text-[#716753]">
-                {paidTrialHint}
-              </p>
-            ) : null}
             <p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">
               {formatPlanPriceLabel(entitlements.priceMonthlyHalalas, lang, {
                 isTrialPlan: entitlements.isTrialPlan,
@@ -554,14 +542,10 @@ export function OwnerSettingsSubscriptionSection({
                   </div>
                 ))}
               </div>
-              <p className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">
-                {text(lang, "upgradeSupportHint")}
-              </p>
             </div>
           ) : (
             <div className="rounded-3xl bg-white p-5 ring-1 ring-black/[0.045]">
-              <p className="text-taq-meta font-bold leading-6 text-[#716753]">{text(lang, "topPlanHint")}</p>
-              <button type="button" onClick={onOpenSupport} className="mt-4 w-full rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">
+              <button type="button" onClick={onOpenSupport} className="w-full rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">
                 {text(lang, "contactSupport")}
               </button>
             </div>

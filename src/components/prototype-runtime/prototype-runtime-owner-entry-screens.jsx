@@ -153,7 +153,7 @@ export function OwnerSummaryScreen({
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
             <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
             <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>
-              {selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseStoreToStartEntry")}
+              {!selectedStore ? text(lang, "chooseStoreToStartEntry") : null}
             </p>
           </div>
         ) : null}
@@ -163,7 +163,7 @@ export function OwnerSummaryScreen({
           <div>
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
             <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
-            <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseStoreForSummary")}</p>
+            <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{!selectedStore ? text(lang, "chooseStoreForSummary") : null}</p>
           </div>
         ) : null}
         <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.05]">
@@ -242,18 +242,17 @@ export function OwnerExpenseScreen({
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
             <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
             <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>
-              {selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseStoreToStartEntry")}
+              {!selectedStore ? text(lang, "chooseStoreToStartEntry") : null}
             </p>
           </div>
         ) : null}
         <fieldset disabled={!formEnabled} className="min-w-0 space-y-5 border-0 p-0 m-0 disabled:opacity-55">
-        <div className="rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">{text(lang, "ownerOutflowNotice")}</div>
         <EntryDatePicker lang={lang} value={operationDate} onChange={setOperationDate} />
         {!showStorePicker ? (
           <div>
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "operationStore")}</p>
             <StoreOperationPicker lang={lang} businessesList={businessesList} selectedId={businessId} onSelect={changeStore} />
-            <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{selectedStore ? text(lang, "operationStoreHint") : text(lang, "chooseOperationStore")}</p>
+            <p className={`mt-2 text-taq-meta font-bold ${selectedStore ? "text-[#827762]" : "text-[#B44747]"}`}>{!selectedStore ? text(lang, "chooseOperationStore") : null}</p>
           </div>
         ) : null}
         <div>

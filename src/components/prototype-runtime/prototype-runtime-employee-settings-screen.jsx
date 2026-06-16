@@ -65,7 +65,6 @@ export function EmployeeSettingsScreen({ lang, onBack, currentStore, assignedSto
       <p className="mb-2 text-xs font-bold text-[#716753]">{lang === "ar" ? "شكل دفتر واجهتي" : "My notebook theme"}</p>
       <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
         <ThemePicker lang={lang} theme={draftTheme} onChange={setDraftTheme} />
-        <p className="mt-3 text-taq-meta font-bold leading-5 text-[#806528]">{lang === "ar" ? "يُطبّق على قائمة التقفيلات وشاشة الإدخال فقط. الافتراضي من إعدادات المحل." : "Applies to your closeout list and entry flow. Defaults to store settings."}</p>
         <button type="button" onClick={saveTheme} disabled={!themeDirty} className={`mt-4 w-full rounded-2xl py-3.5 text-xs font-extrabold text-white transition ${themeDirty ? "bg-[#112A46]" : "cursor-not-allowed bg-[#B8C0B7]"}`}>
           {text(lang, savedNotice ? "savedNotice" : "save")}
         </button>

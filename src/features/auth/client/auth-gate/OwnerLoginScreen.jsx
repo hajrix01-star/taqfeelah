@@ -42,7 +42,6 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onBack }) {
             >
               <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "mobileNumber")}</p>
               <AppLoginPhoneField value={form.phone} onChange={form.setPhone} />
-              <p className="mt-2 text-taq-meta font-bold text-[#827762]">{text(lang, "mobileHint")}</p>
               <button type="submit" className="mt-5 w-full rounded-2xl bg-[#112A46] py-4 text-sm font-black text-white">{text(lang, "sendCode")}</button>
             </form>
           ) : (
@@ -117,13 +116,6 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onBack }) {
         {text(lang, "backToLoginGateway")}
       </button>
       {!APP_IN_PRODUCTION_MODE ? <LanHintBanner lang={lang} /> : null}
-      {!APP_IN_PRODUCTION_MODE ? (
-        <div className="mt-4 rounded-2xl bg-[#FFF4D2] p-4 text-center">
-          <p className="text-taq-meta font-black leading-5 text-[#806528]">{text(lang, "prototypeDemoAccess")}</p>
-          <p className="mt-1 text-taq-meta font-bold text-[#957D43]">{text(lang, "linkedAccountNote")}</p>
-          <p className="mt-2 border-t border-[#E4C66B]/45 pt-2 text-taq-meta font-bold text-[#957D43]">{text(lang, "futureLoginOnLoginScreen")}</p>
-        </div>
-      ) : null}
       <ReleaseVersionLine
         className="mt-4 text-center text-taq-meta font-bold text-[#827762]"
         lang={lang}

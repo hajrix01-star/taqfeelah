@@ -36,9 +36,6 @@ export function AuthGatewayScreen({ lang, setLang, onOwnerPortal, onEmployeePort
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-black">{text(lang, "ownerLogin")}</span>
-            <span className="mt-0.5 block text-[11px] font-bold text-white/75">
-              {text(lang, "loginGatewayOwnerHint")}
-            </span>
           </span>
         </button>
         <button
@@ -51,9 +48,6 @@ export function AuthGatewayScreen({ lang, setLang, onOwnerPortal, onEmployeePort
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-black">{text(lang, "employeeLogin")}</span>
-            <span className="mt-0.5 block text-[11px] font-bold text-[#827762]">
-              {text(lang, "loginGatewayEmployeeHint")}
-            </span>
           </span>
         </button>
       </div>

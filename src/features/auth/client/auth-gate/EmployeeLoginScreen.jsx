@@ -26,9 +26,6 @@ export function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin
             <AppLoginPhoneField value={form.employeePhone} onChange={form.setEmployeePhone} className="mb-4" />
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employeePin")}</p>
             <input dir="ltr" inputMode="numeric" value={form.pin} onChange={(event) => form.setPin(event.target.value)} placeholder="• • • •" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]" />
-            <p className="mt-2 text-taq-meta font-bold text-[#827762]">
-              {lang === "ar" ? "على جهاز موثوق يكفي الجوال فقط — وإلا أدخل PIN." : "On a trusted device, mobile only — otherwise enter PIN."}
-            </p>
             <label className="mt-3 flex cursor-pointer items-center gap-2.5">
               <input
                 type="checkbox"
@@ -75,7 +72,6 @@ export function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin
           <>
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employeePin")}</p>
             <input dir="ltr" inputMode="numeric" value={form.pin} onChange={(event) => form.setPin(event.target.value)} placeholder="• • • •" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]" />
-            <p className="mt-2 text-taq-meta font-bold text-[#827762]">{text(lang, "employeePinHint")}</p>
           </>
         ) : null}
         <label className="mt-3 flex cursor-pointer items-center gap-2.5">

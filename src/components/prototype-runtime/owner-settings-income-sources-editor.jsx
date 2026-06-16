@@ -21,10 +21,6 @@ export function OwnerSettingsIncomeSourcesEditor({
 
   return (
     <>
-      <p className="mb-3 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">
-        {text(lang, "channelControlHint")}
-      </p>
-
       <div className="mb-4 overflow-hidden rounded-3xl bg-[#F7F5EF] ring-1 ring-black/[0.03]">
         {rows.length === 0 ? (
           <p className="px-4 py-4 text-taq-meta font-bold text-[#827762]">

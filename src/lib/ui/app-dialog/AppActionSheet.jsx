@@ -80,11 +80,6 @@ export function AppActionSheet({
           {description ? (
             <p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">{description}</p>
           ) : null}
-          {notice ? (
-            <div className="mt-4 rounded-2xl bg-[#FFF4D2] p-3 text-taq-meta font-bold leading-5 text-[#806528]">
-              {notice}
-            </div>
-          ) : null}
           {children}
           {mode === "confirm" ? (
             <div className={`mt-5 grid gap-3 ${lang === "ar" ? "grid-cols-[0.9fr_1.35fr]" : "grid-cols-[1.35fr_0.9fr]"}`}>
