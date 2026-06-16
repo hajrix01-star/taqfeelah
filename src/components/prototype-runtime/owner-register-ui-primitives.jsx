@@ -3,6 +3,7 @@
 import React from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { isRegisterIndexTabsEnabled } from "@/core/config/register-dashboard-tabs-mode";
+import { buildIndexTabBorderClass } from "./index-tab-button-styles";
 import { money, text } from "./prototype-runtime-demo-data";
 import { MoneyValue } from "./prototype-runtime-notebook";
 
@@ -130,7 +131,7 @@ export function RegisterIndexTabs({ lang, value, onChange, counts }) {
             onClick={() => onChange(item.id)}
             className={`flex h-9 min-w-0 flex-1 items-center justify-center gap-1 px-1.5 text-[10px] font-black transition-all duration-200 ${
               active ? item.activeClass : item.inactiveClass
-            } ${active ? "z-10 ring-2 ring-inset ring-[#112A46]/85" : ""} ${
+            } ${buildIndexTabBorderClass(index, items.length, active)} ${
               index > 0 ? "border-s border-[#E8E1D4]/80" : ""
             }`}
           >
