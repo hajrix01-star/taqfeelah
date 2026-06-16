@@ -195,20 +195,24 @@ export default function CloseoutShareModal({
 
   if (!open) return null;
 
+  const snapOpen = newlySubmitted;
+
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0 }}
+        initial={snapOpen ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[220] flex flex-col justify-end bg-[#112A46]/45 sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0"
+        transition={snapOpen ? { duration: 0.12 } : undefined}
+        className={`fixed inset-0 z-[220] flex flex-col justify-end sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0 ${snapOpen ? "bg-[#112A46]/70" : "bg-[#112A46]/45"}`}
         onClick={onClose}
       >
         <motion.div
           dir={lang === "ar" ? "rtl" : "ltr"}
-          initial={{ y: 18, opacity: 0 }}
+          initial={snapOpen ? false : { y: 18, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 18, opacity: 0 }}
+          transition={snapOpen ? { duration: 0.15, ease: "easeOut" } : undefined}
           className="relative z-10 max-h-[92%] w-full overflow-y-auto rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[700px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"
           onClick={(event) => event.stopPropagation()}
         >
