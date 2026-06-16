@@ -64,7 +64,30 @@ export function SettingsLink({ lang, icon: Icon, title, desc = "", value = "", o
   );
 }
 
-export function SettingsPageHeader({ lang, title, onBack }) {
+export function SettingsPageHeader({ lang, title, onBack, subtitle = "", badge = null }) {
+  if (subtitle || badge) {
+    const BackIcon = lang === "ar" ? ChevronRight : ChevronLeft;
+    return (
+      <div className="mb-4 flex items-start gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]"
+        >
+          <BackIcon className="h-5 w-5" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="truncate text-xl font-black">{title}</h2>
+            {badge}
+          </div>
+          {subtitle ? (
+            <p className="mt-1 truncate text-taq-meta font-bold text-[#827762]">{subtitle}</p>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
   return <BackTitle lang={lang} title={title} onBack={onBack} />;
 }
 
