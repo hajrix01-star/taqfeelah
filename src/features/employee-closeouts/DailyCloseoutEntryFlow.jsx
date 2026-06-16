@@ -55,12 +55,12 @@ export default function DailyCloseoutEntryFlow({
   const formEnabled = !storeSelectionRequired || Boolean(selectedStoreId);
 
   return (
-    <div className={`${rootClassName}${sharePreviewOpen ? " pointer-events-none" : ""}`} style={notebookLinesBackground(notebookTheme)}>
+    <div className={`${rootClassName} relative${sharePreviewOpen ? " pointer-events-none" : ""}`} style={notebookLinesBackground(notebookTheme)}>
       <header
         className={headerClassName}
         style={notebookLinesBackground(notebookTheme)}
       >
-        <button type="button" onClick={onCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]">
+        <button type="button" disabled={saving} onClick={onCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05] disabled:opacity-40">
           <X className="h-4 w-4" />
         </button>
         <p className="text-sm font-black">{lang === "ar" ? (isOwnerEdit ? "تعديل التقفيلة" : "تقفيلة يوم جديد") : (isOwnerEdit ? "Edit closeout" : "New closeout")}</p>
@@ -92,6 +92,11 @@ export default function DailyCloseoutEntryFlow({
           {text(lang, saving ? "saving" : (isOwnerEdit ? "saveCloseoutChanges" : "saveAndSend"))}
         </button>
       </div>
+      {saving ? (
+        <div className="absolute inset-0 z-[3] flex items-center justify-center bg-[#F8F6F0]/80 text-sm font-black text-[#257844]">
+          {text(lang, "saving")}
+        </div>
+      ) : null}
       <AttachmentLightbox
         open={Boolean(previewAttachment)}
         src={previewAttachment}

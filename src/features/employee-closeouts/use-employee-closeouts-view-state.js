@@ -84,6 +84,7 @@ export function useEmployeeCloseoutsViewState({
   const [showSettings, setShowSettings] = useState(false);
   const cardRefs = useRef(new Map());
   const pendingToggleAnchorRef = useRef(null);
+  const submitGenerationRef = useRef(0);
 
   const setCardRef = useCallback((closeoutId, node) => {
     if (!closeoutId) return;
@@ -272,10 +273,12 @@ export function useEmployeeCloseoutsViewState({
   }, [currentStoreId, entryCloseout?.storeId, findForStoreDateProp, findForStoreDate]);
 
   const handleSubmit = async (closeout, { isOwnerEdit }) => {
+    const generation = ++submitGenerationRef.current;
     setSubmitting(true);
     try {
       const fn = isOwnerEdit ? ownerEditCloseout : submitCloseout;
       const next = await fn({ closeout, employee });
+      if (generation !== submitGenerationRef.current) return;
       if (isCloseoutWorkflowFailure(next)) {
         const fallback = next.phase === "save"
           ? (lang === "ar" ? "تعذر الحفظ." : "Failed to save.")
@@ -288,15 +291,21 @@ export function useEmployeeCloseoutsViewState({
         return;
       }
       triggerSubmitSuccessHaptic();
+      setEntryCloseout(null);
+      setEntryOwnerEdit(false);
+      setExpandedId(null);
       setShareTarget(next);
       setShareNewlySubmitted(true);
-      setExpandedId(null);
     } finally {
-      setSubmitting(false);
+      if (generation === submitGenerationRef.current) {
+        setSubmitting(false);
+      }
     }
   };
 
   const handleCancelEntry = (closeout) => {
+    if (submitting) return;
+    submitGenerationRef.current += 1;
     if (closeout?.status === CLOSEOUT_STATUS.DRAFT && !closeout.submittedAt) {
       deleteCloseout(closeout.id);
     }

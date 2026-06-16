@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { text } from "../../components/prototype-runtime/prototype-runtime-demo-data";
 import { prepareAttachment } from "@/features/attachments/client/prototype-attachment-storage";
 import { sanitizeAmountInput, toAmount } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
@@ -46,6 +46,7 @@ export function useDailyCloseoutEntryState({
   const [expenseCategory, setExpenseCategory] = useState("maintenance");
   const [outAmount, setOutAmount] = useState("");
   const [outNote, setOutNote] = useState("");
+  const submitInFlightRef = useRef(false);
 
   const totals = useMemo(() => {
     const salesRecord = salesRecordFromChannels(
@@ -163,6 +164,7 @@ export function useDailyCloseoutEntryState({
   }, [date, lang]);
 
   const handleSubmit = useCallback(async () => {
+    if (submitInFlightRef.current) return;
     if (!initialCloseout?.storeId) {
       await appAlert({ lang, title: text(lang, "chooseStoreToStartEntry"), variant: "info" });
       return;
@@ -189,7 +191,12 @@ export function useDailyCloseoutEntryState({
       return;
     }
     if (!(await confirmCloseoutSubmit(lang, text, { isOwnerEdit }))) return;
-    await onSubmit(closeout, { isOwnerEdit });
+    submitInFlightRef.current = true;
+    try {
+      await onSubmit(closeout, { isOwnerEdit });
+    } finally {
+      submitInFlightRef.current = false;
+    }
   }, [
     attachmentProcessing,
     buildCloseout,
