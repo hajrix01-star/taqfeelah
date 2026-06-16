@@ -288,11 +288,9 @@ export function useEmployeeCloseoutsViewState({
         return;
       }
       triggerSubmitSuccessHaptic();
-      setEntryCloseout(null);
-      setEntryOwnerEdit(false);
-      setExpandedId(null);
       setShareTarget(next);
       setShareNewlySubmitted(true);
+      setExpandedId(null);
     } finally {
       setSubmitting(false);
     }
@@ -326,6 +324,8 @@ export function useEmployeeCloseoutsViewState({
       return false;
     });
     setShareTarget(null);
+    setEntryCloseout(null);
+    setEntryOwnerEdit(false);
   }, [onCloseoutSubmitted]);
 
   return {

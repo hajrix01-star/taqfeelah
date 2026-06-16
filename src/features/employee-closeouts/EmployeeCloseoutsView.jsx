@@ -7,7 +7,7 @@ import { resolveCloseoutStoreName } from "./store-name-resolver";
 import { EmployeeCloseoutsListPanel } from "./employee-closeouts-list-panel";
 import { resolveEmployeeDisplayName } from "./employee-portal-session";
 import { useEmployeeCloseoutsViewState } from "./use-employee-closeouts-view-state";
-import { resolveStoreChannelConfig, channelName, text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { resolveStoreChannelConfig, channelName } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 
 function resolveSalesChannelsForStore(storeChannelSettings, storeId, lang) {
   if (!storeId) return [];
@@ -129,9 +129,30 @@ export default function EmployeeCloseoutsView({
     );
   }
 
-  if (entryCloseout) {
-    return (
-      <>
+  const shareModal = (
+    <CloseoutShareModal
+      lang={lang}
+      open={Boolean(shareTarget)}
+      closeout={shareTarget}
+      storeName={resolveCloseoutStoreName({ preferredStoreName: shareTarget?.storeName, closeout: shareTarget, currentStore, lang }) || storeLabel}
+      employeeName={resolveEmployeeDisplayName(
+        employee,
+        lang,
+        sessionDisplayName
+          || shareTarget?.submittedByName
+          || shareTarget?.openedByName
+          || "",
+      )}
+      notebookTheme={notebookTheme}
+      formatCalendarDate={formatCalendarDate}
+      newlySubmitted={shareNewlySubmitted}
+      onClose={closeShareModal}
+    />
+  );
+
+  return (
+    <>
+      {entryCloseout ? (
         <div
           className="fixed inset-x-0 bottom-0 z-[50]"
           style={{ top: "calc(70px + env(safe-area-inset-top, 0px))" }}
@@ -149,87 +170,49 @@ export default function EmployeeCloseoutsView({
             isOwnerEdit={entryOwnerEdit}
             fullScreenOverlay={false}
             saving={saving || submitting}
+            sharePreviewOpen={Boolean(shareTarget)}
             channelLabel={channelLabel}
             onCancel={() => handleCancelEntry(entryCloseout)}
             onSubmit={handleSubmit}
             findForStoreDate={resolveStoreDate}
           />
         </div>
-        <CloseoutShareModal
-          lang={lang}
-          open={Boolean(shareTarget)}
-          closeout={shareTarget}
-          storeName={resolveCloseoutStoreName({ preferredStoreName: shareTarget?.storeName, closeout: shareTarget, currentStore, lang }) || storeLabel}
-          employeeName={resolveEmployeeDisplayName(
-            employee,
-            lang,
-            sessionDisplayName
-              || shareTarget?.submittedByName
-              || shareTarget?.openedByName
-              || "",
+      ) : (
+        <NotebookScrollSurface theme={notebookTheme} lang={lang}>
+          {showSettings && settingsPanel ? (
+            settingsPanel({ onBack: () => setShowSettings(false) })
+          ) : (
+            <EmployeeCloseoutsListPanel
+              lang={lang}
+              pageTitle={pageTitle}
+              employeeDisplayName={employeeDisplayName}
+              employeeRuntimeReady={runtimeReady}
+              channelsReady={channelsReady}
+              syncError={syncError}
+              hasOlderHiddenCloseouts={hasOlderHiddenCloseouts}
+              historyScopeLabel={historyScopeLabel}
+              hiddenCloseoutCount={hiddenCloseoutCount}
+              showStorePicker={assignedStores.length <= 1}
+              assignedStores={assignedStores}
+              currentStore={currentStore}
+              onSelectStore={onSelectStore}
+              closeoutsListPending={closeoutsListPending}
+              displayCloseouts={displayCloseouts}
+              sameDayCloseoutCountByDate={sameDayCloseoutCountByDate}
+              formatCalendarDate={formatCalendarDate}
+              setCardRef={setCardRef}
+              toggleExpandedCard={toggleExpandedCard}
+              setShareTarget={setShareTarget}
+              setShareNewlySubmitted={setShareNewlySubmitted}
+              attachmentsApiEnabled={attachmentsApiEnabled}
+              attachmentsApiOrganizationId={attachmentsApiOrganizationId}
+              attachmentsApiActorUserId={attachmentsApiActorUserId}
+              attachmentsApiActorRole={attachmentsApiActorRole}
+            />
           )}
-          notebookTheme={notebookTheme}
-          formatCalendarDate={formatCalendarDate}
-          newlySubmitted={shareNewlySubmitted}
-          onClose={closeShareModal}
-        />
-      </>
-    );
-  }
-
-  return (
-    <>
-      <NotebookScrollSurface theme={notebookTheme} lang={lang}>
-        {showSettings && settingsPanel ? (
-          settingsPanel({ onBack: () => setShowSettings(false) })
-        ) : (
-          <EmployeeCloseoutsListPanel
-            lang={lang}
-            pageTitle={pageTitle}
-            employeeDisplayName={employeeDisplayName}
-            employeeRuntimeReady={runtimeReady}
-            channelsReady={channelsReady}
-            syncError={syncError}
-            hasOlderHiddenCloseouts={hasOlderHiddenCloseouts}
-            historyScopeLabel={historyScopeLabel}
-            hiddenCloseoutCount={hiddenCloseoutCount}
-            showStorePicker={assignedStores.length <= 1}
-            assignedStores={assignedStores}
-            currentStore={currentStore}
-            onSelectStore={onSelectStore}
-            closeoutsListPending={closeoutsListPending}
-            displayCloseouts={displayCloseouts}
-            sameDayCloseoutCountByDate={sameDayCloseoutCountByDate}
-            formatCalendarDate={formatCalendarDate}
-            setCardRef={setCardRef}
-            toggleExpandedCard={toggleExpandedCard}
-            setShareTarget={setShareTarget}
-            setShareNewlySubmitted={setShareNewlySubmitted}
-            attachmentsApiEnabled={attachmentsApiEnabled}
-            attachmentsApiOrganizationId={attachmentsApiOrganizationId}
-            attachmentsApiActorUserId={attachmentsApiActorUserId}
-            attachmentsApiActorRole={attachmentsApiActorRole}
-          />
-        )}
-      </NotebookScrollSurface>
-      <CloseoutShareModal
-        lang={lang}
-        open={Boolean(shareTarget)}
-        closeout={shareTarget}
-        storeName={resolveCloseoutStoreName({ preferredStoreName: shareTarget?.storeName, closeout: shareTarget, currentStore, lang }) || storeLabel}
-        employeeName={resolveEmployeeDisplayName(
-          employee,
-          lang,
-          sessionDisplayName
-            || shareTarget?.submittedByName
-            || shareTarget?.openedByName
-            || "",
-        )}
-        notebookTheme={notebookTheme}
-        formatCalendarDate={formatCalendarDate}
-        newlySubmitted={shareNewlySubmitted}
-        onClose={closeShareModal}
-      />
+        </NotebookScrollSurface>
+      )}
+      {shareModal}
     </>
   );
 }

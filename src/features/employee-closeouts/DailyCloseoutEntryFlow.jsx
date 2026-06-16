@@ -24,6 +24,7 @@ export default function DailyCloseoutEntryFlow({
   findForStoreDate: _findForStoreDate,
   channelLabel,
   saving = false,
+  sharePreviewOpen = false,
 }) {
   const state = useDailyCloseoutEntryState({
     lang,
@@ -54,7 +55,7 @@ export default function DailyCloseoutEntryFlow({
   const formEnabled = !storeSelectionRequired || Boolean(selectedStoreId);
 
   return (
-    <div className={rootClassName} style={notebookLinesBackground(notebookTheme)}>
+    <div className={`${rootClassName}${sharePreviewOpen ? " pointer-events-none" : ""}`} style={notebookLinesBackground(notebookTheme)}>
       <header
         className={headerClassName}
         style={notebookLinesBackground(notebookTheme)}
