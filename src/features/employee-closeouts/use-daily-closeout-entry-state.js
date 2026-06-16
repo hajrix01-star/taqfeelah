@@ -12,7 +12,6 @@ import {
   attachmentDataUrlsFromList,
   buildCloseoutEntryTitles,
   buildCloseoutOutflowRow,
-  hasUncommittedOutflowDraft,
   todayIsoDate,
 } from "./daily-closeout-entry-helpers";
 
@@ -179,10 +178,6 @@ export function useDailyCloseoutEntryState({
       await appAlert({ lang, title: text(lang, "noSalesChannels"), variant: "info" });
       return;
     }
-    if (hasUncommittedOutflowDraft(outAmount)) {
-      await appAlert({ lang, title: text(lang, "outflowPressAddBeforeSave"), variant: "warning" });
-      return;
-    }
     const closeout = buildCloseout();
     if ((closeout.totals?.totalSales || 0) <= 0) {
       await appAlert({ lang, title: text(lang, "enterSalesAmount"), variant: "warning" });
@@ -191,6 +186,8 @@ export function useDailyCloseoutEntryState({
     submitInFlightRef.current = true;
     try {
       if (!(await confirmCloseoutSubmit(lang, text, { isOwnerEdit }))) return;
+      setOutAmount("");
+      setOutNote("");
       await onSubmit(closeout, { isOwnerEdit });
     } finally {
       submitInFlightRef.current = false;
@@ -202,7 +199,6 @@ export function useDailyCloseoutEntryState({
     isOwnerEdit,
     lang,
     onSubmit,
-    outAmount,
     outflowAttachmentProcessingId,
     salesChannels.length,
     validateDate,
