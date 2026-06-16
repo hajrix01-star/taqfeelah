@@ -41,6 +41,7 @@ import { formatNetMarginOfSalesRatio } from "@/features/entries/client/register-
 import { useHomeDayAttachments } from "@/features/entries/client/use-home-day-attachments";
 import { useOrganizationEntitlements } from "@/features/billing/client/use-organization-entitlements";
 import { SubscriptionRenewalBanner } from "@/features/billing/client/SubscriptionRenewalBanner";
+import { resolveSubscriptionRenewalBanner } from "@/features/billing/client/subscription-display";
 import { SummaryReportDetails } from "./owner-summary-details";
 
 export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoading = false, duplicateSalesAlerts = [], closeoutAlerts = [], onOpenCloseoutAlertInRegister = () => {}, onDismissCloseout = () => {}, onOpenDuplicateSummaryInRegister = () => {}, onAcknowledgeDuplicate = () => {}, onOpenOperation = () => {}, onShareNotebook = () => {}, notebookTheme = "yellow", selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, configuredChannels = channels, summaryApiEnabled = false, summaryApiOrganizationId = "", summaryApiActorUserId = "", summaryApiActorRole = "owner", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner", ownerProfile = null, onOpenSubscriptionSettings = () => {} }) {
@@ -176,7 +177,7 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
   const billingEntitlementsEnabled = summaryApiEnabled
     && Boolean(summaryApiOrganizationId)
     && Boolean(summaryApiActorUserId);
-  const { entitlements: homeEntitlements } = useOrganizationEntitlements({
+  const { entitlements: homeEntitlements, loading: homeEntitlementsLoading } = useOrganizationEntitlements({
     enabled: billingEntitlementsEnabled,
     auth: {
       organizationId: summaryApiOrganizationId,
@@ -184,9 +185,13 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
       actorRole: summaryApiActorRole,
     },
   });
+  const homeBillingLayoutReady = !billingEntitlementsEnabled || !homeEntitlementsLoading;
+  const homeSubscriptionBanner = homeEntitlements
+    ? resolveSubscriptionRenewalBanner(homeEntitlements)
+    : null;
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-6 pt-1">
-      {homeEntitlements ? (
+      {homeBillingLayoutReady && homeSubscriptionBanner ? (
         <div className="mx-2 mb-3">
           <SubscriptionRenewalBanner
             lang={lang}
@@ -197,6 +202,7 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
         </div>
       ) : null}
       {closeoutAlerts.length > 0 && <div className="mx-2 mb-3 rounded-2xl bg-[#E6F5E9] p-3 ring-1 ring-[#39A160]/15"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#257844]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#257844]">{text(lang, "closeoutInAppAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === closeoutAlerts[0].businessId), lang)} · {formatCalendarDate(closeoutAlerts[0].date, lang)} · {lang === "ar" ? closeoutAlerts[0].employeeNameAr : closeoutAlerts[0].employeeNameEn}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onOpenCloseoutAlertInRegister(closeoutAlerts[0])} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#257844] ring-1 ring-[#39A160]/15">{text(lang, "openCloseoutInRegister")}</button><button type="button" onClick={() => onDismissCloseout(closeoutAlerts[0].id)} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "dismissAlert")}</button></div></div>}
+      {homeBillingLayoutReady ? (
       <Notebook fullPage theme={notebookTheme} lang={lang}>
         <NotebookHeading lang={lang} label={monthly ? text(lang, "monthlySummary") : text(lang, "dailySummary")} onShare={() => onShareNotebook({
           theme: notebookTheme,
@@ -354,6 +360,14 @@ export function OwnerHome({ lang, operationalEntries = [], operationalEntriesLoa
           </div>
         )}
       </Notebook>
+      ) : (
+        <div className="px-5 pt-2" aria-busy="true" aria-hidden="true">
+          <div className="flex h-[102px] flex-col items-center justify-end pb-1">
+            <div className="h-[18px] w-[120px] rounded-full bg-[#112A46]/10" />
+            <span className="mt-2 block h-[2px] w-[120px] rounded-full bg-[#C28A30]/35" />
+          </div>
+        </div>
+      )}
       <AttachmentLightbox
         open={Boolean(homeAttachmentPreview?.src)}
         src={homeAttachmentPreview?.src || ""}

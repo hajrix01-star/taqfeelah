@@ -3,6 +3,7 @@ import {
   resolveAuthStateFromSession,
   saveAuthSession,
 } from "@/features/demo/login-credentials-storage";
+import { clearOrganizationEntitlementsCache } from "@/features/billing/client/organization-entitlements-cache";
 import { readPrototypeAuthBoot } from "@/features/demo/prototype-auth-boot";
 import {
   changeOwnerPasswordViaApi,
@@ -35,6 +36,7 @@ export function persistLocalEmployeeSession({ employeeId }) {
 
 export function clearAllLocalSessions() {
   clearAuthSession();
+  clearOrganizationEntitlementsCache();
 }
 
 export async function fetchServerSessionStatus() {
@@ -73,4 +75,5 @@ export async function logoutViaSessionBridge({ useServerAuth }) {
     await logoutSessionViaApi();
   }
   clearAuthSession();
+  clearOrganizationEntitlementsCache();
 }

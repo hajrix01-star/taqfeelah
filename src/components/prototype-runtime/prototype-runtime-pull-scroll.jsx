@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import { shouldResetOwnerShellScroll } from "@/lib/ui/owner-shell-scroll-reset";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
 import { PullToRefreshIndicator } from "@/lib/ui/pull-to-refresh-indicator";
 import {
@@ -82,6 +83,19 @@ export function PrototypeRuntimePullScroll({
     : undefined;
   const indicatorVisible = isActive || refreshing;
   const contentOffset = slotHeight > 0 ? slotHeight : 0;
+  const pageRef = useRef({ ownerPage, employeePage });
+
+  useEffect(() => {
+    const previous = pageRef.current;
+    if (!shouldResetOwnerShellScroll(previous, { ownerPage, employeePage })) {
+      pageRef.current = { ownerPage, employeePage };
+      return;
+    }
+    pageRef.current = { ownerPage, employeePage };
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) return;
+    scrollElement.scrollTop = 0;
+  }, [employeePage, ownerPage, scrollRef]);
 
   return (
     <div
