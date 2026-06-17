@@ -103,6 +103,7 @@ export function OwnerRegisterOperationsList({
                     <AttachmentThumbButton
                       attachment={entry.attachment}
                       storeId={entry.businessId}
+                      lang={lang}
                       attachmentApiContext={entryAttachmentApiContext}
                       onOpen={(src) => onPreviewAttachment(src, {
                         entry,

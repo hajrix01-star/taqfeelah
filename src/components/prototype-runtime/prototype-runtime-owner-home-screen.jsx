@@ -433,6 +433,7 @@ function DayAttachments({
             <div className="mb-1 flex h-14 justify-center">
               <AttachmentThumbButton
                 attachment={item.attachment}
+                lang={lang}
                 onOpen={(src) => onPreviewAttachment(src, shareContext)}
                 className="h-14 w-14 rounded-xl"
                 attachmentApiContext={{

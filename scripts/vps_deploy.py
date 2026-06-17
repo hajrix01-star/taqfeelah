@@ -149,7 +149,7 @@ WAVE_5_ENV_OVERRIDES: dict[str, str] = {
     "NEXT_PUBLIC_PHASE9_API_ENABLED": "true",
     "NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE": "true",
     "ATTACHMENT_STORAGE_MODE": "local",
-    "ATTACHMENT_STORAGE_ROOT": "/opt/taqfeelah/data/attachments",
+    "ATTACHMENT_STORAGE_ROOT": "/var/lib/taqfeelah/attachments",
 }
 
 # Wave 6 enables real auth (Phase 10). Requires auth_identities seed before deploy.
@@ -1716,14 +1716,20 @@ def cmd_deploy_pm2(
                 pass
 
     print_section("Extract application source")
+    attachments_root = "/var/lib/taqfeelah/attachments"
     vps.run(
         textwrap.dedent(
             f"""
             set -euo pipefail
+            mkdir -p {shlex.quote(attachments_root)}
+            if [ -d {shlex.quote(app_dir)}/data/attachments ]; then
+              rsync -a {shlex.quote(app_dir)}/data/attachments/ {shlex.quote(attachments_root)}/ || true
+            fi
             mkdir -p {shlex.quote(app_dir)}
             rm -rf {shlex.quote(app_dir)}/*
             tar -xzf {shlex.quote(remote_archive)} -C {shlex.quote(app_dir)}
             rm -f {shlex.quote(remote_archive)}
+            mkdir -p {shlex.quote(attachments_root)}
             """
         ).strip()
     )
@@ -1791,6 +1797,8 @@ def cmd_deploy_pm2(
             . ./.env.production
             set +a
             node scripts/cleanup-orphan-entries.mjs --apply || true
+            node scripts/diagnose-attachments.mjs || true
+            node scripts/migrate-inline-attachments-to-local.mjs --apply || true
             node scripts/cleanup-inline-attachments.mjs --apply --vacuum || true
             pnpm exec drizzle-kit migrate || pnpm exec drizzle-kit push --force
             node scripts/baseline-drizzle-migrations.mjs

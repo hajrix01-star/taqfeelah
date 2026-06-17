@@ -53,11 +53,13 @@ export function useAttachmentSource(attachment, attachmentApiContext = null, sto
   return useEntryAttachmentSource(attachment, mergeAttachmentApiContext(attachmentApiContext, storeId));
 }
 
-export function ProofThumb({ paper = false, loading = false }) {
+export function ProofThumb({ paper = false, loading = false, unavailable = false }) {
   return (
     <div className={`${paper ? "h-12 w-10" : "h-14 w-14 bg-[#E8E1D4]"} flex shrink-0 items-center justify-center rounded-xl`}>
       {loading ? (
         <span className="text-[10px] font-bold text-[#827762]">…</span>
+      ) : unavailable ? (
+        <span className="px-1 text-center text-[9px] font-black leading-3 text-[#B44747]">!</span>
       ) : (
         <div className={`${paper ? "w-9 border border-[#CFBC82]" : "w-9"} rotate-[-3deg] rounded bg-white p-1.5 shadow-sm`}>
           <div className="mb-1 h-1 w-5 rounded bg-[#D8D1C4]" />
@@ -70,8 +72,8 @@ export function ProofThumb({ paper = false, loading = false }) {
 }
 
 export function AttachmentPreview({ attachment, className = "", attachmentApiContext = null, storeId = "" }) {
-  const { source, loading } = useAttachmentSource(attachment, attachmentApiContext, storeId);
-  if (!source) return <ProofThumb loading={loading} />;
+  const { source, loading, unavailable } = useAttachmentSource(attachment, attachmentApiContext, storeId);
+  if (!source) return <ProofThumb loading={loading} unavailable={unavailable} />;
   return <img src={source} alt="" className={`object-cover ${className}`} />;
 }
 
@@ -82,8 +84,10 @@ export function AttachmentThumbButton({
   buttonClassName = "shrink-0 overflow-hidden rounded-xl ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50 disabled:opacity-70",
   storeId = "",
   attachmentApiContext = null,
+  lang = "ar",
 }) {
-  const { source, loading } = useAttachmentSource(attachment, attachmentApiContext, storeId);
+  const { source, loading, unavailable } = useAttachmentSource(attachment, attachmentApiContext, storeId);
+  const unavailableLabel = lang === "ar" ? "تعذر تحميل الصورة" : "Image unavailable";
   return (
     <button
       type="button"
@@ -94,12 +98,13 @@ export function AttachmentThumbButton({
       disabled={!source}
       className={buttonClassName}
       aria-busy={loading || undefined}
+      title={unavailable ? unavailableLabel : undefined}
     >
       {source ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={source} alt="" className={`${className} object-cover`} />
       ) : (
-        <ProofThumb loading={loading} />
+        <ProofThumb loading={loading} unavailable={unavailable} />
       )}
     </button>
   );

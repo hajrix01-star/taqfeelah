@@ -43,6 +43,7 @@ function GalleryTile({
         <AttachmentThumbButton
           attachment={item.attachment}
           storeId={item.businessId}
+          lang={lang}
           attachmentApiContext={entryAttachmentApiContext}
           onOpen={(src) => onPreviewAttachment(src, shareContext)}
           className="aspect-square h-auto w-full rounded-xl"

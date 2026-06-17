@@ -27,6 +27,7 @@ export function useEntryAttachmentSource(
   const cachedSource = attachmentId ? readResolvedAttachmentSourceCache(storeId, attachmentId) : "";
   const [source, setSource] = useState(inlineDataUrl || cachedSource || "");
   const [loading, setLoading] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,12 +35,14 @@ export function useEntryAttachmentSource(
     if (!attachmentId && !inlineDataUrl) {
       setSource("");
       setLoading(false);
+      setUnavailable(false);
       return undefined;
     }
 
     if (inlineDataUrl) {
       setSource(inlineDataUrl);
       setLoading(false);
+      setUnavailable(false);
       if (attachmentId) writeResolvedAttachmentSourceCache(storeId, attachmentId, inlineDataUrl);
       return undefined;
     }
@@ -48,12 +51,15 @@ export function useEntryAttachmentSource(
     if (cached) {
       setSource(cached);
       setLoading(false);
+      setUnavailable(false);
       return undefined;
     }
 
     const load = async () => {
       setSource("");
       setLoading(true);
+      setUnavailable(false);
+      let resolved = "";
 
       if (attachmentsApiEnabled && isUuid(attachmentId) && storeId && organizationId && actorUserId) {
         try {
@@ -66,27 +72,29 @@ export function useEntryAttachmentSource(
           });
           if (!cancelled && payload?.dataUrl) {
             writeResolvedAttachmentSourceCache(storeId, attachmentId, payload.dataUrl);
-            setSource(payload.dataUrl);
-            setLoading(false);
-            return;
+            resolved = payload.dataUrl;
           }
         } catch (error) {
           console.warn("entry attachment fetch failed", error);
         }
       }
 
-      try {
-        const saved = await readAttachmentPayload(attachmentId);
-        if (!cancelled) {
-          const resolved = saved || "";
-          if (resolved) writeResolvedAttachmentSourceCache(storeId, attachmentId, resolved);
-          setSource(resolved);
+      if (!resolved && attachmentId) {
+        try {
+          const saved = await readAttachmentPayload(attachmentId);
+          if (!cancelled && saved) {
+            writeResolvedAttachmentSourceCache(storeId, attachmentId, saved);
+            resolved = saved;
+          }
+        } catch (error) {
+          console.warn("entry attachment local read failed", error);
         }
-      } catch (error) {
-        console.warn("entry attachment local read failed", error);
-        if (!cancelled) setSource("");
-      } finally {
-        if (!cancelled) setLoading(false);
+      }
+
+      if (!cancelled) {
+        setSource(resolved);
+        setUnavailable(!resolved);
+        setLoading(false);
       }
     };
 
@@ -105,5 +113,5 @@ export function useEntryAttachmentSource(
     storeId,
   ]);
 
-  return { source, loading };
+  return { source, loading, unavailable };
 }

@@ -172,6 +172,7 @@ export function OwnerRegisterCloseoutsList({
                           <AttachmentThumbButton
                             attachment={row.item.attachment}
                             storeId={row.item.businessId}
+                            lang={lang}
                             attachmentApiContext={entryAttachmentApiContext}
                             className="h-8 w-8"
                             buttonClassName="shrink-0 overflow-hidden rounded-lg ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50 disabled:opacity-70"

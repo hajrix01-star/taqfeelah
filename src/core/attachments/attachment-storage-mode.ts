@@ -2,7 +2,7 @@ import { readEnv } from "@/core/config/env";
 
 export type AttachmentStorageMode = "inline" | "local";
 
-const DEFAULT_VPS_STORAGE_ROOT = "/opt/taqfeelah/data/attachments";
+const DEFAULT_VPS_STORAGE_ROOT = "/var/lib/taqfeelah/attachments";
 const DEFAULT_DEV_STORAGE_ROOT = "data/attachments";
 
 let modeCache: AttachmentStorageMode | null = null;
