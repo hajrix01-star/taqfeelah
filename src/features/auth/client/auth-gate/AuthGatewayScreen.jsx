@@ -17,7 +17,7 @@ export function AuthGatewayScreen({ lang, setLang, onOwnerPortal, onEmployeePort
         <LanguageSwitch lang={lang} setLang={setLang} />
       </div>
       <div className="mt-16 flex justify-center">
-        <Logo showTagline />
+        <Logo />
       </div>
       <div className="mt-10 text-center">
         <h1 className="text-2xl font-black text-[#112A46]">{text(lang, "loginGatewayTitle")}</h1>

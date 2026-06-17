@@ -1,32 +1,61 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import PrototypeClientGate from "@/features/demo/PrototypeClientGate";
-import { AppBrandMark } from "@/lib/brand/AppBrandMark";
-
-const TaqfeelahPrototypeRuntime = dynamic(
-  () => import("@/components/TaqfeelahPrototypeRuntime"),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-[#F8F6F0] px-6"
-        dir="rtl"
-        style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-        <AppBrandMark showTagline />
-      </div>
-    ),
-  },
-);
+import { AppOpenSplashOverlay, type AppOpenSplashPhase } from "@/lib/brand/AppOpenSplashOverlay";
+import {
+  APP_OPEN_SPLASH_FADE_MS,
+  markAppOpenSplashDone,
+  resolveAppOpenSplashWaitMs,
+  shouldShowAppOpenSplash,
+} from "@/lib/brand/app-open-splash";
 
 export default function AppRuntimePage() {
+  const [Runtime, setRuntime] = useState<ComponentType | null>(null);
+  const [splashPhase, setSplashPhase] = useState<AppOpenSplashPhase>(() => (
+    shouldShowAppOpenSplash() ? "visible" : "hidden"
+  ));
+  const startedAtRef = useRef(Date.now());
+
+  useEffect(() => {
+    let cancelled = false;
+    let fadeTimer: ReturnType<typeof setTimeout> | undefined;
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
+
+    void import("@/components/TaqfeelahPrototypeRuntime").then((mod) => {
+      if (cancelled) return;
+      setRuntime(() => mod.default);
+
+      if (!shouldShowAppOpenSplash()) return;
+
+      const waitMs = resolveAppOpenSplashWaitMs(Date.now() - startedAtRef.current);
+      fadeTimer = setTimeout(() => {
+        if (cancelled) return;
+        setSplashPhase("fading");
+        hideTimer = setTimeout(() => {
+          if (cancelled) return;
+          markAppOpenSplashDone();
+          setSplashPhase("hidden");
+        }, APP_OPEN_SPLASH_FADE_MS);
+      }, waitMs);
+    });
+
+    return () => {
+      cancelled = true;
+      if (fadeTimer) clearTimeout(fadeTimer);
+      if (hideTimer) clearTimeout(hideTimer);
+    };
+  }, []);
+
   return (
-    <ErrorBoundary>
-      <PrototypeClientGate>
-        <TaqfeelahPrototypeRuntime />
-      </PrototypeClientGate>
-    </ErrorBoundary>
+    <>
+      <ErrorBoundary>
+        <PrototypeClientGate>
+          {Runtime ? <Runtime /> : null}
+        </PrototypeClientGate>
+      </ErrorBoundary>
+      <AppOpenSplashOverlay phase={splashPhase} />
+    </>
   );
 }
