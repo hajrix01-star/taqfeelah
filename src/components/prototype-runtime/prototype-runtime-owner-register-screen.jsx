@@ -227,6 +227,19 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
   const attachmentGalleryEmptyMessage = logFilters.type === "summary"
     ? (lang === "ar" ? "تبويب المرفقات يعرض فواتير الخارج فقط." : "The attachments tab shows outflow invoices only.")
     : (lang === "ar" ? "لا توجد مرفقات خارج مطابقة للتصفية." : "No matching outflow attachments.");
+  useEffect(() => {
+    if (!registerEntriesApiEnabled || logView !== "attachments" || !apiRegisterEntriesHasMore) return undefined;
+    if (attachmentGallery.count > 0) return undefined;
+    loadMoreRegisterEntries();
+    return undefined;
+  }, [
+    apiRegisterEntriesHasMore,
+    attachmentGallery.count,
+    loadMoreRegisterEntries,
+    logView,
+    periodEntries.length,
+    registerEntriesApiEnabled,
+  ]);
   const visibleEntries = newestEntries(filteredEntries);
   const {
     sameDayCloseoutCountByStoreDate,
@@ -382,6 +395,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
       closeoutSummaries,
       generalReportRows,
       periodEntries,
+      attachmentGalleryItems: attachmentGallery.items,
     },
   });
 

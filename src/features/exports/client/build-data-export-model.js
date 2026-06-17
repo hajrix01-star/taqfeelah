@@ -241,11 +241,34 @@ function buildRegisterReportRows(snapshot, lang, businessesList, operationalEntr
   }).sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
+function buildRegisterAttachmentsSheet(snapshot, lang, businessesList) {
+  const items = snapshot.exportData?.attachmentGalleryItems || [];
+  const withStore = includeStoreColumn(snapshot);
+  return {
+    name: text(lang, "attachments"),
+    columns: [
+      ...(withStore ? [{ key: "store", label: text(lang, "store"), type: "text" }] : []),
+      { key: "date", label: lang === "ar" ? "التاريخ" : "Date", type: "date" },
+      { key: "label", label: lang === "ar" ? "البيان" : "Label", type: "text" },
+      { key: "amount", label: lang === "ar" ? "المبلغ" : "Amount", type: "number", sum: true },
+      { key: "status", label: lang === "ar" ? "الحالة" : "Status", type: "text" },
+    ],
+    rows: items.map((item) => ({
+      ...(withStore ? { store: storeCell(snapshot, item.businessId, businessesList, lang) } : {}),
+      date: formatCalendarDate(item.date, lang),
+      label: lang === "ar" ? item.label : item.labelEn,
+      amount: -(Number(item.amount) || 0),
+      status: item.voided ? text(lang, "voided") : text(lang, "active"),
+    })),
+  };
+}
+
 function buildRegisterExportSheets(snapshot, lang, businessesList, operationalEntries) {
   const view = snapshot.registerView || "report";
   const sheets = [];
   if (view === "operations") sheets.push(buildRegisterOperationsSheet(snapshot, lang, businessesList));
   if (view === "closeouts") sheets.push(buildRegisterCloseoutsSheet(snapshot, lang, businessesList));
+  if (view === "attachments") sheets.push(buildRegisterAttachmentsSheet(snapshot, lang, businessesList));
   if (view === "report") {
     const withStore = includeStoreColumn(snapshot);
     const rows = withStore || !snapshot.exportData?.generalReportRows?.length
@@ -274,6 +297,7 @@ function buildRegisterExportSheets(snapshot, lang, businessesList, operationalEn
 function registerViewLabel(view, lang) {
   if (view === "operations") return lang === "ar" ? "العمليات" : "Operations";
   if (view === "closeouts") return lang === "ar" ? "التقفيلات" : "Closeouts";
+  if (view === "attachments") return text(lang, "attachments");
   return lang === "ar" ? "تقرير عام" : "General report";
 }
 

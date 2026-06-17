@@ -125,8 +125,19 @@ export function OwnerRegisterAttachmentsGallery({
 
   if (!sections.length) {
     return (
-      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">
-        {emptyMessage || text(lang, "noOperationsMatch")}
+      <div className="space-y-3">
+        <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">
+          {registerEntriesApiEnabled && apiRegisterEntriesHasMore
+            ? (lang === "ar" ? "جاري تحميل المرفقات…" : "Loading attachments…")
+            : (emptyMessage || text(lang, "noOperationsMatch"))}
+        </div>
+        {registerEntriesApiEnabled && apiRegisterEntriesHasMore ? (
+          <div ref={registerLoadMoreRef} className="flex justify-center py-1 text-[10px] font-bold text-[#827762]">
+            {loadingMore
+              ? (lang === "ar" ? "جاري تحميل المزيد…" : "Loading more…")
+              : (lang === "ar" ? "جاري البحث في السجل…" : "Searching the log…")}
+          </div>
+        ) : null}
       </div>
     );
   }

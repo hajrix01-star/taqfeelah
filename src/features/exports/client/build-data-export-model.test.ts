@@ -49,6 +49,40 @@ describe("buildDataExportModel", () => {
     expect(model?.sheets[0]?.rows[1]?.amount).toBe(-250);
   });
 
+  it("builds register attachments sheet from gallery items", () => {
+    const model = buildDataExportModel({
+      lang: "ar",
+      businessesList,
+      operationalEntries: [],
+      archivedBusinessIds: [],
+      snapshot: {
+        screen: "register",
+        registerView: "attachments",
+        selectedBusiness: "shami",
+        includedBusinessIds: ["shami"],
+        period: "month",
+        selectedMonth: "2026-06",
+        exportData: {
+          attachmentGalleryItems: [
+            {
+              businessId: "shami",
+              date: "2026-06-05",
+              label: "صيانة",
+              labelEn: "Maintenance",
+              amount: 250,
+              voided: false,
+            },
+          ],
+        },
+      },
+    });
+
+    expect(model?.meta.viewLabel).toBe("المرفقات");
+    expect(model?.sheets[0]?.name).toBe("المرفقات");
+    expect(model?.sheets[0]?.rows[0]?.amount).toBe(-250);
+    expect(model?.sheets[0]?.rows[0]?.label).toBe("صيانة");
+  });
+
   it("builds combined home summary with summable store rows", () => {
     const model = buildDataExportModel({
       lang: "en",
