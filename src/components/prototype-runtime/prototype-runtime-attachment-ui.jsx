@@ -53,21 +53,25 @@ export function useAttachmentSource(attachment, attachmentApiContext = null, sto
   return useEntryAttachmentSource(attachment, mergeAttachmentApiContext(attachmentApiContext, storeId));
 }
 
-export function ProofThumb({ paper = false }) {
+export function ProofThumb({ paper = false, loading = false }) {
   return (
     <div className={`${paper ? "h-12 w-10" : "h-14 w-14 bg-[#E8E1D4]"} flex shrink-0 items-center justify-center rounded-xl`}>
-      <div className={`${paper ? "w-9 border border-[#CFBC82]" : "w-9"} rotate-[-3deg] rounded bg-white p-1.5 shadow-sm`}>
-        <div className="mb-1 h-1 w-5 rounded bg-[#D8D1C4]" />
-        <div className="mb-1 h-1 w-full rounded bg-[#E9E2D6]" />
-        <div className="h-1 w-7 rounded bg-[#E9E2D6]" />
-      </div>
+      {loading ? (
+        <span className="text-[10px] font-bold text-[#827762]">…</span>
+      ) : (
+        <div className={`${paper ? "w-9 border border-[#CFBC82]" : "w-9"} rotate-[-3deg] rounded bg-white p-1.5 shadow-sm`}>
+          <div className="mb-1 h-1 w-5 rounded bg-[#D8D1C4]" />
+          <div className="mb-1 h-1 w-full rounded bg-[#E9E2D6]" />
+          <div className="h-1 w-7 rounded bg-[#E9E2D6]" />
+        </div>
+      )}
     </div>
   );
 }
 
 export function AttachmentPreview({ attachment, className = "", attachmentApiContext = null, storeId = "" }) {
-  const source = useAttachmentSource(attachment, attachmentApiContext, storeId);
-  if (!source) return <ProofThumb />;
+  const { source, loading } = useAttachmentSource(attachment, attachmentApiContext, storeId);
+  if (!source) return <ProofThumb loading={loading} />;
   return <img src={source} alt="" className={`object-cover ${className}`} />;
 }
 
@@ -79,7 +83,7 @@ export function AttachmentThumbButton({
   storeId = "",
   attachmentApiContext = null,
 }) {
-  const source = useAttachmentSource(attachment, attachmentApiContext, storeId);
+  const { source, loading } = useAttachmentSource(attachment, attachmentApiContext, storeId);
   return (
     <button
       type="button"
@@ -89,12 +93,13 @@ export function AttachmentThumbButton({
       }}
       disabled={!source}
       className={buttonClassName}
+      aria-busy={loading || undefined}
     >
       {source ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={source} alt="" className={`${className} object-cover`} />
       ) : (
-        <ProofThumb />
+        <ProofThumb loading={loading} />
       )}
     </button>
   );
@@ -114,7 +119,7 @@ export function EntryAttachmentShareButton({
   compact = false,
   className = "",
 }) {
-  const source = useAttachmentSource(attachment, attachmentApiContext, storeId);
+  const { source } = useAttachmentSource(attachment, attachmentApiContext, storeId);
   const [sharing, setSharing] = useState(false);
 
   if (!attachment) return null;
