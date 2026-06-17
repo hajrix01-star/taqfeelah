@@ -15,18 +15,13 @@ import {
 } from "lucide-react";
 import EmployeeFooterNav from "@/features/employee-closeouts/EmployeeFooterNav";
 import { notebookLinesBackground } from "@/features/daily-closeouts/notebook-themes";
-import { TAQFEELAH_LOGO_SRC } from "@/lib/brand/taqfeelah-logo";
+import { AppBrandMark } from "@/lib/brand/AppBrandMark";
 import { text } from "./prototype-runtime-demo-data";
 
-function Logo({ compact = false, centered = false }) {
+function Logo({ compact = false, centered = false, showTagline = false }) {
   return (
     <div className={`shrink-0 ${centered ? "flex justify-center" : "flex items-center"}`}>
-      <img
-        src={TAQFEELAH_LOGO_SRC}
-        alt="تقفيلة - TAQFEELAH"
-        draggable={false}
-        className={`select-none object-contain ${compact ? "h-[44px] w-[132px]" : "h-[68px] w-[176px]"}`}
-      />
+      <AppBrandMark compact={compact} showTagline={showTagline} />
     </div>
   );
 }

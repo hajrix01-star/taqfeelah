@@ -14,7 +14,7 @@ export function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter flex min-h-[800px] flex-col pb-8 pt-10">
       <div className="flex justify-end"><LanguageSwitch lang={lang} setLang={setLang} /></div>
-      <div className="mt-16 flex justify-center"><Logo lang={lang} /></div>
+      <div className="mt-16 flex justify-center"><Logo showTagline /></div>
       <div className="mt-10 text-center">
         <h1 className="text-2xl font-black text-[#112A46]">{text(lang, "employeeLogin")}</h1>
         <p className="mx-auto mt-3 max-w-[280px] text-sm leading-6 text-[#827762]">{text(lang, "employeeLoginSubtitle")}</p>

@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import PrototypeClientGate from "@/features/demo/PrototypeClientGate";
+import { AppBrandMark } from "@/lib/brand/AppBrandMark";
 
 const TaqfeelahPrototypeRuntime = dynamic(
   () => import("@/components/TaqfeelahPrototypeRuntime"),
@@ -10,11 +11,11 @@ const TaqfeelahPrototypeRuntime = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="flex min-h-[100dvh] items-center justify-center bg-[#F8F6F0] text-sm font-bold text-[#827762]"
+        className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-[#F8F6F0] px-6"
         dir="rtl"
         style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        جاري التحميل…
+        <AppBrandMark showTagline />
       </div>
     ),
   },
