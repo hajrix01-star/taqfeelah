@@ -1,15 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ComponentType } from "react";
+import { describe, expect, it, vi } from "vitest";
 import {
   APP_OPEN_SPLASH_FADE_MS,
-  APP_OPEN_SPLASH_MAX_MS,
+  APP_OPEN_SPLASH_FALLBACK_MS,
   APP_OPEN_SPLASH_MIN_MS,
-  APP_OPEN_SPLASH_SESSION_KEY,
-  buildAppOpenSplashDismissPlan,
-  resolveAppOpenSplashWaitMs,
-  resolveInitialSplashPhase,
-  scheduleAppOpenSplashDismissal,
-  scheduleAppOpenSplashDismissalWithPlan,
+  APP_OPEN_SPLASH_TOTAL_MS,
+  resolveAppOpenSplashHoldRatio,
+  resolveInitialBootSplashVisible,
 } from "./app-open-splash";
 import {
   APP_RUNTIME_LOAD_MAX_ATTEMPTS,
@@ -17,119 +13,29 @@ import {
   loadTaqfeelahPrototypeRuntime,
 } from "./load-taqfeelah-prototype-runtime";
 
-describe("app open splash timing", () => {
-  it("exposes minimum display, fade, and max durations", () => {
+describe("app boot splash timing", () => {
+  it("exposes minimum display, fade, total, and fallback durations", () => {
     expect(APP_OPEN_SPLASH_MIN_MS).toBe(600);
     expect(APP_OPEN_SPLASH_FADE_MS).toBe(180);
-    expect(APP_OPEN_SPLASH_MAX_MS).toBe(8000);
+    expect(APP_OPEN_SPLASH_TOTAL_MS).toBe(780);
+    expect(APP_OPEN_SPLASH_FALLBACK_MS).toBe(1030);
   });
 
-  it("waits only until the minimum display time is met", () => {
-    expect(resolveAppOpenSplashWaitMs(0)).toBe(600);
-    expect(resolveAppOpenSplashWaitMs(250)).toBe(350);
-    expect(resolveAppOpenSplashWaitMs(600)).toBe(0);
-    expect(resolveAppOpenSplashWaitMs(1200)).toBe(0);
+  it("derives the CSS hold ratio from min/total durations", () => {
+    expect(resolveAppOpenSplashHoldRatio()).toBeCloseTo(600 / 780, 5);
   });
 
-  it("builds a dismiss plan from elapsed time", () => {
-    expect(buildAppOpenSplashDismissPlan(0)).toEqual({
-      waitMs: 600,
-      fadeMs: 180,
-      maxMs: 8000,
-    });
-    expect(buildAppOpenSplashDismissPlan(500)).toEqual({
-      waitMs: 100,
-      fadeMs: 180,
-      maxMs: 8000,
-    });
-  });
-
-  it("resolves the initial splash phase from session gate", () => {
-    expect(resolveInitialSplashPhase(true)).toBe("visible");
-    expect(resolveInitialSplashPhase(false)).toBe("hidden");
-  });
-});
-
-describe("scheduleAppOpenSplashDismissal", () => {
-  const storage = new Map<string, string>();
-
-  beforeEach(() => {
-    vi.useFakeTimers();
-    storage.clear();
-    vi.stubGlobal("window", {});
-    vi.stubGlobal("sessionStorage", {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => {
-        storage.set(key, value);
-      },
-      removeItem: (key: string) => {
-        storage.delete(key);
-      },
-      clear: () => {
-        storage.clear();
-      },
-    });
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-    vi.unstubAllGlobals();
-  });
-
-  it("fades then hides after the minimum display time", () => {
-    const onFade = vi.fn();
-    const onHidden = vi.fn();
-
-    scheduleAppOpenSplashDismissal(0, { onFade, onHidden });
-
-    expect(onFade).not.toHaveBeenCalled();
-    expect(onHidden).not.toHaveBeenCalled();
-
-    vi.advanceTimersByTime(APP_OPEN_SPLASH_MIN_MS);
-    expect(onFade).toHaveBeenCalledTimes(1);
-    expect(onHidden).not.toHaveBeenCalled();
-
-    vi.advanceTimersByTime(APP_OPEN_SPLASH_FADE_MS);
-    expect(onHidden).toHaveBeenCalledTimes(1);
-    expect(sessionStorage.getItem(APP_OPEN_SPLASH_SESSION_KEY)).toBe("1");
-  });
-
-  it("forces hide at the max ceiling when fade has not started yet", () => {
-    const onFade = vi.fn();
-    const onHidden = vi.fn();
-
-    scheduleAppOpenSplashDismissalWithPlan(
-      { waitMs: 5_000, fadeMs: 2_000, maxMs: 1_000 },
-      { onFade, onHidden },
-    );
-
-    vi.advanceTimersByTime(1_000);
-
-    expect(onFade).not.toHaveBeenCalled();
-    expect(onHidden).toHaveBeenCalledTimes(1);
-    expect(sessionStorage.getItem(APP_OPEN_SPLASH_SESSION_KEY)).toBe("1");
-  });
-
-  it("cancels pending timers when disposed", () => {
-    const onFade = vi.fn();
-    const onHidden = vi.fn();
-
-    const dispose = scheduleAppOpenSplashDismissal(0, { onFade, onHidden });
-    dispose();
-
-    vi.advanceTimersByTime(APP_OPEN_SPLASH_MAX_MS);
-
-    expect(onFade).not.toHaveBeenCalled();
-    expect(onHidden).not.toHaveBeenCalled();
-    expect(sessionStorage.getItem(APP_OPEN_SPLASH_SESSION_KEY)).toBeNull();
+  it("resolves whether the boot splash should show from session gate", () => {
+    expect(resolveInitialBootSplashVisible(true)).toBe(true);
+    expect(resolveInitialBootSplashVisible(false)).toBe(false);
   });
 });
 
 describe("loadTaqfeelahPrototypeRuntime", () => {
   it("retries transient import failures before succeeding", async () => {
-    const RuntimeStub = (() => null) as ComponentType;
+    const RuntimeStub = (() => null) as import("react").ComponentType;
     const importRuntime = vi
-      .fn<() => Promise<{ default: ComponentType | undefined }>>()
+      .fn<() => Promise<{ default: import("react").ComponentType | undefined }>>()
       .mockRejectedValueOnce(new Error("chunk-failed"))
       .mockResolvedValueOnce({ default: RuntimeStub });
 
@@ -150,7 +56,7 @@ describe("loadTaqfeelahPrototypeRuntime", () => {
 
   it("throws after exhausting all attempts", async () => {
     const importRuntime = vi
-      .fn<() => Promise<{ default: ComponentType | undefined }>>()
+      .fn<() => Promise<{ default: import("react").ComponentType | undefined }>>()
       .mockRejectedValue(new Error("chunk-failed"));
     const wait = vi.fn(async () => {});
 

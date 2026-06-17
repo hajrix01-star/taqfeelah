@@ -2,13 +2,13 @@
 
 import ErrorBoundary from "@/components/ErrorBoundary";
 import PrototypeClientGate from "@/features/demo/PrototypeClientGate";
-import { AppOpenSplashOverlay } from "@/lib/brand/AppOpenSplashOverlay";
+import { AppBootSplashScreen } from "@/lib/brand/AppBootSplashScreen";
 import { AppRuntimeLoadErrorScreen } from "@/lib/brand/AppRuntimeLoadErrorScreen";
-import { useAppOpenSplash } from "@/lib/brand/use-app-open-splash";
+import { useAppBootGate } from "@/lib/brand/use-app-boot-gate";
 import { useTaqfeelahPrototypeRuntime } from "@/lib/brand/use-taqfeelah-prototype-runtime";
 
 export default function AppRuntimePage() {
-  const splashPhase = useAppOpenSplash();
+  const { showBootSplash, dismissBootSplash } = useAppBootGate();
   const { Runtime, loadError, retryLoad } = useTaqfeelahPrototypeRuntime();
 
   const runtimeContent = Runtime ? (
@@ -22,7 +22,7 @@ export default function AppRuntimePage() {
       <ErrorBoundary>
         <PrototypeClientGate>{runtimeContent}</PrototypeClientGate>
       </ErrorBoundary>
-      <AppOpenSplashOverlay phase={splashPhase} />
+      {showBootSplash ? <AppBootSplashScreen onDone={dismissBootSplash} /> : null}
     </>
   );
 }

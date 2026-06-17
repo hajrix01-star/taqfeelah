@@ -16,6 +16,7 @@ import {
 import { getClientReleaseBuild } from "@/release/client-release";
 import type { ReleaseMeta } from "@/release/version";
 import PwaInstallPrompt from "@/features/pwa/PwaInstallPrompt";
+import { shouldReloadAfterServiceWorkerControllerChange } from "@/features/pwa/pwa-controller-change-reload";
 
 type UpdatePhase = "idle" | "available";
 
@@ -107,7 +108,10 @@ export default function PwaLifecycle() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return undefined;
 
+    const hadControllerAtMount = Boolean(navigator.serviceWorker.controller);
+
     const onControllerChange = () => {
+      if (!shouldReloadAfterServiceWorkerControllerChange(hadControllerAtMount)) return;
       window.location.reload();
     };
 

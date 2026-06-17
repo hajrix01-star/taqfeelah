@@ -43,3 +43,21 @@ body {
   font-size: var(--text-taq-body-sm);
   line-height: 1.4;
 }
+
+@keyframes taq-app-boot-splash-out {
+  0%,
+  76.923% {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.taq-app-boot-splash {
+  animation: taq-app-boot-splash-out var(--taq-boot-splash-duration, 780ms) ease-out forwards;
+  pointer-events: none;
+}
