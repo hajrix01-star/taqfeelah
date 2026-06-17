@@ -12,6 +12,11 @@ export type AppOpenSplashDismissPlan = {
   maxMs: number;
 };
 
+export type AppOpenSplashDismissCallbacks = {
+  onFade: () => void;
+  onHidden: () => void;
+};
+
 export function shouldShowAppOpenSplash(): boolean {
   if (typeof window === "undefined") return true;
   try {
@@ -46,4 +51,56 @@ export function buildAppOpenSplashDismissPlan(elapsedMs: number): AppOpenSplashD
     fadeMs: APP_OPEN_SPLASH_FADE_MS,
     maxMs: APP_OPEN_SPLASH_MAX_MS,
   };
+}
+
+/**
+ * Schedules splash fade + hide on timers independent of runtime loading.
+ * Returns a dispose function that cancels all pending timers.
+ */
+export function scheduleAppOpenSplashDismissalWithPlan(
+  plan: AppOpenSplashDismissPlan,
+  callbacks: AppOpenSplashDismissCallbacks,
+): () => void {
+  const { waitMs, fadeMs, maxMs } = plan;
+  let disposed = false;
+  let hideTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const completeHidden = () => {
+    if (disposed) return;
+    disposed = true;
+    markAppOpenSplashDone();
+    callbacks.onHidden();
+  };
+
+  const fadeTimer = setTimeout(() => {
+    if (disposed) return;
+    callbacks.onFade();
+    hideTimer = setTimeout(completeHidden, fadeMs);
+  }, waitMs);
+
+  const maxTimer = setTimeout(() => {
+    if (disposed) return;
+    disposed = true;
+    clearTimeout(fadeTimer);
+    if (hideTimer) clearTimeout(hideTimer);
+    markAppOpenSplashDone();
+    callbacks.onHidden();
+  }, maxMs);
+
+  return () => {
+    disposed = true;
+    clearTimeout(fadeTimer);
+    if (hideTimer) clearTimeout(hideTimer);
+    clearTimeout(maxTimer);
+  };
+}
+
+export function scheduleAppOpenSplashDismissal(
+  elapsedMs: number,
+  callbacks: AppOpenSplashDismissCallbacks,
+): () => void {
+  return scheduleAppOpenSplashDismissalWithPlan(
+    buildAppOpenSplashDismissPlan(elapsedMs),
+    callbacks,
+  );
 }
