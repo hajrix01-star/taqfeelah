@@ -1,9 +1,9 @@
 "use client";
 
 import { AppBrandMark } from "@/lib/brand/AppBrandMark";
-import { APP_OPEN_SPLASH_FADE_MS } from "@/lib/brand/app-open-splash";
+import { APP_OPEN_SPLASH_FADE_MS, type AppOpenSplashPhase } from "@/lib/brand/app-open-splash";
 
-export type AppOpenSplashPhase = "visible" | "fading" | "hidden";
+export type { AppOpenSplashPhase };
 
 type AppOpenSplashOverlayProps = {
   phase: AppOpenSplashPhase;
