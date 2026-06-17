@@ -49,6 +49,18 @@ function buildRegisterViewItems(lang, counts) {
       contentSurfaceClass: "bg-[#F4FAF6]",
       contentAccentClass: "border-t-2 border-[#257844]/40",
     },
+    {
+      id: "attachments",
+      label: text(lang, "attachments"),
+      count: counts.attachments ?? 0,
+      hideCount: false,
+      activeClass: "bg-[#806528] text-white",
+      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[#806528]/80`,
+      badgeActiveClass: "bg-white/20 text-white",
+      badgeInactiveClass: "bg-[#806528]/10 text-[#806528]",
+      contentSurfaceClass: "bg-[#FFFBF7]",
+      contentAccentClass: "border-t-2 border-[#806528]/40",
+    },
   ];
 }
 

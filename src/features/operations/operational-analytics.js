@@ -16,7 +16,8 @@ import {
 export const OUTFLOW_ENTRY_TYPES = new Set(["purchases", "expense", "withdrawal"]);
 
 export function entryHasAttachment(entry) {
-  return Boolean(entry?.attachment);
+  if (Boolean(entry?.attachment)) return true;
+  return Array.isArray(entry?.attachments) && entry.attachments.length > 0;
 }
 
 export function entryIsVoided(entry) {

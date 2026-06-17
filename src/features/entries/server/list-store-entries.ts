@@ -217,27 +217,30 @@ export async function listStoreEntries(rawInput: Input) {
       ),
     );
 
-  const attachmentByEntryId = new Map<
+  const attachmentsByEntryId = new Map<
     string,
-    {
+    Array<{
       id: string;
       name: string;
       mimeType: string;
       sizeBytes: number;
       createdAt: Date;
-    }
+    }>
   >();
   attachmentRows.forEach((row) => {
-    const current = attachmentByEntryId.get(row.entryId);
-    if (!current || row.createdAt > current.createdAt) {
-      attachmentByEntryId.set(row.entryId, {
-        id: row.id,
-        name: row.originalFileName || "attachment.jpg",
-        mimeType: row.mimeType,
-        sizeBytes: row.sizeBytes,
-        createdAt: row.createdAt,
-      });
-    }
+    const current = attachmentsByEntryId.get(row.entryId) || [];
+    current.push({
+      id: row.id,
+      name: row.originalFileName || "attachment.jpg",
+      mimeType: row.mimeType,
+      sizeBytes: row.sizeBytes,
+      createdAt: row.createdAt,
+    });
+    attachmentsByEntryId.set(row.entryId, current);
+  });
+  attachmentsByEntryId.forEach((rows, entryId) => {
+    rows.sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime());
+    attachmentsByEntryId.set(entryId, rows);
   });
 
   const entryAuditRows = await db
@@ -320,7 +323,8 @@ export async function listStoreEntries(rawInput: Input) {
       nameEn: actorName,
     };
     const latestAudit = latestAuditByEntryId.get(row.id);
-    const attachment = attachmentByEntryId.get(row.id);
+    const attachmentRowsForEntry = attachmentsByEntryId.get(row.id) || [];
+    const attachment = attachmentRowsForEntry[attachmentRowsForEntry.length - 1] || null;
     const reviewedAt = toIso(row.reviewedAt) || toIso(latestAudit?.reviewed?.createdAt || null);
     const voidedAt = toIso(row.voidedAt) || toIso(latestAudit?.voided?.createdAt || null);
     const restoredAt = toIso(row.restoredAt) || toIso(latestAudit?.restored?.createdAt || null);
@@ -392,6 +396,13 @@ export async function listStoreEntries(rawInput: Input) {
           sizeBytes: attachment.sizeBytes,
         }
         : null,
+      attachments: attachmentRowsForEntry.map((item) => ({
+        id: item.id,
+        kind: "image",
+        name: item.name,
+        mimeType: item.mimeType,
+        sizeBytes: item.sizeBytes,
+      })),
       reviewed: Boolean(reviewedAt),
       reviewedAt,
       reviewedBy: latestAudit?.reviewed ? actorById(latestAudit.reviewed.actorUserId) : null,

@@ -21,6 +21,7 @@ import {
   resolveRegisterCloseoutActorLabel,
   summarizeRegisterPeriod,
 } from "@/features/entries/client/register-log-display";
+import { buildRegisterAttachmentGalleryModel } from "@/features/entries/client/register-outflow-attachments";
 import {
   logPeriodScopeLabel,
 } from "@/features/reports/client/report-period-labels";
@@ -38,6 +39,7 @@ import { ENTRIES_API_DB_SOURCE } from "./prototype-runtime-boot";
 import {
   entryCategory,
   entryDateMatches,
+  operationDisplayLabel,
 } from "./prototype-runtime-entry-helpers";
 import {
   DateSelector,
@@ -50,6 +52,7 @@ import { RegisterFiltersSheet } from "./owner-register-filters-sheet";
 import { OwnerRegisterCloseoutsList } from "./owner-register-closeouts-list";
 import { OwnerRegisterGeneralReportList } from "./owner-register-general-report-list";
 import { OwnerRegisterOperationsList } from "./owner-register-operations-list";
+import { OwnerRegisterAttachmentsGallery } from "./owner-register-attachments-gallery";
 import { RegisterStoreChips } from "./owner-register-store-filter";
 import { RegisterDashboardCard } from "./owner-register-ui-primitives";
 import { confirmCloseoutDelete, alertCloseoutNotFound } from "@/lib/ui/app-dialog/app-dialog-helpers";
@@ -124,6 +127,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
     hasMore: apiRegisterEntriesHasMore,
     loadMore: loadMoreRegisterEntries,
     loadAllRemaining: loadAllRegisterEntries,
+    loadingMore: registerEntriesLoadingMore,
   } = useRegisterEntriesFromApi({
     enabled: registerEntriesApiEnabled,
     organizationId: registerEntriesApiOrganizationId,
@@ -153,6 +157,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
     ? "تعذر تحميل التقفيلات من الخادم. لم يتم عرض بيانات محلية بديلة."
     : "Failed to load closeouts from the server. No local fallback data is shown.";
   const registerLoadMoreRef = useRef(null);
+  const attachmentsLoadMoreRef = useRef(null);
   useEffect(() => {
     if (!registerEntriesApiEnabled || logView !== "operations" || !apiRegisterEntriesHasMore) return undefined;
     const target = registerLoadMoreRef.current;
@@ -162,6 +167,18 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
         loadMoreRegisterEntries();
       }
     }, { root: null, rootMargin: "240px" });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [apiRegisterEntriesHasMore, loadMoreRegisterEntries, logView, periodEntries.length, registerEntriesApiEnabled]);
+  useEffect(() => {
+    if (!registerEntriesApiEnabled || logView !== "attachments" || !apiRegisterEntriesHasMore) return undefined;
+    const target = attachmentsLoadMoreRef.current;
+    if (!target) return undefined;
+    const observer = new IntersectionObserver((records) => {
+      if (records.some((record) => record.isIntersecting)) {
+        loadMoreRegisterEntries();
+      }
+    }, { root: null, rootMargin: "320px" });
     observer.observe(target);
     return () => observer.disconnect();
   }, [apiRegisterEntriesHasMore, loadMoreRegisterEntries, logView, periodEntries.length, registerEntriesApiEnabled]);
@@ -197,6 +214,19 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
     () => filterRegisterLogEntries(periodEntries, logFilters, entryCategory, channels),
     [periodEntries, logFilters],
   );
+  const attachmentGallery = useMemo(
+    () => buildRegisterAttachmentGalleryModel(periodEntries, logFilters, {
+      resolveLabel: (entry, labelLang) => operationDisplayLabel(entry, labelLang, logFilters.salesChannel),
+      resolveExpenseCategory: entryCategory,
+      configuredChannels: channels,
+      todayIso: todayIsoDate(),
+      lang,
+    }),
+    [lang, logFilters, periodEntries],
+  );
+  const attachmentGalleryEmptyMessage = logFilters.type === "summary"
+    ? (lang === "ar" ? "تبويب المرفقات يعرض فواتير الخارج فقط." : "The attachments tab shows outflow invoices only.")
+    : (lang === "ar" ? "لا توجد مرفقات خارج مطابقة للتصفية." : "No matching outflow attachments.");
   const visibleEntries = newestEntries(filteredEntries);
   const {
     sameDayCloseoutCountByStoreDate,
@@ -401,6 +431,7 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
             logView={logView}
             setLogView={setLogView}
             tabCounts={{
+              attachments: attachmentGallery.count,
               closeouts: closeoutSummaries.length,
               operations: visibleEntries.length,
               report: generalReportRows.length,
@@ -431,11 +462,34 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
           <span className="rounded-lg bg-white px-2.5 py-1 text-[10px] font-black tabular-nums text-[#827762] ring-1 ring-[#E8E1D4]">
             {logView === "operations"
               ? `${visibleEntries.length} ${text(lang, "operations")}`
+              : logView === "attachments"
+                ? `${attachmentGallery.count} ${text(lang, "attachments")}`
               : logView === "report"
                 ? `${generalReportRows.length} ${lang === "ar" ? "يوم" : "days"}`
                 : `${closeoutSummaries.length} ${lang === "ar" ? "تقفيلات" : "Closeouts"}`}
           </span>
         </div>
+
+        {logView === "attachments" && (
+          <OwnerRegisterAttachmentsGallery
+            lang={lang}
+            sections={attachmentGallery.sections}
+            businessesList={businessesList}
+            showStoreBadge={showAllStores}
+            entryAttachmentApiContext={entryAttachmentApiContext}
+            daySequenceByCloseoutId={daySequenceByCloseoutId}
+            sameDayCloseoutCountByStoreDate={sameDayCloseoutCountByStoreDate}
+            onOpenOperation={onOpenOperation}
+            onPreviewAttachment={openRegisterAttachmentPreview}
+            registerEntriesApiEnabled={registerEntriesApiEnabled}
+            apiRegisterEntriesHasMore={apiRegisterEntriesHasMore}
+            registerLoadMoreRef={attachmentsLoadMoreRef}
+            loadError={registerEntriesLoadError}
+            loadErrorMessage={registerEntriesLoadErrorMessage}
+            emptyMessage={attachmentGalleryEmptyMessage}
+            loadingMore={registerEntriesLoadingMore}
+          />
+        )}
 
         {logView === "operations" && (
           <OwnerRegisterOperationsList
