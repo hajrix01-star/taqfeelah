@@ -179,6 +179,24 @@ export function DailyCloseoutsProvider({
     return remoteList;
   }, [reloadCloseoutsFromApi, upsertCloseout]);
 
+  const runPostSubmitBackgroundSync = useCallback((submittedCloseout) => {
+    void (async () => {
+      try {
+        await reloadCloseoutsAndPreserveSubmitted(submittedCloseout);
+        await onSyncToOperationalEntries(submittedCloseout);
+      } catch (error) {
+        console.warn("closeout post-submit background sync failed", error);
+        const fallback = lang === "ar"
+          ? "تم الإرسال؛ تعذر تحديث القائمة من الخادم."
+          : "Submitted; failed to refresh list from server.";
+        const detail = error instanceof Error && error.message.trim()
+          ? mapCloseoutSyncErrorToUserMessage(error, lang)
+          : "";
+        setSyncError(detail || fallback);
+      }
+    })();
+  }, [lang, onSyncToOperationalEntries, reloadCloseoutsAndPreserveSubmitted]);
+
   useEffect(() => {
     if (typeof loadCloseoutsFromApi !== "function") return;
     const queryKey = closeoutsAutoLoadQueryKey || "default";
@@ -255,8 +273,8 @@ export function DailyCloseoutsProvider({
           }
           setSyncError("");
           if (dbSourceMode) {
-            await reloadCloseoutsAndPreserveSubmitted(next);
-            await onSyncToOperationalEntries(next);
+            upsertCloseout(next);
+            runPostSubmitBackgroundSync(next);
             return next;
           }
         } else {
@@ -301,8 +319,9 @@ export function DailyCloseoutsProvider({
     logEvent,
     onSubmitCloseoutToApi,
     onSyncToOperationalEntries,
-    reloadCloseoutsAndPreserveSubmitted,
+    runPostSubmitBackgroundSync,
     saveCloseoutRecord,
+    upsertCloseout,
     useApiWrites,
   ]);
 
@@ -346,8 +365,8 @@ export function DailyCloseoutsProvider({
           }
           setSyncError("");
           if (dbSourceMode) {
-            await reloadCloseoutsAndPreserveSubmitted(next);
-            await onSyncToOperationalEntries(next);
+            upsertCloseout(next);
+            runPostSubmitBackgroundSync(next);
             return next;
           }
         } else {
@@ -392,8 +411,9 @@ export function DailyCloseoutsProvider({
     logEvent,
     onSubmitCloseoutToApi,
     onSyncToOperationalEntries,
-    reloadCloseoutsAndPreserveSubmitted,
+    runPostSubmitBackgroundSync,
     saveCloseoutRecord,
+    upsertCloseout,
     useApiWrites,
   ]);
 
