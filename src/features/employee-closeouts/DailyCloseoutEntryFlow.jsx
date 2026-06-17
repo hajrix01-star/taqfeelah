@@ -1,7 +1,9 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useEffect } from "react";
 import NotebookScrollSurface from "../daily-closeouts/NotebookScrollSurface";
+import { preloadNotebookShareCapture } from "../daily-closeouts/notebook-share-capture";
 import { notebookLinesBackground } from "../daily-closeouts/notebook-themes";
 import AttachmentLightbox from "../../components/AttachmentLightbox";
 import { text } from "../../components/prototype-runtime/prototype-runtime-demo-data";
@@ -43,6 +45,10 @@ export default function DailyCloseoutEntryFlow({
     setPreviewAttachment,
     handleSubmit,
   } = state;
+
+  useEffect(() => {
+    preloadNotebookShareCapture();
+  }, []);
 
   const rootClassName = fullScreenOverlay
     ? "absolute inset-0 z-[50] flex flex-col"
