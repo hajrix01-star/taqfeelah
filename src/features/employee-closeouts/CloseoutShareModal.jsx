@@ -115,9 +115,9 @@ export default function CloseoutShareModal({
     const captureToken = ++preCaptureTokenRef.current;
     let cancelled = false;
     const filename = `taqfeelah-${closeout.date}.png`;
-    let timeoutId = 0;
+    let innerFrameId = 0;
     const frameId = requestAnimationFrame(() => {
-      timeoutId = window.setTimeout(async () => {
+      innerFrameId = requestAnimationFrame(async () => {
         if (cancelled || captureToken !== preCaptureTokenRef.current) return;
         if (!previewRef.current) {
           setPreCaptureDone(true);
@@ -139,12 +139,12 @@ export default function CloseoutShareModal({
             setPreCaptureDone(true);
           }
         }
-      }, 400);
+      });
     });
     return () => {
       cancelled = true;
       cancelAnimationFrame(frameId);
-      window.clearTimeout(timeoutId);
+      if (innerFrameId) cancelAnimationFrame(innerFrameId);
     };
   }, [open, closeout?.id, previewData, paperColor]);
 
@@ -217,7 +217,6 @@ export default function CloseoutShareModal({
     });
   };
 
-  const sharePreparing = Boolean(previewData) && (!preCaptureDone || imageBusy);
   const whatsAppDisabled = imageBusy || !previewData || !preCaptureDone;
 
   const modal = (
@@ -281,12 +280,17 @@ export default function CloseoutShareModal({
                 {lang === "ar" ? "لا توجد بيانات للمشاركة" : "Nothing to share"}
               </div>
             )}
-            {sharePreparing ? (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#F8F6F0]/94 text-xs font-bold text-[#827762]">
+            {imageBusy ? (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#F8F6F0]/88 text-xs font-bold text-[#827762]">
                 {lang === "ar" ? "جاري تجهيز الصورة…" : "Preparing image…"}
               </div>
             ) : null}
           </div>
+          {previewData && !imageReady && !imageBusy ? (
+            <p className="mb-2 text-center text-taq-meta font-bold text-[#827762]">
+              {lang === "ar" ? "جاري تجهيز ملف المشاركة في الخلفية…" : "Preparing share file in the background…"}
+            </p>
+          ) : null}
           {imageReady ? (
             <p className="mb-2 text-center text-taq-meta font-bold text-[#257844]">
               {lang === "ar" ? "الصورة جاهزة للمشاركة" : "Image ready to share"}

@@ -15,6 +15,20 @@ export const NOTEBOOK_SHARE_MAX_OUTPUT_DIMENSION_PX = 8192;
 /** CSS height ceiling before rasterization. */
 export const NOTEBOOK_SHARE_MAX_CSS_HEIGHT = 6000;
 
+let htmlToImageModulePromise = null;
+
+/** Warm html-to-image while the employee is still on the entry screen. */
+export function preloadNotebookShareCapture() {
+  if (!htmlToImageModulePromise) {
+    htmlToImageModulePromise = import("html-to-image");
+  }
+  return htmlToImageModulePromise;
+}
+
+async function loadHtmlToImage() {
+  return preloadNotebookShareCapture();
+}
+
 /**
  * Derive capture rasterization from the rendered preview size.
  * Upscales export only (pixelRatio); CSS layout width/height match the live preview.
@@ -67,7 +81,7 @@ function readPreviewCssSize(element) {
 
 export async function captureNotebookShareBlob(element, backgroundColor = "#FFFDF7") {
   if (!element) throw new Error("missing-preview");
-  const { toBlob } = await import("html-to-image");
+  const { toBlob } = await loadHtmlToImage();
   if (document.fonts?.ready) await document.fonts.ready;
 
   const { width, height } = readPreviewCssSize(element);
