@@ -18,6 +18,12 @@ describe("pwa config", () => {
     expect(PWA_MANIFEST_ID).toBe("/");
   });
 
+  it("uses brand tagline for install description", () => {
+    const value = manifest();
+    expect(value.description).toBe("حسبة بدو، لا تعقدها");
+    expect(value.screenshots?.every((item) => item.label === "حسبة بدو، لا تعقدها")).toBe(true);
+  });
+
   it("generates a manifest with required install fields", () => {
     const value = manifest();
 

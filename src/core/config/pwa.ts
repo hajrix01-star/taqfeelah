@@ -1,7 +1,7 @@
 export const PWA_APP_NAME = "تقفيلة";
 export const PWA_SHORT_NAME = "تقفيلة";
-export const PWA_DESCRIPTION =
-  "تقفيلة — متابعة تشغيل يومية للمحلات (الداخل − الخارج = الناتج).";
+export const PWA_DESCRIPTION = "حسبة بدو، لا تعقدها";
+export const PWA_SCREENSHOT_TAGLINE = PWA_DESCRIPTION;
 export const PWA_MANIFEST_ID = "/";
 export const PWA_THEME_COLOR = "#F8F6F0";
 export const PWA_BACKGROUND_COLOR = "#F8F6F0";
@@ -34,14 +34,14 @@ export const PWA_SCREENSHOTS = [
     sizes: "540x720",
     type: "image/png" as const,
     form_factor: "narrow" as const,
-    label: "ملخص اليوم في تقفيلة",
+    label: PWA_SCREENSHOT_TAGLINE,
   },
   {
     src: "/screenshots/app-wide.png",
     sizes: "1280x720",
     type: "image/png" as const,
     form_factor: "wide" as const,
-    label: "متابعة تشغيل المحل",
+    label: PWA_SCREENSHOT_TAGLINE,
   },
 ] as const;
 
