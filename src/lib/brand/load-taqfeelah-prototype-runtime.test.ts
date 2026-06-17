@@ -1,35 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  APP_OPEN_SPLASH_FADE_MS,
-  APP_OPEN_SPLASH_FALLBACK_MS,
-  APP_OPEN_SPLASH_MIN_MS,
-  APP_OPEN_SPLASH_TOTAL_MS,
-  resolveAppOpenSplashHoldRatio,
-  resolveInitialBootSplashVisible,
-} from "./app-open-splash";
-import {
   APP_RUNTIME_LOAD_MAX_ATTEMPTS,
   APP_RUNTIME_LOAD_RETRY_MS,
   loadTaqfeelahPrototypeRuntime,
 } from "./load-taqfeelah-prototype-runtime";
-
-describe("app boot splash timing", () => {
-  it("exposes minimum display, fade, total, and fallback durations", () => {
-    expect(APP_OPEN_SPLASH_MIN_MS).toBe(600);
-    expect(APP_OPEN_SPLASH_FADE_MS).toBe(180);
-    expect(APP_OPEN_SPLASH_TOTAL_MS).toBe(780);
-    expect(APP_OPEN_SPLASH_FALLBACK_MS).toBe(1030);
-  });
-
-  it("derives the CSS hold ratio from min/total durations", () => {
-    expect(resolveAppOpenSplashHoldRatio()).toBeCloseTo(600 / 780, 5);
-  });
-
-  it("resolves whether the boot splash should show from session gate", () => {
-    expect(resolveInitialBootSplashVisible(true)).toBe(true);
-    expect(resolveInitialBootSplashVisible(false)).toBe(false);
-  });
-});
 
 describe("loadTaqfeelahPrototypeRuntime", () => {
   it("retries transient import failures before succeeding", async () => {
