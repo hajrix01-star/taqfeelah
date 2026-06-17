@@ -78,7 +78,7 @@ export function usePrototypeRuntimeCloseoutsApi({
         : "Closeout submit failed: server returned an empty response.");
     }
     if (entriesApiEnabled) {
-      await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
+      void refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
     }
     notifyOperationalSyncWrite?.("closeout.submitted");
     return result;
