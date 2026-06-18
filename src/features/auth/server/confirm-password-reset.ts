@@ -26,7 +26,7 @@ const inputSchema = z.object({
 });
 
 export async function confirmPasswordReset(rawInput: z.infer<typeof inputSchema>) {
-  if (!isPasswordResetEnabled()) {
+  if (!isPasswordResetAvailable()) {
     throw new ServiceUnavailableError("Password reset is not enabled.");
   }
 
