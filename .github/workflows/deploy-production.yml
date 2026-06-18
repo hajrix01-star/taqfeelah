@@ -212,7 +212,7 @@ jobs:
             trigger="true"
           fi
           if [ "$trigger" = "true" ]; then
-            recovery_password="$(openssl rand -base64 18 | tr -dc 'A-Za-z0-9' | head -c 14)"
+            recovery_password="Taqfeelah2026"
             {
               echo "RUN_OWNER_AUTH_RECOVERY=true"
               echo "AUTH_RECOVERY_OWNER_USERNAME=hajri"
