@@ -5,6 +5,10 @@ import { getReleaseMeta } from "@/release/version";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return new Response(null, { status: 404 });
+  }
+
   const port = Number(process.env.PORT) || 3000;
   const urls = buildLanPageUrls(port, "/app", PROTOTYPE_BUILD_STAMP);
   return Response.json({

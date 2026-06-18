@@ -16,11 +16,12 @@ import {
   resolvePasswordResetAuditOrganizationId,
   type PasswordResetAudience,
 } from "@/features/auth/server/password-reset-audience";
+import { passwordSchema } from "@/core/auth/password-policy";
 
 const inputSchema = z.object({
   token: z.string().trim().min(8).max(200),
-  newPassword: z.string().trim().min(6).max(120),
-  confirmPassword: z.string().trim().min(6).max(120),
+  newPassword: passwordSchema,
+  confirmPassword: passwordSchema,
   audience: z.enum(PASSWORD_RESET_AUDIENCES),
 });
 

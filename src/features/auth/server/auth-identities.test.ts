@@ -48,7 +48,7 @@ describe("auth-identities", () => {
     const result = await upsertOwnerPasswordIdentity({
       userId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
       username: "Owner",
-      password: "secret",
+      password: "secret-12",
     });
     expect(result.provider).toBe("username_password");
     expect(dbMock.insert).toHaveBeenCalled();

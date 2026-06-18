@@ -18,12 +18,13 @@ import {
   upsertEmployeePinIdentity,
   upsertOwnerPasswordIdentity,
 } from "@/features/auth/server/auth-identities";
+import { passwordSchema } from "@/core/auth/password-policy";
 
 const credentialsSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("owner_password"),
     username: z.string().trim().min(1).max(120),
-    password: z.string().trim().min(4).max(120),
+    password: passwordSchema,
   }),
   z.object({
     type: z.literal("employee_pin"),

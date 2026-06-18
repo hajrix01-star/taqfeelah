@@ -9,11 +9,12 @@ import {
   upsertOwnerPasswordIdentity,
   verifyOwnerPasswordIdentity,
 } from "@/features/auth/server/auth-identities";
+import { passwordSchema } from "@/core/auth/password-policy";
 
 const inputSchema = z.object({
   userId: z.string().uuid(),
   currentPassword: z.string().trim().min(1).max(120),
-  newPassword: z.string().trim().min(6).max(120),
+  newPassword: passwordSchema,
 });
 
 export async function changeOwnerPassword(rawInput: z.infer<typeof inputSchema>) {

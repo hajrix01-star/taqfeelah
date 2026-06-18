@@ -18,12 +18,13 @@ import {
   upsertEmployeePinIdentity,
   upsertOwnerPasswordIdentity,
 } from "@/features/auth/server/auth-identities";
+import { passwordSchema } from "@/core/auth/password-policy";
 
 const credentialsSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("owner_password"),
     username: z.string().trim().min(1).max(120),
-    password: z.string().trim().min(4).max(120),
+    password: passwordSchema,
   }),
   z.object({
     type: z.literal("employee_pin"),
@@ -37,7 +38,7 @@ const inputSchema = z.object({
   actorRole: z.enum(["owner", "manager", "employee"]),
   name: z.string().trim().min(1).max(120),
   role: z.enum(["owner", "manager", "employee"]),
-  storeIds: z.array(z.string().uuid()).default([]),
+  storeIds: z.array(z.string().uuid()).max(50).default([]),
   loginPhone: z.string().trim().min(1).max(30).optional(),
   credentials: credentialsSchema.optional(),
 });

@@ -28,6 +28,6 @@ describe("platform admin grants repository contracts", () => {
 
     expect(updateProfileSchema.safeParse({}).success).toBe(false);
     expect(updateProfileSchema.safeParse({ name: "Owner" }).success).toBe(true);
-    expect(updateProfileSchema.safeParse({ password: "secret" }).success).toBe(true);
+    expect(updateProfileSchema.safeParse({ password: "secret12" }).success).toBe(true);
   });
 });

@@ -42,6 +42,11 @@ const withSerwist = withSerwistInit({
 const nextConfig = {
   env: releaseEnv,
   allowedDevOrigins: buildAllowedDevOrigins(),
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "15mb",
+    },
+  },
   async headers() {
     const securityHeaders = [
       { key: "X-Frame-Options", value: "DENY" },

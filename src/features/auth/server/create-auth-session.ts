@@ -45,7 +45,7 @@ const authConfigSchema = z.object({
   employeePins: z.record(z.string(), z.string()).optional(),
 });
 
-const BOOTSTRAP_OWNER_USERNAME = process.env.AUTH_OWNER_USERNAME || "hajri";
+const BOOTSTRAP_OWNER_USERNAME = process.env.AUTH_OWNER_USERNAME || "";
 const BOOTSTRAP_OWNER_PASSWORD = process.env.AUTH_OWNER_PASSWORD || "";
 const BOOTSTRAP_EMPLOYEE_PINS: Record<string, string> = {};
 
