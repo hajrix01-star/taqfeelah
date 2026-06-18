@@ -1156,6 +1156,29 @@ def run_tcp_connectivity_preflight(host: str, port: int, tcp_probe_timeout: floa
         )
 
 
+def owner_auth_recovery_requested() -> bool:
+    return os.environ.get("RUN_OWNER_AUTH_RECOVERY", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+def maybe_run_owner_auth_recovery(vps: VPS) -> None:
+    if not owner_auth_recovery_requested():
+        return
+    username = os.environ.get("AUTH_RECOVERY_OWNER_USERNAME", "").strip()
+    password = os.environ.get("AUTH_RECOVERY_OWNER_PASSWORD", "").strip()
+    if not username or not password:
+        raise RuntimeError(
+            "RUN_OWNER_AUTH_RECOVERY=true requires AUTH_RECOVERY_OWNER_USERNAME "
+            "and AUTH_RECOVERY_OWNER_PASSWORD."
+        )
+    safe_print(f"Owner auth recovery requested for username={username.strip().lower()}.")
+    cmd_reset_owner_auth(vps, username, password)
+
+
 def cmd_deploy_production(
     vps: VPS,
     domain: str,
@@ -1167,6 +1190,7 @@ def cmd_deploy_production(
     """Preflight + deploy + verify in one SSH session (fewer connection storms)."""
     cmd_preflight(vps, domain, www_domain)
     cmd_deploy_pm2(vps, domain, www_domain, local_path, artifact_path=artifact_path)
+    maybe_run_owner_auth_recovery(vps)
     cmd_verify(vps, domain, www_domain)
 
 
@@ -2219,6 +2243,26 @@ def cmd_reset_owner_auth(vps: VPS, owner_username: str, owner_password: str) -> 
             """
         ).strip()
     )
+
+    print_section("Seed auth_identities from recovered owner credentials")
+    _, seed_out, seed_err = vps.run(
+        textwrap.dedent(
+            f"""
+            set -euo pipefail
+            cd {shlex.quote(app_dir)}
+            set -a
+            . ./.env.production
+            set +a
+            node scripts/seed-auth-credentials.mjs
+            """
+        ).strip(),
+        check=True,
+    )
+    if seed_out.strip():
+        safe_print(seed_out.strip())
+    if seed_err.strip():
+        safe_print("STDERR:")
+        safe_print(seed_err.strip())
 
     print_section("Restart PM2 app")
     vps.run(
