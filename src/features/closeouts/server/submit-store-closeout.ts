@@ -20,6 +20,11 @@ import {
   normalizeCloseoutSubmitMode,
   type CloseoutSubmitModeInput,
 } from "@/features/closeouts/closeout-submit-mode";
+import { closeoutDateSchema } from "@/features/closeouts/server/closeout-date-validation";
+
+const CLOSEOUT_MAX_SALES_CHANNELS = 100;
+const CLOSEOUT_MAX_OUTFLOWS = 100;
+const CLOSEOUT_MAX_ATTACHMENTS = 20;
 
 const salesChannelSchema = z.object({
   salesChannelId: z.string().uuid(),
@@ -40,13 +45,17 @@ const outflowSchema = z.object({
 const closeoutSubmitSchema = z.object({
   organizationId: z.string().uuid(),
   storeId: z.string().uuid(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD"),
+  date: closeoutDateSchema,
   actorUserId: z.string().uuid(),
   actorRole: z.enum(["owner", "manager", "employee"]),
   closeoutId: z.string().trim().min(1).max(120),
-  salesChannels: z.array(salesChannelSchema).default([]),
-  outflows: z.array(outflowSchema).default([]),
-  attachments: z.array(z.union([z.string(), closeoutAttachmentSchema])).optional().default([]),
+  salesChannels: z.array(salesChannelSchema).max(CLOSEOUT_MAX_SALES_CHANNELS).default([]),
+  outflows: z.array(outflowSchema).max(CLOSEOUT_MAX_OUTFLOWS).default([]),
+  attachments: z
+    .array(z.union([z.string(), closeoutAttachmentSchema]))
+    .max(CLOSEOUT_MAX_ATTACHMENTS)
+    .optional()
+    .default([]),
   note: z.string().trim().max(500).optional(),
   mode: z.preprocess(
     (value) => normalizeCloseoutSubmitMode(value),

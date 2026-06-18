@@ -61,9 +61,6 @@ PRODUCTION_ENV_KEYS = [
     "AUTH_SESSION_COOKIE_NAME",
     "AUTH_ORGANIZATION_ID",
     "AUTH_OWNER_USER_ID",
-    "AUTH_OWNER_USERNAME",
-    "AUTH_OWNER_PASSWORD",
-    "AUTH_EMPLOYEE_PIN_MAP",
     "NEXT_PUBLIC_CLOSEOUTS_API_ENABLED",
     "NEXT_PUBLIC_ENTRIES_API_ENABLED",
     "NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID",
@@ -85,10 +82,6 @@ PRODUCTION_ENV_KEYS = [
     "ATTACHMENT_STORAGE_MODE",
     "ATTACHMENT_STORAGE_ROOT",
     "NEXT_PUBLIC_SUPPORT_WHATSAPP",
-]
-
-# Written to .env.production when present on VPS (or via CI secrets). Not in wave defaults.
-PRESERVED_REMOTE_ENV_KEYS = (
     "AUTH_PASSWORD_RESET_ENABLED",
     "AUTH_EMAIL_FROM",
     "RESEND_API_KEY",
@@ -96,7 +89,10 @@ PRESERVED_REMOTE_ENV_KEYS = (
     "SMTP_PORT",
     "SMTP_USER",
     "SMTP_PASS",
-)
+]
+
+# Optional VPS-only values preserved when not supplied by CI.
+PRESERVED_REMOTE_ENV_KEYS = ()
 
 # Opt-in flags: wave defaults must not overwrite explicit CI or VPS values once enabled.
 SAAS_OPT_IN_ENV_KEYS = (
@@ -738,6 +734,24 @@ def verify_request_auth_flags(
     )
 
 
+def resolve_auth_verify_credentials() -> tuple[str, str]:
+    username = (
+        os.environ.get("AUTH_VERIFY_OWNER_USERNAME", "").strip()
+        or os.environ.get("AUTH_OWNER_USERNAME", "").strip()
+    )
+    password = (
+        os.environ.get("AUTH_VERIFY_OWNER_PASSWORD", "").strip()
+        or os.environ.get("AUTH_OWNER_PASSWORD", "").strip()
+    )
+    if not username or not password:
+        raise RuntimeError(
+            "Deploy auth verification requires AUTH_VERIFY_OWNER_USERNAME and "
+            "AUTH_VERIFY_OWNER_PASSWORD GitHub Actions secrets (or legacy "
+            "AUTH_OWNER_USERNAME/PASSWORD during migration)."
+        )
+    return username, password
+
+
 def resolve_production_env(existing_remote_env: dict[str, str] | None = None) -> dict[str, str]:
     merged = dict(PRODUCTION_ENV_BOOTSTRAP_DEFAULTS)
     if existing_remote_env:
@@ -751,13 +765,6 @@ def resolve_production_env(existing_remote_env: dict[str, str] | None = None) ->
 
     merged = apply_deployment_wave_overrides(merged, existing_remote_env)
     merged = resolve_saas_platform_admin_ids(merged)
-
-    if deployment_wave_requires_auth_verify():
-        if not merged.get("AUTH_OWNER_USERNAME", "").strip():
-            merged["AUTH_OWNER_USERNAME"] = "hajri"
-        db_credentials_enabled = merged.get("AUTH_DB_CREDENTIALS_ENABLED", "").strip().lower() == "true"
-        if not db_credentials_enabled and not merged.get("AUTH_OWNER_PASSWORD"):
-            merged["AUTH_OWNER_PASSWORD"] = "123"
 
     if not merged.get("DATABASE_URL"):
         raise RuntimeError(
@@ -1206,9 +1213,9 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     phase9_verify = deployment_wave_requires_phase9_verify()
     auth_verify = deployment_wave_requires_auth_verify()
     saas_verify = deployment_wave_requires_saas_verify()
-    # GitHub Actions injects empty strings when secrets are unset — treat as missing.
-    auth_owner_username = os.environ.get("AUTH_OWNER_USERNAME", "").strip() or "hajri"
-    auth_owner_password = os.environ.get("AUTH_OWNER_PASSWORD", "") or "123"
+    auth_owner_username, auth_owner_password = (
+        resolve_auth_verify_credentials() if auth_verify else ("", "")
+    )
     auth_employee_user_id = "4cf1450d-08d8-4ca1-b180-1c2642174a79"
     auth_employee_pin = "1234"
     auth_flags = verify_request_auth_flags(auth_verify, wave_org_id, wave_owner_id)
@@ -2069,6 +2076,8 @@ def cmd_pm2_app_logs(vps: VPS, app_name: str) -> None:
 
 
 def cmd_reset_owner_auth(vps: VPS, owner_username: str, owner_password: str) -> None:
+    if not owner_username.strip() or not owner_password:
+        raise RuntimeError("reset-owner-auth requires non-empty --username and --password.")
     app_dir = "/opt/taqfeelah"
     username_sql = owner_username.strip().lower().replace("'", "''")
     password_sql = owner_password.replace("'", "''")
@@ -2294,8 +2303,8 @@ def main() -> int:
     p_ssl.add_argument("--www-domain", required=True)
 
     p_reset_owner = sub.add_parser("reset-owner-auth")
-    p_reset_owner.add_argument("--username", default=os.environ.get("AUTH_OWNER_USERNAME", "hajri"))
-    p_reset_owner.add_argument("--password", default=os.environ.get("AUTH_OWNER_PASSWORD", "123"))
+    p_reset_owner.add_argument("--username", required=True)
+    p_reset_owner.add_argument("--password", required=True)
 
     args = parser.parse_args()
     artifact_path = getattr(args, "artifact_path", "").strip() or None

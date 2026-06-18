@@ -4,6 +4,7 @@ import { getDb } from "@/core/db/client";
 import { authIdentities } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import { hashPassword, verifyPassword } from "@/features/auth/server/password-hash";
+import { passwordSchema } from "@/core/auth/password-policy";
 
 type AuthIdentityDb = Pick<ReturnType<typeof getDb>, "select" | "insert" | "update">;
 
@@ -14,7 +15,7 @@ function resolveDb(executor?: AuthIdentityDb) {
 const ownerPasswordSchema = z.object({
   userId: z.string().uuid(),
   username: z.string().trim().min(1).max(120),
-  password: z.string().trim().min(4).max(120),
+  password: passwordSchema,
   phoneNumber: z.string().trim().max(30).optional(),
   loginPhone: z.string().trim().max(30).optional(),
   mustChangePassword: z.boolean().optional(),

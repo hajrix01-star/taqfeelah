@@ -1,6 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
-import { isPasswordResetEnabled } from "@/core/config/password-reset-mode";
+import { isPasswordResetAvailable } from "@/core/config/password-reset-mode";
 import { getDb } from "@/core/db/client";
 import { auditEvents, passwordResetTokens } from "@/core/db/schema";
 import { ServiceUnavailableError, UnauthorizedError, ValidationError } from "@/core/errors/app-error";
@@ -16,16 +16,17 @@ import {
   resolvePasswordResetAuditOrganizationId,
   type PasswordResetAudience,
 } from "@/features/auth/server/password-reset-audience";
+import { passwordSchema } from "@/core/auth/password-policy";
 
 const inputSchema = z.object({
   token: z.string().trim().min(8).max(200),
-  newPassword: z.string().trim().min(6).max(120),
-  confirmPassword: z.string().trim().min(6).max(120),
+  newPassword: passwordSchema,
+  confirmPassword: passwordSchema,
   audience: z.enum(PASSWORD_RESET_AUDIENCES),
 });
 
 export async function confirmPasswordReset(rawInput: z.infer<typeof inputSchema>) {
-  if (!isPasswordResetEnabled()) {
+  if (!isPasswordResetAvailable()) {
     throw new ServiceUnavailableError("Password reset is not enabled.");
   }
 

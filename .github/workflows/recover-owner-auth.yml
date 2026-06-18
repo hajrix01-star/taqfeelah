@@ -6,11 +6,9 @@ on:
       owner_username:
         description: Owner username to set
         required: true
-        default: hajri
       owner_password:
         description: Owner password to set
         required: true
-        default: "123"
 
 permissions:
   contents: read

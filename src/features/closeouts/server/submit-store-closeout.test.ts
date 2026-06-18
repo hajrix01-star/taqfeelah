@@ -229,4 +229,29 @@ describe("submitStoreCloseout", () => {
 
     expect((auditInserts()[0]?.values as { action: string }).action).toBe("closeout_resubmitted");
   });
+
+  it("rejects future closeout dates", async () => {
+    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
+
+    await expect(
+      submitStoreCloseout({
+        ...baseInput,
+        date: "2099-12-31",
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+  });
+
+  it("rejects oversized outflow arrays", async () => {
+    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
+
+    await expect(
+      submitStoreCloseout({
+        ...baseInput,
+        outflows: Array.from({ length: 101 }, (_, index) => ({
+          type: "expense" as const,
+          amountHalalas: 100 + index,
+        })),
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+  });
 });
