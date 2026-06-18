@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { isPasswordResetEnabled } from "@/core/config/password-reset-mode";
+import { isPasswordResetAvailable } from "@/core/config/password-reset-mode";
 import { sendTransactionalEmail } from "@/core/email/send-transactional-email";
 import { getDb } from "@/core/db/client";
 import { auditEvents, passwordResetTokens } from "@/core/db/schema";
@@ -32,7 +32,7 @@ export async function requestPasswordReset(
   rawInput: z.infer<typeof inputSchema>,
   request?: Request,
 ) {
-  if (!isPasswordResetEnabled()) {
+  if (!isPasswordResetAvailable()) {
     throw new ServiceUnavailableError("Password reset is not enabled.");
   }
 

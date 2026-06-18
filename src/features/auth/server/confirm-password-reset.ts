@@ -1,6 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
-import { isPasswordResetEnabled } from "@/core/config/password-reset-mode";
+import { isPasswordResetAvailable } from "@/core/config/password-reset-mode";
 import { getDb } from "@/core/db/client";
 import { auditEvents, passwordResetTokens } from "@/core/db/schema";
 import { ServiceUnavailableError, UnauthorizedError, ValidationError } from "@/core/errors/app-error";

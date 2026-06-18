@@ -82,10 +82,6 @@ PRODUCTION_ENV_KEYS = [
     "ATTACHMENT_STORAGE_MODE",
     "ATTACHMENT_STORAGE_ROOT",
     "NEXT_PUBLIC_SUPPORT_WHATSAPP",
-]
-
-# Written to .env.production when present on VPS (or via CI secrets). Not in wave defaults.
-PRESERVED_REMOTE_ENV_KEYS = (
     "AUTH_PASSWORD_RESET_ENABLED",
     "AUTH_EMAIL_FROM",
     "RESEND_API_KEY",
@@ -93,7 +89,10 @@ PRESERVED_REMOTE_ENV_KEYS = (
     "SMTP_PORT",
     "SMTP_USER",
     "SMTP_PASS",
-)
+]
+
+# Optional VPS-only values preserved when not supplied by CI.
+PRESERVED_REMOTE_ENV_KEYS = ()
 
 # Opt-in flags: wave defaults must not overwrite explicit CI or VPS values once enabled.
 SAAS_OPT_IN_ENV_KEYS = (
