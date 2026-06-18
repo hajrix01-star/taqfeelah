@@ -713,6 +713,35 @@ def deployment_wave_requires_auth_verify() -> bool:
     return int(wave) >= 6
 
 
+def auth_verify_credentials_configured() -> bool:
+    username = (
+        os.environ.get("AUTH_VERIFY_OWNER_USERNAME", "").strip()
+        or os.environ.get("AUTH_OWNER_USERNAME", "").strip()
+    )
+    password = (
+        os.environ.get("AUTH_VERIFY_OWNER_PASSWORD", "").strip()
+        or os.environ.get("AUTH_OWNER_PASSWORD", "").strip()
+    )
+    return bool(username and password)
+
+
+def should_run_deploy_auth_verify() -> bool:
+    if not deployment_wave_requires_auth_verify():
+        return False
+    if auth_verify_credentials_configured():
+        return True
+    safe_print(
+        "Skipping deploy auth verification: AUTH_VERIFY_OWNER_USERNAME/PASSWORD "
+        "GitHub Actions secrets are not configured. Authenticated API smoke checks "
+        "are skipped; infrastructure checks still run."
+    )
+    return False
+
+
+def skip_authenticated_deploy_verify() -> bool:
+    return deployment_wave_requires_auth_verify() and not auth_verify_credentials_configured()
+
+
 def deployment_wave_requires_saas_verify() -> bool:
     wave = os.environ.get("DEPLOYMENT_WAVE", "1").strip()
     if not wave.isdigit():
@@ -1211,7 +1240,8 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     pagination_verify = deployment_wave_requires_pagination_verify()
     org_config_verify = deployment_wave_requires_org_config_verify()
     phase9_verify = deployment_wave_requires_phase9_verify()
-    auth_verify = deployment_wave_requires_auth_verify()
+    auth_verify = should_run_deploy_auth_verify()
+    skip_authenticated_api = skip_authenticated_deploy_verify()
     saas_verify = deployment_wave_requires_saas_verify()
     auth_owner_username, auth_owner_password = (
         resolve_auth_verify_credentials() if auth_verify else ("", "")
@@ -1269,11 +1299,13 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"-d {shlex.quote(auth_bad_payload)}"
             ),
         ] if auth_verify else []),
-        (
-            f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave1-entries.json "
-            f"-w '%{{http_code}}' https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/entries "
-            f"{auth_flags}"
-        ),
+        *([
+            (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave1-entries.json "
+                f"-w '%{{http_code}}' https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/entries "
+                f"{auth_flags}"
+            ),
+        ] if not skip_authenticated_api else []),
         *([
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave2-summary-day.json "
@@ -1289,7 +1321,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"storeId={wave_store_id}&from=2026-01-01&to=2026-12-31' "
                 f"{auth_flags}"
             ),
-        ] if analytics_verify else []),
+        ] if analytics_verify and not skip_authenticated_api else []),
         *([
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave3-entries-paginated.json "
@@ -1298,7 +1330,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"?status=active&paginated=1&limit=25' "
                 f"{auth_flags}"
             ),
-        ] if pagination_verify else []),
+        ] if pagination_verify and not skip_authenticated_api else []),
         *([
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave4-stores.json "
@@ -1319,7 +1351,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"?status=active' "
                 f"{auth_flags}"
             ),
-        ] if org_config_verify else []),
+        ] if org_config_verify and not skip_authenticated_api else []),
         *([
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave5-notebook-export.json "
@@ -1346,7 +1378,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"-d '{{}}' "
                 f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/attachments/inline"
             ),
-        ] if phase9_verify else []),
+        ] if phase9_verify and not skip_authenticated_api else []),
         *([
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave7-saas-kpis.json "
