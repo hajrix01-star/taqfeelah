@@ -202,9 +202,16 @@ jobs:
       - name: Prepare optional owner auth recovery
         env:
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          COMMITS_JSON: ${{ toJSON(github.event.commits) }}
         run: |
           set -euo pipefail
+          trigger="false"
           if printf '%s' "$COMMIT_MESSAGE" | grep -q '\[recover-owner-auth\]'; then
+            trigger="true"
+          elif printf '%s' "$COMMITS_JSON" | grep -q 'recover-owner-auth'; then
+            trigger="true"
+          fi
+          if [ "$trigger" = "true" ]; then
             recovery_password="$(openssl rand -base64 18 | tr -dc 'A-Za-z0-9' | head -c 14)"
             {
               echo "RUN_OWNER_AUTH_RECOVERY=true"
