@@ -102,14 +102,25 @@ async function readRuntimeSettingsEnvelope(organizationId: string) {
   const { mergeCanonicalOwnerProfileIntoSettings, resolveOrganizationOwnerName } = await import(
     "@/features/runtime-settings/server/sync-runtime-owner-profile"
   );
+  const { mergeCanonicalOwnerAuthIntoSettings, resolveOrganizationOwnerAuth } = await import(
+    "@/features/runtime-settings/server/sync-runtime-owner-auth"
+  );
   const envelope = await readRawRuntimeSettingsEnvelope(organizationId);
-  const canonicalOwnerName = await resolveOrganizationOwnerName(organizationId);
+  const [canonicalOwnerName, canonicalOwnerAuth] = await Promise.all([
+    resolveOrganizationOwnerName(organizationId),
+    resolveOrganizationOwnerAuth(organizationId),
+  ]);
+
+  const mergeSettings = (settings: Record<string, unknown> | null | undefined) => normalizeRuntimeSettings(
+    mergeCanonicalOwnerAuthIntoSettings(
+      mergeCanonicalOwnerProfileIntoSettings(settings, canonicalOwnerName),
+      canonicalOwnerAuth,
+    ),
+  );
 
   if (!envelope.settings) {
     return {
-      settings: normalizeRuntimeSettings(
-        mergeCanonicalOwnerProfileIntoSettings(null, canonicalOwnerName),
-      ),
+      settings: mergeSettings(null),
       updatedAt: envelope.updatedAt,
       updatedByUserId: envelope.updatedByUserId,
       schemaVersion: envelope.schemaVersion,
@@ -117,9 +128,7 @@ async function readRuntimeSettingsEnvelope(organizationId: string) {
   }
 
   return {
-    settings: normalizeRuntimeSettings(
-      mergeCanonicalOwnerProfileIntoSettings(envelope.settings, canonicalOwnerName),
-    ),
+    settings: mergeSettings(envelope.settings as Record<string, unknown>),
     schemaVersion: envelope.schemaVersion,
     updatedAt: envelope.updatedAt,
     updatedByUserId: envelope.updatedByUserId,

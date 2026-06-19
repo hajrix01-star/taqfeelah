@@ -10,6 +10,8 @@ import {
   ChevronRight,
   CreditCard,
   FileText,
+  Mail,
+  Phone,
   Plus,
   ReceiptText,
   Smartphone,
@@ -41,6 +43,7 @@ import {
   resolveStoreLimitMessage,
 } from "@/features/billing/client/entitlement-guards";
 import { ownerPasswordInputProps } from "@/features/auth/client/auth-gate/owner-password-input-props";
+import { useOwnerPasswordChangeForm } from "@/features/auth/client/auth-gate/use-owner-password-change-form";
 import { text } from "./prototype-runtime-demo-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";
 import {
@@ -62,6 +65,169 @@ function SettingsSectionFrame({ embedded, children }) {
   );
 }
 
+function OwnerAccountReadOnlyField({ label, value, dir = "ltr" }) {
+  return (
+    <div className="mb-3 last:mb-0">
+      <p className="mb-2 text-xs font-bold text-[#716753]">{label}</p>
+      <div dir={dir} className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black text-[#112A46]">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function OwnerSettingsAccountPasswordPanel({ lang, onPasswordChanged }) {
+  const form = useOwnerPasswordChangeForm({
+    lang,
+    onComplete: onPasswordChanged,
+  });
+
+  return (
+    <div className="mt-4 space-y-2 border-t border-black/[0.06] pt-4">
+      <input
+        dir="ltr"
+        type="password"
+        value={form.currentPassword}
+        onChange={(event) => form.setCurrentPassword(event.target.value)}
+        autoComplete="current-password"
+        placeholder={text(lang, "ownerAccountCurrentPassword")}
+        {...ownerPasswordInputProps}
+        className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none"
+      />
+      <input
+        dir="ltr"
+        type="password"
+        value={form.newPassword}
+        onChange={(event) => form.setNewPassword(event.target.value)}
+        autoComplete="new-password"
+        placeholder={text(lang, "ownerAccountNewPassword")}
+        {...ownerPasswordInputProps}
+        className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none"
+      />
+      <input
+        dir="ltr"
+        type="password"
+        value={form.confirmPassword}
+        onChange={(event) => form.setConfirmPassword(event.target.value)}
+        autoComplete="new-password"
+        placeholder={text(lang, "ownerAccountConfirmPassword")}
+        {...ownerPasswordInputProps}
+        className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none"
+      />
+      {form.error ? (
+        <p className="rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{form.error}</p>
+      ) : null}
+      <button
+        type="button"
+        disabled={form.submitting}
+        onClick={() => { void form.submit(); }}
+        className={`w-full rounded-2xl py-3.5 text-xs font-black text-white ${form.submitting ? "bg-[#B8C0B7]" : "bg-[#112A46]"}`}
+      >
+        {text(lang, "ownerAccountChangePassword")}
+      </button>
+    </div>
+  );
+}
+
+function OwnerSettingsAccountPlanPanel({
+  lang,
+  entitlements,
+  entitlementsLoading,
+  entitlementsError,
+  reloadEntitlements,
+  ownerProfile,
+  ownerAccount,
+  onOpenSupport,
+}) {
+  const planName = pickLocalizedPlanName(entitlements, lang);
+  const statusLabel = formatSubscriptionStatusLabel(
+    entitlements?.subscriptionStatus || entitlements?.organizationStatus,
+    lang,
+    { isTrialPlan: Boolean(entitlements?.isTrialPlan) },
+  );
+  const statusTone = formatSubscriptionStatusTone(
+    entitlements?.subscriptionStatus,
+    entitlements?.organizationStatus,
+  );
+
+  const openUpgradeSupport = () => {
+    if (entitlements?.isTrialPlan) {
+      openBillingUpgradeToPaidSupport({
+        ownerName: ownerProfile?.name || ownerAccount?.ownerName || "",
+        currentPlanName: planName,
+      });
+      return;
+    }
+    const targetPlan = entitlements?.upgradePlans?.[0];
+    if (targetPlan) {
+      openBillingUpgradeSupport({
+        ownerName: ownerProfile?.name || ownerAccount?.ownerName || "",
+        organizationName: ownerAccount?.organizationName || "",
+        currentPlanName: planName,
+        targetPlanName: lang === "ar" ? targetPlan.displayNameAr : targetPlan.displayNameEn,
+      });
+      return;
+    }
+    onOpenSupport?.();
+  };
+
+  return (
+    <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
+      <div className="mb-3 flex items-center gap-2">
+        <CreditCard className="h-4 w-4 text-[#B99844]" />
+        <p className="text-xs font-bold text-[#716753]">{text(lang, "ownerAccountPlanTitle")}</p>
+      </div>
+      {entitlementsLoading ? (
+        <p className="text-taq-meta font-bold text-[#827762]">{text(lang, "subscriptionLoading")}</p>
+      ) : null}
+      {entitlementsError ? (
+        <div className="rounded-2xl bg-[#FFF1EE] p-3 text-center">
+          <p className="text-taq-meta font-bold text-[#B44747]">{entitlementsError}</p>
+          <button
+            type="button"
+            onClick={() => { void reloadEntitlements(); }}
+            className="mt-3 rounded-2xl bg-[#112A46] px-4 py-2.5 text-taq-meta font-black text-white"
+          >
+            {text(lang, "retryLoad")}
+          </button>
+        </div>
+      ) : null}
+      {entitlements ? (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="navy">{text(lang, "currentPlan")}</Badge>
+            {entitlements.isTrialPlan ? <Badge tone="warning">{text(lang, "trialPlanBadge")}</Badge> : null}
+            <Badge tone={statusTone}>{statusLabel}</Badge>
+          </div>
+          <h3 className="mt-3 text-sm font-black text-[#112A46]">{planName}</h3>
+          <p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">
+            {formatPlanPriceLabel(entitlements.priceMonthlyHalalas, lang, {
+              isTrialPlan: entitlements.isTrialPlan,
+              billingCycle: entitlements.billingCycle,
+              priceYearlyHalalas: entitlements.priceYearlyHalalas,
+            })}
+          </p>
+          <p className="mt-2 text-taq-meta font-bold text-[#827762]">
+            {entitlements.isTrialPlan
+              ? `${text(lang, "trialDaysRemaining")}: ${formatTrialDaysRemainingLabel(entitlements.trialDaysRemaining, lang)}`
+              : `${text(lang, "renewalDaysRemaining")}: ${formatRenewalDaysRemainingLabel(entitlements.renewalDaysRemaining, lang)}`}
+          </p>
+          <p className="mt-4 text-taq-meta font-bold leading-6 text-[#827762]">
+            {text(lang, "ownerAccountPlanUpgradeHint")}
+          </p>
+          <button
+            type="button"
+            onClick={openUpgradeSupport}
+            className="mt-4 w-full rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white"
+          >
+            {entitlements.isTrialPlan ? text(lang, "upgradeToPaid") : text(lang, "ownerAccountRequestUpgrade")}
+          </button>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 export function OwnerSettingsAccountSection({
   lang,
   draftOwnerName,
@@ -78,7 +244,113 @@ export function OwnerSettingsAccountSection({
   settingsSuccess,
   setSection,
   embedded = false,
+  serverAuthMode = false,
+  ownerAccount = null,
+  ownerAccountLoading = false,
+  ownerAccountError = "",
+  reloadOwnerAccount = () => {},
+  entitlements = null,
+  entitlementsLoading = false,
+  entitlementsError = "",
+  reloadEntitlements = () => {},
+  ownerProfile = null,
+  onOpenSupport = null,
 }) {
+  const [showPasswordPanel, setShowPasswordPanel] = React.useState(false);
+  const [passwordChangedNotice, setPasswordChangedNotice] = React.useState(false);
+
+  const handlePasswordChanged = React.useCallback(() => {
+    setPasswordChangedNotice(true);
+    setShowPasswordPanel(false);
+  }, []);
+
+  if (serverAuthMode) {
+    const email = ownerAccount?.email || text(lang, "ownerAccountNotAvailable");
+    const phone = ownerAccount?.loginPhoneDisplay || text(lang, "ownerAccountNotAvailable");
+
+    return (
+      <SettingsSectionFrame embedded={embedded}>
+        {!embedded ? (
+          <SettingsPageHeader title={text(lang, "myAccountSecurity")} onBack={() => setSection("home")} lang={lang} />
+        ) : null}
+
+        <div className={`${embedded ? "" : "mb-5 "}rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]`}>
+          <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "ownerFullName")}</p>
+          <input value={draftOwnerName} onChange={(event) => setDraftOwnerName(event.target.value)} maxLength={80} className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none" />
+          <button disabled={!ownerProfileDirty} onClick={saveOwnerProfile} className={`mt-5 w-full rounded-2xl py-3.5 text-xs font-black text-white ${ownerProfileDirty ? "bg-[#112A46]" : "bg-[#B8C0B7]"}`}>{text(lang, "saveAccountSettings")}</button>
+        </div>
+
+        <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
+          <div className="mb-3 flex items-center gap-2">
+            <Mail className="h-4 w-4 text-[#B99844]" />
+            <p className="text-xs font-bold text-[#716753]">{text(lang, "ownerAccountContactTitle")}</p>
+          </div>
+          {ownerAccountLoading ? (
+            <p className="text-taq-meta font-bold text-[#827762]">{text(lang, "ownerAccountLoading")}</p>
+          ) : null}
+          {ownerAccountError ? (
+            <div className="rounded-2xl bg-[#FFF1EE] p-3 text-center">
+              <p className="text-taq-meta font-bold text-[#B44747]">{ownerAccountError}</p>
+              <button
+                type="button"
+                onClick={() => { void reloadOwnerAccount(); }}
+                className="mt-3 rounded-2xl bg-[#112A46] px-4 py-2.5 text-taq-meta font-black text-white"
+              >
+                {text(lang, "retryLoad")}
+              </button>
+            </div>
+          ) : null}
+          {!ownerAccountLoading && !ownerAccountError ? (
+            <>
+              <OwnerAccountReadOnlyField label={text(lang, "ownerAccountEmail")} value={email} />
+              <OwnerAccountReadOnlyField label={text(lang, "ownerAccountPhone")} value={phone} />
+              <p className="mt-2 text-taq-meta font-bold leading-6 text-[#827762]">
+                {text(lang, "ownerAccountContactHint")}
+              </p>
+            </>
+          ) : null}
+        </div>
+
+        <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
+          <div className="mb-3 flex items-center gap-2">
+            <Phone className="h-4 w-4 text-[#B99844]" />
+            <p className="text-xs font-bold text-[#716753]">{text(lang, "ownerAccountLoginTitle")}</p>
+          </div>
+          <p className="text-taq-meta font-bold leading-6 text-[#827762]">{text(lang, "ownerAccountLoginHint")}</p>
+          <button
+            type="button"
+            onClick={() => setShowPasswordPanel((current) => !current)}
+            className="mt-4 w-full rounded-2xl bg-[#F7F5EF] py-3.5 text-xs font-black text-[#112A46]"
+          >
+            {text(lang, "ownerAccountChangePassword")}
+          </button>
+          {showPasswordPanel ? (
+            <OwnerSettingsAccountPasswordPanel lang={lang} onPasswordChanged={handlePasswordChanged} />
+          ) : null}
+          {passwordChangedNotice ? (
+            <div className="mt-4 rounded-xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">
+              {text(lang, "ownerAccountPasswordChanged")}
+            </div>
+          ) : null}
+        </div>
+
+        <OwnerSettingsAccountPlanPanel
+          lang={lang}
+          entitlements={entitlements}
+          entitlementsLoading={entitlementsLoading}
+          entitlementsError={entitlementsError}
+          reloadEntitlements={reloadEntitlements}
+          ownerProfile={ownerProfile}
+          ownerAccount={ownerAccount}
+          onOpenSupport={onOpenSupport}
+        />
+
+        {settingsNotice && <p className="rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{settingsNotice}</p>}
+        {settingsSuccess && <div className="mt-4 rounded-xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">{text(lang, "changesSaved")}</div>}
+      </SettingsSectionFrame>
+    );
+  }
+
   return (
     <SettingsSectionFrame embedded={embedded}>
       {!embedded ? (
@@ -658,6 +930,17 @@ export function renderOwnerSettingsSection(section, state, callbacks, options = 
         saveAuthCredentials={state.saveAuthCredentials}
         settingsNotice={state.settingsNotice}
         settingsSuccess={state.settingsSuccess}
+        serverAuthMode={state.serverAuthMode}
+        ownerAccount={state.ownerAccount}
+        ownerAccountLoading={state.ownerAccountLoading}
+        ownerAccountError={state.ownerAccountError}
+        reloadOwnerAccount={state.reloadOwnerAccount}
+        entitlements={state.entitlements}
+        entitlementsLoading={state.entitlementsLoading}
+        entitlementsError={state.entitlementsError}
+        reloadEntitlements={state.reloadEntitlements}
+        ownerProfile={state.ownerProfile}
+        onOpenSupport={onOpenSupport}
       />
     );
   }

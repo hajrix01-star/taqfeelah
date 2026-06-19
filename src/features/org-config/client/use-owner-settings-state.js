@@ -78,10 +78,14 @@ export function useOwnerSettingsState({
       : {}),
   );
   const [authOwnerUsername, setAuthOwnerUsername] = useState(
-    () => initialAuthConfig.ownerUsername || prototypeOwnerUsername || "hajri",
+    () => (bindsToServerAuth
+      ? (initialAuthConfig.ownerUsername?.trim() || "")
+      : (initialAuthConfig.ownerUsername || prototypeOwnerUsername || "hajri")),
   );
   const [authOwnerPassword, setAuthOwnerPassword] = useState(
-    () => initialAuthConfig.ownerPassword || prototypeOwnerPassword || "123",
+    () => (bindsToServerAuth
+      ? ""
+      : (initialAuthConfig.ownerPassword || prototypeOwnerPassword || "123")),
   );
   const [authEmployeePins, setAuthEmployeePins] = useState(
     () => (initialAuthConfig.employeePins && typeof initialAuthConfig.employeePins === "object"
