@@ -84,7 +84,7 @@ export function serializeRuntimeSettingsSignature(value) {
 }
 
 export function buildRuntimeSettingsPersistPayload(runtimeSettingsSnapshot, partialSettings = {}) {
-  return {
+  const merged = {
     ...runtimeSettingsSnapshot,
     ...partialSettings,
     authConfig: {
@@ -94,6 +94,14 @@ export function buildRuntimeSettingsPersistPayload(runtimeSettingsSnapshot, part
         : {}),
     },
   };
+
+  if (bindsToServerAuth()) {
+    const rest = { ...merged };
+    delete rest.authConfig;
+    return rest;
+  }
+
+  return merged;
 }
 
 export function applyRuntimeSettingsSnapshotPatch({ migrated, orgConfigApiEnabled, apply }) {
@@ -133,11 +141,26 @@ export function applyRuntimeSettingsSnapshotPatch({ migrated, orgConfigApiEnable
     if (typeof migrated.authConfig.ownerUsername === "string" && migrated.authConfig.ownerUsername.trim() && apply.setAuthOwnerUsername) {
       apply.setAuthOwnerUsername(migrated.authConfig.ownerUsername.trim());
     }
-    if (typeof migrated.authConfig.ownerPassword === "string" && migrated.authConfig.ownerPassword.trim() && apply.setAuthOwnerPassword) {
-      apply.setAuthOwnerPassword(migrated.authConfig.ownerPassword);
+    if (typeof migrated.authConfig.ownerLoginPhone === "string" && migrated.authConfig.ownerLoginPhone.trim() && apply.setOwnerLoginPhone) {
+      apply.setOwnerLoginPhone(migrated.authConfig.ownerLoginPhone.trim());
+    }
+    if (!bindsToServerAuth()) {
+      if (typeof migrated.authConfig.ownerPassword === "string" && migrated.authConfig.ownerPassword.trim() && apply.setAuthOwnerPassword) {
+        apply.setAuthOwnerPassword(migrated.authConfig.ownerPassword);
+      }
+    } else if (apply.setAuthOwnerPassword) {
+      apply.setAuthOwnerPassword("");
     }
     if (migrated.authConfig.employeePins && typeof migrated.authConfig.employeePins === "object" && apply.setAuthEmployeePins) {
       apply.setAuthEmployeePins(migrated.authConfig.employeePins);
+    }
+  }
+  if (migrated.ownerContact && typeof migrated.ownerContact === "object") {
+    if (typeof migrated.ownerContact.email === "string" && apply.setOwnerContactEmail) {
+      apply.setOwnerContactEmail(migrated.ownerContact.email.trim());
+    }
+    if (typeof migrated.ownerContact.loginPhone === "string" && apply.setOwnerContactLoginPhone) {
+      apply.setOwnerContactLoginPhone(migrated.ownerContact.loginPhone.trim());
     }
   }
 }

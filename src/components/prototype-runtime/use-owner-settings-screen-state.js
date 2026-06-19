@@ -26,6 +26,7 @@ import {
 } from "./prototype-runtime-boot";
 import { createOwnerSettingsScreenHandlers } from "./owner-settings-screen-action-handlers";
 import { useOrganizationEntitlements } from "@/features/billing/client/use-organization-entitlements";
+import { useOwnerAccountSummary } from "@/features/owner-account/client/use-owner-account-summary";
 import { bindsToServerAuth } from "@/core/config/runtime-capabilities";
 import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 
@@ -77,6 +78,21 @@ export function useOwnerSettingsScreenState({
   } = useOrganizationEntitlements({
     enabled: billingEnabled,
     auth: billingApiContext || {},
+  });
+  const ownerAccountEnabled = Boolean(
+    billingApiContext?.organizationId
+    && billingApiContext?.actorUserId
+    && bindsToServerAuth(),
+  );
+  const {
+    account: ownerAccount,
+    loading: ownerAccountLoading,
+    error: ownerAccountError,
+    reload: reloadOwnerAccount,
+  } = useOwnerAccountSummary({
+    enabled: ownerAccountEnabled,
+    auth: billingApiContext || {},
+    lang,
   });
 
   const [section, setSection] = useState(initialSettingsSection);
@@ -409,6 +425,11 @@ export function useOwnerSettingsScreenState({
     entitlementsLoading,
     entitlementsError,
     reloadEntitlements,
+    ownerAccount,
+    ownerAccountLoading,
+    ownerAccountError,
+    reloadOwnerAccount,
+    serverAuthMode: bindsToServerAuth(),
     orgConfigApiContext,
   };
 }
