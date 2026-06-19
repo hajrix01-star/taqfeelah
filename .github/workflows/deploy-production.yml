@@ -26,8 +26,8 @@ on:
           - "true"
 
 concurrency:
-  group: production-deploy
-  cancel-in-progress: true
+  group: vps-operations
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -109,8 +109,11 @@ jobs:
   deploy:
     name: Deploy to VPS
     needs: [validate]
+    if: |
+      !contains(github.event.head_commit.message, '[recover-owner-auth]') &&
+      !contains(toJSON(github.event.commits), 'recover-owner-auth')
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     permissions:
       contents: read
       actions: read

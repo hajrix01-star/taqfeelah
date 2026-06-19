@@ -2442,7 +2442,13 @@ def main() -> int:
         elif args.action == "enable-ssl":
             cmd_enable_ssl(vps, args.domain, args.www_domain)
         elif args.action == "reset-owner-auth":
-            cmd_reset_owner_auth(vps, args.username, args.password)
+            quick = os.environ.get("RESET_OWNER_AUTH_QUICK", "").strip().lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+            cmd_reset_owner_auth(vps, args.username, args.password, quick=quick)
         else:
             raise RuntimeError(f"Unknown action: {args.action}")
 
