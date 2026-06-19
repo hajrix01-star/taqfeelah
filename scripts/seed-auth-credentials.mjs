@@ -9,11 +9,21 @@
  * Optional env:
  *   SEED_OWNER_USER_ID, AUTH_OWNER_USERNAME, AUTH_OWNER_PASSWORD
  *   SEED_EMPLOYEE_PIN_MAP — JSON: { "<user-uuid>": "<pin>", ... }
+ *   AUTH_SEED_FORCE_OWNER_CREDENTIALS=true — overwrite existing owner username/password
+ *     (requires explicit AUTH_OWNER_USERNAME and AUTH_OWNER_PASSWORD; used by recovery flows)
+ *
+ * Deploy behavior (wave 6+):
+ *   - Missing owner identity → created with bootstrap defaults (or env when set)
+ *   - Existing owner identity → preserved (username/password NOT overwritten)
  */
 
 import process from "node:process";
 import { Client } from "pg";
 import { hashPassword } from "./lib/password-hash.mjs";
+import {
+  canForceUpdateOwnerIdentity,
+  shouldPreserveExistingOwnerIdentity,
+} from "./lib/auth-seed-policy.mjs";
 
 function valueFromEnv(name, fallback = "") {
   const value = process.env[name];
@@ -44,7 +54,7 @@ async function upsertOwnerIdentity(client, { userId, username, password }) {
   const [existing] = (
     await client.query(
       `
-      select id from auth_identities
+      select id, username from auth_identities
       where user_id = $1 and provider = 'username_password'
       limit 1
       `,
@@ -53,6 +63,22 @@ async function upsertOwnerIdentity(client, { userId, username, password }) {
   ).rows;
 
   if (existing?.id) {
+    if (shouldPreserveExistingOwnerIdentity()) {
+      console.log(
+        `Preserved existing owner identity for user ${userId} ` +
+          `(username=${existing.username}; deploy seed does not overwrite).`,
+      );
+      return;
+    }
+
+    if (!canForceUpdateOwnerIdentity()) {
+      console.log(
+        `Skipped owner identity update for user ${userId}: ` +
+          "set AUTH_SEED_FORCE_OWNER_CREDENTIALS=true with explicit AUTH_OWNER_USERNAME/PASSWORD.",
+      );
+      return;
+    }
+
     await client.query(
       `
       update auth_identities
@@ -61,7 +87,7 @@ async function upsertOwnerIdentity(client, { userId, username, password }) {
       `,
       [existing.id, normalizedUsername, passwordHash],
     );
-    console.log(`Updated owner identity for user ${userId} (username=${normalizedUsername}).`);
+    console.log(`Force-updated owner identity for user ${userId} (username=${normalizedUsername}).`);
     return;
   }
 
@@ -89,6 +115,11 @@ async function upsertEmployeeIdentity(client, { userId, pin }) {
   ).rows;
 
   if (existing?.id) {
+    if (shouldPreserveExistingOwnerIdentity()) {
+      console.log(`Preserved existing employee pin identity for user ${userId}.`);
+      return;
+    }
+
     await client.query(
       `
       update auth_identities

@@ -81,6 +81,20 @@ Until migration, legacy accounts receive:
 
 `This platform admin account must be updated to use an email login before sign-in.`
 
+## Deploy must not reset admin email
+
+Every production deploy (wave 6+) runs `scripts/seed-auth-credentials.mjs` to **bootstrap missing** `auth_identities` rows.
+
+| Scenario | Behavior |
+|----------|----------|
+| Owner identity missing | Created with `AUTH_OWNER_USERNAME` / `AUTH_OWNER_PASSWORD` env, or bootstrap defaults |
+| Owner identity exists | **Preserved** — username and password are **not** overwritten |
+| Explicit recovery | Set `AUTH_SEED_FORCE_OWNER_CREDENTIALS=true` **and** explicit `AUTH_OWNER_USERNAME` + `AUTH_OWNER_PASSWORD` |
+
+This prevents the env-sourced Owner (`SAAS_PLATFORM_ADMIN_USER_IDS`, UI tag **بيئة (env)**) from reverting to `hajri` after each deploy when you update the email from **Platform admins**.
+
+For deploy auth smoke checks, configure GitHub secrets `AUTH_VERIFY_OWNER_USERNAME` / `AUTH_VERIFY_OWNER_PASSWORD` to match the live owner email and password (not legacy `hajri`).
+
 ## Environment (password reset email)
 
 See `scripts/check-password-reset-email.mjs` and `.env.example`:
