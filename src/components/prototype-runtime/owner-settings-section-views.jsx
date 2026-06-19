@@ -18,10 +18,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { isNotebookThemeDirty } from "@/features/org-config/client/owner-settings-appearance-actions";
-import {
-  openBillingUpgradeSupport,
-  openBillingUpgradeToPaidSupport,
-} from "@/features/billing/client/billing-upgrade-support";
+import { formatOrganizationAccountRef } from "@/features/billing/client/format-organization-account-ref";
 import {
   formatBillingCycleLabel,
   formatPlanSubscriptionHomeLabel,
@@ -129,104 +126,6 @@ function OwnerSettingsAccountPasswordPanel({ lang, onPasswordChanged }) {
   );
 }
 
-function OwnerSettingsAccountPlanPanel({
-  lang,
-  entitlements,
-  entitlementsLoading,
-  entitlementsError,
-  reloadEntitlements,
-  ownerProfile,
-  ownerAccount,
-  onOpenSupport,
-}) {
-  const planName = pickLocalizedPlanName(entitlements, lang);
-  const statusLabel = formatSubscriptionStatusLabel(
-    entitlements?.subscriptionStatus || entitlements?.organizationStatus,
-    lang,
-    { isTrialPlan: Boolean(entitlements?.isTrialPlan) },
-  );
-  const statusTone = formatSubscriptionStatusTone(
-    entitlements?.subscriptionStatus,
-    entitlements?.organizationStatus,
-  );
-
-  const openUpgradeSupport = () => {
-    if (entitlements?.isTrialPlan) {
-      openBillingUpgradeToPaidSupport({
-        ownerName: ownerProfile?.name || ownerAccount?.ownerName || "",
-        currentPlanName: planName,
-      });
-      return;
-    }
-    const targetPlan = entitlements?.upgradePlans?.[0];
-    if (targetPlan) {
-      openBillingUpgradeSupport({
-        ownerName: ownerProfile?.name || ownerAccount?.ownerName || "",
-        organizationName: ownerAccount?.organizationName || "",
-        currentPlanName: planName,
-        targetPlanName: lang === "ar" ? targetPlan.displayNameAr : targetPlan.displayNameEn,
-      });
-      return;
-    }
-    onOpenSupport?.();
-  };
-
-  return (
-    <div className="mb-5 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
-      <div className="mb-3 flex items-center gap-2">
-        <CreditCard className="h-4 w-4 text-[#B99844]" />
-        <p className="text-xs font-bold text-[#716753]">{text(lang, "ownerAccountPlanTitle")}</p>
-      </div>
-      {entitlementsLoading ? (
-        <p className="text-taq-meta font-bold text-[#827762]">{text(lang, "subscriptionLoading")}</p>
-      ) : null}
-      {entitlementsError ? (
-        <div className="rounded-2xl bg-[#FFF1EE] p-3 text-center">
-          <p className="text-taq-meta font-bold text-[#B44747]">{entitlementsError}</p>
-          <button
-            type="button"
-            onClick={() => { void reloadEntitlements(); }}
-            className="mt-3 rounded-2xl bg-[#112A46] px-4 py-2.5 text-taq-meta font-black text-white"
-          >
-            {text(lang, "retryLoad")}
-          </button>
-        </div>
-      ) : null}
-      {entitlements ? (
-        <>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge tone="navy">{text(lang, "currentPlan")}</Badge>
-            {entitlements.isTrialPlan ? <Badge tone="warning">{text(lang, "trialPlanBadge")}</Badge> : null}
-            <Badge tone={statusTone}>{statusLabel}</Badge>
-          </div>
-          <h3 className="mt-3 text-sm font-black text-[#112A46]">{planName}</h3>
-          <p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">
-            {formatPlanPriceLabel(entitlements.priceMonthlyHalalas, lang, {
-              isTrialPlan: entitlements.isTrialPlan,
-              billingCycle: entitlements.billingCycle,
-              priceYearlyHalalas: entitlements.priceYearlyHalalas,
-            })}
-          </p>
-          <p className="mt-2 text-taq-meta font-bold text-[#827762]">
-            {entitlements.isTrialPlan
-              ? `${text(lang, "trialDaysRemaining")}: ${formatTrialDaysRemainingLabel(entitlements.trialDaysRemaining, lang)}`
-              : `${text(lang, "renewalDaysRemaining")}: ${formatRenewalDaysRemainingLabel(entitlements.renewalDaysRemaining, lang)}`}
-          </p>
-          <p className="mt-4 text-taq-meta font-bold leading-6 text-[#827762]">
-            {text(lang, "ownerAccountPlanUpgradeHint")}
-          </p>
-          <button
-            type="button"
-            onClick={openUpgradeSupport}
-            className="mt-4 w-full rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white"
-          >
-            {entitlements.isTrialPlan ? text(lang, "upgradeToPaid") : text(lang, "ownerAccountRequestUpgrade")}
-          </button>
-        </>
-      ) : null}
-    </div>
-  );
-}
 
 export function OwnerSettingsAccountSection({
   lang,
@@ -249,12 +148,6 @@ export function OwnerSettingsAccountSection({
   ownerAccountLoading = false,
   ownerAccountError = "",
   reloadOwnerAccount = () => {},
-  entitlements = null,
-  entitlementsLoading = false,
-  entitlementsError = "",
-  reloadEntitlements = () => {},
-  ownerProfile = null,
-  onOpenSupport = null,
 }) {
   const [showPasswordPanel, setShowPasswordPanel] = React.useState(false);
   const [passwordChangedNotice, setPasswordChangedNotice] = React.useState(false);
@@ -334,17 +227,6 @@ export function OwnerSettingsAccountSection({
           ) : null}
         </div>
 
-        <OwnerSettingsAccountPlanPanel
-          lang={lang}
-          entitlements={entitlements}
-          entitlementsLoading={entitlementsLoading}
-          entitlementsError={entitlementsError}
-          reloadEntitlements={reloadEntitlements}
-          ownerProfile={ownerProfile}
-          ownerAccount={ownerAccount}
-          onOpenSupport={onOpenSupport}
-        />
-
         {settingsNotice && <p className="rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{settingsNotice}</p>}
         {settingsSuccess && <div className="mt-4 rounded-xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">{text(lang, "changesSaved")}</div>}
       </SettingsSectionFrame>
@@ -381,6 +263,33 @@ export function OwnerSettingsAccountSection({
   );
 }
 
+export function OwnerSettingsStoresTeamSection(props) {
+  const {
+    visibleStaff,
+    employeeStoreIds,
+    embedded = true,
+  } = props;
+
+  const countEmployeesForStore = React.useCallback((storeId) => (
+    visibleStaff.filter((person) => employeeStoreIds(person).includes(storeId)).length
+  ), [visibleStaff, employeeStoreIds]);
+
+  return (
+    <SettingsSectionFrame embedded={embedded}>
+      <OwnerSettingsStoresSection
+        {...props}
+        embedded={embedded}
+        countEmployeesForStore={countEmployeesForStore}
+      />
+      <div className="my-4 border-t border-[#E8E1D4]/90" />
+      <OwnerSettingsTeamSection
+        {...props}
+        embedded={embedded}
+      />
+    </SettingsSectionFrame>
+  );
+}
+
 export function OwnerSettingsStoresSection({
   lang,
   showAddStore,
@@ -405,6 +314,7 @@ export function OwnerSettingsStoresSection({
   settingsSuccess = false,
   entitlements = null,
   embedded = false,
+  countEmployeesForStore = null,
 }) {
   const Arrow = lang === "ar" ? ChevronLeft : ChevronRight;
   const atStoreLimit = entitlements ? !canAddStore(entitlements) : false;
@@ -453,7 +363,17 @@ export function OwnerSettingsStoresSection({
           <button key={business.id} onClick={() => openStore(business.id)} className={`flex w-full items-center justify-between px-4 py-4 text-start ${index < activeStoredBusinesses.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}>
             <div>
               <p className="text-xs font-black">{displayBusinessName(business)}</p>
-              <p className="mt-1 text-taq-meta font-bold text-[#827762]">{displayLocation(business)} <span className="text-[#257844]">{text(lang, "storeActive")}</span></p>
+              <p className="mt-1 text-taq-meta font-bold text-[#827762]">
+                {displayLocation(business)}{" "}
+                <span className="text-[#257844]">{text(lang, "storeActive")}</span>
+                {typeof countEmployeesForStore === "function" ? (
+                  <span className="text-[#716753]">
+                    {" · "}
+                    {countEmployeesForStore(business.id)}
+                    {lang === "ar" ? " موظف" : " staff"}
+                  </span>
+                ) : null}
+              </p>
             </div>
             <Arrow className="h-4 w-4 text-[#B99844]" />
           </button>
@@ -667,6 +587,7 @@ export function OwnerSettingsSubscriptionSection({
   ownerProfile,
   onOpenSupport,
   embedded = false,
+  hideUpgradeActions = false,
 }) {
   const planName = pickLocalizedPlanName(entitlements, lang);
   const statusLabel = formatSubscriptionStatusLabel(
@@ -715,16 +636,11 @@ export function OwnerSettingsSubscriptionSection({
               <p className="mt-3 text-taq-meta font-bold text-[#806528]">
                 {text(lang, "trialDaysRemaining")}: {formatTrialDaysRemainingLabel(entitlements.trialDaysRemaining, lang)}
               </p>
-              <button
-                type="button"
-                onClick={() => openBillingUpgradeToPaidSupport({
-                  ownerName: ownerProfile?.name || "",
-                  currentPlanName: planName,
-                })}
-                className="mt-4 w-full rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white"
-              >
-                {text(lang, "upgradeToPaid")}
-              </button>
+              {hideUpgradeActions ? (
+                <p className="mt-3 text-taq-meta font-bold text-[#806528]">
+                  {lang === "ar" ? "لترقية الخطة اضغط اسم خطتك أعلى الإعدادات." : "Tap your plan name at the top of Settings to upgrade."}
+                </p>
+              ) : null}
             </div>
           ) : null}
           <div className="mb-4 rounded-3xl bg-white p-5 ring-1 ring-black/[0.045]">
@@ -734,6 +650,12 @@ export function OwnerSettingsSubscriptionSection({
               <Badge tone={statusTone}>{statusLabel}</Badge>
             </div>
             <h3 className="mt-4 text-lg font-black">{planName}</h3>
+            {entitlements.organizationId ? (
+              <p className="mt-2 text-taq-meta font-bold text-[#827762]" dir="ltr">
+                {lang === "ar" ? "رقم الحساب: " : "Account ref: "}
+                {formatOrganizationAccountRef(entitlements.organizationId)}
+              </p>
+            ) : null}
             <p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">
               {formatPlanPriceLabel(entitlements.priceMonthlyHalalas, lang, {
                 isTrialPlan: entitlements.isTrialPlan,
@@ -779,30 +701,17 @@ export function OwnerSettingsSubscriptionSection({
               ))}
             </ul>
           </div>
-          {entitlements.upgradePlans.length ? (
+          {entitlements.upgradePlans.length && !hideUpgradeActions ? (
             <div className="rounded-3xl bg-white p-5 ring-1 ring-black/[0.045]">
               <p className="text-xs font-bold text-[#716753]">{text(lang, "upgradeOptions")}</p>
               <div className="mt-3 space-y-3">
                 {entitlements.upgradePlans.map((plan) => (
                   <div key={plan.planCode} className="rounded-2xl border border-[#F0ECE2] p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-black">{lang === "ar" ? plan.displayNameAr : plan.displayNameEn}</p>
-                        <p className="mt-1 text-taq-meta font-bold text-[#827762]">
-                          {formatPlanPriceLabel(plan.priceMonthlyHalalas, lang)}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => openBillingUpgradeSupport({
-                          ownerName: ownerProfile?.name || "",
-                          currentPlanName: planName,
-                          targetPlanName: lang === "ar" ? plan.displayNameAr : plan.displayNameEn,
-                        })}
-                        className="shrink-0 rounded-2xl bg-[#112A46] px-3 py-2 text-taq-meta font-black text-white"
-                      >
-                        {text(lang, "requestUpgrade")}
-                      </button>
+                    <div>
+                      <p className="text-sm font-black">{lang === "ar" ? plan.displayNameAr : plan.displayNameEn}</p>
+                      <p className="mt-1 text-taq-meta font-bold text-[#827762]">
+                        {formatPlanPriceLabel(plan.priceMonthlyHalalas, lang)}
+                      </p>
                     </div>
                     <ul className="mt-3 space-y-1.5">
                       {plan.features.map((feature) => (
@@ -815,26 +724,50 @@ export function OwnerSettingsSubscriptionSection({
                 ))}
               </div>
             </div>
-          ) : (
+          ) : null}
+          {!hideUpgradeActions && !entitlements.upgradePlans.length ? (
             <div className="rounded-3xl bg-white p-5 ring-1 ring-black/[0.045]">
               <button type="button" onClick={onOpenSupport} className="w-full rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">
                 {text(lang, "contactSupport")}
               </button>
             </div>
-          )}
+          ) : null}
         </>
       ) : null}
     </SettingsSectionFrame>
   );
 }
 
-export function OwnerSettingsSupportSection({ lang, setSection, onOpenSupport, onOpenHelp, embedded = false }) {
+export function OwnerSettingsSupportSection({
+  lang,
+  setSection,
+  onOpenSupport,
+  onOpenHelp,
+  embedded = false,
+  entitlements = null,
+  entitlementsLoading = false,
+  entitlementsError = "",
+  reloadEntitlements = () => {},
+  ownerProfile = null,
+}) {
   return (
     <SettingsSectionFrame embedded={embedded}>
       {!embedded ? (
-        <SettingsPageHeader title={text(lang, "support")} onBack={() => setSection("home")} lang={lang} />
+        <SettingsPageHeader title={text(lang, "support")} onBack={() => setSection("stores-team")} lang={lang} />
       ) : null}
-      <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
+      <OwnerSettingsSubscriptionSection
+        lang={lang}
+        setSection={setSection}
+        entitlements={entitlements}
+        entitlementsLoading={entitlementsLoading}
+        entitlementsError={entitlementsError}
+        reloadEntitlements={reloadEntitlements}
+        ownerProfile={ownerProfile}
+        onOpenSupport={onOpenSupport}
+        embedded
+        hideUpgradeActions
+      />
+      <div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
         <SettingsLink lang={lang} icon={Smartphone} title={text(lang, "whatsappSupport")} onClick={onOpenSupport} border />
         <SettingsLink lang={lang} icon={FileText} title={text(lang, "helpCenter")} onClick={onOpenHelp} border={false} />
       </div>
@@ -935,18 +868,12 @@ export function renderOwnerSettingsSection(section, state, callbacks, options = 
         ownerAccountLoading={state.ownerAccountLoading}
         ownerAccountError={state.ownerAccountError}
         reloadOwnerAccount={state.reloadOwnerAccount}
-        entitlements={state.entitlements}
-        entitlementsLoading={state.entitlementsLoading}
-        entitlementsError={state.entitlementsError}
-        reloadEntitlements={state.reloadEntitlements}
-        ownerProfile={state.ownerProfile}
-        onOpenSupport={onOpenSupport}
       />
     );
   }
-  if (section === "stores") {
+  if (section === "stores-team" || section === "stores" || section === "team") {
     return (
-      <OwnerSettingsStoresSection
+      <OwnerSettingsStoresTeamSection
         {...common}
         showAddStore={state.showAddStore}
         setShowAddStore={state.setShowAddStore}
@@ -968,13 +895,6 @@ export function renderOwnerSettingsSection(section, state, callbacks, options = 
         settingsNotice={state.settingsNotice}
         settingsSuccess={state.settingsSuccess}
         entitlements={state.entitlements}
-      />
-    );
-  }
-  if (section === "team") {
-    return (
-      <OwnerSettingsTeamSection
-        {...common}
         managingTeam={state.managingTeam}
         startManagingTeam={state.startManagingTeam}
         cancelManagingTeam={state.cancelManagingTeam}
@@ -982,8 +902,6 @@ export function renderOwnerSettingsSection(section, state, callbacks, options = 
         employeeStoreIds={state.employeeStoreIds}
         toggleEmployeeActive={state.toggleEmployeeActive}
         setDeleteTarget={state.setDeleteTarget}
-        activeStoredBusinesses={state.activeStoredBusinesses}
-        displayBusinessName={state.displayBusinessName}
         toggleEmployeeStore={state.toggleEmployeeStore}
         draftAuthEmployeePins={state.draftAuthEmployeePins}
         updateDraftEmployeePin={state.updateDraftEmployeePin}
@@ -997,10 +915,7 @@ export function renderOwnerSettingsSection(section, state, callbacks, options = 
         addStaff={state.addStaff}
         teamSaving={state.teamSaving}
         saveManagingTeam={state.saveManagingTeam}
-        deleteDialogProps={state.deleteDialogProps}
         inviteApiContext={state.inviteApiContext}
-        orgConfigLoading={state.orgConfigApiContext?.loading}
-        settingsNotice={state.settingsNotice}
       />
     );
   }
@@ -1021,14 +936,15 @@ export function renderOwnerSettingsSection(section, state, callbacks, options = 
   }
   if (section === "subscription") {
     return (
-      <OwnerSettingsSubscriptionSection
+      <OwnerSettingsSupportSection
         {...common}
+        onOpenSupport={onOpenSupport}
+        onOpenHelp={onOpenHelp}
         entitlements={state.entitlements}
         entitlementsLoading={state.entitlementsLoading}
         entitlementsError={state.entitlementsError}
         reloadEntitlements={state.reloadEntitlements}
         ownerProfile={state.ownerProfile}
-        onOpenSupport={onOpenSupport}
       />
     );
   }
@@ -1038,6 +954,11 @@ export function renderOwnerSettingsSection(section, state, callbacks, options = 
         {...common}
         onOpenSupport={onOpenSupport}
         onOpenHelp={onOpenHelp}
+        entitlements={state.entitlements}
+        entitlementsLoading={state.entitlementsLoading}
+        entitlementsError={state.entitlementsError}
+        reloadEntitlements={state.reloadEntitlements}
+        ownerProfile={state.ownerProfile}
       />
     );
   }
