@@ -11,7 +11,7 @@ type RenewalReminderMessageInput = {
 type UpgradeRequestMessageInput = {
   ownerName: string;
   organizationName?: string;
-  organizationId?: string;
+  accountNumber?: number | null;
   currentPlanName: string;
   targetPlanName: string;
 };
@@ -20,18 +20,21 @@ type UpgradeToPaidMessageInput = {
   ownerName: string;
   currentPlanName: string;
   organizationName?: string;
-  organizationId?: string;
+  accountNumber?: number | null;
 };
 
-function buildOrganizationReferenceLines(input: { organizationName?: string; organizationId?: string }) {
+function buildOrganizationReferenceLines(input: {
+  organizationName?: string;
+  accountNumber?: number | null;
+}) {
   const lines: string[] = [];
   const organizationName = input.organizationName?.trim();
   if (organizationName) {
     lines.push(`النشاط: ${organizationName}`);
   }
-  const organizationId = input.organizationId?.trim();
-  if (organizationId) {
-    lines.push(`معرف الحساب: ${organizationId}`);
+  const accountNumber = input.accountNumber;
+  if (typeof accountNumber === "number" && Number.isInteger(accountNumber) && accountNumber > 0) {
+    lines.push(`رقم الحساب: ${accountNumber}`);
   }
   return lines;
 }

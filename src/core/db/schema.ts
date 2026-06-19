@@ -20,11 +20,15 @@ const updatedAt = timestamp("updated_at", { withTimezone: true }).notNull().defa
 
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
+  /** Public numeric customer reference for support (e.g. 100042). */
+  accountNumber: integer("account_number").notNull(),
   name: text("name").notNull(),
   status: text("status").notNull().default("active"),
   createdAt,
   updatedAt,
-});
+}, (table) => ({
+  accountNumberUq: uniqueIndex("organizations_account_number_uq").on(table.accountNumber),
+}));
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),

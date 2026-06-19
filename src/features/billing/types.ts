@@ -41,6 +41,7 @@ export type OwnerPlanSummary = {
 
 export type ResolvedOrganizationEntitlements = {
   organizationId: string;
+  accountNumber: number;
   planCode: PlanCode;
   planDisplayNameAr: string;
   planDisplayNameEn: string;

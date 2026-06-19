@@ -18,7 +18,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { isNotebookThemeDirty } from "@/features/org-config/client/owner-settings-appearance-actions";
-import { formatOrganizationAccountRef } from "@/features/billing/client/format-organization-account-ref";
+import { formatOrganizationAccountNumber } from "@/features/billing/client/format-organization-account-number";
 import {
   formatBillingCycleLabel,
   formatPlanSubscriptionHomeLabel,
@@ -650,10 +650,10 @@ export function OwnerSettingsSubscriptionSection({
               <Badge tone={statusTone}>{statusLabel}</Badge>
             </div>
             <h3 className="mt-4 text-lg font-black">{planName}</h3>
-            {entitlements.organizationId ? (
+            {Number.isInteger(entitlements.accountNumber) ? (
               <p className="mt-2 text-taq-meta font-bold text-[#827762]" dir="ltr">
-                {lang === "ar" ? "رقم الحساب: " : "Account ref: "}
-                {formatOrganizationAccountRef(entitlements.organizationId)}
+                {lang === "ar" ? "رقم الحساب: " : "Account no.: "}
+                {formatOrganizationAccountNumber(entitlements.accountNumber)}
               </p>
             ) : null}
             <p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">

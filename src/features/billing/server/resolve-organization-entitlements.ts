@@ -33,7 +33,10 @@ export async function resolveOrganizationEntitlements(
   const gracePeriodDays = resolveSubscriptionGracePeriodDays();
 
   const [organization] = await db
-    .select({ status: organizations.status })
+    .select({
+      status: organizations.status,
+      accountNumber: organizations.accountNumber,
+    })
     .from(organizations)
     .where(eq(organizations.id, organizationId))
     .limit(1);
@@ -112,6 +115,7 @@ export async function resolveOrganizationEntitlements(
 
   return {
     organizationId,
+    accountNumber: organization.accountNumber,
     planCode,
     planDisplayNameAr: plan.displayNameAr,
     planDisplayNameEn: plan.displayNameEn,

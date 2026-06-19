@@ -82,8 +82,8 @@ async function resetData(client) {
 
 async function seedCore(client) {
   await client.query(
-    `insert into organizations (id, name, status)
-     values ($1, $2, 'active')`,
+    `insert into organizations (id, account_number, name, status)
+     values ($1, nextval('organization_account_number_seq'), $2, 'active')`,
     [IDS.organization, "شركة النجاح"],
   );
 

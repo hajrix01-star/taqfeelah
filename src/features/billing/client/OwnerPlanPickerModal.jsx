@@ -64,13 +64,13 @@ export function OwnerPlanPickerModal({
     const targetPlanName = lang === "ar"
       ? selectedPlan.displayNameAr
       : selectedPlan.displayNameEn;
-    const organizationId = entitlements.organizationId || ownerAccount?.organizationId || "";
     const organizationName = ownerAccount?.organizationName || "";
+    const accountNumber = entitlements.accountNumber ?? ownerAccount?.accountNumber ?? null;
 
     openBillingUpgradeSupport({
       ownerName: ownerProfile?.name || ownerAccount?.ownerName || "",
       organizationName,
-      organizationId,
+      accountNumber,
       currentPlanName,
       targetPlanName,
     });
