@@ -58,6 +58,7 @@ export const translations = {
       allStatuses: "كل الحالات",
       allPlans: "كل الخطط",
       searchByName: "بحث بالاسم…",
+      searchAccounts: "بحث بالاسم، رقم الحساب، الجوال، أو الإيميل…",
       currencySar: "ر.س",
     },
     status: {
@@ -198,6 +199,7 @@ export const translations = {
       colLastActivity: "آخر نشاط",
       colPlan: "الخطة",
       colStatus: "الحالة",
+      accountNumberLabel: "رقم الحساب",
       loadError: "تعذر تحميل الحسابات",
     },
     newAccount: {
@@ -380,6 +382,7 @@ export const translations = {
     },
     accountDetails: {
       description: "تفاصيل الحساب وإدارة المستخدمين",
+      accountNumber: "رقم الحساب",
       notFound: "الحساب غير موجود",
       createdAt: "تاريخ الإنشاء",
       lastActivity: "آخر نشاط",
@@ -582,6 +585,7 @@ export const translations = {
       allStatuses: "All statuses",
       allPlans: "All plans",
       searchByName: "Search by name…",
+      searchAccounts: "Search by name, account no., phone, or email…",
       currencySar: "SAR",
     },
     status: {
@@ -722,6 +726,7 @@ export const translations = {
       colLastActivity: "Last activity",
       colPlan: "Plan",
       colStatus: "Status",
+      accountNumberLabel: "Account no.",
       loadError: "Failed to load accounts",
     },
     newAccount: {
@@ -904,6 +909,7 @@ export const translations = {
     },
     accountDetails: {
       description: "Account details and user management",
+      accountNumber: "Account no.",
       notFound: "Account not found",
       createdAt: "Created",
       lastActivity: "Last activity",
