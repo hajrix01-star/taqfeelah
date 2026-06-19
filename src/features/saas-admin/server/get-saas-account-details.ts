@@ -304,6 +304,7 @@ export async function getSaasAccountDetails(
 
   return {
     id: org.id,
+    accountNumber: org.accountNumber,
     name: org.name,
     ownerName: owner?.name ?? null,
     ownerUsername: owner?.username ?? null,

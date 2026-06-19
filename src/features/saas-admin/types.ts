@@ -63,6 +63,7 @@ export type SaasOverview = {
 
 export type SaasAccountRow = {
   id: string;
+  accountNumber: number;
   name: string;
   ownerName: string | null;
   storesCount: number;
@@ -93,6 +94,7 @@ export type SaasAccountSubscriptionSnapshot = {
 
 export type SaasAccountDetails = {
   id: string;
+  accountNumber: number;
   name: string;
   ownerName: string | null;
   ownerUsername: string | null;

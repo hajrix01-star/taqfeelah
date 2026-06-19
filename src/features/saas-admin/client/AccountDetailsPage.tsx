@@ -38,6 +38,7 @@ import { AccountTeamSection } from "@/features/saas-admin/client/AccountTeamSect
 import { AccountSubscriptionPanel } from "@/features/saas-admin/client/AccountSubscriptionPanel";
 import { EditAccountForms } from "@/features/saas-admin/client/EditAccountForms";
 import { fetchSaasAccountDetails } from "@/features/saas-admin/client/saas-admin-api-client";
+import { formatOrganizationAccountNumber } from "@/features/billing/client/format-organization-account-number";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
 import { useSaasAdminSession } from "@/features/saas-admin/client/SaasAdminSessionProvider";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
@@ -85,7 +86,9 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
     <>
       <AdminHeader
         title={data.name}
-        description={t.accountDetails.description}
+        description={formatOrganizationAccountNumber(data.accountNumber)
+          ? `${t.accountDetails.accountNumber}: ${formatOrganizationAccountNumber(data.accountNumber)}`
+          : t.accountDetails.description}
         actions={(
           <Link
             href="/saas-admin/accounts"
@@ -140,6 +143,13 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
                 <p className="text-xs text-[var(--admin-muted)]" dir="ltr">
                   {data.ownerPhone || data.ownerUsername || "—"}
                 </p>
+                {formatOrganizationAccountNumber(data.accountNumber) ? (
+                  <p className="text-xs text-[var(--admin-muted)]">
+                    {t.accountDetails.accountNumber}
+                    {": "}
+                    <span className="font-mono">{formatOrganizationAccountNumber(data.accountNumber)}</span>
+                  </p>
+                ) : null}
                 <p className="text-xs text-[var(--admin-muted)]">
                   {t.common.plan}
                   :

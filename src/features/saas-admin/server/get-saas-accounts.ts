@@ -5,7 +5,6 @@ import {
   desc,
   eq,
   gte,
-  ilike,
   inArray,
   lte,
   sql,
@@ -22,6 +21,7 @@ import {
 } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import type { SaasAccountsList } from "@/features/saas-admin/types";
+import { buildSaasAccountsSearchFilter } from "@/features/saas-admin/server/build-saas-accounts-search-filter";
 import { currentMonthRangeUtc, resolveAccountStatus } from "@/features/saas-admin/server/saas-admin-utils";
 
 const inputSchema = z.object({
@@ -64,8 +64,9 @@ export async function getSaasAccounts(rawInput: z.infer<typeof inputSchema>): Pr
   const offset = (input.page - 1) * input.pageSize;
 
   const filters = [];
-  if (input.search?.trim()) {
-    filters.push(ilike(organizations.name, `%${input.search.trim()}%`));
+  const searchFilter = buildSaasAccountsSearchFilter(input.search);
+  if (searchFilter) {
+    filters.push(searchFilter);
   }
   if (input.plan?.trim()) {
     filters.push(sql`lower(coalesce(latest_sub.plan_code, '')) = ${input.plan.trim().toLowerCase()}`);
@@ -88,6 +89,7 @@ export async function getSaasAccounts(rawInput: z.infer<typeof inputSchema>): Pr
   const orgRows = await db
     .select({
       id: organizations.id,
+      accountNumber: organizations.accountNumber,
       name: organizations.name,
       status: organizations.status,
       createdAt: organizations.createdAt,
@@ -196,6 +198,7 @@ export async function getSaasAccounts(rawInput: z.infer<typeof inputSchema>): Pr
 
   const accounts = orgRows.map((row) => ({
     id: row.id,
+    accountNumber: row.accountNumber,
     name: row.name,
     ownerName: ownerByOrg.get(row.id) ?? null,
     storesCount: storeCountByOrg.get(row.id) ?? 0,

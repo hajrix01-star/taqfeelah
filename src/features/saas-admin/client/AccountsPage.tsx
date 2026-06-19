@@ -10,6 +10,7 @@ import { formatDateTime, formatNumber } from "@/features/saas-admin/components/f
 import { LoadingSkeleton } from "@/features/saas-admin/components/LoadingSkeleton";
 import { StatusBadge } from "@/features/saas-admin/components/StatusBadge";
 import { fetchSaasAccounts } from "@/features/saas-admin/client/saas-admin-api-client";
+import { formatOrganizationAccountNumber } from "@/features/billing/client/format-organization-account-number";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
 import { useSaasAdminSession } from "@/features/saas-admin/client/SaasAdminSessionProvider";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
@@ -37,7 +38,7 @@ function AccountFilters({
     <>
       <input
         type="search"
-        placeholder={t.common.searchByName}
+        placeholder={t.common.searchAccounts}
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
         className="admin-filter-field min-w-0 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] px-3 py-2.5 text-sm lg:w-52"
@@ -164,7 +165,14 @@ export default function AccountsPage() {
                 <tr key={row.id} className="hover:bg-[var(--admin-hover)]">
                   <AdminTableCell col={0}>
                     <Link href={`/saas-admin/accounts/${row.id}`} className="font-semibold text-[var(--admin-primary)] hover:underline">
-                      {row.name}
+                      <span className="block">{row.name}</span>
+                      {formatOrganizationAccountNumber(row.accountNumber) ? (
+                        <span className="mt-0.5 block font-mono text-xs font-normal text-[var(--admin-muted)]">
+                          {t.accounts.accountNumberLabel}
+                          {": "}
+                          {formatOrganizationAccountNumber(row.accountNumber)}
+                        </span>
+                      ) : null}
                     </Link>
                   </AdminTableCell>
                   <AdminTableCell col={1} className="text-[var(--admin-muted)]">{row.ownerName || "—"}</AdminTableCell>
