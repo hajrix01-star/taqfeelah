@@ -1,8 +1,8 @@
 name: Recover Owner Auth
 
+# Manual-only: push-triggered recovery runs inside deploy-production.yml
+# (single SSH session). Parallel recover + deploy jobs cause fail2ban blocks.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       owner_username:
@@ -21,92 +21,58 @@ concurrency:
 
 jobs:
   recover:
-    name: Reset owner auth
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      contains(github.event.head_commit.message, '[recover-owner-auth]') ||
-      contains(toJSON(github.event.commits), 'recover-owner-auth')
+    name: Reset owner auth on VPS
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Resolve recovery credentials
-        id: creds
-        env:
-          DISPATCH_USERNAME: ${{ github.event.inputs.owner_username }}
-          DISPATCH_PASSWORD: ${{ github.event.inputs.owner_password }}
+      - name: Verify VPS secrets are configured
         run: |
-          set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            username="${DISPATCH_USERNAME}"
-            password="${DISPATCH_PASSWORD}"
-          else
-            username="hajri"
-            password="Taqfeelah2026"
+          missing=0
+          if [ -z "${{ secrets.VPS_HOST }}" ]; then
+            echo "::error::Missing GitHub secret VPS_HOST"
+            missing=1
           fi
-          if [ -z "$username" ] || [ -z "$password" ]; then
-            echo "::error::Owner username and password are required."
+          if [ -z "${{ secrets.VPS_USER }}" ]; then
+            echo "::error::Missing GitHub secret VPS_USER"
+            missing=1
+          fi
+          if [ -z "${{ secrets.VPS_PASS }}" ] && [ -z "${{ secrets.VPS_SSH_PRIVATE_KEY }}" ]; then
+            echo "::error::Missing GitHub secret VPS_PASS or VPS_SSH_PRIVATE_KEY"
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
             exit 1
           fi
-          if [ "${#password}" -lt 8 ]; then
-            echo "::error::Owner password must be at least 8 characters."
-            exit 1
-          fi
-          echo "username=$username" >> "$GITHUB_OUTPUT"
-          echo "password=$password" >> "$GITHUB_OUTPUT"
-          {
-            echo "### Owner login recovery"
-            echo ""
-            echo "- **Username:** \`$username\`"
-            echo "- **Password:** \`$password\`"
-            echo ""
-            echo "Use at [taqfeelah.com/app](https://taqfeelah.com/app) or [saas-admin/login](https://taqfeelah.com/saas-admin/login)."
-          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Verify DATABASE_URL is configured
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deploy dependencies
+        run: pip install -r scripts/requirements-deploy.txt
+
+      - name: SSH preflight cooldown
         run: |
-          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
-            echo "::error::Missing GitHub secret DATABASE_URL"
-            exit 1
-          fi
+          echo "Waiting 600s before SSH (fail2ban / runner IP cooldown)…"
+          sleep 600
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.9
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Seed owner credentials in PostgreSQL
+      - name: Reset owner auth on VPS
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          AUTH_OWNER_USERNAME: ${{ steps.creds.outputs.username }}
-          AUTH_OWNER_PASSWORD: ${{ steps.creds.outputs.password }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PASS: ${{ secrets.VPS_PASS }}
+          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_CONNECT_TIMEOUT: "25"
+          VPS_CONNECT_RETRIES: "5"
+          VPS_RETRY_DELAY_SECONDS: "15"
+          AUTH_ORGANIZATION_ID: ${{ secrets.AUTH_ORGANIZATION_ID }}
           AUTH_OWNER_USER_ID: ${{ secrets.AUTH_OWNER_USER_ID }}
-          SEED_OWNER_USER_ID: ${{ secrets.AUTH_OWNER_USER_ID }}
-        run: node scripts/seed-auth-credentials.mjs
-
-      - name: Verify owner login against production API
-        env:
-          USERNAME: ${{ steps.creds.outputs.username }}
-          PASSWORD: ${{ steps.creds.outputs.password }}
         run: |
-          set -euo pipefail
-          response="$(curl -sS --max-time 30 -X POST https://taqfeelah.com/api/v1/auth/session \
-            -H 'content-type: application/json' \
-            -d "{\"mode\":\"owner_password\",\"username\":\"${USERNAME}\",\"password\":\"${PASSWORD}\"}")"
-          echo "$response"
-          if ! echo "$response" | grep -q '"userId"'; then
-            echo "::error::Production login verification failed."
-            exit 1
-          fi
-          echo "Production login verification passed."
+          python scripts/vps_deploy.py reset-owner-auth \
+            --username "${{ github.event.inputs.owner_username }}" \
+            --password "${{ github.event.inputs.owner_password }}"
