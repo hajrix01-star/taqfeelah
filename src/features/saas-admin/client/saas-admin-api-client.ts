@@ -444,6 +444,29 @@ export async function requestPlatformAdminPasswordResetViaApi({ email }: { email
   );
 }
 
+export async function loginPlatformAdminSessionViaApi({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}) {
+  return fetchAuthJson<{
+    organizationId: string;
+    userId: string;
+    role: string;
+    displayName: string;
+    mustChangePassword?: boolean;
+  }>("/api/v1/auth/session", {
+    method: "POST",
+    body: JSON.stringify({
+      mode: "platform_admin_password",
+      email: email.trim(),
+      password,
+    }),
+  });
+}
+
 export async function validatePlatformAdminPasswordResetTokenViaApi(token: string) {
   const search = new URLSearchParams({ token, audience: "platform_admin" });
   return fetchAuthJson<{ valid: boolean; status?: string }>(

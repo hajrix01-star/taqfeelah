@@ -29,11 +29,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       password?: string;
     };
 
-    const hasProfileUpdate = Boolean(
-      (body.name && body.name.trim())
-      || (body.username && body.username.trim())
-      || (body.password && body.password.trim()),
-    );
+    const hasProfileUpdate = Boolean(body.name?.trim() && body.username?.trim());
     const nextRole = parsePlatformAdminRole(body.role);
 
     if (!nextRole && !hasProfileUpdate) {
@@ -48,8 +44,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       admin = await updatePlatformAdminProfile(
         userId,
         {
-          name: body.name?.trim() || undefined,
-          username: body.username?.trim() || undefined,
+          name: body.name!.trim(),
+          username: body.username!.trim(),
           password: body.password?.trim() || undefined,
         },
         actorUserId,

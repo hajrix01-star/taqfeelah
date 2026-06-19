@@ -8,7 +8,7 @@ import {
   useSaasAdminLocale,
 } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 import type { SaasAdminLocale } from "@/features/saas-admin/i18n/translations";
-import { loginOwnerSessionViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
+import { loginPlatformAdminSessionViaApi } from "@/features/saas-admin/client/saas-admin-api-client";
 import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import "@/features/saas-admin/components/admin-theme.css";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
@@ -20,7 +20,7 @@ type SaasAdminLoginPageProps = {
 
 function LoginForm({ nextPath }: { nextPath: string }) {
   const { locale, t, dir } = useSaasAdminLocale();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,8 +30,8 @@ function LoginForm({ nextPath }: { nextPath: string }) {
     setError(null);
     setIsSubmitting(true);
     try {
-      await loginOwnerSessionViaApi({
-        username: username.trim(),
+      await loginPlatformAdminSessionViaApi({
+        email: email.trim(),
         password,
       });
       window.location.assign(nextPath);
@@ -57,16 +57,15 @@ function LoginForm({ nextPath }: { nextPath: string }) {
           <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">{t.auth.loginDescription}</p>
           <form onSubmit={(event) => { void handleSubmit(event); }} className="mt-6 space-y-4">
             <label className="block space-y-1 text-sm">
-              <span className="text-[var(--admin-muted)]">{t.auth.username}</span>
+              <span className="text-[var(--admin-muted)]">{t.auth.email}</span>
               <input
                 required
-                type="text"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
                 dir="ltr"
-                autoComplete="username"
-                inputMode="email"
+                autoComplete="email"
               />
             </label>
             <label className="block space-y-1 text-sm">

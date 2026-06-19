@@ -17,10 +17,18 @@ import {
 } from "@/features/auth/server/resolve-employee-user-id";
 import { resolveUserDisplayName } from "@/features/auth/server/resolve-user-display-name";
 import { createPhoneAuthSession } from "@/features/auth/server/create-phone-auth-session";
+import { createPlatformAdminAuthSession } from "@/features/auth/server/create-platform-admin-auth-session";
 
 const loginInputSchema = z.object({
-  mode: z.enum(["owner_password", "employee_pin", "owner_phone_password", "employee_phone_pin"]),
+  mode: z.enum([
+    "owner_password",
+    "employee_pin",
+    "owner_phone_password",
+    "employee_phone_pin",
+    "platform_admin_password",
+  ]),
   username: z.string().optional(),
+  email: z.string().optional(),
   password: z.string().optional(),
   employeeId: z.string().optional(),
   phone: z.string().optional(),
@@ -207,6 +215,12 @@ export async function createAuthSession(rawInput: LoginInput) {
     throw new ValidationError("Invalid login payload.", parsed.error.flatten());
   }
   const input = parsed.data;
+
+  if (input.mode === "platform_admin_password") {
+    const email = normalize(input.email) || normalize(input.username);
+    const password = normalize(input.password);
+    return createPlatformAdminAuthSession({ email, password });
+  }
 
   if (input.mode === "owner_phone_password" || input.mode === "employee_phone_pin") {
     return createPhoneAuthSession(

@@ -56,17 +56,19 @@ See `docs/API_CONTRACT.md` for query params and response shapes.
 4. Set `SAAS_ADMIN_API_ENABLED=true`
 5. Set `NEXT_PUBLIC_SAAS_ADMIN_ENABLED=true`
 6. Redeploy or restart PM2 so Next.js picks up env changes
-7. Sign in as the allowlisted user, then open `https://taqfeelah.com/saas-admin`
+7. Sign in at `https://taqfeelah.com/saas-admin/login` with a **platform admin email** (see `docs/PLATFORM_ADMIN_EMAIL_AUTH.md`)
 8. Optional: `USAGE_TRACKING_ENABLED=true` and run `pnpm saas:aggregate` (cron daily)
 9. Optional: `pnpm saas:subscription-scan` daily for renewal reminders and `past_due` transitions
 
-While flags stay `false`, deploy verify expects `GET /api/v1/saas-admin/overview` → `503` and `GET /saas-admin` → `200` (disabled shell).
+## Platform admin email auth
+
+See **`docs/PLATFORM_ADMIN_EMAIL_AUTH.md`** — email-only login, credential updates, and password reset contract.
 
 ## Deferred / not yet
 
 - **Payment provider integration** (owner-approved deferral)
 - Self-service public signup page
-- Automated setup-link email (WhatsApp/manual copy today)
+- Automated setup-link email for store owners (WhatsApp/manual copy today)
 - Investor CSV export route
 - Account disable/delete actions from admin UI
 - `pnpm saas:aggregate` cron (optional ops — run manually or schedule on VPS)

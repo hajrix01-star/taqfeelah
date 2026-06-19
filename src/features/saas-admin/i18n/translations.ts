@@ -127,7 +127,7 @@ export const translations = {
     },
     auth: {
       loginTitle: "دخول لوحة إدارة المنصة",
-      loginDescription: "سجّل الدخول ببريد مسؤول المنصة (أو اسم المستخدم الحالي) وكلمة المرور.",
+      loginDescription: "سجّل الدخول ببريد مسؤول المنصة الإلكتروني وكلمة المرور. لا يُقبل اسم مستخدم بدون @.",
       email: "البريد الإلكتروني",
       username: "اسم المستخدم",
       password: "كلمة المرور",
@@ -508,7 +508,7 @@ export const translations = {
       alreadyGranted: "المستخدم لديه صلاحية مسؤول المنصة مسبقًا.",
       needsPasswordLogin: "المستخدم لا يملك دخولًا باسم مستخدم وكلمة مرور — أنشئ حسابًا جديدًا أو أضف هوية دخول أولًا.",
       envHint:
-        "المسؤولون من البيئة (SAAS_PLATFORM_ADMIN_USER_IDS) لا يمكن تغيير دورهم أو إلغاؤهم من الواجهة، لكن يمكنك تعديل اسم العرض واسم المستخدم وكلمة المرور من هنا.",
+        "كل مسؤول منصة يجب أن يستخدم بريدًا إلكترونيًا حقيقيًا للدخول واستعادة كلمة المرور. المسؤولون من البيئة (SAAS_PLATFORM_ADMIN_USER_IDS) لا يمكن تغيير دورهم أو إلغاؤهم من الواجهة، لكن يمكنك تعديل الاسم والبريد وكلمة المرور من هنا.",
       platformRole: "صلاحية المنصة",
       adminsListTitle: "المسؤولون الحاليون",
       editCredentials: "تعديل الدخول",
@@ -518,6 +518,8 @@ export const translations = {
       credentialsUpdateSuccess: "تم تحديث بيانات الدخول.",
       credentialsUpdateError: "تعذر تحديث بيانات الدخول",
       usernameOptional: "اتركه فارغًا للإبقاء على اسم المستخدم الحالي",
+      emailRequiredPlaceholder: "name@company.com",
+      emailRequiredHint: "البريد الإلكتروني إلزامي — يُستخدم للدخول واستعادة كلمة المرور.",
       passwordOptional: "اتركه فارغًا للإبقاء على كلمة المرور الحالية",
       roleOwner: "أدمن (مالك المنصة)",
       roleSupport: "دعم فني",
@@ -649,7 +651,7 @@ export const translations = {
     },
     auth: {
       loginTitle: "SaaS Admin sign in",
-      loginDescription: "Sign in with your platform admin email (or current username) and password.",
+      loginDescription: "Sign in with your platform admin email and password. Usernames without @ are not accepted.",
       email: "Email",
       username: "Username",
       password: "Password",
@@ -1031,7 +1033,7 @@ export const translations = {
       needsPasswordLogin:
         "User has no username/password login — create a new admin or add a login identity first.",
       envHint:
-        "Environment admins (SAAS_PLATFORM_ADMIN_USER_IDS) cannot change role or be revoked here, but you can update display name, username, and password.",
+        "Every platform admin must use a real email for sign-in and password reset. Environment admins (SAAS_PLATFORM_ADMIN_USER_IDS) cannot change role or be revoked here, but you can update display name, email, and password.",
       platformRole: "Platform role",
       adminsListTitle: "Current admins",
       editCredentials: "Edit login",
@@ -1041,6 +1043,8 @@ export const translations = {
       credentialsUpdateSuccess: "Login credentials updated.",
       credentialsUpdateError: "Failed to update login credentials",
       usernameOptional: "Leave empty to keep current username",
+      emailRequiredPlaceholder: "name@company.com",
+      emailRequiredHint: "Email is required — used for sign-in and password reset.",
       passwordOptional: "Leave empty to keep current password",
       roleOwner: "Admin (platform owner)",
       roleSupport: "Technical support",
