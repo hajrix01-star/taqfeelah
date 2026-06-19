@@ -33,6 +33,8 @@ export function readPublicEnvString(key, env) {
       return process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
     case "NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID":
       return process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";
+    case "NEXT_PUBLIC_SUPPORT_WHATSAPP":
+      return process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || "";
     default:
       return "";
   }

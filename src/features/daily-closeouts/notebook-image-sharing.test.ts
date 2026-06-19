@@ -50,7 +50,7 @@ describe("shareImageThroughWhatsApp", () => {
 
     expect(navigator.share).not.toHaveBeenCalled();
     expect(openSpy).toHaveBeenCalledWith(
-      `https://wa.me/?text=${encodeURIComponent(caption)}`,
+      `https://wa.me/966533507223?text=${encodeURIComponent(caption)}`,
       "_blank",
       "noopener,noreferrer",
     );
@@ -99,7 +99,7 @@ describe("shareImageThroughWhatsApp", () => {
 
     expect(navigator.clipboard.write).toHaveBeenCalled();
     expect(openSpy).toHaveBeenCalledWith(
-      `https://wa.me/?text=${encodeURIComponent(caption)}`,
+      `https://wa.me/966533507223?text=${encodeURIComponent(caption)}`,
       "_blank",
       "noopener,noreferrer",
     );

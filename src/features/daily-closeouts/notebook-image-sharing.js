@@ -1,6 +1,9 @@
+import { resolveSupportWhatsAppNumber } from "@/core/config/marketing-support";
+import { openWhatsAppShare } from "@/core/whatsapp/share-link";
+
 function openWhatsAppWithText(message) {
   if (typeof window === "undefined") return;
-  window.open(`https://wa.me/?text=${encodeURIComponent(message || "")}`, "_blank", "noopener,noreferrer");
+  openWhatsAppShare(message || "", resolveSupportWhatsAppNumber());
 }
 
 export async function copyShareCaptionText(caption) {

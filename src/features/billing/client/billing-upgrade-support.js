@@ -6,8 +6,6 @@ import {
   buildUpgradeToPaidWhatsAppMessage,
 } from "@/core/messaging/whatsapp-billing-messages";
 
-const SUPPORT_WHATSAPP = resolveSupportWhatsAppNumber();
-
 export function openBillingUpgradeToPaidSupport({
   ownerName,
   currentPlanName,
@@ -16,7 +14,7 @@ export function openBillingUpgradeToPaidSupport({
     ownerName,
     currentPlanName,
   });
-  const url = buildWhatsAppShareUrl(message, SUPPORT_WHATSAPP);
+  const url = buildWhatsAppShareUrl(message, resolveSupportWhatsAppNumber());
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
@@ -32,7 +30,7 @@ export function openBillingUpgradeSupport({
     currentPlanName,
     targetPlanName,
   });
-  const url = buildWhatsAppShareUrl(message, SUPPORT_WHATSAPP);
+  const url = buildWhatsAppShareUrl(message, resolveSupportWhatsAppNumber());
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
@@ -54,6 +52,6 @@ export function openBillingRenewalSupport({
     daysUntilEnd,
     periodEndIso,
   });
-  const url = buildWhatsAppShareUrl(message, SUPPORT_WHATSAPP);
+  const url = buildWhatsAppShareUrl(message, resolveSupportWhatsAppNumber());
   window.open(url, "_blank", "noopener,noreferrer");
 }
