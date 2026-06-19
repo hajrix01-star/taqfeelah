@@ -174,10 +174,10 @@ export async function listPlatformAdmins(actorUserId: string): Promise<PlatformA
 }
 
 const lookupSchema = z.object({
-  username: z.string().trim().min(1).max(120).optional(),
+  username: z.string().trim().email("A valid email address is required.").max(120).optional(),
   userId: z.string().uuid().optional(),
 }).refine((value) => Boolean(value.username || value.userId), {
-  message: "username or userId is required.",
+  message: "email or userId is required.",
 });
 
 export async function lookupPlatformAdminCandidate(
@@ -388,11 +388,9 @@ const updateRoleSchema = z.object({
 });
 
 const updateProfileSchema = z.object({
-  name: z.string().trim().min(1).max(120).optional(),
-  username: z.string().trim().email("A valid email address is required.").max(120).optional(),
+  name: z.string().trim().min(1).max(120),
+  username: z.string().trim().email("A valid email address is required.").max(120),
   password: passwordSchema.optional(),
-}).refine((value) => Boolean(value.name || value.username || value.password), {
-  message: "At least one profile field must be provided.",
 });
 
 export async function updatePlatformAdminProfile(
@@ -439,10 +437,7 @@ export async function updatePlatformAdminProfile(
         )
         .limit(1);
 
-      const nextUsername = (parsed.data.username || identity?.username || "").trim().toLowerCase();
-      if (!nextUsername) {
-        throw new ValidationError("Username is required when setting credentials.");
-      }
+      const nextUsername = parsed.data.username.trim().toLowerCase();
 
       if (!identity?.id && !parsed.data.password) {
         throw new ValidationError("Password is required when creating login credentials.");
@@ -459,7 +454,7 @@ export async function updatePlatformAdminProfile(
           },
           tx,
         );
-      } else if (parsed.data.username && identity?.id) {
+      } else if (identity?.id) {
         await tx
           .update(authIdentities)
           .set({

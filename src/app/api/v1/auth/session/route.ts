@@ -32,6 +32,11 @@ function resolveClientIp(request: Request): string {
 }
 
 function resolveLoginIdentifier(payload: Record<string, unknown>): string {
+  if (payload.mode === "platform_admin_password") {
+    return typeof payload.email === "string"
+      ? payload.email
+      : (typeof payload.username === "string" ? payload.username : "");
+  }
   if (payload.mode === "employee_pin" || payload.mode === "employee_phone_pin") {
     return typeof payload.phone === "string"
       ? payload.phone

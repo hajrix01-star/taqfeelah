@@ -154,9 +154,10 @@ function PlatformAdminListItem({
             <input
               dir="ltr"
               type="email"
+              required
               value={editDraft.username}
               onChange={(event) => onEditDraftChange({ ...editDraft, username: event.target.value })}
-              placeholder={t.platformAdmins.usernameOptional}
+              placeholder={t.platformAdmins.emailRequiredPlaceholder}
               className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2 text-sm"
               autoComplete="off"
             />
@@ -328,7 +329,7 @@ export default function PlatformAdminsPage() {
     try {
       await updatePlatformAdminProfile(admin.userId, {
         name: editDraft.name.trim(),
-        username: editDraft.username.trim() || undefined,
+        username: editDraft.username.trim(),
         password: editDraft.password || undefined,
       });
       cancelEdit();
