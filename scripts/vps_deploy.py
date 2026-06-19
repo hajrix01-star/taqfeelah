@@ -1176,7 +1176,7 @@ def maybe_run_owner_auth_recovery(vps: VPS) -> None:
             "and AUTH_RECOVERY_OWNER_PASSWORD."
         )
     safe_print(f"Owner auth recovery requested for username={username.strip().lower()}.")
-    cmd_reset_owner_auth(vps, username, password)
+    cmd_reset_owner_auth(vps, username, password, quick=True)
 
 
 def cmd_deploy_production(
@@ -2131,7 +2131,13 @@ def cmd_pm2_app_logs(vps: VPS, app_name: str) -> None:
         safe_print(err.strip())
 
 
-def cmd_reset_owner_auth(vps: VPS, owner_username: str, owner_password: str) -> None:
+def cmd_reset_owner_auth(
+    vps: VPS,
+    owner_username: str,
+    owner_password: str,
+    *,
+    quick: bool = False,
+) -> None:
     if not owner_username.strip() or not owner_password:
         raise RuntimeError("reset-owner-auth requires non-empty --username and --password.")
     app_dir = "/opt/taqfeelah"
@@ -2144,32 +2150,33 @@ def cmd_reset_owner_auth(vps: VPS, owner_username: str, owner_password: str) -> 
         """
     ).strip()
 
-    print_section("Diagnose current owner auth")
-    vps.run(
-        textwrap.dedent(
-            f"""
-            set -euo pipefail
-            cd {shlex.quote(app_dir)}
-            set -a
-            . ./.env.production
-            set +a
-            {remote_env_bootstrap}
-            node -e "const u=new URL(process.env.DATABASE_URL); console.log('DATABASE host:', u.host)"
-            echo "Organization: $ORG_ID"
-            psql "$DATABASE_URL" -c "
-            SELECT created_at, reason,
-                   metadata->'settings'->'authConfig'->>'ownerUsername' AS username,
-                   metadata->'settings'->'authConfig'->>'ownerPassword' AS password
-            FROM audit_events
-            WHERE organization_id = '$ORG_ID'
-              AND action = 'runtime_settings_saved'
-            ORDER BY created_at DESC
-            LIMIT 1;
-            "
-            """
-        ).strip(),
-        check=False,
-    )
+    if not quick:
+        print_section("Diagnose current owner auth")
+        vps.run(
+            textwrap.dedent(
+                f"""
+                set -euo pipefail
+                cd {shlex.quote(app_dir)}
+                set -a
+                . ./.env.production
+                set +a
+                {remote_env_bootstrap}
+                node -e "const u=new URL(process.env.DATABASE_URL); console.log('DATABASE host:', u.host)"
+                echo "Organization: $ORG_ID"
+                psql "$DATABASE_URL" -c "
+                SELECT created_at, reason,
+                       metadata->'settings'->'authConfig'->>'ownerUsername' AS username,
+                       metadata->'settings'->'authConfig'->>'ownerPassword' AS password
+                FROM audit_events
+                WHERE organization_id = '$ORG_ID'
+                  AND action = 'runtime_settings_saved'
+                ORDER BY created_at DESC
+                LIMIT 1;
+                "
+                """
+            ).strip(),
+            check=False,
+        )
 
     print_section("Write AUTH_OWNER credentials to .env.production")
     vps.run(
@@ -2194,55 +2201,56 @@ def cmd_reset_owner_auth(vps: VPS, owner_username: str, owner_password: str) -> 
         ).strip()
     )
 
-    print_section("Insert fresh runtime settings row with owner auth reset")
-    vps.run(
-        textwrap.dedent(
-            f"""
-            set -euo pipefail
-            cd {shlex.quote(app_dir)}
-            set -a
-            . ./.env.production
-            set +a
-            {remote_env_bootstrap}
-            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "
-            WITH latest AS (
-              SELECT metadata
-              FROM audit_events
-              WHERE organization_id = '$ORG_ID'
-                AND action = 'runtime_settings_saved'
-              ORDER BY created_at DESC
-              LIMIT 1
-            )
-            INSERT INTO audit_events (
-              organization_id, store_id, entry_id, actor_user_id,
-              action, reason, metadata
-            )
-            SELECT
-              '$ORG_ID',
-              null,
-              null,
-              '$OWNER_ID',
-              'runtime_settings_saved',
-              'vps_reset_owner_auth',
-              jsonb_build_object(
-                'schemaVersion', 1,
-                'settings',
-                jsonb_set(
-                  COALESCE(latest.metadata->'settings', '{{}}'::jsonb),
-                  '{{authConfig}}',
-                  COALESCE(latest.metadata->'settings'->'authConfig', '{{}}'::jsonb)
-                    || jsonb_build_object(
-                      'ownerUsername', '{username_sql}',
-                      'ownerPassword', '{password_sql}'
-                    ),
-                  true
+    if not quick:
+        print_section("Insert fresh runtime settings row with owner auth reset")
+        vps.run(
+            textwrap.dedent(
+                f"""
+                set -euo pipefail
+                cd {shlex.quote(app_dir)}
+                set -a
+                . ./.env.production
+                set +a
+                {remote_env_bootstrap}
+                psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "
+                WITH latest AS (
+                  SELECT metadata
+                  FROM audit_events
+                  WHERE organization_id = '$ORG_ID'
+                    AND action = 'runtime_settings_saved'
+                  ORDER BY created_at DESC
+                  LIMIT 1
                 )
-              )
-            FROM latest;
-            "
-            """
-        ).strip()
-    )
+                INSERT INTO audit_events (
+                  organization_id, store_id, entry_id, actor_user_id,
+                  action, reason, metadata
+                )
+                SELECT
+                  '$ORG_ID',
+                  null,
+                  null,
+                  '$OWNER_ID',
+                  'runtime_settings_saved',
+                  'vps_reset_owner_auth',
+                  jsonb_build_object(
+                    'schemaVersion', 1,
+                    'settings',
+                    jsonb_set(
+                      COALESCE(latest.metadata->'settings', '{{}}'::jsonb),
+                      '{{authConfig}}',
+                      COALESCE(latest.metadata->'settings'->'authConfig', '{{}}'::jsonb)
+                        || jsonb_build_object(
+                          'ownerUsername', '{username_sql}',
+                          'ownerPassword', '{password_sql}'
+                        ),
+                      true
+                    )
+                  )
+                FROM latest;
+                "
+                """
+            ).strip()
+        )
 
     print_section("Seed auth_identities from recovered owner credentials")
     _, seed_out, seed_err = vps.run(
