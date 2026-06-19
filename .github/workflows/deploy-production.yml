@@ -199,45 +199,8 @@ jobs:
         with:
           name: production-build-${{ github.sha }}
 
-      - name: Prepare optional owner auth recovery
-        env:
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-          COMMITS_JSON: ${{ toJSON(github.event.commits) }}
-        run: |
-          set -euo pipefail
-          trigger="false"
-          if printf '%s' "$COMMIT_MESSAGE" | grep -q '\[recover-owner-auth\]'; then
-            trigger="true"
-          elif printf '%s' "$COMMITS_JSON" | grep -q 'recover-owner-auth'; then
-            trigger="true"
-          fi
-          if [ "$trigger" = "true" ]; then
-            recovery_password="Taqfeelah2026"
-            {
-              echo "RUN_OWNER_AUTH_RECOVERY=true"
-              echo "AUTH_RECOVERY_OWNER_USERNAME=hajri"
-              echo "AUTH_RECOVERY_OWNER_PASSWORD=${recovery_password}"
-            } >> "$GITHUB_ENV"
-            {
-              echo "### Owner login recovery"
-              echo ""
-              echo "Save these credentials now. They are shown once in this deploy log."
-              echo ""
-              echo "- **Username:** \`hajri\`"
-              echo "- **Password:** \`${recovery_password}\`"
-              echo ""
-              echo "Use them at [taqfeelah.com/app](https://taqfeelah.com/app) or [saas-admin/login](https://taqfeelah.com/saas-admin/login)."
-            } >> "$GITHUB_STEP_SUMMARY"
-            echo "::notice title=Owner recovery credentials::username=hajri password=${recovery_password}"
-          else
-            echo "Owner auth recovery not requested for this deploy."
-          fi
-
       - name: Deploy to VPS (single SSH session)
         env:
-          RUN_OWNER_AUTH_RECOVERY: ${{ env.RUN_OWNER_AUTH_RECOVERY }}
-          AUTH_RECOVERY_OWNER_USERNAME: ${{ env.AUTH_RECOVERY_OWNER_USERNAME }}
-          AUTH_RECOVERY_OWNER_PASSWORD: ${{ env.AUTH_RECOVERY_OWNER_PASSWORD }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PASS: ${{ secrets.VPS_PASS }}
