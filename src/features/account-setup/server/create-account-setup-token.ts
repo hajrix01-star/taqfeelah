@@ -22,6 +22,10 @@ const inputSchema = z.object({
   userId: z.string().uuid().optional(),
   phoneNumber: z.string().trim().min(1),
   ownerName: z.string().trim().min(1).max(120).optional(),
+  ownerEmail: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().email().optional(),
+  ),
   purpose: z.enum(["onboarding", "password_reset"]),
   createdByUserId: z.string().uuid().optional(),
   publicOrigin: z.string().trim().min(1),
@@ -66,6 +70,7 @@ export async function createAccountSetupToken(rawInput: z.infer<typeof inputSche
     userId: input.userId ?? null,
     phoneNumber,
     ownerName: input.ownerName?.trim() || null,
+    ownerEmail: input.ownerEmail?.trim().toLowerCase() || null,
     tokenHash,
     purpose: input.purpose,
     expiresAt,

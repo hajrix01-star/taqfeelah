@@ -24,7 +24,9 @@ import {
   marketingNavLinkClassName,
 } from "@/features/marketing/marketing-ui";
 
-const APP_ENTRY_HREF = "/app";
+const PUBLIC_SIGNUP_ENABLED = process.env.NEXT_PUBLIC_PUBLIC_SIGNUP_ENABLED === "true";
+const SIGNUP_HREF = PUBLIC_SIGNUP_ENABLED ? "/signup" : "/app";
+const APP_LOGIN_HREF = "/app";
 const contactMessage = "مرحبًا، أريد معرفة المزيد عن تقفيلة والباقات المتاحة.";
 
 export default function MarketingPage() {
@@ -54,8 +56,13 @@ export default function MarketingPage() {
                 تواصل
               </a>
             </nav>
-            <div className="hidden sm:block">
-              <MarketingCta href={APP_ENTRY_HREF}>الدخول للتطبيق</MarketingCta>
+            <div className="hidden sm:flex items-center gap-2">
+              {PUBLIC_SIGNUP_ENABLED ? (
+                <MarketingCta href={SIGNUP_HREF} variant="secondary">
+                  إنشاء حساب
+                </MarketingCta>
+              ) : null}
+              <MarketingCta href={APP_LOGIN_HREF}>الدخول للتطبيق</MarketingCta>
             </div>
           </div>
         </header>
@@ -70,9 +77,14 @@ export default function MarketingPage() {
               <ReleaseVersionLine className="text-[#A99D87]" lang="ar" showBuild />
             </div>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <Link href={APP_ENTRY_HREF} className="no-underline hover:text-[#112A46]">
+              <Link href={APP_LOGIN_HREF} className="no-underline hover:text-[#112A46]">
                 الدخول للتطبيق
               </Link>
+              {PUBLIC_SIGNUP_ENABLED ? (
+                <Link href={SIGNUP_HREF} className="no-underline hover:text-[#112A46]">
+                  إنشاء حساب
+                </Link>
+              ) : null}
               <a
                 href={whatsappHref}
                 target="_blank"
@@ -85,7 +97,11 @@ export default function MarketingPage() {
           </div>
         </footer>
       }
-      mobileCta={<MarketingCta href={APP_ENTRY_HREF}>الدخول للتطبيق</MarketingCta>}
+      mobileCta={
+        PUBLIC_SIGNUP_ENABLED
+          ? <MarketingCta href={SIGNUP_HREF}>ابدأ مجانًا</MarketingCta>
+          : <MarketingCta href={APP_LOGIN_HREF}>الدخول للتطبيق</MarketingCta>
+      }
     >
       <AppFontStyles />
 
@@ -110,7 +126,12 @@ export default function MarketingPage() {
             موظفين، وتقارير — بنفس روح الدفتر المعتمدة في التطبيق.
           </p>
           <div className="flex flex-wrap gap-3">
-            <MarketingCta href={APP_ENTRY_HREF}>جرّب التطبيق الآن</MarketingCta>
+            <MarketingCta href={PUBLIC_SIGNUP_ENABLED ? SIGNUP_HREF : APP_LOGIN_HREF}>
+              {PUBLIC_SIGNUP_ENABLED ? "ابدأ مجانًا" : "جرّب التطبيق الآن"}
+            </MarketingCta>
+            <MarketingCta href={APP_LOGIN_HREF} variant="secondary">
+              الدخول للتطبيق
+            </MarketingCta>
             <MarketingCta href="#pricing" variant="secondary">
               عرض الباقات
             </MarketingCta>
@@ -208,7 +229,7 @@ export default function MarketingPage() {
                   </ul>
                   <div className="mt-6 pt-2">
                     <MarketingCta
-                      href={plan.id === "starter" ? APP_ENTRY_HREF : whatsappHref}
+                      href={plan.id === "starter" ? (PUBLIC_SIGNUP_ENABLED ? SIGNUP_HREF : APP_LOGIN_HREF) : whatsappHref}
                       variant={plan.id === "starter" ? "primary" : plan.featured ? "secondary" : "primary"}
                       external={plan.id !== "starter"}
                     >
@@ -228,10 +249,15 @@ export default function MarketingPage() {
             <MarketingSectionIntro
               eyebrow="Try the app"
               title="جرّب التطبيق مباشرة"
-              description="بعد التسجيل أو الدخول تنتقل إلى التطبيق التشغيلي — نفس التجربة على الجوال والكمبيوتر."
+              description="بعد إنشاء الحساب أو الدخول تنتقل إلى التطبيق التشغيلي — نفس التجربة على الجوال والكمبيوتر."
             />
-            <div className="mt-6">
-              <MarketingCta href={APP_ENTRY_HREF}>الدخول إلى التطبيق</MarketingCta>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {PUBLIC_SIGNUP_ENABLED ? (
+                <MarketingCta href={SIGNUP_HREF}>إنشاء حساب</MarketingCta>
+              ) : null}
+              <MarketingCta href={APP_LOGIN_HREF} variant={PUBLIC_SIGNUP_ENABLED ? "secondary" : "primary"}>
+                الدخول إلى التطبيق
+              </MarketingCta>
             </div>
           </MarketingFadeIn>
           <div className="space-y-4">
@@ -267,8 +293,8 @@ export default function MarketingPage() {
                 <MarketingCta href={whatsappHref} variant="whatsapp" external>
                   واتساب — تواصل معنا
                 </MarketingCta>
-                <MarketingCta href={APP_ENTRY_HREF} variant="secondary">
-                  تسجيل / دخول
+                <MarketingCta href={PUBLIC_SIGNUP_ENABLED ? SIGNUP_HREF : APP_LOGIN_HREF} variant="secondary">
+                  {PUBLIC_SIGNUP_ENABLED ? "إنشاء حساب" : "تسجيل / دخول"}
                 </MarketingCta>
               </div>
             </MarketingCard>

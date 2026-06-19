@@ -2,6 +2,7 @@ export type AccountSetupPreview = {
   purpose: "onboarding" | "password_reset";
   phoneNumber: string;
   ownerName: string;
+  ownerEmail: string | null;
   organizationName: string;
   expiresAt: string;
 };

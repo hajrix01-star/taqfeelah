@@ -397,6 +397,7 @@ export const accountSetupTokens = pgTable(
     userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
     phoneNumber: text("phone_number").notNull(),
     ownerName: text("owner_name"),
+    ownerEmail: text("owner_email"),
     tokenHash: text("token_hash").notNull(),
     purpose: text("purpose").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
@@ -407,6 +408,30 @@ export const accountSetupTokens = pgTable(
   (table) => ({
     tokenHashUq: uniqueIndex("account_setup_tokens_token_hash_uq").on(table.tokenHash),
     orgCreatedIdx: index("account_setup_tokens_org_created_idx").on(table.organizationId, table.createdAt),
+  }),
+);
+
+export const signupRequests = pgTable(
+  "signup_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    organizationName: text("organization_name").notNull(),
+    ownerName: text("owner_name").notNull(),
+    ownerPhone: text("owner_phone").notNull(),
+    storeName: text("store_name"),
+    planCode: text("plan_code").notNull().default("trial"),
+    tokenHash: text("token_hash").notNull(),
+    status: text("status").notNull().default("pending_verification"),
+    organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "set null" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    createdAt,
+  },
+  (table) => ({
+    tokenHashUq: uniqueIndex("signup_requests_token_hash_uq").on(table.tokenHash),
+    emailCreatedIdx: index("signup_requests_email_created_idx").on(table.email, table.createdAt),
+    statusExpiresIdx: index("signup_requests_status_expires_idx").on(table.status, table.expiresAt),
   }),
 );
 

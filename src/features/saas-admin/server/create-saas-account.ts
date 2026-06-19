@@ -1,19 +1,11 @@
-import { randomUUID } from "node:crypto";
-import { ensureOwnerLoginPhoneAvailable } from "@/features/auth/server/owner-login-phone-availability";
 import { z } from "zod";
 import { resolveAppPublicOrigin } from "@/core/auth/app-origin";
-import { getDb } from "@/core/db/client";
-import {
-  auditEvents,
-  organizations,
-  stores,
-  subscriptions,
-} from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
 import { assertValidLoginPhone } from "@/core/phone/normalize-login-phone";
 import { createAccountSetupToken } from "@/features/account-setup/server/create-account-setup-token";
 import { DEFAULT_PLAN_CODE, PLAN_CODES } from "@/features/billing/plan-codes";
 import { getPlanCatalogRow } from "@/features/billing/server/plan-catalog-repository";
+import { provisionOrganizationAccount } from "@/features/saas-admin/server/provision-organization-account";
 
 function optionalNonEmptyString(max: number) {
   return z.preprocess(
@@ -71,9 +63,8 @@ export async function createSaasAccount(
   }
   const input = parsed.data;
 
-  let ownerPhone: string;
   try {
-    ownerPhone = assertValidLoginPhone(input.ownerPhone);
+    assertValidLoginPhone(input.ownerPhone);
   } catch {
     throw new ValidationError("Invalid owner phone number.");
   }
@@ -83,96 +74,40 @@ export async function createSaasAccount(
     throw new ValidationError("Invalid plan code.");
   }
 
-  const db = getDb();
-  const organizationId = randomUUID();
-  const storeId = randomUUID();
-  const subscriptionId = randomUUID();
-  const now = new Date();
-  const periodEnd = new Date(now);
-  periodEnd.setUTCDate(periodEnd.getUTCDate() + plan.trialDays);
-
-  const storeName = input.storeName?.trim() || input.organizationName.trim();
   const publicOrigin = resolveAppPublicOrigin(request);
 
-  await db.transaction(async (tx) => {
-    await ensureOwnerLoginPhoneAvailable(
-      {
-        phone: ownerPhone,
-        excludeUserId: null,
-        targetOrganizationId: organizationId,
-        actorUserId: input.actorUserId,
-      },
-      tx,
-    );
-
-    await tx.insert(organizations).values({
-      id: organizationId,
-      name: input.organizationName.trim(),
-      status: "pending_activation",
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    await tx.insert(stores).values({
-      id: storeId,
-      organizationId,
-      name: storeName,
-      location: input.storeLocation?.trim() || null,
-      status: "active",
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    await tx.insert(subscriptions).values({
-      id: subscriptionId,
-      organizationId,
-      planCode: input.planCode,
-      status: "trialing",
-      billingCycle: "monthly",
-      currentPeriodStart: now,
-      currentPeriodEnd: periodEnd,
-      cancelAtPeriodEnd: false,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    await tx.insert(auditEvents).values({
-      organizationId,
-      storeId,
-      actorUserId: input.actorUserId,
-      action: "saas_account_provisioned",
-      metadata: {
-        organizationName: input.organizationName.trim(),
-        ownerPhone,
-        storeId,
-        subscriptionId,
-        planCode: input.planCode,
-        activation: "pending_setup_link",
-      },
-    });
+  const provisioned = await provisionOrganizationAccount({
+    actorUserId: input.actorUserId,
+    organizationName: input.organizationName,
+    ownerName: input.ownerName,
+    ownerPhone: input.ownerPhone,
+    storeName: input.storeName,
+    storeLocation: input.storeLocation,
+    planCode: input.planCode,
+    activation: "pending_setup_link",
   });
 
   const setup = await createAccountSetupToken({
-    organizationId,
-    phoneNumber: ownerPhone,
-    ownerName: input.ownerName.trim(),
+    organizationId: provisioned.organizationId,
+    phoneNumber: provisioned.ownerPhone,
+    ownerName: provisioned.ownerName,
     purpose: "onboarding",
     createdByUserId: input.actorUserId,
     publicOrigin,
   });
 
   return {
-    organizationId,
-    organizationName: input.organizationName.trim(),
-    ownerName: input.ownerName.trim(),
-    ownerPhone,
+    organizationId: provisioned.organizationId,
+    organizationName: provisioned.organizationName,
+    ownerName: provisioned.ownerName,
+    ownerPhone: provisioned.ownerPhone,
     setupUrl: setup.setupUrl,
     setupExpiresAt: setup.expiresAt,
-    storeId,
-    storeName,
-    subscriptionId,
-    planCode: input.planCode,
+    storeId: provisioned.storeId,
+    storeName: provisioned.storeName,
+    subscriptionId: provisioned.subscriptionId,
+    planCode: provisioned.planCode,
     status: "pending_activation" as const,
-    createdAt: now.toISOString(),
+    createdAt: provisioned.createdAt.toISOString(),
   };
 }

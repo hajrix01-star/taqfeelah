@@ -28,6 +28,7 @@ export async function validateAccountSetupToken(
       userId: accountSetupTokens.userId,
       phoneNumber: accountSetupTokens.phoneNumber,
       ownerName: accountSetupTokens.ownerName,
+      ownerEmail: accountSetupTokens.ownerEmail,
       purpose: accountSetupTokens.purpose,
       expiresAt: accountSetupTokens.expiresAt,
       usedAt: accountSetupTokens.usedAt,
@@ -59,6 +60,7 @@ export async function validateAccountSetupToken(
     purpose: row.purpose as AccountSetupTokenPreview["purpose"],
     phoneNumber: row.phoneNumber,
     ownerName: row.ownerName,
+    ownerEmail: row.ownerEmail,
     organizationName: organization?.name ?? "",
     expiresAt: row.expiresAt.toISOString(),
   };
