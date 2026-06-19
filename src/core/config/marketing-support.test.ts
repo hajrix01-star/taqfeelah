@@ -1,12 +1,27 @@
-import { describe, expect, it } from "vitest";
-import { buildSupportWhatsAppUrl, resolveSupportWhatsAppNumber } from "./marketing-support";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  buildSupportWhatsAppUrl,
+  LEGACY_DEMO_SUPPORT_WHATSAPP,
+  PRODUCTION_SUPPORT_WHATSAPP,
+  resolveSupportWhatsAppNumber,
+} from "./marketing-support";
 
 describe("marketing support", () => {
-  it("falls back to the default whatsapp number", () => {
-    expect(resolveSupportWhatsAppNumber({})).toBe("966501234567");
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
-  it("normalizes configured whatsapp number", () => {
+  it("falls back to the production support whatsapp number", () => {
+    expect(resolveSupportWhatsAppNumber()).toBe(PRODUCTION_SUPPORT_WHATSAPP);
+    expect(resolveSupportWhatsAppNumber({})).toBe(PRODUCTION_SUPPORT_WHATSAPP);
+  });
+
+  it("reads configured whatsapp via direct process.env for client inlining", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPPORT_WHATSAPP", "0533507223");
+    expect(resolveSupportWhatsAppNumber()).toBe("966533507223");
+  });
+
+  it("normalizes configured whatsapp number from custom env", () => {
     expect(
       resolveSupportWhatsAppNumber({ NEXT_PUBLIC_SUPPORT_WHATSAPP: "+966 50 999 8888" }),
     ).toBe("966509998888");
@@ -18,8 +33,11 @@ describe("marketing support", () => {
     ).toBe("966533507223");
   });
 
-  it("builds a whatsapp contact url", () => {
-    expect(buildSupportWhatsAppUrl("مرحبًا")).toContain("https://wa.me/");
-    expect(buildSupportWhatsAppUrl("مرحبًا")).toContain(encodeURIComponent("مرحبًا"));
+  it("builds a whatsapp contact url with the resolved phone", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPPORT_WHATSAPP", "0533507223");
+    const url = buildSupportWhatsAppUrl("مرحبًا");
+    expect(url).toContain(`https://wa.me/${PRODUCTION_SUPPORT_WHATSAPP}`);
+    expect(url).toContain(encodeURIComponent("مرحبًا"));
+    expect(url).not.toContain(LEGACY_DEMO_SUPPORT_WHATSAPP);
   });
 });

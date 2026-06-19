@@ -96,6 +96,9 @@ jobs:
           NEXT_PUBLIC_PUBLIC_SIGNUP_ENABLED: "true"
         run: pnpm build
 
+      - name: Verify support WhatsApp is baked into client bundles
+        run: node scripts/verify-support-whatsapp-build.mjs
+
       - name: Package production artifact
         run: node scripts/package-production-artifact.mjs
 
