@@ -57,6 +57,12 @@ export default function AccountSetupPage({ token }: AccountSetupPageProps) {
               <p className="text-xs font-bold text-[#716753]">جوال الدخول</p>
               <p dir="ltr" className="mt-1 text-sm font-black">{preview.phoneNumber}</p>
             </div>
+            {preview.ownerEmail ? (
+              <div className="rounded-2xl bg-[#F7F5EF] p-3 text-center">
+                <p className="text-xs font-bold text-[#716753]">البريد الإلكتروني</p>
+                <p dir="ltr" className="mt-1 text-sm font-black">{preview.ownerEmail}</p>
+              </div>
+            ) : null}
             <input
               dir="ltr"
               type="password"

@@ -1,7 +1,8 @@
 # Phase 11 — SaaS admin console
 
 > **الحالة (2026-06-12):** مفعّل على الإنتاج عند ضبط `SAAS_PLATFORM_ADMIN_USER_IDS` في أسرار النشر.  
-> لا تسجيل ذاتي عام — الحسابات تُنشأ من `/saas-admin/accounts/new`.  
+> **التسجيل الذاتي:** راجع `docs/OWNER_PUBLIC_SIGNUP.md` — يُفعَّل بـ `AUTH_PUBLIC_SIGNUP_ENABLED`.  
+> لا يُلغي مسار Admin — الحسابات يمكن أيضًا إنشاؤها من `/saas-admin/accounts/new`.  
 > الدفع الإلكتروني **مؤجّل** — راجع `docs/PRODUCTION_STATUS.md`.
 
 ## Flags (all OFF by default)
@@ -67,8 +68,7 @@ See **`docs/PLATFORM_ADMIN_EMAIL_AUTH.md`** — email-only login, credential upd
 ## Deferred / not yet
 
 - **Payment provider integration** (owner-approved deferral)
-- Self-service public signup page
-- Automated setup-link email for store owners (WhatsApp/manual copy today)
+- Automated setup-link email for admin-provisioned accounts (WhatsApp/manual copy today)
 - Investor CSV export route
 - Account disable/delete actions from admin UI
 - `pnpm saas:aggregate` cron (optional ops — run manually or schedule on VPS)

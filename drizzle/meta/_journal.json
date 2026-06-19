@@ -134,6 +134,13 @@
       "when": 1781022000000,
       "tag": "0018_sales_channels_income_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1781022100000,
+      "tag": "0019_public_signup_requests",
+      "breakpoints": true
     }
   ]
 }

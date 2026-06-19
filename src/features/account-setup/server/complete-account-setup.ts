@@ -80,6 +80,7 @@ async function completeOnboardingSetup(
   }
 
   const ownerName = tokenRow.ownerName?.trim() || "Owner";
+  const loginUsername = tokenRow.ownerEmail?.trim().toLowerCase() || tokenRow.phoneNumber;
 
   const result = await db.transaction(async (tx) => {
     await tx.insert(users).values({
@@ -103,7 +104,7 @@ async function completeOnboardingSetup(
     await upsertOwnerPasswordIdentity(
       {
         userId: ownerUserId,
-        username: tokenRow.phoneNumber,
+        username: loginUsername,
         loginPhone: tokenRow.phoneNumber,
         password,
         phoneNumber: tokenRow.phoneNumber,
@@ -150,6 +151,7 @@ async function completeOnboardingSetup(
       action: "owner_account_setup_completed",
       metadata: {
         phoneNumber: tokenRow.phoneNumber,
+        ownerEmail: tokenRow.ownerEmail,
         purpose: tokenRow.purpose,
       },
     });
