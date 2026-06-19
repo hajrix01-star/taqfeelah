@@ -95,9 +95,21 @@ export function useOwnerSettingsScreenState({
     lang,
   });
 
-  const [section, setSection] = useState(initialSettingsSection);
+  const [section, setSection] = useState(() => {
+    if (initialSettingsSection === "home" || initialSettingsSection === "stores" || initialSettingsSection === "team") {
+      return "stores-team";
+    }
+    if (initialSettingsSection === "subscription") return "support";
+    return initialSettingsSection;
+  });
   useEffect(() => {
-    const normalized = initialSettingsSection === "home" ? "stores" : initialSettingsSection;
+    const normalized = initialSettingsSection === "home"
+      || initialSettingsSection === "stores"
+      || initialSettingsSection === "team"
+      ? "stores-team"
+      : initialSettingsSection === "subscription"
+        ? "support"
+        : initialSettingsSection;
     setSection(normalized);
   }, [initialSettingsSection]);
 

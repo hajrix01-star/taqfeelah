@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { PlanCode } from "@/features/billing/plan-codes";
 import { getPlanCatalogRow } from "@/features/billing/server/plan-catalog-repository";
 import { ensureOwnerLoginPhoneAvailable } from "@/features/auth/server/owner-login-phone-availability";
+import { allocateOrganizationAccountNumber } from "@/features/billing/server/allocate-organization-account-number";
 import { getDb } from "@/core/db/client";
 import { auditEvents, organizations, stores, subscriptions } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
@@ -69,8 +70,11 @@ export async function provisionOrganizationAccount(
       tx,
     );
 
+    const accountNumber = await allocateOrganizationAccountNumber(tx);
+
     await tx.insert(organizations).values({
       id: organizationId,
+      accountNumber,
       name: organizationName,
       status: "pending_activation",
       createdAt: now,

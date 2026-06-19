@@ -11,6 +11,7 @@ type RenewalReminderMessageInput = {
 type UpgradeRequestMessageInput = {
   ownerName: string;
   organizationName?: string;
+  accountNumber?: number | null;
   currentPlanName: string;
   targetPlanName: string;
 };
@@ -18,7 +19,25 @@ type UpgradeRequestMessageInput = {
 type UpgradeToPaidMessageInput = {
   ownerName: string;
   currentPlanName: string;
+  organizationName?: string;
+  accountNumber?: number | null;
 };
+
+function buildOrganizationReferenceLines(input: {
+  organizationName?: string;
+  accountNumber?: number | null;
+}) {
+  const lines: string[] = [];
+  const organizationName = input.organizationName?.trim();
+  if (organizationName) {
+    lines.push(`النشاط: ${organizationName}`);
+  }
+  const accountNumber = input.accountNumber;
+  if (typeof accountNumber === "number" && Number.isInteger(accountNumber) && accountNumber > 0) {
+    lines.push(`رقم الحساب: ${accountNumber}`);
+  }
+  return lines;
+}
 
 export function buildUpgradeToPaidWhatsAppMessage(input: UpgradeToPaidMessageInput): string {
   return [
@@ -26,26 +45,23 @@ export function buildUpgradeToPaidWhatsAppMessage(input: UpgradeToPaidMessageInp
     "",
     "أرغب بالترقية من الخطة التجريبية إلى خطة مدفوعة في تقفيلة.",
     `الخطة الحالية: ${input.currentPlanName}`,
+    ...buildOrganizationReferenceLines(input),
     "",
     "شكرًا.",
   ].join("\n");
 }
 
 export function buildUpgradeRequestWhatsAppMessage(input: UpgradeRequestMessageInput): string {
-  const organizationLine = input.organizationName?.trim()
-    ? `النشاط: ${input.organizationName.trim()}`
-    : "";
-
   return [
     `مرحبًا، أنا ${input.ownerName || "مالك النشاط"}.`,
     "",
     "أرغب بترقية اشتراك تقفيلة:",
     `الخطة الحالية: ${input.currentPlanName}`,
     `الخطة المطلوبة: ${input.targetPlanName}`,
-    organizationLine,
+    ...buildOrganizationReferenceLines(input),
     "",
     "شكرًا.",
-  ].filter(Boolean).join("\n");
+  ].join("\n");
 }
 
 function formatBillingCycleLabelAr(billingCycle: string): string {

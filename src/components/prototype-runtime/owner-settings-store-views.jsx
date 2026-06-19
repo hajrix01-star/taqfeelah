@@ -143,32 +143,6 @@ export function OwnerSettingsStoreAlertsPanel({
   );
 }
 
-export function OwnerSettingsStoreStaffPanel({
-  lang,
-  linkedStaff,
-  closeStore,
-  setSection,
-  backFromStorePanel,
-}) {
-  return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
-      <SettingsPageHeader title={text(lang, "linkedEmployees")} onBack={backFromStorePanel} lang={lang} />
-      <div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
-        {linkedStaff.length ? linkedStaff.map((person, index) => (
-          <div key={person.id} className={`flex items-center gap-3 py-3 ${index < linkedStaff.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}>
-            <UserRound className="h-5 w-5 text-[#806528]" />
-            <div>
-              <p className="text-xs font-black">{lang === "ar" ? person.nameAr : person.nameEn}</p>
-              <p dir="ltr" className="text-taq-meta text-[#827762]">{person.mobile}</p>
-            </div>
-          </div>
-        )) : <p className="text-xs font-bold text-[#827762]">{text(lang, "noLinkedEmployees")}</p>}
-      </div>
-      <button onClick={() => { closeStore(); setSection("team"); }} className="w-full rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white">{lang === "ar" ? "إدارة الفريق والصلاحيات" : "Manage team access"}</button>
-    </motion.section>
-  );
-}
-
 export function OwnerSettingsStoreOverviewPanel({
   lang,
   selectedStore,
@@ -178,7 +152,6 @@ export function OwnerSettingsStoreOverviewPanel({
   activeChannelCount,
   activeCategoryCount,
   operationalConfig,
-  linkedStaff,
   openStorePanel,
   setArchivedReadOnlyBusinessId,
   setSelectedBusiness,
@@ -207,8 +180,7 @@ export function OwnerSettingsStoreOverviewPanel({
         <SettingsLink lang={lang} icon={Building2} title={lang === "ar" ? "بيانات المحل" : "Shop details"} desc={displayLocation(selectedStore)} onClick={() => openStorePanel("profile")} />
         <SettingsLink lang={lang} icon={CreditCard} title={text(lang, "paymentMethods")} value={`${activeChannelCount}`} onClick={() => openStorePanel("channels")} />
         <SettingsLink lang={lang} icon={ReceiptText} title={text(lang, "outflowCategories")} value={`${activeCategoryCount}`} onClick={() => openStorePanel("expenses")} />
-        <SettingsLink lang={lang} icon={Bell} title={lang === "ar" ? "التنبيهات والتفضيلات" : "Alerts & preferences"} value={operationalConfig.closeoutAlert ? text(lang, "active") : text(lang, "stopChannel")} onClick={() => openStorePanel("alerts")} />
-        <SettingsLink lang={lang} icon={UserRound} title={text(lang, "linkedEmployees")} value={`${linkedStaff.length}`} onClick={() => openStorePanel("staff")} border={false} />
+        <SettingsLink lang={lang} icon={Bell} title={lang === "ar" ? "التنبيهات والتفضيلات" : "Alerts & preferences"} value={operationalConfig.closeoutAlert ? text(lang, "active") : text(lang, "stopChannel")} onClick={() => openStorePanel("alerts")} border={false} />
       </div>
       {archived && (
         <div className="mb-5 rounded-3xl bg-[#FFF4D2] p-4">
@@ -241,7 +213,6 @@ export function OwnerSettingsStoreFlattenedPanel({
   displayLocation,
   archived,
   operationalConfig,
-  linkedStaff,
   draftStoreName,
   setDraftStoreName,
   draftStoreLocation,
@@ -263,7 +234,6 @@ export function OwnerSettingsStoreFlattenedPanel({
   notebookTheme,
   updateOperationalDraft,
   closeStore,
-  setSection,
   setArchivedReadOnlyBusinessId,
   setSelectedBusiness,
   setOwnerPage,
@@ -367,25 +337,6 @@ export function OwnerSettingsStoreFlattenedPanel({
                 <p className="mb-2 text-xs font-black">{lang === "ar" ? "شكل دفتر هذا المحل" : "This store notebook theme"}</p>
                 <ThemePicker lang={lang} theme={operationalConfig.notebookTheme || notebookTheme} onChange={(nextTheme) => updateOperationalDraft({ notebookTheme: nextTheme })} />
               </div>
-              <div className="mb-4 rounded-3xl bg-[#F7F5EF] p-4 ring-1 ring-black/[0.03]">
-                <p className="mb-2 text-xs font-black">{text(lang, "linkedEmployees")}</p>
-                {linkedStaff.length ? linkedStaff.map((person, index) => (
-                  <div key={person.id} className={`flex items-center gap-3 bg-white px-3 py-3 ${index < linkedStaff.length - 1 ? "mb-2" : ""}`}>
-                    <UserRound className="h-5 w-5 text-[#806528]" />
-                    <div>
-                      <p className="text-xs font-black">{lang === "ar" ? person.nameAr : person.nameEn}</p>
-                      <p dir="ltr" className="text-taq-meta text-[#827762]">{person.mobile}</p>
-                    </div>
-                  </div>
-                )) : <p className="text-xs font-bold text-[#827762]">{text(lang, "noLinkedEmployees")}</p>}
-              </div>
-              <button
-                type="button"
-                onClick={() => { closeStore(); setSection("team"); }}
-                className="mb-4 w-full rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white"
-              >
-                {lang === "ar" ? "إدارة الفريق والصلاحيات" : "Manage team access"}
-              </button>
               <div className="grid grid-cols-[0.9fr_1.35fr] gap-3">
                 <button onClick={cancelOperationalDraft} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button>
                 <button onClick={saveOperationalSettings} className="rounded-2xl bg-[#112A46] py-3.5 text-xs font-black text-white">{text(lang, "saveSettings")}</button>
@@ -481,17 +432,6 @@ export function renderOwnerSettingsStorePanel(storePanel, state) {
       />
     );
   }
-  if (storePanel === "staff") {
-    return (
-      <OwnerSettingsStoreStaffPanel
-        {...common}
-        linkedStaff={state.linkedStaff}
-        closeStore={state.closeStore}
-        setSection={state.setSection}
-        backFromStorePanel={state.backFromStorePanel}
-      />
-    );
-  }
   return (
     <OwnerSettingsStoreOverviewPanel
       {...common}
@@ -502,7 +442,6 @@ export function renderOwnerSettingsStorePanel(storePanel, state) {
       activeChannelCount={state.activeChannelCount}
       activeCategoryCount={state.activeCategoryCount}
       operationalConfig={state.operationalConfig}
-      linkedStaff={state.linkedStaff}
       openStorePanel={state.openStorePanel}
       setArchivedReadOnlyBusinessId={state.setArchivedReadOnlyBusinessId}
       setSelectedBusiness={state.setSelectedBusiness}

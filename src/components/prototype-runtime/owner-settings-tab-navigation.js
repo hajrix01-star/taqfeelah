@@ -1,24 +1,37 @@
-const ORGANIZATION_SECTIONS = new Set(["home", "stores", "team", "subscription"]);
+const LEGACY_SECTION_ALIASES = {
+  home: "stores-team",
+  stores: "stores-team",
+  team: "stores-team",
+  subscription: "support",
+  organization: "stores-team",
+};
 
-export function resolveSettingsMainTab(section) {
-  if (section === "account") return "account";
-  if (section === "appearance") return "app";
-  if (section === "support") return "help";
-  if (ORGANIZATION_SECTIONS.has(section)) return "organization";
-  return "organization";
+export function normalizeSettingsSection(section) {
+  if (!section) return "stores-team";
+  return LEGACY_SECTION_ALIASES[section] || section;
 }
 
+export function resolveSettingsMainTab(section) {
+  const normalized = normalizeSettingsSection(section);
+  if (normalized === "stores-team") return "stores-team";
+  if (normalized === "account") return "account";
+  if (normalized === "appearance") return "shape";
+  if (normalized === "support") return "help";
+  return "stores-team";
+}
+
+export function sectionFromSettingsTabs(mainTab) {
+  if (mainTab === "stores-team") return "stores-team";
+  if (mainTab === "account") return "account";
+  if (mainTab === "shape") return "appearance";
+  if (mainTab === "help") return "support";
+  return "stores-team";
+}
+
+/** @deprecated Org sub-tabs removed — kept for legacy store panel aliases only */
 export function resolveSettingsOrgSubTab(section) {
   if (section === "team") return "team";
   if (section === "subscription") return "subscription";
-  return "stores";
-}
-
-export function sectionFromSettingsTabs(mainTab, orgSubTab = "stores") {
-  if (mainTab === "organization") return orgSubTab;
-  if (mainTab === "account") return "account";
-  if (mainTab === "app") return "appearance";
-  if (mainTab === "help") return "support";
   return "stores";
 }
 

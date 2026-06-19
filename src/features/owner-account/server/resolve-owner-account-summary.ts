@@ -20,6 +20,7 @@ export async function resolveOwnerAccountSummary(input: {
     .select({
       id: organizations.id,
       name: organizations.name,
+      accountNumber: organizations.accountNumber,
     })
     .from(organizations)
     .where(eq(organizations.id, input.organizationId))
@@ -73,6 +74,7 @@ export async function resolveOwnerAccountSummary(input: {
     ownerUserId: ownerMember.userId,
     ownerName: ownerMember.name?.trim() || "",
     organizationId: organization.id,
+    accountNumber: organization.accountNumber,
     organizationName: organization.name?.trim() || "",
     email,
     loginPhone,

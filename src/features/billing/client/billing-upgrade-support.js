@@ -9,10 +9,14 @@ import {
 export function openBillingUpgradeToPaidSupport({
   ownerName,
   currentPlanName,
+  organizationName,
+  accountNumber,
 }) {
   const message = buildUpgradeToPaidWhatsAppMessage({
     ownerName,
     currentPlanName,
+    organizationName,
+    accountNumber,
   });
   const url = buildWhatsAppShareUrl(message, resolveSupportWhatsAppNumber());
   window.open(url, "_blank", "noopener,noreferrer");
@@ -21,12 +25,14 @@ export function openBillingUpgradeToPaidSupport({
 export function openBillingUpgradeSupport({
   ownerName,
   organizationName,
+  accountNumber,
   currentPlanName,
   targetPlanName,
 }) {
   const message = buildUpgradeRequestWhatsAppMessage({
     ownerName,
     organizationName,
+    accountNumber,
     currentPlanName,
     targetPlanName,
   });

@@ -68,8 +68,8 @@ function SettingsTabList({
 export function buildSettingsMainTabItems(lang) {
   return [
     {
-      id: "organization",
-      label: lang === "ar" ? "المنشأة" : "Organization",
+      id: "stores-team",
+      label: lang === "ar" ? "محلات وفريق" : "Shops & team",
       hideCount: true,
       activeClass: "bg-[#214B7B] text-white",
       inactiveClass: `${SETTINGS_TAB_NEUTRAL_INACTIVE} text-[#214B7B]/75`,
@@ -86,8 +86,8 @@ export function buildSettingsMainTabItems(lang) {
       contentAccentClass: "border-t-2 border-[#112A46]/35",
     },
     {
-      id: "app",
-      label: lang === "ar" ? "التطبيق" : "App",
+      id: "shape",
+      label: lang === "ar" ? "الشكل" : "Look",
       hideCount: true,
       activeClass: "bg-[#E4B84A] text-[#112A46]",
       inactiveClass: `${SETTINGS_TAB_NEUTRAL_INACTIVE} text-[#957D43]/80`,
