@@ -138,6 +138,8 @@
 
 **قبل التفعيل:** `pnpm db:seed:auth` أو `pnpm db:migrate:auth` على VPS.
 
+**ملاحظة (2026-06-19):** `seed-auth-credentials.mjs` على النشر **لا يعيد كتابة** بيانات مالك موجودة — يُنشئ فقط عند غياب السجل. استعدال إجباري عبر `AUTH_SEED_FORCE_OWNER_CREDENTIALS=true` (مسارات الاسترداد فقط).
+
 **تحقق تلقائي (عند wave ≥ 6):** POST دخول مالك 200، كلمة مرور خاطئة 401، PIN موظف 200.
 
 راجع `docs/PHASE_10_AUTH.md`.

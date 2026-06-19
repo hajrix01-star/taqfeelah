@@ -1870,7 +1870,7 @@ def cmd_deploy_pm2(
     )
 
     if deployment_wave_requires_auth_verify():
-        print_section("Seed auth credentials (wave 6+)")
+        print_section("Seed auth credentials (wave 6+, insert-only for existing)")
         _, auth_seed_out, auth_seed_err = vps.run(
             textwrap.dedent(
                 f"""
@@ -2261,7 +2261,7 @@ def cmd_reset_owner_auth(
             set -a
             . ./.env.production
             set +a
-            node scripts/seed-auth-credentials.mjs
+            AUTH_SEED_FORCE_OWNER_CREDENTIALS=true node scripts/seed-auth-credentials.mjs
             """
         ).strip(),
         check=True,
