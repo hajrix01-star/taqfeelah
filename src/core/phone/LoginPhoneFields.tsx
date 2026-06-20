@@ -20,6 +20,7 @@ type LoginPhoneFieldsProps = {
   /** App login screens: fixed +966 with Saudi flag and shared styling. */
   variant?: "admin" | "app";
   lockDialCode?: boolean;
+  required?: boolean;
 };
 
 const APP_DIAL_CLASS = "flex shrink-0 items-center gap-2 border-r border-[#DDD3C0] px-3 py-3.5 text-sm font-black text-[#112A46]";
@@ -47,6 +48,7 @@ export function LoginPhoneFields({
   containerClassName,
   variant = "admin",
   lockDialCode: lockDialCodeProp,
+  required = false,
 }: LoginPhoneFieldsProps) {
   const isAppVariant = variant === "app";
   const split = splitLoginPhone(value);
@@ -72,7 +74,7 @@ export function LoginPhoneFields({
     <div dir="ltr" className={resolvedContainerClassName}>
       {lockDialCode ? (
         <div className={resolvedDialClassName}>
-          {isAppVariant ? <SaudiFlag /> : null}
+          <SaudiFlag className={isAppVariant ? "text-base leading-none" : "text-sm leading-none"} />
           <span>{resolvedDialCode}</span>
         </div>
       ) : (
@@ -92,6 +94,7 @@ export function LoginPhoneFields({
         value={nationalNumber}
         onChange={(event) => handleNationalChange(event.target.value)}
         disabled={disabled}
+        required={required}
         placeholder={resolvedNationalPlaceholder}
         aria-label="Mobile number"
         className={resolvedNationalClassName}

@@ -1,4 +1,5 @@
 import { ilike, or, sql, type SQL } from "drizzle-orm";
+import { expandPhoneSearchDigits } from "@/core/phone/expand-phone-search-digits";
 import {
   accountSetupTokens,
   authIdentities,
@@ -13,6 +14,7 @@ export type SaasAccountsSearchTerm = {
   loweredPattern: string;
   digitsOnly: string;
   isAllDigits: boolean;
+  phoneDigitVariants: string[];
 };
 
 export function parseSaasAccountsSearchTerm(search: string | undefined): SaasAccountsSearchTerm | null {
@@ -25,7 +27,38 @@ export function parseSaasAccountsSearchTerm(search: string | undefined): SaasAcc
     loweredPattern: `%${trimmed.toLowerCase()}%`,
     digitsOnly: trimmed.replace(/\D/g, ""),
     isAllDigits: /^\d+$/.test(trimmed),
+    phoneDigitVariants: expandPhoneSearchDigits(trimmed),
   };
+}
+
+function buildOwnerPhoneSearchCondition(parsed: SaasAccountsSearchTerm): SQL | undefined {
+  const digitPatterns = [...new Set(
+    parsed.phoneDigitVariants.map((digits) => `%${digits}%`),
+  )];
+
+  if (digitPatterns.length === 0) {
+    return undefined;
+  }
+
+  const digitMatches = digitPatterns.flatMap((digitPattern) => ([
+    sql`regexp_replace(coalesce(ai.login_phone, ''), '\\D', '', 'g') like ${digitPattern}`,
+    sql`regexp_replace(coalesce(ai.phone_number, ''), '\\D', '', 'g') like ${digitPattern}`,
+  ]));
+
+  return sql`exists (
+    select 1
+    from ${organizationMembers} om
+    inner join ${authIdentities} ai
+      on ai.user_id = om.user_id
+      and ai.provider = 'username_password'
+    where om.organization_id = ${organizations.id}
+      and om.role = 'owner'
+      and (
+        ai.login_phone ilike ${parsed.likePattern}
+        or ai.phone_number ilike ${parsed.likePattern}
+        or ${or(...digitMatches)}
+      )
+  )`;
 }
 
 export function buildSaasAccountsSearchFilter(search: string | undefined): SQL | undefined {
@@ -40,23 +73,9 @@ export function buildSaasAccountsSearchFilter(search: string | undefined): SQL |
     conditions.push(sql`cast(${organizations.accountNumber} as text) like ${parsed.likePattern}`);
   }
 
-  if (parsed.digitsOnly.length >= 3) {
-    const digitPattern = `%${parsed.digitsOnly}%`;
-    conditions.push(sql`exists (
-      select 1
-      from ${organizationMembers} om
-      inner join ${authIdentities} ai
-        on ai.user_id = om.user_id
-        and ai.provider = 'username_password'
-      where om.organization_id = ${organizations.id}
-        and om.role = 'owner'
-        and (
-          ai.login_phone ilike ${parsed.likePattern}
-          or ai.phone_number ilike ${parsed.likePattern}
-          or regexp_replace(coalesce(ai.login_phone, ''), '\\D', '', 'g') like ${digitPattern}
-          or regexp_replace(coalesce(ai.phone_number, ''), '\\D', '', 'g') like ${digitPattern}
-        )
-    )`);
+  const phoneCondition = buildOwnerPhoneSearchCondition(parsed);
+  if (phoneCondition) {
+    conditions.push(phoneCondition);
   }
 
   if (parsed.trimmed.includes("@") || !parsed.isAllDigits) {

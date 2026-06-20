@@ -1,5 +1,6 @@
 "use client";
 
+import { StandardLoginPhoneField } from "@/core/phone/StandardLoginPhoneField";
 import {
   getOwnerTeamInvitesLabels,
 } from "@/features/member-invitations/client/owner-team-invites-labels";
@@ -23,13 +24,14 @@ export function OwnerSettingsTeamInviteCreate({
           placeholder={labels.name}
           className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none"
         />
-        <input
-          dir="ltr"
-          value={invites.phoneNumber}
-          onChange={(event) => invites.setPhoneNumber(event.target.value)}
-          placeholder={labels.phone}
-          className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-black outline-none"
-        />
+        <div>
+          <p className="mb-2 text-xs font-black text-[#716753]">{labels.phone}</p>
+          <StandardLoginPhoneField
+            surface="owner"
+            value={invites.phoneNumber}
+            onChange={invites.setPhoneNumber}
+          />
+        </div>
         <input
           dir="ltr"
           inputMode="numeric"

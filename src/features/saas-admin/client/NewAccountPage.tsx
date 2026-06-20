@@ -6,6 +6,7 @@ import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import { AdminErrorAlert } from "@/features/saas-admin/components/AdminErrorAlert";
 import { AdminHeader } from "@/features/saas-admin/components/AdminHeader";
 import { AdminPageBody } from "@/features/saas-admin/components/AdminPageBody";
+import { StandardLoginPhoneField } from "@/core/phone/StandardLoginPhoneField";
 import { useNewAccountForm } from "@/features/saas-admin/client/use-new-account-form";
 import { useSaasAdminLocale } from "@/features/saas-admin/i18n/SaasAdminLocaleProvider";
 
@@ -77,13 +78,10 @@ export default function NewAccountPage() {
               </label>
               <label className="block space-y-1 text-sm">
                 <span className="text-[var(--admin-muted)]">{t.newAccount.ownerPhone}</span>
-                <input
+                <StandardLoginPhoneField
                   required
                   value={form.ownerPhone}
-                  onChange={(e) => form.setOwnerPhone(e.target.value)}
-                  placeholder={t.newAccount.ownerPhonePlaceholder}
-                  className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
-                  dir="ltr"
+                  onChange={form.setOwnerPhone}
                 />
               </label>
               <p className="text-xs text-[var(--admin-muted)]">{t.newAccount.setupLinkHint}</p>

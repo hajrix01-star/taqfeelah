@@ -11,4 +11,14 @@ describe("buildWhatsAppShareUrl", () => {
     const url = buildWhatsAppShareUrl("hello");
     expect(url).toBe(`https://wa.me/?text=${encodeURIComponent("hello")}`);
   });
+
+  it("builds wa.me link from national-only Saudi mobile", () => {
+    const url = buildWhatsAppShareUrl("hello", "501234567");
+    expect(url).toBe(`https://wa.me/966501234567?text=${encodeURIComponent("hello")}`);
+  });
+
+  it("builds wa.me link from E.164 Saudi mobile", () => {
+    const url = buildWhatsAppShareUrl("hello", "+966501234567");
+    expect(url).toBe(`https://wa.me/966501234567?text=${encodeURIComponent("hello")}`);
+  });
 });
