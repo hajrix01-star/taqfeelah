@@ -5,7 +5,7 @@
  * Usage:
  *   node scripts/prelaunch-check.mjs
  *   node scripts/prelaunch-check.mjs --env-file .env.production
- *   node scripts/prelaunch-check.mjs --strict   # fail on warnings (UPSTASH, etc.)
+ *   node scripts/prelaunch-check.mjs --strict   # fail on launch-critical gaps (not Upstash)
  */
 import { readFileSync } from "node:fs";
 import process from "node:process";
@@ -79,29 +79,11 @@ if (sessionSecret.length < 16) {
   errors.push("AUTH_SESSION_SECRET must be at least 16 characters");
 }
 
-warnIfMissing(
-  "UPSTASH_REDIS_REST_URL",
-  "UPSTASH_REDIS_REST_URL not set — login rate limiting uses in-memory store (resets on restart)",
-);
-warnIfMissing(
-  "UPSTASH_REDIS_REST_TOKEN",
-  "UPSTASH_REDIS_REST_TOKEN not set — login rate limiting uses in-memory store",
-);
-
 warnIfMissing("SAAS_PLATFORM_ADMIN_USER_IDS", "SAAS_PLATFORM_ADMIN_USER_IDS not set — SaaS admin access undefined");
 
 if (strict) {
-  if (!process.env.UPSTASH_REDIS_REST_URL?.trim()) {
-    errors.push("UPSTASH_REDIS_REST_URL is required in strict mode");
-  }
-  if (!process.env.UPSTASH_REDIS_REST_TOKEN?.trim()) {
-    errors.push("UPSTASH_REDIS_REST_TOKEN is required in strict mode");
-  }
   if (!process.env.SAAS_PLATFORM_ADMIN_USER_IDS?.trim()) {
     errors.push("SAAS_PLATFORM_ADMIN_USER_IDS is required in strict mode");
-  }
-  if (process.env.AUTH_RATE_LIMIT_REDIS_REQUIRED !== "true") {
-    errors.push("AUTH_RATE_LIMIT_REDIS_REQUIRED must be true in strict mode");
   }
 }
 
@@ -139,4 +121,14 @@ if (strict && warnings.length > 0) {
 console.log("✅ Pre-launch check PASSED");
 if (warnings.length > 0) {
   console.log(`   (${warnings.length} warning(s) — run with --strict to fail on warnings)`);
+}
+
+const hasUpstash = Boolean(
+  process.env.UPSTASH_REDIS_REST_URL?.trim() && process.env.UPSTASH_REDIS_REST_TOKEN?.trim(),
+);
+if (!hasUpstash) {
+  console.log("");
+  console.log("ℹ Upstash Redis: optional (owner decision — not required for launch).");
+  console.log("  Login rate limiting uses in-memory store (resets on app restart).");
+  console.log("  Add UPSTASH_* + AUTH_RATE_LIMIT_REDIS_REQUIRED=true later when scaling.");
 }

@@ -17,12 +17,10 @@
 |---------|--------|
 | `DATABASE_URL` | ✅ |
 | `AUTH_SESSION_SECRET` | ≥16 حرف |
-| `UPSTASH_REDIS_REST_URL` | ✅ |
-| `UPSTASH_REDIS_REST_TOKEN` | ✅ |
-| `AUTH_RATE_LIMIT_REDIS_REQUIRED` | `true` |
 | `SAAS_PLATFORM_ADMIN_USER_IDS` | UUIDs مفصولة بفاصلة |
 | `NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE` | `true` |
 | `APP_MODE` | `production` |
+| `UPSTASH_*` | ⏸ اختياري (لاحقًا عند التوسع) |
 
 ```bash
 pnpm prelaunch:check:strict --env-file .env.production

@@ -1,13 +1,14 @@
 # ضبط الإنتاج — للمالك (بدون خبرة برمجة)
 
-> **الخلاصة:** لا تحتاج فتح ملفات على السيرفر يدويًا في الغالب.  
+> **الخلاصة:** لا تحتاج فتح ملفات على السيرفر يدويًا.  
 > الأسرار تُحفظ في **GitHub** → كل **نشر** يكتبها تلقائيًا في `/opt/taqfeelah/.env.production` على VPS.
+
+> **قرار المالك (2026-06-20):** **Upstash اختياري** — يمكن الإطلاق بدونه.  
+> حماية تسجيل الدخول تعمل بذاكرة السيرفر (كافية للبداية).
 
 ---
 
 ## ماذا يحدث تلقائيًا (لا تلمسه)
-
-عند merge إلى `main`، النشر يضبط على VPS مثل:
 
 | المتغير | المصدر |
 |---------|--------|
@@ -15,93 +16,63 @@
 | `AUTH_SESSION_SECRET` | GitHub Secret |
 | `SAAS_PLATFORM_ADMIN_USER_IDS` | GitHub Secret |
 | `APP_MODE=production` | النشر |
-| `AUTH_RATE_LIMIT_REDIS_REQUIRED=true` | النشر (ثابت) |
 | باقي flags التطبيق | النشر |
 
 **إذا الموقع يعمل اليوم** — هذه الغالبية **موجودة مسبقًا**.
 
 ---
 
-## ما الذي تحتاج أنت فقط (قبل «جاهز للايف»)
+## Upstash — **تخطّه للإطلاق** ✅
 
-### الخطوة 1 — حساب Upstash (5 دقائق، مرة واحدة)
+| | |
+|---|---|
+| **ما هو؟** | خدمة اختيارية لتقوية حماية تسجيل الدخول عند التوسع |
+| **هل ضروري؟** | **لا** — قرار المشروع محدّث |
+| **بدونه** | Rate limit في ذاكرة السيرفر (يُصفّر عند restart — مقبول للبداية) |
+| **متى تضيفه؟** | عند نمو العملاء أو أكثر من سيرفر — لاحقًا |
 
-Upstash = خدمة Redis مجانية/رخيصة لحماية تسجيل الدخول (منع brute-force).
-
-1. افتح [console.upstash.com](https://console.upstash.com/) وسجّل دخول (Google/GitHub).
-2. **Create database** → نوع **Redis**.
-3. المنطقة: الأقرب للسعودية/الVPS (مثل `eu-central-1` إن لم يتوفر `me-*`).
-4. بعد الإنشاء، من تبويب **REST API** انسخ:
-   - **UPSTASH_REDIS_REST_URL** (يبدأ بـ `https://...upstash.io`)
-   - **UPSTASH_REDIS_REST_TOKEN** (نص طويل)
-
-احتفظ بهما في مكان آمن (Notes) — لن نعرضهما في المحادثة مرة أخرى.
+**لا تحتاج أي خطوة Upstash قبل «جاهز للايف».**
 
 ---
 
-### الخطوة 2 — إضافة سرّين في GitHub (3 دقائق)
+## (اختياري لاحقًا) إضافة Upstash
 
-1. افتح:  
-   [github.com/hajrix01-star/taqfeelah/settings/secrets/actions](https://github.com/hajrix01-star/taqfeelah/settings/secrets/actions)
-2. **New repository secret** — الاسم **`UPSTASH_REDIS_REST_URL`** → الصق الرابط.
-3. **New repository secret** — الاسم **`UPSTASH_REDIS_REST_TOKEN`** → الصق التوكن.
-
-> لا تضف `AUTH_RATE_LIMIT_REDIS_REQUIRED` يدويًا — النشر يضعه `true` تلقائيًا.
+1. [console.upstash.com](https://console.upstash.com/) → Create Redis database
+2. GitHub Secrets: `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`
+3. على VPS أو في Secrets: `AUTH_RATE_LIMIT_REDIS_REQUIRED=true`
+4. redeploy
 
 ---
 
-### الخطوة 3 — تحقق (بعد النشر التالي)
+## تحقق قبل الإطلاق
 
-بعد merge PR الإطلاق إلى `main` ونجاح deploy:
+بعد merge PR و deploy:
 
-1. (اختياري) SSH للVPS — **فقط إن كنت مرتاحًا**:
-   ```bash
-   cd /opt/taqfeelah
-   pnpm prelaunch:check:strict --env-file .env.production
-   ```
-2. أو اطلب من المطور/الوكيل تشغيل نفس الأمر والتأكد من ✅.
+```bash
+cd /opt/taqfeelah
+pnpm prelaunch:check:strict --env-file .env.production
+```
+
+يجب أن يمرّ ✅ **بدون** Upstash (يطبع ملاحظة أن Upstash اختياري).
 
 ---
 
-## هل أحتاج SSH وتعديل `.env.production`؟
+## قائمة GitHub Secrets للإطلاق
 
-| الحالة | الجواب |
+| Secret | مطلوب؟ |
 |--------|--------|
-| أضفت Upstash في GitHub Secrets + نشر جديد | **لا** — النشر يحدّث الملف |
-| تريد اختبار قبل merge | يمكن لمن لديه SSH إضافة السطرين على VPS مؤقتًا |
-| لا Upstash ولا GitHub secrets | **لا تقل «جاهز للايف»** — strict gate سيفشل |
+| `VPS_*`, `DATABASE_URL`, `AUTH_SESSION_SECRET` | ✅ |
+| `SAAS_PLATFORM_ADMIN_USER_IDS` | ✅ |
+| `UPSTASH_*` | ⏸ اختياري (لاحقًا) |
+| `RESEND_API_KEY` / SMTP | ⚠️ إن forgot-password مفعّل |
 
 ---
 
-## قائمة GitHub Secrets المهمة للإطلاق
+## بعد ذلك
 
-| Secret | مطلوب للايف؟ | ملاحظة |
-|--------|-------------|--------|
-| `VPS_HOST`, `VPS_USER`, `VPS_PASS` أو `VPS_SSH_PRIVATE_KEY` | ✅ | للنشر |
-| `DATABASE_URL` | ✅ | PostgreSQL |
-| `AUTH_SESSION_SECRET` | ✅ | ≥16 حرف |
-| `SAAS_PLATFORM_ADMIN_USER_IDS` | ✅ | UUID مالك المنصة |
-| `UPSTASH_REDIS_REST_URL` | ✅ **جديد** | من Upstash |
-| `UPSTASH_REDIS_REST_TOKEN` | ✅ **جديد** | من Upstash |
-| `RESEND_API_KEY` أو SMTP | ⚠️ | إن forgot-password مفعّل |
-| `AUTH_EMAIL_FROM` | ⚠️ | مع البريد |
-
----
-
-## بعد Upstash + النشر
-
-تابع `docs/VPS_LAUNCH_RUNBOOK.md`:
-
-1. مسح البيانات التجريبية (`prelaunch:wipe:apply`)
-2. `prelaunch:live-gate`
-3. checklist `PRELAUNCH_MANUAL_SMOKE.md`
-4. أول عميل من `/saas-admin/accounts/new`
-5. قل **«جاهز للايف»** للإعلان
-
----
+`docs/VPS_LAUNCH_RUNBOOK.md` — مسح البيانات → smoke → أول عميل.
 
 ## مراجع
 
-- `docs/VPS_LAUNCH_RUNBOOK.md`
 - `docs/LIVE_DEPLOY_BATCH_PLAN.md`
-- `.env.example`
+- `docs/VPS_LAUNCH_RUNBOOK.md`

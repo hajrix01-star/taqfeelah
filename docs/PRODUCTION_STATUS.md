@@ -79,7 +79,7 @@
 ## فجوات معروفة (دفعات لاحقة)
 
 1. حدود/هجرة مرفقات أقوى (object storage)
-2. UPSTASH Redis لـ rate limiting في الإنتاج — تحقق عبر `pnpm prelaunch:check --strict`
+2. Upstash Redis — **اختياري**؛ موصى به عند التوسع (ليس شرط إطلاق)
 3. ترحيل JS legacy → TypeScript (272 ملف)
 4. CSP nonce-based (تقليل `unsafe-eval`)
 
@@ -88,7 +88,7 @@
 - ✅ E2E + PostgreSQL في CI (`db-integration` job)
 - ✅ `check:db-source` في CI
 - ✅ client password min = 8 (محاذاة مع server)
-- ✅ `scripts/prelaunch-check.mjs` + `--strict` + `AUTH_RATE_LIMIT_REDIS_REQUIRED`
+- ✅ `scripts/prelaunch-check.mjs` + `--strict` (بدون اشتراط Upstash)
 - ✅ `prelaunch-live-gate.mjs` + `PRELAUNCH_MANUAL_SMOKE.md`
 - ✅ `prelaunch-wipe-all-tenant-data.mjs`
 - ✅ إعادة تسمية `features/phase9` → `features/exports-attachments`

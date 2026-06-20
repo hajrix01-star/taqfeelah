@@ -11,7 +11,7 @@
 - [ ] VPS يعمل على آخر deploy من فرع prelaunch
 - [ ] `pnpm prelaunch:check --env-file .env.production --strict` ✅
 - [ ] قاعدة البيانات **فارغة** (بعد wipe) — لا seed demo
-- [ ] UPSTASH Redis مفعّل
+- [ ] UPSTASH Redis مفعّل — **اختياري** (قرار المالك: ليس مطلوبًا للإطلاق)
 - [ ] `AUTH_SESSION_SECRET` قوي (≥16 حرف)
 
 ---

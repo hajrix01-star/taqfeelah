@@ -56,7 +56,7 @@ PRELAUNCH_WIPE_CONFIRM=wipe-all-tenant-data-for-live pnpm prelaunch:wipe:apply
 
 - [ ] VPS: `drizzle-kit migrate` فقط — **بدون** seed demo
 - [ ] `AUTH_SESSION_SECRET` ≥ 16 حرفًا (GitHub secret)
-- [ ] `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` مفعّلان
+- [ ] Upstash — **اختياري** للإطلاق (ذاكرة السيرفر كافية للبداية)
 - [ ] `NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true`
 - [ ] أول حساب من `/saas-admin/accounts/new`
 - [ ] مسار: مالك → موظف → تقفيلة → تقرير
