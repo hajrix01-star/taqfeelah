@@ -15,7 +15,7 @@ const employeeUserId = process.env.CHECK_EMPLOYEE_USER_ID || "4cf1450d-08d8-4ca1
 const ownerUserId = process.env.CHECK_OWNER_USER_ID || "e8f3e35b-6051-4da3-8b10-979700c2f00f";
 const salesChannelId = process.env.CHECK_SALES_CHANNEL_ID || "9bc40d4f-c773-4ba3-87db-b8bb1467dafb";
 const ownerUsername = process.env.CHECK_OWNER_USERNAME || "hajri";
-const ownerPassword = process.env.CHECK_OWNER_PASSWORD || "123";
+const ownerPassword = process.env.CHECK_OWNER_PASSWORD || "hajri123";
 const employeeId = process.env.CHECK_EMPLOYEE_ID || "ahmed";
 const employeePin = process.env.CHECK_EMPLOYEE_PIN || "1234";
 

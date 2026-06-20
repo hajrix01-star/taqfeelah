@@ -38,6 +38,7 @@ export default function MarketingPage() {
         <header className="sticky top-0 z-40 border-b border-[#ECE6DA]/90 bg-[#F8F6F0]/95 backdrop-blur-sm">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
             <Link href="/" className="flex items-center no-underline">
+              {/* eslint-disable-next-line @next/next/no-img-element -- static brand logo */}
               <img
                 src={TAQFEELAH_LOGO_SRC}
                 alt={PWA_APP_NAME}

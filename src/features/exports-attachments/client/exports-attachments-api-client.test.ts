@@ -14,7 +14,7 @@ function setMapsEnv() {
   });
 }
 
-describe("phase9 api client", () => {
+describe("exports-attachments api client", () => {
   beforeEach(() => {
     vi.resetModules();
     process.env = { ...ORIGINAL_ENV };
@@ -32,7 +32,7 @@ describe("phase9 api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { approveDuplicateSummaryViaApi } = await import("./phase9-api-client.js");
+    const { approveDuplicateSummaryViaApi } = await import("./exports-attachments-api-client.js");
     const result = await approveDuplicateSummaryViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       actorUserId: "owner",
@@ -64,7 +64,7 @@ describe("phase9 api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { acknowledgeDuplicateSummariesViaApi } = await import("./phase9-api-client.js");
+    const { acknowledgeDuplicateSummariesViaApi } = await import("./exports-attachments-api-client.js");
     const result = await acknowledgeDuplicateSummariesViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       actorUserId: "owner",
@@ -94,7 +94,7 @@ describe("phase9 api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { fetchNotebookExportViaApi } = await import("./phase9-api-client.js");
+    const { fetchNotebookExportViaApi } = await import("./exports-attachments-api-client.js");
     const result = await fetchNotebookExportViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       actorUserId: "owner",

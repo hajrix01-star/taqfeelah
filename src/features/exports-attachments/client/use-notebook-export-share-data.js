@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { fetchNotebookExportViaApi } from "./phase9-api-client.js";
+import { fetchNotebookExportViaApi } from "./exports-attachments-api-client.js";
 import {
   buildNotebookExportRequest,
   canFetchNotebookExportForSnapshot,

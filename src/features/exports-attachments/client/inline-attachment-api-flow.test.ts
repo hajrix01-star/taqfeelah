@@ -37,8 +37,8 @@ describe("inline attachment api flow", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const { resolvePayloadAttachmentForPhase9Api } = await import("./inline-attachment-api-flow.js");
-    const result = await resolvePayloadAttachmentForPhase9Api({
+    const { resolveInlineAttachmentPayloadForApi } = await import("./inline-attachment-api-flow.js");
+    const result = await resolveInlineAttachmentPayloadForApi({
       enabled: true,
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       actorUserId: "owner",
@@ -60,12 +60,12 @@ describe("inline attachment api flow", () => {
     expect(fetchMock).toHaveBeenCalled();
   });
 
-  it("returns payload unchanged when phase9 flow is disabled", async () => {
-    const { resolvePayloadAttachmentForPhase9Api } = await import("./inline-attachment-api-flow.js");
+  it("returns payload unchanged when exports-attachments flow is disabled", async () => {
+    const { resolveInlineAttachmentPayloadForApi } = await import("./inline-attachment-api-flow.js");
     const payload = {
       attachment: { dataUrl: "data:image/jpeg;base64,abc", sizeBytes: 10 },
     };
-    const result = await resolvePayloadAttachmentForPhase9Api({
+    const result = await resolveInlineAttachmentPayloadForApi({
       enabled: false,
       payload,
     });

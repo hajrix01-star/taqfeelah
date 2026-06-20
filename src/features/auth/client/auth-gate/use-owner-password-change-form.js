@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { changeOwnerPasswordViaSessionBridge } from "@/features/auth/client/session-bridge";
 import { APP_IN_PRODUCTION_MODE } from "@/components/prototype-runtime/prototype-runtime-boot";
+import { MIN_PASSWORD_LENGTH } from "@/core/auth/password-policy";
 
 export function useOwnerPasswordChangeForm({ lang, onComplete }) {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -13,10 +14,10 @@ export function useOwnerPasswordChangeForm({ lang, onComplete }) {
 
   const submit = useCallback(async () => {
     if (submitting) return;
-    if (newPassword.trim().length < 6) {
+    if (newPassword.trim().length < MIN_PASSWORD_LENGTH) {
       setError(lang === "ar"
-        ? "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل."
-        : "New password must be at least 6 characters.");
+        ? `كلمة المرور الجديدة يجب أن تكون ${MIN_PASSWORD_LENGTH} أحرف على الأقل.`
+        : `New password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
       return;
     }
     if (newPassword !== confirmPassword) {

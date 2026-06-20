@@ -4,8 +4,8 @@ import { useCallback } from "react";
 import {
   acknowledgeDuplicateSummariesViaApi,
   approveDuplicateSummaryViaApi,
-} from "@/features/phase9/client/phase9-api-client";
-import { resolvePayloadAttachmentForPhase9Api } from "@/features/phase9/client/inline-attachment-api-flow";
+} from "@/features/exports-attachments/client/exports-attachments-api-client";
+import { resolveInlineAttachmentPayloadForApi } from "@/features/exports-attachments/client/inline-attachment-api-flow";
 import { resolveLatestActiveCloseoutDateFromEntries } from "@/features/operations/operational-entry-save-helpers";
 import {
   applyDuplicateApprovedAudit,
@@ -58,7 +58,7 @@ export function useRegisterDuplicateSummaryHandlers({
       savingRef.current = true;
       setSaving(true);
       try {
-        const apiPayload = await resolvePayloadAttachmentForPhase9Api({
+        const apiPayload = await resolveInlineAttachmentPayloadForApi({
           enabled: phase9ApiEnabled,
           organizationId: closeoutsApiOrganizationId,
           actorUserId,

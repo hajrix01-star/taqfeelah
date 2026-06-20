@@ -38,6 +38,7 @@ export default function MarketingAppPreview() {
             className="flex items-center justify-center px-4 pb-3 pt-4"
             style={{ backgroundColor: MARKETING_SHELL_BG }}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset in marketing mockup */}
             <img
               src={TAQFEELAH_LOGO_SRC}
               alt=""
