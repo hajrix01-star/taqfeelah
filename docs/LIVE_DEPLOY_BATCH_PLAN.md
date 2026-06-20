@@ -105,6 +105,7 @@ CHECK_BASE_URL=https://your-domain pnpm prelaunch:live-gate --env-file .env.prod
 
 ## مراجع
 
+- `docs/VPS_ENV_SETUP_FOR_OWNER.md`
 - `docs/VPS_LAUNCH_RUNBOOK.md`
 - `docs/PRELAUNCH_AUDIT_AND_REMEDIATION.md`
 - `docs/PRODUCTION_STATUS.md`
