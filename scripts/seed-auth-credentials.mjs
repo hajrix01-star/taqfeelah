@@ -150,7 +150,7 @@ async function main() {
 
   const ownerUserId = valueFromEnv("SEED_OWNER_USER_ID", valueFromEnv("AUTH_OWNER_USER_ID", DEFAULT_OWNER_USER_ID));
   const ownerUsername = valueFromEnv("AUTH_OWNER_USERNAME", "hajri");
-  const ownerPassword = valueFromEnv("AUTH_OWNER_PASSWORD", "123");
+  const ownerPassword = valueFromEnv("AUTH_OWNER_PASSWORD", "hajri123");
   const employeePins = parseEmployeePinMap();
 
   const client = new Client({ connectionString: databaseUrl });

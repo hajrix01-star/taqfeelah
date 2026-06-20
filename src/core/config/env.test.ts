@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ServiceUnavailableError } from "@/core/errors/app-error";
-import { __resetEnvCacheForTests, allowHeaderAuthContext, assertProductionRuntimeEnv } from "./env";
+import { __resetEnvCacheForTests, allowHeaderAuthContext, assertProductionRuntimeEnv, isAuthSessionCookieSecure } from "./env";
 
 const productionEnv = {
   NODE_ENV: "production",
@@ -135,13 +135,54 @@ describe("assertProductionRuntimeEnv", () => {
     expect(() => assertProductionRuntimeEnv()).not.toThrow();
   });
 
-  it("still requires legacy env ID maps when header auth bypass is enabled", () => {
-    stubProductionEnv({ ALLOW_HEADER_AUTH_CONTEXT: "true" });
-    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP", "");
-    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP", "");
-    vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP", "");
+  it("requires Upstash when AUTH_RATE_LIMIT_REDIS_REQUIRED=true", () => {
+    stubProductionEnv({
+      AUTH_RATE_LIMIT_REDIS_REQUIRED: "true",
+      NEXT_PUBLIC_AUTH_API_ENABLED: "true",
+      AUTH_DB_CREDENTIALS_ENABLED: "true",
+    });
+    vi.unstubAllEnvs();
+    Object.entries({
+      ...productionEnv,
+      AUTH_RATE_LIMIT_REDIS_REQUIRED: "true",
+      NEXT_PUBLIC_AUTH_API_ENABLED: "true",
+      AUTH_DB_CREDENTIALS_ENABLED: "true",
+    }).forEach(([key, value]) => vi.stubEnv(key, value));
     __resetEnvCacheForTests();
     expect(() => assertProductionRuntimeEnv()).toThrow(ServiceUnavailableError);
-    expect(() => assertProductionRuntimeEnv()).toThrow(/NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP/);
+    expect(() => assertProductionRuntimeEnv()).toThrow(/UPSTASH_REDIS_REST_URL/);
+  });
+
+  it("accepts production when Upstash is configured and required", () => {
+    stubProductionEnv({
+      AUTH_RATE_LIMIT_REDIS_REQUIRED: "true",
+      UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
+      UPSTASH_REDIS_REST_TOKEN: "token",
+      NEXT_PUBLIC_AUTH_API_ENABLED: "true",
+      AUTH_DB_CREDENTIALS_ENABLED: "true",
+    });
+    expect(() => assertProductionRuntimeEnv()).not.toThrow();
+  });
+});
+
+describe("isAuthSessionCookieSecure", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    __resetEnvCacheForTests();
+  });
+
+  it("defaults to true in production mode", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("APP_MODE", "production");
+    __resetEnvCacheForTests();
+    expect(isAuthSessionCookieSecure()).toBe(true);
+  });
+
+  it("honors explicit false for CI HTTP E2E", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("APP_MODE", "production");
+    vi.stubEnv("AUTH_SESSION_COOKIE_SECURE", "false");
+    __resetEnvCacheForTests();
+    expect(isAuthSessionCookieSecure()).toBe(false);
   });
 });

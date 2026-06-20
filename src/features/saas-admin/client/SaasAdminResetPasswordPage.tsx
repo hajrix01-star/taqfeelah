@@ -16,6 +16,7 @@ import {
 import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import "@/features/saas-admin/components/admin-theme.css";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
+import { MIN_PASSWORD_LENGTH } from "@/core/auth/password-policy";
 
 function ResetPasswordForm({ token }: { token: string }) {
   const { locale, t, dir } = useSaasAdminLocale();
@@ -98,7 +99,7 @@ function ResetPasswordForm({ token }: { token: string }) {
                 <input
                   required
                   type="password"
-                  minLength={6}
+                  minLength={MIN_PASSWORD_LENGTH}
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
                   className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
@@ -111,7 +112,7 @@ function ResetPasswordForm({ token }: { token: string }) {
                 <input
                   required
                   type="password"
-                  minLength={6}
+                  minLength={MIN_PASSWORD_LENGTH}
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"

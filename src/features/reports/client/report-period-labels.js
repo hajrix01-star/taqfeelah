@@ -21,7 +21,8 @@ export function formatNumericMonth(value) {
 }
 
 /** Gregorian display date: dd-mm-yyyy (Saudi operational convention). */
-export function formatCalendarDate(dateString, _lang) {
+export function formatCalendarDate(dateString, lang) {
+  void lang;
   return formatNumericDate(dateString);
 }
 
@@ -38,11 +39,13 @@ export function formatRegisterCloseoutTypeLabel(dateString, lang) {
   return lang === "ar" ? `تقفيلة يوم ${dateLabel}` : `Daily closeout ${dateLabel}`;
 }
 
-export function formatCalendarMonth(year, monthIndex, _lang) {
+export function formatCalendarMonth(year, monthIndex, lang) {
+  void lang;
   return formatNumericMonthYear(year, monthIndex);
 }
 
-export function formatSelectedMonth(value, _lang) {
+export function formatSelectedMonth(value, lang) {
+  void lang;
   return formatNumericMonth(value);
 }
 

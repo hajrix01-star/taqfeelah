@@ -92,6 +92,9 @@ PRODUCTION_ENV_KEYS = [
     "SMTP_PORT",
     "SMTP_USER",
     "SMTP_PASS",
+    "AUTH_RATE_LIMIT_REDIS_REQUIRED",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
 ]
 
 # Optional VPS-only values preserved when not supplied by CI.

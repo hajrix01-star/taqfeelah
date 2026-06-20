@@ -10,9 +10,12 @@ import {
   setRuntimeApiIdMaps,
 } from "@/core/client/runtime-api-maps-state";
 
-export function setPhase9RuntimeApiIdMaps(overrides) {
+export function setExportsAttachmentsRuntimeApiIdMaps(overrides) {
   setRuntimeApiIdMaps(overrides);
 }
+
+/** @deprecated Use setExportsAttachmentsRuntimeApiIdMaps */
+export const setPhase9RuntimeApiIdMaps = setExportsAttachmentsRuntimeApiIdMaps;
 
 function getMaps() {
   return getRuntimeApiMaps();

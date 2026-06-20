@@ -78,10 +78,20 @@
 
 ## فجوات معروفة (دفعات لاحقة)
 
-1. E2E مع PostgreSQL + login كامل في CI
-2. حدود/هجرة مرفقات أقوى (object storage)
-3. رفع الحد الأدنى لكلمة المرور إلى 8 أحرف
-4. UPSTASH Redis لـ rate limiting في الإنتاج
+1. حدود/هجرة مرفقات أقوى (object storage)
+2. Upstash Redis — **اختياري**؛ موصى به عند التوسع (ليس شرط إطلاق)
+3. ترحيل JS legacy → TypeScript (272 ملف)
+4. CSP nonce-based (تقليل `unsafe-eval`)
+
+## مُعالَج في دفعة prelaunch-remediation (2026-06-20)
+
+- ✅ E2E + PostgreSQL في CI (`db-integration` job)
+- ✅ `check:db-source` في CI
+- ✅ client password min = 8 (محاذاة مع server)
+- ✅ `scripts/prelaunch-check.mjs` + `--strict` (بدون اشتراط Upstash)
+- ✅ `prelaunch-live-gate.mjs` + `PRELAUNCH_MANUAL_SMOKE.md`
+- ✅ `prelaunch-wipe-all-tenant-data.mjs`
+- ✅ إعادة تسمية `features/phase9` → `features/exports-attachments`
 
 ---
 

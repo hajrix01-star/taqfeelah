@@ -19,7 +19,7 @@ import {
   resolveOwnerDuplicateWatchWindow,
 } from "@/features/operations/client/owner-duplicate-watch";
 import { mergeLastCloseoutDateForStore } from "@/features/operations/operational-entry-save-helpers";
-import { resolvePayloadAttachmentForPhase9Api } from "@/features/phase9/client/inline-attachment-api-flow";
+import { resolveInlineAttachmentPayloadForApi } from "@/features/exports-attachments/client/inline-attachment-api-flow";
 import { safeSetLocalStorageItem } from "@/features/demo/prototype-storage";
 import { todayIsoDate } from "@/components/prototype-runtime/prototype-runtime-notebook";
 import {
@@ -121,7 +121,7 @@ export function usePrototypeRuntimeOperationalEntries({
       if (entriesApiStrictMode) throw new Error("organization id is missing/invalid for entries API.");
       return null;
     }
-    const apiPayload = await resolvePayloadAttachmentForPhase9Api({
+    const apiPayload = await resolveInlineAttachmentPayloadForApi({
       enabled: phase9ApiEnabled,
       organizationId: closeoutsApiOrganizationId,
       actorUserId,

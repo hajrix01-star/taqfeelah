@@ -1,5 +1,5 @@
 import { failRequest, ok } from "@/core/http/api-response";
-import { readEnv, assertProductionRuntimeEnv, isServerProductionMode } from "@/core/config/env";
+import { readEnv, assertProductionRuntimeEnv, isServerProductionMode, isAuthSessionCookieSecure } from "@/core/config/env";
 import {
   buildClearAuthSessionCookieHeader,
   buildSetAuthSessionCookieHeader,
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
       throw new ServiceUnavailableError("AUTH_SESSION_SECRET is not configured.");
     }
 
-    const secureCookie = env.NODE_ENV === "production" || env.APP_MODE === "production";
+    const secureCookie = isAuthSessionCookieSecure(env);
     const setCookie = buildSetAuthSessionCookieHeader(
       {
         organizationId: sessionClaims.organizationId,
@@ -180,7 +180,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const env = readEnv();
-    const secureCookie = env.NODE_ENV === "production" || env.APP_MODE === "production";
+    const secureCookie = isAuthSessionCookieSecure(env);
     return ok(
       { success: true },
       {

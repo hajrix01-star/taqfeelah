@@ -16,6 +16,7 @@ export function AppBrandMark({
 }: AppBrandMarkProps) {
   return (
     <div className="flex flex-col items-center gap-3 text-center">
+      {/* eslint-disable-next-line @next/next/no-img-element -- static SVG/PNG brand mark */}
       <img
         src={TAQFEELAH_LOGO_SRC}
         alt="تقفيلة"

@@ -9,6 +9,7 @@ import {
   confirmOwnerPasswordResetViaApi,
   validateOwnerPasswordResetTokenViaApi,
 } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
+import { MIN_PASSWORD_LENGTH } from "@/core/auth/password-policy";
 
 type OwnerResetPasswordPageProps = {
   token: string;
@@ -82,7 +83,7 @@ export default function OwnerResetPasswordPage({ token }: OwnerResetPasswordPage
               dir="ltr"
               type="password"
               required
-              minLength={6}
+              minLength={MIN_PASSWORD_LENGTH}
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
               placeholder="كلمة المرور الجديدة"
@@ -93,7 +94,7 @@ export default function OwnerResetPasswordPage({ token }: OwnerResetPasswordPage
               dir="ltr"
               type="password"
               required
-              minLength={6}
+              minLength={MIN_PASSWORD_LENGTH}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder="تأكيد كلمة المرور"

@@ -1,4 +1,4 @@
-import { registerInlineAttachmentViaApi } from "./phase9-api-client.js";
+import { registerInlineAttachmentViaApi } from "./exports-attachments-api-client.js";
 
 function toInlineAttachmentInput(attachment) {
   if (!attachment || typeof attachment !== "object" || !attachment.dataUrl) return null;
@@ -11,7 +11,7 @@ function toInlineAttachmentInput(attachment) {
   };
 }
 
-export async function resolvePayloadAttachmentForPhase9Api({
+export async function resolveInlineAttachmentPayloadForApi({
   enabled = false,
   organizationId = "",
   actorUserId = "",
@@ -48,3 +48,6 @@ export async function resolvePayloadAttachmentForPhase9Api({
     return payload;
   }
 }
+
+/** @deprecated Use resolveInlineAttachmentPayloadForApi */
+export const resolvePayloadAttachmentForPhase9Api = resolveInlineAttachmentPayloadForApi;

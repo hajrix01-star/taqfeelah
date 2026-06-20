@@ -11,8 +11,8 @@ import {
   X,
 } from "lucide-react";
 import { notebookThemes } from "@/features/daily-closeouts/notebook-themes";
-import { canFetchNotebookExportForSnapshot } from "@/features/phase9/client/notebook-export-share-data";
-import { useNotebookExportShareData } from "@/features/phase9/client/use-notebook-export-share-data";
+import { canFetchNotebookExportForSnapshot } from "@/features/exports-attachments/client/notebook-export-share-data";
+import { useNotebookExportShareData } from "@/features/exports-attachments/client/use-notebook-export-share-data";
 import { businesses, text } from "./prototype-runtime-demo-data";
 import { todayIsoDate } from "./prototype-runtime-notebook";
 import { buildDataExportModel } from "@/features/exports/client/build-data-export-model";
