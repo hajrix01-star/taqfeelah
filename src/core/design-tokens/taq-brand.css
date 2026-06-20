@@ -24,4 +24,16 @@
   --taq-warning-border: #f0d9a2;
   --taq-success: #2d6a4f;
   --taq-success-bg: #e8f5ee;
+
+  /* Interactive affordance — change here to restyle hover/active app-wide */
+  --taq-interactive-transition: 150ms ease;
+  --taq-interactive-hover-bg: rgba(17, 42, 70, 0.04);
+  --taq-interactive-active-bg: rgba(17, 42, 70, 0.08);
+  --taq-interactive-surface-hover-bg: var(--taq-cream-soft);
+  --taq-interactive-surface-active-bg: #f0ece2;
+  --taq-interactive-danger-hover-bg: rgba(180, 71, 71, 0.06);
+  --taq-interactive-danger-active-bg: rgba(180, 71, 71, 0.1);
+  --taq-interactive-primary-hover-filter: brightness(1.07);
+  --taq-interactive-primary-active-filter: brightness(0.94);
+  --taq-interactive-muted-hover-opacity: 0.82;
 }

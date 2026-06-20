@@ -3,6 +3,7 @@
 import React from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { BackTitle } from "./prototype-runtime-chrome";
+import { taqInteractive } from "@/core/ui/interactive-classes";
 
 export function Badge({ children, tone = "neutral" }) {
   const themes = { neutral: "bg-[#F0ECE2] text-[#655B45]", success: "bg-[#E6F5E9] text-[#257844]", warning: "bg-[#FFF0E2] text-[#B96725]", navy: "bg-[#E7EEF5] text-[#112A46]" };
@@ -14,7 +15,7 @@ export function SettingToggle({ enabled, onToggle, disabled = false }) {
     <button
       disabled={disabled}
       onClick={onToggle}
-      className={`relative h-6 w-11 rounded-full transition ${disabled ? "cursor-not-allowed opacity-55" : ""} ${enabled ? "bg-[#39A160]" : "bg-[#D9D3C7]"}`}
+      className={`relative h-6 w-11 rounded-full transition ${taqInteractive.none} ${disabled ? "cursor-not-allowed opacity-55" : ""} ${enabled ? "bg-[#39A160]" : "bg-[#D9D3C7]"}`}
     >
       <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition ${enabled ? "left-1" : "left-6"}`} />
     </button>
@@ -39,7 +40,7 @@ export function ActionRow({ label, lang, danger = false, border = false, onClick
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center justify-between px-4 py-4 text-sm font-black ${border ? "border-b border-[#F0ECE2]" : ""} ${danger ? "text-[#B44747]" : "text-[#112A46]"}`}
+      className={`${danger ? taqInteractive.rowDanger : taqInteractive.row} flex w-full items-center justify-between px-4 py-4 text-sm font-black ${border ? "border-b border-[#F0ECE2]" : ""} ${danger ? "text-[#B44747]" : "text-[#112A46]"}`}
     >
       <span>{label}</span>
       <Arrow className="h-4 w-4" />
@@ -50,7 +51,7 @@ export function ActionRow({ label, lang, danger = false, border = false, onClick
 export function SettingsLink({ lang, icon: Icon, title, desc = "", value = "", onClick, danger = false, border = true }) {
   const Arrow = lang === "ar" ? ChevronLeft : ChevronRight;
   return (
-    <button onClick={onClick} className={`flex w-full items-center gap-3 px-4 py-4 text-start ${border ? "border-b border-[#F0ECE2]" : ""}`}>
+    <button type="button" onClick={onClick} className={`${danger ? taqInteractive.rowDanger : taqInteractive.row} flex w-full items-center gap-3 px-4 py-4 text-start ${border ? "border-b border-[#F0ECE2]" : ""}`}>
       <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${danger ? "bg-[#FFF1EE] text-[#B44747]" : "bg-[#F7F5EF] text-[#806528]"}`}>
         <Icon className="h-5 w-5" />
       </span>
@@ -72,7 +73,7 @@ export function SettingsPageHeader({ lang, title, onBack, subtitle = "", badge =
         <button
           type="button"
           onClick={onBack}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]"
+          className={`${taqInteractive.icon} flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]`}
         >
           <BackIcon className="h-5 w-5" />
         </button>
@@ -104,7 +105,7 @@ export function SettingsAccordionSection({
   const Chevron = expanded ? ChevronUp : ChevronDown;
   return (
     <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
-      <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 px-4 py-4 text-start">
+      <button type="button" onClick={onToggle} className={`${taqInteractive.row} flex w-full items-center gap-3 px-4 py-4 text-start`}>
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F7F5EF] text-[#806528]">
           <Icon className="h-5 w-5" />
         </span>

@@ -6,6 +6,7 @@
   --admin-surface: var(--taq-cream-paper);
   --admin-surface-muted: var(--taq-cream-soft);
   --admin-hover: var(--taq-cream-soft);
+  --admin-interactive-transition: var(--taq-interactive-transition);
 
   /* Brand & actions */
   --admin-primary: var(--taq-ink);
@@ -150,6 +151,35 @@
 
 .saas-admin-root :is(button, a)[class*="bg-[var(--admin-primary)]"]:disabled {
   filter: none;
+}
+
+.saas-admin-root :is(button, a, [role="button"]):not(:disabled):not(.taq-interactive-none) {
+  cursor: pointer;
+  transition:
+    background-color var(--admin-interactive-transition),
+    color var(--admin-interactive-transition),
+    opacity var(--admin-interactive-transition),
+    filter var(--admin-interactive-transition),
+    border-color var(--admin-interactive-transition),
+    box-shadow var(--admin-interactive-transition);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .saas-admin-root :is(button, a)[class*="border-[var(--admin-border)]"]:hover:not(:disabled):not(.taq-interactive-none) {
+    background-color: var(--admin-hover);
+  }
+
+  .saas-admin-root :is(button, a)[class*="bg-[#25D366]"]:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+
+  .saas-admin-root :is(button, a)[class*="text-[var(--admin-primary)]"]:hover:not(:disabled) {
+    text-decoration: underline;
+  }
+}
+
+.saas-admin-root :is(button, a)[class*="border-[var(--admin-border)]"]:active:not(:disabled):not(.taq-interactive-none) {
+  background-color: var(--taq-interactive-active-bg);
 }
 
 @media (max-width: 1023px) {
