@@ -3,6 +3,7 @@ import {
   entryIsOutflow,
 } from "@/features/operations/operational-analytics";
 import { formatCalendarDate, formatSelectedMonth } from "@/features/reports/client/report-period-labels";
+import { formatDisplayNumber } from "@/core/i18n/display-locale";
 import {
   formatRegisterReportRowLabel,
   registerReportGranularityColumnLabel,
@@ -369,7 +370,10 @@ export function buildDataExportModel({
       rows: sheets[0].rows.map((row) => sheets[0].columns.map((column) => {
         const value = row[column.key];
         if (column.type === "number" && typeof value === "number") {
-          return value.toLocaleString(lang === "ar" ? "ar-SA" : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          return formatDisplayNumber(value, lang, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
         }
         return String(value ?? "");
       })),

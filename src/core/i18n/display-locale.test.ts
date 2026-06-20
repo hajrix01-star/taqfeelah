@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ARABIC_LATIN_DATE_LOCALE,
   ARABIC_LATIN_NUMBER_LOCALE,
+  formatDisplayDateTime,
   formatDisplayNumber,
   resolveDateTimeLocale,
   resolveNumberLocale,
@@ -17,12 +18,21 @@ describe("display-locale", () => {
 
   it("uses Latin digits in Arabic datetime locale", () => {
     expect(resolveDateTimeLocale("ar")).toBe(ARABIC_LATIN_DATE_LOCALE);
-    const formatted = new Intl.DateTimeFormat(resolveDateTimeLocale("ar"), {
+    const formatted = formatDisplayDateTime("2026-06-11T12:00:00", "ar", {
       day: "numeric",
       month: "long",
       year: "numeric",
-    }).format(new Date("2026-06-11T12:00:00"));
+    });
     expect(formatted).toMatch(/2026/);
+    expect(formatted).not.toMatch(/[٠-٩]/);
+  });
+
+  it("formats money preview values with Latin digits", () => {
+    const formatted = formatDisplayNumber(108705, "ar", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    expect(formatted).toBe("108,705.00");
     expect(formatted).not.toMatch(/[٠-٩]/);
   });
 

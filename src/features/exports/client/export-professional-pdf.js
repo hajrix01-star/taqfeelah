@@ -1,3 +1,5 @@
+import { formatDisplayNumber } from "@/core/i18n/display-locale";
+
 const escapeHtml = (value) => String(value ?? "")
   .replace(/&/g, "&amp;")
   .replace(/</g, "&lt;")
@@ -6,7 +8,7 @@ const escapeHtml = (value) => String(value ?? "")
 
 function formatCellValue(value, column, lang) {
   if (column.type === "number" && typeof value === "number") {
-    return value.toLocaleString(lang === "ar" ? "ar-SA" : "en-US", {
+    return formatDisplayNumber(value, lang, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });

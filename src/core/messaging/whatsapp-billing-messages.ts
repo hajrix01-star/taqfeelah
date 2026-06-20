@@ -1,3 +1,5 @@
+import { formatDisplayDateTime } from "@/core/i18n/display-locale";
+
 type RenewalReminderMessageInput = {
   ownerName: string;
   organizationName?: string;
@@ -77,7 +79,11 @@ export function buildRenewalReminderWhatsAppMessage(input: RenewalReminderMessag
   const periodEndDate = new Date(input.periodEndIso);
   const periodEndLabel = Number.isNaN(periodEndDate.getTime())
     ? input.periodEndIso
-    : periodEndDate.toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" });
+    : formatDisplayDateTime(periodEndDate, "ar", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
 
   if (input.daysUntilEnd <= 0) {
     return [

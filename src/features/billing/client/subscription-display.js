@@ -1,4 +1,5 @@
 import { halalasToSar } from "@/features/billing/client/plan-price-utils";
+import { formatDisplayDateTime } from "@/core/i18n/display-locale";
 
 export function formatSubscriptionStatusLabel(status, lang, { isTrialPlan = false } = {}) {
   const normalized = typeof status === "string" ? status.trim().toLowerCase() : "";
@@ -76,7 +77,7 @@ export function formatPeriodEndLabel(isoValue, lang) {
   if (!isoValue) return lang === "ar" ? "غير محدد" : "Not set";
   const date = new Date(isoValue);
   if (Number.isNaN(date.getTime())) return lang === "ar" ? "غير محدد" : "Not set";
-  return date.toLocaleDateString(lang === "ar" ? "ar-SA" : "en-GB", {
+  return formatDisplayDateTime(date, lang, {
     year: "numeric",
     month: "short",
     day: "numeric",

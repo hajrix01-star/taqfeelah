@@ -26,10 +26,7 @@ type AccountSubscriptionPanelProps = {
 };
 
 function formatPriceHalalas(halalas: number, locale: "ar" | "en", currencyLabel: string): string {
-  const amount = (halalas / 100).toLocaleString(locale === "ar" ? "ar-SA" : "en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
+  const amount = formatNumber(halalas / 100, locale);
   return `${amount} ${currencyLabel}`;
 }
 
