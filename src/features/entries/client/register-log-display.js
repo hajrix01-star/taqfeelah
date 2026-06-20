@@ -1,4 +1,4 @@
-import { sumUiAmounts } from "@/domain/cash-movement/calculations";
+import { sumUiAmounts, addUiAmounts } from "@/domain/cash-movement/calculations";
 import { resolveCloseoutOwnerEditMetaFromEntries } from "@/features/closeouts/client/closeout-owner-edit-display";
 import {
   entryRowMatchesIncomeSourceFilter,
@@ -13,6 +13,7 @@ import {
   newestEntries,
   summarizeEntries,
 } from "@/features/operations/operational-analytics";
+import { REGISTER_REPORT_GRANULARITY } from "@/features/reports/client/register-report-granularity";
 
 export const DEFAULT_REGISTER_LOG_FILTERS = {
   status: "all",
@@ -105,7 +106,7 @@ export function formatNetMarginOfSalesRatio(sales, net) {
 }
 
 /** Daily in/out/net rows for register general report (unfiltered period entries). */
-export function buildRegisterDayReportRows(entries) {
+function buildRegisterDailyReportRows(entries) {
   const activeEntries = (Array.isArray(entries) ? entries : []).filter(entryIsActive);
   const dates = [...new Set(activeEntries.map((entry) => entry.date).filter(Boolean))].sort().reverse();
   return dates
@@ -120,6 +121,95 @@ export function buildRegisterDayReportRows(entries) {
       };
     })
     .filter((row) => row.sales > 0 || row.expense > 0);
+}
+
+export function applyRegisterReportGranularity(
+  rows,
+  granularity = REGISTER_REPORT_GRANULARITY.DAY,
+) {
+  if (granularity !== REGISTER_REPORT_GRANULARITY.MONTH) {
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  const monthMap = new Map();
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const monthKey = String(row.date || row.id || "").slice(0, 7);
+    if (!monthKey) return;
+    const current = monthMap.get(monthKey) || {
+      id: monthKey,
+      date: monthKey,
+      sales: 0,
+      expense: 0,
+      net: 0,
+    };
+    monthMap.set(monthKey, {
+      id: monthKey,
+      date: monthKey,
+      sales: addUiAmounts(current.sales, Number(row.sales) || 0),
+      expense: addUiAmounts(current.expense, Number(row.expense) || 0),
+      net: addUiAmounts(current.net, Number(row.net) || 0),
+    });
+  });
+
+  return [...monthMap.values()]
+    .filter((row) => row.sales > 0 || row.expense > 0)
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+export function buildRegisterReportRows(
+  entries,
+  { granularity = REGISTER_REPORT_GRANULARITY.DAY } = {},
+) {
+  const dailyRows = buildRegisterDailyReportRows(entries);
+  return applyRegisterReportGranularity(dailyRows, granularity);
+}
+
+export function buildRegisterDayReportRows(entries) {
+  return buildRegisterReportRows(entries, { granularity: REGISTER_REPORT_GRANULARITY.DAY });
+}
+
+/**
+ * Builds register general-report rows for export from scoped entries.
+ * Supports optional store column for combined exports.
+ */
+export function buildRegisterReportExportRows({
+  entries = [],
+  granularity = REGISTER_REPORT_GRANULARITY.DAY,
+  withStore = false,
+  formatStore = () => "",
+} = {}) {
+  const activeEntries = (Array.isArray(entries) ? entries : []).filter(entryIsActive);
+  if (!withStore) {
+    return buildRegisterReportRows(activeEntries, { granularity });
+  }
+
+  const keys = new Set();
+  activeEntries.forEach((entry) => {
+    const periodKey = granularity === REGISTER_REPORT_GRANULARITY.MONTH
+      ? entry.date.slice(0, 7)
+      : entry.date;
+    keys.add(`${entry.businessId}|${periodKey}`);
+  });
+
+  return [...keys]
+    .map((key) => {
+      const [businessId, periodKey] = key.split("|");
+      const scoped = activeEntries.filter((entry) => {
+        if (entry.businessId !== businessId) return false;
+        return granularity === REGISTER_REPORT_GRANULARITY.MONTH
+          ? entry.date.startsWith(periodKey)
+          : entry.date === periodKey;
+      });
+      const totals = summarizeEntries(scoped);
+      return {
+        store: formatStore(businessId),
+        date: periodKey,
+        sales: totals.sales,
+        expense: totals.expense,
+        net: totals.net,
+      };
+    })
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
 export function summarizeRegisterPeriod(

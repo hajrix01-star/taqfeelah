@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_REGISTER_LOG_FILTERS,
+  applyRegisterReportGranularity,
   buildRegisterCloseoutSummaries,
   buildRegisterDayReportRows,
+  buildRegisterReportRows,
   buildRegisterSalesChannelOptions,
   filterRegisterLogEntries,
   formatNetMarginOfSalesRatio,
@@ -10,6 +12,7 @@ import {
   resolveRegisterCloseoutActorLabel,
   summarizeRegisterPeriod,
 } from "./register-log-display";
+import { REGISTER_REPORT_GRANULARITY } from "@/features/reports/client/register-report-granularity";
 
 describe("register-log-display", () => {
   it("counts active register log filters", () => {
@@ -107,6 +110,35 @@ describe("register-log-display", () => {
     expect(rows[1].sales).toBe(100);
     expect(rows[1].expense).toBe(20);
     expect(rows[1].net).toBe(80);
+  });
+
+  it("aggregates register report rows by month", () => {
+    const rows = buildRegisterReportRows([
+      { id: "1", type: "summary", status: "active", date: "2026-06-10", amount: 100, salesChannels: [] },
+      { id: "2", type: "expense", status: "active", date: "2026-06-10", amount: 20 },
+      { id: "3", type: "summary", status: "active", date: "2026-06-12", amount: 50, salesChannels: [] },
+      { id: "4", type: "summary", status: "active", date: "2026-05-03", amount: 30, salesChannels: [] },
+    ], { granularity: REGISTER_REPORT_GRANULARITY.MONTH });
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0].date).toBe("2026-06");
+    expect(rows[0].sales).toBe(150);
+    expect(rows[0].expense).toBe(20);
+    expect(rows[0].net).toBe(130);
+    expect(rows[1].date).toBe("2026-05");
+    expect(rows[1].sales).toBe(30);
+  });
+
+  it("aggregates daily api rows into monthly rows", () => {
+    const monthlyRows = applyRegisterReportGranularity([
+      { id: "2026-06-10", date: "2026-06-10", sales: 100, expense: 20, net: 80 },
+      { id: "2026-06-12", date: "2026-06-12", sales: 50, expense: 0, net: 50 },
+      { id: "2026-05-03", date: "2026-05-03", sales: 30, expense: 0, net: 30 },
+    ], REGISTER_REPORT_GRANULARITY.MONTH);
+
+    expect(monthlyRows).toHaveLength(2);
+    expect(monthlyRows[0].date).toBe("2026-06");
+    expect(monthlyRows[0].sales).toBe(150);
   });
 
   it("formats net margin of sales ratio", () => {

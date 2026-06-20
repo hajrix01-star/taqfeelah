@@ -3,6 +3,7 @@
 import React from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { isRegisterIndexTabsEnabled } from "@/core/config/register-dashboard-tabs-mode";
+import { REGISTER_REPORT_GRANULARITY } from "@/features/reports/client/register-report-granularity";
 import { buildIndexTabBorderClass } from "./index-tab-button-styles";
 import { money, text } from "./prototype-runtime-demo-data";
 import { MoneyValue } from "./prototype-runtime-notebook";
@@ -332,5 +333,30 @@ export function RegisterDashboardCard({
         {summaryBody}
       </div>
     </article>
+  );
+}
+
+export function OwnerRegisterReportGranularityToggle({ lang, value, onChange }) {
+  return (
+    <div
+      className="mb-3 flex items-center justify-end gap-1.5"
+      role="group"
+      aria-label={lang === "ar" ? "تجميع التقرير" : "Report grouping"}
+    >
+      <LogFilterChip
+        active={value === REGISTER_REPORT_GRANULARITY.MONTH}
+        onClick={() => onChange(REGISTER_REPORT_GRANULARITY.MONTH)}
+        tone="accent"
+      >
+        {text(lang, "reportGranularityMonthly")}
+      </LogFilterChip>
+      <LogFilterChip
+        active={value === REGISTER_REPORT_GRANULARITY.DAY}
+        onClick={() => onChange(REGISTER_REPORT_GRANULARITY.DAY)}
+        tone="navy"
+      >
+        {text(lang, "reportGranularityDaily")}
+      </LogFilterChip>
+    </div>
   );
 }
