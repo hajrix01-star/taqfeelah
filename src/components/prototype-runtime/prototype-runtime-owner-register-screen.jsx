@@ -428,7 +428,6 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
       visibleEntries,
       closeoutSummaries,
       generalReportRows,
-      generalReportGranularity: resolvedGeneralReportGranularity,
       periodEntries,
       attachmentGalleryItems: attachmentGallery.items,
     },

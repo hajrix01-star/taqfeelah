@@ -7,7 +7,7 @@ import {
   formatRegisterReportRowLabel,
   registerReportGranularityColumnLabel,
   registerReportGranularitySheetName,
-  resolveRegisterReportGranularity,
+  resolveRegisterReportGranularityFromSnapshot,
 } from "@/features/reports/client/register-report-granularity";
 import { buildRegisterReportExportRows } from "@/features/entries/client/register-log-display";
 import {
@@ -220,7 +220,7 @@ function buildRegisterCloseoutsSheet(snapshot, lang, businessesList) {
   };
 }
 
-function buildRegisterReportRows(snapshot, lang, businessesList, operationalEntries) {
+function buildRegisterReportExportSnapshotRows(snapshot, lang, businessesList, operationalEntries) {
   const sharePeriod = snapshot.period || "month";
   const shareDate = snapshot.selectedDate || todayIsoDate();
   const shareYear = snapshot.selectedYear || String(new Date().getFullYear());
@@ -233,10 +233,7 @@ function buildRegisterReportRows(snapshot, lang, businessesList, operationalEntr
       && entryDateMatches(entry, sharePeriod, shareDate, snapshot.selectedMonth, shareYear, shareFrom, shareTo),
   );
   const withStore = includeStoreColumn(snapshot);
-  const granularity = resolveRegisterReportGranularity(
-    sharePeriod,
-    snapshot.generalReportGranularity || snapshot.exportData?.generalReportGranularity,
-  );
+  const granularity = resolveRegisterReportGranularityFromSnapshot(snapshot);
 
   return buildRegisterReportExportRows({
     entries: scoped,
@@ -276,12 +273,9 @@ function buildRegisterExportSheets(snapshot, lang, businessesList, operationalEn
   if (view === "attachments") sheets.push(buildRegisterAttachmentsSheet(snapshot, lang, businessesList));
   if (view === "report") {
     const withStore = includeStoreColumn(snapshot);
-    const granularity = resolveRegisterReportGranularity(
-      snapshot.period,
-      snapshot.generalReportGranularity || snapshot.exportData?.generalReportGranularity,
-    );
+    const granularity = resolveRegisterReportGranularityFromSnapshot(snapshot);
     const rows = withStore || !snapshot.exportData?.generalReportRows?.length
-      ? buildRegisterReportRows(snapshot, lang, businessesList, operationalEntries).map((row) => ({
+      ? buildRegisterReportExportSnapshotRows(snapshot, lang, businessesList, operationalEntries).map((row) => ({
         ...(withStore ? { store: row.store } : {}),
         date: formatRegisterReportRowLabel(row.date, granularity, lang),
         sales: Number(row.sales) || 0,

@@ -102,7 +102,6 @@ describe("buildDataExportModel", () => {
             { date: "2026-06", sales: 150, expense: 20, net: 130 },
             { date: "2026-05", sales: 30, expense: 0, net: 30 },
           ],
-          generalReportGranularity: "month",
         },
       },
     });

@@ -1,3 +1,4 @@
+import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 import { formatCalendarDate, formatSelectedMonth } from "./report-period-labels";
 
 export const REGISTER_REPORT_GRANULARITY = {
@@ -24,6 +25,13 @@ export function resolveRegisterReportGranularity(period, granularity) {
     : REGISTER_REPORT_GRANULARITY.MONTH;
 }
 
+export function resolveRegisterReportGranularityFromSnapshot(snapshot) {
+  return resolveRegisterReportGranularity(
+    snapshot?.period,
+    snapshot?.generalReportGranularity,
+  );
+}
+
 export function formatRegisterReportRowLabel(value, granularity, lang) {
   if (granularity === REGISTER_REPORT_GRANULARITY.MONTH) {
     return formatSelectedMonth(value, lang);
@@ -34,21 +42,21 @@ export function formatRegisterReportRowLabel(value, granularity, lang) {
 export function registerReportGranularityCountLabel(count, granularity, lang) {
   const safeCount = Number(count) || 0;
   if (granularity === REGISTER_REPORT_GRANULARITY.MONTH) {
-    return lang === "ar" ? `${safeCount} شهر` : `${safeCount} months`;
+    return `${safeCount} ${text(lang, "reportGranularityMonthsUnit")}`;
   }
-  return lang === "ar" ? `${safeCount} يوم` : `${safeCount} days`;
+  return `${safeCount} ${text(lang, "reportGranularityDaysUnit")}`;
 }
 
 export function registerReportGranularitySheetName(granularity, lang) {
   if (granularity === REGISTER_REPORT_GRANULARITY.MONTH) {
-    return lang === "ar" ? "تقرير شهري" : "Monthly report";
+    return text(lang, "reportSheetMonthly");
   }
-  return lang === "ar" ? "تقرير الأيام" : "Daily report";
+  return text(lang, "reportSheetDaily");
 }
 
 export function registerReportGranularityColumnLabel(granularity, lang) {
   if (granularity === REGISTER_REPORT_GRANULARITY.MONTH) {
-    return lang === "ar" ? "الشهر" : "Month";
+    return text(lang, "month");
   }
-  return lang === "ar" ? "اليوم" : "Day";
+  return text(lang, "day");
 }

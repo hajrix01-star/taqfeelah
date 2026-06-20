@@ -5,6 +5,7 @@ import {
   registerReportGranularityCountLabel,
   registerReportGranularitySheetName,
   resolveRegisterReportGranularity,
+  resolveRegisterReportGranularityFromSnapshot,
   supportsRegisterReportGranularity,
   REGISTER_REPORT_GRANULARITY,
 } from "./register-report-granularity";
@@ -26,6 +27,17 @@ describe("register-report-granularity", () => {
       .toBe(REGISTER_REPORT_GRANULARITY.DAY);
     expect(resolveRegisterReportGranularity("year", REGISTER_REPORT_GRANULARITY.MONTH))
       .toBe(REGISTER_REPORT_GRANULARITY.MONTH);
+  });
+
+  it("resolves granularity from snapshot root only", () => {
+    expect(resolveRegisterReportGranularityFromSnapshot({
+      period: "year",
+      generalReportGranularity: "day",
+    })).toBe(REGISTER_REPORT_GRANULARITY.DAY);
+    expect(resolveRegisterReportGranularityFromSnapshot({
+      period: "month",
+      generalReportGranularity: "month",
+    })).toBe(REGISTER_REPORT_GRANULARITY.DAY);
   });
 
   it("formats row labels and export labels by granularity", () => {
