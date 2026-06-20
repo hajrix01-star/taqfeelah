@@ -35,6 +35,13 @@ export function isCloseoutWorkflowFailure(result) {
   );
 }
 
+/** Client-only draft closeouts never exist on the server until submit succeeds. */
+export function isLocalDraftCloseout(closeout) {
+  if (!closeout || typeof closeout !== "object") return false;
+  if (closeout.status === CLOSEOUT_STATUS.DRAFT && !closeout.submittedAt) return true;
+  return typeof closeout.id === "string" && closeout.id.startsWith("dc-");
+}
+
 export function readCloseoutEvents() {
   if (typeof window === "undefined") return [];
   const parsed = readLocalStorageJson(CLOSEOUT_EVENTS_STORAGE_KEY, []);

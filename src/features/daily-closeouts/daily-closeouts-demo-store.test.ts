@@ -4,6 +4,7 @@ import {
   findCloseoutForStoreDate,
   findCloseoutsForStoreDate,
   isCloseoutWorkflowFailure,
+  isLocalDraftCloseout,
   withCloseoutTotals,
 } from "./daily-closeouts-demo-store";
 
@@ -91,5 +92,21 @@ describe("isCloseoutWorkflowFailure", () => {
     expect(isCloseoutWorkflowFailure({ ok: false, phase: "send" })).toBe(true);
     expect(isCloseoutWorkflowFailure({ id: "c-1", status: CLOSEOUT_STATUS.DRAFT })).toBe(false);
     expect(isCloseoutWorkflowFailure(null)).toBe(false);
+  });
+});
+
+describe("isLocalDraftCloseout", () => {
+  it("detects client-only draft ids and unsubmitted drafts", () => {
+    expect(isLocalDraftCloseout({ id: "dc-1781996576905", status: CLOSEOUT_STATUS.DRAFT })).toBe(true);
+    expect(isLocalDraftCloseout({
+      id: "server-closeout-1",
+      status: CLOSEOUT_STATUS.DRAFT,
+      submittedAt: null,
+    })).toBe(true);
+    expect(isLocalDraftCloseout({
+      id: "server-closeout-1",
+      status: CLOSEOUT_STATUS.REVIEWED,
+      submittedAt: "2026-06-06T08:00:00Z",
+    })).toBe(false);
   });
 });

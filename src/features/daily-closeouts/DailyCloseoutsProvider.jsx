@@ -6,6 +6,7 @@ import {
   createDraftCloseout,
   findCloseoutForStoreDate,
   findCloseoutsForStoreDate,
+  isLocalDraftCloseout,
   readCloseoutEvents,
   readDailyCloseouts,
   sortCloseoutsNewestFirst,
@@ -79,7 +80,8 @@ export function DailyCloseoutsProvider({
 
   const deleteCloseout = useCallback(async (closeoutId, closeoutMeta = null) => {
     const target = closeoutMeta || closeouts.find((item) => item.id === closeoutId) || null;
-    if (typeof onDeleteCloseoutToApi === "function" && useApiWrites && target) {
+    const skipApiDelete = isLocalDraftCloseout(target);
+    if (!skipApiDelete && typeof onDeleteCloseoutToApi === "function" && useApiWrites && target) {
       await onDeleteCloseoutToApi({ closeout: target });
     }
     persistCloseouts((current) => current.filter((item) => item.id !== closeoutId));

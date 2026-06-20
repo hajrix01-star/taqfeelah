@@ -35,6 +35,13 @@ function resolveCloseoutSubmitChannelName(row, storeChannels, legacyChannelId) {
   return row?.name || row?.channelName || row?.channelLabel || legacyChannelId || "";
 }
 
+function normalizeSubmitChannelName(rawName, legacyChannelId = "") {
+  const trimmed = typeof rawName === "string" ? rawName.trim() : "";
+  if (trimmed) return trimmed.slice(0, 120);
+  const legacy = typeof legacyChannelId === "string" ? legacyChannelId.trim() : "";
+  return legacy || "Channel";
+}
+
 /** @param {{ storeChannels?: Array<Record<string, unknown>> }} [options] */
 export function extractCloseoutSalesChannels(closeout, { storeChannels = [] } = {}) {
   return listCloseoutSalesRows(closeout)
@@ -42,7 +49,10 @@ export function extractCloseoutSalesChannels(closeout, { storeChannels = [] } = 
       const legacyChannelId = row?.channelId || row?.id || "";
       return {
         salesChannelId: resolveCloseoutSalesChannelId(legacyChannelId, storeChannels),
-        channelName: resolveCloseoutSubmitChannelName(row, storeChannels, legacyChannelId),
+        channelName: normalizeSubmitChannelName(
+          resolveCloseoutSubmitChannelName(row, storeChannels, legacyChannelId),
+          legacyChannelId,
+        ),
         amountHalalas: toMoneyHalalas(row?.amount),
         legacyChannelId,
       };
