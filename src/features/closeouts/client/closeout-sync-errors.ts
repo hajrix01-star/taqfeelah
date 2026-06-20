@@ -1,9 +1,12 @@
+type CloseoutSyncLang = "ar" | "en";
+
 /**
  * Map server/API closeout sync errors to user-facing copy.
- * @param {unknown} error
- * @param {"ar" | "en"} [lang]
  */
-export function mapCloseoutSyncErrorToUserMessage(error, lang = "ar") {
+export function mapCloseoutSyncErrorToUserMessage(
+  error: unknown,
+  lang: CloseoutSyncLang = "ar",
+): string {
   const message = error instanceof Error ? error.message.trim() : "";
   if (!message) {
     return lang === "ar"

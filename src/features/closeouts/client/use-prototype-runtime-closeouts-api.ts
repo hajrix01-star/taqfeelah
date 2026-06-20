@@ -17,6 +17,19 @@ import { normalizeCloseoutSubmitMode } from "@/features/closeouts/closeout-submi
 import { resolveOwnerCloseoutsFetchWindow } from "@/features/closeouts/client/owner-closeouts-fetch-window";
 import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
 
+type CloseoutRecord = {
+  id?: string;
+  storeId?: string;
+  date?: string;
+  [key: string]: unknown;
+};
+
+type EmployeeContext = {
+  apiUserId?: string;
+  id?: string;
+  submitActorRole?: string;
+};
+
 export function usePrototypeRuntimeCloseoutsApi({
   lang,
   closeoutsApiEnabled,
@@ -33,16 +46,40 @@ export function usePrototypeRuntimeCloseoutsApi({
   ownerCloseoutBusiness,
   ownerCloseoutChannelConfig,
   notifyOperationalSyncWrite = null,
+}: {
+  lang: "ar" | "en";
+  closeoutsApiEnabled: boolean;
+  closeoutsApiStrictMode?: boolean;
+  closeoutsApiOrganizationId?: string;
+  apiActorUserId?: string;
+  apiActorRole?: string;
+  apiTargetStoreIdsKey?: string;
+  employee?: boolean | EmployeeContext;
+  storeOperationalSettings?: Record<string, unknown>;
+  entriesApiEnabled?: boolean;
+  loadOperationalEntriesFromApi?: () => Promise<unknown> | unknown;
+  currentEmployeeChannelConfig?: { channels?: Array<Record<string, unknown>> };
+  ownerCloseoutBusiness?: { id?: string };
+  ownerCloseoutChannelConfig?: { channels?: Array<Record<string, unknown>> };
+  notifyOperationalSyncWrite?: ((event: string) => void) | null;
 }) {
-  const syncSubmitCloseoutToApi = useCallback(async ({ action, closeout, employee }) => {
+  const syncSubmitCloseoutToApi = useCallback(async ({
+    action,
+    closeout,
+    employee: submitEmployee,
+  }: {
+    action: string;
+    closeout: CloseoutRecord;
+    employee?: EmployeeContext;
+  }) => {
     if (!closeoutsApiEnabled) {
       throw new Error(lang === "ar"
         ? "مسار API للتقفيلات غير مفعّل."
         : "Closeouts API is disabled.");
     }
-    const actorUserId = employee?.apiUserId || employee?.id;
+    const actorUserId = submitEmployee?.apiUserId || submitEmployee?.id;
     const storeChannels = currentEmployeeChannelConfig?.channels || [];
-    const isOwnerSubmit = employee?.submitActorRole === "owner";
+    const isOwnerSubmit = submitEmployee?.submitActorRole === "owner";
     const ownerStoreChannels = isOwnerSubmit && ownerCloseoutBusiness?.id === closeout?.storeId
       ? (ownerCloseoutChannelConfig?.channels || [])
       : storeChannels;
@@ -143,10 +180,11 @@ export function usePrototypeRuntimeCloseoutsApi({
     );
 
     const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
-    const seen = new Set();
+    const seen = new Set<string>();
     return merged.filter((item) => {
-      const itemId = typeof item?.id === "string" ? item.id : "";
-      const itemDate = typeof item?.date === "string" ? item.date : "";
+      const record = item as CloseoutRecord;
+      const itemId = typeof record?.id === "string" ? record.id : "";
+      const itemDate = typeof record?.date === "string" ? record.date : "";
       if (!itemId || !itemDate) return false;
       const key = `${itemId}:${itemDate}`;
       if (seen.has(key)) return false;
@@ -165,7 +203,7 @@ export function usePrototypeRuntimeCloseoutsApi({
     storeOperationalSettings,
   ]);
 
-  const syncDeleteCloseoutToApi = useCallback(async ({ closeout }) => {
+  const syncDeleteCloseoutToApi = useCallback(async ({ closeout }: { closeout: CloseoutRecord }) => {
     if (!closeoutsApiEnabled) {
       throw new Error(lang === "ar"
         ? "مسار API للتقفيلات غير مفعّل."

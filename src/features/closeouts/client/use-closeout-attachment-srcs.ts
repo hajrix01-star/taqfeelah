@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchStoreAttachmentViaApi } from "./closeout-attachments-api-client";
-import { isCloseoutAttachmentRef, normalizeCloseoutAttachmentList } from "./closeout-attachment-utils";
+import {
+  isCloseoutAttachmentRef,
+  normalizeCloseoutAttachmentList,
+  type CloseoutAttachmentListItem,
+} from "./closeout-attachment-utils";
 
 export function useCloseoutAttachmentSrcs({
   enabled = false,
@@ -12,18 +16,26 @@ export function useCloseoutAttachmentSrcs({
   actorUserId = "",
   actorRole = "employee",
   attachmentsApiEnabled = false,
+}: {
+  enabled?: boolean;
+  attachments?: unknown;
+  storeId?: string;
+  organizationId?: string;
+  actorUserId?: string;
+  actorRole?: string;
+  attachmentsApiEnabled?: boolean;
 }) {
   const normalized = useMemo(
     () => normalizeCloseoutAttachmentList(attachments),
     [attachments],
   );
-  const [srcByKey, setSrcByKey] = useState({});
+  const [srcByKey, setSrcByKey] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const loadedIdsRef = useRef(new Set());
-  const inFlightRef = useRef(new Set());
+  const loadedIdsRef = useRef(new Set<string>());
+  const inFlightRef = useRef(new Set<string>());
 
-  const resolveSrc = useCallback((item) => {
+  const resolveSrc = useCallback((item: CloseoutAttachmentListItem) => {
     if (typeof item === "string") return item;
     if (!isCloseoutAttachmentRef(item)) return "";
     return srcByKey[item.id] || "";
@@ -35,7 +47,7 @@ export function useCloseoutAttachmentSrcs({
     }
 
     const pending = normalized.filter(
-      (item) => isCloseoutAttachmentRef(item)
+      (item): item is CloseoutAttachmentListItem & { id: string } => isCloseoutAttachmentRef(item)
         && !loadedIdsRef.current.has(item.id)
         && !inFlightRef.current.has(item.id),
     );

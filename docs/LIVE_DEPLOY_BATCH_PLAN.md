@@ -54,14 +54,16 @@
 | `prelaunch-live-gate.mjs` — env strict + db-source + manual pointer | ✅ |
 | object storage | ⏸ قرار مالك (بعد الإطلاق) |
 
-### الدفعة 4 — ⏸ **لم تُنفَّذ** (ما بعد الإطلاق — لا تمنع لايف)
+### الدفعة 4 — 🟡 **PR مفتوح** (ما بعد الإطلاق — لا تمنع لايف)
 
 | البند | الحالة |
 |-------|--------|
-| ترحيل JS→TS (~272 ملف legacy) | ⏸ لم يبدأ |
-| CSP nonce | ⏸ لم يبدأ |
+| ترحيل JS→TS — موجة 1 (`src/features/closeouts/**`, 15 ملف) | ✅ |
+| CSP nonce (`strict-dynamic`, dev-only `unsafe-eval`) | ✅ |
+| ~258 ملف JS legacy متبقي | ⏸ موجات لاحقة |
 
-> **لا تستحق تأجيل الإطلاق:** التطبيق يعمل؛ هذه تحسينات صيانة/أمان تدريجية بعد stabilize.
+> **PR:** `cursor/batch-4-csp-ts-migration-3ebd` — CI للاختبار؛ **لا merge** إلا بطلب «جاهز للايف».  
+> التفاصيل: `docs/BATCH_4_JS_TS_MIGRATION.md`
 
 ---
 

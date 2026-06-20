@@ -8,7 +8,13 @@ export async function fetchStoreAttachmentViaApi({
   actorRole,
   storeId,
   attachmentId,
-}) {
+}: {
+  organizationId?: string;
+  actorUserId?: string;
+  actorRole?: string;
+  storeId?: string;
+  attachmentId?: string;
+}): Promise<{ dataUrl: string }> {
   const context = resolvePrototypeApiContext({
     organizationId,
     actorUserId,
@@ -29,9 +35,9 @@ export async function fetchStoreAttachmentViaApi({
     },
   );
 
-  if (!payload || typeof payload !== "object" || typeof payload.dataUrl !== "string") {
+  if (!payload || typeof payload !== "object" || typeof (payload as { dataUrl?: unknown }).dataUrl !== "string") {
     throw new Error("attachment fetch API returned invalid payload.");
   }
 
-  return payload;
+  return payload as { dataUrl: string };
 }

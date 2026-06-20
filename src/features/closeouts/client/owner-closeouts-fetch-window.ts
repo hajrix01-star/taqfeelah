@@ -2,7 +2,7 @@ import { todayIsoDate } from "@/components/prototype-runtime/prototype-runtime-n
 
 export const OWNER_CLOSEOUTS_FETCH_CAP_DAYS = 90;
 
-function isoDaysBefore(referenceDate, days) {
+function isoDaysBefore(referenceDate: string, days: number): string {
   const [year, month, day] = referenceDate.split("-").map(Number);
   const date = new Date(year, month - 1, day);
   date.setDate(date.getDate() - days);
@@ -12,7 +12,10 @@ function isoDaysBefore(referenceDate, days) {
   return `${nextYear}-${nextMonth}-${nextDay}`;
 }
 
-export function resolveOwnerCloseoutsFetchWindow(referenceDate = todayIsoDate()) {
+export function resolveOwnerCloseoutsFetchWindow(referenceDate: string = todayIsoDate()): {
+  dateFrom: string;
+  dateTo: string;
+} {
   return {
     dateFrom: isoDaysBefore(referenceDate, OWNER_CLOSEOUTS_FETCH_CAP_DAYS),
     dateTo: referenceDate,

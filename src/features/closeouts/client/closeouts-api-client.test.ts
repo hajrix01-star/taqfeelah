@@ -41,7 +41,7 @@ describe("closeouts api client", () => {
       sizeBytes: 120,
       dataUrl: proof,
     };
-    const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
+    const { submitCloseoutViaApi } = await import("./closeouts-api-client");
 
     await submitCloseoutViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -68,7 +68,7 @@ describe("closeouts api client", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const proof = "data:image/jpeg;base64,/9j/4AAQ";
-    const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
+    const { submitCloseoutViaApi } = await import("./closeouts-api-client");
 
     await submitCloseoutViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -101,7 +101,7 @@ describe("closeouts api client", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const proof = "data:image/jpeg;base64,/9j/4AAQ";
-    const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
+    const { submitCloseoutViaApi } = await import("./closeouts-api-client");
 
     await submitCloseoutViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -132,7 +132,7 @@ describe("closeouts api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
+    const { submitCloseoutViaApi } = await import("./closeouts-api-client");
 
     await submitCloseoutViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -165,7 +165,7 @@ describe("closeouts api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
+    const { submitCloseoutViaApi } = await import("./closeouts-api-client");
 
     const result = await submitCloseoutViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -191,7 +191,7 @@ describe("closeouts api client", () => {
     const {
       hasCloseoutApiActorMapping,
       hasCloseoutApiStoreMapping,
-    } = await import("./closeouts-api-client.js");
+    } = await import("./closeouts-api-client");
     expect(hasCloseoutApiActorMapping("ahmed")).toBe(true);
     expect(hasCloseoutApiStoreMapping("shami")).toBe(true);
     expect(hasCloseoutApiActorMapping("unknown")).toBe(false);
@@ -205,7 +205,7 @@ describe("closeouts api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
+    const { submitCloseoutViaApi } = await import("./closeouts-api-client");
 
     await submitCloseoutViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -245,7 +245,7 @@ describe("closeouts api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
+    const { submitCloseoutViaApi } = await import("./closeouts-api-client");
 
     await submitCloseoutViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -274,7 +274,7 @@ describe("closeouts api client", () => {
       ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
     });
 
-    const { diagnoseCloseoutSubmitFailure, setRuntimeApiIdMaps } = await import("./closeouts-api-client.js");
+    const { diagnoseCloseoutSubmitFailure, setRuntimeApiIdMaps } = await import("./closeouts-api-client");
     setRuntimeApiIdMaps({
       storeIdMap: { shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c" },
       userIdMap: { ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79" },
@@ -310,7 +310,7 @@ describe("closeouts api client", () => {
     });
     process.env.NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP = "{}";
 
-    const { diagnoseCloseoutSubmitFailure, setRuntimeApiIdMaps } = await import("./closeouts-api-client.js");
+    const { diagnoseCloseoutSubmitFailure, setRuntimeApiIdMaps } = await import("./closeouts-api-client");
     setRuntimeApiIdMaps({
       storeIdMap: { shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c" },
       userIdMap: { ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79" },
@@ -332,7 +332,7 @@ describe("closeouts api client", () => {
 
   it("diagnoses invalid closeout dates before submit", async () => {
     setMapsEnv();
-    const { diagnoseCloseoutSubmitFailure } = await import("./closeouts-api-client.js");
+    const { diagnoseCloseoutSubmitFailure } = await import("./closeouts-api-client");
 
     const failure = diagnoseCloseoutSubmitFailure({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -354,7 +354,7 @@ describe("closeouts api client", () => {
     const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>();
     vi.stubGlobal("fetch", fetchMock);
 
-    const { submitCloseoutViaApi } = await import("./closeouts-api-client.js");
+    const { submitCloseoutViaApi } = await import("./closeouts-api-client");
     const result = await submitCloseoutViaApi({
       organizationId: "not-a-uuid",
       actorUserId: "unknown",
@@ -377,7 +377,7 @@ describe("closeouts api client", () => {
     const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>();
     vi.stubGlobal("fetch", fetchMock);
 
-    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client.js");
+    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client");
     await expect(fetchStoreCloseoutsViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       actorUserId: "unknown",
@@ -410,7 +410,7 @@ describe("closeouts api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client.js");
+    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client");
     const result = await fetchStoreCloseoutsViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       actorUserId: "owner",
@@ -465,7 +465,7 @@ describe("closeouts api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client.js");
+    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client");
     const result = await fetchStoreCloseoutsViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       actorUserId: "owner",
@@ -487,7 +487,7 @@ describe("closeouts api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client.js");
+    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client");
     const result = await fetchStoreCloseoutsViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       actorUserId: "owner",
@@ -506,7 +506,7 @@ describe("closeouts api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client.js");
+    const { fetchStoreCloseoutsViaApi } = await import("./closeouts-api-client");
 
     await expect(fetchStoreCloseoutsViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",

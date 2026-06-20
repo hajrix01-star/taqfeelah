@@ -1,7 +1,19 @@
-/**
- * @param {object | null | undefined} source
- */
-export function resolveCloseoutOwnerEditMeta(source) {
+export type CloseoutOwnerEditMeta = {
+  ownerEditedAt: string;
+  ownerEditedByUserId: string | null;
+  ownerEditedByName: string;
+};
+
+type CloseoutOwnerEditSource = {
+  ownerEditedAt?: unknown;
+  ownerEditedByUserId?: unknown;
+  ownerEditedByName?: unknown;
+  closeoutOwnerEditedAt?: unknown;
+  closeoutOwnerEditedByUserId?: unknown;
+  closeoutOwnerEditedByName?: unknown;
+};
+
+export function resolveCloseoutOwnerEditMeta(source: CloseoutOwnerEditSource | null | undefined): CloseoutOwnerEditMeta | null {
   if (!source || typeof source !== "object") return null;
   const ownerEditedAt = typeof source.ownerEditedAt === "string" ? source.ownerEditedAt : null;
   if (!ownerEditedAt) return null;
@@ -12,11 +24,8 @@ export function resolveCloseoutOwnerEditMeta(source) {
   };
 }
 
-/**
- * @param {Array<object>} entries
- */
-export function resolveCloseoutOwnerEditMetaFromEntries(entries = []) {
-  let latest = null;
+export function resolveCloseoutOwnerEditMetaFromEntries(entries: CloseoutOwnerEditSource[] = []): CloseoutOwnerEditMeta | null {
+  let latest: CloseoutOwnerEditMeta | null = null;
   for (const entry of entries) {
     const candidates = [
       resolveCloseoutOwnerEditMeta(entry),
@@ -25,7 +34,7 @@ export function resolveCloseoutOwnerEditMetaFromEntries(entries = []) {
         ownerEditedByUserId: entry.closeoutOwnerEditedByUserId,
         ownerEditedByName: entry.closeoutOwnerEditedByName,
       }),
-    ].filter(Boolean);
+    ].filter(Boolean) as CloseoutOwnerEditMeta[];
     for (const meta of candidates) {
       if (!latest || String(meta.ownerEditedAt) > String(latest.ownerEditedAt)) {
         latest = meta;
@@ -35,14 +44,11 @@ export function resolveCloseoutOwnerEditMetaFromEntries(entries = []) {
   return latest;
 }
 
-/**
- * Prefer the freshest owner-edit metadata between a frozen entry and closeouts list.
- *
- * @param {object | null | undefined} selected
- * @param {Array<object>} closeouts
- * @param {(entry: object, closeouts: Array<object>) => object | null | undefined} resolveCloseoutForEntry
- */
-export function resolveSelectedCloseoutOwnerEditSource(selected, closeouts, resolveCloseoutForEntry) {
+export function resolveSelectedCloseoutOwnerEditSource<T extends CloseoutOwnerEditSource>(
+  selected: T | null | undefined,
+  closeouts: CloseoutOwnerEditSource[],
+  resolveCloseoutForEntry: (entry: T, closeouts: CloseoutOwnerEditSource[]) => CloseoutOwnerEditSource | null | undefined,
+): CloseoutOwnerEditMeta | null {
   if (!selected) return null;
   const entryMeta = resolveCloseoutOwnerEditMeta({
     ownerEditedAt: selected.closeoutOwnerEditedAt,
@@ -57,11 +63,10 @@ export function resolveSelectedCloseoutOwnerEditSource(selected, closeouts, reso
     : entryMeta;
 }
 
-/**
- * @param {object | null | undefined} source
- * @param {"ar" | "en"} [lang="ar"]
- */
-export function closeoutOwnerEditLabel(source, lang = "ar") {
+export function closeoutOwnerEditLabel(
+  source: CloseoutOwnerEditSource | null | undefined,
+  lang: "ar" | "en" = "ar",
+): string {
   const meta = resolveCloseoutOwnerEditMeta(source);
   if (!meta) return "";
   if (lang === "ar") {

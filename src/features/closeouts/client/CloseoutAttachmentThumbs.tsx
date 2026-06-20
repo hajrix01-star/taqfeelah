@@ -16,6 +16,17 @@ export default function CloseoutAttachmentThumbs({
   organizationId = "",
   actorUserId = "",
   actorRole = "employee",
+}: {
+  lang: "ar" | "en";
+  closeoutId?: string;
+  storeId?: string;
+  attachments?: unknown;
+  thumbClassName?: string;
+  enabled?: boolean;
+  attachmentsApiEnabled?: boolean;
+  organizationId?: string;
+  actorUserId?: string;
+  actorRole?: string;
 }) {
   const [selectedAttachment, setSelectedAttachment] = useState("");
   const { normalized, resolveSrc, loading } = useCloseoutAttachmentSrcs({
@@ -35,7 +46,7 @@ export default function CloseoutAttachmentThumbs({
       <div className="flex flex-wrap gap-2">
         {normalized.map((item, index) => {
           const key = isCloseoutAttachmentRef(item) ? item.id : `${closeoutId}-att-${index}`;
-          const src = resolveSrc(item, index);
+          const src = resolveSrc(item);
           return (
             <button
               key={key}

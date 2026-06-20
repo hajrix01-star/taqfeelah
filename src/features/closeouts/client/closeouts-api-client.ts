@@ -17,7 +17,7 @@ import { isCloseoutSubmitDateAllowed } from "@/features/closeouts/closeout-submi
 import {
   diagnoseCloseoutSalesChannelGaps,
   extractCloseoutSalesChannels,
-} from "./resolve-closeout-sales-channels.js";
+} from "./resolve-closeout-sales-channels";
 
 export {
   getCloseoutApiMaps,
@@ -28,19 +28,65 @@ export {
   setRuntimeApiIdMaps,
 };
 
+type CloseoutOutflowRow = {
+  id?: unknown;
+  type?: string;
+  amount?: unknown;
+  category?: unknown;
+  categoryName?: unknown;
+  categoryId?: unknown;
+  typeLabel?: unknown;
+  note?: unknown;
+  attachments?: unknown;
+};
+
+type CloseoutSubmitPayload = {
+  id?: string;
+  storeId?: string;
+  date?: string;
+  note?: string;
+  attachments?: unknown;
+  outflows?: CloseoutOutflowRow[];
+  sales?: unknown;
+};
+
+export type CloseoutSubmitFailureCode =
+  | "invalid_organization"
+  | "unmapped_actor"
+  | "unmapped_store"
+  | "unmapped_sales_channels"
+  | "empty_sales"
+  | "invalid_date";
+
+export type CloseoutSubmitFailure = {
+  code: CloseoutSubmitFailureCode;
+  unmappedChannels: Array<{ channelId: string; name: string; amount: number; mapped: boolean }>;
+};
+
 function getMaps() {
   return getRuntimeApiMaps();
 }
 
-function buildCloseoutFetchContextError({ organizationId, mappedActorUserId, mappedStoreId }) {
-  const missing = [];
+function buildCloseoutFetchContextError({
+  organizationId,
+  mappedActorUserId,
+  mappedStoreId,
+}: {
+  organizationId?: string;
+  mappedActorUserId: string | null | undefined;
+  mappedStoreId: string | null | undefined;
+}): Error {
+  const missing: string[] = [];
   if (!isUuid(organizationId)) missing.push("organizationId");
   if (!mappedActorUserId) missing.push("actorUserId");
   if (!mappedStoreId) missing.push("storeId");
   return new Error(`closeouts fetch API context missing/invalid: ${missing.join(", ")}.`);
 }
 
-export function buildCloseoutSubmitFailureMessage(submitFailure, lang = "ar") {
+export function buildCloseoutSubmitFailureMessage(
+  submitFailure: CloseoutSubmitFailure | null | undefined,
+  lang: "ar" | "en" = "ar",
+): string {
   if (!submitFailure) return "";
   const channelNames = (submitFailure.unmappedChannels || [])
     .map((row) => row.name || row.channelId)
@@ -77,16 +123,17 @@ export function buildCloseoutSubmitFailureMessage(submitFailure, lang = "ar") {
   }
 }
 
-/**
- * Explain why submitCloseoutViaApi would return null (mapping / channel gaps).
- * @param {{ organizationId?: string, actorUserId?: string, closeout?: object, storeChannels?: Array<Record<string, unknown>> }} input
- */
 export function diagnoseCloseoutSubmitFailure({
   organizationId,
   actorUserId,
   closeout,
   storeChannels = [],
-}) {
+}: {
+  organizationId?: string;
+  actorUserId?: string;
+  closeout?: CloseoutSubmitPayload | null;
+  storeChannels?: Array<Record<string, unknown>>;
+}): CloseoutSubmitFailure | null {
   const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
   if (!mappedOrganizationId) return { code: "invalid_organization", unmappedChannels: [] };
 
@@ -115,28 +162,29 @@ export function diagnoseCloseoutSubmitFailure({
   return null;
 }
 
-function hasPositiveOutflows(closeout) {
+function hasPositiveOutflows(closeout: CloseoutSubmitPayload | null | undefined): boolean {
   return (closeout?.outflows || []).some((row) => Number(row?.amount || 0) > 0);
 }
 
-function extractAttachmentPayloads(rawList) {
+function extractAttachmentPayloads(rawList: unknown): string[] {
   if (!Array.isArray(rawList)) return [];
   return rawList
     .map((item) => {
       if (typeof item === "string" && item.startsWith("data:")) return item;
-      if (item && typeof item === "object" && typeof item.dataUrl === "string" && item.dataUrl.startsWith("data:")) {
-        return item.dataUrl;
+      if (item && typeof item === "object" && typeof (item as { dataUrl?: unknown }).dataUrl === "string") {
+        const dataUrl = (item as { dataUrl: string }).dataUrl;
+        if (dataUrl.startsWith("data:")) return dataUrl;
       }
       return "";
     })
     .filter(Boolean);
 }
 
-function optionalTrimmedString(value) {
+function optionalTrimmedString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
-function extractOutflows(closeout) {
+function extractOutflows(closeout: CloseoutSubmitPayload | null | undefined) {
   return (closeout?.outflows || [])
     .map((row) => {
       const categoryName = optionalTrimmedString(
@@ -144,7 +192,7 @@ function extractOutflows(closeout) {
       );
       const typeLabel = optionalTrimmedString(row?.typeLabel);
       const note = optionalTrimmedString(row?.note);
-      const payload = {
+      const payload: Record<string, unknown> = {
         type: row?.type,
         amountHalalas: toMoneyHalalas(row?.amount),
         categoryId: isUuid(row?.categoryId) ? row.categoryId : null,
@@ -155,12 +203,12 @@ function extractOutflows(closeout) {
       if (note) payload.note = note;
       return payload;
     })
-    .filter((row) => (row.type === "purchases" || row.type === "expense" || row.type === "withdrawal") && row.amountHalalas > 0);
+    .filter((row) => (
+      (row.type === "purchases" || row.type === "expense" || row.type === "withdrawal")
+      && Number(row.amountHalalas) > 0
+    ));
 }
 
-/**
- * @param {{ organizationId?: string, actorUserId?: string, actorRole?: string, closeout?: object, storeChannels?: Array<Record<string, unknown>>, mode?: string }} input
- */
 export async function submitCloseoutViaApi({
   organizationId,
   actorUserId,
@@ -168,6 +216,13 @@ export async function submitCloseoutViaApi({
   closeout,
   storeChannels = [],
   mode = "submit",
+}: {
+  organizationId?: string;
+  actorUserId?: string;
+  actorRole?: string;
+  closeout?: CloseoutSubmitPayload | null;
+  storeChannels?: Array<Record<string, unknown>>;
+  mode?: string;
 }) {
   const { storeIdMap } = getMaps();
   const mappedStoreId = mapToUuid(closeout?.storeId, storeIdMap);
@@ -184,14 +239,21 @@ export async function submitCloseoutViaApi({
     method: "POST",
     body: {
       mode: normalizeCloseoutSubmitMode(mode),
-      closeoutId: closeout.id,
-      date: closeout.date,
+      closeoutId: closeout?.id,
+      date: closeout?.date,
       salesChannels,
       outflows: extractOutflows(closeout),
       attachments: extractAttachmentPayloads(closeout?.attachments),
       ...(optionalTrimmedString(closeout?.note) ? { note: optionalTrimmedString(closeout?.note) } : {}),
     },
     errorMessage: "تعذر إرسال التقفيلة. تحقق من الصور وحاول مرة أخرى.",
+  } as {
+    organizationId?: string;
+    actorUserId?: string;
+    actorRole?: string;
+    method?: string;
+    body?: Record<string, unknown>;
+    errorMessage?: string;
   });
 }
 
@@ -202,7 +264,14 @@ export async function fetchStoreCloseoutsViaApi({
   storeId,
   dateFrom = "",
   dateTo = "",
-}) {
+}: {
+  organizationId?: string;
+  actorUserId?: string;
+  actorRole?: string;
+  storeId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<Array<Record<string, unknown>>> {
   const { userIdMap, storeIdMap, salesChannelIdMap } = getMaps();
   const mappedStoreId = mapToUuid(storeId, storeIdMap);
   const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
@@ -220,7 +289,7 @@ export async function fetchStoreCloseoutsViaApi({
   search.set("paginated", "1");
   search.set("limit", "50");
 
-  const mergedItems = [];
+  const mergedItems: unknown[] = [];
   let cursor = "";
 
   while (true) {
@@ -243,29 +312,34 @@ export async function fetchStoreCloseoutsViaApi({
       break;
     }
 
-    if (!payload || typeof payload !== "object" || !Array.isArray(payload.items)) {
+    if (!payload || typeof payload !== "object" || !Array.isArray((payload as { items?: unknown }).items)) {
       throw new Error("closeouts fetch API returned invalid payload.");
     }
 
-    mergedItems.push(...payload.items);
-    cursor = typeof payload.nextCursor === "string" ? payload.nextCursor : "";
+    const page = payload as { items: unknown[]; nextCursor?: unknown };
+    mergedItems.push(...page.items);
+    cursor = typeof page.nextCursor === "string" ? page.nextCursor : "";
     if (!cursor) break;
   }
 
-  return mergedItems.map((item) => {
-    if (!item || typeof item !== "object") return item;
-    const mappedStoreLegacyId = reverseLookupKeyByUuid(item.storeId, storeIdMap) || storeId;
-    const salesRows = Array.isArray(item.sales)
-      ? item.sales.map((row) => ({
-        ...row,
-        channelId: reverseLookupKeyByUuid(row?.channelId, salesChannelIdMap) || row?.channelId,
-      }))
-      : item.sales;
+  return mergedItems.map((item): Record<string, unknown> => {
+    if (!item || typeof item !== "object") return item as Record<string, unknown>;
+    const record = item as Record<string, unknown>;
+    const mappedStoreLegacyId = reverseLookupKeyByUuid(String(record.storeId), storeIdMap) || storeId;
+    const salesRows = Array.isArray(record.sales)
+      ? record.sales.map((row) => {
+        const salesRow = row as Record<string, unknown>;
+        return {
+          ...salesRow,
+          channelId: reverseLookupKeyByUuid(String(salesRow?.channelId), salesChannelIdMap) || salesRow?.channelId,
+        };
+      })
+      : record.sales;
     return {
-      ...item,
+      ...record,
       storeId: mappedStoreLegacyId,
-      openedByUserId: reverseLookupKeyByUuid(item.openedByUserId, userIdMap) || item.openedByUserId,
-      submittedByUserId: reverseLookupKeyByUuid(item.submittedByUserId, userIdMap) || item.submittedByUserId,
+      openedByUserId: reverseLookupKeyByUuid(String(record.openedByUserId), userIdMap) || record.openedByUserId,
+      submittedByUserId: reverseLookupKeyByUuid(String(record.submittedByUserId), userIdMap) || record.submittedByUserId,
       sales: salesRows,
     };
   });
@@ -277,6 +351,12 @@ export async function deleteCloseoutViaApi({
   actorRole,
   storeId,
   closeoutId,
+}: {
+  organizationId?: string;
+  actorUserId?: string;
+  actorRole?: string;
+  storeId?: string;
+  closeoutId?: string;
 }) {
   const { userIdMap, storeIdMap } = getMaps();
   const mappedStoreId = mapToUuid(storeId, storeIdMap);
@@ -303,4 +383,3 @@ export async function deleteCloseoutViaApi({
     },
   );
 }
-

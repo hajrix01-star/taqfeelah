@@ -6,8 +6,8 @@ describe("extractCloseoutSalesChannels", () => {
   });
 
   it("falls back to a non-empty channel name when labels are blank", async () => {
-    const { extractCloseoutSalesChannels } = await import("./resolve-closeout-sales-channels.js");
-    const { setRuntimeApiIdMaps } = await import("./closeouts-api-client.js");
+    const { extractCloseoutSalesChannels } = await import("./resolve-closeout-sales-channels");
+    const { setRuntimeApiIdMaps } = await import("./closeouts-api-client");
     setRuntimeApiIdMaps({
       storeIdMap: {},
       userIdMap: {},
@@ -29,8 +29,8 @@ describe("extractCloseoutSalesChannels", () => {
   });
 
   it("uses Channel fallback when no label or legacy id is available", async () => {
-    const { extractCloseoutSalesChannels } = await import("./resolve-closeout-sales-channels.js");
-    const { setRuntimeApiIdMaps } = await import("./closeouts-api-client.js");
+    const { extractCloseoutSalesChannels } = await import("./resolve-closeout-sales-channels");
+    const { setRuntimeApiIdMaps } = await import("./closeouts-api-client");
     setRuntimeApiIdMaps({
       storeIdMap: {},
       userIdMap: {},

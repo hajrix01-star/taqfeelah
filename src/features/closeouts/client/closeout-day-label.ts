@@ -1,4 +1,4 @@
-export function closeoutSequenceLetter(sequence) {
+export function closeoutSequenceLetter(sequence: number): string {
   const value = Number(sequence);
   if (!Number.isInteger(value) || value < 1) return "";
   let remaining = value;
@@ -11,14 +11,15 @@ export function closeoutSequenceLetter(sequence) {
   return letters;
 }
 
-/**
- * @param {{ formattedDate?: string, daySequence?: number | null, sameDayCloseoutCount?: number }} input
- */
 export function formatCloseoutDayLabel({
   formattedDate = "",
   daySequence = null,
   sameDayCloseoutCount = 1,
-}) {
+}: {
+  formattedDate?: string;
+  daySequence?: number | null;
+  sameDayCloseoutCount?: number;
+}): string {
   if (!formattedDate) return "";
   const count = Number(sameDayCloseoutCount) || 1;
   const sequence = Number(daySequence);
@@ -30,8 +31,8 @@ export function formatCloseoutDayLabel({
 }
 
 /** Counts sent closeouts per date (any non-draft status). */
-export function countSentCloseoutsByDate(closeouts = []) {
-  const counts = new Map();
+export function countSentCloseoutsByDate(closeouts: Array<{ date?: string; status?: string }> = []): Map<string, number> {
+  const counts = new Map<string, number>();
   (Array.isArray(closeouts) ? closeouts : []).forEach((item) => {
     if (!item?.date || item?.status === "draft") return;
     counts.set(item.date, (counts.get(item.date) || 0) + 1);
