@@ -1,4 +1,5 @@
 import { toAmount } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
+import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
 
 export const EXPENSE_CATEGORIES = [
   { id: "electricity", ar: "كهرباء", en: "Electricity" },
@@ -18,7 +19,7 @@ export const OUTFLOW_TYPES = [
 export const moneyInputClass = "w-full bg-transparent text-center text-sm font-black outline-none [direction:ltr]";
 
 export function formatCloseoutMoney(value, lang) {
-  return Number(value || 0).toLocaleString(lang === "ar" ? "en-US" : "en-US");
+  return formatDisplayMoneyFromRiyals(value, lang);
 }
 
 export function todayIsoDate() {

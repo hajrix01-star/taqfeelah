@@ -1,14 +1,10 @@
 /** Share employee closeout PNG with image + caption together via the native share sheet. */
 import { shareImageThroughWhatsApp } from "../daily-closeouts/notebook-image-sharing";
 import { formatNumericDate } from "@/features/reports/client/report-period-labels";
+import { formatDisplayMoneyLabel } from "@/core/money/format-display-money";
 
 function formatShareMoney(value, lang) {
-  const numericValue = Number(value) || 0;
-  const formatted = new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 0,
-  }).format(Math.abs(numericValue));
-  return lang === "ar" ? `${formatted} ر.س` : `${formatted} SAR`;
+  return formatDisplayMoneyLabel(value, lang);
 }
 
 function normalizedStoreLabel(storeName, lang) {

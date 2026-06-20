@@ -3,7 +3,7 @@ import {
   entryIsOutflow,
 } from "@/features/operations/operational-analytics";
 import { formatCalendarDate, formatSelectedMonth } from "@/features/reports/client/report-period-labels";
-import { formatDisplayNumber } from "@/core/i18n/display-locale";
+import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
 import {
   formatRegisterReportRowLabel,
   registerReportGranularityColumnLabel,
@@ -370,10 +370,7 @@ export function buildDataExportModel({
       rows: sheets[0].rows.map((row) => sheets[0].columns.map((column) => {
         const value = row[column.key];
         if (column.type === "number" && typeof value === "number") {
-          return formatDisplayNumber(value, lang, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          });
+          return formatDisplayMoneyFromRiyals(value, lang);
         }
         return String(value ?? "");
       })),

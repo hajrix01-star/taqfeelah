@@ -1,8 +1,8 @@
 import { downloadBlobFile } from "@/components/prototype-runtime/notebook-share-export-helpers";
+import { resolveExcelMoneyNumFmt, resolveExcelMoneyNumFmtForValues } from "@/core/money/format-display-money";
 
 const HEADER_FILL = "FF112A46";
 const HEADER_FONT = "FFFFFFFF";
-const NUMBER_FORMAT = "#,##0.00";
 
 function columnLetter(index) {
   let n = index + 1;
@@ -57,7 +57,8 @@ export async function exportProfessionalExcel(payload) {
       const added = worksheet.addRow(values);
       sheetDef.columns.forEach((column, index) => {
         if (column.type === "number") {
-          added.getCell(index + 1).numFmt = NUMBER_FORMAT;
+          const cellValue = values[index];
+          added.getCell(index + 1).numFmt = resolveExcelMoneyNumFmt(Number(cellValue) || 0);
         }
       });
     });
@@ -77,8 +78,11 @@ export async function exportProfessionalExcel(payload) {
       });
       const totalRow = worksheet.addRow(totalRowValues);
       sumColumns.forEach((index) => {
-        totalRow.getCell(index + 1).numFmt = NUMBER_FORMAT;
-        totalRow.getCell(index + 1).font = { bold: true };
+        const column = sheetDef.columns[index];
+        const columnValues = sheetDef.rows.map((row) => Number(row[column.key]) || 0);
+        const cell = totalRow.getCell(index + 1);
+        cell.numFmt = resolveExcelMoneyNumFmtForValues(columnValues);
+        cell.font = { bold: true };
       });
     }
 

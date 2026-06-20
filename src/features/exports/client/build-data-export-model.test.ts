@@ -110,7 +110,7 @@ describe("buildDataExportModel", () => {
     expect(model?.sheets[0]?.columns.find((column) => column.key === "date")?.label).toBe("Month");
     expect(model?.sheets[0]?.rows).toHaveLength(2);
     expect(model?.sheets[0]?.rows[0]?.date).toBe("06-2026");
-    expect(model?.previewTable.rows[0][1]).toBe("150.00");
+    expect(model?.previewTable.rows[0][1]).toBe("150");
     expect(model?.previewTable.rows[0][1]).not.toMatch(/[٠-٩]/);
   });
 

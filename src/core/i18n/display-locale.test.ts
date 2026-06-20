@@ -27,12 +27,12 @@ describe("display-locale", () => {
     expect(formatted).not.toMatch(/[٠-٩]/);
   });
 
-  it("formats money preview values with Latin digits", () => {
+  it("formats money values with Latin digits and no trailing zeros", () => {
     const formatted = formatDisplayNumber(108705, "ar", {
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     });
-    expect(formatted).toBe("108,705.00");
+    expect(formatted).toBe("108,705");
     expect(formatted).not.toMatch(/[٠-٩]/);
   });
 

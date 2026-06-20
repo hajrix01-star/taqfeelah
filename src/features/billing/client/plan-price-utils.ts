@@ -1,5 +1,7 @@
+import { formatDisplayMoneyFromHalalas } from "@/core/money/format-display-money";
+
 export function halalasToSar(halalas: number): string {
-  return (halalas / 100).toFixed(2);
+  return formatDisplayMoneyFromHalalas(halalas, "en");
 }
 
 export function sarToHalalas(value: string): number {
