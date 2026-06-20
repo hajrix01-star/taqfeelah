@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 import { buildWhatsAppShareUrl } from "@/core/whatsapp/share-link";
 import { buildOwnerSetupWhatsAppMessage } from "@/core/messaging/whatsapp-auth-messages";
 import type { CreateSaasAccountResponse } from "@/features/saas-admin/client/saas-admin-api-client";
@@ -45,7 +46,7 @@ export function AccountCreatedSuccessPanel({ created }: AccountCreatedSuccessPan
         <p className="font-semibold text-[var(--admin-text)]">{t.newAccount.setupLinkLabel}</p>
         <p className="mt-1 break-all font-mono text-xs">{created.setupUrl}</p>
         <p className="mt-3 font-semibold text-[var(--admin-text)]">{t.newAccount.ownerPhone}</p>
-        <p className="mt-1 font-mono">{created.ownerPhone}</p>
+        <p className="mt-1 font-mono">{formatLoginPhoneForDisplay(created.ownerPhone)}</p>
         <p className="mt-3 text-xs text-[var(--admin-muted)]">
           {t.newAccount.setupExpiresLabel}: {new Date(created.setupExpiresAt).toLocaleString()}
         </p>

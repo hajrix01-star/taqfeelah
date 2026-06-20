@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { LoginPhoneFields } from "@/core/phone/LoginPhoneFields";
+import { StandardLoginPhoneField } from "@/core/phone/StandardLoginPhoneField";
 import { resolveSaasAdminFormError, type SaasAdminFormError } from "@/features/saas-admin/client/api-error";
 import { createSaasAccountMember } from "@/features/saas-admin/client/saas-admin-api-client";
 import { AdminErrorAlert } from "@/features/saas-admin/components/AdminErrorAlert";
@@ -91,7 +91,7 @@ export function AddAccountMemberForm({
         </label>
         <label className="block space-y-1 text-sm sm:col-span-2">
           <span className="text-[var(--admin-muted)]">{t.editMember.loginPhone}</span>
-          <LoginPhoneFields value={loginPhone} onChange={setLoginPhone} />
+          <StandardLoginPhoneField value={loginPhone} onChange={setLoginPhone} />
         </label>
         <label className="block space-y-1 text-sm sm:col-span-2">
           <span className="text-[var(--admin-muted)]">{t.addMember.pin}</span>

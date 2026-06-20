@@ -1,7 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
-import { LoginPhoneFields } from "@/core/phone/LoginPhoneFields";
+import { StandardLoginPhoneField } from "@/core/phone/StandardLoginPhoneField";
 import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 import { buildStaffDeleteTarget } from "@/features/org-config/client/owner-settings-team-actions";
 import { resolveStaffInviteUserKey } from "@/features/member-invitations/client/group-team-invitations";
@@ -92,12 +92,10 @@ export function OwnerSettingsTeamRoster({
                   </div>
                   <div className="mt-3">
                     <p className="mb-2 text-xs font-black text-[#716753]">{text(lang, "employeeMobile")}</p>
-                    <LoginPhoneFields
+                    <StandardLoginPhoneField
+                      surface="owner"
                       value={person.mobile || ""}
                       onChange={(nextValue) => updateEmployeeMobile(person.id, nextValue)}
-                      dialClassName="w-24 rounded-2xl bg-[#F7F5EF] px-3 py-3 text-xs font-black outline-none"
-                      nationalClassName="min-w-0 flex-1 rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none"
-                      containerClassName="flex gap-2"
                     />
                   </div>
                   <div className="mt-3">
@@ -125,12 +123,10 @@ export function OwnerSettingsTeamRoster({
             <input value={newEmployeeName} onChange={(event) => setNewEmployeeName(event.target.value)} placeholder={text(lang, "newEmployeeName")} className="mb-2 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" />
             <div className="mb-3">
               <p className="mb-2 text-xs font-black text-[#716753]">{text(lang, "employeeMobile")}</p>
-              <LoginPhoneFields
+              <StandardLoginPhoneField
+                surface="owner"
                 value={newEmployeeMobile}
                 onChange={setNewEmployeeMobile}
-                dialClassName="w-24 rounded-2xl bg-[#F7F5EF] px-3 py-3 text-xs font-black outline-none"
-                nationalClassName="min-w-0 flex-1 rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none"
-                containerClassName="flex gap-2"
               />
             </div>
             <div className="mb-3 flex flex-wrap gap-2">

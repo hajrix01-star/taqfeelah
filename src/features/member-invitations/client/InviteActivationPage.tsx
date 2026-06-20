@@ -1,6 +1,7 @@
 "use client";
 
 import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { StandardLoginPhoneField } from "@/core/phone/StandardLoginPhoneField";
 import { useInviteActivationForm } from "@/features/member-invitations/client/use-invite-activation-form";
 
 type InviteActivationPageProps = {
@@ -50,13 +51,10 @@ export default function InviteActivationPage({ token }: InviteActivationPageProp
               <form onSubmit={form.submit} className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-black/[0.045]">
                 <label className="mb-4 block">
                   <span className="mb-2 block text-xs font-bold text-[#716753]">جوالك</span>
-                  <input
-                    dir="ltr"
-                    inputMode="tel"
+                  <StandardLoginPhoneField
+                    surface="activation"
                     value={form.phone}
-                    onChange={(event) => form.setPhone(event.target.value)}
-                    className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-center text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
-                    required
+                    onChange={form.setPhone}
                   />
                 </label>
                 <label className="mb-4 block">

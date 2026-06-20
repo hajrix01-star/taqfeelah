@@ -72,7 +72,7 @@ export function LoginPhoneFields({
     <div dir="ltr" className={resolvedContainerClassName}>
       {lockDialCode ? (
         <div className={resolvedDialClassName}>
-          {isAppVariant ? <SaudiFlag /> : null}
+          <SaudiFlag className={isAppVariant ? "text-base leading-none" : "text-sm leading-none"} />
           <span>{resolvedDialCode}</span>
         </div>
       ) : (

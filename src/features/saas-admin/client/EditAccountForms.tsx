@@ -1,5 +1,6 @@
 "use client";
 
+import { StandardLoginPhoneField } from "@/core/phone/StandardLoginPhoneField";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   repairSaasAccountFoundation,
@@ -181,14 +182,9 @@ export function EditAccountForms({
         </label>
         <label className="block space-y-1 text-sm">
           <span className="text-[var(--admin-muted)]">{t.newAccount.ownerPhone}</span>
-          <input
+          <StandardLoginPhoneField
             value={editOwnerPhone}
-            onChange={(e) => setEditOwnerPhone(e.target.value)}
-            placeholder={t.newAccount.ownerPhonePlaceholder}
-            className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
-            dir="ltr"
-            inputMode="tel"
-            autoComplete="tel"
+            onChange={setEditOwnerPhone}
           />
         </label>
         <label className="block space-y-1 text-sm">

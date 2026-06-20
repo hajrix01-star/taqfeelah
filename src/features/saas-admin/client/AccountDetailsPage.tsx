@@ -38,6 +38,7 @@ import { AccountTeamSection } from "@/features/saas-admin/client/AccountTeamSect
 import { AccountSubscriptionPanel } from "@/features/saas-admin/client/AccountSubscriptionPanel";
 import { EditAccountForms } from "@/features/saas-admin/client/EditAccountForms";
 import { fetchSaasAccountDetails } from "@/features/saas-admin/client/saas-admin-api-client";
+import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 import { formatOrganizationAccountNumber } from "@/features/billing/client/format-organization-account-number";
 import { useSaasAdminQuery } from "@/features/saas-admin/client/use-saas-admin-query";
 import { useSaasAdminSession } from "@/features/saas-admin/client/SaasAdminSessionProvider";
@@ -141,7 +142,9 @@ export default function AccountDetailsPage({ accountId }: AccountDetailsPageProp
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--admin-muted)]">{t.common.owner}</p>
                 <p className="font-semibold text-[var(--admin-text)]">{data.ownerName || "—"}</p>
                 <p className="text-xs text-[var(--admin-muted)]" dir="ltr">
-                  {data.ownerPhone || data.ownerUsername || "—"}
+                  {data.ownerPhone
+                    ? formatLoginPhoneForDisplay(data.ownerPhone)
+                    : (data.ownerUsername || "—")}
                 </p>
                 {formatOrganizationAccountNumber(data.accountNumber) ? (
                   <p className="text-xs text-[var(--admin-muted)]">

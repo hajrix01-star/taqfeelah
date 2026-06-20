@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { LoginPhoneFields } from "@/core/phone/LoginPhoneFields";
+import { StandardLoginPhoneField } from "@/core/phone/StandardLoginPhoneField";
 import { updateSaasAccountMember } from "@/features/saas-admin/client/saas-admin-api-client";
 import { mapSaasAdminApiError } from "@/features/saas-admin/client/api-error";
 import { AdminModal } from "@/features/saas-admin/components/AdminModal";
@@ -123,7 +123,7 @@ export function EditAccountMemberForm({
         </label>
         <label className="block space-y-1 text-sm">
           <span className="text-[var(--admin-muted)]">{t.editMember.loginPhone}</span>
-          <LoginPhoneFields
+          <StandardLoginPhoneField
             value={loginPhone}
             onChange={setLoginPhone}
           />
