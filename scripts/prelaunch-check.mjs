@@ -90,6 +90,21 @@ warnIfMissing(
 
 warnIfMissing("SAAS_PLATFORM_ADMIN_USER_IDS", "SAAS_PLATFORM_ADMIN_USER_IDS not set — SaaS admin access undefined");
 
+if (strict) {
+  if (!process.env.UPSTASH_REDIS_REST_URL?.trim()) {
+    errors.push("UPSTASH_REDIS_REST_URL is required in strict mode");
+  }
+  if (!process.env.UPSTASH_REDIS_REST_TOKEN?.trim()) {
+    errors.push("UPSTASH_REDIS_REST_TOKEN is required in strict mode");
+  }
+  if (!process.env.SAAS_PLATFORM_ADMIN_USER_IDS?.trim()) {
+    errors.push("SAAS_PLATFORM_ADMIN_USER_IDS is required in strict mode");
+  }
+  if (process.env.AUTH_RATE_LIMIT_REDIS_REQUIRED !== "true") {
+    errors.push("AUTH_RATE_LIMIT_REDIS_REQUIRED must be true in strict mode");
+  }
+}
+
 if (process.env.AUTH_PASSWORD_RESET_ENABLED === "true") {
   if (!process.env.RESEND_API_KEY && !process.env.SMTP_HOST) {
     warnings.push("AUTH_PASSWORD_RESET_ENABLED=true but no RESEND_API_KEY or SMTP_HOST");

@@ -48,6 +48,7 @@ const envSchema = z.object({
   SMTP_PORT: z.string().optional(),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
+  AUTH_RATE_LIMIT_REDIS_REQUIRED: z.enum(["true", "false"]).optional(),
 });
 
 type AppEnv = z.infer<typeof envSchema>;
@@ -166,6 +167,15 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
   }
   if (env.ALLOW_HEADER_AUTH_CONTEXT === "true") {
     missing.push("ALLOW_HEADER_AUTH_CONTEXT=false (header auth is disabled in production)");
+  }
+
+  if (env.AUTH_RATE_LIMIT_REDIS_REQUIRED === "true") {
+    if (!env.UPSTASH_REDIS_REST_URL?.trim()) {
+      missing.push("UPSTASH_REDIS_REST_URL (required when AUTH_RATE_LIMIT_REDIS_REQUIRED=true)");
+    }
+    if (!env.UPSTASH_REDIS_REST_TOKEN?.trim()) {
+      missing.push("UPSTASH_REDIS_REST_TOKEN (required when AUTH_RATE_LIMIT_REDIS_REQUIRED=true)");
+    }
   }
 
   if (missing.length > 0) {

@@ -5,7 +5,7 @@ async function login() {
   const res = await fetch("http://localhost:3000/api/v1/auth/session", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ mode: "owner_password", username: "hajri", password: "123" }),
+    body: JSON.stringify({ mode: "owner_password", username: "hajri", password: "hajri123" }),
   });
   const body = await res.json();
   const cookie = res.headers.get("set-cookie");

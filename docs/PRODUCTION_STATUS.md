@@ -88,7 +88,9 @@
 - ✅ E2E + PostgreSQL في CI (`db-integration` job)
 - ✅ `check:db-source` في CI
 - ✅ client password min = 8 (محاذاة مع server)
-- ✅ `scripts/prelaunch-check.mjs`
+- ✅ `scripts/prelaunch-check.mjs` + `--strict` + `AUTH_RATE_LIMIT_REDIS_REQUIRED`
+- ✅ `prelaunch-live-gate.mjs` + `PRELAUNCH_MANUAL_SMOKE.md`
+- ✅ `prelaunch-wipe-all-tenant-data.mjs`
 - ✅ إعادة تسمية `features/phase9` → `features/exports-attachments`
 
 ---

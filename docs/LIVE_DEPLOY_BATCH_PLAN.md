@@ -43,13 +43,14 @@
 | `LIVE_DEPLOY_BATCH_PLAN.md` | هذه الوثيقة |
 | checklist إطلاق موحّد | مسح → migrate → env strict → أول حساب SaaS |
 
-### الدفعة 3 — ⏳ (قبل merge النهائي)
+### الدفعة 3 — ✅ (على نفس الفرع)
 
-| البند | الأولوية |
-|-------|----------|
-| UPSTASH Redis **إلزامي** (`prelaunch:check --strict` على VPS) | 🔴 |
-| object storage للمرفقات | 🟠 (قرار مالك) |
-| اختبار يدوي: مالك → موظف → تقفيلة → تقرير | 🔴 |
+| البند | الحالة |
+|-------|--------|
+| UPSTASH إلزامي (`AUTH_RATE_LIMIT_REDIS_REQUIRED` + `--strict`) | ✅ |
+| `docs/PRELAUNCH_MANUAL_SMOKE.md` — checklist يدوي | ✅ |
+| `prelaunch-live-gate.mjs` — env strict + db-source + manual pointer | ✅ |
+| object storage | ⏸ قرار مالك (بعد الإطلاق) |
 
 ### الدفعة 4 — ⏸ (ما بعد الإطلاق)
 
@@ -80,7 +81,9 @@ PRELAUNCH_WIPE_CONFIRM=wipe-all-tenant-data-for-live pnpm prelaunch:wipe --apply
 pnpm db:migrate
 
 # 5. تحقق env
-pnpm prelaunch:check --env-file .env.production --strict
+pnpm prelaunch:live-gate --env-file .env.production
+# أو: pnpm prelaunch:check:strict --env-file .env.production
+CHECK_BASE_URL=https://your-domain pnpm prelaunch:live-gate --env-file .env.production
 
 # 6. أول عميل حقيقي
 # /saas-admin/accounts/new
@@ -94,10 +97,8 @@ pnpm prelaunch:check --env-file .env.production --strict
 - [ ] `pnpm check:refactor` أخضر محليًا
 - [ ] CI أخضر (quality + db-integration)
 - [ ] `prelaunch:wipe --apply` على VPS (أو DB فارغة)
-- [ ] `prelaunch:check --strict` على `.env.production`
-- [ ] UPSTASH + AUTH_SESSION_SECRET + SAAS_PLATFORM_ADMIN_USER_IDS
-- [ ] أول حساب من SaaS Admin (ليس seed)
-- [ ] اختبار يدوي كامل
+- [ ] `pnpm prelaunch:live-gate --env-file .env.production` (أو check:strict)
+- [ ] `docs/PRELAUNCH_MANUAL_SMOKE.md` — كل البنود ☑
 - [ ] **طلب صريح:** «جاهز للايف» / «ادمج» → merge إلى `main`
 
 ---

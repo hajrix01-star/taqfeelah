@@ -29,18 +29,10 @@
 |----|-------|----------|--------|
 | R1 | محاذاة client password min = 8 مع `password-policy.ts` | 🔴 | ✅ |
 | R2 | `scripts/prelaunch-check.mjs` — checklist تشغيلي | 🔴 | ✅ |
-| R3 | E2E + PostgreSQL في CI | 🔴 | ✅ |
-| R4 | `check:db-source` في CI (job db-integration) | 🔴 | ✅ |
-| R5 | إصلاح 14 lint warnings | 🟠 | ✅ |
-| R6 | إعادة تسمية `phase9` → `exports-attachments` | 🟠 | ✅ |
-| R7 | seed dev password ≥ 8 أحرف | 🟠 | ✅ |
-| R8 | `password-policy.test.ts` | 🟠 | ✅ |
-| R9 | UPSTASH في prelaunch-check (تحذير إنتاج) | 🟠 | ✅ |
-| R10 | Object storage | — | ⏸ دفعة 3 |
-| R11 | `prelaunch-wipe-all-tenant-data.mjs` — مسح تجريبي | 🔴 | ✅ |
-| R12 | `LIVE_DEPLOY_BATCH_PLAN.md` — دفعات مجمّعة | 🔴 | ✅ |
-| R13 | CSP nonce | 🟡 | ⏸ دفعة 4 |
-| R14 | UPSTASH `--strict` إلزامي على VPS | 🔴 | ⏳ دفعة 3 |
+| R3 | E2E + PostgreSQL | 🔴 | ✅ |
+| R4 | db-source في CI | 🔴 | ✅ |
+| R5–R9 | lint, rename, seed, tests | 🟠 | ✅ |
+| R11–R15 | wipe, batch plan, UPSTASH strict, manual smoke | 🔴 | ✅ |
 
 ---
 
@@ -122,7 +114,7 @@ PRELAUNCH_WIPE_CONFIRM=wipe-all-tenant-data-for-live pnpm prelaunch:wipe:apply
 
 ## 6. مراجع
 
-- `docs/LIVE_DEPLOY_BATCH_PLAN.md` — **دفعات مجمّعة + مسح تجريبي + gate الإطلاق**
+- `docs/PRELAUNCH_MANUAL_SMOKE.md` — checklist يدوي قبل الإعلان
 - `docs/PRODUCTION_STATUS.md`
 
 - `docs/PRODUCTION_STATUS.md`
