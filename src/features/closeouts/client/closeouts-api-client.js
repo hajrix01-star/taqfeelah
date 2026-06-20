@@ -115,12 +115,20 @@ function extractAttachmentPayloads(rawList) {
     .map((item) => {
       if (typeof item === "string" && item.startsWith("data:")) return item;
       if (item && typeof item === "object" && typeof item.dataUrl === "string" && item.dataUrl.startsWith("data:")) {
-        if (item.kind === "image" && typeof item.sizeBytes === "number") {
+        const sizeBytes = typeof item.sizeBytes === "number" && item.sizeBytes > 0
+          ? Math.round(item.sizeBytes)
+          : null;
+        if (item.kind === "image" && sizeBytes) {
+          const name = typeof item.name === "string" && item.name.trim()
+            ? item.name.trim()
+            : undefined;
           return {
             kind: "image",
-            name: typeof item.name === "string" ? item.name : undefined,
-            mimeType: typeof item.mimeType === "string" ? item.mimeType : "image/jpeg",
-            sizeBytes: item.sizeBytes,
+            name,
+            mimeType: typeof item.mimeType === "string" && item.mimeType.trim()
+              ? item.mimeType.trim()
+              : "image/jpeg",
+            sizeBytes,
             dataUrl: item.dataUrl,
           };
         }

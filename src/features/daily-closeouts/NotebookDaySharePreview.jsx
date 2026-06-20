@@ -118,7 +118,7 @@ export default function NotebookDaySharePreview({
                       formatAmount(item.amount, lang, "sale")
                     ) : (
                       <span dir="ltr" className="whitespace-nowrap tabular-nums text-taq-meta font-black text-[#B44747]">
-                        {`-${money(item.amount)} ${lang === "ar" ? "ر.س" : "SAR"}`}
+                        {`-${formatDisplayMoneyFromRiyals(item.amount, lang)} ${lang === "ar" ? "ر.س" : "SAR"}`}
                       </span>
                     )}
                   </div>
