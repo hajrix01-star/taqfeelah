@@ -44,6 +44,14 @@ export default defineConfig({
       AUTH_OWNER_USER_ID: SEED_OWNER,
       NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID: SEED_ORG,
       NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID: SEED_OWNER,
+      NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP: JSON.stringify({
+        shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+      }),
+      NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP: JSON.stringify({
+        owner: SEED_OWNER,
+        ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+        sara: "85f696d6-f655-4f2d-9f56-1f13c2f4c66c",
+      }),
     },
   },
 });
