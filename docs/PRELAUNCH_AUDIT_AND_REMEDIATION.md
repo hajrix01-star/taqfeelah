@@ -2,7 +2,8 @@
 
 > **التاريخ:** 2026-06-20  
 > **الفرع:** `cursor/prelaunch-remediation-3ebd`  
-> **الحالة:** تنفيذ الإصلاحات + checklist تحقق
+> **الحالة:** دفعة 1 ✅ + دفعة 2 🟠 — **لا merge إلى main حتى «جاهز للايف»**  
+> **استراتيجية:** راجع `docs/LIVE_DEPLOY_BATCH_PLAN.md`
 
 ---
 
@@ -35,8 +36,11 @@
 | R7 | seed dev password ≥ 8 أحرف | 🟠 | ✅ |
 | R8 | `password-policy.test.ts` | 🟠 | ✅ |
 | R9 | UPSTASH في prelaunch-check (تحذير إنتاج) | 🟠 | ✅ |
-| R10 | Object storage | — | ⏸ مؤجّل بقرار المالك |
-| R12 | CSP nonce | 🟡 | ⏸ يتطلب refactor Next.js |
+| R10 | Object storage | — | ⏸ دفعة 3 |
+| R11 | `prelaunch-wipe-all-tenant-data.mjs` — مسح تجريبي | 🔴 | ✅ |
+| R12 | `LIVE_DEPLOY_BATCH_PLAN.md` — دفعات مجمّعة | 🔴 | ✅ |
+| R13 | CSP nonce | 🟡 | ⏸ دفعة 4 |
+| R14 | UPSTASH `--strict` إلزامي على VPS | 🔴 | ⏳ دفعة 3 |
 
 ---
 
@@ -52,6 +56,8 @@ corepack pnpm smoke:browser # shell smoke
 corepack pnpm smoke:browser:db  # E2E + PostgreSQL (CI)
 corepack pnpm build         # pass
 node scripts/prelaunch-check.mjs --env-file .env.example
+pnpm prelaunch:wipe                                    # dry-run counts
+PRELAUNCH_WIPE_CONFIRM=wipe-all-tenant-data-for-live pnpm prelaunch:wipe:apply
 ```
 
 ### 3.2 تحقق يدوي قبل أول عميل
@@ -115,6 +121,9 @@ node scripts/prelaunch-check.mjs --env-file .env.example
 ---
 
 ## 6. مراجع
+
+- `docs/LIVE_DEPLOY_BATCH_PLAN.md` — **دفعات مجمّعة + مسح تجريبي + gate الإطلاق**
+- `docs/PRODUCTION_STATUS.md`
 
 - `docs/PRODUCTION_STATUS.md`
 - `docs/PRELAUNCH_CLEANUP.md`
