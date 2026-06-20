@@ -1,6 +1,6 @@
 import {
   formatDisplayNumber,
-  resolveDateTimeLocale,
+  formatDisplayDateTime,
 } from "@/core/i18n/display-locale";
 import type { SaasAdminLocale } from "@/features/saas-admin/i18n/translations";
 
@@ -17,10 +17,10 @@ export function formatDateTime(
   locale: SaasAdminLocale = "ar",
 ): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat(resolveDateTimeLocale(locale), {
+  return formatDisplayDateTime(value, locale, {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(value));
+  });
 }
 
 export function formatBytes(bytes: number | null | undefined): string {

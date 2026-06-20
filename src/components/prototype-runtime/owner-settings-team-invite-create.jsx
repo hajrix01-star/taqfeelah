@@ -1,6 +1,7 @@
 "use client";
 
 import { StandardLoginPhoneField } from "@/core/phone/StandardLoginPhoneField";
+import { formatDisplayDateTime } from "@/core/i18n/display-locale";
 import {
   getOwnerTeamInvitesLabels,
 } from "@/features/member-invitations/client/owner-team-invites-labels";
@@ -77,7 +78,7 @@ export function OwnerSettingsTeamInviteCreate({
           <p dir="ltr" className="mt-1 text-lg font-black tracking-[0.3em]">{invites.createdInvite.pin}</p>
           <p className="mt-3 text-taq-meta font-bold text-[#806528]">{labels.expiresAt}</p>
           <p dir="ltr" className="mt-1 text-xs font-black">
-            {new Date(invites.createdInvite.expiresAt).toLocaleString(lang === "ar" ? "ar-SA" : "en-US")}
+            {formatDisplayDateTime(invites.createdInvite.expiresAt, lang)}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" onClick={() => { void invites.copyText(invites.createdInvite.inviteUrl, "link"); }} className="rounded-full bg-white px-3 py-2 text-taq-meta font-black">{invites.copiedField === "link" ? labels.copied : labels.copyLink}</button>

@@ -23,3 +23,13 @@ export function formatDisplayNumber(
 ): string {
   return new Intl.NumberFormat(resolveNumberLocale(lang), options).format(value);
 }
+
+export function formatDisplayDateTime(
+  value: Date | string | number,
+  lang: DisplayLang | string = "ar",
+  options?: Intl.DateTimeFormatOptions,
+): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(resolveDateTimeLocale(lang), options).format(date);
+}
