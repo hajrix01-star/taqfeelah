@@ -110,7 +110,7 @@ export function useRegisterDuplicateSummaryHandlers({
         }
       } catch (error) {
         console.warn("duplicate summary approve api failed", error);
-        await appAlert({ lang, title: text(lang, "duplicateSummarySaveFailed"), variant: "danger" });
+        await appAlert({ lang, title: resolveDuplicateSummaryApproveFailureMessage(lang), variant: "danger" });
       } finally {
         savingRef.current = false;
         setSaving(false);
