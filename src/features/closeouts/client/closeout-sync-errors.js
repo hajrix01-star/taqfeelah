@@ -23,5 +23,17 @@ export function mapCloseoutSyncErrorToUserMessage(error, lang = "ar") {
       : message;
   }
 
+  if (message === "Closeout date cannot be in the future.") {
+    return lang === "ar"
+      ? "تعذر إرسال التقفيلة: التاريخ المختار غير مقبول. اختر تاريخ اليوم أو يومًا سابقًا."
+      : message;
+  }
+
+  if (message === "Invalid closeout attachment payload.") {
+    return lang === "ar"
+      ? "تعذر إرسال التقفيلة: مرفق الصورة غير صالح. أزل الصورة وأضفها من جديد."
+      : message;
+  }
+
   return message;
 }

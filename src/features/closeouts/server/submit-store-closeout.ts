@@ -67,10 +67,32 @@ type CloseoutSubmitInput = Omit<z.infer<typeof closeoutSubmitSchema>, "mode"> & 
   mode?: CloseoutSubmitModeInput;
 };
 
+function formatCloseoutSubmitValidationMessage(
+  error: z.ZodError<CloseoutSubmitInput>,
+): string {
+  const flattened = error.flatten();
+  if (flattened.fieldErrors.date?.length) {
+    return "Closeout date cannot be in the future.";
+  }
+  if (flattened.fieldErrors.attachments?.length) {
+    return "Invalid closeout attachment payload.";
+  }
+  if (flattened.fieldErrors.salesChannels?.length) {
+    return "Invalid closeout sales channel payload.";
+  }
+  if (flattened.fieldErrors.outflows?.length) {
+    return "Invalid closeout outflow payload.";
+  }
+  return "Invalid closeout submit input.";
+}
+
 export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
   const parsed = closeoutSubmitSchema.safeParse(rawInput);
   if (!parsed.success) {
-    throw new ValidationError("Invalid closeout submit input.", parsed.error.flatten());
+    throw new ValidationError(
+      formatCloseoutSubmitValidationMessage(parsed.error),
+      parsed.error.flatten(),
+    );
   }
 
   const input = parsed.data;
