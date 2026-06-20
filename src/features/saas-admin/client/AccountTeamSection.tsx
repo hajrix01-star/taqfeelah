@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AddAccountMemberForm } from "@/features/saas-admin/client/AddAccountMemberForm";
 import { EditAccountMemberForm } from "@/features/saas-admin/client/EditAccountMemberForm";
+import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 import { updateSaasAccountMember } from "@/features/saas-admin/client/saas-admin-api-client";
 import { resolveSaasAdminFormError, type SaasAdminFormError } from "@/features/saas-admin/client/api-error";
 import { AdminErrorAlert } from "@/features/saas-admin/components/AdminErrorAlert";
@@ -107,6 +108,11 @@ export function AccountTeamSection({
           <tr key={row.memberId} className="hover:bg-[var(--admin-hover)]">
             <AdminCompactTableCell col={0} className="font-semibold text-[var(--admin-text)]">
               {row.name}
+              {row.loginPhone ? (
+                <span className="mt-0.5 block text-[10px] font-normal text-[var(--admin-muted)]" dir="ltr">
+                  {formatLoginPhoneForDisplay(row.loginPhone)}
+                </span>
+              ) : null}
             </AdminCompactTableCell>
             <AdminCompactTableCell col={1}>{formatMemberRole(row.role, t)}</AdminCompactTableCell>
             <AdminCompactTableCell col={2} className="text-[var(--admin-muted)]">

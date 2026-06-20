@@ -1,11 +1,4 @@
-function normalizeWhatsAppPhone(phone: string | null | undefined): string {
-  if (!phone) return "";
-  const digits = phone.replace(/\D/g, "");
-  if (!digits) return "";
-  if (digits.startsWith("00")) return digits.slice(2);
-  if (digits.startsWith("0") && digits.length === 10) return `966${digits.slice(1)}`;
-  return digits;
-}
+import { normalizeWhatsAppPhone } from "@/core/phone/normalize-whatsapp-phone";
 
 export function buildWhatsAppShareUrl(message: string, phone?: string | null): string {
   const encoded = encodeURIComponent(message);

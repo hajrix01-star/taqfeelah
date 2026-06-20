@@ -1,6 +1,7 @@
 "use client";
 
 import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 import { useAccountSetupForm } from "@/features/account-setup/client/use-account-setup-form";
 
 type AccountSetupPageProps = {
@@ -55,7 +56,9 @@ export default function AccountSetupPage({ token }: AccountSetupPageProps) {
           >
             <div className="rounded-2xl bg-[#F7F5EF] p-3 text-center">
               <p className="text-xs font-bold text-[#716753]">جوال الدخول</p>
-              <p dir="ltr" className="mt-1 text-sm font-black">{preview.phoneNumber}</p>
+              <p dir="ltr" className="mt-1 text-sm font-black">
+                {formatLoginPhoneForDisplay(preview.phoneNumber) || preview.phoneNumber}
+              </p>
             </div>
             {preview.ownerEmail ? (
               <div className="rounded-2xl bg-[#F7F5EF] p-3 text-center">

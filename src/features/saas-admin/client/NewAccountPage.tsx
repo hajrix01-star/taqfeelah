@@ -79,6 +79,7 @@ export default function NewAccountPage() {
               <label className="block space-y-1 text-sm">
                 <span className="text-[var(--admin-muted)]">{t.newAccount.ownerPhone}</span>
                 <StandardLoginPhoneField
+                  required
                   value={form.ownerPhone}
                   onChange={form.setOwnerPhone}
                 />

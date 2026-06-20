@@ -8,6 +8,7 @@ type StandardLoginPhoneFieldProps = {
   value: string;
   onChange: (nextValue: string) => void;
   disabled?: boolean;
+  required?: boolean;
   /** Visual preset — all surfaces lock +966 with Saudi flag. */
   surface?: StandardLoginPhoneSurface;
 };
@@ -46,6 +47,7 @@ export function StandardLoginPhoneField({
   value,
   onChange,
   disabled = false,
+  required = false,
   surface = "admin",
 }: StandardLoginPhoneFieldProps) {
   const preset = SURFACE_PRESETS[surface];
@@ -55,6 +57,7 @@ export function StandardLoginPhoneField({
       value={value}
       onChange={onChange}
       disabled={disabled}
+      required={required}
       lockDialCode
       variant="admin"
       containerClassName={preset.containerClassName}

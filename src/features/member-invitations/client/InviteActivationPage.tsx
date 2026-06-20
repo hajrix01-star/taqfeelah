@@ -53,6 +53,7 @@ export default function InviteActivationPage({ token }: InviteActivationPageProp
                   <span className="mb-2 block text-xs font-bold text-[#716753]">جوالك</span>
                   <StandardLoginPhoneField
                     surface="activation"
+                    required
                     value={form.phone}
                     onChange={form.setPhone}
                   />
