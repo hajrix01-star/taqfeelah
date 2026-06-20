@@ -65,8 +65,6 @@ const combinedTotals = (monthly, storeList = businesses) => storeList.reduce((to
   const record = businessRecord(business, monthly);
   return { sales: total.sales + record.sales, expense: total.expense + record.expense, net: total.net + record.net, proofs: total.proofs + record.proofs };
 }, { sales: 0, expense: 0, net: 0, proofs: 0 });
-import { formatDisplayMoneyLabel } from "@/core/money/format-display-money";
-
 const text = (lang, key) => copy[lang][key] || key;
 const money = (value, lang) => formatDisplayMoneyLabel(value, lang);
 const fullDate = (day, lang) => lang === "ar" ? day.fullAr : day.fullEn;
