@@ -35,13 +35,13 @@
 | `phase9` → `exports-attachments` | ✅ |
 | توثيق `PRELAUNCH_AUDIT_AND_REMEDIATION.md` | ✅ |
 
-### الدفعة 2 — 🟠 (جارية على نفس الفرع)
+### الدفعة 2 — ✅ (على نفس الفرع)
 
-| البند | الهدف |
+| البند | الحالة |
 |-------|--------|
-| `prelaunch-wipe-all-tenant-data.mjs` | مسح **كل** بيانات العملاء/التجربة بدون seed |
-| `LIVE_DEPLOY_BATCH_PLAN.md` | هذه الوثيقة |
-| checklist إطلاق موحّد | مسح → migrate → env strict → أول حساب SaaS |
+| `prelaunch-wipe-all-tenant-data.mjs` | ✅ |
+| `LIVE_DEPLOY_BATCH_PLAN.md` | ✅ |
+| checklist إطلاق موحّد | ✅ |
 
 ### الدفعة 3 — ✅ (على نفس الفرع)
 
@@ -105,6 +105,7 @@ CHECK_BASE_URL=https://your-domain pnpm prelaunch:live-gate --env-file .env.prod
 
 ## مراجع
 
+- `docs/VPS_LAUNCH_RUNBOOK.md`
 - `docs/PRELAUNCH_AUDIT_AND_REMEDIATION.md`
 - `docs/PRODUCTION_STATUS.md`
 - `scripts/prelaunch-wipe-all-tenant-data.mjs`

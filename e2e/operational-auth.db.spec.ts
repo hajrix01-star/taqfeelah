@@ -4,11 +4,12 @@ const OWNER_USERNAME = process.env.E2E_OWNER_USERNAME || "hajri";
 const OWNER_PASSWORD = process.env.E2E_OWNER_PASSWORD || "hajri123";
 
 test.describe("operational auth with PostgreSQL", () => {
-  test("owner session login reaches the operational shell", async ({ page, request }) => {
+  test("owner session login reaches the operational shell", async ({ page }) => {
     const runtimeFailures: string[] = [];
     page.on("pageerror", (error) => runtimeFailures.push(error.message));
 
-    const loginResponse = await request.post("/api/v1/auth/session", {
+    // page.request shares the browser cookie jar; the isolated `request` fixture does not.
+    const loginResponse = await page.request.post("/api/v1/auth/session", {
       data: {
         mode: "owner_password",
         username: OWNER_USERNAME,
