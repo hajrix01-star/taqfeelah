@@ -6,6 +6,7 @@ import { updateSaasAccountSubscription } from "@/features/saas-admin/client/saas
 import { usePlanCatalogAdmin } from "@/features/billing/client/use-plan-catalog-admin";
 import { mapSaasAdminApiError } from "@/features/saas-admin/client/api-error";
 import { formatPlanCode } from "@/features/saas-admin/components/admin-display-labels";
+import { formatDisplayMoneyFromHalalas } from "@/core/money/format-display-money";
 import { formatDateTime, formatNumber } from "@/features/saas-admin/components/format-utils";
 import { AdminCallout } from "@/features/saas-admin/components/AdminCallout";
 import { AdminCard } from "@/features/saas-admin/components/AdminCard";
@@ -26,7 +27,7 @@ type AccountSubscriptionPanelProps = {
 };
 
 function formatPriceHalalas(halalas: number, locale: "ar" | "en", currencyLabel: string): string {
-  const amount = formatNumber(halalas / 100, locale);
+  const amount = formatDisplayMoneyFromHalalas(halalas, locale);
   return `${amount} ${currencyLabel}`;
 }
 

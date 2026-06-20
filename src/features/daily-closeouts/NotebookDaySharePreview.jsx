@@ -1,20 +1,18 @@
 "use client";
 
+import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
 import { TAQFEELAH_LOGO_SRC } from "@/lib/brand/taqfeelah-logo";
 import { resolveAppFontFamily } from "@/core/fonts/app-font-family";
 import { notebookLinesBackground, notebookThemes } from "./notebook-themes";
 
 
-function money(value) {
-  return Number(value || 0).toLocaleString("en-US");
-}
-
 function formatAmount(value, lang, tone = "default") {
   const suffix = lang === "ar" ? "ر.س" : "SAR";
   const color = tone === "sale" ? "#257844" : tone === "out" ? "#B44747" : tone === "net-pos" ? "#257844" : tone === "net-neg" ? "#B44747" : "#112A46";
+  const formatted = formatDisplayMoneyFromRiyals(value, lang);
   return (
     <span dir="ltr" className="whitespace-nowrap tabular-nums font-bold" style={{ color }}>
-      {`${money(value)} ${suffix}`}
+      {`${formatted} ${suffix}`}
     </span>
   );
 }

@@ -1,4 +1,4 @@
-import { formatDisplayNumber } from "@/core/i18n/display-locale";
+import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
 
 const escapeHtml = (value) => String(value ?? "")
   .replace(/&/g, "&amp;")
@@ -8,10 +8,7 @@ const escapeHtml = (value) => String(value ?? "")
 
 function formatCellValue(value, column, lang) {
   if (column.type === "number" && typeof value === "number") {
-    return formatDisplayNumber(value, lang, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+    return formatDisplayMoneyFromRiyals(value, lang);
   }
   return String(value ?? "");
 }

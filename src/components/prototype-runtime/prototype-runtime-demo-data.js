@@ -1,4 +1,5 @@
 import { Wallet, CreditCard } from "lucide-react";
+import { formatDisplayMoneyLabel } from "@/core/money/format-display-money";
 import { DEFAULT_NEW_STORE_SALES_CHANNEL_IDS } from "@/core/client/sales-channel-catalog";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import {
@@ -64,13 +65,10 @@ const combinedTotals = (monthly, storeList = businesses) => storeList.reduce((to
   const record = businessRecord(business, monthly);
   return { sales: total.sales + record.sales, expense: total.expense + record.expense, net: total.net + record.net, proofs: total.proofs + record.proofs };
 }, { sales: 0, expense: 0, net: 0, proofs: 0 });
+import { formatDisplayMoneyLabel } from "@/core/money/format-display-money";
+
 const text = (lang, key) => copy[lang][key] || key;
-const money = (value, lang) => {
-  const numericValue = Number(value) || 0;
-  const sign = numericValue < 0 ? "-" : "";
-  const formatted = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Math.abs(numericValue));
-  return lang === "ar" ? `${sign}${formatted} ر.س` : `${sign}${formatted} SAR`;
-};
+const money = (value, lang) => formatDisplayMoneyLabel(value, lang);
 const fullDate = (day, lang) => lang === "ar" ? day.fullAr : day.fullEn;
 const shortDate = (day, lang) => lang === "ar" ? day.dayAr : day.dayEn;
 const opDate = (item, lang) => item.date ? formatCalendarDate(item.date, lang) : (lang === "ar" ? item.dateAr : item.dateEn);

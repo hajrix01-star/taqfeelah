@@ -10,10 +10,11 @@ import {
 } from "../closeouts/client/closeout-attachment-utils";
 import { computeCloseoutTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
 import CloseoutOwnerEditBadge from "../closeouts/client/CloseoutOwnerEditBadge";
+import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
 import { closeoutStatusLabel } from "../daily-closeouts/closeout-status";
 
 function money(value, lang) {
-  return Number(value || 0).toLocaleString(lang === "ar" ? "en-US" : "en-US");
+  return formatDisplayMoneyFromRiyals(value, lang);
 }
 
 export default function OwnerCloseoutManagePanel({

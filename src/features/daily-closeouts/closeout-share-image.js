@@ -1,10 +1,11 @@
 import { countCloseoutAttachments } from "@/features/closeouts/client/closeout-attachment-utils";
+import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
 import { formatNumericDate } from "@/features/reports/client/report-period-labels";
 import { closeoutStatusLabel } from "./closeout-status";
 import { computeCloseoutTotals, salesArrayFromRecord } from "./closeout-calculations";
 
 function money(value) {
-  return Number(value || 0).toLocaleString("en-US");
+  return formatDisplayMoneyFromRiyals(value, "en");
 }
 
 function formatShareDate(isoDate) {

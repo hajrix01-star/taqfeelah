@@ -10,10 +10,11 @@ import {
   countOutflowAttachments,
 } from "../closeouts/client/closeout-attachment-utils";
 import { formatCloseoutDayLabel } from "../closeouts/client/closeout-day-label";
+import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 
 function money(value, lang) {
-  return Number(value || 0).toLocaleString(lang === "ar" ? "en-US" : "en-US");
+  return formatDisplayMoneyFromRiyals(value, lang);
 }
 
 const toneClass = {
