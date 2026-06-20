@@ -241,6 +241,20 @@ describe("submitStoreCloseout", () => {
     ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
   });
 
+  it("accepts one calendar day ahead of UTC for east-of-UTC clients", async () => {
+    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
+    const utcToday = new Date().toISOString().slice(0, 10);
+    const [y, m, d] = utcToday.split("-").map(Number);
+    const tomorrowUtc = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+
+    const result = await submitStoreCloseout({
+      ...baseInput,
+      date: tomorrowUtc,
+    });
+
+    expect(result.summaryEntryId).toBeTruthy();
+  });
+
   it("rejects oversized outflow arrays", async () => {
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 

@@ -57,7 +57,7 @@ describe("closeouts api client", () => {
     });
 
     const payload = JSON.parse(String(fetchMock.mock.lastCall?.[1]?.body ?? "{}"));
-    expect(payload.attachments).toEqual([preparedProof]);
+    expect(payload.attachments).toEqual([proof]);
   });
 
   it("falls back to dataUrl when attachment metadata would fail server validation", async () => {
@@ -328,6 +328,23 @@ describe("closeouts api client", () => {
 
     expect(failure?.code).toBe("unmapped_sales_channels");
     expect(failure?.unmappedChannels?.[0]?.channelId).toBe("custom-pos-99");
+  });
+
+  it("diagnoses invalid closeout dates before submit", async () => {
+    setMapsEnv();
+    const { diagnoseCloseoutSubmitFailure } = await import("./closeouts-api-client.js");
+
+    const failure = diagnoseCloseoutSubmitFailure({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "ahmed",
+      closeout: {
+        storeId: "shami",
+        date: "2099-12-31",
+        sales: [{ channelId: "cash", name: "Cash", amount: 100 }],
+      },
+    });
+
+    expect(failure?.code).toBe("invalid_date");
   });
 
   it("returns empty list when required UUID mapping is missing", async () => {

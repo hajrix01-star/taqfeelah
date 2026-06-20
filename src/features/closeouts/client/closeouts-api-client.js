@@ -13,6 +13,7 @@ import {
   hasCloseoutApiStoreMapping,
   setRuntimeApiIdMaps,
 } from "@/core/client/runtime-api-maps-state";
+import { isCloseoutSubmitDateAllowed } from "@/features/closeouts/closeout-submit-date";
 import {
   diagnoseCloseoutSalesChannelGaps,
   extractCloseoutSalesChannels,
@@ -67,6 +68,10 @@ export function buildCloseoutSubmitFailureMessage(submitFailure, lang = "ar") {
       return lang === "ar"
         ? "تعذر إرسال التقفيلة: أدخل مبلغ الداخل في قناة بيع واحدة على الأقل."
         : "Closeout submit blocked: enter at least one positive sales amount.";
+    case "invalid_date":
+      return lang === "ar"
+        ? "تعذر إرسال التقفيلة: تاريخ اليوم غير مقبول على الخادم. اختر تاريخ اليوم أو يومًا سابقًا."
+        : "Closeout submit blocked: closeout date is not accepted by the server. Choose today or an earlier date.";
     default:
       return lang === "ar" ? "تعذر الإرسال." : "Failed to send.";
   }
@@ -84,6 +89,11 @@ export function diagnoseCloseoutSubmitFailure({
 }) {
   const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
   if (!mappedOrganizationId) return { code: "invalid_organization", unmappedChannels: [] };
+
+  const closeoutDate = typeof closeout?.date === "string" ? closeout.date.trim() : "";
+  if (closeoutDate && !isCloseoutSubmitDateAllowed(closeoutDate)) {
+    return { code: "invalid_date", unmappedChannels: [] };
+  }
 
   const { userIdMap, storeIdMap } = getMaps();
   const mappedActorUserId = mapToUuid(actorUserId, userIdMap);
@@ -115,23 +125,6 @@ function extractAttachmentPayloads(rawList) {
     .map((item) => {
       if (typeof item === "string" && item.startsWith("data:")) return item;
       if (item && typeof item === "object" && typeof item.dataUrl === "string" && item.dataUrl.startsWith("data:")) {
-        const sizeBytes = typeof item.sizeBytes === "number" && item.sizeBytes > 0
-          ? Math.round(item.sizeBytes)
-          : null;
-        if (item.kind === "image" && sizeBytes) {
-          const name = typeof item.name === "string" && item.name.trim()
-            ? item.name.trim()
-            : undefined;
-          return {
-            kind: "image",
-            name,
-            mimeType: typeof item.mimeType === "string" && item.mimeType.trim()
-              ? item.mimeType.trim()
-              : "image/jpeg",
-            sizeBytes,
-            dataUrl: item.dataUrl,
-          };
-        }
         return item.dataUrl;
       }
       return "";
@@ -139,19 +132,29 @@ function extractAttachmentPayloads(rawList) {
     .filter(Boolean);
 }
 
+function optionalTrimmedString(value) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
 function extractOutflows(closeout) {
   return (closeout?.outflows || [])
-    .map((row) => ({
-      type: row?.type,
-      amountHalalas: toMoneyHalalas(row?.amount),
-      categoryId: isUuid(row?.categoryId) ? row.categoryId : null,
-      categoryName: typeof row?.category === "string"
-        ? row.category
-        : (typeof row?.categoryName === "string" ? row.categoryName : ""),
-      typeLabel: typeof row?.typeLabel === "string" ? row.typeLabel : "",
-      note: typeof row?.note === "string" ? row.note : "",
-      attachments: extractAttachmentPayloads(row?.attachments),
-    }))
+    .map((row) => {
+      const categoryName = optionalTrimmedString(
+        typeof row?.category === "string" ? row.category : row?.categoryName,
+      );
+      const typeLabel = optionalTrimmedString(row?.typeLabel);
+      const note = optionalTrimmedString(row?.note);
+      const payload = {
+        type: row?.type,
+        amountHalalas: toMoneyHalalas(row?.amount),
+        categoryId: isUuid(row?.categoryId) ? row.categoryId : null,
+        attachments: extractAttachmentPayloads(row?.attachments),
+      };
+      if (categoryName) payload.categoryName = categoryName;
+      if (typeLabel) payload.typeLabel = typeLabel;
+      if (note) payload.note = note;
+      return payload;
+    })
     .filter((row) => (row.type === "purchases" || row.type === "expense" || row.type === "withdrawal") && row.amountHalalas > 0);
 }
 
@@ -186,7 +189,7 @@ export async function submitCloseoutViaApi({
       salesChannels,
       outflows: extractOutflows(closeout),
       attachments: extractAttachmentPayloads(closeout?.attachments),
-      note: closeout?.note || "",
+      ...(optionalTrimmedString(closeout?.note) ? { note: optionalTrimmedString(closeout?.note) } : {}),
     },
     errorMessage: "تعذر إرسال التقفيلة. تحقق من الصور وحاول مرة أخرى.",
   });
