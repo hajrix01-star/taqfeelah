@@ -28,8 +28,8 @@ test.describe("operational auth with PostgreSQL", () => {
     const sessionResponse = await page.request.get("/api/v1/auth/session");
     expect(sessionResponse.ok()).toBeTruthy();
     const sessionBody = await sessionResponse.json();
-    expect(sessionBody?.data?.authenticated).toBe(true);
-    expect(sessionBody?.data?.role).toBe("owner");
+    expect(sessionBody?.authenticated).toBe(true);
+    expect(sessionBody?.role).toBe("owner");
 
     expect(runtimeFailures.filter((msg) => /ReferenceError|is not defined/i.test(msg))).toEqual([]);
   });
