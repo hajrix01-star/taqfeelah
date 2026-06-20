@@ -36,20 +36,10 @@ pnpm prelaunch:check:strict --env-file .env.production
 
 ---
 
-## 3. مسح البيانات التجريبية
+## 3. مسح البيانات التجريبية — **مؤجّل**
 
-```bash
-# نسخ احتياطي (موصى به)
-pg_dump "$DATABASE_URL" > backup-before-live-$(date +%Y%m%d).sql
-
-# معاينة
-pnpm prelaunch:wipe
-
-# تنفيذ
-PRELAUNCH_WIPE_CONFIRM=wipe-all-tenant-data-for-live pnpm prelaunch:wipe:apply
-
-pnpm db:migrate
-```
+> **قرار المالك:** نُبقي البيانات للتجربة — **لا wipe الآن**.  
+> نفّذ `prelaunch:wipe:apply` **فقط** قبل أول عميل حقيقي (ليس قبل merge).
 
 ---
 

@@ -1,6 +1,6 @@
 # الاختبار اليدوي قبل الإطلاق — تقفيلة
 
-> **متى:** بعد `prelaunch:wipe:apply` + `prelaunch:check --strict` + merge + deploy  
+> **متى:** بعد deploy — **مع** أو **بدون** wipe (البيانات التجريبية مسموحة للتجربة)  
 > **من ينفّذ:** مالك المنتج أو QA  
 > **المدة التقريبية:** 30–45 دقيقة
 
@@ -10,7 +10,7 @@
 
 - [ ] VPS يعمل على آخر deploy من فرع prelaunch
 - [ ] `pnpm prelaunch:check --env-file .env.production --strict` ✅
-- [ ] قاعدة البيانات **فارغة** (بعد wipe) — لا seed demo
+- [ ] قاعدة البيانات — **تجريبية OK** (wipe مؤجّل حتى أول عميل حقيقي)
 - [ ] UPSTASH Redis مفعّل — **اختياري** (قرار المالك: ليس مطلوبًا للإطلاق)
 - [ ] `AUTH_SESSION_SECRET` قوي (≥16 حرف)
 

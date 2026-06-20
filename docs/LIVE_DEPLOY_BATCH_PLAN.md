@@ -4,7 +4,8 @@
 > - تجميع **عدة دفعات إصلاح** في PR/فرع واحد قبل أي merge إلى `main`  
 > - **لا نشر لايف** إلا بدفعة واحدة عند «جاهز للايف»  
 > - **كل البيانات الحالية تجريبية** — مسموح حذف المنشآت والمشتركين والموظفين الوهميين بالكامل  
-> - **Upstash Redis اختياري للإطلاق** — rate limit في الذاكرة كافٍ للبداية
+> - **Upstash Redis اختياري للإطلاق** — rate limit في الذاكرة كافٍ للبداية  
+> - **مسح البيانات التجريبية:** **مؤجّل** — نُبقي البيانات للتجربة حتى أول عميل حقيقي
 
 ---
 
@@ -53,42 +54,29 @@
 | `prelaunch-live-gate.mjs` — env strict + db-source + manual pointer | ✅ |
 | object storage | ⏸ قرار مالك (بعد الإطلاق) |
 
-### الدفعة 4 — ⏸ (ما بعد الإطلاق)
+### الدفعة 4 — ⏸ **لم تُنفَّذ** (ما بعد الإطلاق — لا تمنع لايف)
 
-| البند |
-|-------|
-| ترحيل JS→TS (272 ملف) |
-| CSP nonce |
+| البند | الحالة |
+|-------|--------|
+| ترحيل JS→TS (~272 ملف legacy) | ⏸ لم يبدأ |
+| CSP nonce | ⏸ لم يبدأ |
+
+> **لا تستحق تأجيل الإطلاق:** التطبيق يعمل؛ هذه تحسينات صيانة/أمان تدريجية بعد stabilize.
 
 ---
 
-## مسح البيانات التجريبية (قبل أول عميل)
+## مسح البيانات التجريبية
 
-> **يحذف:** منشآت، مستخدمين، تقفيلات، entries، اشتراكات، دعوات، signup requests، metrics، platform admin grants في DB  
-> **يحتفظ:** `plan_catalog` (خطط النظام من migrations)  
-> **لا يُعاد seed demo** بعد المسح
+> **قرار المالك (2026-06):** **لا مسح الآن** — البيانات التجريبية تُبقى للتجربة على اللايف.  
+> **متى المسح؟** فقط قبل **أول عميل حقيقي** (ليس قبل merge أو أول deploy).
 
 ```bash
-# 1. نسخ احتياطي (اختياري لكن موصى به)
-pg_dump "$DATABASE_URL" > backup-before-live.sql
-
-# 2. مسح جاف — يعرض الخطة فقط
+# عند الحاجة لاحقًا — dry-run أولًا
 pnpm prelaunch:wipe
-
-# 3. مسح فعلي
-PRELAUNCH_WIPE_CONFIRM=wipe-all-tenant-data-for-live pnpm prelaunch:wipe --apply
-
-# 4. migrate (إن لزم)
-pnpm db:migrate
-
-# 5. تحقق env
-pnpm prelaunch:live-gate --env-file .env.production
-# أو: pnpm prelaunch:check:strict --env-file .env.production
-CHECK_BASE_URL=https://your-domain pnpm prelaunch:live-gate --env-file .env.production
-
-# 6. أول عميل حقيقي
-# /saas-admin/accounts/new
+PRELAUNCH_WIPE_CONFIRM=wipe-all-tenant-data-for-live pnpm prelaunch:wipe:apply
 ```
+
+Script جاهز (`prelaunch-wipe-all-tenant-data.mjs`) — **لا تُشغّله** ما دامت التجربة مستمرة.
 
 ---
 
@@ -97,9 +85,9 @@ CHECK_BASE_URL=https://your-domain pnpm prelaunch:live-gate --env-file .env.prod
 - [ ] الدفعات 1–3 مدمجة في فرع واحد
 - [ ] `pnpm check:refactor` أخضر محليًا
 - [ ] CI أخضر (quality + db-integration)
-- [ ] `prelaunch:wipe --apply` على VPS (أو DB فارغة)
 - [ ] `pnpm prelaunch:live-gate --env-file .env.production` (أو check:strict)
 - [ ] `docs/PRELAUNCH_MANUAL_SMOKE.md` — كل البنود ☑
+- [ ] ~~`prelaunch:wipe --apply`~~ — **مؤجّل** (نُبقي بيانات التجربة)
 - [ ] **طلب صريح:** «جاهز للايف» / «ادمج» → merge إلى `main`
 
 ---
