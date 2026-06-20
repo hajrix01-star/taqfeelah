@@ -49,6 +49,7 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   AUTH_RATE_LIMIT_REDIS_REQUIRED: z.enum(["true", "false"]).optional(),
+  AUTH_SESSION_COOKIE_SECURE: z.enum(["true", "false"]).optional(),
 });
 
 type AppEnv = z.infer<typeof envSchema>;
@@ -67,6 +68,13 @@ export function allowHeaderAuthContext(env = readEnv()): boolean {
 
 export function isServerProductionMode(env = readEnv()): boolean {
   return env.APP_MODE === "production" || env.NODE_ENV === "production";
+}
+
+/** When unset, Secure cookies follow production mode (HTTPS). Set false for local/CI HTTP E2E. */
+export function isAuthSessionCookieSecure(env = readEnv()): boolean {
+  if (env.AUTH_SESSION_COOKIE_SECURE === "true") return true;
+  if (env.AUTH_SESSION_COOKIE_SECURE === "false") return false;
+  return isServerProductionMode(env);
 }
 
 function parseJsonMap(rawValue: string | undefined): Record<string, string> {

@@ -39,6 +39,7 @@ export default defineConfig({
       AUTH_DB_CREDENTIALS_ENABLED: "true",
       ALLOW_HEADER_AUTH_CONTEXT: "false",
       AUTH_SESSION_SECRET: "playwright-db-test-session-secret-32chars",
+      AUTH_SESSION_COOKIE_SECURE: "false",
       AUTH_ORGANIZATION_ID: SEED_ORG,
       AUTH_OWNER_USER_ID: SEED_OWNER,
       NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID: SEED_ORG,

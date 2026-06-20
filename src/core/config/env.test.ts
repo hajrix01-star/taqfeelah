@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ServiceUnavailableError } from "@/core/errors/app-error";
-import { __resetEnvCacheForTests, allowHeaderAuthContext, assertProductionRuntimeEnv } from "./env";
+import { __resetEnvCacheForTests, allowHeaderAuthContext, assertProductionRuntimeEnv, isAuthSessionCookieSecure } from "./env";
 
 const productionEnv = {
   NODE_ENV: "production",
@@ -162,5 +162,27 @@ describe("assertProductionRuntimeEnv", () => {
       AUTH_DB_CREDENTIALS_ENABLED: "true",
     });
     expect(() => assertProductionRuntimeEnv()).not.toThrow();
+  });
+});
+
+describe("isAuthSessionCookieSecure", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    __resetEnvCacheForTests();
+  });
+
+  it("defaults to true in production mode", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("APP_MODE", "production");
+    __resetEnvCacheForTests();
+    expect(isAuthSessionCookieSecure()).toBe(true);
+  });
+
+  it("honors explicit false for CI HTTP E2E", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("APP_MODE", "production");
+    vi.stubEnv("AUTH_SESSION_COOKIE_SECURE", "false");
+    __resetEnvCacheForTests();
+    expect(isAuthSessionCookieSecure()).toBe(false);
   });
 });
