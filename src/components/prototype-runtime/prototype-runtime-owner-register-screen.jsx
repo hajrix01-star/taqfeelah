@@ -13,6 +13,7 @@ import { useRegisterEntriesFromApi } from "@/features/entries/client/use-registe
 import { newestEntries } from "@/features/operations/operational-analytics";
 import {
   DEFAULT_REGISTER_LOG_FILTERS,
+  applyRegisterReportGranularity,
   buildRegisterCloseoutSummaries,
   buildRegisterDayReportRows,
   buildRegisterSalesChannelOptions,
@@ -25,6 +26,13 @@ import { buildRegisterAttachmentGalleryModel } from "@/features/entries/client/r
 import {
   logPeriodScopeLabel,
 } from "@/features/reports/client/report-period-labels";
+import {
+  defaultRegisterReportGranularity,
+  registerReportGranularityCountLabel,
+  resolveRegisterReportGranularity,
+  supportsRegisterReportGranularity,
+  REGISTER_REPORT_GRANULARITY,
+} from "@/features/reports/client/register-report-granularity";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { entryIsActive, summarizeEntries } from "@/features/operations/operational-analytics";
 import { resolveSalesChannelRowLabel } from "@/features/org-config/client/sales-channel-display";
@@ -54,7 +62,7 @@ import { OwnerRegisterGeneralReportList } from "./owner-register-general-report-
 import { OwnerRegisterOperationsList } from "./owner-register-operations-list";
 import { OwnerRegisterAttachmentsGallery } from "./owner-register-attachments-gallery";
 import { RegisterStoreChips } from "./owner-register-store-filter";
-import { RegisterDashboardCard } from "./owner-register-ui-primitives";
+import { RegisterDashboardCard, OwnerRegisterReportGranularityToggle } from "./owner-register-ui-primitives";
 import { confirmCloseoutDelete, alertCloseoutNotFound } from "@/lib/ui/app-dialog/app-dialog-helpers";
 
 export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOperation = () => {}, onRestoreOperation = () => {}, onEditCloseout = () => {}, onDeleteCloseout = () => {}, onShareRegister = () => {}, operationalEntries = [], selectedBusiness = "all", setSelectedBusiness = () => {}, businessesList = businesses, archivedBusinessIds = [], archivedReadOnlyBusinessId = null, duplicateSummaryFocus = null, notebookTheme = "yellow", registerEntriesApiEnabled = false, registerEntriesApiOrganizationId = "", registerEntriesApiActorUserId = "", registerEntriesApiActorRole = "owner", registerEntriesSyncError = "", closeoutsSyncError = "", entryAttachmentsApiEnabled = false, entryAttachmentsApiOrganizationId = "", entryAttachmentsApiActorUserId = "", entryAttachmentsApiActorRole = "owner" }) {
@@ -64,6 +72,9 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
   const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
   const [customFrom, setCustomFrom] = useState(() => `${new Date().getFullYear()}-01-01`);
   const [customTo, setCustomTo] = useState(() => todayIsoDate());
+  const [generalReportGranularity, setGeneralReportGranularity] = useState(
+    () => defaultRegisterReportGranularity("month"),
+  );
   const [logFilters, setLogFilters] = useState(DEFAULT_REGISTER_LOG_FILTERS);
   const [draftLogFilters, setDraftLogFilters] = useState(DEFAULT_REGISTER_LOG_FILTERS);
   const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
@@ -110,11 +121,16 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
     setPeriod(nextPeriod);
     if (nextPeriod === "day") {
       setSelectedDate(today);
+      setGeneralReportGranularity(REGISTER_REPORT_GRANULARITY.DAY);
       setLogView((current) => (current === "report" && safeBusinessId === "all" ? "closeouts" : current));
     } else if (nextPeriod === "month") {
       setSelectedMonth(today.slice(0, 7));
+      setGeneralReportGranularity(REGISTER_REPORT_GRANULARITY.DAY);
     } else if (nextPeriod === "year") {
       setSelectedYear(String(new Date().getFullYear()));
+      setGeneralReportGranularity(REGISTER_REPORT_GRANULARITY.MONTH);
+    } else {
+      setGeneralReportGranularity(REGISTER_REPORT_GRANULARITY.DAY);
     }
   }, [safeBusinessId]);
   const registerTargetStoreIds = useMemo(
@@ -305,14 +321,25 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
     [filteredEntries, lang, logFilters.salesChannel, salesChannelOptions],
   );
   const registerPeriodLabel = logPeriodScopeLabel(lang, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo);
+  const resolvedGeneralReportGranularity = resolveRegisterReportGranularity(
+    period,
+    generalReportGranularity,
+  );
+  const showGeneralReportGranularityToggle = logView === "report"
+    && supportsRegisterReportGranularity(period)
+    && safeBusinessId !== "all";
   const generalReportNeedsStore = safeBusinessId === "all";
   const generalReportPeriodEntries = useMemo(
     () => periodEntries.filter(entryIsActive),
     [periodEntries],
   );
-  const localGeneralReportRows = useMemo(
+  const dailyGeneralReportRows = useMemo(
     () => buildRegisterDayReportRows(generalReportPeriodEntries),
     [generalReportPeriodEntries],
+  );
+  const localGeneralReportRows = useMemo(
+    () => applyRegisterReportGranularity(dailyGeneralReportRows, resolvedGeneralReportGranularity),
+    [dailyGeneralReportRows, resolvedGeneralReportGranularity],
   );
   const localGeneralReportTotals = useMemo(
     () => summarizeEntries(generalReportPeriodEntries),
@@ -343,14 +370,20 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
     configuredChannels: channels,
     includeOutflowTransactions: false,
   });
+  const apiDailyGeneralReportRows = useMemo(
+    () => (generalReportApiEnabled && generalReportApiLoaded && !generalReportApiError
+      ? apiGeneralReportRows.map((row) => ({
+        id: row.id || row.date,
+        date: row.date || row.id,
+        sales: row.sales,
+        expense: row.expense,
+        net: row.net,
+      }))
+      : []),
+    [apiGeneralReportRows, generalReportApiEnabled, generalReportApiError, generalReportApiLoaded],
+  );
   const generalReportRows = generalReportApiEnabled && generalReportApiLoaded && !generalReportApiError
-    ? apiGeneralReportRows.map((row) => ({
-      id: row.id || row.date,
-      date: row.date || row.id,
-      sales: row.sales,
-      expense: row.expense,
-      net: row.net,
-    }))
+    ? applyRegisterReportGranularity(apiDailyGeneralReportRows, resolvedGeneralReportGranularity)
     : localGeneralReportRows;
   const generalReportTotals = generalReportApiEnabled && generalReportApiLoaded && !generalReportApiError && apiGeneralReportTotals
     ? {
@@ -390,10 +423,12 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
     selectedYear,
     customFrom,
     customTo,
+    generalReportGranularity: resolvedGeneralReportGranularity,
     exportData: {
       visibleEntries,
       closeoutSummaries,
       generalReportRows,
+      generalReportGranularity: resolvedGeneralReportGranularity,
       periodEntries,
       attachmentGalleryItems: attachmentGallery.items,
     },
@@ -479,7 +514,11 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
               : logView === "attachments"
                 ? `${attachmentGallery.count} ${text(lang, "attachments")}`
               : logView === "report"
-                ? `${generalReportRows.length} ${lang === "ar" ? "يوم" : "days"}`
+                ? registerReportGranularityCountLabel(
+                  generalReportRows.length,
+                  resolvedGeneralReportGranularity,
+                  lang,
+                )
                 : `${closeoutSummaries.length} ${lang === "ar" ? "تقفيلات" : "Closeouts"}`}
           </span>
         </div>
@@ -549,13 +588,22 @@ export function OwnerRegisterScreen({ lang, onOpenOperation = () => {}, onVoidOp
           />
         )}
 
+        {logView === "report" && showGeneralReportGranularityToggle && (
+          <OwnerRegisterReportGranularityToggle
+            lang={lang}
+            value={resolvedGeneralReportGranularity}
+            onChange={setGeneralReportGranularity}
+          />
+        )}
+
         {logView === "report" && (
           <OwnerRegisterGeneralReportList
             lang={lang}
             rows={generalReportRows}
             totals={generalReportTotals}
-            loading={generalReportApiEnabled && generalReportApiLoading && !generalReportApiLoaded && !localGeneralReportRows.length}
-            loadError={generalReportLoadError && !localGeneralReportRows.length}
+            granularity={resolvedGeneralReportGranularity}
+            loading={generalReportApiEnabled && generalReportApiLoading && !generalReportApiLoaded && !dailyGeneralReportRows.length}
+            loadError={generalReportLoadError && !dailyGeneralReportRows.length}
             loadErrorMessage={generalReportLoadErrorMessage}
             needsStoreSelection={generalReportNeedsStore}
           />

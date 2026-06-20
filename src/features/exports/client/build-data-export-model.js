@@ -1,9 +1,15 @@
 import {
   entryIsActive,
   entryIsOutflow,
-  summarizeEntries,
 } from "@/features/operations/operational-analytics";
 import { formatCalendarDate, formatSelectedMonth } from "@/features/reports/client/report-period-labels";
+import {
+  formatRegisterReportRowLabel,
+  registerReportGranularityColumnLabel,
+  registerReportGranularitySheetName,
+  resolveRegisterReportGranularity,
+} from "@/features/reports/client/register-report-granularity";
+import { buildRegisterReportExportRows } from "@/features/entries/client/register-log-display";
 import {
   businessName,
   text,
@@ -227,18 +233,17 @@ function buildRegisterReportRows(snapshot, lang, businessesList, operationalEntr
       && entryDateMatches(entry, sharePeriod, shareDate, snapshot.selectedMonth, shareYear, shareFrom, shareTo),
   );
   const withStore = includeStoreColumn(snapshot);
-  const keys = new Set(scoped.map((entry) => `${entry.businessId}|${entry.date}`));
-  return [...keys].map((key) => {
-    const [businessId, date] = key.split("|");
-    const totals = summarizeEntries(scoped.filter((entry) => entry.businessId === businessId && entry.date === date));
-    return {
-      ...(withStore ? { store: storeCell(snapshot, businessId, businessesList, lang) } : {}),
-      date: formatCalendarDate(date, lang),
-      sales: totals.sales,
-      expense: totals.expense,
-      net: totals.net,
-    };
-  }).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const granularity = resolveRegisterReportGranularity(
+    sharePeriod,
+    snapshot.generalReportGranularity || snapshot.exportData?.generalReportGranularity,
+  );
+
+  return buildRegisterReportExportRows({
+    entries: scoped,
+    granularity,
+    withStore,
+    formatStore: (businessId) => storeCell(snapshot, businessId, businessesList, lang),
+  });
 }
 
 function buildRegisterAttachmentsSheet(snapshot, lang, businessesList) {
@@ -271,19 +276,30 @@ function buildRegisterExportSheets(snapshot, lang, businessesList, operationalEn
   if (view === "attachments") sheets.push(buildRegisterAttachmentsSheet(snapshot, lang, businessesList));
   if (view === "report") {
     const withStore = includeStoreColumn(snapshot);
+    const granularity = resolveRegisterReportGranularity(
+      snapshot.period,
+      snapshot.generalReportGranularity || snapshot.exportData?.generalReportGranularity,
+    );
     const rows = withStore || !snapshot.exportData?.generalReportRows?.length
-      ? buildRegisterReportRows(snapshot, lang, businessesList, operationalEntries)
+      ? buildRegisterReportRows(snapshot, lang, businessesList, operationalEntries).map((row) => ({
+        ...(withStore ? { store: row.store } : {}),
+        date: formatRegisterReportRowLabel(row.date, granularity, lang),
+        sales: Number(row.sales) || 0,
+        expense: Number(row.expense) || 0,
+        net: Number(row.net) || 0,
+      }))
       : snapshot.exportData.generalReportRows.map((row) => ({
-        date: formatCalendarDate(row.date, lang),
+        ...(withStore && row.store ? { store: row.store } : {}),
+        date: formatRegisterReportRowLabel(row.date, granularity, lang),
         sales: Number(row.sales) || 0,
         expense: Number(row.expense) || 0,
         net: Number(row.net) || 0,
       }));
     sheets.push({
-      name: lang === "ar" ? "تقرير الأيام" : "Daily report",
+      name: registerReportGranularitySheetName(granularity, lang),
       columns: [
         ...(includeStoreColumn(snapshot) ? [{ key: "store", label: text(lang, "store"), type: "text" }] : []),
-        { key: "date", label: lang === "ar" ? "اليوم" : "Day", type: "date" },
+        { key: "date", label: registerReportGranularityColumnLabel(granularity, lang), type: "date" },
         { key: "sales", label: text(lang, "sales"), type: "number", sum: true },
         { key: "expense", label: text(lang, "purchasesExpenses"), type: "number", sum: true },
         { key: "net", label: text(lang, "result"), type: "number", sum: true },

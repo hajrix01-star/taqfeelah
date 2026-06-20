@@ -83,6 +83,36 @@ describe("buildDataExportModel", () => {
     expect(model?.sheets[0]?.rows[0]?.label).toBe("صيانة");
   });
 
+  it("builds register monthly export sheet from general report rows", () => {
+    const model = buildDataExportModel({
+      lang: "en",
+      businessesList,
+      operationalEntries: [],
+      archivedBusinessIds: [],
+      snapshot: {
+        screen: "register",
+        registerView: "report",
+        selectedBusiness: "shami",
+        includedBusinessIds: ["shami"],
+        period: "year",
+        selectedYear: "2026",
+        generalReportGranularity: "month",
+        exportData: {
+          generalReportRows: [
+            { date: "2026-06", sales: 150, expense: 20, net: 130 },
+            { date: "2026-05", sales: 30, expense: 0, net: 30 },
+          ],
+          generalReportGranularity: "month",
+        },
+      },
+    });
+
+    expect(model?.sheets[0]?.name).toBe("Monthly report");
+    expect(model?.sheets[0]?.columns.find((column) => column.key === "date")?.label).toBe("Month");
+    expect(model?.sheets[0]?.rows).toHaveLength(2);
+    expect(model?.sheets[0]?.rows[0]?.date).toBe("06-2026");
+  });
+
   it("builds combined home summary with summable store rows", () => {
     const model = buildDataExportModel({
       lang: "en",

@@ -2,7 +2,11 @@
 
 import React from "react";
 import { formatNetMarginOfSalesRatio } from "@/features/entries/client/register-log-display";
-import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
+import {
+  formatRegisterReportRowLabel,
+  registerReportGranularityColumnLabel,
+  REGISTER_REPORT_GRANULARITY,
+} from "@/features/reports/client/register-report-granularity";
 import { money, text } from "./prototype-runtime-demo-data";
 import { MoneyValue } from "./prototype-runtime-notebook";
 
@@ -26,6 +30,7 @@ export function OwnerRegisterGeneralReportList({
   lang,
   rows = [],
   totals = { sales: 0, expense: 0, net: 0 },
+  granularity = REGISTER_REPORT_GRANULARITY.DAY,
   loading = false,
   loadError = false,
   loadErrorMessage = "",
@@ -70,7 +75,9 @@ export function OwnerRegisterGeneralReportList({
     <article className="overflow-hidden rounded-[18px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
       <div className="border-b border-[#F0EBE0] px-3 py-2">
         <div className={`${GRID_CLASS} text-taq-nav font-bold text-[#806528]`}>
-          <span className={dayColumnAlignClass(lang)}>{text(lang, "day")}</span>
+          <span className={dayColumnAlignClass(lang)}>
+            {registerReportGranularityColumnLabel(granularity, lang)}
+          </span>
           <span className="text-center">{text(lang, "salesShort")}</span>
           <span className="text-center">{text(lang, "outflowShort")}</span>
           <span className="text-center">{text(lang, "result")}</span>
@@ -86,7 +93,7 @@ export function OwnerRegisterGeneralReportList({
               className={`block w-full truncate font-bold text-[#112A46] ${dayColumnAlignClass(lang)}`}
               dir="ltr"
             >
-              {formatCalendarDate(row.date, lang)}
+              {formatRegisterReportRowLabel(row.date, granularity, lang)}
             </span>
             <strong className="text-center tabular-nums text-[#257844]">
               <MoneyValue value={money(row.sales, lang)} />
