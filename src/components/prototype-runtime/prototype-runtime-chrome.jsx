@@ -17,6 +17,7 @@ import EmployeeFooterNav from "@/features/employee-closeouts/EmployeeFooterNav";
 import { notebookLinesBackground } from "@/features/daily-closeouts/notebook-themes";
 import { AppBrandMark } from "@/lib/brand/AppBrandMark";
 import { text } from "./prototype-runtime-demo-data";
+import { taqInteractive } from "@/core/ui/interactive-classes";
 
 function Logo({ compact = false, centered = false, showTagline = false }) {
   return (
@@ -29,15 +30,15 @@ function Logo({ compact = false, centered = false, showTagline = false }) {
 function LanguageSwitch({ lang, setLang }) {
   return (
     <div className="flex shrink-0 items-center gap-1 rounded-full bg-white p-1 ring-1 ring-black/[0.05]">
-      <button onClick={() => setLang("ar")} className={`rounded-full px-1.5 py-1 text-taq-meta font-black ${lang === "ar" ? "bg-[#112A46] text-white" : "text-[#827762]"}`}>ع</button>
-      <button onClick={() => setLang("en")} className={`rounded-full px-1.5 py-1 text-taq-meta font-black ${lang === "en" ? "bg-[#112A46] text-white" : "text-[#827762]"}`}>EN</button>
+      <button type="button" onClick={() => setLang("ar")} className={`${taqInteractive.chip} rounded-full px-1.5 py-1 text-taq-meta font-black ${lang === "ar" ? "bg-[#112A46] text-white" : "text-[#827762]"}`}>ع</button>
+      <button type="button" onClick={() => setLang("en")} className={`${taqInteractive.chip} rounded-full px-1.5 py-1 text-taq-meta font-black ${lang === "en" ? "bg-[#112A46] text-white" : "text-[#827762]"}`}>EN</button>
     </div>
   );
 }
 
 function BackTitle({ title, onBack, lang, inNotebook = false }) {
   const BackIcon = lang === "ar" ? ChevronRight : ChevronLeft;
-  return <div className={`mb-5 flex items-center gap-3 ${inNotebook ? "" : "taq-page-gutter"}`}><button onClick={onBack} className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]"><BackIcon className="h-5 w-5" /></button><h2 className="text-xl font-black">{title}</h2></div>;
+  return <div className={`mb-5 flex items-center gap-3 ${inNotebook ? "" : "taq-page-gutter"}`}><button type="button" onClick={onBack} className={`${taqInteractive.icon} flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]`}><BackIcon className="h-5 w-5" /></button><h2 className="text-xl font-black">{title}</h2></div>;
 }
 
 function TopBar({
@@ -73,7 +74,7 @@ function TopBar({
     <header dir="ltr" className="taq-topbar sticky top-0 z-40 shrink-0 pb-2" style={headerStyle}>
       <div className={`absolute top-[calc(22px+env(safe-area-inset-top,0px))] flex h-10 w-10 items-center justify-center ${lang === "ar" ? "left-[14px]" : "right-[14px]"}`}>
         {!employee && showNotifications && (
-          <button onClick={onNotifications} className="relative flex h-9 w-9 items-center justify-center text-[#112A46]">
+          <button type="button" onClick={onNotifications} className={`${taqInteractive.icon} relative flex h-9 w-9 items-center justify-center rounded-full text-[#112A46]`}>
             <Bell className="h-5 w-5" />
             {hasNotificationBadge && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#CE4642]" />}
           </button>
@@ -90,7 +91,7 @@ function TopBar({
             aria-label={text(lang, "account")}
             aria-expanded={accountMenuOpen}
             aria-haspopup="menu"
-            className={`flex h-9 w-9 items-center justify-center rounded-full text-[#112A46] transition ${accountMenuOpen ? "text-[#9A823E]" : ""}`}
+            className={`${taqInteractive.icon} flex h-9 w-9 items-center justify-center rounded-full text-[#112A46] transition ${accountMenuOpen ? "text-[#9A823E]" : ""}`}
           >
             <UserRound className="h-[21px] w-[21px]" strokeWidth={2} />
           </button>
@@ -112,14 +113,14 @@ function TopBar({
                       role="menuitem"
                       type="button"
                       onClick={() => { setAccountMenuOpen(false); onEmployeeSettings(); }}
-                      className="flex w-full items-center justify-center rounded-lg px-2 py-2.5 text-taq-meta font-black text-[#112A46] transition hover:bg-[#F7F5EF]"
+                      className={`${taqInteractive.row} flex w-full items-center justify-center rounded-lg px-2 py-2.5 text-taq-meta font-black text-[#112A46]`}
                     >
                       {text(lang, "settings")}
                     </button>
                   </>
                 ) : null}
                 <div className="my-1 border-t border-[#F0ECE2]" />
-                <button role="menuitem" type="button" onClick={() => { setAccountMenuOpen(false); onLogout(); }} className="flex w-full items-center justify-center rounded-lg px-2 py-2.5 text-taq-meta font-black text-[#B44747] transition hover:bg-[#FFF1EE]">
+                <button role="menuitem" type="button" onClick={() => { setAccountMenuOpen(false); onLogout(); }} className={`${taqInteractive.rowDanger} flex w-full items-center justify-center rounded-lg px-2 py-2.5 text-taq-meta font-black text-[#B44747]`}>
                   <span>{text(lang, "logout")}</span>
                 </button>
               </motion.div>
@@ -135,7 +136,7 @@ function BottomNav({ lang, employee, active, onChange, onAdd = () => {} }) {
   const NavButton = ({ item }) => {
     const Icon = item.icon;
     return (
-      <button onClick={() => onChange(item.id)} className={`flex min-w-[52px] flex-col items-center gap-0.5 px-0.5 text-taq-nav font-bold ${active === item.id ? "text-[#112A46]" : "text-[#A99D87]"}`}>
+      <button type="button" onClick={() => onChange(item.id)} className={`${taqInteractive.nav} flex min-w-[52px] flex-col items-center gap-0.5 px-0.5 text-taq-nav font-bold ${active === item.id ? "text-[#112A46]" : "text-[#A99D87]"}`}>
         <Icon className="h-4.5 w-4.5" />
         {text(lang, item.key)}
       </button>
@@ -155,7 +156,7 @@ function BottomNav({ lang, employee, active, onChange, onAdd = () => {} }) {
   return (
     <nav className="taq-owner-nav relative z-30 flex h-[64px] w-full shrink-0 items-center border-t border-[#ECE6DA] bg-white/95 px-2 pb-[env(safe-area-inset-bottom,0px)]">
       <div className="flex min-w-0 flex-1 items-center justify-evenly pe-8">{leftItems.map((item) => <NavButton key={item.id} item={item} />)}</div>
-      <button onClick={onAdd} aria-label={lang === "ar" ? "إضافة عملية" : "Add entry"} className="absolute left-1/2 top-0.5 flex h-[56px] w-[56px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[4px] border-[#F8F6F0] bg-[#E4B84A] text-[#112A46] shadow-sm"><Plus className="h-7 w-7" strokeWidth={2.4} /></button>
+      <button type="button" onClick={onAdd} aria-label={lang === "ar" ? "إضافة عملية" : "Add entry"} className={`${taqInteractive.chip} absolute left-1/2 top-0.5 flex h-[56px] w-[56px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[4px] border-[#F8F6F0] bg-[#E4B84A] text-[#112A46] shadow-sm`}><Plus className="h-7 w-7" strokeWidth={2.4} /></button>
       <div className="flex min-w-0 flex-1 items-center justify-evenly ps-8">{rightItems.map((item) => <NavButton key={item.id} item={item} />)}</div>
     </nav>
   );

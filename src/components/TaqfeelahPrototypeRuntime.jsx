@@ -277,7 +277,7 @@ export default function TaqfeelahPrototypeRuntime() {
         entriesSyncEnabled={operationalSync.entriesSyncEnabled}
         notifyLocalWriteRef={operationalSync.notifyRef}
       />
-      <div dir={lang === "ar" ? "rtl" : "ltr"} className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
+      <div dir={lang === "ar" ? "rtl" : "ltr"} className="taq-app-root min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
         <AppFontStyles />
         <main className="taq-shell relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#F8F6F0]">
           <div className="taq-screen relative grid h-[100dvh] max-h-[100dvh] grid-rows-[auto_1fr_auto] overflow-hidden bg-[#F8F6F0]">

@@ -18,7 +18,7 @@ export function PrototypeRuntimeLoggedOutGate({
   onEmployeeLogin,
 }) {
   return (
-    <div dir={lang === "ar" ? "rtl" : "ltr"} className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
+    <div dir={lang === "ar" ? "rtl" : "ltr"} className="taq-app-root min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
       <AppFontStyles />
       {authScreen === "gateway" ? (
         <AuthGatewayScreen
@@ -65,7 +65,7 @@ export function PrototypeRuntimeOwnerPasswordGate({
   onLogout,
 }) {
   return (
-    <div dir={lang === "ar" ? "rtl" : "ltr"} className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
+    <div dir={lang === "ar" ? "rtl" : "ltr"} className="taq-app-root min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
       <AppFontStyles />
       <OwnerPasswordChangeScreen
         lang={lang}

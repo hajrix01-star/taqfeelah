@@ -1,0 +1,124 @@
+/**
+ * Shared interactive affordance classes (hover, active, cursor).
+ * Import via globals.css — apply class names from `@/core/ui/interactive-classes`.
+ */
+
+.taq-interactive {
+  cursor: pointer;
+  transition:
+    background-color var(--taq-interactive-transition),
+    color var(--taq-interactive-transition),
+    opacity var(--taq-interactive-transition),
+    filter var(--taq-interactive-transition),
+    box-shadow var(--taq-interactive-transition);
+}
+
+.taq-interactive:disabled,
+.taq-interactive[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.taq-interactive-none {
+  cursor: default;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .taq-interactive-row:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--taq-interactive-hover-bg);
+  }
+
+  .taq-interactive-row-danger:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--taq-interactive-danger-hover-bg);
+  }
+
+  .taq-interactive-surface:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--taq-interactive-surface-hover-bg);
+  }
+
+  .taq-interactive-icon:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--taq-interactive-hover-bg);
+  }
+
+  .taq-interactive-primary:hover:not(:disabled):not([aria-disabled="true"]) {
+    filter: var(--taq-interactive-primary-hover-filter);
+  }
+
+  .taq-interactive-success:hover:not(:disabled):not([aria-disabled="true"]) {
+    filter: brightness(1.06);
+  }
+
+  .taq-interactive-chip:hover:not(:disabled):not([aria-disabled="true"]) {
+    filter: brightness(1.04);
+  }
+
+  .taq-interactive-nav:hover:not(:disabled):not([aria-disabled="true"]) {
+    opacity: var(--taq-interactive-muted-hover-opacity);
+  }
+
+  .taq-interactive-link:hover:not(:disabled):not([aria-disabled="true"]) {
+    text-decoration: underline;
+  }
+}
+
+.taq-interactive-row:active:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--taq-interactive-active-bg);
+}
+
+.taq-interactive-row-danger:active:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--taq-interactive-danger-active-bg);
+}
+
+.taq-interactive-surface:active:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--taq-interactive-surface-active-bg);
+}
+
+.taq-interactive-icon:active:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--taq-interactive-active-bg);
+}
+
+.taq-interactive-primary:active:not(:disabled):not([aria-disabled="true"]) {
+  filter: var(--taq-interactive-primary-active-filter);
+}
+
+.taq-interactive-success:active:not(:disabled):not([aria-disabled="true"]) {
+  filter: brightness(0.94);
+}
+
+.taq-interactive-chip:active:not(:disabled):not([aria-disabled="true"]) {
+  filter: brightness(0.96);
+}
+
+.taq-interactive-nav:active:not(:disabled):not([aria-disabled="true"]) {
+  opacity: 0.72;
+}
+
+/* App shell — fallback for legacy inline Tailwind buttons (no layout change) */
+.taq-app-root :is(button, [role="button"]):not(:disabled):not(.taq-interactive-none) {
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .taq-app-root button[class*="bg-[#112A46]"]:hover:not(:disabled):not(.taq-interactive-none) {
+    filter: var(--taq-interactive-primary-hover-filter);
+  }
+
+  .taq-app-root button[class*="bg-[#39A160]"]:hover:not(:disabled):not(.taq-interactive-none),
+  .taq-app-root button[class*="bg-[#25D366]"]:hover:not(:disabled):not(.taq-interactive-none) {
+    filter: brightness(1.06);
+  }
+
+  .taq-app-root button[class*="bg-white"][class*="ring-"]:hover:not(:disabled):not(.taq-interactive-none) {
+    background-color: var(--taq-interactive-surface-hover-bg);
+  }
+
+  .taq-app-root button[class*="rounded-full"][class*="bg-[#F0ECE2]"]:hover:not(:disabled):not(.taq-interactive-none),
+  .taq-app-root button[class*="rounded-full"][class*="bg-[#112A46]"]:hover:not(:disabled):not(.taq-interactive-none) {
+    filter: brightness(1.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .taq-interactive {
+    transition: none;
+  }
+}

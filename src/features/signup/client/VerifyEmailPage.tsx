@@ -44,7 +44,7 @@ export default function VerifyEmailPage({ token }: VerifyEmailPageProps) {
   }, [token]);
 
   return (
-    <div dir="rtl" className="min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
+    <div dir="rtl" className="taq-app-root min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
       <div className="taq-page-gutter flex min-h-[100dvh] flex-col pb-8 pt-10">
         <div className="mt-10 flex justify-center"><Logo /></div>
         <div className="mt-10 text-center">
