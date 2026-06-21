@@ -11,9 +11,14 @@ const SALES_CHANNEL_ID = process.env.E2E_SALES_CHANNEL_ID || "9bc40d4f-c773-4ba3
 
 const UUID_PATTERN = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
 
-function isoDateNow(): string {
-  const date = new Date();
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+/** Match app register period filters (local calendar date, not UTC). */
+function localIsoDateNow(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function registerCloseoutDomId(clientCloseoutId: string): string {
+  return `register-closeout-${`closeout|${clientCloseoutId}`.replace(/\|/g, "--")}`;
 }
 
 function isRuntimeFailure(message: string): boolean {
@@ -69,6 +74,25 @@ async function submitEmployeeCloseout(
   expect(submitResponse.ok()).toBeTruthy();
 }
 
+async function waitForOwnerSummaryEntry(
+  page: import("@playwright/test").Page,
+  date: string,
+): Promise<void> {
+  const monthStart = `${date.slice(0, 7)}-01`;
+  await expect.poll(async () => {
+    const response = await page.request.get(
+      `/api/v1/stores/${STORE_ID}/entries?paginated=1&status=all&limit=50&dateFrom=${monthStart}&dateTo=${date}`,
+    );
+    if (!response.ok()) return 0;
+    const body = await response.json();
+    const items = Array.isArray(body?.items) ? body.items : [];
+    return items.filter((entry: { type?: string }) => entry?.type === "summary").length;
+  }, {
+    timeout: 60_000,
+    message: "owner register entries API should include the submitted closeout summary",
+  }).toBeGreaterThan(0);
+}
+
 test.describe("register closeouts with PostgreSQL", () => {
   test("owner register shows channel labels, edit form, and delete flow", async ({ page }) => {
     const runtimeFailures: string[] = [];
@@ -76,11 +100,13 @@ test.describe("register closeouts with PostgreSQL", () => {
       if (isRuntimeFailure(error.message)) runtimeFailures.push(error.message);
     });
 
-    const date = process.env.E2E_CLOSEOUT_DATE || isoDateNow();
+    const date = process.env.E2E_CLOSEOUT_DATE || localIsoDateNow();
     const closeoutId = `e2e-reg-${randomUUID().slice(0, 8)}`;
+    const closeoutCardId = registerCloseoutDomId(closeoutId);
 
     await submitEmployeeCloseout(page, { closeoutId, date });
     await loginOwnerSession(page);
+    await waitForOwnerSummaryEntry(page, date);
 
     await page.goto("/app");
 
@@ -88,9 +114,17 @@ test.describe("register closeouts with PostgreSQL", () => {
     await page.getByRole("button", { name: "السجل" }).click();
 
     await expect(page.getByRole("tab", { name: /التقفيلات/ })).toBeVisible({ timeout: 60_000 });
-    await page.getByRole("tab", { name: /التقفيلات/ }).click();
 
-    const closeoutCard = page.locator("article[id^='register-closeout-']").first();
+    const entriesResponse = page.waitForResponse(
+      (response) => response.url().includes("/entries")
+        && response.url().includes("paginated=1")
+        && response.ok(),
+      { timeout: 90_000 },
+    );
+    await page.getByRole("tab", { name: /التقفيلات/ }).click();
+    await entriesResponse;
+
+    const closeoutCard = page.locator(`#${closeoutCardId}`);
     await expect(closeoutCard).toBeVisible({ timeout: 90_000 });
     await closeoutCard.locator("button").first().click();
 
