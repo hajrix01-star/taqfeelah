@@ -17,6 +17,8 @@ import {
   resolveOperationalEntryRestoreFailureMessage,
   resolveOperationalEntryVoidFailureMessage,
 } from "@/features/operations/operational-entry-mutation-helpers";
+import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
+import type { UseRegisterVoidRestoreHandlersProps } from "./operations-client-types";
 
 export function useRegisterVoidRestoreHandlers({
   lang,
@@ -37,7 +39,7 @@ export function useRegisterVoidRestoreHandlers({
   setLastCloseoutDates = () => {},
   setSelected = () => {},
   notifyOperationalSyncWrite = null,
-}) {
+}: UseRegisterVoidRestoreHandlersProps) {
   const confirmVoidOperation = useCallback(async (reason = "") => {
     if (entriesApiEnabled) {
       const target = voidTarget;
@@ -50,7 +52,7 @@ export function useRegisterVoidRestoreHandlers({
           organizationId: closeoutsApiOrganizationId,
           actorUserId: ownerApiUserId,
           actorRole: "owner",
-          entry: target,
+          entry: target as OperationalEntry,
           reason: reason.trim(),
         });
         if (!voided) {
@@ -58,10 +60,10 @@ export function useRegisterVoidRestoreHandlers({
           return;
         }
         const refreshed = await loadOperationalEntriesFromApi();
-        if (target.type === "summary") {
+        if (target!.type === "summary") {
           setLastCloseoutDates((current) => mergeLastCloseoutDateAfterSummaryVoid(
             current,
-            target.businessId,
+            target!.businessId!,
             refreshed,
             entryIsActive,
           ));
@@ -83,14 +85,14 @@ export function useRegisterVoidRestoreHandlers({
     const actionAt = new Date().toISOString();
     const nextEntries = mapOperationalEntryMutation(
       operationalEntries,
-      target.id,
+      target!.id!,
       (entry) => applyVoidToEntry(entry, currentOwnerActor, reason, actionAt),
     );
-    setOperationalEntries(nextEntries);
-    if (target.type === "summary") {
+    setOperationalEntries(nextEntries as OperationalEntry[]);
+    if (target!.type === "summary") {
       setLastCloseoutDates((current) => mergeLastCloseoutDateAfterSummaryVoid(
         current,
-        target.businessId,
+        target!.businessId!,
         nextEntries,
         entryIsActive,
       ));
@@ -128,7 +130,7 @@ export function useRegisterVoidRestoreHandlers({
           organizationId: closeoutsApiOrganizationId,
           actorUserId: ownerApiUserId,
           actorRole: "owner",
-          entry: target,
+          entry: target as OperationalEntry,
           reason: reason.trim(),
         });
         if (!restored) {
@@ -136,12 +138,12 @@ export function useRegisterVoidRestoreHandlers({
           return;
         }
         const refreshed = await loadOperationalEntriesFromApi();
-        if (target.type === "summary") {
+        if (target!.type === "summary") {
           setLastCloseoutDates((current) => mergeLastCloseoutDateAfterSummaryRestore(
             current,
-            target.businessId,
+            target!.businessId!,
             refreshed,
-            target.date,
+            target!.date!,
             entryIsActive,
           ));
         }
@@ -162,16 +164,16 @@ export function useRegisterVoidRestoreHandlers({
     const actionAt = new Date().toISOString();
     const nextEntries = mapOperationalEntryMutation(
       operationalEntries,
-      target.id,
+      target!.id!,
       (entry) => applyRestoreToEntry(entry, currentOwnerActor, reason, actionAt),
     );
-    setOperationalEntries(nextEntries);
-    if (target.type === "summary") {
+    setOperationalEntries(nextEntries as OperationalEntry[]);
+    if (target!.type === "summary") {
       setLastCloseoutDates((current) => mergeLastCloseoutDateAfterSummaryRestore(
         current,
-        target.businessId,
+        target!.businessId!,
         nextEntries,
-        target.date,
+        target!.date!,
         entryIsActive,
       ));
     }

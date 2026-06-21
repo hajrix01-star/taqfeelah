@@ -8,16 +8,17 @@ import {
   cursorsMapFromRecord,
   fetchRegisterEntriesPageBundle,
 } from "./fetch-register-entries-page-bundle";
+import type { OperationalEntry, RegisterEntriesPageState } from "./entries-client-types";
 
 const DEFAULT_PAGE_SIZE = 50;
-const emptyRegisterEntriesState = { entries: [], cursors: {}, hasMore: false };
+const emptyRegisterEntriesState: RegisterEntriesPageState = { entries: [], cursors: {}, hasMore: false };
 
 export function useRegisterEntriesFromApi({
   enabled = false,
   organizationId = "",
   actorUserId = "",
   actorRole = "owner",
-  storeIds = [],
+  storeIds = [] as string[],
   period = "day",
   selectedDate = "",
   selectedMonth = "",
@@ -25,7 +26,20 @@ export function useRegisterEntriesFromApi({
   customFrom = "",
   customTo = "",
   pageSize = DEFAULT_PAGE_SIZE,
-}) {
+}: {
+  enabled?: boolean;
+  organizationId?: string;
+  actorUserId?: string;
+  actorRole?: string;
+  storeIds?: string[];
+  period?: string;
+  selectedDate?: string;
+  selectedMonth?: string;
+  selectedYear?: string;
+  customFrom?: string;
+  customTo?: string;
+  pageSize?: number;
+} = {}) {
   const queryClient = useQueryClient();
   const [loadingMore, setLoadingMore] = useState(false);
   const storeIdsKey = useMemo(
@@ -88,10 +102,10 @@ export function useRegisterEntriesFromApi({
   const loading = queryEnabled && query.isPending && !query.isPlaceholderData;
   const error = query.isError ? "failed" : "";
 
-  const loadMore = useCallback(async () => {
+  const loadMore = useCallback(async (): Promise<boolean> => {
     if (!queryEnabled || loading || loadingMore || !hasMore) return false;
 
-    const current = queryClient.getQueryData(queryKey) || emptyRegisterEntriesState;
+    const current = queryClient.getQueryData<RegisterEntriesPageState>(queryKey) || emptyRegisterEntriesState;
     const pendingStoreIds = storeIdList.filter((storeId) => current.cursors?.[storeId]);
     if (!pendingStoreIds.length) {
       queryClient.setQueryData(queryKey, { ...current, hasMore: false });
@@ -136,10 +150,10 @@ export function useRegisterEntriesFromApi({
     storeIdList,
   ]);
 
-  const loadAllRemaining = useCallback(async () => {
+  const loadAllRemaining = useCallback(async (): Promise<void> => {
     if (!queryEnabled || loading || !hasMore) return;
 
-    let keepLoading = hasMore;
+    let keepLoading: boolean = hasMore;
     while (keepLoading) {
       keepLoading = await loadMore();
     }

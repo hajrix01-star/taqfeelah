@@ -16,6 +16,8 @@ import {
 } from "@/features/operations/operational-entry-mutation-helpers";
 import { duplicateSummaryBlockedInDbSourceMessage } from "@/features/operations/client/closeout-required-entry-message";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
+import type { OperationalEntry, OperationalEntryActor } from "@/features/entries/client/entries-client-types";
+import type { DuplicateSalesAlert, UseRegisterDuplicateSummaryHandlersProps } from "./operations-client-types";
 
 export function useRegisterDuplicateSummaryHandlers({
   lang,
@@ -41,7 +43,7 @@ export function useRegisterDuplicateSummaryHandlers({
   persistEmployeeEntry = async () => {},
   savingRef,
   setSaving = () => {},
-}) {
+}: UseRegisterDuplicateSummaryHandlersProps) {
   const confirmDuplicateSummary = useCallback(async () => {
     const pending = pendingDuplicateSummary;
     if (!pending?.payload) return;
@@ -71,9 +73,9 @@ export function useRegisterDuplicateSummaryHandlers({
           actorUserId,
           actorRole,
           storeId: payload.businessId,
-          date: payload.date,
+          date: payload.date!,
           payload: apiPayload,
-        });
+        }) as OperationalEntry | null;
         if (!created) {
           await appAlert({ lang, title: resolveDuplicateSummaryApproveFailureMessage(lang), variant: "danger" });
           return;
@@ -82,21 +84,21 @@ export function useRegisterDuplicateSummaryHandlers({
         if (payload.type === "summary") {
           const latestActiveCloseoutDate = resolveLatestActiveCloseoutDateFromEntries(
             refreshed,
-            payload.businessId,
-            payload.date,
+            payload.businessId!,
+            payload.date!,
             entryIsActive,
           );
           setLastCloseoutDates((current) => ({
             ...current,
-            [payload.businessId]: latestActiveCloseoutDate,
+            [payload.businessId!]: latestActiveCloseoutDate,
           }));
         }
         if (pending.actor === "owner") {
           setOwnerPage("home");
           setSaved(true);
           window.setTimeout(() => setSaved(false), 2200);
-        } else {
-          const actor = {
+        } else if (activeEmployee?.id) {
+          const actor: OperationalEntryActor = {
             role: "employee",
             userId: activeEmployee.id,
             nameAr: activeEmployee.nameAr,
@@ -142,7 +144,7 @@ export function useRegisterDuplicateSummaryHandlers({
     setSaving,
   ]);
 
-  const acknowledgeDuplicateSales = useCallback(async (alert) => {
+  const acknowledgeDuplicateSales = useCallback(async (alert: DuplicateSalesAlert) => {
     if (!alert?.businessId || !alert?.date || !alert.entries?.length) return;
     if (phase9ApiEnabled && entriesApiEnabled) {
       try {
@@ -160,7 +162,7 @@ export function useRegisterDuplicateSummaryHandlers({
         }
         setAcknowledgedDuplicateSales((current) => ({
           ...current,
-          [duplicateSalesGroupKey(alert)]: duplicateSalesSignature(alert.entries),
+          [duplicateSalesGroupKey(alert)]: duplicateSalesSignature(alert.entries as Array<{ id: string }>),
         }));
       } catch (error) {
         console.warn("duplicate summary acknowledge api failed", error);
@@ -169,16 +171,18 @@ export function useRegisterDuplicateSummaryHandlers({
       return;
     }
     const actionAt = new Date().toISOString();
-    const approvedIds = new Set(alert.entries.map((entry) => entry.id));
+    const approvedIds = new Set<string>(
+      alert.entries!.flatMap((entry) => (entry.id ? [entry.id] : [])),
+    );
     setOperationalEntries((current) => applyDuplicateApprovedAudit(
       current,
       approvedIds,
       currentOwnerActor,
       actionAt,
-    ));
+    ) as OperationalEntry[]);
     setAcknowledgedDuplicateSales((current) => ({
       ...current,
-      [duplicateSalesGroupKey(alert)]: duplicateSalesSignature(alert.entries),
+      [duplicateSalesGroupKey(alert)]: duplicateSalesSignature(alert.entries as Array<{ id: string }>),
     }));
   }, [
     closeoutsApiOrganizationId,

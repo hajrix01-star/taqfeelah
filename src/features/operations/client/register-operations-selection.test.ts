@@ -33,7 +33,7 @@ describe("register operations selection", () => {
   it("opens closeout detail for local demo summary entries", () => {
     const readDailyCloseouts = () => [{ id: "c1", storeId: "shami" }];
     const action = resolveOwnerOperationOpenAction(
-      { type: "summary", closeoutId: "c1" },
+      { type: "summary", closeoutId: "c1" } as import("@/features/entries/client/entries-client-types").OperationalEntry,
       {
         bindsToServerAuth: false,
         closeoutsApiDbSource: false,

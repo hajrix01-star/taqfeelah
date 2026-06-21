@@ -12,8 +12,18 @@ import {
 } from "@/core/client/runtime-api-maps-state";
 import { resolvePrototypeApiContext } from "@/core/client/prototype-api-context";
 import { closeoutRequiredEntryMessage } from "@/features/operations/client/closeout-required-entry-message";
+import type {
+  CreateStoreEntryApiBody,
+  CreateStoreEntryApiPayload,
+  EntriesApiActorParams,
+  FetchStoreEntriesPageParams,
+  FetchStoreEntriesParams,
+  OperationalEntry,
+  OperationalEntrySalesChannelRow,
+  RuntimeApiIdMapOverrides,
+} from "./entries-client-types";
 
-export function setRuntimeApiIdMaps(overrides) {
+export function setRuntimeApiIdMaps(overrides: RuntimeApiIdMapOverrides): void {
   applyRuntimeApiIdMaps(overrides);
 }
 
@@ -21,30 +31,51 @@ function getMaps() {
   return getRuntimeApiMaps();
 }
 
-function assertEntriesApiContext(context, resource) {
+function assertEntriesApiContext(
+  context: { storeId: string } | null,
+  resource: string,
+): asserts context is { storeId: string } {
   if (!context) {
     throw new Error(`${resource} API context missing/invalid: organizationId, actorUserId, or storeId mapping.`);
   }
 }
 
-function resolveEntriesItemsPayload(payload, resource) {
-  if (Array.isArray(payload)) return payload;
-  if (payload && typeof payload === "object" && Array.isArray(payload.items)) return payload.items;
+function resolveEntriesItemsPayload(payload: unknown, resource: string): OperationalEntry[] {
+  if (Array.isArray(payload)) return payload as OperationalEntry[];
+  if (payload && typeof payload === "object" && Array.isArray((payload as { items?: unknown }).items)) {
+    return (payload as { items: OperationalEntry[] }).items;
+  }
   throw new Error(`${resource} API returned invalid payload.`);
 }
 
-function assertEntriesPagePayload(payload) {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload) || !Array.isArray(payload.items)) {
+type EntriesPagePayload = {
+  items: OperationalEntry[];
+  nextCursor?: string | null;
+};
+
+function assertEntriesPagePayload(payload: unknown): asserts payload is EntriesPagePayload {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload) || !Array.isArray((payload as EntriesPagePayload).items)) {
     throw new Error("entries page API returned invalid payload.");
   }
 }
 
-function mapEntryItems(items, { storeId, storeIdMap, salesChannelIdMap }) {
+function mapEntryItems(
+  items: OperationalEntry[],
+  {
+    storeId,
+    storeIdMap,
+    salesChannelIdMap,
+  }: {
+    storeId: string;
+    storeIdMap: Record<string, string>;
+    salesChannelIdMap: Record<string, string>;
+  },
+): OperationalEntry[] {
   return items.map((item) => {
     if (!item || typeof item !== "object") return item;
     const mappedBusinessId = reverseLookupKeyByUuid(item.businessId, storeIdMap) || storeId;
     const mappedSalesChannels = Array.isArray(item.salesChannels)
-      ? item.salesChannels.map((row) => ({
+      ? item.salesChannels.map((row: OperationalEntrySalesChannelRow) => ({
         ...row,
         channelId: reverseLookupKeyByUuid(row?.channelId, salesChannelIdMap) || row?.channelId,
       }))
@@ -66,7 +97,7 @@ export async function fetchStoreEntriesViaApi({
   dateTo = "",
   status = "all",
   limit = 800,
-}) {
+}: FetchStoreEntriesParams): Promise<OperationalEntry[]> {
   const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
   assertEntriesApiContext(context, "entries fetch");
 
@@ -102,7 +133,7 @@ export async function fetchStoreEntriesPageViaApi({
   status = "all",
   limit = 50,
   cursor = "",
-}) {
+}: FetchStoreEntriesPageParams): Promise<{ items: OperationalEntry[]; nextCursor: string | null }> {
   const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
   assertEntriesApiContext(context, "entries page");
 
@@ -133,7 +164,10 @@ export async function fetchStoreEntriesPageViaApi({
   };
 }
 
-function resolveEntrySalesChannelUuid(channelId, salesChannelIdMap) {
+function resolveEntrySalesChannelUuid(
+  channelId: string | undefined,
+  salesChannelIdMap: Record<string, string>,
+): string {
   const mapped = mapToUuid(channelId, salesChannelIdMap);
   if (isUuid(mapped)) return mapped;
   if (typeof channelId === "string" && isUuid(channelId.trim())) return channelId.trim();
@@ -145,7 +179,7 @@ export async function createStoreEntryViaApi({
   actorUserId,
   actorRole,
   payload,
-}) {
+}: EntriesApiActorParams & { payload: CreateStoreEntryApiPayload }): Promise<unknown> {
   const { salesChannelIdMap } = getMaps();
   const context = resolvePrototypeApiContext({
     organizationId,
@@ -172,7 +206,7 @@ export async function createStoreEntryViaApi({
   }
 
   const amountHalalas = toMoneyHalalas(payload?.amount);
-  const body = {
+  const body: CreateStoreEntryApiBody = {
     date: payload?.date,
     type: payload?.type,
     categoryId: isUuid(payload?.categoryId) ? payload.categoryId : null,
@@ -214,7 +248,7 @@ export async function voidStoreEntryViaApi({
   actorRole,
   entry,
   reason = "",
-}) {
+}: EntriesApiActorParams & { entry: OperationalEntry; reason?: string }): Promise<unknown> {
   const context = resolvePrototypeApiContext({
     organizationId,
     actorUserId,
@@ -224,7 +258,7 @@ export async function voidStoreEntryViaApi({
   if (!context || !isUuid(entry?.id)) return null;
 
   return fetchApiJsonWithPrototypeContext(
-    `/api/v1/stores/${context.storeId}/entries/${encodeURIComponent(entry.id)}/void`,
+    `/api/v1/stores/${context.storeId}/entries/${encodeURIComponent(entry.id!)}/void`,
     {
       organizationId,
       actorUserId,
@@ -243,7 +277,7 @@ export async function restoreStoreEntryViaApi({
   actorRole,
   entry,
   reason = "",
-}) {
+}: EntriesApiActorParams & { entry: OperationalEntry; reason?: string }): Promise<unknown> {
   const context = resolvePrototypeApiContext({
     organizationId,
     actorUserId,
@@ -253,7 +287,7 @@ export async function restoreStoreEntryViaApi({
   if (!context || !isUuid(entry?.id)) return null;
 
   return fetchApiJsonWithPrototypeContext(
-    `/api/v1/stores/${context.storeId}/entries/${encodeURIComponent(entry.id)}/restore`,
+    `/api/v1/stores/${context.storeId}/entries/${encodeURIComponent(entry.id!)}/restore`,
     {
       organizationId,
       actorUserId,

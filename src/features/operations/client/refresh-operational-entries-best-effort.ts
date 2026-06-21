@@ -1,9 +1,9 @@
 import { OPERATIONAL_SCOPES_AFTER_FINANCIAL_WRITE } from "@/core/client/invalidate-operational-data";
+import type { LoadOperationalEntriesFn, RefreshOperationalEntriesResult } from "./operations-client-types";
 
-/**
- * Post-write refresh must not fail the user-facing save/submit when the write already succeeded.
- */
-export async function refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi) {
+export async function refreshOperationalEntriesBestEffort(
+  loadOperationalEntriesFromApi: LoadOperationalEntriesFn | null | undefined,
+): Promise<RefreshOperationalEntriesResult> {
   if (typeof loadOperationalEntriesFromApi !== "function") {
     return { refreshed: [], refreshFailed: false };
   }

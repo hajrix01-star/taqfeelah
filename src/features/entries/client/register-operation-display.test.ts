@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { OperationalEntry, OperationalEntrySalesChannelRow } from "./entries-client-types";
 import {
   buildRegisterCloseoutDayContext,
   filterSummaryChannelRows,
@@ -6,7 +7,7 @@ import {
   summarySalesChannelLabel,
 } from "./register-operation-display";
 
-const resolveChannelName = (row: { channelId: string; name?: string }) => row.name || row.channelId;
+const resolveChannelName = (row: OperationalEntrySalesChannelRow) => row.name || row.channelId || "";
 
 describe("filterSummaryChannelRows", () => {
   it("returns only the filtered sales channel row", () => {
@@ -16,7 +17,7 @@ describe("filterSummaryChannelRows", () => {
         { channelId: "mada", name: "مدى", amount: 50 },
       ],
     };
-    expect(filterSummaryChannelRows(entry, "cash")).toEqual([
+    expect(filterSummaryChannelRows(entry as OperationalEntry, "cash")).toEqual([
       { channelId: "cash", name: "نقد", amount: 100 },
     ]);
   });
@@ -30,7 +31,7 @@ describe("summarySalesChannelLabel", () => {
         { channelId: "cash", name: "نقد", amount: 100 },
         { channelId: "mada", name: "مدى", amount: 50 },
       ],
-    }, resolveChannelName, "cash", "summary");
+    } as OperationalEntry, resolveChannelName, "cash", "summary");
 
     expect(label).toBe("نقد");
   });
@@ -45,7 +46,7 @@ describe("summaryEntryDisplayAmount", () => {
         { channelId: "cash", name: "نقد", amount: 100 },
         { channelId: "mada", name: "مدى", amount: 50 },
       ],
-    }, "cash");
+    } as OperationalEntry, "cash");
 
     expect(amount).toBe(100);
   });

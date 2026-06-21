@@ -14,8 +14,17 @@ import {
   summarizeEntries,
 } from "@/features/operations/operational-analytics";
 import { REGISTER_REPORT_GRANULARITY } from "@/features/reports/client/register-report-granularity";
+import type { DisplayLang } from "@/core/i18n/display-locale";
+import type {
+  OperationalEntry,
+  OperationalEntrySalesChannelRow,
+  RegisterChannelOption,
+  RegisterCloseoutGroup,
+  RegisterLogFilters,
+  RegisterReportRow,
+} from "./entries-client-types";
 
-export const DEFAULT_REGISTER_LOG_FILTERS = {
+export const DEFAULT_REGISTER_LOG_FILTERS: RegisterLogFilters = {
   status: "all",
   type: "all",
   expenseCategory: "all",
@@ -24,14 +33,10 @@ export const DEFAULT_REGISTER_LOG_FILTERS = {
   salesChannel: "all",
 };
 
-/**
- * @param {{ entries: Array<object> }} group
- * @param {{ ownerUserId?: string, lang?: "ar" | "en", enteredByOwnerLabel?: string }} [options]
- */
 export function resolveRegisterCloseoutActorLabel(
-  group,
-  { ownerUserId = "", lang = "ar", enteredByOwnerLabel = "المالك" } = {},
-) {
+  group: RegisterCloseoutGroup,
+  { ownerUserId = "", lang = "ar" as DisplayLang, enteredByOwnerLabel = "المالك" } = {},
+): string {
   const ownerEntered = (ownerUserId
     ? group.entries.find((entry) => entry.enteredBy?.userId === ownerUserId)
     : null)
@@ -40,7 +45,7 @@ export function resolveRegisterCloseoutActorLabel(
   return employeeDisplayName(ownerEntered, lang) || enteredByOwnerLabel;
 }
 
-export function registerLogFilterCount(filters) {
+export function registerLogFilterCount(filters: RegisterLogFilters): number {
   return Number(filters.status !== "all")
     + Number(filters.type !== "all")
     + Number(filters.expenseCategory !== "all")
@@ -49,7 +54,7 @@ export function registerLogFilterCount(filters) {
     + Number(filters.actor !== "all");
 }
 
-export function entryCategoryForLogFilter(entry) {
+export function entryCategoryForLogFilter(entry: OperationalEntry): string {
   return entry.type === "purchases"
     ? "purchases"
     : entry.type === "withdrawal"
@@ -58,11 +63,11 @@ export function entryCategoryForLogFilter(entry) {
 }
 
 export function entryMatchesRegisterLogFilters(
-  entry,
-  filters,
-  resolveExpenseCategory = entryCategoryForLogFilter,
-  configuredChannels = [],
-) {
+  entry: OperationalEntry,
+  filters: RegisterLogFilters,
+  resolveExpenseCategory: (entry: OperationalEntry) => string = entryCategoryForLogFilter,
+  configuredChannels: Array<Record<string, unknown>> = [],
+): boolean {
   const matchesStatus = filters.status === "all"
     || (filters.status === "active" ? entryIsActive(entry) : entryIsVoided(entry));
   const matchesType = filters.type === "all" || entry.type === filters.type;
@@ -87,34 +92,32 @@ export function entryMatchesRegisterLogFilters(
 }
 
 export function filterRegisterLogEntries(
-  entries,
-  filters,
-  resolveExpenseCategory = entryCategoryForLogFilter,
-  configuredChannels = [],
-) {
+  entries: OperationalEntry[],
+  filters: RegisterLogFilters,
+  resolveExpenseCategory: (entry: OperationalEntry) => string = entryCategoryForLogFilter,
+  configuredChannels: Array<Record<string, unknown>> = [],
+): OperationalEntry[] {
   return (Array.isArray(entries) ? entries : []).filter(
     (entry) => entryMatchesRegisterLogFilters(entry, filters, resolveExpenseCategory, configuredChannels),
   );
 }
 
-/** Net margin as % of sales (نسبة الناتج من الداخل). */
-export function formatNetMarginOfSalesRatio(sales, net) {
+export function formatNetMarginOfSalesRatio(sales: number, net: number): string {
   const salesAmount = Number(sales) || 0;
   const netAmount = Number(net) || 0;
   if (salesAmount <= 0) return "—";
   return `${((netAmount / salesAmount) * 100).toFixed(1)}%`;
 }
 
-/** Daily in/out/net rows for register general report (unfiltered period entries). */
-function buildRegisterDailyReportRows(entries) {
+function buildRegisterDailyReportRows(entries: OperationalEntry[]): RegisterReportRow[] {
   const activeEntries = (Array.isArray(entries) ? entries : []).filter(entryIsActive);
   const dates = [...new Set(activeEntries.map((entry) => entry.date).filter(Boolean))].sort().reverse();
   return dates
     .map((date) => {
       const dayTotals = summarizeEntries(activeEntries.filter((entry) => entry.date === date));
       return {
-        id: date,
-        date,
+        id: date!,
+        date: date!,
         sales: dayTotals.sales,
         expense: dayTotals.expense,
         net: dayTotals.net,
@@ -124,14 +127,14 @@ function buildRegisterDailyReportRows(entries) {
 }
 
 export function applyRegisterReportGranularity(
-  rows,
-  granularity = REGISTER_REPORT_GRANULARITY.DAY,
-) {
+  rows: RegisterReportRow[],
+  granularity: string = REGISTER_REPORT_GRANULARITY.DAY,
+): RegisterReportRow[] {
   if (granularity !== REGISTER_REPORT_GRANULARITY.MONTH) {
     return Array.isArray(rows) ? rows : [];
   }
 
-  const monthMap = new Map();
+  const monthMap = new Map<string, RegisterReportRow>();
   (Array.isArray(rows) ? rows : []).forEach((row) => {
     const monthKey = String(row.date || row.id || "").slice(0, 7);
     if (!monthKey) return;
@@ -157,37 +160,38 @@ export function applyRegisterReportGranularity(
 }
 
 export function buildRegisterReportRows(
-  entries,
-  { granularity = REGISTER_REPORT_GRANULARITY.DAY } = {},
-) {
+  entries: OperationalEntry[],
+  { granularity = REGISTER_REPORT_GRANULARITY.DAY }: { granularity?: string } = {},
+): RegisterReportRow[] {
   const dailyRows = buildRegisterDailyReportRows(entries);
   return applyRegisterReportGranularity(dailyRows, granularity);
 }
 
-export function buildRegisterDayReportRows(entries) {
+export function buildRegisterDayReportRows(entries: OperationalEntry[]): RegisterReportRow[] {
   return buildRegisterReportRows(entries, { granularity: REGISTER_REPORT_GRANULARITY.DAY });
 }
 
-/**
- * Builds register general-report rows for export from scoped entries.
- * Supports optional store column for combined exports.
- */
 export function buildRegisterReportExportRows({
   entries = [],
   granularity = REGISTER_REPORT_GRANULARITY.DAY,
   withStore = false,
-  formatStore = () => "",
-} = {}) {
+  formatStore = (_businessId: string) => "",
+}: {
+  entries?: OperationalEntry[];
+  granularity?: string;
+  withStore?: boolean;
+  formatStore?: (businessId: string) => string;
+} = {}): RegisterReportRow[] {
   const activeEntries = (Array.isArray(entries) ? entries : []).filter(entryIsActive);
   if (!withStore) {
     return buildRegisterReportRows(activeEntries, { granularity });
   }
 
-  const keys = new Set();
+  const keys = new Set<string>();
   activeEntries.forEach((entry) => {
     const periodKey = granularity === REGISTER_REPORT_GRANULARITY.MONTH
-      ? entry.date.slice(0, 7)
-      : entry.date;
+      ? (entry.date || "").slice(0, 7)
+      : (entry.date || "");
     keys.add(`${entry.businessId}|${periodKey}`);
   });
 
@@ -197,7 +201,7 @@ export function buildRegisterReportExportRows({
       const scoped = activeEntries.filter((entry) => {
         if (entry.businessId !== businessId) return false;
         return granularity === REGISTER_REPORT_GRANULARITY.MONTH
-          ? entry.date.startsWith(periodKey)
+          ? (entry.date || "").startsWith(periodKey)
           : entry.date === periodKey;
       });
       const totals = summarizeEntries(scoped);
@@ -212,17 +216,21 @@ export function buildRegisterReportExportRows({
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
+export type RegisterPeriodSummary =
+  | { mode: "channel"; label: string; amount: number }
+  | { mode: "totals"; sales: number; expense: number; net: number };
+
 export function summarizeRegisterPeriod(
-  entries,
-  salesChannelFilter,
-  channelOptions = [],
+  entries: OperationalEntry[],
+  salesChannelFilter: string,
+  channelOptions: RegisterChannelOption[] = [],
   channelLabelFallback = "Channel",
-  configuredChannels = [],
-) {
+  configuredChannels: Array<Record<string, unknown>> = [],
+): RegisterPeriodSummary {
   const activeEntries = (Array.isArray(entries) ? entries : []).filter(entryIsActive);
   if (salesChannelFilter !== "all") {
     const option = channelOptions.find((item) => item.id === salesChannelFilter);
-    const channelAmounts = [];
+    const channelAmounts: number[] = [];
     activeEntries.forEach((entry) => {
       if (entry.type !== "summary") return;
       (entry.salesChannels || []).forEach((row) => {
@@ -242,13 +250,13 @@ export function summarizeRegisterPeriod(
 }
 
 export function buildRegisterSalesChannelOptions(
-  periodEntries,
-  resolveChannelLabel,
-  allChannelsLabel,
-  configuredChannels = [],
-) {
-  const seen = new Set();
-  const options = [{ id: "all", label: allChannelsLabel }];
+  periodEntries: OperationalEntry[],
+  resolveChannelLabel: (row: OperationalEntrySalesChannelRow) => string,
+  allChannelsLabel: string,
+  configuredChannels: Array<Record<string, unknown>> = [],
+): RegisterChannelOption[] {
+  const seen = new Set<string>();
+  const options: RegisterChannelOption[] = [{ id: "all", label: allChannelsLabel }];
   (Array.isArray(periodEntries) ? periodEntries : []).forEach((entry) => {
     if (entry.type !== "summary") return;
     (entry.salesChannels || []).forEach((row) => {
@@ -265,16 +273,36 @@ export function buildRegisterSalesChannelOptions(
   return options;
 }
 
-/** @param {{ filteredEntries?: object[], salesChannelFilter?: string, configuredChannels?: object[], resolveChannelName?: (row: object) => string, resolveStore?: (businessId: string) => object | null, resolveActorLabel?: (group: object) => string }} params */
+export type RegisterCloseoutSummary = RegisterCloseoutGroup & {
+  store: Record<string, unknown> | null;
+  totals: { sales: number; expense: number; net: number };
+  salesChannels: Array<{ channelId?: string; amount: number; label?: string }>;
+  displaySales: number;
+  operations: OperationalEntry[];
+  actorLabel: string;
+  daySequence: number | null;
+  ownerEditedAt: string | null;
+  ownerEditedByUserId: string | null;
+  ownerEditedByName: string | null;
+  sameDayCloseoutCount?: number;
+};
+
 export function buildRegisterCloseoutSummaries({
   filteredEntries = [],
   salesChannelFilter = "all",
   configuredChannels = [],
   resolveChannelName,
   resolveStore,
-  resolveActorLabel = () => "",
-}) {
-  const grouped = new Map();
+  resolveActorLabel = (_group: RegisterCloseoutGroup) => "",
+}: {
+  filteredEntries?: OperationalEntry[];
+  salesChannelFilter?: string;
+  configuredChannels?: Array<Record<string, unknown>>;
+  resolveChannelName: (row: OperationalEntrySalesChannelRow) => string;
+  resolveStore: (businessId: string) => Record<string, unknown> | null;
+  resolveActorLabel?: (group: RegisterCloseoutGroup) => string;
+}): RegisterCloseoutSummary[] {
+  const grouped = new Map<string, RegisterCloseoutGroup>();
   newestEntries(filteredEntries).forEach((entry) => {
     const key = entry.closeoutId
       ? `closeout|${entry.closeoutId}`
@@ -288,11 +316,11 @@ export function buildRegisterCloseoutSummaries({
         entries: [],
       });
     }
-    grouped.get(key).entries.push(entry);
+    grouped.get(key)!.entries.push(entry);
   });
 
   const summaries = [...grouped.values()].map((group) => {
-    const store = resolveStore(group.businessId);
+    const store = resolveStore(group.businessId || "");
     const totals = summarizeEntries(group.entries);
     const salesChannels = aggregateSalesChannelsFromGroupEntries(
       group.entries,
@@ -318,7 +346,7 @@ export function buildRegisterCloseoutSummaries({
     };
   });
 
-  const sameDayCloseoutCountByStoreDate = new Map();
+  const sameDayCloseoutCountByStoreDate = new Map<string, number>();
   summaries.forEach((summary) => {
     if (!summary.closeoutId) return;
     const key = `${summary.businessId}|${summary.date}`;
@@ -334,7 +362,7 @@ export function buildRegisterCloseoutSummaries({
     }))
     .filter((group) => salesChannelFilter === "all" || group.salesChannels.length > 0)
     .sort((a, b) => {
-      if (a.date !== b.date) return b.date.localeCompare(a.date);
+      if (a.date !== b.date) return (b.date || "").localeCompare(a.date || "");
       const aStamp = `${a.date}|${a.operations[0]?.createdAt || ""}`;
       const bStamp = `${b.date}|${b.operations[0]?.createdAt || ""}`;
       return bStamp.localeCompare(aStamp);

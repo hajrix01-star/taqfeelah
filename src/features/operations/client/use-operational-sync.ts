@@ -8,6 +8,7 @@ import {
   createOperationalSyncBroadcastChannel,
   notifyLocalOperationalSyncWrite,
   postOperationalSyncBroadcast,
+  type OperationalSyncBroadcastMessage,
 } from "@/core/client/operational-sync-broadcast";
 import {
   resolveOperationalSyncRefreshTarget,
@@ -16,7 +17,9 @@ import {
 } from "@/core/client/resolve-operational-sync-target";
 import { OPERATIONAL_SYNC_POLL_INTERVAL_MS, OPERATIONAL_SYNC_REFRESH_DEBOUNCE_MS } from "@/core/sync/operational-sync-policy";
 import { OPERATIONAL_SYNC_BACKGROUND_REFRESH } from "@/core/sync/operational-sync-event-types";
+import type { OperationalSyncEventType, OperationalSyncRefreshTrigger } from "@/core/sync/operational-sync-event-types";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
+import type { OperationalSyncScheduleOptions, UseOperationalSyncProps } from "./operations-client-types";
 
 export function useOperationalSync({
   enabled,
@@ -31,12 +34,12 @@ export function useOperationalSync({
   reloadOperationalEntries,
   closeoutsSyncEnabled,
   entriesSyncEnabled,
-}) {
+}: UseOperationalSyncProps) {
   const queryClient = useQueryClient();
   const { reloadCloseoutsFromApi } = useDailyCloseouts();
-  const broadcastChannelRef = useRef(null);
+  const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
   const refreshInFlightRef = useRef(false);
-  const refreshQueuedRef = useRef(null);
+  const refreshQueuedRef = useRef<OperationalSyncEventType | typeof OPERATIONAL_SYNC_BACKGROUND_REFRESH | "refresh.all" | null>(null);
   const lastRefreshAtRef = useRef(0);
 
   const syncContext = {
@@ -51,8 +54,8 @@ export function useOperationalSync({
   const pollingEnabled = shouldEnableOperationalSyncPolling(syncContext);
   const focusRefetchEnabled = shouldEnableOperationalSyncFocusRefetch(syncContext);
 
-  const runRefresh = useCallback(async (eventType) => {
-    const target = resolveOperationalSyncRefreshTarget(eventType);
+  const runRefresh = useCallback(async (eventType: OperationalSyncEventType | typeof OPERATIONAL_SYNC_BACKGROUND_REFRESH | "refresh.all") => {
+    const target = resolveOperationalSyncRefreshTarget(eventType as OperationalSyncRefreshTrigger);
     await applyOperationalSyncRefresh({
       queryClient,
       invalidateScopes: target.invalidateScopes,
@@ -69,7 +72,10 @@ export function useOperationalSync({
     reloadOperationalEntries,
   ]);
 
-  const scheduleRefresh = useCallback((eventType, options = {}) => {
+  const scheduleRefresh = useCallback((
+    eventType: OperationalSyncEventType | typeof OPERATIONAL_SYNC_BACKGROUND_REFRESH | "refresh.all",
+    options: OperationalSyncScheduleOptions = {},
+  ) => {
     const { skipSelfEcho = false, actorUserId: sourceActorUserId = "" } = options;
     if (skipSelfEcho && sourceActorUserId && sourceActorUserId === actorUserId) {
       return;
@@ -113,7 +119,7 @@ export function useOperationalSync({
     }, delay);
   }, [actorUserId, runRefresh]);
 
-  const notifyLocalWrite = useCallback((eventType) => {
+  const notifyLocalWrite = useCallback((eventType: OperationalSyncEventType) => {
     notifyLocalOperationalSyncWrite(broadcastChannelRef.current, eventType, actorUserId);
   }, [actorUserId]);
 
@@ -122,8 +128,8 @@ export function useOperationalSync({
     const channel = broadcastChannelRef.current;
     if (!channel) return undefined;
 
-    const onMessage = (event) => {
-      const message = /** @type {OperationalSyncBroadcastMessage} */ (event.data);
+    const onMessage = (event: MessageEvent<OperationalSyncBroadcastMessage>) => {
+      const message = event.data;
       if (!message?.eventType) return;
       if (message.source === "local-write" && message.actorUserId === actorUserId) {
         return;
@@ -224,7 +230,3 @@ export function useOperationalSync({
     notifyLocalWrite,
   };
 }
-
-/**
- * @typedef {import("@/core/sync/operational-sync-event-types").OperationalSyncEventType} OperationalSyncEventType
- */

@@ -1,6 +1,11 @@
-export function mergeRegisterEntryPages(existing = [], incoming = []) {
-  const seen = new Set();
-  const merged = [];
+import type { OperationalEntry } from "./entries-client-types";
+
+export function mergeRegisterEntryPages(
+  existing: OperationalEntry[] = [],
+  incoming: OperationalEntry[] = [],
+): OperationalEntry[] {
+  const seen = new Set<string>();
+  const merged: OperationalEntry[] = [];
 
   [...existing, ...incoming].forEach((entry) => {
     const entryId = typeof entry?.id === "string" ? entry.id : "";

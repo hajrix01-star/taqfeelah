@@ -1,44 +1,43 @@
-/**
- * @param {string} [prefix]
- * @param {number} [now]
- */
-export function createOperationalEntryId(prefix = "entry", now = Date.now()) {
+import type {
+  BuildOperationalEntryOptions,
+  OperationalEntry,
+  OperationalEntryActor,
+  OperationalEntryAttachment,
+  OperationalEntryPayload,
+} from "./entries-client-types";
+
+export function createOperationalEntryId(prefix = "entry", now = Date.now()): string {
   return `${prefix}-${now}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-/**
- * @param {string} entryId
- * @param {Record<string, unknown> | null | undefined} prepared
- */
-export function makeOperationalEntryAttachment(entryId, prepared = null) {
+export function makeOperationalEntryAttachment(
+  entryId: string,
+  prepared: OperationalEntryAttachment | null = null,
+): OperationalEntryAttachment | null {
   return prepared ? { ...prepared, id: `attachment-${entryId}` } : null;
 }
 
-/**
- * @param {string | number} value
- */
-export function parseOperationalAmount(value) {
+export function parseOperationalAmount(value: string | number): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
 }
 
-/**
- * @param {Record<string, unknown>} payload
- * @param {Record<string, unknown>} actor
- * @param {Object} [options]
- * @param {() => string} [options.createId]
- * @param {string} [options.createdAt]
- * @param {(value: string | number) => number} [options.parseAmount]
- */
-export function buildOperationalEntry(payload, actor, {
-  createId = () => createOperationalEntryId(String(payload.type || "entry")),
-  createdAt = new Date().toISOString(),
-  parseAmount = parseOperationalAmount,
-} = {}) {
+export function buildOperationalEntry(
+  payload: OperationalEntryPayload,
+  actor: OperationalEntryActor,
+  {
+    createId = () => createOperationalEntryId(String(payload.type || "entry")),
+    createdAt = new Date().toISOString(),
+    parseAmount = parseOperationalAmount,
+  }: BuildOperationalEntryOptions = {},
+): OperationalEntry {
   const id = createId();
   const amount = payload.type === "summary"
-    ? (payload.salesChannels || []).reduce((sum, row) => sum + Number(row.amount || 0), 0)
-    : parseAmount(payload.amount);
+    ? (payload.salesChannels || []).reduce(
+      (sum, row) => sum + Number(row.amount || 0),
+      0,
+    )
+    : parseAmount(payload.amount ?? 0);
 
   return {
     id,

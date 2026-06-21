@@ -1,13 +1,11 @@
 import { fetchStoreEntriesPageViaApi } from "./store-entries-api-client";
 import { mergeRegisterEntryPages } from "./merge-register-entry-pages";
+import type {
+  FetchRegisterEntriesPageBundleParams,
+  OperationalEntry,
+  RegisterEntriesPageState,
+} from "./entries-client-types";
 
-/**
- * @param {object} input
- * @param {string[]} input.storeIdList
- * @param {Map<string, string>} [input.cursors]
- * @param {boolean} [input.replace=false]
- * @param {Array<object>} [input.currentEntries=[]]
- */
 export async function fetchRegisterEntriesPageBundle({
   organizationId,
   actorUserId,
@@ -16,10 +14,10 @@ export async function fetchRegisterEntriesPageBundle({
   dateFrom,
   dateTo,
   pageSize,
-  cursors = new Map(),
+  cursors = new Map<string, string>(),
   replace = false,
   currentEntries = [],
-}) {
+}: FetchRegisterEntriesPageBundleParams): Promise<RegisterEntriesPageState> {
   const responses = await Promise.all(
     storeIdList.map(async (storeId) => {
       const cursor = cursors.get(storeId) || "";
@@ -39,7 +37,7 @@ export async function fetchRegisterEntriesPageBundle({
   );
 
   const nextCursors = new Map(cursors);
-  let nextEntries = replace ? [] : currentEntries;
+  let nextEntries: OperationalEntry[] = replace ? [] : currentEntries;
   let hasMore = false;
 
   responses.forEach(({ storeId, page }) => {
@@ -60,6 +58,6 @@ export async function fetchRegisterEntriesPageBundle({
   };
 }
 
-export function cursorsMapFromRecord(record = {}) {
+export function cursorsMapFromRecord(record: Record<string, string> = {}): Map<string, string> {
   return new Map(Object.entries(record).filter(([storeId]) => Boolean(storeId)));
 }

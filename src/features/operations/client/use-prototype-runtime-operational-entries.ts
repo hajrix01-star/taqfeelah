@@ -38,6 +38,21 @@ import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data
 import { invalidateOperationalData } from "@/core/client/invalidate-operational-data";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
+import type { OperationalEntry, OperationalEntryAttachment, OperationalEntryPayload } from "@/features/entries/client/entries-client-types";
+import type {
+  CloseoutRecord,
+  CreateOperationalEntryInApiParams,
+  LoadOperationalEntriesFn,
+  LoadOperationalEntriesOptions,
+  SyncCloseoutOptions,
+  UsePrototypeRuntimeOperationalEntriesProps,
+} from "./operations-client-types";
+
+type CloseoutBuiltEntryItem = {
+  payload: OperationalEntryPayload;
+  kind: string;
+  attachment?: OperationalEntryAttachment | string | null;
+};
 
 export function usePrototypeRuntimeOperationalEntries({
   lang,
@@ -52,12 +67,12 @@ export function usePrototypeRuntimeOperationalEntries({
   apiTargetStoreIdsKey,
   phase9ApiEnabled,
   setLastCloseoutDates,
-}) {
+}: UsePrototypeRuntimeOperationalEntriesProps) {
   const queryClient = useQueryClient();
-  const [bulkOperationalEntries, setBulkOperationalEntries] = useState(() => readOperationalEntries());
+  const [bulkOperationalEntries, setBulkOperationalEntries] = useState<OperationalEntry[]>(() => readOperationalEntries());
   const [bulkOperationalEntriesLoading, setBulkOperationalEntriesLoading] = useState(false);
   const [operationalEntriesSyncError, setOperationalEntriesSyncError] = useState("");
-  const loadOperationalEntriesFromApiRef = useRef(async () => []);
+  const loadOperationalEntriesFromApiRef = useRef<LoadOperationalEntriesFn>(async () => []);
 
   const shouldDeferOwnerBulkEntriesLoad = !employee
     && REGISTER_ENTRIES_PAGINATION_ENABLED
@@ -83,7 +98,7 @@ export function usePrototypeRuntimeOperationalEntries({
     queryKey: duplicateWatchQueryKey,
     queryFn: async () => {
       const targetStoreIds = apiTargetStoreIdsKey ? apiTargetStoreIdsKey.split("|").filter(Boolean) : [];
-      if (!targetStoreIds.length) return [];
+      if (!targetStoreIds.length) return [] as OperationalEntry[];
 
       const { dateFrom, dateTo, limit } = resolveOwnerDuplicateWatchWindow();
       const fetched = await Promise.all(
@@ -112,7 +127,11 @@ export function usePrototypeRuntimeOperationalEntries({
     : bulkOperationalEntriesLoading;
   const setOperationalEntries = setBulkOperationalEntries;
 
-  const createOperationalEntryInApi = useCallback(async ({ payload, actorUserId, actorRole }) => {
+  const createOperationalEntryInApi = useCallback(async ({
+    payload,
+    actorUserId,
+    actorRole,
+  }: CreateOperationalEntryInApiParams) => {
     if (!entriesApiEnabled) {
       if (entriesApiStrictMode) throw new Error("entries API is disabled in production mode.");
       return null;
@@ -133,11 +152,11 @@ export function usePrototypeRuntimeOperationalEntries({
       organizationId: closeoutsApiOrganizationId,
       actorUserId,
       actorRole,
-      payload: apiPayload,
+      payload: apiPayload as OperationalEntryPayload,
     });
   }, [closeoutsApiOrganizationId, entriesApiEnabled, entriesApiStrictMode, phase9ApiEnabled]);
 
-  const loadOperationalEntriesFromApi = useCallback(async (options = {}) => {
+  const loadOperationalEntriesFromApi = useCallback(async (options: LoadOperationalEntriesOptions = {}) => {
     await invalidateOperationalData(queryClient, {
       scopes: options.invalidateScopes ?? "all",
     });
@@ -145,7 +164,7 @@ export function usePrototypeRuntimeOperationalEntries({
     if (shouldDeferOwnerBulkEntriesLoad) {
       if (!duplicateWatchEnabled) return [];
       await queryClient.refetchQueries({ queryKey: duplicateWatchQueryKey });
-      const refreshed = queryClient.getQueryData(duplicateWatchQueryKey);
+      const refreshed = queryClient.getQueryData<OperationalEntry[]>(duplicateWatchQueryKey);
       return Array.isArray(refreshed) ? refreshed : [];
     }
 
@@ -197,7 +216,7 @@ export function usePrototypeRuntimeOperationalEntries({
       );
 
       const merged = fetched.flatMap((items) => (Array.isArray(items) ? items : []));
-      const seen = new Set();
+      const seen = new Set<string>();
       const deduped = merged.filter((item) => {
         const itemId = typeof item?.id === "string" ? item.id : "";
         if (!itemId || seen.has(itemId)) return false;
@@ -227,7 +246,7 @@ export function usePrototypeRuntimeOperationalEntries({
 
   loadOperationalEntriesFromApiRef.current = loadOperationalEntriesFromApi;
 
-  const removeOperationalEntriesForCloseout = useCallback((closeoutId, storeId = null) => {
+  const removeOperationalEntriesForCloseout = useCallback((closeoutId: string, storeId: string | null = null) => {
     if (!closeoutId) return;
     setBulkOperationalEntries((current) => {
       const next = current.filter((entry) => entry.closeoutId !== closeoutId);
@@ -248,7 +267,10 @@ export function usePrototypeRuntimeOperationalEntries({
     });
   }, [setLastCloseoutDates]);
 
-  const syncCloseoutToOperationalEntries = useCallback(async (closeout, { force = false } = {}) => {
+  const syncCloseoutToOperationalEntries = useCallback(async (
+    closeout: CloseoutRecord,
+    { force = false }: SyncCloseoutOptions = {},
+  ) => {
     if (ENTRIES_API_DB_SOURCE) {
       if (typeof loadOperationalEntriesFromApiRef.current === "function") {
         await loadOperationalEntriesFromApiRef.current();
@@ -258,7 +280,7 @@ export function usePrototypeRuntimeOperationalEntries({
     if (!closeout) return;
     if (!force && closeout.syncedToEntries) return;
     if (force) {
-      removeOperationalEntriesForCloseout(closeout.id, closeout.storeId);
+      removeOperationalEntriesForCloseout(closeout.id!, closeout.storeId || null);
     }
     const actor = {
       role: "employee",
@@ -266,15 +288,24 @@ export function usePrototypeRuntimeOperationalEntries({
       nameAr: closeout.submittedByName || closeout.openedByName,
       nameEn: closeout.submittedByName || closeout.openedByName,
     };
-    const { entries } = buildOperationalEntriesFromCloseout(closeout, actor);
-    const created = [];
+    const { entries } = buildOperationalEntriesFromCloseout(closeout, actor) as {
+      entries: CloseoutBuiltEntryItem[];
+      actor: typeof actor;
+    };
+    const created: OperationalEntry[] = [];
     for (const item of entries) {
-      const entry = buildEntry(item.payload, actor);
+      const entry = buildEntry(item.payload, actor) as OperationalEntry;
       if (item.payload.attachment || item.attachment) {
         const attachmentPayload = item.payload.attachment || item.attachment;
+        const normalizedAttachment = typeof attachmentPayload === "string"
+          ? { dataUrl: attachmentPayload }
+          : attachmentPayload;
         try {
-          await storeAttachmentPayload(attachmentPayload);
-          entry.attachment = makeAttachment(entry.id, attachmentPayload);
+          await storeAttachmentPayload(normalizedAttachment as Record<string, unknown> | null | undefined);
+          entry.attachment = makeAttachment(
+            entry.id!,
+            normalizedAttachment as Record<string, unknown> | null,
+          ) as OperationalEntry["attachment"];
         } catch {
           await appAlert({ lang, title: text(lang, "attachmentSaveFailed"), variant: "info" });
         }
@@ -284,8 +315,8 @@ export function usePrototypeRuntimeOperationalEntries({
     if (created.length) {
       setBulkOperationalEntries((current) => [...created, ...current]);
       const summaryEntry = created.find((entry) => entry.type === "summary");
-      if (summaryEntry) {
-        setLastCloseoutDates((current) => mergeLastCloseoutDateForStore(current, summaryEntry.businessId, summaryEntry.date));
+      if (summaryEntry?.businessId && summaryEntry.date) {
+        setLastCloseoutDates((current) => mergeLastCloseoutDateForStore(current, summaryEntry.businessId!, summaryEntry.date!));
       }
     }
   }, [lang, removeOperationalEntriesForCloseout, setLastCloseoutDates]);

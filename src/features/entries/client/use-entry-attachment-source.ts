@@ -9,17 +9,24 @@ import {
   readResolvedAttachmentSourceCache,
   writeResolvedAttachmentSourceCache,
 } from "./entry-attachment-source-cache";
+import type { OperationalEntryAttachment } from "./entries-client-types";
 
 export { clearEntryAttachmentSourceCache };
 
 export function useEntryAttachmentSource(
-  attachment,
+  attachment: OperationalEntryAttachment | null | undefined,
   {
     storeId = "",
     attachmentsApiEnabled = false,
     organizationId = "",
     actorUserId = "",
     actorRole = "owner",
+  }: {
+    storeId?: string;
+    attachmentsApiEnabled?: boolean;
+    organizationId?: string;
+    actorUserId?: string;
+    actorRole?: string;
   } = {},
 ) {
   const attachmentId = typeof attachment?.id === "string" ? attachment.id : "";

@@ -6,10 +6,7 @@ import { attachmentsFromEntries } from "@/components/prototype-runtime/prototype
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { fetchStoreEntriesViaApi } from "./store-entries-api-client";
 import { resolveAttachmentGroupForDate } from "./attachments-from-entries";
-
-/**
- * @typedef {{ date?: string, items?: Array<{ id: string }> } | null} HomeAttachmentGroup
- */
+import type { HomeAttachmentGroup, OperationalEntry } from "./entries-client-types";
 
 export function shouldFetchHomeDayAttachments({
   enabled = false,
@@ -20,7 +17,7 @@ export function shouldFetchHomeDayAttachments({
   actorUserId = "",
   storeId = "",
   selectedDate = "",
-} = {}) {
+} = {}): boolean {
   return enabled
     && entriesApiEnabled
     && Boolean(storeId)
@@ -30,23 +27,19 @@ export function shouldFetchHomeDayAttachments({
     && proofsCount > localItemCount;
 }
 
-/**
- * @param {{
- *   localGroup?: HomeAttachmentGroup,
- *   fetchedGroup?: HomeAttachmentGroup,
- *   shouldFetchDayEntries?: boolean,
- *   fetchSucceeded?: boolean,
- *   fetchFailed?: boolean,
- * }} [input]
- * @returns {HomeAttachmentGroup}
- */
 export function resolveHomeDayAttachmentGroup({
   localGroup = null,
   fetchedGroup = null,
   shouldFetchDayEntries = false,
   fetchSucceeded = false,
   fetchFailed = false,
-} = {}) {
+}: {
+  localGroup?: HomeAttachmentGroup;
+  fetchedGroup?: HomeAttachmentGroup;
+  shouldFetchDayEntries?: boolean;
+  fetchSucceeded?: boolean;
+  fetchFailed?: boolean;
+} = {}): HomeAttachmentGroup {
   const localItemCount = localGroup?.items?.length || 0;
   const fetchedItemCount = fetchedGroup?.items?.length || 0;
 
@@ -63,7 +56,7 @@ export function resolveHomeDayAttachmentGroup({
 
 export function useHomeDayAttachments({
   enabled = false,
-  localDayEntries = [],
+  localDayEntries = [] as OperationalEntry[],
   selectedDate = "",
   proofsCount = 0,
   entriesApiEnabled = false,
@@ -71,7 +64,17 @@ export function useHomeDayAttachments({
   actorUserId = "",
   actorRole = "owner",
   storeId = "",
-}) {
+}: {
+  enabled?: boolean;
+  localDayEntries?: OperationalEntry[];
+  selectedDate?: string;
+  proofsCount?: number;
+  entriesApiEnabled?: boolean;
+  organizationId?: string;
+  actorUserId?: string;
+  actorRole?: string;
+  storeId?: string;
+} = {}) {
   const localGroup = useMemo(
     () => resolveAttachmentGroupForDate(attachmentsFromEntries(localDayEntries), selectedDate),
     [localDayEntries, selectedDate],

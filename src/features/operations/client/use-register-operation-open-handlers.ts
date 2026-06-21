@@ -5,8 +5,10 @@ import {
   resolveOwnerOperationOpenAction,
   resolveRestoreOperationTarget,
   resolveVoidOperationTarget,
-} from "./register-operations-selection.js";
+} from "./register-operations-selection";
 import { useRegisterEntriesCatalog } from "./use-register-entries-catalog";
+import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
+import type { UseRegisterOperationOpenHandlersProps } from "./operations-client-types";
 
 export function useRegisterOperationOpenHandlers({
   operationalEntries = [],
@@ -19,13 +21,13 @@ export function useRegisterOperationOpenHandlers({
   setVoidTarget = () => {},
   setRestoreTarget = () => {},
   setOwnerManageCloseout = () => {},
-}) {
+}: UseRegisterOperationOpenHandlersProps = {}) {
   const registerEntriesCatalog = useRegisterEntriesCatalog();
   const entryCatalogs = useMemo(
     () => [operationalEntries, registerEntriesCatalog],
     [operationalEntries, registerEntriesCatalog],
   );
-  const handleOpenOwnerOperation = useCallback((entry) => {
+  const handleOpenOwnerOperation = useCallback((entry: OperationalEntry) => {
     const action = resolveOwnerOperationOpenAction(entry, {
       bindsToServerAuth,
       closeoutsApiDbSource,
@@ -44,7 +46,7 @@ export function useRegisterOperationOpenHandlers({
     setSelected,
   ]);
 
-  const requestVoidOperation = useCallback((entryId) => {
+  const requestVoidOperation = useCallback((entryId: string) => {
     const target = resolveVoidOperationTarget(
       entryCatalogs,
       entryId,
@@ -54,7 +56,7 @@ export function useRegisterOperationOpenHandlers({
     if (target) setVoidTarget(target);
   }, [archivedBusinessIds, entryCatalogs, entryIsVoided, setVoidTarget]);
 
-  const requestRestoreOperation = useCallback((entryId) => {
+  const requestRestoreOperation = useCallback((entryId: string) => {
     const target = resolveRestoreOperationTarget(
       entryCatalogs,
       entryId,

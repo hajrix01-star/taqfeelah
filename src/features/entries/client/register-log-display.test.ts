@@ -162,7 +162,7 @@ describe("register-log-display", () => {
           ],
         },
       ],
-      (row: { channelId: string }) => row.channelId,
+      (row) => row.channelId || "",
       "All",
       configuredChannels,
     );
