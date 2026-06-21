@@ -10,7 +10,7 @@ export type UiEntryLike = {
   salesChannels?: Array<{ amount?: number | null }>;
 };
 
-function resolveSummaryEntrySalesAmountRiyals(entry: UiEntryLike): number {
+export function resolveSummaryEntrySalesAmountRiyals(entry: UiEntryLike): number {
   if (entry.type !== "summary") return entry.amount;
   const channels = Array.isArray(entry.salesChannels) ? entry.salesChannels : [];
   if (channels.length === 0) return entry.amount;

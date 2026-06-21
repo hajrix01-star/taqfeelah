@@ -1,6 +1,6 @@
 import { toRiyals } from "@/core/money/halalas";
 import { countCloseoutAttachments } from "@/features/closeouts/client/closeout-attachment-utils";
-import { computeCloseoutTotals, salesArrayFromRecord } from "./closeout-calculations";
+import { resolveCloseoutRecordDisplayTotals, salesArrayFromRecord } from "./closeout-calculations";
 import type {
   CloseoutOutflow,
   CloseoutShareOperationRow,
@@ -107,6 +107,17 @@ export function buildCloseoutShareOperationRows(
 }
 
 export function closeoutShareTotals(closeout: DailyCloseoutRecord | null | undefined): CloseoutShareTotals {
+  const fromRows = resolveCloseoutRecordDisplayTotals(closeout);
+  const hasRowBackedTotals = salesArrayFromRecord(closeout?.sales).some((row) => Number(row.amount) > 0)
+    || (closeout?.outflows || []).some((row) => Number(row.amount) > 0);
+
+  if (hasRowBackedTotals) {
+    const sales = fromRows.totalSales || 0;
+    const expense = fromRows.totalOutflow || 0;
+    const ratio = sales > 0 ? `${((expense / sales) * 100).toFixed(1)}%` : expense > 0 ? "—" : "0.0%";
+    return { sales, expense, net: fromRows.netMovement ?? sales - expense, ratio };
+  }
+
   const normalized = normalizeCloseoutShareTotals(closeout?.totals);
   if (normalized) {
     const { sales, expense, net } = normalized;
@@ -114,9 +125,9 @@ export function closeoutShareTotals(closeout: DailyCloseoutRecord | null | undef
       || (sales > 0 ? `${((expense / sales) * 100).toFixed(1)}%` : expense > 0 ? "—" : "0.0%");
     return { sales, expense, net, ratio };
   }
-  const computed = computeCloseoutTotals(closeout?.sales, closeout?.outflows);
-  const sales = computed.totalSales || 0;
-  const expense = computed.totalOutflow || 0;
+
+  const sales = fromRows.totalSales || 0;
+  const expense = fromRows.totalOutflow || 0;
   const ratio = sales > 0 ? `${((expense / sales) * 100).toFixed(1)}%` : expense > 0 ? "—" : "0.0%";
-  return { sales, expense, net: computed.netMovement ?? sales - expense, ratio };
+  return { sales, expense, net: fromRows.netMovement ?? sales - expense, ratio };
 }

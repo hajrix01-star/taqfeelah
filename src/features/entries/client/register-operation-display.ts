@@ -1,3 +1,4 @@
+import { resolveOperationalEntrySalesAmount } from "./resolve-operational-entry-amount";
 import type { OperationalEntry, OperationalEntrySalesChannelRow } from "./entries-client-types";
 
 export function filterSummaryChannelRows(
@@ -32,10 +33,7 @@ export function summarySalesChannelLabel(
 }
 
 export function summaryEntryDisplayAmount(entry: OperationalEntry, salesChannelFilter = "all"): number {
-  if (entry?.type !== "summary") return Number(entry?.amount || 0);
-  if (salesChannelFilter === "all") return Number(entry?.amount || 0);
-  return filterSummaryChannelRows(entry, salesChannelFilter)
-    .reduce((sum, row) => sum + Number(row.amount || 0), 0);
+  return resolveOperationalEntrySalesAmount(entry, salesChannelFilter);
 }
 
 export type RegisterCloseoutDayContext = {

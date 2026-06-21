@@ -62,3 +62,33 @@ export function salesArrayFromRecord(
 ): CloseoutSalesChannelRow[] {
   return normalizeCloseoutSalesToArray(salesRecord);
 }
+
+/** Display totals always reconcile stored totals with sales/outflow rows. */
+export function resolveCloseoutDisplayTotals(
+  sales: CloseoutSalesRecord | null | undefined,
+  outflows: CloseoutOutflow[] = [],
+  storedTotals?: CloseoutTotals | null,
+): CloseoutTotals {
+  const fromRows = computeCloseoutTotals(sales, outflows);
+  if (!storedTotals) return fromRows;
+  const salesMatch = toHalalas(storedTotals.totalSales ?? 0) === toHalalas(fromRows.totalSales ?? 0);
+  const outflowMatch = toHalalas(storedTotals.totalOutflow ?? 0) === toHalalas(fromRows.totalOutflow ?? 0);
+  return salesMatch && outflowMatch ? storedTotals : fromRows;
+}
+
+export function resolveCloseoutRecordDisplayTotals(
+  closeout: {
+    sales?: CloseoutSalesRecord | null;
+    outflows?: CloseoutOutflow[] | null;
+    totals?: CloseoutTotals | null;
+  } | null | undefined,
+): CloseoutTotals {
+  if (!closeout) {
+    return { totalSales: 0, totalOutflow: 0, netMovement: 0 };
+  }
+  return resolveCloseoutDisplayTotals(
+    closeout.sales,
+    closeout.outflows || [],
+    closeout.totals,
+  );
+}

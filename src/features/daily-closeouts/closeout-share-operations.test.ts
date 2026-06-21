@@ -43,4 +43,13 @@ describe("closeoutShareTotals", () => {
     expect(totals.expense).toBe(0);
     expect(totals.net).toBe(1200);
   });
+
+  it("prefers sales rows over stale persisted totals when both exist", () => {
+    const totals = closeoutShareTotals({
+      sales: [{ channelId: "card", amount: 5000 }],
+      totals: { totalSales: 100, totalOutflow: 0, netMovement: 100 },
+    } as import("./daily-closeouts-types").DailyCloseoutRecord);
+    expect(totals.sales).toBe(5000);
+    expect(totals.net).toBe(5000);
+  });
 });

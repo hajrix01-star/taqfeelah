@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { computeCloseoutTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
+import { resolveCloseoutRecordDisplayTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
 import { closeoutStatusLabel, closeoutStatusTone } from "../daily-closeouts/closeout-status";
 import CloseoutAttachmentThumbs from "../closeouts/client/CloseoutAttachmentThumbs";
 import {
@@ -52,7 +52,7 @@ export default function DailyCloseoutCard({
   attachmentsApiActorUserId?: string;
   attachmentsApiActorRole?: string;
 }) {
-  const totals = closeout.totals || computeCloseoutTotals(closeout.sales, closeout.outflows);
+  const totals = resolveCloseoutRecordDisplayTotals(closeout);
   const salesRows = salesArrayFromRecord(closeout.sales);
   const statusText = closeoutStatusLabel(closeout.status, lang, {
     autoRecorded: !closeout.reviewedByName && closeout.status === "reviewed",

@@ -8,7 +8,7 @@ import {
   countCloseoutAttachments,
   countOutflowAttachments,
 } from "../closeouts/client/closeout-attachment-utils";
-import { computeCloseoutTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
+import { resolveCloseoutRecordDisplayTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
 import type { CloseoutOutflow } from "@/features/daily-closeouts/daily-closeouts-types";
 import CloseoutOwnerEditBadge from "../closeouts/client/CloseoutOwnerEditBadge";
 import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
@@ -34,7 +34,7 @@ export default function OwnerCloseoutManagePanel({
   attachmentsApiActorRole = "owner",
 }: OwnerCloseoutManagePanelProps) {
   if (!closeout) return null;
-  const totals = closeout.totals || computeCloseoutTotals(closeout.sales, closeout.outflows as CloseoutOutflow[] | undefined);
+  const totals = resolveCloseoutRecordDisplayTotals(closeout as import("@/features/daily-closeouts/daily-closeouts-types").DailyCloseoutRecord);
   const salesRows = salesArrayFromRecord(closeout.sales);
   const statusText = closeoutStatusLabel(closeout.status, lang);
 

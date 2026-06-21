@@ -1,8 +1,8 @@
 import {
   filterSummaryChannelRows,
-  summaryEntryDisplayAmount,
   summarySalesChannelLabel as buildSummarySalesChannelLabel,
 } from "@/features/entries/client/register-operation-display";
+import { signedOperationalEntryAmount } from "@/features/entries/client/resolve-operational-entry-amount";
 import {
   entryDateMatches,
   entryIsActive,
@@ -69,7 +69,7 @@ function expandRegisterCloseoutOperationRows(
   }
   const rows = filterSummaryChannelRows(item, salesChannelFilter);
   if (!rows.length) {
-    return [{ key: item.id || "", item, label: summarySalesChannelLabel(item, lang, salesChannelFilter, channelCatalog), amount: summaryEntryDisplayAmount(item, salesChannelFilter), isSale: true }];
+    return [{ key: item.id || "", item, label: summarySalesChannelLabel(item, lang, salesChannelFilter, channelCatalog), amount: signedOperationalEntryAmount(item, salesChannelFilter), isSale: true }];
   }
   return rows.map((row, index) => {
     const label = resolveSalesChannelRowLabel(row, channelCatalog, lang, channelName);
@@ -77,7 +77,9 @@ function expandRegisterCloseoutOperationRows(
     return { key: `${item.id}-${row.channelId}-${index}`, item, label: resolvedLabel, amount: Number(row.amount), isSale: true };
   });
 }
-const signedEntryAmount = (entry: OperationalEntry) => entry.type === "summary" ? Number(entry.amount || 0) : -Number(entry.amount || 0);
+const signedEntryAmount = (entry: OperationalEntry, salesChannelFilter = "all") => (
+  signedOperationalEntryAmount(entry, salesChannelFilter)
+);
 const entryWasRestored = (entry: OperationalEntry) => Boolean(entry.restoredAt);
 
 export const entryHasAttachment = (entry: OperationalEntry) => Boolean(entry.attachment);

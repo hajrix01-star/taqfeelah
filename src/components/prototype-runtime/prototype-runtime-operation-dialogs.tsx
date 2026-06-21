@@ -28,6 +28,10 @@ import {
   entryIsVoided,
 } from "./prototype-runtime-entry-helpers";
 import CloseoutOwnerEditBadge from "@/features/closeouts/client/CloseoutOwnerEditBadge";
+import {
+  resolveOperationalEntrySalesAmount,
+  sumOperationalSummaryEntryAmounts,
+} from "@/features/entries/client/resolve-operational-entry-amount";
 import { Badge } from "./prototype-runtime-shell-ui";
 import type {
   OperationalEntry,
@@ -263,8 +267,12 @@ export function DuplicateSalesDialog({ lang, draft, previousEntries = [], busine
 }) {
   if (!draft) return null;
   const store = businessesList.find((business) => business.id === draft.businessId);
-  const newAmount = (draft.salesChannels || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
-  const previousTotal = previousEntries.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const newAmount = resolveOperationalEntrySalesAmount({
+    type: draft.type || "summary",
+    amount: Number(draft.amount ?? 0),
+    salesChannels: draft.salesChannels,
+  });
+  const previousTotal = sumOperationalSummaryEntryAmounts(previousEntries);
   return <AnimatePresence><motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[60] flex items-end bg-[#112A46]/50 sm:items-center sm:justify-center sm:p-6 lg:items-end lg:justify-start lg:p-0"><motion.div initial={{ y: 18 }} animate={{ y: 0 }} exit={{ y: 18 }} className="relative z-10 w-full rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:max-w-[560px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8"><div className="mb-4 flex items-start justify-between"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF1EE] text-[#B44747]"><Bell className="h-5 w-5" /></div><button onClick={onCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]"><X className="h-4 w-4" /></button></div><h3 className="text-base font-black">{text(lang, "duplicateSalesTitle")}</h3><p className="mt-2 text-taq-meta font-bold leading-6 text-[#716753]">{text(lang, "duplicateSalesWarning")}</p><div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-black/[0.045]"><p className="text-taq-meta font-black text-[#112A46]">{businessName(store, lang)} {formatCalendarDate(draft.date || "", lang)}</p><div className="mt-3 flex justify-between text-xs font-bold text-[#827762]"><span>{text(lang, "previousSalesEntries")} ({previousEntries.length})</span><strong>{money(previousTotal, lang)}</strong></div><div className="mt-2 flex justify-between border-t border-[#F0ECE2] pt-2 text-xs font-black"><span>{text(lang, "summary")}</span><strong className="text-[#257844]">+{money(newAmount, lang)}</strong></div></div><div className="mt-5 grid grid-cols-[0.9fr_1.35fr] gap-3"><button onClick={onCancel} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.06]">{text(lang, "cancel")}</button><button onClick={onConfirm} className="rounded-2xl bg-[#B44747] py-3.5 text-xs font-black text-white">{text(lang, "saveAdditionalEntry")}</button></div></motion.div></motion.div></AnimatePresence>;
 }
 

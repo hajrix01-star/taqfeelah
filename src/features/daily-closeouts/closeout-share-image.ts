@@ -2,7 +2,7 @@ import { countCloseoutAttachments } from "@/features/closeouts/client/closeout-a
 import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
 import { formatNumericDate } from "@/features/reports/client/report-period-labels";
 import { closeoutStatusLabel } from "./closeout-status";
-import { computeCloseoutTotals, salesArrayFromRecord } from "./closeout-calculations";
+import { resolveCloseoutRecordDisplayTotals, salesArrayFromRecord } from "./closeout-calculations";
 import type { CloseoutOutflow, CloseoutSyncLang, DailyCloseoutRecord } from "./daily-closeouts-types";
 
 function money(value: number | string | null | undefined): string {
@@ -31,7 +31,7 @@ export async function createCloseoutShareImage(
   const lang = options.lang || "ar";
   const storeName = options.storeName || closeout.storeName || "";
   const salesRows = salesArrayFromRecord(closeout.sales);
-  const totals = closeout.totals || computeCloseoutTotals(closeout.sales, closeout.outflows);
+  const totals = resolveCloseoutRecordDisplayTotals(closeout);
   const outflows = closeout.outflows || [];
   const attachmentCount = countCloseoutAttachments(closeout.attachments);
   const statusText = closeoutStatusLabel(closeout.status, lang, {

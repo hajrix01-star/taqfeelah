@@ -1,12 +1,15 @@
 import { resolveReportDateRange } from "@/features/reports/client/report-period-range";
-import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
+import { summarizeEntries } from "@/features/operations/operational-analytics";
+import { resolveOperationalEntrySalesAmount } from "@/features/entries/client/resolve-operational-entry-amount";
+import type {
+  OperationalEntry,
+  OperationalEntrySalesChannelRow,
+} from "@/features/entries/client/entries-client-types";
 import type { ExportSnapshot } from "@/features/exports/client/exports-client-types";
 import type {
   NotebookExportRequest,
   NotebookExportShareData,
 } from "@/features/exports-attachments/client/exports-attachments-client-types";
-
-const OUTFLOW_TYPES = new Set(["purchases", "expense", "withdrawal"]);
 
 export function canFetchNotebookExportForSnapshot(snapshot: ExportSnapshot | null | undefined, enabled: boolean) {
   if (!enabled || !snapshot || typeof snapshot !== "object") return false;
@@ -43,22 +46,50 @@ export function buildNotebookExportRequest(snapshot: ExportSnapshot): NotebookEx
   return request;
 }
 
+function mapNotebookExportSalesChannels(
+  operation: Record<string, unknown>,
+): OperationalEntrySalesChannelRow[] {
+  const raw = operation.salesChannels;
+  if (!Array.isArray(raw)) return [];
+  const mapped: OperationalEntrySalesChannelRow[] = [];
+  raw.forEach((row) => {
+    const channel = row as Record<string, unknown>;
+    const channelId = typeof channel.channelId === "string"
+      ? channel.channelId
+      : typeof channel.id === "string"
+        ? channel.id
+        : "";
+    const amount = Number(channel.amount ?? 0);
+    if (!channelId || amount <= 0) return;
+    mapped.push({
+      channelId,
+      amount,
+      name: typeof channel.name === "string" ? channel.name : undefined,
+    });
+  });
+  return mapped;
+}
+
 export function mapNotebookExportOperationToEntry(
   operation: Record<string, unknown>,
   businessId: string,
 ): OperationalEntry {
+  const salesChannels = mapNotebookExportSalesChannels(operation);
+  const type = String(operation?.type || "summary");
   const amount = Number(operation?.amount) || 0;
   return {
     id: String(operation?.id || `op-${operation?.date || "unknown"}`),
     businessId,
     date: String(operation?.date || ""),
-    type: String(operation?.type || "summary"),
-    amount,
+    type,
+    amount: type === "summary" && salesChannels.length > 0
+      ? resolveOperationalEntrySalesAmount({ type, amount, salesChannels })
+      : amount,
     note: String(operation?.note || ""),
     createdAt: String(operation?.createdAt || ""),
     reviewed: true,
     status: "active",
-    salesChannels: [],
+    salesChannels,
     attachment: operation?.hasAttachment ? { kind: "image", name: "attachment" } : null,
   };
 }
@@ -95,13 +126,11 @@ export function mapNotebookExportToShareData(
       };
     });
 
-  const dayTotals = new Map<string, { sales: number; expense: number }>();
+  const dayTotals = new Map<string, ReturnType<typeof summarizeEntries>>();
   entries.forEach((entry) => {
     if (!entry.date) return;
-    const current = dayTotals.get(entry.date) || { sales: 0, expense: 0 };
-    if (entry.type === "summary") current.sales += Number(entry.amount) || 0;
-    if (entry.type && OUTFLOW_TYPES.has(entry.type)) current.expense += Number(entry.amount) || 0;
-    dayTotals.set(entry.date, current);
+    const scoped = entries.filter((item) => item.date === entry.date);
+    dayTotals.set(entry.date, summarizeEntries(scoped));
   });
 
   const shareDayRows = [...dayTotals.entries()]
@@ -110,7 +139,7 @@ export function mapNotebookExportToShareData(
       date,
       sales: values.sales,
       expense: values.expense,
-      net: values.sales - values.expense,
+      net: values.net,
     }));
 
   return {

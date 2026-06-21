@@ -47,4 +47,24 @@ describe("notebook export share data", () => {
     expect(mapped?.entries[0].businessId).toBe("shami");
     expect(mapped?.proofs).toBe(1);
   });
+
+  it("uses channel-aware day totals when export operation amount is stale", () => {
+    const mapped = mapNotebookExportToShareData({
+      storeId: "shami",
+      totals: { sales: 5000, expense: 0, net: 5000, ratio: "0.0%", proofs: 0 },
+      channels: [{ channelId: "card", name: "Card", amount: 5000 }],
+      operations: [{
+        id: "entry-1",
+        date: "2026-06-17",
+        type: "summary",
+        amount: 100,
+        salesChannels: [{ channelId: "card", name: "Card", amount: 5000 }],
+        note: "",
+        createdAt: "2026-06-17T10:00:00.000Z",
+      }],
+    }, { selectedBusiness: "shami" });
+
+    expect(mapped?.entries[0].amount).toBe(5000);
+    expect(mapped?.shareDayRows[0]?.sales).toBe(5000);
+  });
 });

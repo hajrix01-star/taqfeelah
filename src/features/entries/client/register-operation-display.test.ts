@@ -50,6 +50,16 @@ describe("summaryEntryDisplayAmount", () => {
 
     expect(amount).toBe(100);
   });
+
+  it("prefers salesChannels sum over stale summary amount when filter is all", () => {
+    const amount = summaryEntryDisplayAmount({
+      type: "summary",
+      amount: 100,
+      salesChannels: [{ channelId: "card", amount: 5000 }],
+    } as OperationalEntry, "all");
+
+    expect(amount).toBe(5000);
+  });
 });
 
 describe("buildRegisterCloseoutDayContext", () => {
