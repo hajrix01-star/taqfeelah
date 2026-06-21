@@ -113,16 +113,9 @@ test.describe("register closeouts with PostgreSQL", () => {
     await expect(page.getByRole("button", { name: "السجل" })).toBeVisible({ timeout: 120_000 });
     await page.getByRole("button", { name: "السجل" }).click();
 
-    await expect(page.getByRole("tab", { name: /التقفيلات/ })).toBeVisible({ timeout: 60_000 });
-
-    const entriesResponse = page.waitForResponse(
-      (response) => response.url().includes("/entries")
-        && response.url().includes("paginated=1")
-        && response.ok(),
-      { timeout: 90_000 },
-    );
-    await page.getByRole("tab", { name: /التقفيلات/ }).click();
-    await entriesResponse;
+    const closeoutsTab = page.getByRole("tab", { name: /التقفيلات/ });
+    await expect(closeoutsTab).toBeVisible({ timeout: 60_000 });
+    await closeoutsTab.click();
 
     const closeoutCard = page.locator(`#${closeoutCardId}`);
     await expect(closeoutCard).toBeVisible({ timeout: 90_000 });

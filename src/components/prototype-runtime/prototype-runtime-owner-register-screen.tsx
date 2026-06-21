@@ -190,6 +190,7 @@ export function OwnerRegisterScreen({
     hasMore: apiRegisterEntriesHasMore,
     loadMore: loadMoreRegisterEntries,
     loadAllRemaining: loadAllRegisterEntries,
+    refetch: refetchRegisterEntries,
     loadingMore: registerEntriesLoadingMore,
   } = useRegisterEntriesFromApi({
     enabled: registerEntriesApiEnabled,
@@ -247,10 +248,12 @@ export function OwnerRegisterScreen({
     return () => observer.disconnect();
   }, [apiRegisterEntriesHasMore, loadMoreRegisterEntries, logView, periodEntries.length, registerEntriesApiEnabled]);
   useEffect(() => {
-    if (!registerEntriesApiEnabled || logView !== "closeouts" || !apiRegisterEntriesHasMore) return undefined;
+    if (!registerEntriesApiEnabled || logView !== "closeouts") return undefined;
+    void refetchRegisterEntries();
+    if (!apiRegisterEntriesHasMore) return undefined;
     loadAllRegisterEntries();
     return undefined;
-  }, [apiRegisterEntriesHasMore, loadAllRegisterEntries, logView, registerEntriesApiEnabled, safeBusinessId, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo]);
+  }, [apiRegisterEntriesHasMore, loadAllRegisterEntries, logView, refetchRegisterEntries, registerEntriesApiEnabled, safeBusinessId, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo]);
   const actorOptions = useMemo(() => {
     const seen = new Set();
     const options = [{ id: "all", label: lang === "ar" ? "الكل" : "All" }];

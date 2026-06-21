@@ -168,6 +168,7 @@ export function useRegisterEntriesFromApi({
     error,
     loadMore,
     loadAllRemaining,
+    refetch: query.refetch,
     enabled,
   };
 }
