@@ -5,7 +5,7 @@ import {
   PWA_DESCRIPTION,
   PWA_THEME_COLOR,
 } from "@/core/config/pwa";
-import { appFontClassNames, notoSansArabic } from "@/core/fonts/app-fonts";
+import { appFontClassNames } from "@/core/fonts/app-fonts";
 import PwaLifecycle from "@/features/pwa/PwaLifecycle";
 import "./globals.css";
 
@@ -51,7 +51,7 @@ export default async function RootLayout({
 
   return (
     <html lang="ar" className={appFontClassNames} suppressHydrationWarning>
-      <body className={notoSansArabic.className}>
+      <body>
         {children}
         <PwaLifecycle />
       </body>

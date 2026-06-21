@@ -65,6 +65,8 @@
     "pwa:assets": "pnpm pwa:icons && pnpm pwa:screenshots"
   },
   "dependencies": {
+    "@fontsource-variable/noto-sans": "5.2.10",
+    "@fontsource-variable/noto-sans-arabic": "5.2.10",
     "@serwist/next": "^9.5.11",
     "@tanstack/react-query": "^5.90.2",
     "@upstash/redis": "^1.38.0",

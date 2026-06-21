@@ -2,6 +2,11 @@
 @import "../core/design-tokens/taq-brand.css";
 @import "../core/ui/interactive.css";
 
+.taq-app-fonts {
+  --font-noto-sans: "Noto Sans Variable";
+  --font-noto-sans-arabic: "Noto Sans Arabic Variable";
+}
+
 /* Taqfeelah typography scale (aligned with iOS/Material mobile body standards) */
 @theme {
   --text-taq-nav: 0.6875rem;
