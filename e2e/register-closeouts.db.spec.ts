@@ -95,7 +95,7 @@ test.describe("register closeouts with PostgreSQL", () => {
     await closeoutCard.locator("button").first().click();
 
     const expandedCardText = await closeoutCard.innerText();
-    expect(expandedCardText).toMatch(/Cash|كاش/i);
+    expect(expandedCardText).toMatch(/Cash|كاش|نقد/i);
     expect(expandedCardText).not.toMatch(UUID_PATTERN);
 
     await closeoutCard.getByRole("button", { name: "تعديل التقفيلة" }).click();
