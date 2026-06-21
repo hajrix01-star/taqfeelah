@@ -97,6 +97,8 @@ export function AttachmentPreview({
 }) {
   const { source, loading, unavailable } = useAttachmentSource(attachment, attachmentApiContext, storeId);
   if (!source) return <ProofThumb loading={loading} unavailable={unavailable} />;
+  // Dynamic data/object URLs are already normalized locally and cannot use Next image optimization.
+  // eslint-disable-next-line @next/next/no-img-element
   return <img src={source} alt="" className={`object-cover ${className}`} />;
 }
 

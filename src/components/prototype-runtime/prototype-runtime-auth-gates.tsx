@@ -11,7 +11,6 @@ import type {
   PrototypeAuthScreen,
   PrototypeLang,
   PrototypeRuntimeCallback,
-  PrototypeSetState,
   PrototypeStaffMember,
 } from "./prototype-runtime-types";
 

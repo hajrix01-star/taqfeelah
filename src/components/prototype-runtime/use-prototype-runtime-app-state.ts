@@ -493,11 +493,8 @@ export function usePrototypeRuntimeAppState() {
     apiTargetStoreIdsKey: syncApiTargetStoreIdsKey,
     employee,
     storeOperationalSettings,
-    entriesApiEnabled,
     loadOperationalEntriesFromApi,
     currentEmployeeChannelConfig,
-    ownerCloseoutBusiness: ownerCloseout.ownerCloseoutBusiness,
-    ownerCloseoutChannelConfig: ownerCloseout.ownerCloseoutChannelConfig,
     resolveStoreSalesChannels,
     notifyOperationalSyncWrite,
   });

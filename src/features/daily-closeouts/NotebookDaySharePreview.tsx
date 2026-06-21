@@ -68,6 +68,8 @@ export default function NotebookDaySharePreview({
       <div className="relative px-5 pb-4 pt-3" style={lines}>
         <div>
           <div className="flex min-h-[54px] items-center justify-center">
+            {/* Kept as a plain image because this DOM subtree is captured directly into a shareable bitmap. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={TAQFEELAH_LOGO_SRC} alt="" draggable={false} className="h-[44px] w-[132px] select-none object-contain" />
           </div>
           <div className="flex min-h-[44px] items-end justify-center pb-2 text-taq-meta font-black text-[#112A46]">

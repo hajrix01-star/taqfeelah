@@ -11,7 +11,6 @@ import {
   summarizeEntries,
 } from "./operational-analytics";
 
-import type { AnalyticsTotals } from "./operations-types";
 
 describe("operational analytics summary helpers", () => {
   it("detects activity in totals", () => {

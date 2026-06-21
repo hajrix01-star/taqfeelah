@@ -156,12 +156,6 @@ export function NotebookShareModal({
   const {
     shareCaption,
     activeTheme,
-    exportTitle,
-    periodLabel,
-    title,
-    combined,
-    exportTable,
-    safeExportName,
     imageFilename,
   } = model;
 
@@ -169,8 +163,6 @@ export function NotebookShareModal({
     previewTable,
     title: exportStoreTitle,
     periodLabel: exportPeriodLabel,
-    combined: exportCombined,
-    safeExportName: exportFileName,
   } = exportModel;
 
   const buildNotebookImageFile = async () => {

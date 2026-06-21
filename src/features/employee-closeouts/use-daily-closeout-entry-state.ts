@@ -15,7 +15,6 @@ import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-demo-stor
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import { confirmCloseoutSubmit } from "@/lib/ui/app-dialog/app-dialog-helpers";
 import type {
-  CloseoutSalesChannelRow,
   CloseoutTotals,
   DailyCloseoutRecord,
   NotebookThemeId,

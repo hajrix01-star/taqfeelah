@@ -1,4 +1,3 @@
-import type { CloseoutSyncLang } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { NotebookThemeId } from "@/features/daily-closeouts/daily-closeouts-types";
 
 import { usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";

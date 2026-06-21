@@ -15,7 +15,6 @@ import {
   resolveRegisterIncomeSourceFilterKey,
 } from "@/features/org-config/client/sales-channel-display";
 import { sanitizeCloseoutChannelDisplayName } from "@/features/daily-closeouts/closeout-sales-normalize";
-import type { DisplayLang } from "@/core/i18n/display-locale";
 import type {
   AnalyticsBusinessRef,
   AnalyticsDaySummaryRow,

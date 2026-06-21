@@ -1,8 +1,6 @@
 import type { RuntimeSettingsAuth } from "@/features/runtime-settings/client/runtime-settings-client-types";
 import type {
   OwnerNotebookChecklistItem,
-  OwnerNotebookFilter,
-  OwnerNotebookNote,
   OwnerNotebookNoteInput,
   OwnerNotebookNotePatch,
   OwnerNotebookNoteKind,

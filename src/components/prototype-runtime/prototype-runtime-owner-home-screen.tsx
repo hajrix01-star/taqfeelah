@@ -17,7 +17,6 @@ import AttachmentLightbox from "../AttachmentLightbox";
 import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
 import {
   entryDateMatches,
-  entryHasAttachment,
   signedEntryAmount,
 } from "./prototype-runtime-entry-helpers";
 import { summaryDayFromEntriesWithLabels } from "./prototype-runtime-demo-operational-entries";
@@ -51,12 +50,12 @@ export function OwnerHome({
   lang,
   operationalEntries = [],
   operationalEntriesLoading = false,
-  duplicateSalesAlerts = [],
+  duplicateSalesAlerts: _duplicateSalesAlerts = [],
   closeoutAlerts = [],
   onOpenCloseoutAlertInRegister = () => {},
   onDismissCloseout = () => {},
-  onOpenDuplicateSummaryInRegister = () => {},
-  onAcknowledgeDuplicate = () => {},
+  onOpenDuplicateSummaryInRegister: _onOpenDuplicateSummaryInRegister = () => {},
+  onAcknowledgeDuplicate: _onAcknowledgeDuplicate = () => {},
   onOpenOperation = () => {},
   onShareNotebook = () => {},
   notebookTheme = "yellow",
@@ -224,7 +223,6 @@ export function OwnerHome({
   const firstAlertDate = typeof firstCloseoutAlert?.date === "string" ? firstCloseoutAlert.date : "";
   const firstAlertEmployeeNameAr = typeof firstCloseoutAlert?.employeeNameAr === "string" ? firstCloseoutAlert.employeeNameAr : "";
   const firstAlertEmployeeNameEn = typeof firstCloseoutAlert?.employeeNameEn === "string" ? firstCloseoutAlert.employeeNameEn : "";
-  const firstAlertId = typeof firstCloseoutAlert?.id === "string" ? firstCloseoutAlert.id : "";
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-6 pt-1">
       {homeBillingLayoutReady && homeSubscriptionBanner ? (

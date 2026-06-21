@@ -21,6 +21,15 @@ const eslintConfig = [
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
+    rules: {
+      "@typescript-eslint/no-unused-vars": ["warn", {
+        argsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+      }],
+    },
+  },
+  {
     files: [
       "src/components/TaqfeelahPrototypeRuntime.jsx",
       "src/components/prototype-runtime/OwnerSettingsSection.jsx",

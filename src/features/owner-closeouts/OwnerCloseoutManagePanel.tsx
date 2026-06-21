@@ -4,12 +4,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import CloseoutAttachmentThumbs from "../closeouts/client/CloseoutAttachmentThumbs";
 import {
-  countAllCloseoutProofAttachments,
   countCloseoutAttachments,
-  countOutflowAttachments,
 } from "../closeouts/client/closeout-attachment-utils";
 import { resolveCloseoutRecordDisplayTotals, salesArrayFromRecord } from "../daily-closeouts/closeout-calculations";
-import type { CloseoutOutflow } from "@/features/daily-closeouts/daily-closeouts-types";
 import CloseoutOwnerEditBadge from "../closeouts/client/CloseoutOwnerEditBadge";
 import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
 import { closeoutStatusLabel } from "../daily-closeouts/closeout-status";

@@ -5,7 +5,6 @@ import { Plus } from "lucide-react";
 import { sanitizeAmountInput } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import type { CloseoutSyncLang, SalesChannelConfig, StoreRef } from "@/features/daily-closeouts/daily-closeouts-types";
-import type { CloseoutOutflowRow } from "./employee-closeouts-types";
 import type { DailyCloseoutEntryState } from "./use-daily-closeout-entry-state";
 import {
   EXPENSE_CATEGORIES,

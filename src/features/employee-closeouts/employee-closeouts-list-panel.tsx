@@ -17,7 +17,7 @@ export function EmployeeCloseoutsListPanel({
   syncError,
   hasOlderHiddenCloseouts,
   historyScopeLabel,
-  hiddenCloseoutCount,
+  hiddenCloseoutCount: _hiddenCloseoutCount,
   showStorePicker,
   assignedStores,
   currentStore,

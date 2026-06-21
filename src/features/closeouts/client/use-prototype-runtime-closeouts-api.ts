@@ -44,11 +44,8 @@ export function usePrototypeRuntimeCloseoutsApi({
   apiTargetStoreIdsKey,
   employee = false,
   storeOperationalSettings = {},
-  entriesApiEnabled,
   loadOperationalEntriesFromApi,
   currentEmployeeChannelConfig,
-  ownerCloseoutBusiness,
-  ownerCloseoutChannelConfig,
   resolveStoreSalesChannels = () => [] as StoreChannel[],
   notifyOperationalSyncWrite = null,
 }: {
@@ -61,11 +58,8 @@ export function usePrototypeRuntimeCloseoutsApi({
   apiTargetStoreIdsKey?: string;
   employee?: boolean | EmployeeContext;
   storeOperationalSettings?: Record<string, unknown>;
-  entriesApiEnabled?: boolean;
   loadOperationalEntriesFromApi?: LoadOperationalEntriesFn;
   currentEmployeeChannelConfig?: { channels?: Array<Record<string, unknown>> };
-  ownerCloseoutBusiness?: { id?: string };
-  ownerCloseoutChannelConfig?: { channels?: Array<Record<string, unknown>> };
   resolveStoreSalesChannels?: (storeId: string) => StoreChannel[];
   notifyOperationalSyncWrite?: ((event: string) => void) | null;
 }) {
@@ -134,11 +128,8 @@ export function usePrototypeRuntimeCloseoutsApi({
     closeoutsApiEnabled,
     closeoutsApiOrganizationId,
     currentEmployeeChannelConfig?.channels,
-    entriesApiEnabled,
     lang,
     notifyOperationalSyncWrite,
-    ownerCloseoutBusiness?.id,
-    ownerCloseoutChannelConfig?.channels,
     refreshAfterCloseoutWrite,
     resolveStoreSalesChannels,
   ]);

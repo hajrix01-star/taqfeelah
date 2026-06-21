@@ -13,7 +13,7 @@ function InkTab({
   children,
   onClick,
   className = "",
-  titleUnderline = false,
+  titleUnderline: _titleUnderline = false,
   showActiveUnderline = true,
 }: {
   active: boolean;

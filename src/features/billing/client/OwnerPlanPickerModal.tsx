@@ -20,7 +20,7 @@ import { Badge } from "@/components/prototype-runtime/owner-settings-ui-primitiv
 
 function buildCurrentPlanRow(
   entitlements: ResolvedOrganizationEntitlements,
-  lang: DisplayLang,
+  _lang: DisplayLang,
 ): PlanPickerRow {
   return {
     planCode: entitlements.planCode,

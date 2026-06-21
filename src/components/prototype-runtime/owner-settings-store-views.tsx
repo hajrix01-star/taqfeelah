@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Building2, CreditCard, Plus, ReceiptText, Trash2, UserRound, Bell } from "lucide-react";
+import { Bell, Building2, CreditCard, ReceiptText } from "lucide-react";
 import EmployeeHistoryVisibilityPicker from "@/features/employee-closeouts/EmployeeHistoryVisibilityPicker";
 import { channelName, expenseCategories, text } from "./prototype-runtime-demo-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";

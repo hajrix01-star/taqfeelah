@@ -36,6 +36,7 @@ export function OwnerNotebookShareModal({ lang, note, onClose }: OwnerNotebookSh
   const [imageBusy, setImageBusy] = useState(false);
   const [imageError, setImageError] = useState("");
   const [shareHint, setShareHint] = useState("");
+  const noteId = note?.id || "";
 
   const paperColor = notebookThemePaperColor(note?.color || "yellow");
   const imageFilename = note ? ownerNotebookShareFilename(note, lang) : "daftari-note.png";
@@ -66,7 +67,7 @@ export function OwnerNotebookShareModal({ lang, note, onClose }: OwnerNotebookSh
   }, [note, lang, shareLabels]);
 
   useEffect(() => {
-    if (!open) {
+    if (!open || !noteId) {
       setImageBusy(false);
       setImageError("");
       setShareHint("");
@@ -77,10 +78,10 @@ export function OwnerNotebookShareModal({ lang, note, onClose }: OwnerNotebookSh
     setShareHint("");
     cachedImageFileRef.current = null;
     return undefined;
-  }, [open, note?.id]);
+  }, [open, noteId]);
 
   useEffect(() => {
-    if (!open || !note || !previewData) {
+    if (!open || !noteId || !previewData) {
       cachedImageFileRef.current = null;
       return undefined;
     }
@@ -105,7 +106,7 @@ export function OwnerNotebookShareModal({ lang, note, onClose }: OwnerNotebookSh
       cancelAnimationFrame(frameId);
       clearTimeout(timeoutId);
     };
-  }, [open, note?.id, previewData, paperColor, imageFilename]);
+  }, [open, noteId, previewData, paperColor, imageFilename]);
 
   const buildNotebookImageFile = async () => {
     if (!previewRef.current) throw new Error("missing-preview");

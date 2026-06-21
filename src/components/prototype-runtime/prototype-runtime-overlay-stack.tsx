@@ -25,7 +25,7 @@ import { NotebookShareModal } from "./prototype-runtime-notebook-share-modal";
 import { OwnerCloseoutEditFlow, OwnerCloseoutModals } from "./prototype-runtime-owner-closeout-modals";
 import { text } from "./prototype-runtime-demo-data";
 import { alertCloseoutNotFoundForEntry, alertCloseoutNotFound } from "@/lib/ui/app-dialog/app-dialog-helpers";
-import type { OperationalEntry, PrototypeBusiness, PrototypeChannel, PrototypeLang, NotebookShareSnapshot } from "./prototype-runtime-types";
+import type { OperationalEntry, PrototypeBusiness, PrototypeChannel, NotebookShareSnapshot } from "./prototype-runtime-types";
 import type { PrototypeRuntimeOverlayStackProps, PrototypeCloseoutRecord } from "./prototype-runtime-types";
 import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
 

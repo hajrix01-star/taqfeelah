@@ -8,7 +8,7 @@ import {
   cursorsMapFromRecord,
   fetchRegisterEntriesPageBundle,
 } from "./fetch-register-entries-page-bundle";
-import type { OperationalEntry, RegisterEntriesPageState } from "./entries-client-types";
+import type { RegisterEntriesPageState } from "./entries-client-types";
 
 const DEFAULT_PAGE_SIZE = 50;
 const emptyRegisterEntriesState: RegisterEntriesPageState = { entries: [], cursors: {}, hasMore: false };

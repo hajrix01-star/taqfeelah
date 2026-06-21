@@ -41,6 +41,8 @@ export default function OwnerNotebookNoteSharePreview({
     >
       <div className="relative px-4 pb-3 pt-3" style={lines}>
         <div className="flex items-center justify-center pb-4 pt-1">
+          {/* Kept as a plain image because this DOM subtree is captured directly into a shareable bitmap. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={TAQFEELAH_LOGO_SRC}
             alt=""

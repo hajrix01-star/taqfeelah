@@ -1,13 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Share2 } from "lucide-react";
 import { resolveAppFontFamily } from "@/core/fonts/app-font-family";
 import {
   NOTEBOOK_THEME_IDS,
-  notebookCardBackground,
-  notebookLinesBackground,
   notebookThemes,
 } from "@/features/daily-closeouts/notebook-themes";
 import { formatCalendarDate, formatCalendarMonth, formatSelectedMonth } from "@/features/reports/client/report-period-labels";
@@ -17,9 +15,7 @@ import {
   businessName,
   businessRecord,
   businesses,
-  channelName,
   combinedTotals,
-  emptyStoreRecord,
   money,
   text,
 } from "./prototype-runtime-demo-data";
@@ -29,7 +25,6 @@ import type {
   NotebookThemeId,
   PrototypeBusiness,
   PrototypeLang,
-  PrototypeSetState,
 } from "./prototype-runtime-types";
 
 function resolveNotebookTheme(theme: NotebookThemeId | string): NotebookThemeId {
@@ -196,11 +191,11 @@ function DateSelector({
   period,
   setPeriod,
   allowedPeriods = ["day", "month"],
-  selectedDay,
-  setSelectedDay,
+  selectedDay: _selectedDay,
+  setSelectedDay: _setSelectedDay,
   selectedDate = null,
   setSelectedDate = () => {},
-  fullCalendar = false,
+  fullCalendar: _fullCalendar = false,
   selectedMonth,
   setSelectedMonth,
   selectedYear = "2026",

@@ -1,5 +1,4 @@
 import type { DisplayLang } from "@/core/i18n/display-locale";
-import type { JsonStringMap } from "@/core/client/client-types";
 
 export type RuntimeSettingsAuth = {
   organizationId?: string;

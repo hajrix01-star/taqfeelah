@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { OperationalEntry } from "./entries-client-types";
 import { groupAttachmentsFromEntries, resolveAttachmentGroupForDate } from "./attachments-from-entries";
 
 describe("groupAttachmentsFromEntries", () => {

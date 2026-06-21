@@ -7,7 +7,6 @@ import CloseoutAttachmentThumbs from "../closeouts/client/CloseoutAttachmentThum
 import {
   countAllCloseoutProofAttachments,
   countCloseoutAttachments,
-  countOutflowAttachments,
 } from "../closeouts/client/closeout-attachment-utils";
 import { formatCloseoutDayLabel } from "../closeouts/client/closeout-day-label";
 import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
@@ -60,7 +59,6 @@ export default function DailyCloseoutCard({
   const tone = closeoutStatusTone(closeout.status);
   const attachmentCount = countAllCloseoutProofAttachments(closeout);
   const closeoutLevelAttachmentCount = countCloseoutAttachments(closeout.attachments);
-  const outflowAttachmentCount = countOutflowAttachments(closeout.outflows);
   const closeoutDateLabel = formatCloseoutDayLabel({
     formattedDate: formatDate(closeout.date || "", lang),
     daySequence,

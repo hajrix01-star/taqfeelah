@@ -1,4 +1,3 @@
-import type { DisplayLang } from "@/core/i18n/display-locale";
 import type {
   OperationalEntry,
   OperationalEntryActor,

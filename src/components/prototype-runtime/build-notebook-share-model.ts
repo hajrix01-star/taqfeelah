@@ -32,7 +32,6 @@ import { summaryDayFromEntriesWithLabels } from "./prototype-runtime-demo-operat
 import { todayIsoDate } from "./prototype-runtime-notebook";
 import type { NotebookThemeId } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { BuildNotebookShareModelInput, NotebookShareBusinessRow, NotebookShareChannelRow, NotebookShareModel, PrototypeBusiness } from "./prototype-runtime-types";
-import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
 
 export function buildNotebookShareModel({
   snapshot,

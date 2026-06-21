@@ -1,6 +1,5 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import {
   appendCloseoutEvent,
@@ -65,7 +64,6 @@ export function DailyCloseoutsProvider({
   apiStrictMode = false,
   dbSourceMode = false,
 }: DailyCloseoutsProviderProps) {
-  const queryClient = useQueryClient();
   const skipLocalPersistence = apiStrictMode || dbSourceMode;
   const useApiWrites = apiStrictMode || dbSourceMode;
   const usesCloseoutsApi = typeof loadCloseoutsFromApi === "function";
@@ -149,7 +147,6 @@ export function DailyCloseoutsProvider({
     closeouts,
     onDeleteCloseoutToApi,
     persistCloseouts,
-    queryClient,
     removeCloseoutFromCache,
     useApiWrites,
     usesCloseoutsApi,

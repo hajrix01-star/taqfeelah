@@ -43,6 +43,8 @@ export default function CloseoutShareModal({
   const [shareHint, setShareHint] = useState("");
   const [imageReady, setImageReady] = useState(false);
   const [preCaptureDone, setPreCaptureDone] = useState(false);
+  const closeoutId = closeout?.id || "";
+  const closeoutDate = closeout?.date || "";
 
   const periodLabel = closeout && formatCalendarDate ? formatCalendarDate(closeout.date || "", lang) : "";
   const resolvedStoreName = resolveCloseoutStoreName({ preferredStoreName: storeName, closeout, lang });
@@ -87,10 +89,10 @@ export default function CloseoutShareModal({
       operations,
       showOutflowRatio: false,
     };
-  }, [totals, closeout, lang, resolvedPeriodLabel, labels, resolvedStoreName, resolvedEmployeeName, shareCaption, operations, selectedTheme]);
+  }, [totals, closeout, lang, resolvedPeriodLabel, labels, resolvedStoreName, resolvedEmployeeName, operations, selectedTheme]);
 
   useEffect(() => {
-    if (!open || !closeout) {
+    if (!open || !closeoutId) {
       setImageBusy(false);
       setImageError("");
       setShareHint("");
@@ -105,10 +107,10 @@ export default function CloseoutShareModal({
     setPreCaptureDone(false);
     cachedImageFileRef.current = null;
     return undefined;
-  }, [open, closeout?.id]);
+  }, [open, closeoutId]);
 
   useEffect(() => {
-    if (!open || !closeout || !previewData) {
+    if (!open || !previewData || !closeoutDate) {
       cachedImageFileRef.current = null;
       setImageReady(false);
       setPreCaptureDone(false);
@@ -118,7 +120,7 @@ export default function CloseoutShareModal({
     setPreCaptureDone(false);
     const captureToken = ++preCaptureTokenRef.current;
     let cancelled = false;
-    const filename = `taqfeelah-${closeout.date}.png`;
+    const filename = `taqfeelah-${closeoutDate}.png`;
     let innerFrameId = 0;
     const frameId = requestAnimationFrame(() => {
       innerFrameId = requestAnimationFrame(async () => {
@@ -150,7 +152,7 @@ export default function CloseoutShareModal({
       cancelAnimationFrame(frameId);
       if (innerFrameId) cancelAnimationFrame(innerFrameId);
     };
-  }, [open, closeout?.id, previewData, paperColor]);
+  }, [open, closeoutDate, previewData, paperColor]);
 
   const imageFilename = closeout ? `taqfeelah-${closeout.date}.png` : "taqfeelah-closeout.png";
 

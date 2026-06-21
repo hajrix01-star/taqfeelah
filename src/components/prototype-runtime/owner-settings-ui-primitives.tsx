@@ -96,7 +96,7 @@ export function SettingsPageHeader({ lang, title, onBack, subtitle = "", badge =
 }
 
 export function SettingsAccordionSection({
-  lang,
+  lang: _lang,
   icon: Icon,
   title,
   subtitle = "",

@@ -27,7 +27,6 @@ import type {
   PrototypeBusiness,
   PrototypeChannel,
   PrototypeLang,
-  PrototypeOutflowCategory,
 } from "./prototype-runtime-types";
 
 function summaryDayFromEntriesWithLabels(
@@ -64,7 +63,6 @@ export function SummaryReportDetails({
   selectedDate,
   selectedMonth,
   reportChannels = channels,
-  businessesList = [],
   section = "both",
   operationalEntries = [],
   apiChannelRows = null,

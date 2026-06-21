@@ -46,16 +46,17 @@ export function useCloseoutAttachmentSrcs({
       return undefined;
     }
 
+    const inFlightIds = inFlightRef.current;
     const pending = normalized.filter(
       (item): item is CloseoutAttachmentListItem & { id: string } => isCloseoutAttachmentRef(item)
         && !loadedIdsRef.current.has(item.id)
-        && !inFlightRef.current.has(item.id),
+        && !inFlightIds.has(item.id),
     );
 
     if (!pending.length) return undefined;
 
     let cancelled = false;
-    pending.forEach((item) => inFlightRef.current.add(item.id));
+    pending.forEach((item) => inFlightIds.add(item.id));
     setLoading(true);
     setError("");
 
@@ -90,14 +91,14 @@ export function useCloseoutAttachmentSrcs({
         setError("failed");
       })
       .finally(() => {
-        pending.forEach((item) => inFlightRef.current.delete(item.id));
+        pending.forEach((item) => inFlightIds.delete(item.id));
         if (!cancelled) setLoading(false);
       });
 
     const pendingIds = pending.map((item) => item.id);
     return () => {
       cancelled = true;
-      pendingIds.forEach((id) => inFlightRef.current.delete(id));
+      pendingIds.forEach((id) => inFlightIds.delete(id));
     };
   }, [
     actorRole,

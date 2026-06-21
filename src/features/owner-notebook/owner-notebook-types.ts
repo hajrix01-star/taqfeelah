@@ -1,4 +1,3 @@
-import type { DisplayLang } from "@/core/i18n/display-locale";
 import type { LocalStorageWriteResult } from "@/features/demo/demo-types";
 
 export type OwnerNotebookNoteKind = "note" | "task";

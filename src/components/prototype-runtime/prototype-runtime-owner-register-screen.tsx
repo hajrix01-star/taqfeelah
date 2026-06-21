@@ -72,7 +72,6 @@ import type { RegisterCloseoutSummary } from "@/features/entries/client/register
 import type { OwnerRegisterScreenProps, PrototypeAttachmentPreviewState, PrototypeChannel } from "./prototype-runtime-types";
 import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { DisplayLang } from "@/core/i18n/display-locale";
-import type { RegisterReportGranularity } from "@/features/reports/client/register-report-granularity";
 
 export function OwnerRegisterScreen({
   lang,
@@ -750,6 +749,7 @@ export function OwnerRegisterConnected({
     <OwnerRegisterScreen
       {...props}
       lang={lang}
+      registerEntriesApiEnabled={registerEntriesApiEnabled}
       onVoidOperation={onVoidOperation}
       onRestoreOperation={onRestoreOperation}
       onEditCloseout={handleEditCloseout}

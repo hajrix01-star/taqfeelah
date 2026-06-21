@@ -20,7 +20,6 @@ import {
   businessLocation,
   businessName,
   channelName,
-  DEFAULT_STORE_CHANNEL_CONFIG,
   expenseCategories,
   money,
   resolveStoreChannelConfig,
@@ -33,7 +32,7 @@ import { formatCalendarMonth,
   todayIsoDate,
 } from "./prototype-runtime-notebook";
 import { resolveAttachmentPreviewSrc } from "@/features/employee-closeouts/daily-closeout-entry-helpers";
-import { appAlert, appConfirm } from "@/lib/ui/app-dialog/app-dialog-bridge";
+import { appConfirm } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import type { PrototypeBusiness, PrototypeLang } from "./prototype-runtime-types";
 import type { ReactNode } from "react";
 
@@ -138,9 +137,17 @@ export function OwnerSummaryScreen({
   });
   const [summaryDate, setSummaryDate] = useState(() => todayIsoDate());
   const { attachment, processing, error, selectAttachment, clearAttachment } = useAttachmentCapture(lang);
-  const selectedStore = businessesList.find((business) => business.id === businessId) || null;
-  const channelConfig = resolveStoreChannelConfig(storeChannelSettings, businessId);
-  const salesChannels = selectedStore ? channelConfig.channels.filter((channel) => channelConfig.activeIds.includes(String(channel.id)) && !channel.retired) : [];
+  const selectedStore = useMemo(
+    () => businessesList.find((business) => business.id === businessId) || null,
+    [businessId, businessesList],
+  );
+  const salesChannels = useMemo(() => {
+    if (!selectedStore) return [];
+    const channelConfig = resolveStoreChannelConfig(storeChannelSettings, businessId);
+    return channelConfig.channels.filter(
+      (channel) => channelConfig.activeIds.includes(String(channel.id)) && !channel.retired,
+    );
+  }, [businessId, selectedStore, storeChannelSettings]);
   const [values, setValues] = useState<Record<string, string>>({});
   const channelSignature = salesChannels.map((channel) => String(channel.id)).join("|");
   useEffect(() => {

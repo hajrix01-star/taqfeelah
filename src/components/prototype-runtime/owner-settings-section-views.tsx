@@ -45,7 +45,6 @@ import { text } from "./prototype-runtime-demo-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";
 import {
   Badge,
-  SettingToggle,
   SettingsLink,
   SettingsPageHeader,
 } from "./owner-settings-ui-primitives";

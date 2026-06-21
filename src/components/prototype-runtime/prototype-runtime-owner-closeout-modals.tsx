@@ -11,7 +11,7 @@ import { formatDateTimeLabel } from "./prototype-runtime-date-helpers";
 import { text } from "./prototype-runtime-demo-data";
 import { confirmCloseoutDelete } from "@/lib/ui/app-dialog/app-dialog-helpers";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
-import type { DailyCloseoutRecord, SalesChannelConfig } from "@/features/daily-closeouts/daily-closeouts-types";
+import type { SalesChannelConfig } from "@/features/daily-closeouts/daily-closeouts-types";
 import type {
   OwnerCloseoutEditFlowProps,
   OwnerCloseoutModalsProps,
@@ -79,10 +79,10 @@ export function OwnerCloseoutModals({
   lang,
   ownerManageCloseout,
   ownerDisplayName: _ownerDisplayName,
-  ownerNotebookTheme = "yellow",
+  ownerNotebookTheme: _ownerNotebookTheme = "yellow",
   resolveSalesChannels: _resolveSalesChannels = () => [],
   channelLabel: _channelLabel,
-  onCloseoutUpdated = async () => {},
+  onCloseoutUpdated: _onCloseoutUpdated = async () => {},
   onCloseoutDeleted = async () => {},
   onClose,
   onOwnerEditCloseout,
