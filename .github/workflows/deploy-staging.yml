@@ -364,6 +364,51 @@ jobs:
             "http://${VPS_HOST}/api/v1/meta" >/dev/null
           echo 'Staging route is reachable through the public server address.'
 
+      - name: Ensure staging HTTPS certificate
+        run: |
+          set -euo pipefail
+          ssh_args=(-p "$VPS_PORT_EFFECTIVE" -o ConnectTimeout=20)
+          if [ "$AUTH_MODE" = "key" ]; then
+            ssh_cmd=(ssh "${ssh_args[@]}" -o BatchMode=yes -i "$HOME/.ssh/id_vps")
+          else
+            export SSHPASS="$VPS_PASS"
+            ssh_cmd=(sshpass -e ssh "${ssh_args[@]}")
+          fi
+          "${ssh_cmd[@]}" "$VPS_USER@$VPS_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          DOMAIN=staging.taqfeelah.com
+          NGINX_CONFIG=/etc/nginx/sites-available/staging.taqfeelah.com.conf
+          BACKUP=$(mktemp /tmp/taqfeelah-staging-nginx.XXXXXX)
+          cp "$NGINX_CONFIG" "$BACKUP"
+
+          if ! command -v certbot >/dev/null 2>&1; then
+            echo 'Certbot is not installed; refusing to change system packages automatically.' >&2
+            rm -f "$BACKUP"
+            exit 1
+          fi
+
+          if ! certbot --nginx \
+            --non-interactive \
+            --agree-tos \
+            --register-unsafely-without-email \
+            --redirect \
+            --keep-until-expiring \
+            -d "$DOMAIN"; then
+            cp "$BACKUP" "$NGINX_CONFIG"
+            nginx -t
+            systemctl reload nginx
+            rm -f "$BACKUP"
+            exit 1
+          fi
+
+          rm -f "$BACKUP"
+          nginx -t
+          systemctl reload nginx
+          REMOTE
+
+          curl -fsS --max-time 20 https://staging.taqfeelah.com/api/v1/meta >/dev/null
+          echo 'Staging HTTPS is active.'
+
       - name: Confirm production endpoints remain healthy
         run: |
           set -euo pipefail
