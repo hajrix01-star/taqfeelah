@@ -75,7 +75,7 @@ export default function DailyCloseoutEntryFlow({
   }, []);
 
   const rootClassName = fullScreenOverlay
-    ? "absolute inset-0 z-[50] flex flex-col"
+    ? "fixed inset-0 z-[50] flex flex-col"
     : "flex h-full min-h-0 flex-col";
   const headerClassName = fullScreenOverlay
     ? "relative z-[2] flex shrink-0 items-center justify-between border-b border-[#ECE6DA]/80 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]"

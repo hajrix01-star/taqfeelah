@@ -76,7 +76,7 @@ export function useDailyCloseoutEntryState({
       let changed = false;
       const next = { ...current };
       salesChannels.forEach((ch) => {
-        if (next[ch.id]) return;
+        if (Object.prototype.hasOwnProperty.call(next, ch.id)) return;
         const row = findCloseoutSalesRowForChannel(salesRows, ch, labelChannel(ch));
         if (!row) return;
         next[ch.id] = String(row.amount || "");
@@ -84,7 +84,7 @@ export function useDailyCloseoutEntryState({
       });
       return changed ? next : current;
     });
-  }, [initialCloseout?.sales, isOwnerEdit, labelChannel, salesChannels]);
+  }, [initialCloseout?.id, initialCloseout?.sales, isOwnerEdit, labelChannel, salesChannels]);
   const [outflows, setOutflows] = useState<CloseoutOutflowRow[]>(
     (initialCloseout?.outflows as CloseoutOutflowRow[] | undefined) || [],
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import DailyCloseoutEntryFlow from "@/features/employee-closeouts/DailyCloseoutEntryFlow";
 import OwnerCloseoutManagePanel from "@/features/owner-closeouts/OwnerCloseoutManagePanel";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
@@ -27,19 +28,26 @@ export function OwnerCloseoutEditFlow({
   onClose,
 }: OwnerCloseoutEditFlowProps) {
   const { ownerEditCloseout } = useDailyCloseouts();
+  const storeId = String(editCloseout?.storeId || "");
+  const salesChannels = useMemo(
+    () => (editCloseout ? resolveSalesChannels(storeId) as SalesChannelConfig[] : []),
+    [editCloseout, editCloseout?.id, resolveSalesChannels, storeId],
+  );
+  const resolvedChannelLabel = useMemo(
+    () => channelLabel
+      || ((channel: SalesChannelConfig) => String(channel.displayName || channel.id || "")),
+    [channelLabel],
+  );
 
   if (!editCloseout) return null;
 
-  const resolvedChannelLabel = channelLabel
-    || ((channel: SalesChannelConfig) => String(channel.displayName || channel.id || ""));
-
   return (
     <DailyCloseoutEntryFlow
-      key={`${editCloseout.id}-${editCloseout.storeId || "pending"}`}
+      key={`${editCloseout.id}-${storeId}-${salesChannels.length}`}
       lang={lang}
       notebookTheme={ownerNotebookTheme || editCloseout.notebookTheme}
       closeout={editCloseout}
-      salesChannels={resolveSalesChannels(String(editCloseout.storeId || "")) as SalesChannelConfig[]}
+      salesChannels={salesChannels}
       storeName={editCloseout.storeName}
       isOwnerEdit
       saving={false}
