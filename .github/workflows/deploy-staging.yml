@@ -1,0 +1,356 @@
+name: Deploy staging
+
+on:
+  push:
+    branches:
+      - codex/vps-readonly-audit
+    paths-ignore:
+      - "docs/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: taqfeelah-staging
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build isolated staging artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      APP_MODE: production
+      NEXT_PUBLIC_APP_MODE: production
+      NEXT_PUBLIC_CLOSEOUTS_API_ENABLED: "true"
+      NEXT_PUBLIC_ENTRIES_API_ENABLED: "true"
+      NEXT_PUBLIC_ORG_CONFIG_API_ENABLED: "true"
+      NEXT_PUBLIC_PHASE9_API_ENABLED: "true"
+      NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED: "true"
+      NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE: "true"
+      NEXT_PUBLIC_AUTH_API_ENABLED: "true"
+      NEXT_PUBLIC_SAAS_ADMIN_ENABLED: "false"
+      NEXT_PUBLIC_PUBLIC_SIGNUP_ENABLED: "false"
+      NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID: 8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1
+      NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID: e8f3e35b-6051-4da3-8b10-979700c2f00f
+      NEXT_PUBLIC_SUPPORT_WHATSAPP: "966533507223"
+      NEXT_PUBLIC_RELEASE_BUILD: ${{ github.sha }}
+      APP_PUBLIC_ORIGIN: https://staging.taqfeelah.com
+      DATABASE_URL: postgresql://taqfeelah_staging:${{ secrets.STAGING_DB_PASSWORD }}@127.0.0.1:5434/taqfeelah_staging
+      AUTH_SESSION_SECRET: ${{ secrets.STAGING_AUTH_SESSION_SECRET }}
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test -- --reporter=dot --maxWorkers=2
+
+      - name: Build
+        run: pnpm build
+
+      - name: Package artifact
+        run: node scripts/package-production-artifact.mjs taqfeelah-staging-artifact.tar.gz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: taqfeelah-staging-${{ github.sha }}
+          path: taqfeelah-staging-artifact.tar.gz
+          if-no-files-found: error
+          retention-days: 3
+
+  deploy:
+    name: Deploy isolated staging service
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: staging
+      url: https://staging.taqfeelah.com
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PASS: ${{ secrets.VPS_PASS }}
+      VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+      VPS_PORT: ${{ secrets.VPS_PORT }}
+      STAGING_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+      STAGING_AUTH_SESSION_SECRET: ${{ secrets.STAGING_AUTH_SESSION_SECRET }}
+      STAGING_OWNER_USERNAME: ${{ secrets.STAGING_OWNER_USERNAME }}
+      STAGING_OWNER_PASSWORD: ${{ secrets.STAGING_OWNER_PASSWORD }}
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: taqfeelah-staging-${{ github.sha }}
+
+      - name: Prepare SSH client
+        run: |
+          set -euo pipefail
+          test -n "$VPS_HOST"
+          test -n "$VPS_USER"
+          test -n "$STAGING_DB_PASSWORD"
+          test -n "$STAGING_AUTH_SESSION_SECRET"
+          test -n "$STAGING_OWNER_USERNAME"
+          test -n "$STAGING_OWNER_PASSWORD"
+          port="${VPS_PORT:-22}"
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          ssh-keyscan -p "$port" -H "$VPS_HOST" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          if [ -n "$VPS_SSH_PRIVATE_KEY" ]; then
+            printf '%s\n' "$VPS_SSH_PRIVATE_KEY" > "$HOME/.ssh/id_vps"
+            chmod 600 "$HOME/.ssh/id_vps"
+            echo 'AUTH_MODE=key' >> "$GITHUB_ENV"
+          elif [ -n "$VPS_PASS" ]; then
+            command -v sshpass >/dev/null || {
+              sudo apt-get update -qq
+              sudo apt-get install -y -qq sshpass
+            }
+            echo 'AUTH_MODE=password' >> "$GITHUB_ENV"
+          else
+            echo 'Missing VPS authentication secret' >&2
+            exit 1
+          fi
+          echo "VPS_PORT_EFFECTIVE=$port" >> "$GITHUB_ENV"
+
+      - name: Build staging environment file
+        run: |
+          set -euo pipefail
+          umask 077
+          cat > staging.env <<EOF
+          DATABASE_URL=postgresql://taqfeelah_staging:${STAGING_DB_PASSWORD}@127.0.0.1:5434/taqfeelah_staging
+          APP_MODE=production
+          NEXT_PUBLIC_APP_MODE=production
+          APP_PUBLIC_ORIGIN=https://staging.taqfeelah.com
+          NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true
+          NEXT_PUBLIC_ENTRIES_API_ENABLED=true
+          NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true
+          NEXT_PUBLIC_PHASE9_API_ENABLED=true
+          NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true
+          NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true
+          NEXT_PUBLIC_AUTH_API_ENABLED=true
+          AUTH_DB_CREDENTIALS_ENABLED=true
+          ALLOW_HEADER_AUTH_CONTEXT=false
+          AUTH_SESSION_SECRET=${STAGING_AUTH_SESSION_SECRET}
+          AUTH_SESSION_COOKIE_NAME=taqfeelah_staging_session
+          AUTH_ORGANIZATION_ID=8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1
+          AUTH_OWNER_USER_ID=e8f3e35b-6051-4da3-8b10-979700c2f00f
+          NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID=8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1
+          NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID=e8f3e35b-6051-4da3-8b10-979700c2f00f
+          AUTH_OWNER_USERNAME=${STAGING_OWNER_USERNAME}
+          AUTH_OWNER_PASSWORD=${STAGING_OWNER_PASSWORD}
+          SAAS_ADMIN_API_ENABLED=false
+          NEXT_PUBLIC_SAAS_ADMIN_ENABLED=false
+          AUTH_PASSWORD_RESET_ENABLED=false
+          AUTH_PUBLIC_SIGNUP_ENABLED=false
+          NEXT_PUBLIC_PUBLIC_SIGNUP_ENABLED=false
+          NEXT_PUBLIC_SUPPORT_WHATSAPP=966533507223
+          ATTACHMENT_STORAGE_MODE=local
+          ATTACHMENT_STORAGE_ROOT=/var/lib/taqfeelah-staging/attachments
+          RELEASE_BUILD=${GITHUB_SHA}
+          NEXT_PUBLIC_RELEASE_BUILD=${GITHUB_SHA}
+          EOF
+          chmod 600 staging.env
+
+      - name: Upload isolated staging inputs
+        run: |
+          set -euo pipefail
+          ssh_args=(-P "$VPS_PORT_EFFECTIVE" -o ConnectTimeout=20)
+          if [ "$AUTH_MODE" = "key" ]; then
+            scp_cmd=(scp "${ssh_args[@]}" -i "$HOME/.ssh/id_vps")
+          else
+            export SSHPASS="$VPS_PASS"
+            scp_cmd=(sshpass -e scp "${ssh_args[@]}")
+          fi
+          "${scp_cmd[@]}" taqfeelah-staging-artifact.tar.gz "$VPS_USER@$VPS_HOST:/tmp/taqfeelah-staging-${GITHUB_RUN_ID}.tar.gz"
+          "${scp_cmd[@]}" staging.env "$VPS_USER@$VPS_HOST:/tmp/taqfeelah-staging-${GITHUB_RUN_ID}.env"
+
+      - name: Install and start isolated staging
+        run: |
+          set -euo pipefail
+          ssh_args=(-p "$VPS_PORT_EFFECTIVE" -o ConnectTimeout=20)
+          if [ "$AUTH_MODE" = "key" ]; then
+            ssh_cmd=(ssh "${ssh_args[@]}" -o BatchMode=yes -i "$HOME/.ssh/id_vps")
+          else
+            export SSHPASS="$VPS_PASS"
+            ssh_cmd=(sshpass -e ssh "${ssh_args[@]}")
+          fi
+          "${ssh_cmd[@]}" "$VPS_USER@$VPS_HOST" "STAGING_RUN_ID='$GITHUB_RUN_ID' STAGING_DB_PASSWORD='$STAGING_DB_PASSWORD' bash -s" <<'REMOTE'
+          set -euo pipefail
+          APP_DIR=/opt/taqfeelah-staging
+          RELEASE_DIR=/opt/taqfeelah-staging.release
+          PREVIOUS_DIR=/opt/taqfeelah-staging.previous
+          DATA_DIR=/var/lib/taqfeelah-staging
+          SERVICE=taqfeelah-staging.service
+          DB_CONTAINER=taqfeelah-staging-postgres
+          DB_VOLUME=taqfeelah-staging-postgres-data
+          APP_PORT=3011
+          DB_PORT=5434
+          DOMAIN=staging.taqfeelah.com
+          ARTIFACT="/tmp/taqfeelah-staging-${STAGING_RUN_ID}.tar.gz"
+          ENV_INPUT="/tmp/taqfeelah-staging-${STAGING_RUN_ID}.env"
+
+          if ss -ltn | awk '{print $4}' | grep -qE '(^|:)3011$' && ! systemctl is-active --quiet "$SERVICE"; then
+            echo 'Port 3011 is owned by a non-staging process; refusing to continue.' >&2
+            exit 1
+          fi
+
+          install -d -m 755 "$DATA_DIR"
+          install -d -m 750 "$DATA_DIR/attachments"
+
+          if ! docker container inspect "$DB_CONTAINER" >/dev/null 2>&1; then
+            docker run -d \
+              --name "$DB_CONTAINER" \
+              --restart unless-stopped \
+              --memory 384m \
+              --cpus 0.50 \
+              -e POSTGRES_USER=taqfeelah_staging \
+              -e POSTGRES_PASSWORD="$STAGING_DB_PASSWORD" \
+              -e POSTGRES_DB=taqfeelah_staging \
+              -p 127.0.0.1:${DB_PORT}:5432 \
+              -v ${DB_VOLUME}:/var/lib/postgresql/data \
+              postgres:16-alpine
+          else
+            docker start "$DB_CONTAINER" >/dev/null
+          fi
+
+          ready=false
+          for _ in $(seq 1 30); do
+            if docker exec "$DB_CONTAINER" pg_isready -U taqfeelah_staging -d taqfeelah_staging >/dev/null 2>&1; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != true ]; then
+            echo 'Staging PostgreSQL did not become ready.' >&2
+            exit 1
+          fi
+
+          rm -rf "$RELEASE_DIR"
+          install -d -m 755 "$RELEASE_DIR"
+          tar -xzf "$ARTIFACT" -C "$RELEASE_DIR"
+          install -m 600 "$ENV_INPUT" "$RELEASE_DIR/.env.production"
+          cd "$RELEASE_DIR"
+          HUSKY=0 corepack pnpm install --frozen-lockfile
+          set -a
+          . ./.env.production
+          set +a
+          corepack pnpm db:migrate
+          node scripts/seed-closeouts-foundation.mjs
+          node scripts/seed-auth-credentials.mjs
+          sed -i '/^AUTH_OWNER_USERNAME=/d; /^AUTH_OWNER_PASSWORD=/d' .env.production
+
+          systemctl stop "$SERVICE" 2>/dev/null || true
+          rm -rf "$PREVIOUS_DIR"
+          if [ -d "$APP_DIR" ]; then
+            mv "$APP_DIR" "$PREVIOUS_DIR"
+          fi
+          mv "$RELEASE_DIR" "$APP_DIR"
+
+          cat > /etc/systemd/system/taqfeelah-staging.service <<'UNIT'
+          [Unit]
+          Description=Taqfeelah isolated staging
+          After=network.target docker.service
+          Requires=docker.service
+
+          [Service]
+          Type=simple
+          WorkingDirectory=/opt/taqfeelah-staging
+          EnvironmentFile=/opt/taqfeelah-staging/.env.production
+          Environment=NODE_ENV=production
+          Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          ExecStart=/opt/taqfeelah-staging/node_modules/.bin/next start --hostname 127.0.0.1 --port 3011
+          Restart=always
+          RestartSec=5
+          Nice=5
+          MemoryHigh=700M
+          MemoryMax=1G
+
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+          systemctl daemon-reload
+          systemctl enable "$SERVICE" >/dev/null
+          if ! systemctl restart "$SERVICE"; then
+            rm -rf "$APP_DIR"
+            if [ -d "$PREVIOUS_DIR" ]; then mv "$PREVIOUS_DIR" "$APP_DIR"; fi
+            systemctl restart "$SERVICE" || true
+            exit 1
+          fi
+
+          healthy=false
+          for _ in $(seq 1 30); do
+            if curl -fsS --max-time 5 "http://127.0.0.1:${APP_PORT}/api/v1/meta" >/dev/null; then
+              healthy=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$healthy" != true ]; then
+            systemctl status "$SERVICE" --no-pager -l || true
+            journalctl -u "$SERVICE" --no-pager -n 80 || true
+            exit 1
+          fi
+
+          NGINX_AVAILABLE=/etc/nginx/sites-available/staging.taqfeelah.com.conf
+          NGINX_ENABLED=/etc/nginx/sites-enabled/staging.taqfeelah.com.conf
+          cat > "$NGINX_AVAILABLE" <<'NGINX'
+          server {
+              listen 80;
+              listen [::]:80;
+              server_name staging.taqfeelah.com;
+
+              location / {
+                  proxy_pass http://127.0.0.1:3011;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Forwarded-Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_cache_bypass $http_upgrade;
+              }
+          }
+          NGINX
+          ln -sfn "$NGINX_AVAILABLE" "$NGINX_ENABLED"
+          if ! nginx -t; then
+            rm -f "$NGINX_ENABLED" "$NGINX_AVAILABLE"
+            nginx -t
+            exit 1
+          fi
+          systemctl reload nginx
+
+          curl -fsS --max-time 10 -H "Host: ${DOMAIN}" http://127.0.0.1/api/v1/meta >/dev/null
+          systemctl is-active "$SERVICE"
+          docker ps --filter "name=^/${DB_CONTAINER}$" --format '{{.Names}}|{{.Status}}|{{.Ports}}'
+          ss -ltn | grep -E '127.0.0.1:(3011|5434)'
+          rm -f "$ARTIFACT" "$ENV_INPUT"
+          echo 'Isolated staging deployment verified.'
+          REMOTE
+
+      - name: Confirm production endpoints remain healthy
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 https://taqfeelah.com/api/v1/meta >/dev/null
+          curl -fsS --max-time 20 https://hajrix.com >/dev/null
+          echo 'Production endpoints remain reachable.'
