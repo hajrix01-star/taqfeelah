@@ -11,9 +11,9 @@ import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
  * Runs demo migration off the critical path so phones don't freeze on first paint.
  */
 export default function PrototypeClientGate({ children }: { children: ReactNode }) {
-  const [phase, setPhase] = useState("loading");
-  const [error, setError] = useState("");
   const productionMode = isProductionAppMode();
+  const [phase, setPhase] = useState(() => (productionMode ? "ready" : "loading"));
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (productionMode) {

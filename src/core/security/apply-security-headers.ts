@@ -20,7 +20,27 @@ function shouldAttachStrictTransportSecurity(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
-/** Apply nonce-based CSP and baseline security headers to a middleware response. */
+function applySharedHeaders(response: NextResponse, csp: string, nonce: string): NextResponse {
+  for (const header of SHARED_SECURITY_HEADERS) {
+    response.headers.set(header.key, header.value);
+  }
+
+  if (shouldAttachStrictTransportSecurity()) {
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=63072000; includeSubDomains; preload",
+    );
+  }
+
+  response.headers.set("Content-Security-Policy", csp);
+  response.headers.set("x-nonce", nonce);
+  return response;
+}
+
+/**
+ * Apply nonce-based CSP and baseline security headers to a middleware response.
+ * Next.js reads CSP from *request* headers to inject script nonces during SSR.
+ */
 export function applySecurityHeaders(
   request: NextRequest,
   upstreamResponse?: NextResponse,
@@ -33,46 +53,19 @@ export function applySecurityHeaders(
     }),
   );
 
+  if (upstreamResponse) {
+    return applySharedHeaders(upstreamResponse, csp, nonce);
+  }
+
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
 
-  const response = upstreamResponse ?? NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
 
-  const secured = new NextResponse(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: response.headers,
-  });
-
-  for (const header of SHARED_SECURITY_HEADERS) {
-    secured.headers.set(header.key, header.value);
-  }
-
-  if (shouldAttachStrictTransportSecurity()) {
-    secured.headers.set(
-      "Strict-Transport-Security",
-      "max-age=63072000; includeSubDomains; preload",
-    );
-  }
-
-  secured.headers.set("Content-Security-Policy", csp);
-  secured.headers.set("x-nonce", nonce);
-
-  // Preserve Set-Cookie and other response-specific headers from upstream handlers.
-  response.headers.forEach((value, key) => {
-    const lowerKey = key.toLowerCase();
-    if (lowerKey === "content-security-policy") return;
-    if (lowerKey === "x-nonce") return;
-    if (SHARED_SECURITY_HEADERS.some((header) => header.key.toLowerCase() === lowerKey)) {
-      return;
-    }
-    if (lowerKey === "strict-transport-security") return;
-    secured.headers.set(key, value);
-  });
-
-  return secured;
+  return applySharedHeaders(response, csp, nonce);
 }
