@@ -1,0 +1,102 @@
+name: VPS read-only inventory
+
+on:
+  push:
+    branches:
+      - codex/vps-readonly-audit
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    name: Read-only VPS inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Prepare SSH client
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PASS: ${{ secrets.VPS_PASS }}
+          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          set -euo pipefail
+          test -n "$VPS_HOST"
+          test -n "$VPS_USER"
+          port="${VPS_PORT:-22}"
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          ssh-keyscan -p "$port" -H "$VPS_HOST" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          if [ -n "$VPS_SSH_PRIVATE_KEY" ]; then
+            printf '%s\n' "$VPS_SSH_PRIVATE_KEY" > "$HOME/.ssh/id_vps"
+            chmod 600 "$HOME/.ssh/id_vps"
+            printf 'AUTH_MODE=key\n' >> "$GITHUB_ENV"
+          elif [ -n "$VPS_PASS" ]; then
+            command -v sshpass >/dev/null || {
+              sudo apt-get update -qq
+              sudo apt-get install -y -qq sshpass
+            }
+            printf 'AUTH_MODE=password\n' >> "$GITHUB_ENV"
+          else
+            echo 'Missing VPS_SSH_PRIVATE_KEY or VPS_PASS' >&2
+            exit 1
+          fi
+          printf 'VPS_PORT_EFFECTIVE=%s\n' "$port" >> "$GITHUB_ENV"
+
+      - name: Collect read-only inventory
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PASS: ${{ secrets.VPS_PASS }}
+        run: |
+          set -euo pipefail
+          ssh_args=(-p "$VPS_PORT_EFFECTIVE" -o ConnectTimeout=20)
+          if [ "$AUTH_MODE" = "key" ]; then
+            ssh_cmd=(ssh "${ssh_args[@]}" -o BatchMode=yes -i "$HOME/.ssh/id_vps")
+          else
+            export SSHPASS="$VPS_PASS"
+            ssh_cmd=(sshpass -e ssh "${ssh_args[@]}")
+          fi
+          "${ssh_cmd[@]}" "$VPS_USER@$VPS_HOST" 'bash -s' <<'REMOTE'
+          set -u
+          echo '=== HOST ==='
+          hostname
+          uname -srmo
+          uptime -p
+
+          echo '=== CAPACITY ==='
+          df -h --output=source,size,used,avail,pcent,target
+          free -h
+
+          echo '=== RUNNING SERVICES ==='
+          systemctl list-units --type=service --state=running --no-pager --no-legend || true
+
+          echo '=== LISTENING PORTS ==='
+          ss -ltnp || true
+
+          echo '=== APPLICATION DIRECTORIES (NAMES ONLY) ==='
+          find /var/www /opt /srv -mindepth 1 -maxdepth 2 -type d -printf '%p\n' 2>/dev/null | sort || true
+
+          echo '=== CUSTOM SYSTEMD SERVICE FILES (NAMES ONLY) ==='
+          find /etc/systemd/system -maxdepth 1 -type f -name '*.service' -printf '%f\n' 2>/dev/null | sort || true
+
+          echo '=== NGINX SITE LINKS ==='
+          find /etc/nginx/sites-enabled -maxdepth 1 -type l -printf '%f -> %l\n' 2>/dev/null | sort || true
+
+          echo '=== NGINX ROUTING DIRECTIVES ==='
+          grep -RHE '^[[:space:]]*(server_name|listen|root|proxy_pass)[[:space:]]' /etc/nginx/sites-enabled 2>/dev/null || true
+
+          echo '=== DOCKER CONTAINERS ==='
+          if command -v docker >/dev/null 2>&1; then
+            docker ps --format '{{.Names}}|{{.Image}}|{{.Ports}}|{{.Status}}' || true
+          else
+            echo 'docker: not installed'
+          fi
+
+          echo '=== PROCESS PROGRAM COUNTS ==='
+          ps -eo user=,comm= | sort | uniq -c | sort -nr | head -80
+          REMOTE
