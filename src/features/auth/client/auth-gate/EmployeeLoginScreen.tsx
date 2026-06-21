@@ -7,8 +7,25 @@ import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data
 import { APP_IN_PRODUCTION_MODE } from "@/components/prototype-runtime/prototype-runtime-boot";
 import { LanguageSwitch, Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
 import { AppLoginPhoneField } from "@/core/phone/AppLoginPhoneField";
+import type {
+  AuthLangProps,
+  AuthStaffMember,
+  EmployeeLoginCallback,
+} from "@/features/auth/client/auth-client-types";
 
-export function EmployeeLoginScreen({ lang, setLang, staff = [], onBack, onLogin }) {
+type EmployeeLoginScreenProps = AuthLangProps & {
+  staff?: AuthStaffMember[];
+  onBack: () => void;
+  onLogin: EmployeeLoginCallback;
+};
+
+export function EmployeeLoginScreen({
+  lang,
+  setLang,
+  staff = [],
+  onBack,
+  onLogin,
+}: EmployeeLoginScreenProps) {
   const form = useEmployeeLoginForm({ lang, staff, onLogin });
 
   return (

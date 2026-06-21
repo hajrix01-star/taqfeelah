@@ -8,8 +8,15 @@ import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 import { APP_IN_PRODUCTION_MODE } from "@/components/prototype-runtime/prototype-runtime-boot";
 import { openWhatsAppSupport } from "@/components/prototype-runtime/prototype-runtime-support";
+import type { AuthLang } from "@/features/auth/client/auth-client-types";
 
-export function HelpCenterSheet({ lang, open, onClose }) {
+type HelpCenterSheetProps = {
+  lang: AuthLang;
+  open: boolean;
+  onClose: () => void;
+};
+
+export function HelpCenterSheet({ lang, open, onClose }: HelpCenterSheetProps) {
   if (!open) return null;
 
   return (

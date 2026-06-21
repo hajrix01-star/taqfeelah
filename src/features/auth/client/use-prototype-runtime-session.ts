@@ -10,6 +10,9 @@ import {
   syncLoggedInEmployeeIdFromSession,
 } from "@/features/employee-closeouts/employee-portal-session";
 import { applyServerSessionBootstrap } from "@/features/auth/client/auth-runtime-orchestrator";
+import type { Dispatch, SetStateAction } from "react";
+import type { OrgConfigRuntimeSetters } from "@/features/org-config/client/org-config-client-types";
+import type { AuthLang, AuthRuntimeApply, AuthStaffMember } from "@/features/auth/client/auth-client-types";
 import { fetchServerSessionStatus } from "@/features/auth/client/session-bridge";
 import { applyOrgConfigMappedState } from "@/features/org-config/client/org-config-runtime-bridge";
 import { loadEmployeeRuntimeContextFromApi } from "@/features/org-config/client/employee-runtime-hydration";
@@ -22,13 +25,16 @@ import { readPrototypeAuthBoot } from "@/features/auth/client/auth-gate/read-run
 
 export function usePrototypeRuntimeSessionState() {
   const prototypeAuthBoot = readPrototypeAuthBoot();
-  const [lang, setLang] = useState("ar");
+  const [lang, setLang] = useState<AuthLang>("ar");
   const [sessionOrganizationId, setSessionOrganizationId] = useState("");
   const [sessionUserId, setSessionUserId] = useState("");
   const [loggedIn, setLoggedIn] = useState(() => prototypeAuthBoot.loggedIn);
   const [authScreen, setAuthScreen] = useState("gateway");
   const [employee, setEmployee] = useState(() => prototypeAuthBoot.employee);
-  const [loggedInEmployeeId, setLoggedInEmployeeId] = useState(() => prototypeAuthBoot.loggedInEmployeeId);
+  const [loggedInEmployeeId, setLoggedInEmployeeId] = useState<string | null>(() => {
+    const bootEmployeeId = prototypeAuthBoot.loggedInEmployeeId;
+    return typeof bootEmployeeId === "string" ? bootEmployeeId : null;
+  });
   const [employeeRuntimeReady, setEmployeeRuntimeReady] = useState(() => !prototypeAuthBoot.employee);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [sessionDisplayName, setSessionDisplayName] = useState("");
@@ -57,6 +63,42 @@ export function usePrototypeRuntimeSessionState() {
     setSessionDisplayName,
   };
 }
+
+export type PrototypeRuntimeSessionSyncInput = Pick<
+  AuthRuntimeApply,
+  | "setSessionOrganizationId"
+  | "setSessionUserId"
+  | "setLoggedIn"
+  | "setAuthScreen"
+  | "setEmployee"
+  | "setLoggedInEmployeeId"
+  | "setOwnerPage"
+  | "setEmployeePage"
+  | "setOwnerProfile"
+  | "setMustChangePassword"
+  | "setSessionDisplayName"
+  | "setEmployeeBusinessId"
+> & Pick<
+  OrgConfigRuntimeSetters,
+  | "setConfiguredBusinesses"
+  | "setArchivedBusinessIds"
+  | "setStoreChannelSettings"
+  | "setStoreOperationalSettings"
+> & {
+  loggedIn: boolean;
+  employee: boolean;
+  sessionOrganizationId: string;
+  sessionUserId: string;
+  loggedInEmployeeId: string | null;
+  staff: AuthStaffMember[];
+  employeeBusinessId: string;
+  closeoutsApiEnabled: boolean;
+  entriesApiEnabled: boolean;
+  configuredBusinesses: Array<Record<string, unknown>>;
+  storeChannelSettings: Record<string, unknown>;
+  setEmployeeRuntimeReady: (value: boolean) => void;
+  setStaff: Dispatch<SetStateAction<AuthStaffMember[]>>;
+};
 
 export function usePrototypeRuntimeSessionSync({
   loggedIn,
@@ -88,7 +130,7 @@ export function usePrototypeRuntimeSessionSync({
   entriesApiEnabled,
   configuredBusinesses,
   storeChannelSettings,
-}) {
+}: PrototypeRuntimeSessionSyncInput) {
   const employeeBusinessIdRef = useRef(employeeBusinessId);
   employeeBusinessIdRef.current = employeeBusinessId;
 
@@ -115,8 +157,8 @@ export function usePrototypeRuntimeSessionSync({
       .catch((error) => {
         if (cancelled) return;
         console.warn("session bootstrap failed", error);
-        setSessionOrganizationId("");
-        setSessionUserId("");
+        setSessionOrganizationId?.("");
+        setSessionUserId?.("");
       });
     return () => {
       cancelled = true;
@@ -139,22 +181,22 @@ export function usePrototypeRuntimeSessionSync({
     if (!BINDS_TO_SERVER_AUTH || !employee || !sessionUserId) return;
     const syncedEmployeeId = syncLoggedInEmployeeIdFromSession(staff, sessionUserId, loggedInEmployeeId);
     if (syncedEmployeeId) {
-      setLoggedInEmployeeId(syncedEmployeeId);
+      setLoggedInEmployeeId?.(syncedEmployeeId);
     }
   }, [employee, loggedInEmployeeId, sessionUserId, staff, setLoggedInEmployeeId]);
 
   useEffect(() => {
     if (!employee || !loggedIn) {
-      setEmployeeRuntimeReady(true);
+      setEmployeeRuntimeReady?.(true);
       return undefined;
     }
     const resolvedOrganizationId = resolveClientOrganizationId({ sessionOrganizationId });
     if (!ORG_CONFIG_API_ENABLED || !sessionUserId || !resolvedOrganizationId) {
-      setEmployeeRuntimeReady(true);
+      setEmployeeRuntimeReady?.(true);
       return undefined;
     }
     let cancelled = false;
-    setEmployeeRuntimeReady(false);
+    setEmployeeRuntimeReady?.(false);
     loadEmployeeRuntimeContextFromApi({
       sessionUserId,
       sessionOrganizationId,
@@ -167,17 +209,17 @@ export function usePrototypeRuntimeSessionSync({
           setConfiguredBusinesses,
           setArchivedBusinessIds,
           setStoreChannelSettings,
-          setStaff,
+          setStaff: (value) => setStaff(value as AuthStaffMember[]),
           setStoreOperationalSettings,
         });
 
         if (!businesses.length) return;
 
         let patchedBusinessId = employeeBusinessIdRef.current;
-        setStaff((currentStaff) => {
+        setStaff?.((currentStaff) => {
           const patch = patchEmployeeStaffStoreIdsFromHydration({
             staff: currentStaff,
-            loggedInEmployeeId,
+            loggedInEmployeeId: loggedInEmployeeId ?? "",
             sessionUserId,
             configuredBusinesses: businesses,
             employeeBusinessId: patchedBusinessId,
@@ -186,7 +228,7 @@ export function usePrototypeRuntimeSessionSync({
           return patch.staff;
         });
         if (patchedBusinessId !== employeeBusinessIdRef.current) {
-          setEmployeeBusinessId(patchedBusinessId);
+          setEmployeeBusinessId?.(patchedBusinessId);
         }
       })
       .catch((error) => {
@@ -194,7 +236,7 @@ export function usePrototypeRuntimeSessionSync({
         console.warn("employee runtime hydration failed", error);
       })
       .finally(() => {
-        if (!cancelled) setEmployeeRuntimeReady(true);
+        if (!cancelled) setEmployeeRuntimeReady?.(true);
       });
     return () => {
       cancelled = true;
@@ -232,9 +274,15 @@ export function usePrototypeRuntimeSessionSync({
       envSalesChannelIdMap = {};
     }
     const maps = buildRuntimeApiIdMaps({
-      configuredBusinesses,
+      configuredBusinesses: configuredBusinesses as Array<{
+        id?: string;
+        dbStoreId?: string;
+        legacyId?: string;
+      }>,
       staff,
-      storeChannelSettings,
+      storeChannelSettings: storeChannelSettings as NonNullable<
+        NonNullable<Parameters<typeof buildRuntimeApiIdMaps>[0]>["storeChannelSettings"]
+      >,
       envStoreIdMap,
       envUserIdMap,
       envSalesChannelIdMap,
@@ -242,7 +290,7 @@ export function usePrototypeRuntimeSessionSync({
     });
     setRuntimeApiIdMaps(patchRuntimeApiMapsForEmployeeSession(maps, {
       employee,
-      loggedInEmployeeId,
+      loggedInEmployeeId: loggedInEmployeeId ?? "",
       sessionUserId,
       uuidChecker: isUuid,
     }));

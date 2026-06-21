@@ -14,6 +14,11 @@ import {
   resolveEmployeeLoginStaff,
 } from "@/features/employee-closeouts/employee-portal-session";
 import { loginEmployeeViaSessionBridge } from "@/features/auth/client/session-bridge";
+import type {
+  AuthLang,
+  AuthStaffMember,
+  EmployeeLoginCallback,
+} from "@/features/auth/client/auth-client-types";
 import { fetchEmployeeLoginRosterViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 import {
@@ -21,7 +26,15 @@ import {
   PROTOTYPE_EMPLOYEE_PIN_DEFAULT,
 } from "@/components/prototype-runtime/prototype-runtime-boot";
 
-export function useEmployeeLoginForm({ lang, staff = [], onLogin }) {
+export function useEmployeeLoginForm({
+  lang,
+  staff = [],
+  onLogin,
+}: {
+  lang: AuthLang;
+  staff?: AuthStaffMember[];
+  onLogin: EmployeeLoginCallback;
+}) {
   const [selectedId, setSelectedId] = useState("");
   const [manualEmployeeId, setManualEmployeeId] = useState("");
   const [employeePhone, setEmployeePhone] = useState("");
@@ -31,7 +44,7 @@ export function useEmployeeLoginForm({ lang, staff = [], onLogin }) {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [rosterStaff, setRosterStaff] = useState([]);
+  const [rosterStaff, setRosterStaff] = useState<AuthStaffMember[]>([]);
   const [rosterLoading, setRosterLoading] = useState(APP_IN_PRODUCTION_MODE);
 
   const loginStaff = resolveEmployeeLoginStaff(staff, rosterStaff, APP_IN_PRODUCTION_MODE);

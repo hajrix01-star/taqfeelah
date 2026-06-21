@@ -14,13 +14,18 @@ import {
   loginOwnerSessionViaApi,
   logoutSessionViaApi,
 } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
+import type {
+  ChangeOwnerPasswordBridgeInput,
+  EmployeeSessionBridgeInput,
+  LogoutSessionBridgeInput,
+  OwnerSessionBridgeInput,
+} from "./auth-client-types";
 
 export { resolveAuthStateFromSession };
 
-/**
- * @param {import("@/features/demo/prototype-auth-boot").PrototypeAuthBootOptions} [options]
- */
-export function readSessionBootState(options = {}) {
+export function readSessionBootState(
+  options: Parameters<typeof readPrototypeAuthBoot>[0] = {},
+) {
   return readPrototypeAuthBoot(options);
 }
 
@@ -28,7 +33,7 @@ export function persistLocalOwnerSession() {
   saveAuthSession({ role: "owner" });
 }
 
-export function persistLocalEmployeeSession({ employeeId }) {
+export function persistLocalEmployeeSession({ employeeId }: { employeeId: string }) {
   if (employeeId) {
     saveAuthSession({ role: "employee", employeeId });
   }
@@ -43,10 +48,12 @@ export async function fetchServerSessionStatus() {
   return getSessionStatusViaApi();
 }
 
-/**
- * @param {{ username?: string, password?: string, phone?: string, useServerAuth?: boolean }} input
- */
-export async function loginOwnerViaSessionBridge({ username, password, phone, useServerAuth } = {}) {
+export async function loginOwnerViaSessionBridge({
+  username,
+  password,
+  phone,
+  useServerAuth,
+}: OwnerSessionBridgeInput = {}) {
   if (!useServerAuth) return null;
   if (phone) {
     return loginOwnerPhoneSessionViaApi({ phone, password });
@@ -54,10 +61,13 @@ export async function loginOwnerViaSessionBridge({ username, password, phone, us
   return loginOwnerSessionViaApi({ username, password });
 }
 
-/**
- * @param {{ employeeId?: string, phone?: string, pin?: string, trustDevice?: boolean, useServerAuth?: boolean }} input
- */
-export async function loginEmployeeViaSessionBridge({ employeeId, phone, pin, trustDevice, useServerAuth } = {}) {
+export async function loginEmployeeViaSessionBridge({
+  employeeId,
+  phone,
+  pin,
+  trustDevice,
+  useServerAuth,
+}: EmployeeSessionBridgeInput = {}) {
   if (!useServerAuth) return null;
   if (phone) {
     return loginEmployeePhoneSessionViaApi({ phone, pin, trustDevice });
@@ -65,12 +75,16 @@ export async function loginEmployeeViaSessionBridge({ employeeId, phone, pin, tr
   return loginEmployeeSessionViaApi({ employeeId, pin });
 }
 
-export async function changeOwnerPasswordViaSessionBridge({ currentPassword, newPassword, useServerAuth }) {
+export async function changeOwnerPasswordViaSessionBridge({
+  currentPassword,
+  newPassword,
+  useServerAuth,
+}: ChangeOwnerPasswordBridgeInput) {
   if (!useServerAuth) return null;
   return changeOwnerPasswordViaApi({ currentPassword, newPassword });
 }
 
-export async function logoutViaSessionBridge({ useServerAuth }) {
+export async function logoutViaSessionBridge({ useServerAuth }: LogoutSessionBridgeInput) {
   if (useServerAuth) {
     await logoutSessionViaApi();
   }

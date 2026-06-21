@@ -3,12 +3,18 @@ import {
   applyLogoutReset,
   applyOwnerLoginSuccess,
 } from "@/features/auth/client/auth-runtime-orchestrator";
+import type { AuthActiveBusiness, AuthRuntimeApply, AuthStaffMember } from "@/features/auth/client/auth-client-types";
 import { upsertPrototypeEmployeeRosterStaff } from "@/features/employee-closeouts/employee-portal-session";
 import { logoutViaSessionBridge } from "@/features/auth/client/session-bridge";
 import {
   APP_IN_PRODUCTION_MODE,
   BINDS_TO_SERVER_AUTH,
 } from "@/components/prototype-runtime/prototype-runtime-boot";
+
+export type PrototypeRuntimeAuthHandlerDeps = AuthRuntimeApply & {
+  staff: AuthStaffMember[];
+  activeBusinesses: AuthActiveBusiness[];
+};
 
 export function createPrototypeRuntimeAuthHandlers({
   staff,
@@ -45,7 +51,7 @@ export function createPrototypeRuntimeAuthHandlers({
   setOwnerProfile,
   setMustChangePassword,
   setSessionDisplayName,
-}) {
+}: PrototypeRuntimeAuthHandlerDeps) {
   const completeOwnerLogin = (
     apiUserId = "",
     organizationId = "",
@@ -78,9 +84,14 @@ export function createPrototypeRuntimeAuthHandlers({
     }
   };
 
-  const completeEmployeeLogin = (personId, apiUserId = "", rosterPerson = null, organizationId = "") => {
+  const completeEmployeeLogin = (
+    personId: string,
+    apiUserId = "",
+    rosterPerson: AuthStaffMember | null = null,
+    organizationId = "",
+  ) => {
     const displayName = rosterPerson?.nameAr || rosterPerson?.nameEn || "";
-    let resolvedRoster = rosterPerson;
+    let resolvedRoster: AuthStaffMember | null = rosterPerson;
     if (!resolvedRoster && displayName && apiUserId) {
       resolvedRoster = {
         id: personId || apiUserId,
@@ -93,10 +104,10 @@ export function createPrototypeRuntimeAuthHandlers({
       };
     }
     const loginStaff = resolvedRoster
-      ? upsertPrototypeEmployeeRosterStaff(staff, resolvedRoster)
+      ? upsertPrototypeEmployeeRosterStaff(staff, resolvedRoster) as AuthStaffMember[]
       : staff;
     if (resolvedRoster) {
-      setStaff((current) => upsertPrototypeEmployeeRosterStaff(current, resolvedRoster));
+      setStaff?.((current) => upsertPrototypeEmployeeRosterStaff(current, resolvedRoster) as AuthStaffMember[]);
     }
     applyEmployeeLoginSuccess({
       personId,
@@ -120,7 +131,7 @@ export function createPrototypeRuntimeAuthHandlers({
     });
   };
 
-  const logout = async ({ nextAuthScreen = "gateway" } = {}) => {
+  const logout = async ({ nextAuthScreen = "gateway" }: { nextAuthScreen?: string } = {}) => {
     try {
       await logoutViaSessionBridge({ useServerAuth: APP_IN_PRODUCTION_MODE });
     } catch (error) {
@@ -162,7 +173,7 @@ export function createPrototypeRuntimeAuthHandlers({
     });
   };
 
-  const switchPortal = async (target) => {
+  const switchPortal = async (target: string) => {
     const nextAuthScreen = target === "employee" ? "employee" : "owner";
     await logout({ nextAuthScreen });
   };

@@ -4,9 +4,15 @@ import { motion } from "framer-motion";
 import { UserRound, Users } from "lucide-react";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import type { AuthLangProps } from "@/features/auth/client/auth-client-types";
 import { LanguageSwitch, Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
 
-export function AuthGatewayScreen({ lang, setLang, onOwnerPortal, onEmployeePortal }) {
+type AuthGatewayScreenProps = AuthLangProps & {
+  onOwnerPortal: () => void;
+  onEmployeePortal: () => void;
+};
+
+export function AuthGatewayScreen({ lang, setLang, onOwnerPortal, onEmployeePortal }: AuthGatewayScreenProps) {
   return (
     <motion.section
       initial={{ opacity: 0 }}

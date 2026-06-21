@@ -2,10 +2,17 @@
 
 import { useCallback, useState } from "react";
 import { changeOwnerPasswordViaSessionBridge } from "@/features/auth/client/session-bridge";
+import type { AuthLang } from "@/features/auth/client/auth-client-types";
 import { APP_IN_PRODUCTION_MODE } from "@/components/prototype-runtime/prototype-runtime-boot";
 import { MIN_PASSWORD_LENGTH } from "@/core/auth/password-policy";
 
-export function useOwnerPasswordChangeForm({ lang, onComplete }) {
+export function useOwnerPasswordChangeForm({
+  lang,
+  onComplete,
+}: {
+  lang: AuthLang;
+  onComplete: () => void;
+}) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

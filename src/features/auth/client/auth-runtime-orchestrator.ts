@@ -1,45 +1,22 @@
 import { readEmployeeNotebookTheme } from "@/features/employee-closeouts/employee-theme-storage";
 import { usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
+import type {
+  AuthActiveBusiness,
+  AuthRuntimeApply,
+  AuthServerSession,
+  AuthStaffMember,
+} from "./auth-client-types";
 import {
   persistLocalEmployeeSession,
   persistLocalOwnerSession,
 } from "./session-bridge";
 
-/**
- * @typedef {Object} AuthRuntimeApply
- * @property {(value: string) => void} [setSessionUserId]
- * @property {(value: string) => void} [setSessionOrganizationId]
- * @property {(value: boolean) => void} [setLoggedIn]
- * @property {(value: boolean) => void} [setEmployee]
- * @property {(value: string | null) => void} [setLoggedInEmployeeId]
- * @property {(value: string) => void} [setAuthScreen]
- * @property {(value: string) => void} [setOwnerPage]
- * @property {(value: string) => void} [setEmployeePage]
- * @property {(value: string) => void} [setEmployeeBusinessId]
- * @property {(value: unknown) => void} [setEmployeeThemeOverride]
- * @property {(value: unknown[]) => void} [setOperationalEntries]
- * @property {(value: unknown[]) => void} [setStaff]
- * @property {(value: unknown[]) => void} [setConfiguredBusinesses]
- * @property {(value: string[]) => void} [setArchivedBusinessIds]
- * @property {(value: string) => void} [setAuthOwnerUsername]
- * @property {(value: string) => void} [setAuthOwnerPassword]
- * @property {(value: Record<string, string>) => void} [setAuthEmployeePins]
- * @property {(value: { name: string }) => void} [setOwnerProfile]
- * @property {(value: boolean) => void} [setMustChangePassword]
- * @property {(value: string) => void} [setSessionDisplayName]
- * @property {(value: unknown) => void} [setOwnerManageCloseout]
- * @property {(value: unknown) => void} [setSelected]
- * @property {(value: unknown) => void} [setVoidTarget]
- * @property {(value: unknown) => void} [setRestoreTarget]
- * @property {(value: unknown) => void} [setSavedOutflowShareTarget]
- * @property {(value: unknown) => void} [setPendingDuplicateSummary]
- * @property {(value: unknown) => void} [setDuplicateSummaryFocus]
- * @property {(value: unknown) => void} [setAttachmentReviewRequest]
- * @property {(value: unknown) => void} [setShareSnapshot]
- * @property {(value: boolean) => void} [setQuickAddOpen]
- * @property {(value: string | null) => void} [setArchivedReadOnlyBusinessId]
- * @property {(value: string) => void} [setSelectedBusiness]
- */
+export type {
+  AuthActiveBusiness,
+  AuthRuntimeApply,
+  AuthServerSession,
+  AuthStaffMember,
+} from "./auth-client-types";
 
 export function applyOwnerLoginSuccess({
   apiUserId = "",
@@ -47,7 +24,13 @@ export function applyOwnerLoginSuccess({
   displayName = "",
   mustChangePassword = false,
   apply = {},
-}) {
+}: {
+  apiUserId?: string;
+  organizationId?: string;
+  displayName?: string;
+  mustChangePassword?: boolean;
+  apply?: AuthRuntimeApply;
+} = {}) {
   persistLocalOwnerSession();
   const userId = typeof apiUserId === "string" ? apiUserId : "";
   const orgId = typeof organizationId === "string" ? organizationId : "";
@@ -65,15 +48,6 @@ export function applyOwnerLoginSuccess({
   apply.setMustChangePassword?.(mustChangePassword === true);
 }
 
-/**
- * @param {Object} input
- * @param {string} input.personId
- * @param {string} [input.apiUserId]
- * @param {string} [input.organizationId]
- * @param {Array<{ id?: string, active?: boolean, removed?: boolean, storeIds?: string[] }>} [input.staff]
- * @param {Array<{ id?: string }>} [input.activeBusinesses]
- * @param {AuthRuntimeApply} [input.apply]
- */
 export function applyEmployeeLoginSuccess({
   personId,
   apiUserId = "",
@@ -82,6 +56,14 @@ export function applyEmployeeLoginSuccess({
   activeBusinesses = [],
   displayName = "",
   apply = {},
+}: {
+  personId: string;
+  apiUserId?: string;
+  organizationId?: string;
+  staff?: AuthStaffMember[];
+  activeBusinesses?: AuthActiveBusiness[];
+  displayName?: string;
+  apply?: AuthRuntimeApply;
 }) {
   const person = staff.find((item) => item.id === personId && item.active && !item.removed);
   const resolvedEmployeeId = person?.id || (typeof apiUserId === "string" && apiUserId ? apiUserId : personId);
@@ -109,7 +91,7 @@ export function applyEmployeeLoginSuccess({
   return true;
 }
 
-export function applyServerSessionBootstrap(session, apply = {}) {
+export function applyServerSessionBootstrap(session: AuthServerSession, apply: AuthRuntimeApply = {}) {
   if (!session?.authenticated) return false;
 
   apply.setSessionOrganizationId?.(typeof session.organizationId === "string" ? session.organizationId : "");
@@ -119,7 +101,7 @@ export function applyServerSessionBootstrap(session, apply = {}) {
 
   if (session.role === "employee") {
     apply.setEmployee?.(true);
-    apply.setLoggedInEmployeeId?.(session.userId);
+    apply.setLoggedInEmployeeId?.(session.userId ?? null);
     apply.setEmployeePage?.("closeouts");
     const employeeName = typeof session.displayName === "string" ? session.displayName.trim() : "";
     if (employeeName) {
@@ -140,7 +122,15 @@ export function applyServerSessionBootstrap(session, apply = {}) {
   return true;
 }
 
-export function applyLogoutReset({ bindsToServerAuth, apply = {}, nextAuthScreen = "gateway" }) {
+export function applyLogoutReset({
+  bindsToServerAuth,
+  apply = {},
+  nextAuthScreen = "gateway",
+}: {
+  bindsToServerAuth?: boolean;
+  apply?: AuthRuntimeApply;
+  nextAuthScreen?: string;
+} = {}) {
   apply.setSessionOrganizationId?.("");
   apply.setSessionUserId?.("");
   apply.setLoggedIn?.(false);

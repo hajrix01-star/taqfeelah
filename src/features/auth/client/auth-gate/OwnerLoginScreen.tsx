@@ -12,8 +12,14 @@ import { LanguageSwitch, Logo } from "@/components/prototype-runtime/prototype-r
 import { AppLoginPhoneField } from "@/core/phone/AppLoginPhoneField";
 import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 import { ownerPasswordInputProps } from "@/features/auth/client/auth-gate/owner-password-input-props";
+import type { AuthLangProps, OwnerLoginCallback } from "@/features/auth/client/auth-client-types";
 
-export function LoginScreen({ lang, setLang, onOwnerLogin, onBack }) {
+type OwnerLoginScreenProps = AuthLangProps & {
+  onOwnerLogin: OwnerLoginCallback;
+  onBack: () => void;
+};
+
+export function LoginScreen({ lang, setLang, onOwnerLogin, onBack }: OwnerLoginScreenProps) {
   const form = useOwnerLoginForm({ lang, onOwnerLogin });
 
   return (

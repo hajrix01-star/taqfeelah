@@ -8,6 +8,7 @@ import {
   saveOwnerCredentials,
 } from "@/features/demo/login-credentials-storage";
 import { loginOwnerViaSessionBridge } from "@/features/auth/client/session-bridge";
+import type { AuthLang, OwnerLoginCallback, SavedOwnerCredentials } from "@/features/auth/client/auth-client-types";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 import {
   APP_IN_PRODUCTION_MODE,
@@ -16,7 +17,13 @@ import {
   PROTOTYPE_OWNER_USERNAME,
 } from "@/components/prototype-runtime/prototype-runtime-boot";
 
-export function useOwnerLoginForm({ lang, onOwnerLogin }) {
+export function useOwnerLoginForm({
+  lang,
+  onOwnerLogin,
+}: {
+  lang: AuthLang;
+  onOwnerLogin: OwnerLoginCallback;
+}) {
   const ownerLoginMethods = getEnabledOwnerLoginMethods();
   const [method, setMethod] = useState(
     ownerLoginMethods.includes("whatsapp_otp") ? "phone" : "password",
@@ -32,7 +39,7 @@ export function useOwnerLoginForm({ lang, onOwnerLogin }) {
   const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
-    const saved = readOwnerCredentials();
+    const saved = readOwnerCredentials() as SavedOwnerCredentials | null;
     if (!saved) return;
     setRememberMe(true);
     if (saved.username) setUsername(saved.username);

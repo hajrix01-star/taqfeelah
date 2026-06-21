@@ -247,13 +247,6 @@ export async function submitCloseoutViaApi({
       ...(optionalTrimmedString(closeout?.note) ? { note: optionalTrimmedString(closeout?.note) } : {}),
     },
     errorMessage: "تعذر إرسال التقفيلة. تحقق من الصور وحاول مرة أخرى.",
-  } as {
-    organizationId?: string;
-    actorUserId?: string;
-    actorRole?: string;
-    method?: string;
-    body?: Record<string, unknown>;
-    errorMessage?: string;
   });
 }
 
