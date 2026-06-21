@@ -21,7 +21,7 @@ describe("build operational entry", () => {
     expect(entry.id).toBe("summary-test");
     expect(entry.amount).toBe(150);
     expect(entry.attachment).toEqual({ kind: "image", name: "receipt.jpg", id: "attachment-summary-test" });
-    expect(entry.auditTrail[0].action).toBe("created");
+    expect(entry.auditTrail?.[0]?.action).toBe("created");
   });
 
   it("creates outflow entry amount from parser", () => {

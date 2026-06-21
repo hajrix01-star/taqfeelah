@@ -56,20 +56,6 @@ const nextConfig = {
         key: "Permissions-Policy",
         value: "camera=(self), microphone=(), geolocation=(), payment=()",
       },
-      {
-        key: "Content-Security-Policy",
-        value: [
-          "default-src 'self'",
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-          "style-src 'self' 'unsafe-inline'",
-          "font-src 'self' data:",
-          "img-src 'self' data: blob:",
-          "connect-src 'self'",
-          "frame-ancestors 'none'",
-          "base-uri 'self'",
-          "form-action 'self'",
-        ].join("; "),
-      },
     ];
 
     if (process.env.NODE_ENV === "production") {
@@ -78,6 +64,8 @@ const nextConfig = {
         value: "max-age=63072000; includeSubDomains; preload",
       });
     }
+
+    // CSP with per-request nonce is applied in src/middleware.ts (batch 4).
 
     return [
       {

@@ -11,6 +11,8 @@ import { GOLDEN_ACCOUNTING_CASES } from "@/domain/cash-movement/golden-fixtures"
 import { computeCloseoutTotals } from "@/features/daily-closeouts/closeout-calculations";
 import { combineUiTotals } from "@/features/reports/client/map-day-summary-to-ui";
 import { summarizeEntries } from "@/features/operations/operational-analytics";
+import type { AnalyticsEntry } from "@/features/operations/operations-types";
+import type { UiTotalsRecord } from "@/features/reports/client/reports-client-types";
 
 function expectTotals(
   actual: { sales: number; expense: number; net: number; ratio: string },
@@ -23,6 +25,15 @@ function expectTotals(
   expect(actual.ratio, `${label}.ratio`).toBe(expected.ratio);
 }
 
+function uiTotalsForExpect(record: UiTotalsRecord): { sales: number; expense: number; net: number; ratio: string } {
+  return {
+    sales: record.sales ?? 0,
+    expense: record.expense ?? 0,
+    net: record.net ?? 0,
+    ratio: record.ratio ?? "",
+  };
+}
+
 type GoldenAccountingCase = (typeof GOLDEN_ACCOUNTING_CASES)[number];
 
 describe("golden accounting parity", () => {
@@ -31,11 +42,11 @@ describe("golden accounting parity", () => {
     const domainUi = daySummaryToUiTotals(domainSummary);
     const rowsFromUi = calculateDaySummary(rowsFromUiEntries(fixture.uiEntries));
     const rowsFromUiTotals = daySummaryToUiTotals(rowsFromUi);
-    const clientTotals = summarizeEntries(fixture.uiEntries);
+    const clientTotals = summarizeEntries(fixture.uiEntries as AnalyticsEntry[]);
     const closeoutTotals = computeCloseoutTotals(fixture.closeoutSales, fixture.closeoutOutflows);
     const closeoutRatio = formatOutflowRatio(
-      Math.round(closeoutTotals.totalSales * 100),
-      Math.round(closeoutTotals.totalOutflow * 100),
+      Math.round((closeoutTotals.totalSales || 0) * 100),
+      Math.round((closeoutTotals.totalOutflow || 0) * 100),
     ).ratio;
 
     expectTotals(domainUi, fixture.expected, "domain");
@@ -60,7 +71,7 @@ describe("golden accounting parity", () => {
       const mergedUi = daySummaryToUiTotals(mergedSummary);
 
       expectTotals(combinedDomain, fixture.expected, "combineDomain");
-      expectTotals(combinedClient, fixture.expected, "combineClient");
+      expectTotals(uiTotalsForExpect(combinedClient), fixture.expected, "combineClient");
       expectTotals(mergedUi, fixture.expected, "combineDaySummaries");
     }
   });

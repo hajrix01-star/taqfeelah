@@ -55,7 +55,7 @@ describe("employee-portal-session", () => {
       { id: "b1", nameAr: "A" },
       { id: "b2", nameAr: "B" },
     ];
-    const employee = { storeIds: ["b2"] };
+    const employee = { id: "e1", storeIds: ["b2"] };
     const assigned = resolveAssignedEmployeeBusinesses(businesses, employee);
     expect(assigned).toHaveLength(1);
     expect(resolveCurrentEmployeeBusiness(assigned, "missing")?.id).toBe("b2");
@@ -67,7 +67,7 @@ describe("employee-portal-session", () => {
       { id: "shami", dbStoreId: "store-uuid-1", nameAr: "A" },
       { id: "arz", legacyId: "store-uuid-2", nameAr: "B" },
     ];
-    const employee = { storeIds: ["store-uuid-1", "store-uuid-2"] };
+    const employee = { id: "e1", storeIds: ["store-uuid-1", "store-uuid-2"] };
     const assigned = resolveAssignedEmployeeBusinesses(businesses, employee);
     expect(assigned.map((business) => business.id)).toEqual(["shami", "arz"]);
   });
@@ -99,8 +99,8 @@ describe("employee-portal-session", () => {
         uuidChecker: (value) => value.startsWith("acb"),
       },
     );
-    expect(patched.userIdMap["staff-1"]).toBe("acb24f1e-bf77-48d7-ba01-1e77d2c8c713");
-    expect(patched.userIdMap.ahmed).toBe("old");
+    expect(patched.userIdMap?.["staff-1"]).toBe("acb24f1e-bf77-48d7-ba01-1e77d2c8c713");
+    expect(patched.userIdMap?.ahmed).toBe("old");
   });
 
   it("resolves login staff from roster fallback in production mode", () => {

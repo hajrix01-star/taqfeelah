@@ -10,7 +10,7 @@ import {
   mapApiStoreToBusiness,
   mapOrgConfigBundleToRuntime,
   validateOrgConfigDbChannelMappings,
-} from "./org-config-runtime-mapper.js";
+} from "./org-config-runtime-mapper";
 
 describe("org config runtime mapper", () => {
   it("maps store and channel api rows into runtime settings shape", () => {

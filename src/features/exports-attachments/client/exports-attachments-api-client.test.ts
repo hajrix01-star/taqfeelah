@@ -101,6 +101,8 @@ describe("exports-attachments api client", () => {
       actorRole: "owner",
       storeId: "shami",
       period: "day",
+      from: "2026-06-05",
+      to: "2026-06-05",
       date: "2026-06-05",
     });
 

@@ -15,7 +15,7 @@ describe("org config runtime bridge", () => {
     });
 
     expect(snapshot.configuredBusinesses).toHaveLength(1);
-    expect(snapshot.storeOperationalSettings.shami.closeoutAlert).toBe(true);
+    expect(snapshot.storeOperationalSettings?.shami).toMatchObject({ closeoutAlert: true });
   });
 
   it("applies hydrated org-config payload to runtime setters", () => {

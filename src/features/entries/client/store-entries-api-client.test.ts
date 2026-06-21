@@ -42,7 +42,7 @@ describe("store entries api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { fetchStoreEntriesViaApi } = await import("./store-entries-api-client.js");
+    const { fetchStoreEntriesViaApi } = await import("./store-entries-api-client");
     const result = await fetchStoreEntriesViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       actorUserId: "owner",
@@ -73,7 +73,7 @@ describe("store entries api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { createStoreEntryViaApi } = await import("./store-entries-api-client.js");
+    const { createStoreEntryViaApi } = await import("./store-entries-api-client");
     const result = await createStoreEntryViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       actorUserId: "owner",
@@ -109,7 +109,7 @@ describe("store entries api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { fetchStoreEntriesPageViaApi } = await import("./store-entries-api-client.js");
+    const { fetchStoreEntriesPageViaApi } = await import("./store-entries-api-client");
     const result = await fetchStoreEntriesPageViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
       actorUserId: "owner",
@@ -139,7 +139,7 @@ describe("store entries api client", () => {
     const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>();
     vi.stubGlobal("fetch", fetchMock);
 
-    const { fetchStoreEntriesPageViaApi } = await import("./store-entries-api-client.js");
+    const { fetchStoreEntriesPageViaApi } = await import("./store-entries-api-client");
 
     await expect(fetchStoreEntriesPageViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -157,7 +157,7 @@ describe("store entries api client", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { fetchStoreEntriesViaApi } = await import("./store-entries-api-client.js");
+    const { fetchStoreEntriesViaApi } = await import("./store-entries-api-client");
 
     await expect(fetchStoreEntriesViaApi({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",

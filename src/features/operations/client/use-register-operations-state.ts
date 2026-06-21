@@ -1,0 +1,127 @@
+"use client";
+
+import { useRegisterDuplicateSummaryHandlers } from "./use-register-duplicate-summary-handlers";
+import { useRegisterOperationOpenHandlers } from "./use-register-operation-open-handlers";
+import { useRegisterVoidRestoreHandlers } from "./use-register-void-restore-handlers";
+import type { UseRegisterOperationsStateProps } from "./operations-client-types";
+
+export function useRegisterOperationsState(props: UseRegisterOperationsStateProps) {
+  const {
+    lang,
+    setSelected = () => {},
+    voidTarget = null,
+    setVoidTarget = () => {},
+    restoreTarget = null,
+    setRestoreTarget = () => {},
+    pendingDuplicateSummary = null,
+    setPendingDuplicateSummary = () => {},
+    operationalEntries = [],
+    archivedBusinessIds = [],
+    entriesApiEnabled = false,
+    entriesApiDbSource = false,
+    phase9ApiEnabled = false,
+    closeoutsApiOrganizationId = "",
+    ownerApiUserId = "",
+    currentOwnerActor,
+    activeEmployee = null,
+    entryIsActive = () => true,
+    entryIsVoided = () => false,
+    bindsToServerAuth = false,
+    closeoutsApiDbSource = false,
+    readDailyCloseouts = () => [],
+    loadOperationalEntriesFromApi = async () => [],
+    setOperationalEntries = () => {},
+    setLastCloseoutDates = () => {},
+    setAcknowledgedDuplicateSales = () => {},
+    setOwnerPage = () => {},
+    setEmployeePage = () => {},
+    setSaved = () => {},
+    setOwnerManageCloseout = () => {},
+    pushCloseoutAlert = () => {},
+    saveOwner = async () => {},
+    persistEmployeeEntry = async () => {},
+    savingRef,
+    setSaving = () => {},
+    notifyOperationalSyncWrite = null,
+  } = props;
+
+  const {
+    handleOpenOwnerOperation,
+    requestVoidOperation,
+    requestRestoreOperation,
+  } = useRegisterOperationOpenHandlers({
+    operationalEntries,
+    archivedBusinessIds,
+    entryIsVoided,
+    bindsToServerAuth,
+    closeoutsApiDbSource,
+    readDailyCloseouts,
+    setSelected,
+    setVoidTarget,
+    setRestoreTarget,
+    setOwnerManageCloseout,
+  });
+
+  const {
+    confirmVoidOperation,
+    confirmRestoreOperation,
+  } = useRegisterVoidRestoreHandlers({
+    lang,
+    voidTarget,
+    setVoidTarget,
+    restoreTarget,
+    setRestoreTarget,
+    operationalEntries,
+    archivedBusinessIds,
+    entriesApiEnabled,
+    closeoutsApiOrganizationId,
+    ownerApiUserId,
+    currentOwnerActor,
+    entryIsActive,
+    entryIsVoided,
+    loadOperationalEntriesFromApi,
+    setOperationalEntries,
+    setLastCloseoutDates,
+    setSelected,
+    notifyOperationalSyncWrite,
+  });
+
+  const {
+    confirmDuplicateSummary,
+    acknowledgeDuplicateSales,
+  } = useRegisterDuplicateSummaryHandlers({
+    lang,
+    pendingDuplicateSummary,
+    setPendingDuplicateSummary,
+    entriesApiEnabled,
+    entriesApiDbSource,
+    phase9ApiEnabled,
+    closeoutsApiOrganizationId,
+    ownerApiUserId,
+    currentOwnerActor,
+    activeEmployee,
+    entryIsActive,
+    loadOperationalEntriesFromApi,
+    setOperationalEntries,
+    setLastCloseoutDates,
+    setAcknowledgedDuplicateSales,
+    setOwnerPage,
+    setEmployeePage,
+    setSaved,
+    pushCloseoutAlert,
+    saveOwner,
+    persistEmployeeEntry,
+    savingRef,
+    setSaving,
+  });
+
+  return {
+    handleOpenOwnerOperation,
+    requestVoidOperation,
+    requestRestoreOperation,
+    confirmVoidOperation,
+    confirmRestoreOperation,
+    confirmDuplicateSummary,
+    acknowledgeDuplicateSales,
+  };
+}

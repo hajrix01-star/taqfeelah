@@ -11,10 +11,12 @@ import {
   summarizeEntries,
 } from "./operational-analytics";
 
+import type { AnalyticsTotals } from "./operations-types";
+
 describe("operational analytics summary helpers", () => {
   it("detects activity in totals", () => {
-    expect(entryTotalsHaveActivity({ sales: 0, expense: 0, proofs: 0 })).toBe(false);
-    expect(entryTotalsHaveActivity({ sales: 100, expense: 0, proofs: 0 })).toBe(true);
+    expect(entryTotalsHaveActivity({ sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0 })).toBe(false);
+    expect(entryTotalsHaveActivity({ sales: 100, expense: 0, net: 100, ratio: "0.0%", proofs: 0 })).toBe(true);
   });
 
   it("prefers local totals when API totals are empty but local has activity", () => {

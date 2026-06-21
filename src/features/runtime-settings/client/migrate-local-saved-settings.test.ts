@@ -18,13 +18,13 @@ describe("migrate local saved settings", () => {
       },
     });
 
-    expect(migrated.storeOperationalSettings.shami).toMatchObject({
+    expect((migrated?.storeOperationalSettings as Record<string, Record<string, unknown>> | undefined)?.shami).toMatchObject({
       closeoutAlert: true,
       employeeHistoryVisibility: "week",
     });
-    expect(migrated.storeOperationalSettings.shami).not.toHaveProperty("reviewEnabled");
-    expect(migrated.storeOperationalSettings.shami).not.toHaveProperty("attachmentAlert");
-    expect(migrated.storeOperationalSettings.shami).not.toHaveProperty("closeoutReviewEnabled");
+    expect((migrated?.storeOperationalSettings as Record<string, Record<string, unknown>> | undefined)?.shami).not.toHaveProperty("reviewEnabled");
+    expect((migrated?.storeOperationalSettings as Record<string, Record<string, unknown>> | undefined)?.shami).not.toHaveProperty("attachmentAlert");
+    expect((migrated?.storeOperationalSettings as Record<string, Record<string, unknown>> | undefined)?.shami).not.toHaveProperty("closeoutReviewEnabled");
   });
 
   it("returns raw settings when store operational settings are already normalized", () => {
@@ -67,7 +67,7 @@ describe("migrate local saved settings", () => {
       { skip: true, persistMigrated },
     );
 
-    expect(migrated.storeOperationalSettings.shami).toMatchObject({ reviewEnabled: true });
+    expect((migrated?.storeOperationalSettings as Record<string, Record<string, unknown>> | undefined)?.shami).toMatchObject({ reviewEnabled: true });
     expect(persistMigrated).not.toHaveBeenCalled();
   });
 });
