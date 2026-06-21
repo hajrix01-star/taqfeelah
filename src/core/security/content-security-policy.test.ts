@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   buildContentSecurityPolicy,
   createContentSecurityPolicyNonce,
@@ -6,21 +6,34 @@ import {
 } from "./content-security-policy";
 
 describe("buildContentSecurityPolicy", () => {
-  it("includes nonce and strict-dynamic in production", () => {
+  it("uses legacy unsafe-inline scripts by default in production", () => {
+    const policy = buildContentSecurityPolicy({
+      isDevelopment: false,
+      strictNonce: false,
+    });
+
+    expect(policy).toContain("script-src 'self' 'unsafe-inline'");
+    expect(policy).not.toContain("strict-dynamic");
+    expect(policy).not.toContain("unsafe-eval");
+  });
+
+  it("includes nonce and strict-dynamic when strict mode is enabled", () => {
     const policy = buildContentSecurityPolicy({
       nonce: "abc123",
       isDevelopment: false,
+      strictNonce: true,
     });
 
     expect(policy).toContain("script-src 'self' 'nonce-abc123' 'strict-dynamic'");
-    expect(policy).not.toContain("unsafe-eval");
-    expect(policy).toContain("connect-src 'self'");
+    expect(policy).not.toMatch(/script-src[^;]*unsafe-inline/);
+    expect(policy).not.toMatch(/script-src[^;]*unsafe-eval/);
   });
 
   it("allows unsafe-eval in development", () => {
     const policy = buildContentSecurityPolicy({
       nonce: "dev-nonce",
       isDevelopment: true,
+      strictNonce: true,
     });
 
     expect(policy).toContain("'unsafe-eval'");

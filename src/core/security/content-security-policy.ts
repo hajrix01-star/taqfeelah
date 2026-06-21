@@ -1,22 +1,35 @@
 export type ContentSecurityPolicyOptions = {
-  nonce: string;
+  nonce?: string;
   isDevelopment?: boolean;
+  strictNonce?: boolean;
 };
+
+export function isStrictCspNonceEnabled(): boolean {
+  return process.env.CSP_STRICT_NONCE === "true";
+}
 
 /**
  * Build CSP header value for HTML responses.
- * Uses per-request nonce + strict-dynamic for Next.js script chunks.
+ * Default (production-safe): legacy inline scripts for Next.js compatibility.
+ * Opt-in strict mode: CSP_STRICT_NONCE=true + per-request nonce + strict-dynamic.
  */
 export function buildContentSecurityPolicy({
-  nonce,
+  nonce = "",
   isDevelopment = process.env.NODE_ENV === "development",
-}: ContentSecurityPolicyOptions): string {
-  const scriptSrc = [
-    "'self'",
-    `'nonce-${nonce}'`,
-    "'strict-dynamic'",
-    ...(isDevelopment ? ["'unsafe-eval'"] : []),
-  ];
+  strictNonce = isStrictCspNonceEnabled(),
+}: ContentSecurityPolicyOptions = {}): string {
+  const scriptSrc = strictNonce
+    ? [
+      "'self'",
+      `'nonce-${nonce}'`,
+      "'strict-dynamic'",
+      ...(isDevelopment ? ["'unsafe-eval'"] : []),
+    ]
+    : [
+      "'self'",
+      "'unsafe-inline'",
+      ...(isDevelopment ? ["'unsafe-eval'"] : []),
+    ];
 
   return [
     "default-src 'self'",

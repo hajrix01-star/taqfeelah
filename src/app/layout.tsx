@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { connection } from "next/server";
 import {
   PWA_APP_NAME,
   PWA_DESCRIPTION,
@@ -41,14 +40,11 @@ export const viewport: Viewport = {
   themeColor: PWA_THEME_COLOR,
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Required for CSP nonce injection on dynamically rendered HTML (Next.js 15).
-  await connection();
-
   return (
     <html lang="ar" className={appFontClassNames} suppressHydrationWarning>
       <body className={notoSansArabic.className}>
