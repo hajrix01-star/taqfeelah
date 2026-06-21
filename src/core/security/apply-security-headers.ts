@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import {
   buildContentSecurityPolicy,
   createContentSecurityPolicyNonce,
-  isStrictCspNonceEnabled,
   normalizeCspHeaderValue,
 } from "./content-security-policy";
 
@@ -21,7 +20,7 @@ function shouldAttachStrictTransportSecurity(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
-function applySharedHeaders(response: NextResponse, csp: string, nonce?: string): NextResponse {
+function applySharedHeaders(response: NextResponse, csp: string, nonce: string): NextResponse {
   for (const header of SHARED_SECURITY_HEADERS) {
     response.headers.set(header.key, header.value);
   }
@@ -34,42 +33,39 @@ function applySharedHeaders(response: NextResponse, csp: string, nonce?: string)
   }
 
   response.headers.set("Content-Security-Policy", csp);
-  if (nonce) {
-    response.headers.set("x-nonce", nonce);
-  }
+  response.headers.set("x-nonce", nonce);
   return response;
 }
 
-/** Apply CSP and baseline security headers to a middleware response. */
+/**
+ * Apply nonce-based CSP and baseline security headers to a middleware response.
+ * Next.js reads CSP from *request* headers to inject script nonces during SSR.
+ */
 export function applySecurityHeaders(
   request: NextRequest,
   upstreamResponse?: NextResponse,
 ): NextResponse {
-  const strictNonce = isStrictCspNonceEnabled();
-  const nonce = strictNonce ? createContentSecurityPolicyNonce() : "";
+  const nonce = createContentSecurityPolicyNonce();
   const csp = normalizeCspHeaderValue(
     buildContentSecurityPolicy({
       nonce,
       isDevelopment: process.env.NODE_ENV === "development",
-      strictNonce,
     }),
   );
 
   if (upstreamResponse) {
-    return applySharedHeaders(upstreamResponse, csp, strictNonce ? nonce : undefined);
+    return applySharedHeaders(upstreamResponse, csp, nonce);
   }
 
   const requestHeaders = new Headers(request.headers);
-  if (strictNonce) {
-    requestHeaders.set("x-nonce", nonce);
-    requestHeaders.set("Content-Security-Policy", csp);
-  }
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
 
-  const response = NextResponse.next(
-    strictNonce
-      ? { request: { headers: requestHeaders } }
-      : undefined,
-  );
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
-  return applySharedHeaders(response, csp, strictNonce ? nonce : undefined);
+  return applySharedHeaders(response, csp, nonce);
 }
