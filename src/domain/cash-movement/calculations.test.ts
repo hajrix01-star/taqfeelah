@@ -5,6 +5,7 @@ import {
   combineDaySummaries,
   combineUiTotalsFromSummaries,
   daySummaryToUiTotals,
+  reconcileSummarySalesDisplayRiyals,
   rowsFromUiEntries,
   sumUiAmounts,
 } from "./calculations";
@@ -67,6 +68,41 @@ describe("rowsFromUiEntries", () => {
       expense: 0,
       net: 5000,
     });
+  });
+
+  it("prefers stored summary amount when channel rows are incomplete after owner edit", () => {
+    const summary = calculateDaySummary(rowsFromUiEntries([
+      {
+        type: "summary",
+        amount: 10000,
+        status: "active",
+        salesChannels: [{ amount: 5000 }],
+      },
+    ]));
+
+    expect(daySummaryToUiTotals(summary)).toMatchObject({
+      sales: 10000,
+      expense: 0,
+      net: 10000,
+    });
+  });
+});
+
+describe("reconcileSummarySalesDisplayRiyals", () => {
+  it("returns stored amount when no channel rows exist", () => {
+    expect(reconcileSummarySalesDisplayRiyals(7500, [])).toBe(7500);
+  });
+
+  it("returns channel sum when stored amount is stale low", () => {
+    expect(reconcileSummarySalesDisplayRiyals(100, [5000])).toBe(5000);
+  });
+
+  it("returns stored amount when channel rows are incomplete", () => {
+    expect(reconcileSummarySalesDisplayRiyals(10000, [5000])).toBe(10000);
+  });
+
+  it("sums multiple channels when stored amount matches", () => {
+    expect(reconcileSummarySalesDisplayRiyals(10000, [5000, 5000])).toBe(10000);
   });
 });
 

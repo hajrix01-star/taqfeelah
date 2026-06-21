@@ -10,11 +10,31 @@ export type UiEntryLike = {
   salesChannels?: Array<{ amount?: number | null }>;
 };
 
+/** Reconcile stored summary amount vs channel rows (owner edit may hydrate one before the other). */
+export function reconcileSummarySalesDisplayRiyals(
+  storedAmountRiyals: number,
+  channelAmountsRiyals: number[] = [],
+): number {
+  const storedHalalas = toHalalas(Number(storedAmountRiyals) || 0);
+  if (!Array.isArray(channelAmountsRiyals) || channelAmountsRiyals.length === 0) {
+    return toRiyals(storedHalalas);
+  }
+  const channelSumHalalas = toHalalas(sumUiAmounts(
+    channelAmountsRiyals.map((amount) => Number(amount) || 0),
+  ));
+  if (storedHalalas === channelSumHalalas) {
+    return toRiyals(storedHalalas);
+  }
+  return toRiyals(Math.max(storedHalalas, channelSumHalalas));
+}
+
 export function resolveSummaryEntrySalesAmountRiyals(entry: UiEntryLike): number {
-  if (entry.type !== "summary") return entry.amount;
+  if (entry.type !== "summary") return Number(entry.amount ?? 0);
   const channels = Array.isArray(entry.salesChannels) ? entry.salesChannels : [];
-  if (channels.length === 0) return entry.amount;
-  return sumUiAmounts(channels.map((row) => Number(row.amount ?? 0)));
+  return reconcileSummarySalesDisplayRiyals(
+    Number(entry.amount ?? 0),
+    channels.map((row) => Number(row.amount ?? 0)),
+  );
 }
 
 export function rowsFromUiEntries(entries: UiEntryLike[]): MovementRow[] {

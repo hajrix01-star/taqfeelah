@@ -97,6 +97,59 @@ describe("register-log-display", () => {
     expect(summaries[0].salesChannels[0].amount).toBe(5000);
   });
 
+  it("reconciles collapsed income when stored amount includes owner edit addition", () => {
+    const summaries = buildRegisterCloseoutSummaries({
+      filteredEntries: [
+        {
+          id: "e1",
+          closeoutId: "c1",
+          businessId: "b1",
+          date: "2026-06-21",
+          type: "summary",
+          status: "active",
+          amount: 10000,
+          salesChannels: [
+            { channelId: "cash", amount: 5000 },
+            { channelId: "card", amount: 5000 },
+          ],
+          closeoutOwnerEditedAt: "2026-06-21T10:00:00.000Z",
+        },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fixture
+      ] as any[],
+      resolveChannelName: (row) => String((row as { channelId: string }).channelId),
+      resolveStore: (businessId: string) => ({ id: businessId }),
+      resolveActorLabel: () => "محمد خالد",
+    });
+    expect(summaries[0].displaySales).toBe(10000);
+    expect(summaries[0].totals.sales).toBe(10000);
+    expect(summaries[0].totals.net).toBe(10000);
+  });
+
+  it("reconciles collapsed income from stored amount when channel rows are incomplete", () => {
+    const summaries = buildRegisterCloseoutSummaries({
+      filteredEntries: [
+        {
+          id: "e1",
+          closeoutId: "c1",
+          businessId: "b1",
+          date: "2026-06-21",
+          type: "summary",
+          status: "active",
+          amount: 10000,
+          salesChannels: [{ channelId: "cash", amount: 5000 }],
+          closeoutOwnerEditedAt: "2026-06-21T10:00:00.000Z",
+        },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fixture
+      ] as any[],
+      resolveChannelName: () => "نقد",
+      resolveStore: (businessId: string) => ({ id: businessId }),
+      resolveActorLabel: () => "محمد خالد",
+    });
+    expect(summaries[0].displaySales).toBe(10000);
+    expect(summaries[0].totals.sales).toBe(10000);
+    expect(summaries[0].totals.net).toBe(10000);
+  });
+
   it("labels owner-entered closeouts with the owner fallback when name is missing", () => {
     const label = resolveRegisterCloseoutActorLabel({
       entries: [

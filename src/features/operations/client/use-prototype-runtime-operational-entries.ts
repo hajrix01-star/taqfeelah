@@ -37,6 +37,7 @@ import {
 import { entryIsActive } from "@/components/prototype-runtime/prototype-runtime-entry-helpers";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 import { invalidateOperationalData } from "@/core/client/invalidate-operational-data";
+import { refreshOperationalDataAfterWrite } from "@/features/operations/client/refresh-operational-data-after-write";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import type { OperationalEntry, OperationalEntryAttachment, OperationalEntryPayload } from "@/features/entries/client/entries-client-types";
@@ -274,7 +275,7 @@ export function usePrototypeRuntimeOperationalEntries({
   ) => {
     if (ENTRIES_API_DB_SOURCE) {
       if (typeof loadOperationalEntriesFromApiRef.current === "function") {
-        await loadOperationalEntriesFromApiRef.current();
+        await refreshOperationalDataAfterWrite(queryClient, loadOperationalEntriesFromApiRef.current);
       }
       return;
     }
@@ -321,7 +322,7 @@ export function usePrototypeRuntimeOperationalEntries({
         setLastCloseoutDates((current) => mergeLastCloseoutDateForStore(current, summaryEntry.businessId!, summaryEntry.date!));
       }
     }
-  }, [lang, removeOperationalEntriesForCloseout, setLastCloseoutDates]);
+  }, [lang, queryClient, removeOperationalEntriesForCloseout, setLastCloseoutDates]);
 
   useEffect(() => {
     if (!loggedIn) return;

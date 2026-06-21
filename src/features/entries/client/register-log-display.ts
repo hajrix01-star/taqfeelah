@@ -1,4 +1,8 @@
-import { sumUiAmounts, addUiAmounts } from "@/domain/cash-movement/calculations";
+import {
+  sumUiAmounts,
+  addUiAmounts,
+  reconcileSummarySalesDisplayRiyals,
+} from "@/domain/cash-movement/calculations";
 import { resolveCloseoutOwnerEditMetaFromEntries } from "@/features/closeouts/client/closeout-owner-edit-display";
 import {
   entryRowMatchesIncomeSourceFilter,
@@ -335,14 +339,20 @@ export function buildRegisterCloseoutSummaries({
       configuredChannels,
     );
     const channelSalesTotal = sumUiAmounts(salesChannels.map((row) => row.amount));
+    const displaySales = salesChannelFilter === "all"
+      ? reconcileSummarySalesDisplayRiyals(totals.sales, salesChannels.map((row) => row.amount))
+      : channelSalesTotal;
+    const displayNet = addUiAmounts(displaySales, -totals.expense);
     const daySequence = group.entries.find((entry) => Number.isInteger(entry.daySequence))?.daySequence ?? null;
     const ownerEditMeta = resolveCloseoutOwnerEditMetaFromEntries(group.entries);
     return {
       ...group,
       store,
-      totals,
+      totals: salesChannelFilter === "all"
+        ? { ...totals, sales: displaySales, net: displayNet }
+        : totals,
       salesChannels,
-      displaySales: salesChannelFilter === "all" ? totals.sales : channelSalesTotal,
+      displaySales,
       operations: newestEntries(group.entries),
       actorLabel: resolveActorLabel(group),
       daySequence,
