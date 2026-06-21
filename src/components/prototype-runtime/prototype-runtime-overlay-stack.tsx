@@ -67,6 +67,7 @@ export function PrototypeRuntimeOverlayStack({
   operationalEntries,
   phase9ApiEnabled,
   entriesApiEnabled,
+  closeoutsApiEnabled = false,
   runtimeApiAuth,
   ownerManageCloseout,
   ownerDisplayName,
@@ -107,13 +108,17 @@ export function PrototypeRuntimeOverlayStack({
         await reloadCloseoutsFromApi()
       ) as import("@/features/operations/client/operations-client-types").CloseoutRecord[],
       apiContext: {
-        enabled: entriesApiEnabled,
+        enabled: Boolean(
+          closeoutsApiEnabled
+          && typeof runtimeApiAuth?.organizationId === "string" && runtimeApiAuth.organizationId
+          && typeof runtimeApiAuth?.actorUserId === "string" && runtimeApiAuth.actorUserId,
+        ),
         organizationId: typeof runtimeApiAuth?.organizationId === "string" ? runtimeApiAuth.organizationId : "",
         actorUserId: typeof runtimeApiAuth?.actorUserId === "string" ? runtimeApiAuth.actorUserId : "",
         actorRole: typeof runtimeApiAuth?.actorRole === "string" ? runtimeApiAuth.actorRole : "owner",
       },
     }),
-    [closeouts, entriesApiEnabled, reloadCloseoutsFromApi, runtimeApiAuth],
+    [closeouts, closeoutsApiEnabled, reloadCloseoutsFromApi, runtimeApiAuth],
   );
 
   const handleEditOwnerCloseoutFromEntry = useCallback(async (entry: OperationalEntry) => {

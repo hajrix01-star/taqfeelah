@@ -773,6 +773,7 @@ export type PrototypeRuntimePageContentProps = {
   activeViewBusiness: string;
   homeReportChannelConfig: StoreChannelConfig;
   entriesApiEnabled: boolean;
+  closeoutsApiEnabled?: boolean;
   closeoutsApiOrganizationId: string | null;
   ownerApiUserId: string | null;
   ownerNotebookApiEnabled?: boolean;
@@ -856,6 +857,7 @@ export type PrototypeRuntimeOverlayStackProps = {
   operationalEntries: OperationalEntry[];
   phase9ApiEnabled: boolean;
   entriesApiEnabled: boolean;
+  closeoutsApiEnabled?: boolean;
   runtimeApiAuth: Record<string, unknown>;
   ownerManageCloseout: PrototypeCloseoutRecord | null;
   ownerDisplayName: string;
@@ -890,6 +892,7 @@ export type OwnerRegisterScreenProps = {
   duplicateSummaryFocus?: Record<string, unknown> | null;
   notebookTheme?: NotebookThemeId | string;
   registerEntriesApiEnabled?: boolean;
+  closeoutsApiEnabled?: boolean;
   registerEntriesApiOrganizationId?: string;
   registerEntriesApiActorUserId?: string;
   registerEntriesApiActorRole?: string;

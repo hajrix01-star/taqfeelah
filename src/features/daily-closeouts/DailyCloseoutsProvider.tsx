@@ -17,7 +17,6 @@ import {
 import { resolveEmployeeDisplayName } from "@/features/employee-closeouts/employee-portal-session";
 import { mapCloseoutSyncErrorToUserMessage } from "@/features/closeouts/client/closeout-sync-errors";
 import { useCloseoutsQuery } from "@/features/closeouts/client/use-closeouts-query";
-import { invalidateOperationalDataBestEffort, OPERATIONAL_SCOPES_AFTER_FINANCIAL_WRITE } from "@/core/client/invalidate-operational-data";
 import { CLOSEOUT_STATUS } from "./closeout-status";
 import type {
   CloseoutEvent,
@@ -143,11 +142,6 @@ export function DailyCloseoutsProvider({
     }
     if (usesCloseoutsApi) {
       removeCloseoutFromCache(closeoutId);
-      if (skipApiDelete || typeof onDeleteCloseoutToApi !== "function" || !useApiWrites) {
-        await invalidateOperationalDataBestEffort(queryClient, {
-          scopes: OPERATIONAL_SCOPES_AFTER_FINANCIAL_WRITE,
-        });
-      }
       return;
     }
     persistCloseouts((current) => current.filter((item) => item.id !== closeoutId));

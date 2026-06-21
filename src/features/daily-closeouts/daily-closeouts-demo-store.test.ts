@@ -96,7 +96,7 @@ describe("isCloseoutWorkflowFailure", () => {
 });
 
 describe("isLocalDraftCloseout", () => {
-  it("detects client-only draft ids and unsubmitted drafts", () => {
+  it("detects unsubmitted drafts only (not submitted dc-* client ids)", () => {
     expect(isLocalDraftCloseout({ id: "dc-1781996576905", status: CLOSEOUT_STATUS.DRAFT })).toBe(true);
     expect(isLocalDraftCloseout({
       id: "server-closeout-1",
@@ -105,6 +105,11 @@ describe("isLocalDraftCloseout", () => {
     })).toBe(true);
     expect(isLocalDraftCloseout({
       id: "server-closeout-1",
+      status: CLOSEOUT_STATUS.REVIEWED,
+      submittedAt: "2026-06-06T08:00:00Z",
+    })).toBe(false);
+    expect(isLocalDraftCloseout({
+      id: "dc-1781996576905",
       status: CLOSEOUT_STATUS.REVIEWED,
       submittedAt: "2026-06-06T08:00:00Z",
     })).toBe(false);

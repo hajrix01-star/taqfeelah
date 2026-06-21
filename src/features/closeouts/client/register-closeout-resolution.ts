@@ -15,11 +15,15 @@ export type RegisterCloseoutApiFetchContext = {
 
 export function createFetchStoreCloseoutsForRegister(
   context: RegisterCloseoutApiFetchContext,
-): ((storeId: string, date: string) => Promise<CloseoutRecord[]>) | undefined {
-  if (!context.enabled) return undefined;
+): (storeId: string, date: string) => Promise<CloseoutRecord[]> {
+  if (!context.enabled) {
+    return async () => [];
+  }
   const organizationId = typeof context.organizationId === "string" ? context.organizationId.trim() : "";
   const actorUserId = typeof context.actorUserId === "string" ? context.actorUserId.trim() : "";
-  if (!organizationId || !actorUserId) return undefined;
+  if (!organizationId || !actorUserId) {
+    return async () => [];
+  }
 
   return async (storeId, date) => {
     const rows = await fetchStoreCloseoutsViaApi({
@@ -47,7 +51,7 @@ export function buildRegisterCloseoutResolveOptions({
   return {
     cachedCloseouts,
     reloadCloseouts,
-    ...(fetchStoreCloseouts ? { fetchStoreCloseouts } : {}),
+    fetchStoreCloseouts,
   };
 }
 

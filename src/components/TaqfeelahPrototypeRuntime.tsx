@@ -358,6 +358,7 @@ export default function TaqfeelahPrototypeRuntime() {
                 activeViewBusiness={activeViewBusiness}
                 homeReportChannelConfig={homeReportChannelConfig}
                 entriesApiEnabled={entriesApiEnabled}
+                closeoutsApiEnabled={closeoutsApiEnabled}
                 closeoutsApiOrganizationId={closeoutsApiOrganizationId}
                 ownerApiUserId={ownerApiUserId}
                 ownerNotebookApiEnabled={ownerNotebookApiEnabled}
@@ -441,6 +442,7 @@ export default function TaqfeelahPrototypeRuntime() {
               operationalEntries={operationalEntries}
               phase9ApiEnabled={phase9ApiEnabled}
               entriesApiEnabled={entriesApiEnabled}
+              closeoutsApiEnabled={closeoutsApiEnabled}
               runtimeApiAuth={runtimeApiAuth}
               ownerManageCloseout={ownerManageCloseout}
               ownerDisplayName={ownerDisplayName}
