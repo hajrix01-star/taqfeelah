@@ -57,33 +57,29 @@ export async function resolveCloseoutRecordForRegisterSummary(
 ): Promise<CloseoutRecord | null> {
   if (!summary?.closeoutId) return null;
 
-  const fromCache = resolveCloseoutForOperationalEntry(
-    { closeoutId: summary.closeoutId },
-    cachedCloseouts,
-  );
-  if (fromCache) return fromCache;
+  const ref = { closeoutId: summary.closeoutId };
 
-  if (typeof reloadCloseouts === "function") {
-    try {
-      const reloaded = await reloadCloseouts();
-      const match = resolveCloseoutForOperationalEntry(
-        { closeoutId: summary.closeoutId },
-        reloaded,
-      );
-      if (match) return match;
-    } catch {
-      // fall through to date-scoped fetch
-    }
-  }
+  const fromCache = resolveCloseoutForOperationalEntry(ref, cachedCloseouts);
+  if (fromCache) return fromCache;
 
   const storeId = String(summary.businessId || "");
   const date = String(summary.date || "");
   if (storeId && date && typeof fetchStoreCloseouts === "function") {
     try {
       const rows = await fetchStoreCloseouts(storeId, date);
-      return resolveCloseoutForOperationalEntry({ closeoutId: summary.closeoutId }, rows) || null;
-    } catch {
-      return null;
+      const match = resolveCloseoutForOperationalEntry(ref, rows);
+      if (match) return match;
+    } catch (error) {
+      console.warn("register closeout date-scoped fetch failed", error);
+    }
+  }
+
+  if (typeof reloadCloseouts === "function") {
+    try {
+      const reloaded = await reloadCloseouts();
+      return resolveCloseoutForOperationalEntry(ref, reloaded) || null;
+    } catch (error) {
+      console.warn("register closeout reload failed", error);
     }
   }
 

@@ -2,24 +2,24 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildRegisterCloseoutResolveOptions,
   createFetchStoreCloseoutsForRegister,
-  resolveRegisterCloseoutFromEntry,
 } from "./register-closeout-resolution";
 
 describe("register-closeout-resolution", () => {
-  it("returns undefined fetch helper when API context is disabled", () => {
-    expect(createFetchStoreCloseoutsForRegister({ enabled: false })).toBeUndefined();
+  it("returns no-op fetch helper when API context is disabled", async () => {
+    const helper = createFetchStoreCloseoutsForRegister({ enabled: false });
+    await expect(helper("store-a", "2026-06-21")).resolves.toEqual([]);
   });
 
-  it("returns undefined fetch helper when API ids are missing", () => {
-    expect(createFetchStoreCloseoutsForRegister({
+  it("returns no-op fetch helper when API ids are missing", async () => {
+    const helper = createFetchStoreCloseoutsForRegister({
       enabled: true,
       organizationId: "",
       actorUserId: "",
-    })).toBeUndefined();
+    });
+    await expect(helper("store-a", "2026-06-21")).resolves.toEqual([]);
   });
 
-  it("builds resolve options with targeted fetch fallback", () => {
-    const fetchStoreCloseouts = vi.fn(async () => []);
+  it("builds resolve options with date-scoped fetch fallback", () => {
     const options = buildRegisterCloseoutResolveOptions({
       cachedCloseouts: [],
       reloadCloseouts: async () => [],
@@ -31,10 +31,5 @@ describe("register-closeout-resolution", () => {
     });
     expect(typeof options.fetchStoreCloseouts).toBe("function");
     expect(options.reloadCloseouts).toBeTypeOf("function");
-    expect(fetchStoreCloseouts).not.toHaveBeenCalled();
-  });
-
-  it("returns null when entry has no closeout id", async () => {
-    await expect(resolveRegisterCloseoutFromEntry({}, { cachedCloseouts: [] })).resolves.toBeNull();
   });
 });

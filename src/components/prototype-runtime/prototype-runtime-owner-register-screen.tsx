@@ -677,6 +677,7 @@ export function OwnerRegisterConnected({
   onRestoreOperation = () => {},
   lang = "ar" as DisplayLang,
   registerEntriesApiEnabled = false,
+  closeoutsApiEnabled = false,
   registerEntriesApiOrganizationId,
   registerEntriesApiActorUserId,
   registerEntriesApiActorRole = "owner",
@@ -688,14 +689,18 @@ export function OwnerRegisterConnected({
   const { syncError, closeouts, reloadCloseoutsFromApi, deleteCloseout } = useDailyCloseouts();
 
   const closeoutApiContext = useMemo(() => ({
-    enabled: registerEntriesApiEnabled,
+    enabled: Boolean(
+      closeoutsApiEnabled
+      && registerEntriesApiOrganizationId
+      && registerEntriesApiActorUserId,
+    ),
     organizationId: registerEntriesApiOrganizationId,
     actorUserId: registerEntriesApiActorUserId,
     actorRole: registerEntriesApiActorRole,
   }), [
+    closeoutsApiEnabled,
     registerEntriesApiActorRole,
     registerEntriesApiActorUserId,
-    registerEntriesApiEnabled,
     registerEntriesApiOrganizationId,
   ]);
 

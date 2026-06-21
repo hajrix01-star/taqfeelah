@@ -81,8 +81,7 @@ export function isCloseoutWorkflowFailure(result: unknown): result is CloseoutWo
 /** Client-only draft closeouts never exist on the server until submit succeeds. */
 export function isLocalDraftCloseout(closeout: DailyCloseoutRecord | null | undefined): boolean {
   if (!closeout || typeof closeout !== "object") return false;
-  if (closeout.status === CLOSEOUT_STATUS.DRAFT && !closeout.submittedAt) return true;
-  return typeof closeout.id === "string" && closeout.id.startsWith("dc-");
+  return closeout.status === CLOSEOUT_STATUS.DRAFT && !closeout.submittedAt;
 }
 
 export function readCloseoutEvents(): CloseoutEvent[] {

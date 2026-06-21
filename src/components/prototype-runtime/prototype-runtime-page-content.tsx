@@ -71,6 +71,7 @@ export function PrototypeRuntimePageContent({
   activeViewBusiness,
   homeReportChannelConfig,
   entriesApiEnabled,
+  closeoutsApiEnabled = false,
   closeoutsApiOrganizationId,
   ownerApiUserId,
   ownerNotebookApiEnabled = false,
@@ -276,6 +277,7 @@ export function PrototypeRuntimePageContent({
           notebookTheme={notebookTheme}
           resolveStoreSalesChannels={resolveStoreSalesChannels}
           registerEntriesApiEnabled={entriesApiEnabled && registerEntriesPaginationEnabled}
+          closeoutsApiEnabled={closeoutsApiEnabled}
           registerEntriesApiOrganizationId={closeoutsApiOrganizationId ?? undefined}
           registerEntriesApiActorUserId={ownerApiUserId ?? undefined}
           registerEntriesApiActorRole="owner"
