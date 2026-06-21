@@ -112,7 +112,17 @@ jobs:
           port="${VPS_PORT:-22}"
           mkdir -p "$HOME/.ssh"
           chmod 700 "$HOME/.ssh"
-          ssh-keyscan -p "$port" -H "$VPS_HOST" > "$HOME/.ssh/known_hosts"
+          rm -f "$HOME/.ssh/known_hosts.tmp"
+          for attempt in 1 2 3 4 5; do
+            if ssh-keyscan -T 10 -p "$port" -H "$VPS_HOST" > "$HOME/.ssh/known_hosts.tmp" &&
+              [ -s "$HOME/.ssh/known_hosts.tmp" ]; then
+              mv "$HOME/.ssh/known_hosts.tmp" "$HOME/.ssh/known_hosts"
+              break
+            fi
+            echo "SSH host-key scan attempt ${attempt} failed; retrying..."
+            sleep 3
+          done
+          test -s "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
           if [ -n "$VPS_SSH_PRIVATE_KEY" ]; then
             printf '%s\n' "$VPS_SSH_PRIVATE_KEY" > "$HOME/.ssh/id_vps"
