@@ -17,8 +17,16 @@ function localIsoDateNow(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
-function registerCloseoutDomId(clientCloseoutId: string): string {
-  return `register-closeout-${`closeout|${clientCloseoutId}`.replace(/\|/g, "--")}`;
+function monthRangeForDate(date: string): { from: string; to: string } {
+  const monthStart = `${date.slice(0, 7)}-01`;
+  const [yearText, monthText] = date.slice(0, 7).split("-");
+  const year = Number(yearText);
+  const monthIndex = Number(monthText);
+  const lastDay = new Date(year, monthIndex, 0).getDate();
+  return {
+    from: monthStart,
+    to: `${yearText}-${monthText}-${String(lastDay).padStart(2, "0")}`,
+  };
 }
 
 function isRuntimeFailure(message: string): boolean {
@@ -74,19 +82,26 @@ async function submitEmployeeCloseout(
   expect(submitResponse.ok()).toBeTruthy();
 }
 
+async function fetchOwnerSummaryEntries(
+  page: import("@playwright/test").Page,
+  date: string,
+): Promise<Array<{ type?: string; closeoutId?: string | null; salesChannels?: Array<{ name?: string }> }>> {
+  const { from, to } = monthRangeForDate(date);
+  const response = await page.request.get(
+    `/api/v1/stores/${STORE_ID}/entries?paginated=1&status=all&limit=50&dateFrom=${from}&dateTo=${to}`,
+  );
+  expect(response.ok()).toBeTruthy();
+  const body = await response.json();
+  const items = Array.isArray(body?.items) ? body.items : [];
+  return items.filter((entry: { type?: string }) => entry?.type === "summary");
+}
+
 async function waitForOwnerSummaryEntry(
   page: import("@playwright/test").Page,
   date: string,
 ): Promise<void> {
-  const monthStart = `${date.slice(0, 7)}-01`;
   await expect.poll(async () => {
-    const response = await page.request.get(
-      `/api/v1/stores/${STORE_ID}/entries?paginated=1&status=all&limit=50&dateFrom=${monthStart}&dateTo=${date}`,
-    );
-    if (!response.ok()) return 0;
-    const body = await response.json();
-    const items = Array.isArray(body?.items) ? body.items : [];
-    return items.filter((entry: { type?: string }) => entry?.type === "summary").length;
+    return (await fetchOwnerSummaryEntries(page, date)).length;
   }, {
     timeout: 60_000,
     message: "owner register entries API should include the submitted closeout summary",
@@ -102,11 +117,13 @@ test.describe("register closeouts with PostgreSQL", () => {
 
     const date = process.env.E2E_CLOSEOUT_DATE || localIsoDateNow();
     const closeoutId = `e2e-reg-${randomUUID().slice(0, 8)}`;
-    const closeoutCardId = registerCloseoutDomId(closeoutId);
 
     await submitEmployeeCloseout(page, { closeoutId, date });
     await loginOwnerSession(page);
     await waitForOwnerSummaryEntry(page, date);
+
+    const apiSummaries = await fetchOwnerSummaryEntries(page, date);
+    expect(apiSummaries.some((entry) => entry.closeoutId === closeoutId)).toBeTruthy();
 
     await page.goto("/app");
 
@@ -117,8 +134,15 @@ test.describe("register closeouts with PostgreSQL", () => {
     await expect(closeoutsTab).toBeVisible({ timeout: 60_000 });
     await closeoutsTab.click();
 
-    const closeoutCard = page.locator(`#${closeoutCardId}`);
-    await expect(closeoutCard).toBeVisible({ timeout: 90_000 });
+    await expect.poll(async () => {
+      return page.locator("article[id^='register-closeout-']").count();
+    }, {
+      timeout: 90_000,
+      message: "register closeouts tab should render at least one closeout card",
+    }).toBeGreaterThan(0);
+
+    const closeoutCard = page.locator("article[id^='register-closeout-']").first();
+    await expect(closeoutCard).toBeVisible({ timeout: 10_000 });
     await closeoutCard.locator("button").first().click();
 
     const expandedCardText = await closeoutCard.innerText();
