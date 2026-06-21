@@ -95,7 +95,6 @@ export function OwnerRegisterScreen({
   registerEntriesApiActorUserId = "",
   registerEntriesApiActorRole = "owner",
   registerEntriesSyncError = "",
-  closeoutsSyncError = "",
   entryAttachmentsApiEnabled = false,
   entryAttachmentsApiOrganizationId = "",
   entryAttachmentsApiActorUserId = "",
@@ -213,7 +212,8 @@ export function OwnerRegisterScreen({
     ? apiRegisterEntries
     : localPeriodEntries;
   const registerEntriesLoadError = Boolean(registerEntriesApiEnabled && (apiRegisterEntriesError || registerEntriesSyncError));
-  const closeoutsLoadError = Boolean(registerEntriesApiEnabled && (apiRegisterEntriesError || registerEntriesSyncError || closeoutsSyncError));
+  // Closeout cards are built from register entries — do not block on closeouts-provider sync errors.
+  const closeoutsLoadError = Boolean(registerEntriesApiEnabled && (apiRegisterEntriesError || registerEntriesSyncError));
   const registerEntriesLoadErrorMessage = lang === "ar"
     ? "تعذر تحميل العمليات من الخادم. لم يتم عرض بيانات محلية بديلة."
     : "Failed to load operations from the server. No local fallback data is shown.";
@@ -686,7 +686,7 @@ export function OwnerRegisterConnected({
   setOwnerEditCloseout?: (closeout: DailyCloseoutRecord | null) => void;
   onCloseoutDeleted?: (closeout: DailyCloseoutRecord) => void | Promise<void>;
 }) {
-  const { syncError, closeouts, reloadCloseoutsFromApi, deleteCloseout } = useDailyCloseouts();
+  const { closeouts, reloadCloseoutsFromApi, deleteCloseout } = useDailyCloseouts();
 
   const closeoutApiContext = useMemo(() => ({
     enabled: Boolean(
@@ -747,7 +747,6 @@ export function OwnerRegisterConnected({
     <OwnerRegisterScreen
       {...props}
       lang={lang}
-      closeoutsSyncError={syncError}
       onVoidOperation={onVoidOperation}
       onRestoreOperation={onRestoreOperation}
       onEditCloseout={handleEditCloseout}

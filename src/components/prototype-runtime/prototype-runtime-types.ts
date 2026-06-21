@@ -897,7 +897,6 @@ export type OwnerRegisterScreenProps = {
   registerEntriesApiActorUserId?: string;
   registerEntriesApiActorRole?: string;
   registerEntriesSyncError?: string;
-  closeoutsSyncError?: string;
   entryAttachmentsApiEnabled?: boolean;
   entryAttachmentsApiOrganizationId?: string;
   entryAttachmentsApiActorUserId?: string;
