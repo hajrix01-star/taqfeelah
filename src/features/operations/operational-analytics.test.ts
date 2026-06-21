@@ -105,6 +105,24 @@ describe("operational analytics summary helpers", () => {
     expect(channels).toEqual([{ channelId: "cash", name: "cash", amount: 0.3 }]);
   });
 
+  it("merges legacy and uuid channel ids under one badge label", () => {
+    const cashUuid = "9bc40d4f-c773-4ba3-87db-b8bb1467dafb";
+    const configuredChannels = [{ id: cashUuid, legacyId: "cash", text: "cash", custom: false }];
+    const channels = aggregateSalesChannelsFromGroupEntries([
+      {
+        type: "summary",
+        status: "active",
+        salesChannels: [
+          { channelId: "cash", amount: 100 },
+          { channelId: cashUuid, name: cashUuid, amount: 50 },
+        ],
+      },
+    ], "all", (row) => String(row.channelId || ""), configuredChannels);
+    expect(channels).toHaveLength(1);
+    expect(channels[0]?.amount).toBe(150);
+    expect(String(channels[0]?.name)).not.toMatch(/[0-9a-f-]{36}/i);
+  });
+
   it("uses halala domain math instead of float drift for fractional riyals", () => {
     const entries = [
       { type: "summary", amount: 0.1, status: "active" },

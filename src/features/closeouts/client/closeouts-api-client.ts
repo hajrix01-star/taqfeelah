@@ -5,6 +5,8 @@ import {
   toMoneyHalalas,
 } from "@/core/client/api-id-utils";
 import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+import { sanitizeCloseoutChannelDisplayName } from "@/features/daily-closeouts/closeout-sales-normalize";
+import { isUuidLike } from "@/features/org-config/client/sales-channel-display";
 import { normalizeCloseoutSubmitMode } from "@/features/closeouts/closeout-submit-mode";
 import {
   getCloseoutApiMaps,
@@ -322,9 +324,13 @@ export async function fetchStoreCloseoutsViaApi({
     const salesRows = Array.isArray(record.sales)
       ? record.sales.map((row) => {
         const salesRow = row as Record<string, unknown>;
+        const channelId = reverseLookupKeyByUuid(String(salesRow?.channelId), salesChannelIdMap) || salesRow?.channelId;
+        const rawName = salesRow?.name;
+        const fallbackLabel = typeof channelId === "string" && !isUuidLike(channelId) ? channelId : "Channel";
         return {
           ...salesRow,
-          channelId: reverseLookupKeyByUuid(String(salesRow?.channelId), salesChannelIdMap) || salesRow?.channelId,
+          channelId,
+          name: sanitizeCloseoutChannelDisplayName(rawName, fallbackLabel),
         };
       })
       : record.sales;

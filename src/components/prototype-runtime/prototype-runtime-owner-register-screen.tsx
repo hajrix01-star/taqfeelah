@@ -27,6 +27,7 @@ import {
   closeoutDeleteRequestToRecord,
   resolveCloseoutRecordForRegisterSummary,
 } from "@/features/closeouts/client/register-closeout-summary-service";
+import { buildRegisterCloseoutResolveOptions } from "@/features/closeouts/client/register-closeout-resolution";
 import { buildRegisterAttachmentGalleryModel } from "@/features/entries/client/register-outflow-attachments";
 import {
   logPeriodScopeLabel,
@@ -675,6 +676,10 @@ export function OwnerRegisterConnected({
   onVoidOperation = () => {},
   onRestoreOperation = () => {},
   lang = "ar" as DisplayLang,
+  registerEntriesApiEnabled = false,
+  registerEntriesApiOrganizationId,
+  registerEntriesApiActorUserId,
+  registerEntriesApiActorRole = "owner",
   ...props
 }: OwnerRegisterScreenProps & {
   setOwnerEditCloseout?: (closeout: DailyCloseoutRecord | null) => void;
@@ -682,13 +687,26 @@ export function OwnerRegisterConnected({
 }) {
   const { syncError, closeouts, reloadCloseoutsFromApi, deleteCloseout } = useDailyCloseouts();
 
+  const closeoutApiContext = useMemo(() => ({
+    enabled: registerEntriesApiEnabled,
+    organizationId: registerEntriesApiOrganizationId,
+    actorUserId: registerEntriesApiActorUserId,
+    actorRole: registerEntriesApiActorRole,
+  }), [
+    registerEntriesApiActorRole,
+    registerEntriesApiActorUserId,
+    registerEntriesApiEnabled,
+    registerEntriesApiOrganizationId,
+  ]);
+
   const resolveSummaryCloseout = useCallback(async (summary: RegisterCloseoutSummary) => {
-    const resolved = await resolveCloseoutRecordForRegisterSummary(summary, {
+    const resolved = await resolveCloseoutRecordForRegisterSummary(summary, buildRegisterCloseoutResolveOptions({
       cachedCloseouts: closeouts as import("@/features/operations/client/operations-client-types").CloseoutRecord[],
       reloadCloseouts: async () => reloadCloseoutsFromApi() as Promise<import("@/features/operations/client/operations-client-types").CloseoutRecord[]>,
-    });
+      apiContext: closeoutApiContext,
+    }));
     return (resolved as DailyCloseoutRecord | null) ?? null;
-  }, [closeouts, reloadCloseoutsFromApi]);
+  }, [closeoutApiContext, closeouts, reloadCloseoutsFromApi]);
 
   const handleEditCloseout = useCallback(async (summary: RegisterCloseoutSummary) => {
     const closeout = await resolveSummaryCloseout(summary);

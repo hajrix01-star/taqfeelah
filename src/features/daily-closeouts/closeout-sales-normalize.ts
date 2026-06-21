@@ -69,6 +69,28 @@ function channelMatchesRow(channel: SalesChannelConfig, row: CloseoutSalesChanne
     || rowKey === extended.legacyId;
 }
 
+function normalizeSalesRowName(value: unknown): string {
+  return sanitizeCloseoutChannelDisplayName(value, "");
+}
+
+/** Match persisted closeout sales rows to configured channels (ids, legacy ids, snapshot names). */
+export function findCloseoutSalesRowForChannel(
+  salesRows: CloseoutSalesChannelRow[],
+  channel: SalesChannelConfig,
+  channelLabel = "",
+): CloseoutSalesChannelRow | undefined {
+  const byId = salesRows.find((row) => channelMatchesRow(channel, row));
+  if (byId) return byId;
+
+  const label = normalizeSalesRowName(channelLabel);
+  if (!label) return undefined;
+
+  return salesRows.find((row) => {
+    const rowLabel = normalizeSalesRowName(row.name);
+    return rowLabel && rowLabel === label;
+  });
+}
+
 /**
  * Canonical write path: build array-shaped sales for submit / owner edit / API.
  */
@@ -100,7 +122,7 @@ export function mergeCloseoutSalesFromChannelValues(
   salesChannels.forEach((channel) => {
     const amount = Number(valuesById[channel.id] || 0);
     if (amount <= 0) return;
-    const matched = existing.find((row) => channelMatchesRow(channel, row));
+    const matched = findCloseoutSalesRowForChannel(existing, channel, resolveChannelLabel(channel));
     rows.push({
       channelId: String(matched?.channelId || matched?.id || channel.id),
       name: resolveChannelLabel(channel),
