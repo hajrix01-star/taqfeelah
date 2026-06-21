@@ -18,6 +18,7 @@ import {
   buildRegisterDayReportRows,
   buildRegisterSalesChannelOptions,
   filterRegisterLogEntries,
+  mergeRegisterConfiguredChannels,
   registerLogFilterCount,
   resolveRegisterCloseoutActorLabel,
   summarizeRegisterPeriod,
@@ -64,8 +65,9 @@ import { OwnerRegisterAttachmentsGallery } from "./owner-register-attachments-ga
 import { RegisterStoreChips } from "./owner-register-store-filter";
 import { RegisterDashboardCard, OwnerRegisterReportGranularityToggle } from "./owner-register-ui-primitives";
 import { confirmCloseoutDelete, alertCloseoutNotFound } from "@/lib/ui/app-dialog/app-dialog-helpers";
+import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import type { RegisterCloseoutSummary } from "@/features/entries/client/register-log-display";
-import type { OwnerRegisterScreenProps, PrototypeAttachmentPreviewState } from "./prototype-runtime-types";
+import type { OwnerRegisterScreenProps, PrototypeAttachmentPreviewState, PrototypeChannel } from "./prototype-runtime-types";
 import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { DisplayLang } from "@/core/i18n/display-locale";
 import type { RegisterReportGranularity } from "@/features/reports/client/register-report-granularity";
@@ -96,7 +98,22 @@ export function OwnerRegisterScreen({
   entryAttachmentsApiOrganizationId = "",
   entryAttachmentsApiActorUserId = "",
   entryAttachmentsApiActorRole = "owner",
+  configuredChannels: configuredChannelsProp,
+  resolveStoreSalesChannels,
 }: OwnerRegisterScreenProps) {
+  const configuredChannels = useMemo(() => {
+    if (configuredChannelsProp?.length) return configuredChannelsProp;
+    if (typeof resolveStoreSalesChannels === "function") {
+      const businessIds = businessesList.map((business) => String(business.id || "")).filter(Boolean);
+      const merged = mergeRegisterConfiguredChannels(
+        selectedBusiness ?? "all",
+        businessIds,
+        resolveStoreSalesChannels as (storeId: string) => Array<Record<string, unknown>>,
+      );
+      if (merged.length) return merged as PrototypeChannel[];
+    }
+    return channels as PrototypeChannel[];
+  }, [businessesList, configuredChannelsProp, resolveStoreSalesChannels, selectedBusiness]);
   const [period, setPeriod] = useState("month");
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
@@ -252,25 +269,25 @@ export function OwnerRegisterScreen({
   const salesChannelOptions = useMemo(
     () => buildRegisterSalesChannelOptions(
       periodEntries,
-      (row) => resolveSalesChannelRowLabel(row, channels, lang, channelName),
+      (row) => resolveSalesChannelRowLabel(row, configuredChannels, lang, channelName),
       text(lang, "allPaymentMethods"),
-      channels,
+      configuredChannels,
     ),
-    [periodEntries, lang],
+    [configuredChannels, periodEntries, lang],
   );
   const filteredEntries = useMemo(
-    () => filterRegisterLogEntries(periodEntries, logFilters, entryCategory, channels),
-    [periodEntries, logFilters],
+    () => filterRegisterLogEntries(periodEntries, logFilters, entryCategory, configuredChannels),
+    [configuredChannels, periodEntries, logFilters],
   );
   const attachmentGallery = useMemo(
     () => buildRegisterAttachmentGalleryModel(periodEntries, logFilters, {
-      resolveLabel: (entry, labelLang) => operationDisplayLabel(entry, labelLang, logFilters.salesChannel),
+      resolveLabel: (entry, labelLang) => operationDisplayLabel(entry, labelLang, logFilters.salesChannel, configuredChannels),
       resolveExpenseCategory: entryCategory,
-      configuredChannels: channels,
+      configuredChannels,
       todayIso: todayIsoDate(),
       lang,
     }),
-    [lang, logFilters, periodEntries],
+    [configuredChannels, lang, logFilters, periodEntries],
   );
   const attachmentGalleryEmptyMessage = logFilters.type === "summary"
     ? (lang === "ar" ? "تبويب المرفقات يعرض فواتير الخارج فقط." : "The attachments tab shows outflow invoices only.")
@@ -300,8 +317,8 @@ export function OwnerRegisterScreen({
     () => buildRegisterCloseoutSummaries({
       filteredEntries,
       salesChannelFilter: logFilters.salesChannel,
-      configuredChannels: channels,
-      resolveChannelName: (row) => resolveSalesChannelRowLabel(row, channels, lang, channelName),
+      configuredChannels,
+      resolveChannelName: (row) => resolveSalesChannelRowLabel(row, configuredChannels, lang, channelName),
       resolveStore: (businessId) => businessesList.find((business) => business.id === businessId) || null,
       resolveActorLabel: (group) => resolveRegisterCloseoutActorLabel(group, {
         ownerUserId: registerEntriesApiEnabled ? registerEntriesApiActorUserId : "",
@@ -309,7 +326,7 @@ export function OwnerRegisterScreen({
         enteredByOwnerLabel: text(lang, "enteredByOwner"),
       }),
     }),
-    [filteredEntries, businessesList, lang, logFilters.salesChannel, registerEntriesApiActorUserId, registerEntriesApiEnabled],
+    [businessesList, configuredChannels, filteredEntries, lang, logFilters.salesChannel, registerEntriesApiActorUserId, registerEntriesApiEnabled],
   );
   useEffect(() => {
     if (!visibleEntries.length) {
@@ -348,9 +365,9 @@ export function OwnerRegisterScreen({
       logFilters.salesChannel,
       salesChannelOptions,
       text(lang, "paymentMethods"),
-      channels,
+      configuredChannels,
     ),
-    [filteredEntries, lang, logFilters.salesChannel, salesChannelOptions],
+    [configuredChannels, filteredEntries, lang, logFilters.salesChannel, salesChannelOptions],
   );
   const registerPeriodLabel = logPeriodScopeLabel(lang, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo);
   const resolvedGeneralReportGranularity = resolveRegisterReportGranularity(
@@ -399,7 +416,7 @@ export function OwnerRegisterScreen({
     selectedYear,
     customFrom,
     customTo,
-    configuredChannels: channels,
+    configuredChannels,
     includeOutflowTransactions: false,
   });
   const apiDailyGeneralReportRows = useMemo(
@@ -594,6 +611,7 @@ export function OwnerRegisterScreen({
             registerLoadMoreRef={registerLoadMoreRef}
             loadError={registerEntriesLoadError}
             loadErrorMessage={registerEntriesLoadErrorMessage}
+            configuredChannels={configuredChannels}
           />
         )}
 
@@ -616,6 +634,7 @@ export function OwnerRegisterScreen({
             registerScrollId={registerScrollId}
             loadError={closeoutsLoadError}
             loadErrorMessage={closeoutsLoadErrorMessage}
+            configuredChannels={configuredChannels}
           />
         )}
 
@@ -675,7 +694,14 @@ export function OwnerRegisterConnected({
         // fall through
       }
     }
-    return closeout;
+    if (!closeout && summary.closeoutId) {
+      return {
+        id: summary.closeoutId,
+        storeId: summary.businessId,
+        date: summary.date,
+      } as DailyCloseoutRecord;
+    }
+    return (closeout as DailyCloseoutRecord | null) ?? null;
   }, [closeouts, reloadCloseoutsFromApi]);
 
   const handleEditCloseout = useCallback(async (summary: RegisterCloseoutSummary) => {
@@ -694,8 +720,17 @@ export function OwnerRegisterConnected({
       return;
     }
     if (!(await confirmCloseoutDelete(lang, text))) return;
-    await deleteCloseout(String(closeout.id || ""), closeout);
-    await onCloseoutDeleted(closeout as DailyCloseoutRecord);
+    try {
+      await deleteCloseout(String(closeout.id || ""), closeout);
+      await onCloseoutDeleted(closeout as DailyCloseoutRecord);
+    } catch (error) {
+      console.warn("closeout delete failed", error);
+      await appAlert({
+        lang,
+        title: lang === "ar" ? "تعذر حذف التقفيلة." : "Failed to delete closeout.",
+        variant: "danger",
+      });
+    }
   }, [deleteCloseout, lang, onCloseoutDeleted, resolveSummaryCloseout]);
 
   return (

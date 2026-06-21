@@ -787,6 +787,7 @@ export type PrototypeRuntimePageContentProps = {
   reportingBusinesses: Array<PrototypeBusiness | Record<string, unknown>>;
   archivedBusinessIds: string[];
   registerEntriesPaginationEnabled: boolean;
+  resolveStoreSalesChannels: (storeId: string) => Array<PrototypeChannel | Record<string, unknown>>;
   configuredBusinesses: Array<PrototypeBusiness | Record<string, unknown>>;
   setConfiguredBusinesses: PrototypeSetState<Array<PrototypeBusiness | Record<string, unknown>>>;
   setArchivedBusinessIds: PrototypeSetState<string[]>;
@@ -898,6 +899,8 @@ export type OwnerRegisterScreenProps = {
   entryAttachmentsApiOrganizationId?: string;
   entryAttachmentsApiActorUserId?: string;
   entryAttachmentsApiActorRole?: string;
+  configuredChannels?: PrototypeChannel[];
+  resolveStoreSalesChannels?: (storeId: string) => Array<PrototypeChannel | Record<string, unknown>>;
 };
 
 export type OwnerHomeProps = {

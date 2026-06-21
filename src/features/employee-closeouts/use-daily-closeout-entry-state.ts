@@ -4,7 +4,7 @@ import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react"
 import { text } from "../../components/prototype-runtime/prototype-runtime-demo-data";
 import { prepareAttachment } from "@/features/attachments/client/prototype-attachment-storage";
 import { sanitizeAmountInput, toAmount } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
-import { computeCloseoutTotals, salesRecordFromChannels } from "../daily-closeouts/closeout-calculations";
+import { computeCloseoutTotals, salesArrayFromRecord, salesRecordFromChannels } from "../daily-closeouts/closeout-calculations";
 import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-demo-store";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import { confirmCloseoutSubmit } from "@/lib/ui/app-dialog/app-dialog-helpers";
@@ -50,12 +50,14 @@ export function useDailyCloseoutEntryState({
   ) || channel.id);
   const [date, setDate] = useState(initialCloseout?.date || todayIsoDate());
   const [salesValues, setSalesValues] = useState<Record<string, string>>(() => {
-    const record = (initialCloseout?.sales && !Array.isArray(initialCloseout.sales)
-      ? initialCloseout.sales
-      : {}) as Record<string, CloseoutSalesChannelRow>;
+    const salesRows = salesArrayFromRecord(initialCloseout?.sales);
     const values: Record<string, string> = {};
     salesChannels.forEach((ch) => {
-      const row = record[ch.id] || Object.values(record).find((item) => item.channelId === ch.id);
+      const row = salesRows.find((item) => (
+        item.channelId === ch.id
+        || item.channelId === (ch as { apiChannelId?: string }).apiChannelId
+        || item.channelId === (ch as { legacyId?: string }).legacyId
+      ));
       values[ch.id] = row ? String(row.amount || "") : "";
     });
     return values;

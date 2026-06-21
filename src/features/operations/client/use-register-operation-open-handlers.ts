@@ -34,9 +34,11 @@ export function useRegisterOperationOpenHandlers({
       readDailyCloseouts,
     });
     if (action.kind === "closeout" && action.closeout) {
+      setSelected(null);
       setOwnerManageCloseout(action.closeout);
       return;
     }
+    setOwnerManageCloseout(null);
     setSelected(action.entry);
   }, [
     bindsToServerAuth,

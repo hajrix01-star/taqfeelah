@@ -18,6 +18,8 @@ import { resolveOwnerCloseoutsFetchWindow } from "@/features/closeouts/client/ow
 import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
 import type { LoadOperationalEntriesFn } from "@/features/operations/client/operations-client-types";
 
+type StoreChannel = Record<string, unknown>;
+
 type CloseoutRecord = {
   id?: string;
   storeId?: string;
@@ -46,6 +48,7 @@ export function usePrototypeRuntimeCloseoutsApi({
   currentEmployeeChannelConfig,
   ownerCloseoutBusiness,
   ownerCloseoutChannelConfig,
+  resolveStoreSalesChannels = () => [] as StoreChannel[],
   notifyOperationalSyncWrite = null,
 }: {
   lang: "ar" | "en";
@@ -62,6 +65,7 @@ export function usePrototypeRuntimeCloseoutsApi({
   currentEmployeeChannelConfig?: { channels?: Array<Record<string, unknown>> };
   ownerCloseoutBusiness?: { id?: string };
   ownerCloseoutChannelConfig?: { channels?: Array<Record<string, unknown>> };
+  resolveStoreSalesChannels?: (storeId: string) => StoreChannel[];
   notifyOperationalSyncWrite?: ((event: string) => void) | null;
 }) {
   const syncSubmitCloseoutToApi = useCallback(async ({
@@ -81,8 +85,9 @@ export function usePrototypeRuntimeCloseoutsApi({
     const actorUserId = submitEmployee?.apiUserId || submitEmployee?.id;
     const storeChannels = currentEmployeeChannelConfig?.channels || [];
     const isOwnerSubmit = submitEmployee?.submitActorRole === "owner";
-    const ownerStoreChannels = isOwnerSubmit && ownerCloseoutBusiness?.id === closeout?.storeId
-      ? (ownerCloseoutChannelConfig?.channels || [])
+    const closeoutStoreId = String(closeout?.storeId || "");
+    const ownerStoreChannels = isOwnerSubmit && closeoutStoreId
+      ? resolveStoreSalesChannels(closeoutStoreId)
       : storeChannels;
     const submitFailure = diagnoseCloseoutSubmitFailure({
       organizationId: closeoutsApiOrganizationId,
@@ -130,6 +135,7 @@ export function usePrototypeRuntimeCloseoutsApi({
     notifyOperationalSyncWrite,
     ownerCloseoutBusiness?.id,
     ownerCloseoutChannelConfig?.channels,
+    resolveStoreSalesChannels,
   ]);
 
   const loadCloseoutsFromApi = useCallback(async () => {

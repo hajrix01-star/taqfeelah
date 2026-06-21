@@ -372,6 +372,7 @@ export default function TaqfeelahPrototypeRuntime() {
                 reportingBusinesses={reportingBusinesses}
                 archivedBusinessIds={archivedBusinessIds}
                 registerEntriesPaginationEnabled={REGISTER_ENTRIES_PAGINATION_ENABLED}
+                resolveStoreSalesChannels={resolveStoreSalesChannels}
                 configuredBusinesses={configuredBusinesses}
                 setConfiguredBusinesses={setConfiguredBusinesses}
                 setArchivedBusinessIds={setArchivedBusinessIds}

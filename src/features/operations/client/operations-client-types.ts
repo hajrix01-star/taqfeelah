@@ -163,7 +163,7 @@ export type UseRegisterOperationOpenHandlersProps = {
   setSelected?: (value: OperationalEntry | null) => void;
   setVoidTarget?: (value: OperationalEntry | null) => void;
   setRestoreTarget?: (value: OperationalEntry | null) => void;
-  setOwnerManageCloseout?: (value: CloseoutRecord) => void;
+  setOwnerManageCloseout?: (value: CloseoutRecord | null) => void;
 };
 
 export type UseRegisterOperationsStateProps =

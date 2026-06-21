@@ -37,6 +37,13 @@ function normalizeChannelAlias(value: unknown) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
+function isUuidLike(value: unknown): boolean {
+  return typeof value === "string"
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim());
+}
+
+export { isUuidLike };
+
 function resolveAliasTextKey(value: unknown) {
   if (typeof value !== "string") return "";
   const trimmed = value.trim();
@@ -111,7 +118,7 @@ export function resolveSalesChannelRowLabel(
   ));
   if (configured) return channelNameFn(configured, lang);
 
-  if (typeof row?.name === "string" && row.name.trim()) {
+  if (typeof row?.name === "string" && row.name.trim() && !isUuidLike(row.name)) {
     return resolveSalesChannelLabel({
       custom: true,
       nameAr: row.name,
@@ -119,7 +126,7 @@ export function resolveSalesChannelRowLabel(
     }, lang, (currentLang, key) => channelNameFn({ text: key, custom: false }, currentLang));
   }
 
-  return channelId;
+  return channelId && !isUuidLike(channelId) ? channelId : "";
 }
 
 /**

@@ -143,6 +143,7 @@ export function PrototypeRuntimeOverlayStack({
         />
       )}
       <OperationModal
+        key={resolvedSelected?.id || "operation-modal"}
         lang={lang}
         item={resolvedSelected}
         onClose={() => setSelected(null)}
@@ -152,6 +153,7 @@ export function PrototypeRuntimeOverlayStack({
         ownerEditSource={selectedOwnerEditSource}
         canVoid={Boolean(resolvedSelected?.businessId) && !archivedBusinessIds.includes(String(resolvedSelected?.businessId))}
         canRestore={Boolean(resolvedSelected?.businessId) && !archivedBusinessIds.includes(String(resolvedSelected?.businessId))}
+        businessesList={activeBusinesses as PrototypeBusiness[]}
         {...entryAttachmentsApiProps}
       />
       <DuplicateSalesDialog

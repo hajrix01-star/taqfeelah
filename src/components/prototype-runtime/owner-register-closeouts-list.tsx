@@ -9,6 +9,7 @@ import {
   canVoidOperationalEntry,
 } from "@/features/operations/operational-entry-mutation-helpers";
 import { canManageRegisterCloseoutSummary } from "@/features/operations/client/register-closeout-summary-actions";
+import { registerSalesChannelBadgeLabel } from "@/features/entries/client/register-log-display";
 import { businessName, money, opTime, text } from "./prototype-runtime-demo-data";
 import {
   entryHasAttachment,
@@ -19,7 +20,7 @@ import { MoneyValue } from "./prototype-runtime-notebook";
 import { RegisterStoreBadge } from "./owner-register-ui-primitives";
 import CloseoutOwnerEditBadge from "@/features/closeouts/client/CloseoutOwnerEditBadge";
 import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
-import type { DisplayLang, EntryAttachmentApiContext, PrototypeBusiness, RegisterLogFilters } from "./prototype-runtime-types";
+import type { DisplayLang, EntryAttachmentApiContext, PrototypeBusiness, PrototypeChannel, RegisterLogFilters } from "./prototype-runtime-types";
 import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
 import type { RegisterCloseoutSummary } from "@/features/entries/client/register-log-display";
 import type { Dispatch, SetStateAction } from "react";
@@ -99,6 +100,7 @@ export function OwnerRegisterCloseoutsList({
   registerScrollId,
   loadError,
   loadErrorMessage,
+  configuredChannels,
 }: {
   lang: DisplayLang;
   closeoutSummaries: RegisterCloseoutSummaryRow[];
@@ -117,6 +119,7 @@ export function OwnerRegisterCloseoutsList({
   registerScrollId: (key: string) => string;
   loadError?: boolean;
   loadErrorMessage?: string;
+  configuredChannels?: PrototypeChannel[];
 }) {
   if (loadError) {
     return (
@@ -136,7 +139,7 @@ export function OwnerRegisterCloseoutsList({
         const isExpanded = expandedCloseoutKey === summary.key;
         const store = summary.store as PrototypeBusiness | null | undefined;
         const storeLabel = businessName(store, lang, true) || businessName(store, lang);
-        const operationRows = summary.operations.flatMap((item) => expandRegisterCloseoutOperationRows(item, lang, logFilters.salesChannel));
+        const operationRows = summary.operations.flatMap((item) => expandRegisterCloseoutOperationRows(item, lang, logFilters.salesChannel, configuredChannels));
         const summaryBusinessId = String(summary.businessId ?? store?.id ?? "");
         const canManageCloseout = canManageRegisterCloseoutSummary({
           closeoutId: summary.closeoutId ?? summary.key,
@@ -178,7 +181,7 @@ export function OwnerRegisterCloseoutsList({
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {summary.salesChannels.map((channel) => (
                         <span key={channel.channelId} className="rounded-full bg-[#E6F5E9] px-2 py-0.5 text-taq-nav font-bold text-[#257844]">
-                          {channel.label ?? channel.channelId} <span className="tabular-nums"><MoneyValue value={money(channel.amount, lang)} /></span>
+                          {registerSalesChannelBadgeLabel(channel, text(lang, "summary"))} <span className="tabular-nums"><MoneyValue value={money(channel.amount, lang)} /></span>
                         </span>
                       ))}
                     </div>

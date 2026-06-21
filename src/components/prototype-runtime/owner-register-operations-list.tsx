@@ -15,7 +15,7 @@ import { MoneyValue } from "./prototype-runtime-notebook";
 import { Badge } from "./prototype-runtime-shell-ui";
 import { RegisterStoreBadge } from "./owner-register-ui-primitives";
 import { AttachmentThumbButton } from "./prototype-runtime-attachment-ui";
-import type { DisplayLang, EntryAttachmentApiContext, PrototypeBusiness, RegisterLogFilters } from "./prototype-runtime-types";
+import type { DisplayLang, EntryAttachmentApiContext, PrototypeBusiness, PrototypeChannel, RegisterLogFilters } from "./prototype-runtime-types";
 import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 
@@ -37,6 +37,7 @@ export function OwnerRegisterOperationsList({
   registerLoadMoreRef,
   loadError,
   loadErrorMessage,
+  configuredChannels,
 }: {
   lang: DisplayLang;
   businessesList: PrototypeBusiness[];
@@ -55,6 +56,7 @@ export function OwnerRegisterOperationsList({
   registerLoadMoreRef?: RefObject<HTMLDivElement | null>;
   loadError?: boolean;
   loadErrorMessage?: string;
+  configuredChannels?: PrototypeChannel[];
 }) {
   if (loadError) {
     return (
@@ -97,7 +99,7 @@ export function OwnerRegisterOperationsList({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
                   {showStoreBadge ? <RegisterStoreBadge label={storeLabel} /> : null}
-                  <p className="truncate text-taq-meta font-black text-[#112A46]">{operationDisplayLabel(entry, lang, logFilters.salesChannel)}</p>
+                  <p className="truncate text-taq-meta font-black text-[#112A46]">{operationDisplayLabel(entry, lang, logFilters.salesChannel, configuredChannels)}</p>
                   {entryIsVoided(entry) && <Badge tone="warning">{text(lang, "voided")}</Badge>}
                   {entryHasAttachment(entry) && <Badge tone="navy">{text(lang, "attachmentExists")}</Badge>}
                 </div>
@@ -129,7 +131,7 @@ export function OwnerRegisterOperationsList({
                       onOpen={(src) => onPreviewAttachment?.(src, {
                         entry,
                         storeName: businessName(store, lang, true) || businessName(store, lang),
-                        operationLabel: operationDisplayLabel(entry, lang, logFilters.salesChannel),
+                        operationLabel: operationDisplayLabel(entry, lang, logFilters.salesChannel, configuredChannels),
                         entryTime: opTime(entry, lang),
                         daySequence: registerDaySequence,
                         sameDayCloseoutCount: registerSameDayCloseoutCount,
