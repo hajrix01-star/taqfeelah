@@ -2,9 +2,12 @@ import { sumUiAmounts, addUiAmounts } from "@/domain/cash-movement/calculations"
 import { resolveCloseoutOwnerEditMetaFromEntries } from "@/features/closeouts/client/closeout-owner-edit-display";
 import {
   entryRowMatchesIncomeSourceFilter,
-  isUuidLike,
   resolveRegisterIncomeSourceFilterKey,
 } from "@/features/org-config/client/sales-channel-display";
+import {
+  mergeRegisterConfiguredChannels,
+  registerSalesChannelBadgeLabel,
+} from "@/features/entries/client/register-channel-catalog";
 import { employeeDisplayName } from "@/features/employee-closeouts/employee-entries-display";
 import {
   aggregateSalesChannelsFromGroupEntries,
@@ -34,33 +37,7 @@ export const DEFAULT_REGISTER_LOG_FILTERS: RegisterLogFilters = {
   salesChannel: "all",
 };
 
-export function mergeRegisterConfiguredChannels(
-  selectedBusiness: string,
-  businessIds: string[] = [],
-  resolveStoreSalesChannels: (storeId: string) => Array<Record<string, unknown>> = () => [],
-): Array<Record<string, unknown>> {
-  const storeIds = selectedBusiness && selectedBusiness !== "all"
-    ? [selectedBusiness]
-    : businessIds.filter(Boolean);
-  const merged = new Map<string, Record<string, unknown>>();
-  storeIds.forEach((storeId) => {
-    resolveStoreSalesChannels(storeId).forEach((channel) => {
-      const key = String(channel.apiChannelId || channel.id || "");
-      if (key && !merged.has(key)) merged.set(key, channel);
-    });
-  });
-  return [...merged.values()];
-}
-
-export function registerSalesChannelBadgeLabel(
-  channel: { channelId?: string; amount?: number; label?: string; name?: string },
-  fallback = "",
-): string {
-  const explicit = channel.label ?? channel.name;
-  if (explicit && !isUuidLike(explicit)) return explicit;
-  if (channel.channelId && !isUuidLike(channel.channelId)) return channel.channelId;
-  return fallback;
-}
+export { mergeRegisterConfiguredChannels, registerSalesChannelBadgeLabel };
 
 export function resolveRegisterCloseoutActorLabel(
   group: RegisterCloseoutGroup,

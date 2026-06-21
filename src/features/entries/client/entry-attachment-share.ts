@@ -59,13 +59,39 @@ export function buildEntryAttachmentShareCaption({
   return [header, datePart, refPart ? `— ${refPart}` : ""].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 }
 
+function decodeDataUrlToBlob(dataUrl: string): Blob {
+  const match = /^data:([^;,]+)?(?:;charset=[^;,]+)?(;base64)?,([\s\S]*)$/i.exec(dataUrl);
+  if (!match) {
+    throw new Error("Invalid data URL for attachment share.");
+  }
+  const mime = match[1] || "image/jpeg";
+  const isBase64 = Boolean(match[2]);
+  const payload = match[3] || "";
+  if (isBase64) {
+    const binary = atob(payload);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+    return new Blob([bytes], { type: mime });
+  }
+  return new Blob([decodeURIComponent(payload)], { type: mime });
+}
+
 export async function dataUrlToShareFile(dataUrl: string, filename = "invoice"): Promise<File> {
+  const extensionFromMime = (mime: string) => (mime.includes("png") ? "png" : "jpg");
+  const safeName = String(filename).replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "") || "invoice";
+
+  if (dataUrl.startsWith("data:")) {
+    const blob = decodeDataUrlToBlob(dataUrl);
+    const type = blob.type || "image/jpeg";
+    return new File([blob], `${safeName}.${extensionFromMime(type)}`, { type });
+  }
+
   const response = await fetch(dataUrl);
   const blob = await response.blob();
   const type = blob.type || "image/jpeg";
-  const extension = type.includes("png") ? "png" : "jpg";
-  const safeName = String(filename).replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "") || "invoice";
-  return new File([blob], `${safeName}.${extension}`, { type });
+  return new File([blob], `${safeName}.${extensionFromMime(type)}`, { type });
 }
 
 export async function shareEntryAttachmentImage({

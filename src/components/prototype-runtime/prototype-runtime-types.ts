@@ -788,6 +788,8 @@ export type PrototypeRuntimePageContentProps = {
   archivedBusinessIds: string[];
   registerEntriesPaginationEnabled: boolean;
   resolveStoreSalesChannels: (storeId: string) => Array<PrototypeChannel | Record<string, unknown>>;
+  onDeleteRegisterCloseout?: (request: import("@/features/closeouts/client/register-closeout-summary-service").RegisterCloseoutDeleteRequest) => Promise<void>;
+  fetchCloseoutForRegisterSummary?: (summary: import("@/features/entries/client/register-log-display").RegisterCloseoutSummary) => Promise<import("@/features/daily-closeouts/daily-closeouts-types").DailyCloseoutRecord | null>;
   configuredBusinesses: Array<PrototypeBusiness | Record<string, unknown>>;
   setConfiguredBusinesses: PrototypeSetState<Array<PrototypeBusiness | Record<string, unknown>>>;
   setArchivedBusinessIds: PrototypeSetState<string[]>;
@@ -901,6 +903,9 @@ export type OwnerRegisterScreenProps = {
   entryAttachmentsApiActorRole?: string;
   configuredChannels?: PrototypeChannel[];
   resolveStoreSalesChannels?: (storeId: string) => Array<PrototypeChannel | Record<string, unknown>>;
+  onDeleteRegisterCloseout?: (request: import("@/features/closeouts/client/register-closeout-summary-service").RegisterCloseoutDeleteRequest) => Promise<void>;
+  fetchCloseoutForRegisterSummary?: (summary: import("@/features/entries/client/register-log-display").RegisterCloseoutSummary) => Promise<DailyCloseoutRecord | null>;
+  entriesApiDbSource?: boolean;
 };
 
 export type OwnerHomeProps = {

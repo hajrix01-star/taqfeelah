@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { motion } from "framer-motion";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
-import { resolveCloseoutFromRegisterSummary } from "@/features/operations/client/register-closeout-summary-actions";
 import { employeeDisplayName } from "@/features/employee-closeouts/employee-entries-display";
 import {
   buildRegisterCloseoutDayContext,
@@ -18,11 +17,16 @@ import {
   buildRegisterDayReportRows,
   buildRegisterSalesChannelOptions,
   filterRegisterLogEntries,
-  mergeRegisterConfiguredChannels,
   registerLogFilterCount,
   resolveRegisterCloseoutActorLabel,
   summarizeRegisterPeriod,
 } from "@/features/entries/client/register-log-display";
+import { useRegisterChannelCatalog } from "@/features/entries/client/register-channel-catalog";
+import {
+  buildRegisterCloseoutDeleteRequest,
+  closeoutDeleteRequestToRecord,
+  resolveCloseoutRecordForRegisterSummary,
+} from "@/features/closeouts/client/register-closeout-summary-service";
 import { buildRegisterAttachmentGalleryModel } from "@/features/entries/client/register-outflow-attachments";
 import {
   logPeriodScopeLabel,
@@ -36,11 +40,8 @@ import {
 } from "@/features/reports/client/register-report-granularity";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { entryIsActive, summarizeEntries } from "@/features/operations/operational-analytics";
-import { resolveSalesChannelRowLabel } from "@/features/org-config/client/sales-channel-display";
 import {
-  channels,
   businesses,
-  channelName,
   expenseCategories,
   text,
 } from "./prototype-runtime-demo-data";
@@ -98,22 +99,22 @@ export function OwnerRegisterScreen({
   entryAttachmentsApiOrganizationId = "",
   entryAttachmentsApiActorUserId = "",
   entryAttachmentsApiActorRole = "owner",
-  configuredChannels: configuredChannelsProp,
   resolveStoreSalesChannels,
+  onDeleteRegisterCloseout,
+  fetchCloseoutForRegisterSummary,
+  entriesApiDbSource = false,
 }: OwnerRegisterScreenProps) {
-  const configuredChannels = useMemo(() => {
-    if (configuredChannelsProp?.length) return configuredChannelsProp;
-    if (typeof resolveStoreSalesChannels === "function") {
-      const businessIds = businessesList.map((business) => String(business.id || "")).filter(Boolean);
-      const merged = mergeRegisterConfiguredChannels(
-        selectedBusiness ?? "all",
-        businessIds,
-        resolveStoreSalesChannels as (storeId: string) => Array<Record<string, unknown>>,
-      );
-      if (merged.length) return merged as PrototypeChannel[];
-    }
-    return channels as PrototypeChannel[];
-  }, [businessesList, configuredChannelsProp, resolveStoreSalesChannels, selectedBusiness]);
+  const businessIds = useMemo(
+    () => businessesList.map((business) => String(business.id || "")).filter(Boolean),
+    [businessesList],
+  );
+  const { configuredChannels: rawConfiguredChannels, resolveChannelRowLabel } = useRegisterChannelCatalog({
+    selectedBusiness,
+    businessIds,
+    resolveStoreSalesChannels,
+    lang,
+  });
+  const configuredChannels = rawConfiguredChannels as PrototypeChannel[];
   const [period, setPeriod] = useState("month");
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
@@ -269,11 +270,11 @@ export function OwnerRegisterScreen({
   const salesChannelOptions = useMemo(
     () => buildRegisterSalesChannelOptions(
       periodEntries,
-      (row) => resolveSalesChannelRowLabel(row, configuredChannels, lang, channelName),
+      (row) => resolveChannelRowLabel(row),
       text(lang, "allPaymentMethods"),
       configuredChannels,
     ),
-    [configuredChannels, periodEntries, lang],
+    [configuredChannels, periodEntries, lang, resolveChannelRowLabel],
   );
   const filteredEntries = useMemo(
     () => filterRegisterLogEntries(periodEntries, logFilters, entryCategory, configuredChannels),
@@ -318,7 +319,7 @@ export function OwnerRegisterScreen({
       filteredEntries,
       salesChannelFilter: logFilters.salesChannel,
       configuredChannels,
-      resolveChannelName: (row) => resolveSalesChannelRowLabel(row, configuredChannels, lang, channelName),
+      resolveChannelName: resolveChannelRowLabel,
       resolveStore: (businessId) => businessesList.find((business) => business.id === businessId) || null,
       resolveActorLabel: (group) => resolveRegisterCloseoutActorLabel(group, {
         ownerUserId: registerEntriesApiEnabled ? registerEntriesApiActorUserId : "",
@@ -326,7 +327,7 @@ export function OwnerRegisterScreen({
         enteredByOwnerLabel: text(lang, "enteredByOwner"),
       }),
     }),
-    [businessesList, configuredChannels, filteredEntries, lang, logFilters.salesChannel, registerEntriesApiActorUserId, registerEntriesApiEnabled],
+    [businessesList, configuredChannels, filteredEntries, lang, logFilters.salesChannel, registerEntriesApiActorUserId, registerEntriesApiEnabled, resolveChannelRowLabel],
   );
   useEffect(() => {
     if (!visibleEntries.length) {
@@ -676,33 +677,28 @@ export function OwnerRegisterConnected({
   onCloseoutDeleted = async () => {},
   onVoidOperation = () => {},
   onRestoreOperation = () => {},
+  onDeleteRegisterCloseout,
+  fetchCloseoutForRegisterSummary,
+  entriesApiDbSource = false,
   lang = "ar" as DisplayLang,
   ...props
 }: OwnerRegisterScreenProps & {
   setOwnerEditCloseout?: (closeout: DailyCloseoutRecord | null) => void;
   onCloseoutDeleted?: (closeout: DailyCloseoutRecord) => void | Promise<void>;
 }) {
-  const { events: _closeoutEvents, syncError, closeouts, reloadCloseoutsFromApi, deleteCloseout } = useDailyCloseouts();
+  const { syncError, closeouts, reloadCloseoutsFromApi, deleteCloseout } = useDailyCloseouts();
 
   const resolveSummaryCloseout = useCallback(async (summary: RegisterCloseoutSummary) => {
-    let closeout = resolveCloseoutFromRegisterSummary(summary, closeouts as Parameters<typeof resolveCloseoutFromRegisterSummary>[1]);
-    if (!closeout && typeof reloadCloseoutsFromApi === "function") {
-      try {
-        const remoteCloseouts = await reloadCloseoutsFromApi();
-        closeout = resolveCloseoutFromRegisterSummary(summary, remoteCloseouts as Parameters<typeof resolveCloseoutFromRegisterSummary>[1]);
-      } catch {
-        // fall through
-      }
+    if (typeof fetchCloseoutForRegisterSummary === "function") {
+      const loaded = await fetchCloseoutForRegisterSummary(summary);
+      if (loaded) return loaded;
     }
-    if (!closeout && summary.closeoutId) {
-      return {
-        id: summary.closeoutId,
-        storeId: summary.businessId,
-        date: summary.date,
-      } as DailyCloseoutRecord;
-    }
-    return (closeout as DailyCloseoutRecord | null) ?? null;
-  }, [closeouts, reloadCloseoutsFromApi]);
+    const resolved = await resolveCloseoutRecordForRegisterSummary(summary, {
+      cachedCloseouts: closeouts as import("@/features/operations/client/operations-client-types").CloseoutRecord[],
+      reloadCloseouts: async () => reloadCloseoutsFromApi() as Promise<import("@/features/operations/client/operations-client-types").CloseoutRecord[]>,
+    });
+    return (resolved as DailyCloseoutRecord | null) ?? null;
+  }, [closeouts, fetchCloseoutForRegisterSummary, reloadCloseoutsFromApi]);
 
   const handleEditCloseout = useCallback(async (summary: RegisterCloseoutSummary) => {
     const closeout = await resolveSummaryCloseout(summary);
@@ -714,15 +710,20 @@ export function OwnerRegisterConnected({
   }, [lang, resolveSummaryCloseout, setOwnerEditCloseout]);
 
   const handleDeleteCloseout = useCallback(async (summary: RegisterCloseoutSummary) => {
-    const closeout = await resolveSummaryCloseout(summary);
-    if (!closeout) {
+    const deleteRequest = buildRegisterCloseoutDeleteRequest(summary);
+    if (!deleteRequest) {
       await alertCloseoutNotFound(lang, text);
       return;
     }
     if (!(await confirmCloseoutDelete(lang, text))) return;
     try {
-      await deleteCloseout(String(closeout.id || ""), closeout);
-      await onCloseoutDeleted(closeout as DailyCloseoutRecord);
+      if (entriesApiDbSource && typeof onDeleteRegisterCloseout === "function") {
+        await onDeleteRegisterCloseout(deleteRequest);
+      } else {
+        const closeout = closeoutDeleteRequestToRecord(deleteRequest);
+        await deleteCloseout(String(closeout.id || ""), closeout as DailyCloseoutRecord);
+      }
+      await onCloseoutDeleted(closeoutDeleteRequestToRecord(deleteRequest) as DailyCloseoutRecord);
     } catch (error) {
       console.warn("closeout delete failed", error);
       await appAlert({
@@ -731,7 +732,7 @@ export function OwnerRegisterConnected({
         variant: "danger",
       });
     }
-  }, [deleteCloseout, lang, onCloseoutDeleted, resolveSummaryCloseout]);
+  }, [deleteCloseout, entriesApiDbSource, lang, onCloseoutDeleted, onDeleteRegisterCloseout]);
 
   return (
     <OwnerRegisterScreen

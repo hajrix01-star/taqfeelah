@@ -4,7 +4,12 @@ import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react"
 import { text } from "../../components/prototype-runtime/prototype-runtime-demo-data";
 import { prepareAttachment } from "@/features/attachments/client/prototype-attachment-storage";
 import { sanitizeAmountInput, toAmount } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
-import { computeCloseoutTotals, salesArrayFromRecord, salesRecordFromChannels } from "../daily-closeouts/closeout-calculations";
+import { computeCloseoutTotals } from "../daily-closeouts/closeout-calculations";
+import {
+  buildCloseoutSalesFromChannelValues,
+  mergeCloseoutSalesFromChannelValues,
+  normalizeCloseoutSalesToArray,
+} from "../daily-closeouts/closeout-sales-normalize";
 import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-demo-store";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import { confirmCloseoutSubmit } from "@/lib/ui/app-dialog/app-dialog-helpers";
@@ -50,13 +55,14 @@ export function useDailyCloseoutEntryState({
   ) || channel.id);
   const [date, setDate] = useState(initialCloseout?.date || todayIsoDate());
   const [salesValues, setSalesValues] = useState<Record<string, string>>(() => {
-    const salesRows = salesArrayFromRecord(initialCloseout?.sales);
+    const salesRows = normalizeCloseoutSalesToArray(initialCloseout?.sales);
     const values: Record<string, string> = {};
     salesChannels.forEach((ch) => {
+      const extended = ch as SalesChannelConfig & { apiChannelId?: string; legacyId?: string };
       const row = salesRows.find((item) => (
         item.channelId === ch.id
-        || item.channelId === (ch as { apiChannelId?: string }).apiChannelId
-        || item.channelId === (ch as { legacyId?: string }).legacyId
+        || item.channelId === extended.apiChannelId
+        || item.channelId === extended.legacyId
       ));
       values[ch.id] = row ? String(row.amount || "") : "";
     });
@@ -93,29 +99,36 @@ export function useDailyCloseoutEntryState({
   );
 
   const totals = useMemo((): CloseoutTotals => {
-    const salesRecord = salesRecordFromChannels(
+    const salesRows = mergeCloseoutSalesFromChannelValues(
       salesChannels,
       Object.fromEntries(salesChannels.map((ch) => [ch.id, toAmount(salesValues[ch.id])])),
+      initialCloseout?.sales,
     );
-    return computeCloseoutTotals(salesRecord, outflows);
-  }, [outflows, salesChannels, salesValues]);
+    return computeCloseoutTotals(salesRows, outflows);
+  }, [initialCloseout?.sales, outflows, salesChannels, salesValues]);
 
   const buildCloseout = useCallback((outflowRows: CloseoutOutflowRow[] = outflows): DailyCloseoutRecord => {
-    const salesRecord = salesRecordFromChannels(
-      salesChannels,
-      Object.fromEntries(salesChannels.map((ch) => [ch.id, toAmount(salesValues[ch.id])])),
-    );
+    const salesRows = isOwnerEdit
+      ? mergeCloseoutSalesFromChannelValues(
+        salesChannels,
+        Object.fromEntries(salesChannels.map((ch) => [ch.id, toAmount(salesValues[ch.id])])),
+        initialCloseout?.sales,
+      )
+      : buildCloseoutSalesFromChannelValues(
+        salesChannels,
+        Object.fromEntries(salesChannels.map((ch) => [ch.id, toAmount(salesValues[ch.id])])),
+      );
     const base: DailyCloseoutRecord = {
       ...initialCloseout,
       date,
       storeName,
       notebookTheme: initialCloseout?.notebookTheme || notebookTheme || "yellow",
-      sales: salesRecord,
+      sales: salesRows,
       outflows: outflowRows,
       attachments,
     };
     return withCloseoutTotals(base);
-  }, [attachments, date, initialCloseout, notebookTheme, outflows, salesChannels, salesValues, storeName]);
+  }, [attachments, date, initialCloseout, isOwnerEdit, notebookTheme, outflows, salesChannels, salesValues, storeName]);
 
   const pushOutflow = useCallback(() => {
     const row = buildOutflowRow(outAmount);
