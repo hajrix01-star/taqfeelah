@@ -7,6 +7,7 @@ import {
   buildRegisterCloseoutResolveOptions,
   resolveRegisterCloseoutFromEntry,
 } from "@/features/closeouts/client/register-closeout-resolution";
+import { resolveCloseoutRecordForRegisterSummary } from "@/features/closeouts/client/register-closeout-summary-service";
 import { useRegisterEntriesCatalog } from "@/features/operations/client/use-register-entries-catalog";
 import { resolveCloseoutForOperationalEntry } from "@/features/operations/client/register-operations-selection";
 import { useResolvedSelectedOperation } from "@/features/operations/client/use-resolved-selected-operation";
@@ -23,7 +24,7 @@ import { HelpCenterSheet } from "./AuthGateSection";
 import { NotebookShareModal } from "./prototype-runtime-notebook-share-modal";
 import { OwnerCloseoutEditFlow, OwnerCloseoutModals } from "./prototype-runtime-owner-closeout-modals";
 import { text } from "./prototype-runtime-demo-data";
-import { alertCloseoutNotFoundForEntry } from "@/lib/ui/app-dialog/app-dialog-helpers";
+import { alertCloseoutNotFoundForEntry, alertCloseoutNotFound } from "@/lib/ui/app-dialog/app-dialog-helpers";
 import type { OperationalEntry, PrototypeBusiness, PrototypeChannel, PrototypeLang, NotebookShareSnapshot } from "./prototype-runtime-types";
 import type { PrototypeRuntimeOverlayStackProps, PrototypeCloseoutRecord } from "./prototype-runtime-types";
 import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
@@ -122,14 +123,38 @@ export function PrototypeRuntimeOverlayStack({
   );
 
   const handleEditOwnerCloseoutFromEntry = useCallback(async (entry: OperationalEntry) => {
+    setSelected(null);
     const closeout = await resolveRegisterCloseoutFromEntry(entry, closeoutResolveOptions);
     if (!closeout) {
       await alertCloseoutNotFoundForEntry(lang, text);
       return;
     }
-    setSelected(null);
     setOwnerEditCloseout(closeout as PrototypeCloseoutRecord);
   }, [closeoutResolveOptions, lang, setOwnerEditCloseout, setSelected]);
+
+  const handleEditOwnerCloseoutFromManage = useCallback(async (closeout: DailyCloseoutRecord) => {
+    setOwnerManageCloseout(null);
+    const resolved = await resolveCloseoutRecordForRegisterSummary(
+      {
+        closeoutId: closeout.id,
+        businessId: closeout.storeId,
+        date: closeout.date,
+      },
+      closeoutResolveOptions,
+    );
+    if (!resolved) {
+      await alertCloseoutNotFound(lang, text);
+      return;
+    }
+    setOwnerEditCloseout(resolved as PrototypeCloseoutRecord);
+  }, [closeoutResolveOptions, lang, setOwnerEditCloseout, setOwnerManageCloseout]);
+
+  const registerChannelLabel = useCallback(
+    (channel: PrototypeChannel | Record<string, unknown>) => (
+      String((channel as PrototypeChannel).displayName || channelName(channel as PrototypeChannel, lang))
+    ),
+    [lang],
+  );
 
   return (
     <>
@@ -216,14 +241,11 @@ export function PrototypeRuntimeOverlayStack({
         ownerDisplayName={ownerDisplayName}
         ownerNotebookTheme={notebookTheme}
         resolveSalesChannels={(storeId) => resolveStoreSalesChannels(storeId) as PrototypeChannel[]}
-        channelLabel={(channel) => String((channel as PrototypeChannel).displayName || channelName(channel as PrototypeChannel, lang))}
+        channelLabel={registerChannelLabel}
         onCloseoutUpdated={(closeout) => handleOwnerCloseoutUpdated(closeout as PrototypeCloseoutRecord)}
         onCloseoutDeleted={(closeout) => handleOwnerCloseoutDeleted(closeout as PrototypeCloseoutRecord)}
         onClose={() => setOwnerManageCloseout(null)}
-        onOwnerEditCloseout={(closeout: DailyCloseoutRecord) => {
-          setOwnerManageCloseout(null);
-          setOwnerEditCloseout(closeout as PrototypeCloseoutRecord);
-        }}
+        onOwnerEditCloseout={handleEditOwnerCloseoutFromManage}
         {...ownerCloseoutAttachmentsApiProps}
       />
       <OwnerCloseoutEditFlow
@@ -232,7 +254,7 @@ export function PrototypeRuntimeOverlayStack({
         ownerActor={ownerCloseoutActor}
         ownerNotebookTheme={notebookTheme}
         resolveSalesChannels={(storeId) => resolveStoreSalesChannels(storeId) as PrototypeChannel[]}
-        channelLabel={(channel) => String((channel as PrototypeChannel).displayName || channelName(channel as PrototypeChannel, lang))}
+        channelLabel={registerChannelLabel}
         onCloseoutUpdated={(closeout) => handleOwnerCloseoutUpdated(closeout as PrototypeCloseoutRecord)}
         onClose={() => setOwnerEditCloseout(null)}
       />
