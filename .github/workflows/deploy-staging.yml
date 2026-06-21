@@ -203,7 +203,6 @@ jobs:
           DB_VOLUME=taqfeelah-staging-postgres-data
           APP_PORT=3011
           DB_PORT=5434
-          DOMAIN=staging.taqfeelah.com
           ARTIFACT="/tmp/taqfeelah-staging-${STAGING_RUN_ID}.tar.gz"
           ENV_INPUT="/tmp/taqfeelah-staging-${STAGING_RUN_ID}.env"
 
@@ -340,13 +339,20 @@ jobs:
           fi
           systemctl reload nginx
 
-          curl -fsS --max-time 10 -H "Host: ${DOMAIN}" http://127.0.0.1/api/v1/meta >/dev/null
           systemctl is-active "$SERVICE"
           docker ps --filter "name=^/${DB_CONTAINER}$" --format '{{.Names}}|{{.Status}}|{{.Ports}}'
           ss -ltn | grep -E '127.0.0.1:(3011|5434)'
           rm -f "$ARTIFACT" "$ENV_INPUT"
           echo 'Isolated staging deployment verified.'
           REMOTE
+
+      - name: Confirm staging route via public address
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 20 \
+            -H "Host: staging.taqfeelah.com" \
+            "http://${VPS_HOST}/api/v1/meta" >/dev/null
+          echo 'Staging route is reachable through the public server address.'
 
       - name: Confirm production endpoints remain healthy
         run: |
