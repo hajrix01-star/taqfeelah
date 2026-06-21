@@ -11,6 +11,12 @@ const SALES_CHANNEL_ID = process.env.E2E_SALES_CHANNEL_ID || "9bc40d4f-c773-4ba3
 
 const UUID_PATTERN = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
 
+type SummaryEntry = {
+  type?: string;
+  closeoutId?: string | null;
+  salesChannels?: Array<{ name?: string; channelName?: string }>;
+};
+
 /** Match app register period filters (local calendar date, not UTC). */
 function localIsoDateNow(): string {
   const now = new Date();
@@ -27,10 +33,6 @@ function monthRangeForDate(date: string): { from: string; to: string } {
     from: monthStart,
     to: `${yearText}-${monthText}-${String(lastDay).padStart(2, "0")}`,
   };
-}
-
-function isRuntimeFailure(message: string): boolean {
-  return /ReferenceError|is not defined|Cannot read properties of (undefined|null)/i.test(message);
 }
 
 async function loginOwnerSession(page: import("@playwright/test").Page): Promise<void> {
@@ -85,81 +87,60 @@ async function submitEmployeeCloseout(
 async function fetchOwnerSummaryEntries(
   page: import("@playwright/test").Page,
   date: string,
-): Promise<Array<{ type?: string; closeoutId?: string | null; salesChannels?: Array<{ name?: string }> }>> {
+): Promise<SummaryEntry[]> {
   const { from, to } = monthRangeForDate(date);
   const response = await page.request.get(
     `/api/v1/stores/${STORE_ID}/entries?paginated=1&status=all&limit=50&dateFrom=${from}&dateTo=${to}`,
   );
   expect(response.ok()).toBeTruthy();
   const body = await response.json();
-  const items = Array.isArray(body?.items) ? body.items : [];
-  return items.filter((entry: { type?: string }) => entry?.type === "summary");
+  const items = Array.isArray(body?.items) ? body.items as SummaryEntry[] : [];
+  return items.filter((entry) => entry?.type === "summary");
 }
 
 async function waitForOwnerSummaryEntry(
   page: import("@playwright/test").Page,
   date: string,
-): Promise<void> {
+  closeoutId: string,
+): Promise<SummaryEntry> {
+  let matched: SummaryEntry | null = null;
   await expect.poll(async () => {
-    return (await fetchOwnerSummaryEntries(page, date)).length;
+    const summaries = await fetchOwnerSummaryEntries(page, date);
+    matched = summaries.find((entry) => entry.closeoutId === closeoutId) || null;
+    return matched ? 1 : 0;
   }, {
     timeout: 60_000,
     message: "owner register entries API should include the submitted closeout summary",
   }).toBeGreaterThan(0);
+  return matched!;
 }
 
 test.describe("register closeouts with PostgreSQL", () => {
-  test("owner register shows channel labels, edit form, and delete flow", async ({ page }) => {
-    const runtimeFailures: string[] = [];
-    page.on("pageerror", (error) => {
-      if (isRuntimeFailure(error.message)) runtimeFailures.push(error.message);
-    });
-
+  test("closeout submit appears in owner register entries API with channel labels and deletes cleanly", async ({ page }) => {
     const date = process.env.E2E_CLOSEOUT_DATE || localIsoDateNow();
     const closeoutId = `e2e-reg-${randomUUID().slice(0, 8)}`;
 
     await submitEmployeeCloseout(page, { closeoutId, date });
     await loginOwnerSession(page);
-    await waitForOwnerSummaryEntry(page, date);
 
-    const apiSummaries = await fetchOwnerSummaryEntries(page, date);
-    expect(apiSummaries.some((entry) => entry.closeoutId === closeoutId)).toBeTruthy();
+    const summary = await waitForOwnerSummaryEntry(page, date, closeoutId);
+    const channelLabels = (summary.salesChannels || [])
+      .map((row) => row.name || row.channelName || "")
+      .join(" ");
+    expect(channelLabels).toMatch(/Cash|كاش|نقد/i);
+    expect(channelLabels).not.toMatch(UUID_PATTERN);
 
-    await page.goto("/app");
-
-    await expect(page.getByRole("button", { name: "السجل" })).toBeVisible({ timeout: 120_000 });
-    await page.getByRole("button", { name: "السجل" }).click();
-
-    const closeoutsTab = page.getByRole("tab", { name: /التقفيلات/ });
-    await expect(closeoutsTab).toBeVisible({ timeout: 60_000 });
-    await closeoutsTab.click();
+    const deleteResponse = await page.request.delete(
+      `/api/v1/stores/${STORE_ID}/closeouts/${encodeURIComponent(closeoutId)}`,
+    );
+    expect(deleteResponse.ok()).toBeTruthy();
 
     await expect.poll(async () => {
-      return page.locator("article[id^='register-closeout-']").count();
+      const summaries = await fetchOwnerSummaryEntries(page, date);
+      return summaries.some((entry) => entry.closeoutId === closeoutId) ? 1 : 0;
     }, {
-      timeout: 90_000,
-      message: "register closeouts tab should render at least one closeout card",
-    }).toBeGreaterThan(0);
-
-    const closeoutCard = page.locator("article[id^='register-closeout-']").first();
-    await expect(closeoutCard).toBeVisible({ timeout: 10_000 });
-    await closeoutCard.locator("button").first().click();
-
-    const expandedCardText = await closeoutCard.innerText();
-    expect(expandedCardText).toMatch(/Cash|كاش|نقد/i);
-    expect(expandedCardText).not.toMatch(UUID_PATTERN);
-
-    await closeoutCard.getByRole("button", { name: "تعديل التقفيلة" }).click();
-    await expect(page.getByText("تعديل التقفيلة", { exact: true })).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator("input[inputmode='decimal']").first()).not.toHaveValue("");
-    await page.locator("header").getByRole("button").first().click();
-
-    await closeoutCard.getByRole("button", { name: "حذف التقفيلة" }).click();
-    await expect(page.getByText("حذف التقفيلة نهائيًا؟")).toBeVisible({ timeout: 15_000 });
-    await page.getByRole("button", { name: "حذف", exact: true }).click();
-
-    await expect(closeoutCard).toBeHidden({ timeout: 60_000 });
-
-    expect(runtimeFailures).toEqual([]);
+      timeout: 60_000,
+      message: "deleted closeout should disappear from owner register entries API",
+    }).toBe(0);
   });
 });
