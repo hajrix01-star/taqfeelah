@@ -10,6 +10,7 @@
  *   SEED_OWNER_USER_ID, AUTH_OWNER_USERNAME, AUTH_OWNER_PASSWORD,
  *   AUTH_OWNER_LOGIN_PHONE (Saudi E.164, for example +9665xxxxxxxx)
  *   SEED_EMPLOYEE_PIN_MAP — JSON: { "<user-uuid>": "<pin>", ... }
+ *   SEED_EMPLOYEE_LOGIN_PHONE_MAP — JSON: { "<user-uuid>": "+9665xxxxxxxx", ... }
  *   AUTH_SEED_FORCE_OWNER_CREDENTIALS=true — overwrite existing owner username/password
  *     (requires explicit AUTH_OWNER_USERNAME and AUTH_OWNER_PASSWORD; used by recovery flows)
  *
@@ -25,7 +26,7 @@ import {
   canForceUpdateOwnerIdentity,
   shouldPreserveExistingOwnerIdentity,
 } from "./lib/auth-seed-policy.mjs";
-import { normalizeOptionalOwnerLoginPhone } from "./lib/normalize-owner-login-phone.mjs";
+import { normalizeOptionalLoginPhone } from "./lib/normalize-login-phone.mjs";
 
 function valueFromEnv(name, fallback = "") {
   const value = process.env[name];
@@ -48,6 +49,21 @@ function parseEmployeePinMap() {
     return parsed;
   }
   return DEFAULT_EMPLOYEE_PINS;
+}
+
+function parseEmployeeLoginPhoneMap() {
+  const raw = valueFromEnv("SEED_EMPLOYEE_LOGIN_PHONE_MAP");
+  if (!raw) return {};
+  const parsed = JSON.parse(raw);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("SEED_EMPLOYEE_LOGIN_PHONE_MAP must be a JSON object.");
+  }
+  return Object.fromEntries(
+    Object.entries(parsed).map(([userId, phone]) => [
+      userId,
+      normalizeOptionalLoginPhone(phone, `SEED_EMPLOYEE_LOGIN_PHONE_MAP[${userId}]`),
+    ]),
+  );
 }
 
 async function upsertOwnerIdentity(client, { userId, username, password, loginPhone }) {
@@ -108,7 +124,7 @@ async function upsertOwnerIdentity(client, { userId, username, password, loginPh
   console.log(`Created owner identity for user ${userId} (username=${normalizedUsername}).`);
 }
 
-async function upsertEmployeeIdentity(client, { userId, pin }) {
+async function upsertEmployeeIdentity(client, { userId, pin, loginPhone }) {
   const passwordHash = await hashPassword(pin);
   const [existing] = (
     await client.query(
@@ -130,10 +146,13 @@ async function upsertEmployeeIdentity(client, { userId, pin }) {
     await client.query(
       `
       update auth_identities
-      set password_hash = $2, status = 'active', updated_at = now()
+      set password_hash = $2,
+          login_phone = coalesce($3, login_phone),
+          phone_number = coalesce($3, phone_number),
+          status = 'active', updated_at = now()
       where id = $1
       `,
-      [existing.id, passwordHash],
+      [existing.id, passwordHash, loginPhone],
     );
     console.log(`Updated employee pin identity for user ${userId}.`);
     return;
@@ -141,10 +160,12 @@ async function upsertEmployeeIdentity(client, { userId, pin }) {
 
   await client.query(
     `
-    insert into auth_identities (user_id, provider, password_hash, status)
-    values ($1, 'employee_pin', $2, 'active')
+    insert into auth_identities (
+      user_id, provider, password_hash, login_phone, phone_number, status
+    )
+    values ($1, 'employee_pin', $2, $3, $3, 'active')
     `,
-    [userId, passwordHash],
+    [userId, passwordHash, loginPhone],
   );
   console.log(`Created employee pin identity for user ${userId}.`);
 }
@@ -158,8 +179,9 @@ async function main() {
   const ownerUserId = valueFromEnv("SEED_OWNER_USER_ID", valueFromEnv("AUTH_OWNER_USER_ID", DEFAULT_OWNER_USER_ID));
   const ownerUsername = valueFromEnv("AUTH_OWNER_USERNAME", "hajri");
   const ownerPassword = valueFromEnv("AUTH_OWNER_PASSWORD", "hajri123");
-  const ownerLoginPhone = normalizeOptionalOwnerLoginPhone(valueFromEnv("AUTH_OWNER_LOGIN_PHONE"));
+  const ownerLoginPhone = normalizeOptionalLoginPhone(valueFromEnv("AUTH_OWNER_LOGIN_PHONE"));
   const employeePins = parseEmployeePinMap();
+  const employeeLoginPhones = parseEmployeeLoginPhoneMap();
 
   const client = new Client({ connectionString: databaseUrl });
   await client.connect();
@@ -174,7 +196,11 @@ async function main() {
 
     for (const [userId, pin] of Object.entries(employeePins)) {
       if (!userId || !pin) continue;
-      await upsertEmployeeIdentity(client, { userId, pin: String(pin) });
+      await upsertEmployeeIdentity(client, {
+        userId,
+        pin: String(pin),
+        loginPhone: employeeLoginPhones[userId] || null,
+      });
     }
 
     await client.query("commit");
