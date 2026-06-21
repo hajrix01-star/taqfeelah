@@ -27,6 +27,7 @@ describe("invalidateOperationalData", () => {
 
     expect(invalidateSpy).toHaveBeenCalledTimes(OPERATIONAL_SCOPES_AFTER_FINANCIAL_WRITE.length);
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: operationalQueryKeys.registerEntriesPrefix() });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: operationalQueryKeys.closeoutsPrefix() });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: operationalQueryKeys.reportsPrefix() });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: operationalQueryKeys.summaryPrefix() });
     expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: operationalQueryKeys.all });

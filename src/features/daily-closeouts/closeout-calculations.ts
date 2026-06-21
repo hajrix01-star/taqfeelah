@@ -1,6 +1,7 @@
 import { toHalalas, toRiyals } from "@/core/money/halalas";
 import { calculateDaySummary } from "@/domain/cash-movement/calculations";
 import type { EntryKind, MovementRow } from "@/domain/cash-movement/types";
+import { normalizeCloseoutSalesToArray } from "./closeout-sales-normalize";
 import type {
   CloseoutOutflow,
   CloseoutSalesChannelRow,
@@ -12,15 +13,7 @@ import type {
 const OUTFLOW_TYPES = new Set(["purchases", "expense", "withdrawal"]);
 
 function collectSalesRows(sales: CloseoutSalesRecord | null | undefined): number[] {
-  if (Array.isArray(sales)) {
-    return sales.map((row) => Number(row.amount || 0));
-  }
-  if (sales && typeof sales === "object") {
-    return Object.values(sales).map((value) => (
-      typeof value === "number" ? value : Number((value as CloseoutSalesChannelRow)?.amount || 0)
-    ));
-  }
-  return [];
+  return normalizeCloseoutSalesToArray(sales).map((row) => Number(row.amount || 0));
 }
 
 export function computeCloseoutTotals(
@@ -67,14 +60,5 @@ export function salesRecordFromChannels(
 export function salesArrayFromRecord(
   salesRecord: CloseoutSalesRecord | null | undefined,
 ): CloseoutSalesChannelRow[] {
-  if (!salesRecord) return [];
-  if (Array.isArray(salesRecord)) return salesRecord;
-  return Object.values(salesRecord).map((row) => {
-    const channelRow = typeof row === "object" ? row : { amount: row };
-    return {
-      channelId: channelRow.channelId || channelRow.id,
-      name: channelRow.name,
-      amount: Number(channelRow.amount || 0),
-    };
-  });
+  return normalizeCloseoutSalesToArray(salesRecord);
 }

@@ -498,6 +498,7 @@ export function usePrototypeRuntimeAppState() {
     currentEmployeeChannelConfig,
     ownerCloseoutBusiness: ownerCloseout.ownerCloseoutBusiness,
     ownerCloseoutChannelConfig: ownerCloseout.ownerCloseoutChannelConfig,
+    resolveStoreSalesChannels,
     notifyOperationalSyncWrite,
   });
 

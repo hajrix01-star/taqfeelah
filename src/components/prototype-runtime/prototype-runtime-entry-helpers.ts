@@ -23,33 +23,58 @@ const noteLabel = (entry: OperationalEntry, lang: PrototypeLang) => {
   return entry.note || text(lang, entry.type || "");
 };
 const entryCategory = (entry: OperationalEntry) => entry.type === "purchases" ? "purchases" : entry.type === "withdrawal" ? "withdrawal" : (entry.categoryId || "other");
-function resolveSummaryChannelName(row: Record<string, unknown>, lang: PrototypeLang) {
-  return resolveSalesChannelRowLabel(row, channels, lang, channelName);
+function resolveConfiguredChannels(configuredChannels?: PrototypeChannel[]): PrototypeChannel[] {
+  return configuredChannels?.length ? configuredChannels : (channels as PrototypeChannel[]);
 }
-function summarySalesChannelLabel(entry: OperationalEntry, lang: PrototypeLang, salesChannelFilter = "all") {
+
+function resolveSummaryChannelName(
+  row: Record<string, unknown>,
+  lang: PrototypeLang,
+  configuredChannels?: PrototypeChannel[],
+) {
+  return resolveSalesChannelRowLabel(row, resolveConfiguredChannels(configuredChannels), lang, channelName);
+}
+function summarySalesChannelLabel(
+  entry: OperationalEntry,
+  lang: PrototypeLang,
+  salesChannelFilter = "all",
+  configuredChannels?: PrototypeChannel[],
+) {
   return buildSummarySalesChannelLabel(
     entry,
-    (row) => resolveSummaryChannelName(row, lang),
+    (row) => resolveSummaryChannelName(row, lang, configuredChannels),
     salesChannelFilter,
     text(lang, "summary"),
   );
 }
-const operationDisplayLabel = (entry: OperationalEntry, lang: PrototypeLang, salesChannelFilter = "all") => {
+const operationDisplayLabel = (
+  entry: OperationalEntry,
+  lang: PrototypeLang,
+  salesChannelFilter = "all",
+  configuredChannels?: PrototypeChannel[],
+) => {
   if (entry.type === "expense") return text(lang, expenseCategories.find((item) => item.id === entryCategory(entry))?.label || "other");
-  if (entry.type === "summary") return summarySalesChannelLabel(entry, lang, salesChannelFilter);
+  if (entry.type === "summary") return summarySalesChannelLabel(entry, lang, salesChannelFilter, configuredChannels);
   return text(lang, entry.type || "");
 };
-function expandRegisterCloseoutOperationRows(item: OperationalEntry, lang: PrototypeLang, salesChannelFilter = "all") {
+function expandRegisterCloseoutOperationRows(
+  item: OperationalEntry,
+  lang: PrototypeLang,
+  salesChannelFilter = "all",
+  configuredChannels?: PrototypeChannel[],
+) {
+  const channelCatalog = resolveConfiguredChannels(configuredChannels);
   if (item.type !== "summary") {
-    return [{ key: item.id || "", item, label: operationDisplayLabel(item, lang, salesChannelFilter), amount: signedEntryAmount(item), isSale: false }];
+    return [{ key: item.id || "", item, label: operationDisplayLabel(item, lang, salesChannelFilter, channelCatalog), amount: signedEntryAmount(item), isSale: false }];
   }
   const rows = filterSummaryChannelRows(item, salesChannelFilter);
   if (!rows.length) {
-    return [{ key: item.id || "", item, label: summarySalesChannelLabel(item, lang, salesChannelFilter), amount: summaryEntryDisplayAmount(item, salesChannelFilter), isSale: true }];
+    return [{ key: item.id || "", item, label: summarySalesChannelLabel(item, lang, salesChannelFilter, channelCatalog), amount: summaryEntryDisplayAmount(item, salesChannelFilter), isSale: true }];
   }
   return rows.map((row, index) => {
-    const label = resolveSalesChannelRowLabel(row, channels as PrototypeChannel[], lang, channelName);
-    return { key: `${item.id}-${row.channelId}-${index}`, item, label, amount: Number(row.amount), isSale: true };
+    const label = resolveSalesChannelRowLabel(row, channelCatalog, lang, channelName);
+    const resolvedLabel = label || text(lang, "summary");
+    return { key: `${item.id}-${row.channelId}-${index}`, item, label: resolvedLabel, amount: Number(row.amount), isSale: true };
   });
 }
 const signedEntryAmount = (entry: OperationalEntry) => entry.type === "summary" ? Number(entry.amount || 0) : -Number(entry.amount || 0);

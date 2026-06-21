@@ -55,6 +55,7 @@ export default function AttachmentLightbox({
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [sharing, setSharing] = useState(false);
+  const shareFileRef = useRef<File | null>(null);
   const gestureRef = useRef({
     mode: "idle" as "idle" | "pinch" | "pan",
     pinchStartDistance: 0,
@@ -76,6 +77,22 @@ export default function AttachmentLightbox({
   useEffect(() => {
     if (open) resetView();
   }, [open, src, resetView]);
+
+  useEffect(() => {
+    shareFileRef.current = null;
+    if (!open || !src || !shareContext) return undefined;
+    let cancelled = false;
+    dataUrlToShareFile(src, `invoice-${shareContext.entry?.id || "attachment"}`)
+      .then((file) => {
+        if (!cancelled) shareFileRef.current = file;
+      })
+      .catch((error) => {
+        console.warn("attachment share pre-cache failed", error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, shareContext, src]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -163,7 +180,8 @@ export default function AttachmentLightbox({
     if (!src || !shareContext || sharing) return;
     setSharing(true);
     try {
-      const file = await dataUrlToShareFile(src, `invoice-${shareContext.entry?.id || "attachment"}`);
+      const file = shareFileRef.current
+        || await dataUrlToShareFile(src, `invoice-${shareContext.entry?.id || "attachment"}`);
       const caption = buildEntryAttachmentShareCaption({
         lang,
         storeName: shareContext.storeName || "",
@@ -174,6 +192,8 @@ export default function AttachmentLightbox({
         sameDayCloseoutCount: shareContext.sameDayCloseoutCount ?? 1,
       });
       await shareEntryAttachmentImage({ file, caption, lang });
+    } catch (error) {
+      console.warn("attachment whatsapp share failed", error);
     } finally {
       setSharing(false);
     }

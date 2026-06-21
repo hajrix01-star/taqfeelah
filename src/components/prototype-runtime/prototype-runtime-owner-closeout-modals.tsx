@@ -8,6 +8,7 @@ import { formatCalendarDate } from "@/features/reports/client/report-period-labe
 import { formatDateTimeLabel } from "./prototype-runtime-date-helpers";
 import { text } from "./prototype-runtime-demo-data";
 import { confirmCloseoutDelete } from "@/lib/ui/app-dialog/app-dialog-helpers";
+import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import type { DailyCloseoutRecord, SalesChannelConfig } from "@/features/daily-closeouts/daily-closeouts-types";
 import type {
   OwnerCloseoutEditFlowProps,
@@ -34,6 +35,7 @@ export function OwnerCloseoutEditFlow({
 
   return (
     <DailyCloseoutEntryFlow
+      key={`${editCloseout.id}-${editCloseout.storeId || "pending"}`}
       lang={lang}
       notebookTheme={ownerNotebookTheme || editCloseout.notebookTheme}
       closeout={editCloseout}
@@ -88,9 +90,18 @@ export function OwnerCloseoutModals({
       onEdit={() => onOwnerEditCloseout?.(ownerManageCloseout)}
       onDelete={async () => {
         if (!(await confirmCloseoutDelete(lang, text))) return;
-        deleteCloseout(String(ownerManageCloseout.id || ""), ownerManageCloseout);
-        await onCloseoutDeleted(ownerManageCloseout);
-        onClose();
+        try {
+          await deleteCloseout(String(ownerManageCloseout.id || ""), ownerManageCloseout);
+          await onCloseoutDeleted(ownerManageCloseout);
+          onClose();
+        } catch (error) {
+          console.warn("closeout delete failed", error);
+          await appAlert({
+            lang,
+            title: lang === "ar" ? "تعذر حذف التقفيلة." : "Failed to delete closeout.",
+            variant: "danger",
+          });
+        }
       }}
     />
   );

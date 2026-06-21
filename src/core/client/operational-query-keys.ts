@@ -40,4 +40,10 @@ export const operationalQueryKeys = {
     serializeContext(context),
   ] as const,
   homeAttachmentsPrefix: () => [...operationalQueryRoot, "home-attachments"] as const,
+  closeouts: (context: OperationalQueryKeyContext) => [
+    ...operationalQueryRoot,
+    "closeouts",
+    serializeContext(context),
+  ] as const,
+  closeoutsPrefix: () => [...operationalQueryRoot, "closeouts"] as const,
 };

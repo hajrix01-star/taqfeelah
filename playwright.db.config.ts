@@ -52,6 +52,11 @@ export default defineConfig({
         ahmed: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
         sara: "85f696d6-f655-4f2d-9f56-1f13c2f4c66c",
       }),
+      NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP: JSON.stringify({
+        cash: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+        mada: "7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c",
+        card: "bb16ea8f-8abf-4ca9-ab0d-e3a8f69f8db1",
+      }),
     },
   },
 });

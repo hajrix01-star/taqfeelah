@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { resolveStoreChannelConfig, EMPTY_STORE_CHANNEL_CONFIG } from "@/features/org-config/client/store-channel-config";
 import { text } from "./prototype-runtime-demo-data";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
+import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
 import type {
   PrototypeCloseoutRecord,
   UsePrototypeRuntimeOwnerCloseoutActionsProps,
@@ -113,7 +114,7 @@ export function usePrototypeRuntimeOwnerCloseoutActions({
       return;
     }
     if (entriesApiDbSource) {
-      await loadOperationalEntriesFromApi();
+      await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
       return;
     }
     removeOperationalEntriesForCloseout(closeout.id || "", closeout.storeId);
@@ -122,7 +123,7 @@ export function usePrototypeRuntimeOwnerCloseoutActions({
   const handleOwnerCloseoutDeleted = useCallback(async (closeout: PrototypeCloseoutRecord) => {
     if (!closeout) return;
     if (entriesApiDbSource) {
-      await loadOperationalEntriesFromApi();
+      await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
     } else {
       removeOperationalEntriesForCloseout(closeout.id || "", closeout.storeId);
     }

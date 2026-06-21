@@ -85,6 +85,7 @@ export function PrototypeRuntimePageContent({
   reportingBusinesses,
   archivedBusinessIds,
   registerEntriesPaginationEnabled,
+  resolveStoreSalesChannels,
   configuredBusinesses,
   setConfiguredBusinesses,
   setArchivedBusinessIds,
@@ -273,6 +274,7 @@ export function PrototypeRuntimePageContent({
           businessesList={reportingBusinesses as PrototypeBusiness[]}
           archivedBusinessIds={archivedBusinessIds}
           notebookTheme={notebookTheme}
+          resolveStoreSalesChannels={resolveStoreSalesChannels}
           registerEntriesApiEnabled={entriesApiEnabled && registerEntriesPaginationEnabled}
           registerEntriesApiOrganizationId={closeoutsApiOrganizationId ?? undefined}
           registerEntriesApiActorUserId={ownerApiUserId ?? undefined}

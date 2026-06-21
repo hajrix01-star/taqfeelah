@@ -16,6 +16,7 @@ export type OperationalSyncRefreshTarget = {
 
 const CLOSEOUT_SCOPES: OperationalInvalidationScope[] = [
   "register",
+  "closeouts",
   "reports",
   "summary",
   "homeAttachments",
@@ -24,6 +25,7 @@ const CLOSEOUT_SCOPES: OperationalInvalidationScope[] = [
 
 const ENTRY_SCOPES: OperationalInvalidationScope[] = [
   "register",
+  "closeouts",
   "reports",
   "summary",
   "homeAttachments",

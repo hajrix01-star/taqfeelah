@@ -4,6 +4,10 @@ import {
   entryRowMatchesIncomeSourceFilter,
   resolveRegisterIncomeSourceFilterKey,
 } from "@/features/org-config/client/sales-channel-display";
+import {
+  mergeRegisterConfiguredChannels,
+  registerSalesChannelBadgeLabel,
+} from "@/features/entries/client/register-channel-catalog";
 import { employeeDisplayName } from "@/features/employee-closeouts/employee-entries-display";
 import {
   aggregateSalesChannelsFromGroupEntries,
@@ -32,6 +36,8 @@ export const DEFAULT_REGISTER_LOG_FILTERS: RegisterLogFilters = {
   actor: "all",
   salesChannel: "all",
 };
+
+export { mergeRegisterConfiguredChannels, registerSalesChannelBadgeLabel };
 
 export function resolveRegisterCloseoutActorLabel(
   group: RegisterCloseoutGroup,
@@ -276,7 +282,7 @@ export function buildRegisterSalesChannelOptions(
 export type RegisterCloseoutSummary = RegisterCloseoutGroup & {
   store: Record<string, unknown> | null;
   totals: { sales: number; expense: number; net: number };
-  salesChannels: Array<{ channelId?: string; amount: number; label?: string }>;
+  salesChannels: Array<{ channelId?: string; amount: number; label?: string; name?: string }>;
   displaySales: number;
   operations: OperationalEntry[];
   actorLabel: string;

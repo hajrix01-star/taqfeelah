@@ -65,6 +65,7 @@ export function OperationModal({
   ownerEditSource = null,
   canVoid = true,
   canRestore = true,
+  businessesList = businesses,
   entryAttachmentsApiEnabled = false,
   entryAttachmentsApiOrganizationId = "",
   entryAttachmentsApiActorUserId = "",
@@ -79,6 +80,7 @@ export function OperationModal({
   ownerEditSource?: Record<string, unknown> | null;
   canVoid?: boolean;
   canRestore?: boolean;
+  businessesList?: PrototypeBusiness[];
   entryAttachmentsApiEnabled?: boolean;
   entryAttachmentsApiOrganizationId?: string;
   entryAttachmentsApiActorUserId?: string;
@@ -98,6 +100,7 @@ export function OperationModal({
   }, [item?.id]);
 
   if (!item) return null;
+  const store = businessesList.find((business) => business.id === item.businessId);
   const itemWithCloseoutEdit = item as PrototypeOperationalEntry;
   const isSale = item.type === "summary";
   const voided = entryIsVoided(item);
@@ -197,7 +200,7 @@ export function OperationModal({
                   type="button"
                   className="w-full"
                   onClick={() => {
-                    if (attachmentSource) setAttachmentOpen(true);
+                    if (attachmentSource?.source) setAttachmentOpen(true);
                   }}
                 >
                   <AttachmentPreview
@@ -237,6 +240,13 @@ export function OperationModal({
         open={attachmentOpen}
         src={attachmentSource?.source ?? null}
         lang={lang}
+        shareContext={{
+          entry: item,
+          storeName: businessName(store, lang, true) || businessName(store, lang),
+          operationLabel: operationDisplayLabel(item, lang),
+          entryTime: opTime(item, lang),
+          daySequence: Number.isInteger(item.daySequence) ? item.daySequence : null,
+        }}
         onClose={() => setAttachmentOpen(false)}
       />
     </>

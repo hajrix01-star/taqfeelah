@@ -1,6 +1,8 @@
 import { isUuid, mapToUuid, toMoneyHalalas } from "@/core/client/api-id-utils";
 import { salesChannelDisplayName } from "@/core/client/sales-channel-catalog";
 import { getRuntimeApiMaps } from "@/core/client/runtime-api-maps-state";
+import { sanitizeCloseoutChannelDisplayName } from "@/features/daily-closeouts/closeout-sales-normalize";
+import { isUuidLike } from "@/features/org-config/client/sales-channel-display";
 
 type SalesRow = Record<string, unknown>;
 type StoreChannel = Record<string, unknown>;
@@ -39,14 +41,21 @@ function resolveCloseoutSubmitChannelName(
 ): string {
   const matched = findStoreChannel(storeChannels, legacyChannelId);
   if (matched) return salesChannelDisplayName(matched);
-  return String(row?.name || row?.channelName || row?.channelLabel || legacyChannelId || "");
+  const raw = row?.name || row?.channelName || row?.channelLabel || "";
+  if (typeof raw === "string" && raw.trim() && !isUuidLike(raw)) {
+    return raw.trim();
+  }
+  if (legacyChannelId && !isUuidLike(legacyChannelId)) return legacyChannelId;
+  return "";
 }
 
 function normalizeSubmitChannelName(rawName: unknown, legacyChannelId = ""): string {
-  const trimmed = typeof rawName === "string" ? rawName.trim() : "";
-  if (trimmed) return trimmed.slice(0, 120);
-  const legacy = typeof legacyChannelId === "string" ? legacyChannelId.trim() : "";
-  return legacy || "Channel";
+  const fromRaw = sanitizeCloseoutChannelDisplayName(rawName, "");
+  if (fromRaw) return fromRaw;
+  if (legacyChannelId && !isUuidLike(legacyChannelId)) {
+    return sanitizeCloseoutChannelDisplayName(legacyChannelId, "Channel");
+  }
+  return "Channel";
 }
 
 export type ExtractedCloseoutSalesChannel = {

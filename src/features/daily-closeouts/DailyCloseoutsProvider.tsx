@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import {
   appendCloseoutEvent,
   createDraftCloseout,
@@ -15,6 +16,8 @@ import {
 } from "./daily-closeouts-demo-store";
 import { resolveEmployeeDisplayName } from "@/features/employee-closeouts/employee-portal-session";
 import { mapCloseoutSyncErrorToUserMessage } from "@/features/closeouts/client/closeout-sync-errors";
+import { useCloseoutsQuery } from "@/features/closeouts/client/use-closeouts-query";
+import { invalidateOperationalDataBestEffort, OPERATIONAL_SCOPES_AFTER_FINANCIAL_WRITE } from "@/core/client/invalidate-operational-data";
 import { CLOSEOUT_STATUS } from "./closeout-status";
 import type {
   CloseoutEvent,
@@ -63,27 +66,62 @@ export function DailyCloseoutsProvider({
   apiStrictMode = false,
   dbSourceMode = false,
 }: DailyCloseoutsProviderProps) {
+  const queryClient = useQueryClient();
   const skipLocalPersistence = apiStrictMode || dbSourceMode;
   const useApiWrites = apiStrictMode || dbSourceMode;
   const usesCloseoutsApi = typeof loadCloseoutsFromApi === "function";
 
-  const [closeouts, setCloseouts] = useState<DailyCloseoutRecord[]>(
+  const [demoCloseouts, setDemoCloseouts] = useState<DailyCloseoutRecord[]>(
     () => (skipLocalPersistence ? [] : readDailyCloseouts()),
   );
+  const [localDraftCloseouts, setLocalDraftCloseouts] = useState<DailyCloseoutRecord[]>([]);
   const [events, setEvents] = useState<CloseoutEvent[]>(
     () => (skipLocalPersistence ? [] : readCloseoutEvents()),
   );
   const [syncError, setSyncError] = useState("");
-  const [closeoutsLoading, setCloseoutsLoading] = useState(
-    () => usesCloseoutsApi && Boolean(closeoutsAutoLoadQueryKey),
-  );
-  const [closeoutsLoaded, setCloseoutsLoaded] = useState(() => !usesCloseoutsApi);
-  const lastAutoLoadQueryKeyRef = useRef("");
-  const loadedContextRef = useRef("");
+
+  const {
+    closeouts: apiCloseouts,
+    closeoutsLoading: apiCloseoutsLoading,
+    closeoutsLoaded: apiCloseoutsLoaded,
+    closeoutsError: apiCloseoutsError,
+    reloadCloseoutsFromApi: reloadApiCloseouts,
+    upsertCloseoutInCache,
+    removeCloseoutFromCache,
+  } = useCloseoutsQuery({
+    enabled: usesCloseoutsApi,
+    autoLoadQueryKey: closeoutsAutoLoadQueryKey,
+    loadCloseoutsFromApi,
+  });
+
+  const mergedApiCloseouts = useMemo(() => {
+    if (!usesCloseoutsApi) return [] as DailyCloseoutRecord[];
+    const remoteKeys = new Set(apiCloseouts.map((item) => item.id));
+    const localDrafts = skipLocalPersistence
+      ? []
+      : localDraftCloseouts.filter(
+        (item) => item.status === CLOSEOUT_STATUS.DRAFT
+          && !item.submittedAt
+          && !remoteKeys.has(item.id),
+      );
+    return sortCloseoutsNewestFirst([...apiCloseouts, ...localDrafts]);
+  }, [apiCloseouts, localDraftCloseouts, skipLocalPersistence, usesCloseoutsApi]);
+
+  const closeouts = usesCloseoutsApi ? mergedApiCloseouts : demoCloseouts;
 
   const persistCloseouts = useCallback((next: DailyCloseoutRecord[] | ((current: DailyCloseoutRecord[]) => DailyCloseoutRecord[])) => {
     let storageResult: StorageWriteResult = { ok: true };
-    setCloseouts((current) => {
+    if (usesCloseoutsApi) {
+      setLocalDraftCloseouts((current) => {
+        const resolved = typeof next === "function" ? next(current) : next;
+        if (!skipLocalPersistence) {
+          storageResult = writeDailyCloseouts(resolved);
+        }
+        return resolved;
+      });
+      return storageResult;
+    }
+    setDemoCloseouts((current) => {
       const resolved = typeof next === "function" ? next(current) : next;
       if (!skipLocalPersistence) {
         storageResult = writeDailyCloseouts(resolved);
@@ -91,7 +129,7 @@ export function DailyCloseoutsProvider({
       return resolved;
     });
     return storageResult;
-  }, [skipLocalPersistence]);
+  }, [skipLocalPersistence, usesCloseoutsApi]);
 
   const logEvent = useCallback((payload: Omit<CloseoutEvent, "id" | "at">) => {
     setEvents((current) => (skipLocalPersistence ? current : appendCloseoutEvent(current, payload)));
@@ -103,11 +141,41 @@ export function DailyCloseoutsProvider({
     if (!skipApiDelete && typeof onDeleteCloseoutToApi === "function" && useApiWrites && target) {
       await onDeleteCloseoutToApi({ closeout: target });
     }
+    if (usesCloseoutsApi) {
+      removeCloseoutFromCache(closeoutId);
+      if (skipApiDelete || typeof onDeleteCloseoutToApi !== "function" || !useApiWrites) {
+        await invalidateOperationalDataBestEffort(queryClient, {
+          scopes: OPERATIONAL_SCOPES_AFTER_FINANCIAL_WRITE,
+        });
+      }
+      return;
+    }
     persistCloseouts((current) => current.filter((item) => item.id !== closeoutId));
-  }, [closeouts, onDeleteCloseoutToApi, persistCloseouts, useApiWrites]);
+  }, [
+    closeouts,
+    onDeleteCloseoutToApi,
+    persistCloseouts,
+    queryClient,
+    removeCloseoutFromCache,
+    useApiWrites,
+    usesCloseoutsApi,
+  ]);
 
   const upsertCloseout = useCallback((nextCloseout: DailyCloseoutRecord) => {
     const normalized = withCloseoutTotals(nextCloseout);
+    if (usesCloseoutsApi && skipLocalPersistence) {
+      return upsertCloseoutInCache(normalized) ?? normalized;
+    }
+    if (usesCloseoutsApi) {
+      persistCloseouts((current) => {
+        const index = current.findIndex((item) => item.id === normalized.id);
+        if (index === -1) return [normalized, ...current];
+        const copy = [...current];
+        copy[index] = normalized;
+        return copy;
+      });
+      return normalized;
+    }
     persistCloseouts((current) => {
       const index = current.findIndex((item) => item.id === normalized.id);
       if (index === -1) return [normalized, ...current];
@@ -116,7 +184,7 @@ export function DailyCloseoutsProvider({
       return copy;
     });
     return normalized;
-  }, [persistCloseouts]);
+  }, [persistCloseouts, skipLocalPersistence, upsertCloseoutInCache, usesCloseoutsApi]);
 
   const saveCloseoutRecord = useCallback((closeout: DailyCloseoutRecord): CloseoutWorkflowFailure | { ok: true; closeout: DailyCloseoutRecord } => {
     if (!closeout?.id || !closeout?.storeId || !closeout?.date) {
@@ -142,54 +210,21 @@ export function DailyCloseoutsProvider({
   }, [persistCloseouts]);
 
   const reloadCloseoutsFromApi = useCallback(async (): Promise<DailyCloseoutRecord[]> => {
-    if (typeof loadCloseoutsFromApi !== "function") return [];
-    const contextKey = closeoutsAutoLoadQueryKey || "default";
-    const contextChanged = loadedContextRef.current !== "" && loadedContextRef.current !== contextKey;
-
-    setCloseoutsLoading(true);
-    if (contextChanged) {
-      setCloseouts([]);
-      setCloseoutsLoaded(false);
-    }
-
+    if (!usesCloseoutsApi) return [];
+    setSyncError("");
     try {
-      const remote = await loadCloseoutsFromApi();
-      const remoteList = Array.isArray(remote)
-        ? remote.map((item) => withCloseoutTotals(item as DailyCloseoutRecord))
-        : [];
-      setCloseouts((current) => {
-        const localDrafts = dbSourceMode || (apiStrictMode && !dbSourceMode)
-          ? []
-          : current.filter((item) => item.status === CLOSEOUT_STATUS.DRAFT && !item.submittedAt);
-        const remoteKeys = new Set(remoteList.map((item) => item.id));
-        const merged = [
-          ...remoteList,
-          ...localDrafts.filter((item) => !remoteKeys.has(item.id)),
-        ];
-        if (!skipLocalPersistence) {
-          writeDailyCloseouts(merged);
-        }
-        return merged;
-      });
-      setCloseoutsLoaded(true);
-      loadedContextRef.current = contextKey;
-      setSyncError("");
-      return remoteList;
+      return await reloadApiCloseouts();
     } catch (error) {
-      if (loadedContextRef.current !== contextKey) {
-        setCloseoutsLoaded(false);
-      }
+      const fallback = lang === "ar"
+        ? "تعذر تحديث التقفيلات من الخادم."
+        : "Failed to refresh closeouts from server.";
+      const detail = error instanceof Error && error.message.trim()
+        ? mapCloseoutSyncErrorToUserMessage(error, lang)
+        : "";
+      setSyncError(detail || fallback);
       throw error;
-    } finally {
-      setCloseoutsLoading(false);
     }
-  }, [
-    apiStrictMode,
-    closeoutsAutoLoadQueryKey,
-    dbSourceMode,
-    loadCloseoutsFromApi,
-    skipLocalPersistence,
-  ]);
+  }, [lang, reloadApiCloseouts, usesCloseoutsApi]);
 
   const reloadCloseoutsAndPreserveSubmitted = useCallback(async (submittedCloseout: DailyCloseoutRecord) => {
     const remoteList = await reloadCloseoutsFromApi();
@@ -220,24 +255,14 @@ export function DailyCloseoutsProvider({
     })();
   }, [lang, onSyncToOperationalEntries, reloadCloseoutsAndPreserveSubmitted]);
 
-  useEffect(() => {
-    if (typeof loadCloseoutsFromApi !== "function") return;
-    const queryKey = closeoutsAutoLoadQueryKey || "default";
-    if (!queryKey || queryKey === "default") return;
-    if (lastAutoLoadQueryKeyRef.current === queryKey) return;
-    lastAutoLoadQueryKeyRef.current = queryKey;
-    setCloseoutsLoading(true);
-    reloadCloseoutsFromApi().catch((error) => {
-      console.warn("closeouts initial API load failed", error);
-      const fallback = lang === "ar"
-        ? "تعذر تحديث التقفيلات من الخادم."
-        : "Failed to refresh closeouts from server.";
-      const detail = error instanceof Error && error.message.trim()
-        ? mapCloseoutSyncErrorToUserMessage(error, lang)
-        : "";
-      setSyncError(detail || fallback);
-    });
-  }, [closeoutsAutoLoadQueryKey, lang, loadCloseoutsFromApi, reloadCloseoutsFromApi]);
+  const closeoutsLoading = usesCloseoutsApi ? apiCloseoutsLoading : false;
+  const closeoutsLoaded = usesCloseoutsApi ? apiCloseoutsLoaded : true;
+  const resolvedSyncError = syncError
+    || (apiCloseoutsError instanceof Error && apiCloseoutsError.message.trim()
+      ? mapCloseoutSyncErrorToUserMessage(apiCloseoutsError, lang)
+      : "");
+
+  const closeoutsHasData = closeouts.length > 0;
 
   const openOrResumeDraft = useCallback(({ store, date, employee }: Parameters<DailyCloseoutsContextValue["openOrResumeDraft"]>[0]) => {
     const draft = createDraftCloseout({
@@ -440,8 +465,6 @@ export function DailyCloseoutsProvider({
     useApiWrites,
   ]);
 
-  const closeoutsHasData = closeouts.length > 0;
-
   const value = useMemo<DailyCloseoutsContextValue>(() => ({
     closeouts: sortCloseoutsNewestFirst(closeouts),
     events,
@@ -453,7 +476,7 @@ export function DailyCloseoutsProvider({
     ownerEditCloseout,
     findForStoreDate: (storeId: string, date: string) => findCloseoutForStoreDate(closeouts, storeId, date),
     findAllForStoreDate: (storeId: string, date: string) => findCloseoutsForStoreDate(closeouts, storeId, date),
-    syncError,
+    syncError: resolvedSyncError,
     reloadCloseoutsFromApi,
     usesCloseoutsApi,
     closeoutsLoading,
@@ -470,7 +493,7 @@ export function DailyCloseoutsProvider({
     reloadCloseoutsFromApi,
     ownerEditCloseout,
     submitCloseout,
-    syncError,
+    resolvedSyncError,
     upsertCloseout,
     usesCloseoutsApi,
   ]);
