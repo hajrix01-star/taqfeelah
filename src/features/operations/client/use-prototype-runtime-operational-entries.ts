@@ -8,6 +8,7 @@ import {
   storeAttachmentPayload,
   stripEmbeddedAttachmentImages,
 } from "@/features/attachments/client/prototype-attachment-storage";
+import type { PreparedAttachment } from "@/features/attachments/client/attachments-client-types";
 import { hasCloseoutApiActorMapping, isUuid } from "@/features/closeouts/client/closeouts-api-client";
 import {
   createStoreEntryViaApi,
@@ -300,11 +301,12 @@ export function usePrototypeRuntimeOperationalEntries({
         const normalizedAttachment = typeof attachmentPayload === "string"
           ? { dataUrl: attachmentPayload }
           : attachmentPayload;
+        const preparedAttachment = normalizedAttachment as PreparedAttachment;
         try {
-          await storeAttachmentPayload(normalizedAttachment as Record<string, unknown> | null | undefined);
+          await storeAttachmentPayload(preparedAttachment);
           entry.attachment = makeAttachment(
             entry.id!,
-            normalizedAttachment as Record<string, unknown> | null,
+            preparedAttachment,
           ) as OperationalEntry["attachment"];
         } catch {
           await appAlert({ lang, title: text(lang, "attachmentSaveFailed"), variant: "info" });

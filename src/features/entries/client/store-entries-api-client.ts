@@ -73,11 +73,11 @@ function mapEntryItems(
 ): OperationalEntry[] {
   return items.map((item) => {
     if (!item || typeof item !== "object") return item;
-    const mappedBusinessId = reverseLookupKeyByUuid(item.businessId, storeIdMap) || storeId;
+    const mappedBusinessId = reverseLookupKeyByUuid(item.businessId ?? "", storeIdMap) || storeId;
     const mappedSalesChannels = Array.isArray(item.salesChannels)
       ? item.salesChannels.map((row: OperationalEntrySalesChannelRow) => ({
         ...row,
-        channelId: reverseLookupKeyByUuid(row?.channelId, salesChannelIdMap) || row?.channelId,
+        channelId: reverseLookupKeyByUuid(row?.channelId ?? "", salesChannelIdMap) || row?.channelId,
       }))
       : [];
     return {

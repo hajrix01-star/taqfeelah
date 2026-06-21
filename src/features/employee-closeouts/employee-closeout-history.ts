@@ -111,9 +111,10 @@ function reverseLookupLegacyUserId(value: string, userIdMap: Record<string, stri
 }
 
 function mapLegacyUserIdToApi(value: string, userIdMap: Record<string, string>): string {
-  if (!value || typeof value !== "string" || !value.trim()) return "";
-  if (isUuid(value)) return value;
-  const mapped = userIdMap[value] || userIdMap[value.trim()];
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (isUuid(trimmed)) return trimmed;
+  const mapped = userIdMap[trimmed] || userIdMap[value];
   return isUuid(mapped) ? mapped : "";
 }
 

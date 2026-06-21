@@ -13,6 +13,7 @@ import {
   normalizeEmployeeLoginRosterStaff,
   resolveEmployeeLoginStaff,
 } from "@/features/employee-closeouts/employee-portal-session";
+import { readEmployeeLoginRosterPayload } from "@/features/auth/client/auth-api-response";
 import { loginEmployeeViaSessionBridge } from "@/features/auth/client/session-bridge";
 import type {
   AuthLang,
@@ -58,8 +59,9 @@ export function useEmployeeLoginForm({
     fetchEmployeeLoginRosterViaApi()
       .then((payload) => {
         if (cancelled) return;
-        if (Array.isArray(payload?.staff)) {
-          setRosterStaff(normalizeEmployeeLoginRosterStaff(payload));
+        const rosterPayload = readEmployeeLoginRosterPayload(payload);
+        if (Array.isArray(rosterPayload.staff)) {
+          setRosterStaff(normalizeEmployeeLoginRosterStaff(rosterPayload));
         }
       })
       .catch((failure) => {

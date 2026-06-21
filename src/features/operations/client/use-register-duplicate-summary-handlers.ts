@@ -68,6 +68,10 @@ export function useRegisterDuplicateSummaryHandlers({
           storeId: payload.businessId,
           payload,
         });
+        if (!apiPayload) {
+          await appAlert({ lang, title: resolveDuplicateSummaryApproveFailureMessage(lang), variant: "danger" });
+          return;
+        }
         const created = await approveDuplicateSummaryViaApi({
           organizationId: closeoutsApiOrganizationId,
           actorUserId,
@@ -154,7 +158,9 @@ export function useRegisterDuplicateSummaryHandlers({
           actorRole: "owner",
           storeId: alert.businessId,
           date: alert.date,
-          entryIds: alert.entries.map((entry) => entry.id),
+          entryIds: alert.entries
+            .map((entry) => entry.id)
+            .filter((entryId): entryId is string => typeof entryId === "string" && entryId.length > 0),
         });
         if (!acknowledged) {
           await appAlert({ lang, title: resolveDuplicateSummaryAcknowledgeFailureMessage(lang), variant: "danger" });

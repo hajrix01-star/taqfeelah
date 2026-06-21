@@ -50,7 +50,14 @@ describe("session bridge", () => {
       username: "hajri",
       password: "secret",
       useServerAuth: true,
-    })).resolves.toEqual({ userId: "owner-1" });
+    })).resolves.toEqual({
+      authenticated: false,
+      userId: "owner-1",
+      role: undefined,
+      organizationId: undefined,
+      displayName: undefined,
+      mustChangePassword: false,
+    });
     expect(loginOwnerSessionViaApi).toHaveBeenCalledWith({ username: "hajri", password: "secret" });
 
     await expect(loginOwnerViaSessionBridge({

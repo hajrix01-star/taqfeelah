@@ -114,34 +114,39 @@ export type RegisterAttachmentDaySection = {
   sort: number;
 };
 
+function toDisplayLang(lang: DisplayLang | string): DisplayLang {
+  return lang === "en" ? "en" : "ar";
+}
+
 export function resolveRegisterAttachmentDaySection(
   date: string,
   todayIso: string,
   lang: DisplayLang | string = "ar",
 ): RegisterAttachmentDaySection {
+  const displayLang = toDisplayLang(lang);
   const diffDays = dayDiffFromToday(date, todayIso);
   if (diffDays === 0) {
-    return { id: "today", heading: lang === "ar" ? "اليوم" : "Today", sort: 0 };
+    return { id: "today", heading: displayLang === "ar" ? "اليوم" : "Today", sort: 0 };
   }
   if (diffDays === 1) {
-    return { id: "yesterday", heading: lang === "ar" ? "أمس" : "Yesterday", sort: 1 };
+    return { id: "yesterday", heading: displayLang === "ar" ? "أمس" : "Yesterday", sort: 1 };
   }
   if (diffDays > 1 && diffDays <= 7) {
-    return { id: "this-week", heading: lang === "ar" ? "هذا الأسبوع" : "This week", sort: 2 };
+    return { id: "this-week", heading: displayLang === "ar" ? "هذا الأسبوع" : "This week", sort: 2 };
   }
   if (date.slice(0, 7) === todayIso.slice(0, 7)) {
-    return { id: "this-month", heading: lang === "ar" ? "هذا الشهر" : "This month", sort: 3 };
+    return { id: "this-month", heading: displayLang === "ar" ? "هذا الشهر" : "This month", sort: 3 };
   }
   if (date.slice(0, 4) === todayIso.slice(0, 4)) {
     const monthDate = parseIsoDate(`${date.slice(0, 7)}-01`);
     const heading = monthDate
-      ? new Intl.DateTimeFormat(lang === "ar" ? "ar-SA-u-nu-latn" : "en-US", { month: "long" }).format(monthDate)
-      : formatCalendarDate(date, lang);
+      ? new Intl.DateTimeFormat(displayLang === "ar" ? "ar-SA-u-nu-latn" : "en-US", { month: "long" }).format(monthDate)
+      : formatCalendarDate(date, displayLang);
     return { id: `month-${date.slice(0, 7)}`, heading, sort: 4 };
   }
   return {
     id: `date-${date}`,
-    heading: formatCalendarDate(date, lang),
+    heading: formatCalendarDate(date, displayLang),
     sort: 5,
   };
 }

@@ -42,7 +42,7 @@ describe("owner-notebook-storage", () => {
     const base = [
       createOwnerNotebookNoteInput({ text: "أولى", kind: "note", color: "yellow" }),
       createOwnerNotebookNoteInput({ text: "ثانية", kind: "task", color: "softYellow" }),
-    ].filter(Boolean);
+    ].filter((note): note is NonNullable<typeof note> => note != null);
 
     const updated = updateOwnerNotebookNote(base, base[1]!.id, { text: "مهمة محدثة", done: true });
     expect(updated.find((note: { id: string; text?: string; done?: boolean }) => note.id === base[1]!.id)?.text).toBe("مهمة محدثة");
@@ -70,7 +70,7 @@ describe("owner-notebook-storage", () => {
       createOwnerNotebookNoteInput({ text: "n1", kind: "note", color: "yellow" }),
       activeTask,
       ...updateOwnerNotebookNote([doneTask!], doneTask!.id, { done: true }),
-    ].filter(Boolean);
+    ].filter((note): note is NonNullable<typeof note> => note != null);
 
     expect(filterOwnerNotebookNotes(notes, "active")).toHaveLength(2);
     expect(filterOwnerNotebookNotes(notes, "notes")).toHaveLength(1);

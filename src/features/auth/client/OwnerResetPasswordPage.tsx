@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
 import { ownerPasswordInputProps } from "@/features/auth/client/auth-gate/owner-password-input-props";
+import { readPasswordResetTokenValid } from "@/features/auth/client/auth-api-response";
 import {
   confirmOwnerPasswordResetViaApi,
   validateOwnerPasswordResetTokenViaApi,
@@ -29,7 +30,7 @@ export default function OwnerResetPasswordPage({ token }: OwnerResetPasswordPage
     validateOwnerPasswordResetTokenViaApi(token)
       .then((result) => {
         if (cancelled) return;
-        setValid(result?.valid === true);
+        setValid(readPasswordResetTokenValid(result));
       })
       .catch(() => {
         if (!cancelled) setValid(false);

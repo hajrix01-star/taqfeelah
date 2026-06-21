@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { readPasswordResetRequestMessage } from "@/features/auth/client/auth-api-response";
 import { requestOwnerPasswordResetViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
 import { usePasswordResetEnabled } from "@/features/auth/client/use-password-reset-enabled";
 
@@ -21,9 +22,8 @@ export default function OwnerForgotPasswordPage() {
     try {
       const result = await requestOwnerPasswordResetViaApi({ email: email.trim() });
       setSuccess(
-        typeof result?.message === "string"
-          ? result.message
-          : "إذا كان هناك حساب بهذا البريد، فسيصلك رابط إعادة التعيين.",
+        readPasswordResetRequestMessage(result)
+          ?? "إذا كان هناك حساب بهذا البريد، فسيصلك رابط إعادة التعيين.",
       );
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "تعذر إرسال رابط إعادة التعيين.");

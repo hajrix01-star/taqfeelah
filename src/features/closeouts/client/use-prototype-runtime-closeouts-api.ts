@@ -95,8 +95,8 @@ export function usePrototypeRuntimeCloseoutsApi({
     }
     if (
       !isUuid(closeoutsApiOrganizationId)
-      || !hasCloseoutApiActorMapping(actorUserId)
-      || !hasCloseoutApiStoreMapping(closeout?.storeId)
+      || !hasCloseoutApiActorMapping(actorUserId ?? "")
+      || !hasCloseoutApiStoreMapping(closeout?.storeId ?? "")
     ) {
       throw new Error(lang === "ar"
         ? "تعذر إرسال التقفيلة: سياق API غير مكتمل (منظمة/مستخدم/محل)."
@@ -145,7 +145,7 @@ export function usePrototypeRuntimeCloseoutsApi({
       );
     }
 
-    if (!hasCloseoutApiActorMapping(apiActorUserId)) {
+    if (!hasCloseoutApiActorMapping(apiActorUserId ?? "")) {
       throw new Error(
         lang === "ar"
           ? "تعذر تحميل التقفيلات: معرف المستخدم غير مربوط بالخادم."
@@ -212,8 +212,8 @@ export function usePrototypeRuntimeCloseoutsApi({
     }
     if (
       !isUuid(closeoutsApiOrganizationId)
-      || !hasCloseoutApiActorMapping(apiActorUserId)
-      || !hasCloseoutApiStoreMapping(closeout?.storeId)
+      || !hasCloseoutApiActorMapping(apiActorUserId ?? "")
+      || !hasCloseoutApiStoreMapping(closeout?.storeId ?? "")
     ) {
       throw new Error(lang === "ar"
         ? "تعذر حذف التقفيلة: سياق API غير مكتمل (منظمة/مستخدم/محل)."

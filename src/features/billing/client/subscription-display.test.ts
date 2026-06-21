@@ -4,6 +4,7 @@ import {
   formatSubscriptionStatusLabel,
   resolveSubscriptionRenewalBanner,
 } from "@/features/billing/client/subscription-display";
+import type { ResolvedOrganizationEntitlements } from "@/features/billing/types";
 
 describe("subscription-display", () => {
   it("labels paid starter in trialing as trial period, not free trial", () => {
@@ -17,7 +18,7 @@ describe("subscription-display", () => {
       planDisplayNameEn: "Starter",
       isTrialPlan: false,
       subscriptionStatus: "trialing",
-    }, "ar");
+    } as ResolvedOrganizationEntitlements, "ar");
     expect(label).toBe("أساسية — فترة تجريبية");
   });
 
@@ -30,7 +31,7 @@ describe("subscription-display", () => {
       planDisplayNameAr: "نمو",
       planDisplayNameEn: "Growth",
       billingCycle: "yearly",
-    });
+    } as ResolvedOrganizationEntitlements);
     expect(banner?.key).toBe("soon7");
   });
 });

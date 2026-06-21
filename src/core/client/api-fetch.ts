@@ -45,6 +45,7 @@ export type FetchApiJsonOptions = {
   method?: string;
   headers?: Record<string, string>;
   body?: unknown;
+  credentials?: RequestCredentials;
   errorMessage?: string;
   errorStyle?: string;
   parseBody?: boolean;

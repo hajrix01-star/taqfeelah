@@ -4,6 +4,7 @@ import {
   readOrganizationEntitlementsCache,
   writeOrganizationEntitlementsCache,
 } from "./organization-entitlements-cache";
+import type { ResolvedOrganizationEntitlements } from "@/features/billing/types";
 
 describe("organization-entitlements-cache", () => {
   beforeEach(() => {
@@ -12,7 +13,7 @@ describe("organization-entitlements-cache", () => {
 
   it("stores and reads entitlements by auth key", () => {
     writeOrganizationEntitlementsCache("org|user|owner", {
-      entitlements: { planDisplayNameAr: "أساسي" },
+      entitlements: { planDisplayNameAr: "أساسي" } as ResolvedOrganizationEntitlements,
       error: "",
     });
 
@@ -24,8 +25,8 @@ describe("organization-entitlements-cache", () => {
   });
 
   it("clears one key or all keys", () => {
-    writeOrganizationEntitlementsCache("a", { entitlements: { id: 1 }, error: "" });
-    writeOrganizationEntitlementsCache("b", { entitlements: { id: 2 }, error: "" });
+    writeOrganizationEntitlementsCache("a", { entitlements: { planDisplayNameAr: "a" } as ResolvedOrganizationEntitlements, error: "" });
+    writeOrganizationEntitlementsCache("b", { entitlements: { planDisplayNameAr: "b" } as ResolvedOrganizationEntitlements, error: "" });
 
     clearOrganizationEntitlementsCache("a");
     expect(readOrganizationEntitlementsCache("a")).toBeNull();

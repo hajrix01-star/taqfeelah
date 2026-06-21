@@ -4,6 +4,11 @@ import {
   resolveRuntimeApiActorContext,
   resolveRuntimeCapabilities,
 } from "./runtime-capabilities";
+import type { RuntimeCapabilitiesEnv } from "./runtime-capabilities-types";
+
+function asRuntimeEnv(env: NodeJS.ProcessEnv): RuntimeCapabilitiesEnv {
+  return env;
+}
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -16,7 +21,7 @@ describe("runtime capabilities", () => {
     process.env.NEXT_PUBLIC_APP_MODE = "production";
     process.env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE = "false";
 
-    const caps = resolveRuntimeCapabilities(process.env);
+    const caps = resolveRuntimeCapabilities(asRuntimeEnv(process.env));
     expect(caps.appInProductionMode).toBe(true);
     expect(caps.prototypeAccessMode).toBe(false);
     expect(caps.bindsToServerAuth).toBe(true);
@@ -26,7 +31,7 @@ describe("runtime capabilities", () => {
     process.env.NEXT_PUBLIC_APP_MODE = "production";
     delete process.env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE;
 
-    const caps = resolveRuntimeCapabilities(process.env);
+    const caps = resolveRuntimeCapabilities(asRuntimeEnv(process.env));
     expect(caps.prototypeAccessMode).toBe(false);
     expect(caps.bindsToServerAuth).toBe(true);
   });
@@ -36,7 +41,7 @@ describe("runtime capabilities", () => {
     delete process.env.NEXT_PUBLIC_ENTRIES_API_ENABLED;
     delete process.env.NEXT_PUBLIC_PHASE9_API_ENABLED;
 
-    const caps = resolveRuntimeCapabilities(process.env);
+    const caps = resolveRuntimeCapabilities(asRuntimeEnv(process.env));
     expect(caps.closeoutsApiEnabled).toBe(true);
     expect(caps.entriesApiEnabled).toBe(true);
     expect(caps.phase9ApiEnabled).toBe(true);
@@ -69,7 +74,7 @@ describe("runtime capabilities", () => {
       employee: false,
       sessionUserId: "33333333-3333-4333-8333-333333333333",
       operationalBusinesses: [{ id: "shami" }, { id: "arz" }],
-      env: process.env,
+      env: asRuntimeEnv(process.env),
     });
     expect(owner.apiActorRole).toBe("owner");
     expect(owner.apiActorUserId).toBe("33333333-3333-4333-8333-333333333333");
@@ -80,7 +85,7 @@ describe("runtime capabilities", () => {
       sessionUserId: "44444444-4444-4444-8444-444444444444",
       activeEmployee: { id: "ahmed", apiUserId: "55555555-5555-4555-8555-555555555555" },
       assignedEmployeeBusinesses: [{ id: "shami" }],
-      env: process.env,
+      env: asRuntimeEnv(process.env),
     });
     expect(employee.apiActorRole).toBe("employee");
     expect(employee.apiActorUserId).toBe("44444444-4444-4444-8444-444444444444");
@@ -94,7 +99,7 @@ describe("runtime capabilities", () => {
       employee: true,
       sessionUserId: "44444444-4444-4444-8444-444444444444",
       sessionOrganizationId: "66666666-6666-4666-8666-666666666666",
-      env: process.env,
+      env: asRuntimeEnv(process.env),
     });
 
     expect(context.organizationId).toBe("66666666-6666-4666-8666-666666666666");
@@ -108,7 +113,7 @@ describe("runtime capabilities", () => {
     const context = resolveRuntimeApiActorContext({
       sessionOrganizationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       sessionUserId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-      env: process.env,
+      env: asRuntimeEnv(process.env),
     });
 
     expect(context.bindsToServerAuth).toBe(true);
@@ -129,7 +134,7 @@ describe("runtime capabilities", () => {
         ],
       },
       assignedEmployeeBusinesses: [],
-      env: process.env,
+      env: asRuntimeEnv(process.env),
     });
 
     expect(employee.apiTargetStoreIdsKey).toBe(

@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { buildOwnerNotebookShareCaption, ownerNotebookKindLabel } from "./owner-notebook-share";
+import type { OwnerNotebookNote } from "./owner-notebook-types";
 
 describe("owner-notebook-share", () => {
-  const note = {
+  const note: OwnerNotebookNote = {
     id: "note-1",
     text: "مراجعة الموردين\nاتصل بأحمد",
     kind: "note",
     done: false,
     color: "blue",
+    checklist: [],
     createdAt: "2026-06-10T10:00:00.000Z",
     updatedAt: "2026-06-10T12:30:00.000Z",
   };
@@ -24,7 +26,7 @@ describe("owner-notebook-share", () => {
   });
 
   it("labels completed tasks", () => {
-    expect(ownerNotebookKindLabel({ kind: "task", done: true }, "ar", { done: "منجزة", task: "مهمة" })).toBe("منجزة");
+    expect(ownerNotebookKindLabel({ kind: "task", done: true, checklist: [], id: "t", text: "", color: "yellow", createdAt: "", updatedAt: "" }, "ar", { done: "منجزة", task: "مهمة" })).toBe("منجزة");
   });
 
   it("includes checklist lines in share caption", () => {

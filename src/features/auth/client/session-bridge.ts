@@ -14,7 +14,9 @@ import {
   loginOwnerSessionViaApi,
   logoutSessionViaApi,
 } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
+import { readAuthServerSession } from "./auth-api-response";
 import type {
+  AuthServerSession,
   ChangeOwnerPasswordBridgeInput,
   EmployeeSessionBridgeInput,
   LogoutSessionBridgeInput,
@@ -53,12 +55,18 @@ export async function loginOwnerViaSessionBridge({
   password,
   phone,
   useServerAuth,
-}: OwnerSessionBridgeInput = {}) {
+}: OwnerSessionBridgeInput = {}): Promise<AuthServerSession | null> {
   if (!useServerAuth) return null;
   if (phone) {
-    return loginOwnerPhoneSessionViaApi({ phone, password });
+    return readAuthServerSession(await loginOwnerPhoneSessionViaApi({
+      phone,
+      password: password ?? "",
+    }));
   }
-  return loginOwnerSessionViaApi({ username, password });
+  return readAuthServerSession(await loginOwnerSessionViaApi({
+    username: username ?? "",
+    password: password ?? "",
+  }));
 }
 
 export async function loginEmployeeViaSessionBridge({
@@ -67,12 +75,15 @@ export async function loginEmployeeViaSessionBridge({
   pin,
   trustDevice,
   useServerAuth,
-}: EmployeeSessionBridgeInput = {}) {
+}: EmployeeSessionBridgeInput = {}): Promise<AuthServerSession | null> {
   if (!useServerAuth) return null;
   if (phone) {
-    return loginEmployeePhoneSessionViaApi({ phone, pin, trustDevice });
+    return readAuthServerSession(await loginEmployeePhoneSessionViaApi({ phone, pin, trustDevice }));
   }
-  return loginEmployeeSessionViaApi({ employeeId, pin });
+  return readAuthServerSession(await loginEmployeeSessionViaApi({
+    employeeId: employeeId ?? "",
+    pin: pin ?? "",
+  }));
 }
 
 export async function changeOwnerPasswordViaSessionBridge({

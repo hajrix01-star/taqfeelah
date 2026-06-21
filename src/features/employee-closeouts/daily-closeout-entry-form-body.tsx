@@ -291,7 +291,7 @@ export function DailyCloseoutEntryFormBody({
         {outflows.length > 0 ? (
           <div className="space-y-3">
             {outflows.map((row) => {
-              const proofSrc = row.attachments?.find((item) => typeof item === "string" && item.startsWith("data:")) || "";
+              const proofSrc = row.attachments?.map(resolveAttachmentPreviewSrc).find(Boolean) ?? "";
               const processingProof = outflowAttachmentProcessingId === row.id;
               return (
                 <div key={row.id} className="space-y-2">

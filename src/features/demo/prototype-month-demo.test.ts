@@ -117,7 +117,7 @@ describe("operational analytics (add / subtract / filters)", () => {
     const shamiMay = entriesInPeriod(entries, "shami", "month", "", "2026-05");
     const arzMay = entriesInPeriod(entries, "arz", "month", "", "2026-05");
     expect(shamiMay.length).toBeGreaterThan(arzMay.length / 2);
-    expect(shamiMay.every((e: DemoEntry) => e.date.startsWith("2026-05"))).toBe(true);
+    expect(shamiMay.every((e) => (e.date ?? "").startsWith("2026-05"))).toBe(true);
   });
 
   it("aggregates sales channels for a month", () => {

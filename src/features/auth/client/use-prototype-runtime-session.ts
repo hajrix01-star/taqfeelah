@@ -140,7 +140,7 @@ export function usePrototypeRuntimeSessionSync({
     fetchServerSessionStatus()
       .then((session) => {
         if (cancelled) return;
-        applyServerSessionBootstrap(session, {
+        applyServerSessionBootstrap(session as Parameters<typeof applyServerSessionBootstrap>[0], {
           setSessionOrganizationId,
           setSessionUserId,
           setLoggedIn,

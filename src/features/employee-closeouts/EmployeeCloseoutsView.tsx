@@ -8,6 +8,7 @@ import { EmployeeCloseoutsListPanel } from "./employee-closeouts-list-panel";
 import { resolveEmployeeDisplayName } from "./employee-portal-session";
 import { useEmployeeCloseoutsViewState } from "./use-employee-closeouts-view-state";
 import { resolveStoreChannelConfig, channelName } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import type { StoreChannelConfig } from "@/features/org-config/client/org-config-client-types";
 
 import type { EmployeeCloseoutsViewProps, EmployeeHistoryVisibility } from "./employee-closeouts-types";
 import type { CloseoutSyncLang, SalesChannelConfig } from "@/features/daily-closeouts/daily-closeouts-types";
@@ -18,7 +19,10 @@ function resolveSalesChannelsForStore(
   lang: CloseoutSyncLang,
 ): SalesChannelConfig[] {
   if (!storeId) return [];
-  const config = resolveStoreChannelConfig(storeChannelSettings, storeId);
+  const config = resolveStoreChannelConfig(
+    storeChannelSettings as Record<string, StoreChannelConfig | undefined>,
+    storeId,
+  );
   return (config.channels as SalesChannelConfig[])
     .filter((channel) => config.activeIds.includes(channel.id) && !(channel as SalesChannelConfig & { retired?: boolean }).retired)
     .map((channel) => ({ ...channel, displayName: channelName(channel, lang) }));

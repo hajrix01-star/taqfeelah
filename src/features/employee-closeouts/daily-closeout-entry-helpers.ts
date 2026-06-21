@@ -59,7 +59,7 @@ export function buildCloseoutOutflowRow({
   amountValue?: string | number;
   attachments?: CloseoutAttachmentPreview[];
 }): CloseoutOutflowRow | null {
-  const amount = toAmount(amountValue);
+  const amount = toAmount(amountValue ?? "");
   if (!amount) return null;
   let category: string | null = null;
   const localeKey = lang === "ar" ? "ar" : "en";

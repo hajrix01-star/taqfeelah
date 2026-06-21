@@ -124,14 +124,14 @@ export function useOwnerSettingsState({
     if (typeof window === "undefined") return "yellow";
     return window.localStorage.getItem("taqfeelah_notebook_theme") || "yellow";
   });
-  const [employeePreferences, setEmployeePreferences] = useState(
+  const [employeePreferences, setEmployeePreferences] = useState<Record<string, unknown>>(
     () => (initialSettings?.employeePreferences && typeof initialSettings.employeePreferences === "object"
-      ? initialSettings.employeePreferences
+      ? initialSettings.employeePreferences as Record<string, unknown>
       : {}),
   );
-  const [ownerShellPreferences, setOwnerShellPreferences] = useState(
+  const [ownerShellPreferences, setOwnerShellPreferences] = useState<Record<string, unknown>>(
     () => (initialSettings?.ownerShellPreferences && typeof initialSettings.ownerShellPreferences === "object"
-      ? initialSettings.ownerShellPreferences
+      ? initialSettings.ownerShellPreferences as Record<string, unknown>
       : {}),
   );
   const [authOwnerUsername, setAuthOwnerUsername] = useState(
@@ -209,22 +209,25 @@ export function useOwnerSettingsState({
   );
 
   const applyRuntimeSettingsSnapshot = useCallback((rawSettings: unknown) => {
+    const migrated = migrateSavedSettings(rawSettings);
     applyRuntimeSettingsSnapshotPatch({
-      migrated: migrateSavedSettings(rawSettings),
+      migrated: migrated && typeof migrated === "object" && !Array.isArray(migrated)
+        ? migrated as Record<string, unknown>
+        : null,
       orgConfigApiEnabled,
       apply: {
-        setConfiguredBusinesses,
-        setArchivedBusinessIds,
-        setStoreChannelSettings,
-        setStaff,
-        setStoreOperationalSettings,
-        setNotebookTheme,
-        setEmployeePreferences,
-        setOwnerShellPreferences,
-        setOwnerProfile,
-        setAuthOwnerUsername,
-        setAuthOwnerPassword,
-        setAuthEmployeePins,
+        setConfiguredBusinesses: setConfiguredBusinesses as (value: unknown) => void,
+        setArchivedBusinessIds: setArchivedBusinessIds as (value: unknown) => void,
+        setStoreChannelSettings: setStoreChannelSettings as (value: unknown) => void,
+        setStaff: setStaff as (value: unknown) => void,
+        setStoreOperationalSettings: setStoreOperationalSettings as (value: unknown) => void,
+        setNotebookTheme: setNotebookTheme as (value: unknown) => void,
+        setEmployeePreferences: setEmployeePreferences as (value: unknown) => void,
+        setOwnerShellPreferences: setOwnerShellPreferences as (value: unknown) => void,
+        setOwnerProfile: setOwnerProfile as (value: unknown) => void,
+        setAuthOwnerUsername: setAuthOwnerUsername as (value: unknown) => void,
+        setAuthOwnerPassword: setAuthOwnerPassword as (value: unknown) => void,
+        setAuthEmployeePins: setAuthEmployeePins as (value: unknown) => void,
       },
     });
   }, [migrateSavedSettings, orgConfigApiEnabled]);
