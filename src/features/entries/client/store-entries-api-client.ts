@@ -5,6 +5,8 @@ import {
   toMoneyHalalas,
 } from "@/core/client/api-id-utils";
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
+import { sanitizeCloseoutChannelDisplayName } from "@/features/daily-closeouts/closeout-sales-normalize";
+import { isUuidLike } from "@/features/org-config/client/sales-channel-display";
 import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
 import {
   getRuntimeApiMaps,
@@ -75,10 +77,16 @@ function mapEntryItems(
     if (!item || typeof item !== "object") return item;
     const mappedBusinessId = reverseLookupKeyByUuid(item.businessId ?? "", storeIdMap) || storeId;
     const mappedSalesChannels = Array.isArray(item.salesChannels)
-      ? item.salesChannels.map((row: OperationalEntrySalesChannelRow) => ({
-        ...row,
-        channelId: reverseLookupKeyByUuid(row?.channelId ?? "", salesChannelIdMap) || row?.channelId,
-      }))
+      ? item.salesChannels.map((row: OperationalEntrySalesChannelRow) => {
+        const channelId = reverseLookupKeyByUuid(row?.channelId ?? "", salesChannelIdMap) || row?.channelId;
+        const rawName = row?.name ?? row?.channelName ?? row?.channelLabel;
+        const fallbackLabel = typeof channelId === "string" && !isUuidLike(channelId) ? channelId : "Channel";
+        return {
+          ...row,
+          channelId,
+          name: sanitizeCloseoutChannelDisplayName(rawName, fallbackLabel),
+        };
+      })
       : [];
     return {
       ...item,

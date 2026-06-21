@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { text } from "../../components/prototype-runtime/prototype-runtime-demo-data";
 import { prepareAttachment } from "@/features/attachments/client/prototype-attachment-storage";
 import { sanitizeAmountInput, toAmount } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
 import { computeCloseoutTotals } from "../daily-closeouts/closeout-calculations";
 import {
   buildCloseoutSalesFromChannelValues,
+  findCloseoutSalesRowForChannel,
   mergeCloseoutSalesFromChannelValues,
   normalizeCloseoutSalesToArray,
 } from "../daily-closeouts/closeout-sales-normalize";
@@ -58,16 +59,27 @@ export function useDailyCloseoutEntryState({
     const salesRows = normalizeCloseoutSalesToArray(initialCloseout?.sales);
     const values: Record<string, string> = {};
     salesChannels.forEach((ch) => {
-      const extended = ch as SalesChannelConfig & { apiChannelId?: string; legacyId?: string };
-      const row = salesRows.find((item) => (
-        item.channelId === ch.id
-        || item.channelId === extended.apiChannelId
-        || item.channelId === extended.legacyId
-      ));
+      const row = findCloseoutSalesRowForChannel(salesRows, ch, labelChannel(ch));
       values[ch.id] = row ? String(row.amount || "") : "";
     });
     return values;
   });
+  useEffect(() => {
+    if (!isOwnerEdit || salesChannels.length === 0) return;
+    setSalesValues((current) => {
+      const salesRows = normalizeCloseoutSalesToArray(initialCloseout?.sales);
+      let changed = false;
+      const next = { ...current };
+      salesChannels.forEach((ch) => {
+        if (next[ch.id]) return;
+        const row = findCloseoutSalesRowForChannel(salesRows, ch, labelChannel(ch));
+        if (!row) return;
+        next[ch.id] = String(row.amount || "");
+        changed = true;
+      });
+      return changed ? next : current;
+    });
+  }, [initialCloseout?.sales, isOwnerEdit, labelChannel, salesChannels]);
   const [outflows, setOutflows] = useState<CloseoutOutflowRow[]>(
     (initialCloseout?.outflows as CloseoutOutflowRow[] | undefined) || [],
   );

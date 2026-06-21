@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { SalesChannelConfig } from "./daily-closeouts-types";
 import {
   buildCloseoutSalesFromChannelValues,
+  findCloseoutSalesRowForChannel,
   mergeCloseoutSalesFromChannelValues,
   normalizeCloseoutSalesToArray,
   sanitizeCloseoutChannelDisplayName,
@@ -41,5 +42,22 @@ describe("closeout-sales-normalize", () => {
     );
     expect(rows[0]?.channelId).toBe(apiChannelId);
     expect(rows[0]?.amount).toBe(300);
+  });
+
+  it("matches sales rows by snapshot label when channel ids differ", () => {
+    const apiChannelId = "036b5d76-001a-4650-9c62-fadcf7c0613f";
+    const row = findCloseoutSalesRowForChannel(
+      [{ channelId: apiChannelId, name: "036b5d76-001a-4650-9c62-fadcf7c0613f", amount: 120 }],
+      { id: "card", displayName: "بطاقة" },
+      "بطاقة",
+    );
+    expect(row?.amount).toBeUndefined();
+
+    const matched = findCloseoutSalesRowForChannel(
+      [{ channelId: apiChannelId, name: "بطاقة", amount: 120 }],
+      { id: "card", displayName: "بطاقة" },
+      "بطاقة",
+    );
+    expect(matched?.amount).toBe(120);
   });
 });

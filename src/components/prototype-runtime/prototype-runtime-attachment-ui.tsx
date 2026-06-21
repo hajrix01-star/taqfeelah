@@ -12,6 +12,7 @@ import {
   dataUrlToShareFile,
   shareEntryAttachmentImage,
 } from "@/features/entries/client/entry-attachment-share";
+import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import { text } from "./prototype-runtime-demo-data";
 import type { EntryAttachmentApiContext, OperationalEntry, PrototypeLang } from "./prototype-runtime-types";
 
@@ -187,7 +188,25 @@ export function EntryAttachmentShareButton({
         daySequence,
         sameDayCloseoutCount,
       });
-      await shareEntryAttachmentImage({ file, caption, lang });
+      const result = await shareEntryAttachmentImage({ file, caption, lang });
+      if (!result?.ok && result?.method !== "abort") {
+        await appAlert({
+          lang,
+          title: lang === "ar"
+            ? "تعذر مشاركة المرفق عبر واتساب. جرّب مرة أخرى أو احفظ الصورة يدويًا."
+            : "Could not share the attachment via WhatsApp. Try again or save the image manually.",
+          variant: "warning",
+        });
+      }
+    } catch (error) {
+      console.warn("attachment whatsapp share failed", error);
+      await appAlert({
+        lang,
+        title: lang === "ar"
+          ? "تعذر مشاركة المرفق عبر واتساب. جرّب مرة أخرى أو احفظ الصورة يدويًا."
+          : "Could not share the attachment via WhatsApp. Try again or save the image manually.",
+        variant: "warning",
+      });
     } finally {
       setSharing(false);
     }

@@ -1,5 +1,6 @@
 import { closeoutSequenceLetter } from "@/features/closeouts/client/closeout-day-label";
 import { shareImageThroughWhatsApp } from "@/features/daily-closeouts/notebook-image-sharing";
+import type { ShareImageResult } from "@/features/daily-closeouts/daily-closeouts-types";
 import { formatNumericDate } from "@/features/reports/client/report-period-labels";
 import type { DisplayLang } from "@/core/i18n/display-locale";
 import type { EntryAttachmentShareCaptionParams } from "./entries-client-types";
@@ -102,14 +103,14 @@ export async function shareEntryAttachmentImage({
   file: File;
   caption: string;
   lang: DisplayLang | string;
-}): Promise<unknown> {
+}): Promise<ShareImageResult> {
   type ShareParams = {
     file?: File | null;
     caption?: string;
     title?: string;
     allowFileOnlyFallback?: boolean;
   };
-  const shareWhatsApp = shareImageThroughWhatsApp as (params: ShareParams) => ReturnType<typeof shareImageThroughWhatsApp>;
+  const shareWhatsApp = shareImageThroughWhatsApp as (params: ShareParams) => Promise<ShareImageResult>;
   return shareWhatsApp({
     file,
     caption,

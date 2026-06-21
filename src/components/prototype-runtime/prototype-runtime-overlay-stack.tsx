@@ -3,6 +3,10 @@
 import { useCallback, useMemo } from "react";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
 import { resolveSelectedCloseoutOwnerEditSource } from "@/features/closeouts/client/closeout-owner-edit-display";
+import {
+  buildRegisterCloseoutResolveOptions,
+  resolveRegisterCloseoutFromEntry,
+} from "@/features/closeouts/client/register-closeout-resolution";
 import { useRegisterEntriesCatalog } from "@/features/operations/client/use-register-entries-catalog";
 import { resolveCloseoutForOperationalEntry } from "@/features/operations/client/register-operations-selection";
 import { useResolvedSelectedOperation } from "@/features/operations/client/use-resolved-selected-operation";
@@ -96,23 +100,31 @@ export function PrototypeRuntimeOverlayStack({
     [closeouts, resolvedSelected],
   );
 
+  const closeoutResolveOptions = useMemo(
+    () => buildRegisterCloseoutResolveOptions({
+      cachedCloseouts: closeouts as import("@/features/operations/client/operations-client-types").CloseoutRecord[],
+      reloadCloseouts: async () => (
+        await reloadCloseoutsFromApi()
+      ) as import("@/features/operations/client/operations-client-types").CloseoutRecord[],
+      apiContext: {
+        enabled: entriesApiEnabled,
+        organizationId: typeof runtimeApiAuth?.organizationId === "string" ? runtimeApiAuth.organizationId : "",
+        actorUserId: typeof runtimeApiAuth?.actorUserId === "string" ? runtimeApiAuth.actorUserId : "",
+        actorRole: typeof runtimeApiAuth?.actorRole === "string" ? runtimeApiAuth.actorRole : "owner",
+      },
+    }),
+    [closeouts, entriesApiEnabled, reloadCloseoutsFromApi, runtimeApiAuth],
+  );
+
   const handleEditOwnerCloseoutFromEntry = useCallback(async (entry: OperationalEntry) => {
-    let closeout = resolveCloseoutForOperationalEntry(entry, closeouts as Parameters<typeof resolveCloseoutForOperationalEntry>[1]);
-    if (!closeout && typeof reloadCloseoutsFromApi === "function") {
-      try {
-        const remoteCloseouts = await reloadCloseoutsFromApi();
-        closeout = resolveCloseoutForOperationalEntry(entry, remoteCloseouts as Parameters<typeof resolveCloseoutForOperationalEntry>[1]);
-      } catch {
-        // fall through to alert below
-      }
-    }
+    const closeout = await resolveRegisterCloseoutFromEntry(entry, closeoutResolveOptions);
     if (!closeout) {
       await alertCloseoutNotFoundForEntry(lang, text);
       return;
     }
     setSelected(null);
-    setOwnerEditCloseout(closeout);
-  }, [closeouts, lang, reloadCloseoutsFromApi, setOwnerEditCloseout, setSelected]);
+    setOwnerEditCloseout(closeout as PrototypeCloseoutRecord);
+  }, [closeoutResolveOptions, lang, setOwnerEditCloseout, setSelected]);
 
   return (
     <>

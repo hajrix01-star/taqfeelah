@@ -12,7 +12,9 @@ import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 import {
   entryRowMatchesIncomeSourceFilter,
   resolveAggregatedChannelShape,
+  resolveRegisterIncomeSourceFilterKey,
 } from "@/features/org-config/client/sales-channel-display";
+import { sanitizeCloseoutChannelDisplayName } from "@/features/daily-closeouts/closeout-sales-normalize";
 import type { DisplayLang } from "@/core/i18n/display-locale";
 import type {
   AnalyticsBusinessRef,
@@ -145,10 +147,21 @@ export function aggregateSalesChannelsFromGroupEntries(
     if (entry.type !== "summary") return;
     (entry.salesChannels || []).forEach((row) => {
       if (!row?.channelId || Number(row.amount) <= 0) return;
-      const name = resolveChannelName(row);
-      const current = map.get(row.channelId) || { channelId: row.channelId, name, amount: 0 };
-      map.set(row.channelId, {
+      const resolvedName = sanitizeCloseoutChannelDisplayName(
+        resolveChannelName(row),
+        sanitizeCloseoutChannelDisplayName(row.name, ""),
+      );
+      const mapKey = resolveRegisterIncomeSourceFilterKey(row, configuredChannels)
+        || String(row.channelId);
+      const current = map.get(mapKey) || {
+        channelId: String(row.channelId),
+        name: resolvedName,
+        amount: 0,
+      };
+      map.set(mapKey, {
         ...current,
+        channelId: current.channelId || String(row.channelId),
+        name: current.name || resolvedName,
         amount: addUiAmounts(current.amount, Number(row.amount)),
       });
     });
