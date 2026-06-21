@@ -6,4 +6,4 @@ export {
   createOrganizationMemberViaApi,
   updateOrganizationMemberViaApi,
   setOrgConfigRuntimeApiIdMaps as setMembersRuntimeApiIdMaps,
-} from "@/features/org-config/client/org-config-api-client.js";
+} from "@/features/org-config/client/org-config-api-client";

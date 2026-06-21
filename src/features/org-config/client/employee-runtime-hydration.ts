@@ -1,10 +1,10 @@
 import { resolveClientOrganizationId } from "@/core/client/resolve-client-organization-id";
 import { bindsToServerAuth } from "@/core/config/runtime-capabilities";
-import { fetchEmployeeRuntimeBundleViaApi } from "./org-config-api-client.js";
+import { fetchEmployeeRuntimeBundleViaApi } from "./org-config-api-client";
 import {
   mapEmployeeStoresBundleToRuntime,
   validateOrgConfigDbChannelMappings,
-} from "./org-config-runtime-mapper.js";
+} from "./org-config-runtime-mapper";
 
 export function readEmployeeRuntimeApiAuth(sessionUserId = "", sessionOrganizationId = "") {
   return {
@@ -21,6 +21,9 @@ export function readEmployeeRuntimeApiAuth(sessionUserId = "", sessionOrganizati
 export async function loadEmployeeRuntimeContextFromApi({
   sessionUserId,
   sessionOrganizationId = "",
+}: {
+  sessionUserId: string;
+  sessionOrganizationId?: string;
 }) {
   if (!sessionUserId) return null;
   const auth = readEmployeeRuntimeApiAuth(sessionUserId, sessionOrganizationId);

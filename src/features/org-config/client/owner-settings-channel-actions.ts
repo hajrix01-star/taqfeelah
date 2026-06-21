@@ -1,9 +1,3 @@
-/**
- * @typedef {Object} StoreChannelConfig
- * @property {Array<Record<string, unknown>>} channels
- * @property {string[]} activeIds
- */
-
 import {
   INCOME_SOURCE_CATALOG,
   catalogDisplayName,
@@ -11,12 +5,9 @@ import {
   listCatalogByKind,
   resolveIncomeSourceKind,
 } from "@/core/client/income-source-catalog";
+import type { StoreChannelConfig } from "./org-config-client-types";
 
-/**
- * @param {StoreChannelConfig} config
- * @returns {StoreChannelConfig}
- */
-export function cloneStoreChannelDraft(config) {
+export function cloneStoreChannelDraft(config: StoreChannelConfig): StoreChannelConfig {
   return {
     ...config,
     channels: config.channels.map((channel) => ({ ...channel })),
@@ -24,19 +15,11 @@ export function cloneStoreChannelDraft(config) {
   };
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {string} legacyId
- */
-function channelExistsInConfig(config, legacyId) {
+function channelExistsInConfig(config: StoreChannelConfig, legacyId: string) {
   return Boolean(findConfiguredChannelByLegacyId(config, legacyId));
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {string} legacyId
- */
-export function findConfiguredChannelByLegacyId(config, legacyId) {
+export function findConfiguredChannelByLegacyId(config: StoreChannelConfig, legacyId: string) {
   return config.channels.find((channel) => (
     channel.legacyId === legacyId
     || channel.id === legacyId
@@ -44,10 +27,7 @@ export function findConfiguredChannelByLegacyId(config, legacyId) {
   ));
 }
 
-/**
- * @param {Record<string, unknown>} channel
- */
-function isCatalogConfiguredChannel(channel) {
+function isCatalogConfiguredChannel(channel: Record<string, unknown>) {
   const legacyId = String(
     channel?.legacyId
     || channel?.text
@@ -58,12 +38,15 @@ function isCatalogConfiguredChannel(channel) {
 
 /**
  * Unified owner-settings rows: full catalog (toggle-only) plus custom channels.
- *
- * @param {StoreChannelConfig} config
  */
-export function listUnifiedIncomeSourceRows(config) {
-  /** @type {Array<{ rowId: string, toggleId: string, channel: Record<string, unknown>, isCatalog: boolean, isActive: boolean }>} */
-  const rows = [];
+export function listUnifiedIncomeSourceRows(config: StoreChannelConfig) {
+  const rows: Array<{
+    rowId: string;
+    toggleId: string;
+    channel: Record<string, unknown>;
+    isCatalog: boolean;
+    isActive: boolean;
+  }> = [];
 
   for (const entry of INCOME_SOURCE_CATALOG) {
     const channel = findConfiguredChannelByLegacyId(config, entry.legacyId);
@@ -98,11 +81,7 @@ export function listUnifiedIncomeSourceRows(config) {
   return rows;
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {string} channelOrLegacyId
- */
-export function toggleIncomeSourceActive(config, channelOrLegacyId) {
+export function toggleIncomeSourceActive(config: StoreChannelConfig, channelOrLegacyId: string) {
   const configured = config.channels.find((channel) => channel.id === channelOrLegacyId)
     || findConfiguredChannelByLegacyId(config, channelOrLegacyId);
 
@@ -122,27 +101,18 @@ export function toggleIncomeSourceActive(config, channelOrLegacyId) {
   };
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {"payment_method" | "sales_channel"} kind
- */
-export function listAddableCatalogSources(config, kind) {
+export function listAddableCatalogSources(
+  config: StoreChannelConfig,
+  kind: "payment_method" | "sales_channel",
+) {
   return listCatalogByKind(kind).filter((entry) => !channelExistsInConfig(config, entry.legacyId));
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {string} channelId
- */
-export function isLastActiveSalesChannel(config, channelId) {
+export function isLastActiveSalesChannel(config: StoreChannelConfig, channelId: string) {
   return config.activeIds.includes(channelId) && config.activeIds.length === 1;
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {string} channelId
- */
-export function toggleSalesChannelActive(config, channelId) {
+export function toggleSalesChannelActive(config: StoreChannelConfig, channelId: string) {
   if (isLastActiveSalesChannel(config, channelId)) {
     return { config, blocked: true };
   }
@@ -157,20 +127,17 @@ export function toggleSalesChannelActive(config, channelId) {
   };
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {{ id: string }} channel
- */
-export function canRequestRetireSalesChannel(config, channel) {
+export function canRequestRetireSalesChannel(
+  config: StoreChannelConfig,
+  channel: { id: string },
+) {
   return !isLastActiveSalesChannel(config, channel.id);
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {{ id: string }} channel
- * @returns {StoreChannelConfig}
- */
-export function restoreRetiredSalesChannel(config, channel) {
+export function restoreRetiredSalesChannel(
+  config: StoreChannelConfig,
+  channel: { id: string },
+): StoreChannelConfig {
   return {
     channels: config.channels.map((item) => (
       item.id === channel.id ? { ...item, retired: false } : item
@@ -181,12 +148,10 @@ export function restoreRetiredSalesChannel(config, channel) {
   };
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {{ id: string }} channel
- * @returns {StoreChannelConfig}
- */
-export function retireSalesChannelInDraft(config, channel) {
+export function retireSalesChannelInDraft(
+  config: StoreChannelConfig,
+  channel: { id: string },
+): StoreChannelConfig {
   return {
     activeIds: config.activeIds.filter((id) => id !== channel.id),
     channels: config.channels.map((item) => (
@@ -195,12 +160,11 @@ export function retireSalesChannelInDraft(config, channel) {
   };
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {string} legacyId
- * @param {{ icon?: unknown }} [options]
- */
-export function addCatalogIncomeSource(config, legacyId, options = {}) {
+export function addCatalogIncomeSource(
+  config: StoreChannelConfig,
+  legacyId: string,
+  options: { icon?: unknown } = {},
+) {
   const entry = getCatalogEntry(legacyId);
   if (!entry || channelExistsInConfig(config, entry.legacyId)) {
     return { config, added: false, channelId: "" };
@@ -229,12 +193,11 @@ export function addCatalogIncomeSource(config, legacyId, options = {}) {
   };
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {string} name
- * @param {{ id?: string, icon?: unknown, kind?: "payment_method" | "sales_channel" }} [options]
- */
-export function addCustomSalesChannel(config, name, options = {}) {
+export function addCustomSalesChannel(
+  config: StoreChannelConfig,
+  name: string,
+  options: { id?: string; icon?: unknown; kind?: "payment_method" | "sales_channel" } = {},
+) {
   const trimmed = name.trim();
   if (!trimmed) {
     return { config, added: false, channelId: "" };
@@ -262,27 +225,25 @@ export function addCustomSalesChannel(config, name, options = {}) {
   };
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {"payment_method" | "sales_channel"} kind
- */
-export function listConfiguredChannelsByKind(config, kind) {
+export function listConfiguredChannelsByKind(
+  config: StoreChannelConfig,
+  kind: "payment_method" | "sales_channel",
+) {
   return config.channels.filter((channel) => !channel.retired && resolveIncomeSourceKind(channel) === kind);
 }
 
-/**
- * @param {StoreChannelConfig} config
- * @param {"payment_method" | "sales_channel"} kind
- */
-export function listVisibleChannelsByKind(config, visibleChannels, kind) {
+export function listVisibleChannelsByKind(
+  config: StoreChannelConfig,
+  visibleChannels: Array<Record<string, unknown>>,
+  kind: "payment_method" | "sales_channel",
+) {
   return visibleChannels.filter((channel) => resolveIncomeSourceKind(channel) === kind);
 }
 
-/**
- * @param {Record<string, unknown>} channel
- * @param {"ar" | "en"} [lang]
- */
-export function resolveChannelPersistName(channel, lang = "ar") {
+export function resolveChannelPersistName(
+  channel: Record<string, unknown>,
+  lang: "ar" | "en" = "ar",
+) {
   const directName = String(channel?.nameAr || channel?.nameEn || "").trim();
   if (directName) return directName;
 
@@ -299,9 +260,6 @@ export function resolveChannelPersistName(channel, lang = "ar") {
   return "";
 }
 
-/**
- * @param {Record<string, unknown>} channel
- */
-export function resolveChannelPersistKind(channel) {
+export function resolveChannelPersistKind(channel: Record<string, unknown>) {
   return resolveIncomeSourceKind(channel);
 }

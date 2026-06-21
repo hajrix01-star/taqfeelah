@@ -1,39 +1,22 @@
 import { normalizeTeamEmployeePins } from "./owner-settings-local-persistence";
+import type { StaffMember } from "./org-config-client-types";
 
-/**
- * @typedef {Object} StaffMember
- * @property {string} id
- * @property {boolean} [active]
- * @property {string[]} [storeIds]
- * @property {string} [pin]
- * @property {string} [nameAr]
- * @property {string} [nameEn]
- * @property {string} [mobile]
- */
-
-/**
- * @param {StaffMember[]} staff
- * @returns {StaffMember[]}
- */
-export function cloneStaffDraft(staff) {
+export function cloneStaffDraft(staff: StaffMember[]): StaffMember[] {
   return staff.map((person) => ({ ...person, storeIds: [...(person.storeIds || [])] }));
 }
 
-/**
- * @param {StaffMember[]} draftStaff
- * @param {Object} [options]
- * @param {Record<string, string>} [options.draftAuthEmployeePins]
- * @param {Record<string, string>} [options.authEmployeePins]
- * @param {string} [options.defaultPin]
- * @param {boolean} [options.pinsFromAuthIdentitiesOnly]
- */
 export function prepareSavedTeamDraft(
-  draftStaff,
+  draftStaff: StaffMember[],
   {
     draftAuthEmployeePins = {},
     authEmployeePins = {},
     defaultPin = "1234",
     pinsFromAuthIdentitiesOnly = false,
+  }: {
+    draftAuthEmployeePins?: Record<string, string>;
+    authEmployeePins?: Record<string, string>;
+    defaultPin?: string;
+    pinsFromAuthIdentitiesOnly?: boolean;
   } = {},
 ) {
   const staff = draftStaff.map((person) => {
@@ -66,30 +49,30 @@ export function prepareSavedTeamDraft(
   };
 }
 
-/**
- * @param {Object} input
- * @param {string} input.name
- * @param {string[]} input.storeIds
- * @param {boolean} input.managingTeam
- */
-export function canAddStaffMember({ name, storeIds, managingTeam }) {
+export function canAddStaffMember({
+  name,
+  storeIds,
+  managingTeam,
+}: {
+  name: string;
+  storeIds: string[];
+  managingTeam: boolean;
+}) {
   return Boolean(name.trim() && storeIds.length > 0 && managingTeam);
 }
 
-/**
- * @param {Object} input
- * @param {string} input.name
- * @param {string} input.mobile
- * @param {string[]} input.storeIds
- * @param {string} [input.defaultPin]
- * @param {string} [input.id]
- */
 export function buildNewStaffMember({
   name,
   mobile,
   storeIds,
   defaultPin = "1234",
   id,
+}: {
+  name: string;
+  mobile: string;
+  storeIds: string[];
+  defaultPin?: string;
+  id?: string;
 }) {
   const staffId = id || `staff-${Date.now()}`;
   const trimmedName = name.trim();
@@ -108,42 +91,28 @@ export function buildNewStaffMember({
   };
 }
 
-/**
- * @param {StaffMember[]} staffDraft
- * @param {string} personId
- */
-export function toggleEmployeeActiveInDraft(staffDraft, personId) {
+export function toggleEmployeeActiveInDraft(staffDraft: StaffMember[], personId: string) {
   return staffDraft.map((person) => (
     person.id === personId ? { ...person, active: !person.active } : person
   ));
 }
 
-/**
- * @param {StaffMember} person
- * @param {string} [fallbackStoreId]
- */
-export function resolveEmployeeStoreIds(person, fallbackStoreId = "shami") {
+export function resolveEmployeeStoreIds(person: StaffMember, fallbackStoreId = "shami") {
   return person.storeIds || [fallbackStoreId];
 }
 
-/**
- * @param {StaffMember[]} staffDraft
- * @param {string} personId
- * @param {string} mobile
- */
-export function updateEmployeeMobileInDraft(staffDraft, personId, mobile) {
+export function updateEmployeeMobileInDraft(staffDraft: StaffMember[], personId: string, mobile: string) {
   return staffDraft.map((person) => (
     person.id === personId ? { ...person, mobile } : person
   ));
 }
 
-/**
- * @param {StaffMember[]} staffDraft
- * @param {string} personId
- * @param {string} storeId
- * @param {string} [fallbackStoreId]
- */
-export function toggleEmployeeStoreInDraft(staffDraft, personId, storeId, fallbackStoreId = "shami") {
+export function toggleEmployeeStoreInDraft(
+  staffDraft: StaffMember[],
+  personId: string,
+  storeId: string,
+  fallbackStoreId = "shami",
+) {
   return staffDraft.map((person) => {
     if (person.id !== personId) return person;
     const assigned = resolveEmployeeStoreIds(person, fallbackStoreId);
@@ -154,28 +123,17 @@ export function toggleEmployeeStoreInDraft(staffDraft, personId, storeId, fallba
   });
 }
 
-/**
- * @param {string[]} storeIds
- * @param {string} storeId
- */
-export function toggleStoreSelection(storeIds, storeId) {
+export function toggleStoreSelection(storeIds: string[], storeId: string) {
   return storeIds.includes(storeId)
     ? storeIds.filter((item) => item !== storeId)
     : [...storeIds, storeId];
 }
 
-/**
- * @param {Record<string, unknown>} person
- */
-export function buildStaffDeleteTarget(person) {
+export function buildStaffDeleteTarget(person: Record<string, unknown>) {
   return { type: "staff", item: person };
 }
 
-/**
- * @param {unknown} failure
- * @param {"ar" | "en"} [lang]
- */
-export function resolveTeamSaveFailureMessage(failure, lang = "ar") {
+export function resolveTeamSaveFailureMessage(failure: unknown, lang: "ar" | "en" = "ar") {
   if (failure instanceof Error && failure.message) return failure.message;
   return lang === "ar" ? "تعذر حفظ الفريق على الخادم." : "Failed to save team on server.";
 }

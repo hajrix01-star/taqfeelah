@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { useOrgConfigFromApi } from "./use-org-config-from-api.js";
+import { useOrgConfigFromApi } from "./use-org-config-from-api";
+import type {
+  OrgConfigRuntimeMapped,
+  OrgConfigRuntimeSetters,
+  OrgConfigRuntimeSnapshot,
+  OrgConfigApiAuth,
+} from "./org-config-client-types";
 
 export function buildOrgConfigRuntimeSnapshot({
   configuredBusinesses,
@@ -9,7 +15,7 @@ export function buildOrgConfigRuntimeSnapshot({
   storeChannelSettings,
   storeOperationalSettings,
   staff,
-}) {
+}: OrgConfigRuntimeSnapshot): OrgConfigRuntimeSnapshot {
   return {
     configuredBusinesses,
     archivedBusinessIds,
@@ -19,7 +25,10 @@ export function buildOrgConfigRuntimeSnapshot({
   };
 }
 
-export function applyOrgConfigMappedState(mapped, setters) {
+export function applyOrgConfigMappedState(
+  mapped: OrgConfigRuntimeMapped,
+  setters: OrgConfigRuntimeSetters,
+) {
   if (!mapped || typeof mapped !== "object") return;
 
   if (Array.isArray(mapped.configuredBusinesses)) {
@@ -55,6 +64,22 @@ export function useOrgConfigRuntimeBridge({
   setStoreChannelSettings,
   setStoreOperationalSettings,
   setStaff,
+}: {
+  enabled: boolean;
+  auth: OrgConfigApiAuth;
+  loggedIn: boolean;
+  isEmployee: boolean;
+  employeePins: Record<string, string>;
+  configuredBusinesses: Array<Record<string, unknown>>;
+  archivedBusinessIds: string[];
+  storeChannelSettings: OrgConfigRuntimeSnapshot["storeChannelSettings"];
+  storeOperationalSettings: Record<string, unknown>;
+  staff: Array<Record<string, unknown>>;
+  setConfiguredBusinesses: OrgConfigRuntimeSetters["setConfiguredBusinesses"];
+  setArchivedBusinessIds: OrgConfigRuntimeSetters["setArchivedBusinessIds"];
+  setStoreChannelSettings: OrgConfigRuntimeSetters["setStoreChannelSettings"];
+  setStoreOperationalSettings: OrgConfigRuntimeSetters["setStoreOperationalSettings"];
+  setStaff: OrgConfigRuntimeSetters["setStaff"];
 }) {
   const snapshot = useMemo(
     () => buildOrgConfigRuntimeSnapshot({
@@ -81,7 +106,7 @@ export function useOrgConfigRuntimeBridge({
     setStoreOperationalSettings,
   ]);
 
-  const onHydrate = useCallback((mapped) => {
+  const onHydrate = useCallback((mapped: OrgConfigRuntimeMapped) => {
     applyOrgConfigMappedState(mapped, setters);
   }, [setters]);
 

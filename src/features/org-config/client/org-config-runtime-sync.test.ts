@@ -40,7 +40,7 @@ describe("org config runtime sync", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync.js");
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync");
     await persistOrgConfigSnapshot({
       auth: {
         organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -98,7 +98,7 @@ describe("org config runtime sync", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync.js");
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync");
     const applied = await persistOrgConfigSnapshot({
       auth: {
         organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -159,7 +159,7 @@ describe("org config runtime sync", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync.js");
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync");
     await persistOrgConfigSnapshot({
       auth: {
         organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -219,7 +219,7 @@ describe("org config runtime sync", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync.js");
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync");
     const applied = await persistOrgConfigSnapshot({
       auth: {
         organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -288,7 +288,7 @@ describe("org config runtime sync", () => {
       reason: "owner_added_channel",
     });
     const remapped = applied.storeChannelSettings.shami;
-    expect(remapped.channels.some((channel: { id: string }) => channel.id === createdChannelId)).toBe(true);
+    expect(remapped.channels.some((channel) => channel.id === createdChannelId)).toBe(true);
     expect(remapped.activeIds).toContain(createdChannelId);
     expect(remapped.activeIds).not.toContain("channel-1718040000000");
   });
@@ -312,7 +312,7 @@ describe("org config runtime sync", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync.js");
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync");
     const applied = await persistOrgConfigSnapshot({
       auth: {
         organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",

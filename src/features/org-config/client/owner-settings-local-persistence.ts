@@ -1,5 +1,6 @@
 import { OWNER_SETTINGS_STORAGE_KEY } from "@/features/runtime-settings/client/migrate-local-saved-settings";
 import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
+import type { StaffMember, StoreChannelConfig } from "./org-config-client-types";
 
 export function buildOwnerSettingsLocalStoragePayload({
   configuredBusinesses,
@@ -14,6 +15,19 @@ export function buildOwnerSettingsLocalStoragePayload({
   authOwnerUsername,
   authOwnerPassword,
   authEmployeePins,
+}: {
+  configuredBusinesses: Array<Record<string, unknown>>;
+  archivedBusinessIds: string[];
+  storeChannelSettings: Record<string, StoreChannelConfig>;
+  storeOperationalSettings: Record<string, unknown>;
+  notebookTheme: string;
+  employeePreferences?: Record<string, unknown>;
+  ownerShellPreferences?: Record<string, unknown>;
+  staff: Array<Record<string, unknown>>;
+  ownerProfile: Record<string, unknown>;
+  authOwnerUsername: string;
+  authOwnerPassword: string;
+  authEmployeePins: Record<string, string>;
 }) {
   return {
     configuredBusinesses,
@@ -33,40 +47,30 @@ export function buildOwnerSettingsLocalStoragePayload({
   };
 }
 
-/**
- * @typedef {Object} PersistOwnerSettingsOptions
- * @property {boolean} [enabled]
- * @property {string} [storageKey]
- */
-
-/**
- * @param {Record<string, unknown>} payload
- * @param {PersistOwnerSettingsOptions} [options]
- */
-export function persistOwnerSettingsToLocalStorage(payload, {
-  enabled = true,
-  storageKey = OWNER_SETTINGS_STORAGE_KEY,
-} = {}) {
+export function persistOwnerSettingsToLocalStorage(
+  payload: Record<string, unknown>,
+  {
+    enabled = true,
+    storageKey = OWNER_SETTINGS_STORAGE_KEY,
+  }: {
+    enabled?: boolean;
+    storageKey?: string;
+  } = {},
+) {
   if (!isBrowserPersistentStorageAllowed({ scope: "legacy-settings" })) return false;
   if (!enabled || typeof window === "undefined") return false;
   window.localStorage.setItem(storageKey, JSON.stringify(payload));
   return true;
 }
 
-/**
- * @typedef {Object} TeamEmployeePinOptions
- * @property {Record<string, string>} [authEmployeePins]
- * @property {Record<string, string>} [draftAuthEmployeePins]
- * @property {Array<{ id: string }>} [staff]
- */
-
-/**
- * @param {TeamEmployeePinOptions} [options]
- */
 export function normalizeTeamEmployeePins({
   authEmployeePins = {},
   draftAuthEmployeePins = {},
   staff = [],
+}: {
+  authEmployeePins?: Record<string, string>;
+  draftAuthEmployeePins?: Record<string, string>;
+  staff?: StaffMember[];
 } = {}) {
   const allowedIds = new Set(staff.map((person) => person.id));
   return Object.fromEntries(
@@ -75,20 +79,6 @@ export function normalizeTeamEmployeePins({
   );
 }
 
-/**
- * @typedef {Object} OwnerSettingsTeamPersistInput
- * @property {Array<Record<string, unknown>>} staff
- * @property {string} authOwnerUsername
- * @property {string} authOwnerPassword
- * @property {Record<string, string>} [authEmployeePins]
- * @property {Record<string, string>} [draftAuthEmployeePins]
- * @property {boolean} [omitStaff]
- * @property {boolean} [omitEmployeePins]
- */
-
-/**
- * @param {OwnerSettingsTeamPersistInput} input
- */
 export function buildOwnerSettingsTeamPersistPayload({
   staff,
   authOwnerUsername,
@@ -97,6 +87,14 @@ export function buildOwnerSettingsTeamPersistPayload({
   draftAuthEmployeePins,
   omitStaff = false,
   omitEmployeePins = false,
+}: {
+  staff: Array<Record<string, unknown>>;
+  authOwnerUsername: string;
+  authOwnerPassword: string;
+  authEmployeePins?: Record<string, string>;
+  draftAuthEmployeePins?: Record<string, string>;
+  omitStaff?: boolean;
+  omitEmployeePins?: boolean;
 }) {
   return {
     ...(omitStaff ? {} : { staff }),
@@ -108,7 +106,7 @@ export function buildOwnerSettingsTeamPersistPayload({
         : normalizeTeamEmployeePins({
           authEmployeePins,
           draftAuthEmployeePins,
-          staff,
+          staff: staff as StaffMember[],
         }),
     },
   };

@@ -1,16 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchOrgConfigBundleViaApi } from "./org-config-api-client.js";
+import { fetchOrgConfigBundleViaApi } from "./org-config-api-client";
 import { bindsToServerAuth } from "@/core/config/runtime-capabilities";
 import {
   buildOrgConfigPersistBaseline,
   mapOrgConfigBundleToRuntime,
   validateOrgConfigDbChannelMappings,
-} from "./org-config-runtime-mapper.js";
-import { persistOrgConfigSnapshot } from "./org-config-runtime-sync.js";
+} from "./org-config-runtime-mapper";
+import { persistOrgConfigSnapshot } from "./org-config-runtime-sync";
+import type {
+  OrgConfigApiAuth,
+  OrgConfigRuntimeMapped,
+  OrgConfigRuntimeSnapshot,
+} from "./org-config-client-types";
 
-function tryBuildOrgConfigPersistBaseline(snapshot) {
+function tryBuildOrgConfigPersistBaseline(snapshot: OrgConfigRuntimeSnapshot) {
   try {
     return buildOrgConfigPersistBaseline(snapshot);
   } catch (failure) {
@@ -19,9 +24,9 @@ function tryBuildOrgConfigPersistBaseline(snapshot) {
   }
 }
 
-function buildPersistArgsFromBaselineJson(baseline) {
+function buildPersistArgsFromBaselineJson(baseline: Record<string, unknown>): OrgConfigRuntimeSnapshot {
   return {
-    configuredBusinesses: baseline.businesses.map((business) => ({
+    configuredBusinesses: (baseline.businesses as Array<Record<string, unknown>> || []).map((business) => ({
       id: business.id,
       dbStoreId: business.dbStoreId,
       displayName: business.displayName,
@@ -29,21 +34,29 @@ function buildPersistArgsFromBaselineJson(baseline) {
       nameEn: business.displayName,
       customLocation: business.customLocation,
     })),
-    archivedBusinessIds: baseline.archivedBusinessIds,
-    storeChannelSettings: baseline.storeChannelSettings,
-    storeOperationalSettings: baseline.storeOperationalSettings,
-    staff: baseline.staff,
+    archivedBusinessIds: (baseline.archivedBusinessIds as string[]) || [],
+    storeChannelSettings: (baseline.storeChannelSettings as OrgConfigRuntimeSnapshot["storeChannelSettings"]) || {},
+    storeOperationalSettings: (baseline.storeOperationalSettings as Record<string, unknown>) || {},
+    staff: (baseline.staff as Array<Record<string, unknown>>) || [],
   };
 }
 
 export function useOrgConfigFromApi({
   enabled = false,
-  auth = {},
+  auth,
   loggedIn = false,
   isEmployee = false,
-  snapshot = {},
+  snapshot,
   employeePins = {},
   onHydrate = () => {},
+}: {
+  enabled?: boolean;
+  auth: OrgConfigApiAuth;
+  loggedIn?: boolean;
+  isEmployee?: boolean;
+  snapshot: OrgConfigRuntimeSnapshot;
+  employeePins?: Record<string, string>;
+  onHydrate?: (mapped: OrgConfigRuntimeMapped) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -52,16 +65,16 @@ export function useOrgConfigFromApi({
   const applyingRef = useRef(false);
   const baselineRef = useRef("");
   const snapshotRef = useRef(snapshot);
-  const persistTimerRef = useRef(null);
+  const persistTimerRef = useRef<number | null>(null);
   const loadedAuthKeyRef = useRef("");
   snapshotRef.current = snapshot;
 
   const authKey = useMemo(
-    () => `${auth?.organizationId || ""}|${auth?.actorUserId || ""}|${auth?.actorRole || ""}`,
-    [auth?.actorRole, auth?.actorUserId, auth?.organizationId],
+    () => `${auth.organizationId || ""}|${auth.actorUserId || ""}|${auth.actorRole || ""}`,
+    [auth.actorRole, auth.actorUserId, auth.organizationId],
   );
 
-  const loadOrgConfig = useCallback(async (options = {}) => {
+  const loadOrgConfig = useCallback(async (options: { employeePins?: Record<string, string> } = {}) => {
     if (!enabled || !loggedIn) return;
     const pins = options.employeePins ?? employeePins;
     setLoading(true);
@@ -88,14 +101,17 @@ export function useOrgConfigFromApi({
     }
   }, [auth, employeePins, enabled, loggedIn, onHydrate]);
 
-  const flushPersist = useCallback(async (overrides = {}, options = {}) => {
+  const flushPersist = useCallback(async (
+    overrides: Partial<OrgConfigRuntimeSnapshot> = {},
+    options: { employeePins?: Record<string, string> } = {},
+  ) => {
     if (!enabled || !loggedIn || isEmployee || !hydratedRef.current || !baselineRef.current) {
       throw new Error("org config is not ready to save");
     }
 
     const pins = options.employeePins ?? employeePins;
     const next = { ...snapshotRef.current, ...overrides };
-    const baseline = JSON.parse(baselineRef.current);
+    const baseline = JSON.parse(baselineRef.current) as Record<string, unknown>;
     await persistOrgConfigSnapshot({
       auth,
       baseline: buildPersistArgsFromBaselineJson(baseline),

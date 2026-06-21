@@ -1,22 +1,20 @@
 import { readLocalSavedSettings } from "@/features/runtime-settings/client/read-local-saved-settings";
 import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 
-/**
- * @param {Object} deps
- * @param {boolean} deps.bindsToServerAuth
- * @param {string} deps.storageKey
- * @param {string} deps.closeoutAlertsKey
- * @param {(raw: unknown, options: Record<string, unknown>) => unknown} deps.applyMigration
- * @param {(resolveCloseouts: () => void) => void} deps.autoResolveCloseouts
- */
 export function createMigrateSavedSettings({
   bindsToServerAuth,
   storageKey,
   closeoutAlertsKey,
   applyMigration,
   autoResolveCloseouts,
+}: {
+  bindsToServerAuth: boolean;
+  storageKey: string;
+  closeoutAlertsKey: string;
+  applyMigration: (raw: unknown, options: Record<string, unknown>) => unknown;
+  autoResolveCloseouts: (resolveCloseouts: () => void) => void;
 }) {
-  return function migrateSavedSettings(raw) {
+  return function migrateSavedSettings(raw: unknown) {
     if (
       !raw
       || typeof window === "undefined"
@@ -27,7 +25,7 @@ export function createMigrateSavedSettings({
     }
     return applyMigration(raw, {
       skip: false,
-      persistMigrated: (migrated) => {
+      persistMigrated: (migrated: unknown) => {
         window.localStorage.setItem(storageKey, JSON.stringify(migrated));
       },
       clearCloseoutAlerts: () => {
@@ -40,13 +38,17 @@ export function createMigrateSavedSettings({
   };
 }
 
-/**
- * @param {Object} deps
- * @param {boolean} deps.enabled
- * @param {(raw: unknown) => unknown} deps.migrate
- */
-export function createReadSavedSettings({ enabled, migrate }) {
-  return function readSavedSettings() {
-    return readLocalSavedSettings({ enabled, migrate });
+export function createReadSavedSettings({
+  enabled,
+  migrate,
+}: {
+  enabled: boolean;
+  migrate: (raw: unknown) => unknown;
+}) {
+  return function readSavedSettings(): Record<string, unknown> | null {
+    return readLocalSavedSettings({
+      enabled,
+      migrate: migrate as (raw: Record<string, unknown> | null) => Record<string, unknown> | null,
+    }) as Record<string, unknown> | null;
   };
 }

@@ -1,16 +1,24 @@
 import { CreditCard, Landmark, ShoppingBag, Smartphone, Wallet } from "lucide-react";
 import { normalizeStoreOperationalSettings } from "@/domain/store-operational-settings/normalize";
 import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
+import type {
+  ApiChannelRow,
+  ApiMemberRow,
+  ApiStoreRow,
+  OrgConfigBundleInput,
+  OrgConfigRuntimeSnapshot,
+  StoreChannelConfig,
+} from "./org-config-client-types";
 
 const emptyStoreRecord = { sales: 0, expense: 0, ratio: "0.0%", net: 0, proofs: 0 };
 
-export function assertCanonicalUuidId(entityName, value) {
+export function assertCanonicalUuidId(entityName: string, value: unknown) {
   if (!isUuid(value)) {
     throw new Error(`${entityName} id must be a canonical UUID in DB source mode.`);
   }
 }
 
-const CHANNEL_TEMPLATES = {
+const CHANNEL_TEMPLATES: Record<string, Record<string, unknown>> = {
   cash: { id: "cash", text: "cash", kind: "payment_method", icon: Wallet },
   bank: { id: "bank", text: "bank", kind: "payment_method", icon: Landmark },
   mada: { id: "mada", text: "mada", kind: "payment_method", icon: CreditCard },
@@ -22,7 +30,7 @@ const CHANNEL_TEMPLATES = {
   keeta: { id: "keeta", text: "keeta", kind: "sales_channel", icon: ShoppingBag },
 };
 
-const CHANNEL_NAME_TO_LEGACY = {
+const CHANNEL_NAME_TO_LEGACY: Record<string, string> = {
   cash: "cash",
   bank: "bank",
   بنك: "bank",
@@ -38,11 +46,11 @@ const CHANNEL_NAME_TO_LEGACY = {
   online: "online",
 };
 
-function normalizeChannelName(name) {
+function normalizeChannelName(name: unknown) {
   return typeof name === "string" ? name.trim().toLowerCase() : "";
 }
 
-export function resolveChannelLegacyId(channel) {
+export function resolveChannelLegacyId(channel: ApiChannelRow) {
   if (channel?.legacyId && !isUuid(channel.legacyId)) return channel.legacyId;
   const byName = CHANNEL_NAME_TO_LEGACY[normalizeChannelName(channel?.name)];
   if (byName) return byName;
@@ -50,7 +58,7 @@ export function resolveChannelLegacyId(channel) {
   return typeof channel?.id === "string" ? channel.id : "";
 }
 
-export function mapApiChannelToUi(channel) {
+export function mapApiChannelToUi(channel: ApiChannelRow) {
   const legacyId = resolveChannelLegacyId(channel);
   const template = CHANNEL_TEMPLATES[legacyId];
   const retired = channel?.status === "retired";
@@ -81,7 +89,7 @@ export function mapApiChannelToUi(channel) {
   };
 }
 
-export function mapApiStoreToBusiness(store) {
+export function mapApiStoreToBusiness(store: ApiStoreRow) {
   const legacyId = store?.legacyId && !isUuid(store.legacyId) ? store.legacyId : "";
   const name = typeof store?.name === "string" ? store.name.trim() : "";
   const id = isUuid(store?.id) ? store.id : legacyId || store?.id;
@@ -99,9 +107,12 @@ export function mapApiStoreToBusiness(store) {
   };
 }
 
-export function mapApiMemberToStaff(member, { employeePins = {} } = {}) {
+export function mapApiMemberToStaff(
+  member: ApiMemberRow,
+  { employeePins = {} }: { employeePins?: Record<string, string> } = {},
+) {
   const storeIds = (member?.storeAccess || [])
-    .map((row) => row.storeId)
+    .map((row) => String(row.storeId || ""))
     .filter(Boolean);
   const memberId = member?.memberId || "";
   const userId = member?.userId || "";
@@ -129,7 +140,7 @@ export function mapApiMemberToStaff(member, { employeePins = {} } = {}) {
 export function mapEmployeeStoresBundleToRuntime({
   stores = [],
   channelsByStoreId = {},
-}) {
+}: Pick<OrgConfigBundleInput, "stores" | "channelsByStoreId">) {
   const mapped = mapOrgConfigBundleToRuntime({
     stores,
     channelsByStoreId,
@@ -149,26 +160,26 @@ export function mapOrgConfigBundleToRuntime({
   channelsByStoreId = {},
   members = [],
   employeePins = {},
-}) {
-  const configuredBusinesses = [];
-  const archivedBusinessIds = [];
+}: OrgConfigBundleInput = {}): OrgConfigRuntimeSnapshot {
+  const configuredBusinesses: Array<Record<string, unknown>> = [];
+  const archivedBusinessIds: string[] = [];
 
   stores.forEach((store) => {
     const business = mapApiStoreToBusiness(store);
     if (store.status === "archived") {
-      archivedBusinessIds.push(business.id);
+      archivedBusinessIds.push(String(business.id));
     }
     configuredBusinesses.push(business);
   });
 
-  const storeChannelSettings = {};
+  const storeChannelSettings: Record<string, StoreChannelConfig> = {};
   configuredBusinesses.forEach((business) => {
-    const storeUuid = business.dbStoreId || business.id;
-    const channelRows = channelsByStoreId[storeUuid] || channelsByStoreId[business.id] || [];
+    const storeUuid = String(business.dbStoreId || business.id || "");
+    const channelRows = channelsByStoreId[storeUuid] || channelsByStoreId[String(business.id || "")] || [];
     const channels = channelRows.map((row) => mapApiChannelToUi(row));
-    storeChannelSettings[business.id] = {
+    storeChannelSettings[String(business.id || "")] = {
       channels,
-      activeIds: channels.filter((channel) => !channel.retired).map((channel) => channel.id),
+      activeIds: channels.filter((channel) => !channel.retired).map((channel) => String(channel.id || "")),
     };
   });
 
@@ -176,12 +187,12 @@ export function mapOrgConfigBundleToRuntime({
     .filter((member) => member.role === "employee")
     .map((member) => mapApiMemberToStaff(member, { employeePins }));
 
-  const storeOperationalSettings = {};
-  const storesByUuid = new Map(stores.map((store) => [store.id, store]));
+  const storeOperationalSettings: Record<string, unknown> = {};
+  const storesByUuid = new Map(stores.map((store) => [String(store.id || ""), store]));
   configuredBusinesses.forEach((business) => {
-    const storeRow = storesByUuid.get(business.dbStoreId) || storesByUuid.get(business.id);
+    const storeRow = storesByUuid.get(String(business.dbStoreId || "")) || storesByUuid.get(String(business.id || ""));
     if (storeRow?.operationalSettings) {
-      storeOperationalSettings[business.id] = normalizeStoreOperationalSettings(storeRow.operationalSettings);
+      storeOperationalSettings[String(business.id || "")] = normalizeStoreOperationalSettings(storeRow.operationalSettings);
     }
   });
 
@@ -195,13 +206,16 @@ export function mapOrgConfigBundleToRuntime({
 }
 
 /** Ensure active sales channels loaded from DB APIs carry canonical UUID apiChannelId values. */
-export function validateOrgConfigDbChannelMappings(mapped, { strict = false } = {}) {
+export function validateOrgConfigDbChannelMappings(
+  mapped: Pick<OrgConfigRuntimeSnapshot, "storeChannelSettings"> | null | undefined,
+  { strict = false }: { strict?: boolean } = {},
+) {
   if (!strict || !mapped || typeof mapped !== "object") return;
   const settings = mapped.storeChannelSettings || {};
   for (const [storeId, config] of Object.entries(settings)) {
     const activeIds = Array.isArray(config?.activeIds) ? config.activeIds : [];
     for (const channel of config?.channels || []) {
-      if (!activeIds.includes(channel?.id) || channel?.retired) continue;
+      if (!activeIds.includes(String(channel?.id || "")) || channel?.retired) continue;
       if (!isUuid(channel?.apiChannelId)) {
         const label = channel?.nameAr || channel?.nameEn || channel?.id || storeId;
         throw new Error(`sales channel id must be a canonical UUID in DB source mode (${label}).`);
@@ -211,7 +225,7 @@ export function validateOrgConfigDbChannelMappings(mapped, { strict = false } = 
 }
 
 /** Pending UI ids before org-config API create calls resolve them to UUIDs. */
-export function isClientGeneratedId(id) {
+export function isClientGeneratedId(id: unknown) {
   return typeof id === "string" && (
     id.startsWith("custom-")
     || id.startsWith("staff-")
@@ -219,7 +233,7 @@ export function isClientGeneratedId(id) {
   );
 }
 
-export function buildOrgConfigPersistBaseline(snapshot) {
+export function buildOrgConfigPersistBaseline(snapshot: OrgConfigRuntimeSnapshot) {
   (snapshot.configuredBusinesses || []).forEach((business) => {
     if (!isClientGeneratedId(business.id)) {
       assertCanonicalUuidId("store", business.id);
@@ -229,7 +243,7 @@ export function buildOrgConfigPersistBaseline(snapshot) {
     if (!isClientGeneratedId(person.id)) {
       assertCanonicalUuidId("staff", person.id);
     }
-    (person.storeIds || []).forEach((storeId) => {
+    (person.storeIds as string[] | undefined || []).forEach((storeId) => {
       if (!isClientGeneratedId(storeId)) {
         assertCanonicalUuidId("staff store", storeId);
       }
@@ -256,7 +270,7 @@ export function buildOrgConfigPersistBaseline(snapshot) {
       mobile: person.mobile || "",
       active: Boolean(person.active),
       removed: Boolean(person.removed),
-      storeIds: [...(person.storeIds || [])].sort(),
+      storeIds: [...(person.storeIds as string[] | undefined || [])].sort(),
     })),
   });
 }

@@ -8,52 +8,65 @@ import {
   updateOrganizationStoreViaApi,
   updateStoreOperationalSettingsViaApi,
   updateStoreSalesChannelViaApi,
-} from "./org-config-api-client.js";
+} from "./org-config-api-client";
 import {
   isClientGeneratedId,
   mapApiChannelToUi,
   mapApiStoreToBusiness,
   mapApiMemberToStaff,
-} from "./org-config-runtime-mapper.js";
+} from "./org-config-runtime-mapper";
 import {
   resolveChannelPersistKind,
   resolveChannelPersistName,
-} from "./owner-settings-channel-actions.js";
+} from "./owner-settings-channel-actions";
+import type {
+  OrgConfigApiAuth,
+  OrgConfigRuntimeSnapshot,
+  StoreChannelConfig,
+} from "./org-config-client-types";
 
-function resolveStoreUuid(business) {
-  if (isUuid(business?.dbStoreId)) return business.dbStoreId;
-  if (isUuid(business?.id)) return business.id;
+function resolveStoreUuid(business: Record<string, unknown>) {
+  if (isUuid(business?.dbStoreId)) return String(business.dbStoreId);
+  if (isUuid(business?.id)) return String(business.id);
   return "";
 }
 
-function channelApiId(channel) {
-  if (isUuid(channel?.apiChannelId)) return channel.apiChannelId;
-  if (isUuid(channel?.id)) return channel.id;
+function channelApiId(channel: Record<string, unknown>) {
+  if (isUuid(channel?.apiChannelId)) return String(channel.apiChannelId);
+  if (isUuid(channel?.id)) return String(channel.id);
   return "";
 }
 
-function channelIsActive(channel, activeIds) {
-  return Array.isArray(activeIds) && activeIds.includes(channel.id) && !channel.retired;
+function channelIsActive(channel: Record<string, unknown>, activeIds: string[]) {
+  return Array.isArray(activeIds) && activeIds.includes(String(channel.id)) && !channel.retired;
 }
 
-function cloneStoreChannelConfig(config = {}) {
+function cloneStoreChannelConfig(config: StoreChannelConfig = { channels: [], activeIds: [] }): StoreChannelConfig {
   return {
     channels: (config.channels || []).map((channel) => ({ ...channel })),
     activeIds: [...(config.activeIds || [])],
   };
 }
 
-function remapChannelIdInConfig(config, oldId, createdChannel) {
+function remapChannelIdInConfig(
+  config: StoreChannelConfig,
+  oldId: string,
+  createdChannel: Record<string, unknown>,
+): StoreChannelConfig {
   const mappedChannel = mapApiChannelToUi(createdChannel);
   return {
     channels: config.channels.map((channel) => (
       channel.id === oldId ? { ...channel, ...mappedChannel } : channel
     )),
-    activeIds: config.activeIds.map((id) => (id === oldId ? mappedChannel.id : id)),
+    activeIds: config.activeIds.map((id) => (id === oldId ? String(mappedChannel.id || "") : id)),
   };
 }
 
-function remapStoreChannelSettingsStoreKey(settings, oldStoreId, newStoreId) {
+function remapStoreChannelSettingsStoreKey(
+  settings: Record<string, StoreChannelConfig>,
+  oldStoreId: string,
+  newStoreId: string,
+) {
   if (!oldStoreId || !newStoreId || oldStoreId === newStoreId) return settings;
   if (!settings[oldStoreId]) return settings;
   const next = { ...settings };
@@ -67,6 +80,11 @@ export async function persistOrgConfigSnapshot({
   baseline,
   next,
   employeePins = {},
+}: {
+  auth: OrgConfigApiAuth;
+  baseline: OrgConfigRuntimeSnapshot;
+  next: OrgConfigRuntimeSnapshot;
+  employeePins?: Record<string, string>;
 }) {
   const authArgs = {
     organizationId: auth.organizationId,
@@ -74,24 +92,24 @@ export async function persistOrgConfigSnapshot({
     actorRole: auth.actorRole || "owner",
   };
 
-  const baselineBusinessById = new Map((baseline.configuredBusinesses || []).map((item) => [item.id, item]));
+  const baselineBusinessById = new Map((baseline.configuredBusinesses || []).map((item) => [String(item.id), item]));
   const nextBusinesses = next.configuredBusinesses || [];
   const remappedBusinesses = [...nextBusinesses];
   const remappedStaff = [...(next.staff || [])];
 
   for (let index = 0; index < remappedBusinesses.length; index += 1) {
     const business = remappedBusinesses[index];
-    const previous = baselineBusinessById.get(business.id);
-    const archivedNow = (next.archivedBusinessIds || []).includes(business.id);
-    const archivedBefore = (baseline.archivedBusinessIds || []).includes(business.id);
+    const previous = baselineBusinessById.get(String(business.id));
+    const archivedNow = (next.archivedBusinessIds || []).includes(String(business.id));
+    const archivedBefore = (baseline.archivedBusinessIds || []).includes(String(business.id));
 
     if (!previous && (isClientGeneratedId(business.id) || !resolveStoreUuid(business))) {
       const created = await createOrganizationStoreViaApi({
         ...authArgs,
-        name: business.displayName || business.nameAr || business.nameEn || "Store",
-        location: business.customLocation || "",
-      });
-      const mapped = mapApiStoreToBusiness({ ...created, legacyId: created.id });
+        name: String(business.displayName || business.nameAr || business.nameEn || "Store"),
+        location: String(business.customLocation || ""),
+      }) as Record<string, unknown>;
+      const mapped = mapApiStoreToBusiness({ ...created, legacyId: created.id as string });
       remappedBusinesses[index] = {
         ...business,
         ...mapped,
@@ -104,15 +122,15 @@ export async function persistOrgConfigSnapshot({
     const storeUuid = resolveStoreUuid(business);
     if (!storeUuid) continue;
 
-    const nextName = business.displayName || business.nameAr || business.nameEn || "";
-    const prevName = previous?.displayName || previous?.nameAr || previous?.nameEn || "";
-    const nextLocation = business.customLocation || "";
-    const prevLocation = previous?.customLocation || "";
+    const nextName = String(business.displayName || business.nameAr || business.nameEn || "");
+    const prevName = String(previous?.displayName || previous?.nameAr || previous?.nameEn || "");
+    const nextLocation = String(business.customLocation || "");
+    const prevLocation = String(previous?.customLocation || "");
 
     if (nextName !== prevName || nextLocation !== prevLocation) {
       await updateOrganizationStoreViaApi({
         ...authArgs,
-        storeId: business.id,
+        storeId: String(business.id),
         name: nextName,
         location: nextLocation,
       });
@@ -121,14 +139,14 @@ export async function persistOrgConfigSnapshot({
     if (archivedNow !== archivedBefore) {
       await updateOrganizationStoreViaApi({
         ...authArgs,
-        storeId: business.id,
+        storeId: String(business.id),
         status: archivedNow ? "archived" : "active",
         reason: archivedNow ? "owner_archived_store" : "owner_restored_store",
       });
     }
   }
 
-  let remappedStoreChannelSettings = Object.fromEntries(
+  let remappedStoreChannelSettings: Record<string, StoreChannelConfig> = Object.fromEntries(
     Object.entries(next.storeChannelSettings || {}).map(([storeId, config]) => [
       storeId,
       cloneStoreChannelConfig(config),
@@ -136,13 +154,13 @@ export async function persistOrgConfigSnapshot({
   );
 
   remappedBusinesses.forEach((business, index) => {
-    const previous = baselineBusinessById.get(nextBusinesses[index]?.id);
+    const previous = baselineBusinessById.get(String(nextBusinesses[index]?.id));
     const previousId = previous?.id || nextBusinesses[index]?.id;
     if (previousId && business.id !== previousId) {
       remappedStoreChannelSettings = remapStoreChannelSettingsStoreKey(
         remappedStoreChannelSettings,
-        previousId,
-        business.id,
+        String(previousId),
+        String(business.id),
       );
     }
   });
@@ -156,7 +174,7 @@ export async function persistOrgConfigSnapshot({
   for (const storeId of storeIds) {
     const beforeConfig = baselineChannels[storeId] || { channels: [], activeIds: [] };
     let afterConfig = remappedStoreChannelSettings[storeId] || { channels: [], activeIds: [] };
-    const beforeById = new Map((beforeConfig.channels || []).map((channel) => [channel.id, channel]));
+    const beforeById = new Map((beforeConfig.channels || []).map((channel) => [String(channel.id), channel]));
 
     for (const afterChannel of afterConfig.channels || []) {
       const apiId = channelApiId(afterChannel);
@@ -173,12 +191,12 @@ export async function persistOrgConfigSnapshot({
         kind: resolveChannelPersistKind(afterChannel),
         status: isActive ? "active" : "retired",
         reason: "owner_added_channel",
-      });
-      afterConfig = remapChannelIdInConfig(afterConfig, afterChannel.id, created);
+      }) as Record<string, unknown>;
+      afterConfig = remapChannelIdInConfig(afterConfig, String(afterChannel.id), created);
       remappedStoreChannelSettings[storeId] = afterConfig;
     }
 
-    const afterById = new Map((afterConfig.channels || []).map((channel) => [channel.id, channel]));
+    const afterById = new Map((afterConfig.channels || []).map((channel) => [String(channel.id), channel]));
     const channelIds = new Set([...beforeById.keys(), ...afterById.keys()]);
 
     for (const channelId of channelIds) {
@@ -203,11 +221,11 @@ export async function persistOrgConfigSnapshot({
     }
   }
 
-  const baselineStaffById = new Map((baseline.staff || []).map((person) => [person.id, person]));
+  const baselineStaffById = new Map((baseline.staff || []).map((person) => [String(person.id), person]));
   for (let index = 0; index < remappedStaff.length; index += 1) {
     const person = remappedStaff[index];
-    const previous = baselineStaffById.get(person.id);
-    const draftPin = typeof employeePins[person.id] === "string" ? employeePins[person.id].trim() : "";
+    const previous = baselineStaffById.get(String(person.id));
+    const draftPin = typeof employeePins[String(person.id)] === "string" ? employeePins[String(person.id)].trim() : "";
 
     if (!previous?.memberId && (isClientGeneratedId(person.id) || !isUuid(person.memberId))) {
       const pin = draftPin || (typeof person.pin === "string" ? person.pin.trim() : "");
@@ -216,20 +234,20 @@ export async function persistOrgConfigSnapshot({
       }
       const created = await createOrganizationMemberViaApi({
         ...authArgs,
-        name: person.nameAr || person.nameEn || "Employee",
+        name: String(person.nameAr || person.nameEn || "Employee"),
         role: "employee",
-        storeIds: person.storeIds || [],
+        storeIds: (person.storeIds as string[] | undefined) || [],
         pin,
-        loginPhone: person.mobile?.trim() || undefined,
-      });
+        loginPhone: typeof person.mobile === "string" ? person.mobile.trim() || undefined : undefined,
+      }) as Record<string, unknown>;
       const mapped = mapApiMemberToStaff({
-        memberId: created.memberId,
-        userId: created.userId,
-        name: created.name,
-        role: created.role,
-        status: created.status,
-        legacyStaffId: created.userId,
-        storeAccess: (created.storeIds || []).map((storeId) => ({
+        memberId: created.memberId as string,
+        userId: created.userId as string,
+        name: created.name as string,
+        role: created.role as string,
+        status: created.status as string,
+        legacyStaffId: created.userId as string,
+        storeAccess: ((created.storeIds as string[] | undefined) || []).map((storeId) => ({
           storeId,
           legacyStoreId: storeId,
         })),
@@ -245,12 +263,12 @@ export async function persistOrgConfigSnapshot({
     const memberId = person.memberId || previous?.memberId;
     if (!isUuid(memberId)) continue;
 
-    const nextName = person.nameAr || person.nameEn || "";
-    const prevName = previous?.nameAr || previous?.nameEn || "";
-    const nextMobile = (person.mobile || "").trim();
-    const prevMobile = (previous?.mobile || "").trim();
-    const nextStoreIds = [...(person.storeIds || [])].sort().join("|");
-    const prevStoreIds = [...(previous?.storeIds || [])].sort().join("|");
+    const nextName = String(person.nameAr || person.nameEn || "");
+    const prevName = String(previous?.nameAr || previous?.nameEn || "");
+    const nextMobile = String(person.mobile || "").trim();
+    const prevMobile = String(previous?.mobile || "").trim();
+    const nextStoreIds = [...((person.storeIds as string[] | undefined) || [])].sort().join("|");
+    const prevStoreIds = [...((previous?.storeIds as string[] | undefined) || [])].sort().join("|");
     const nextActive = Boolean(person.active) && !person.removed;
     const prevActive = Boolean(previous?.active) && !previous?.removed;
 
@@ -263,10 +281,10 @@ export async function persistOrgConfigSnapshot({
     ) {
       await updateOrganizationMemberViaApi({
         ...authArgs,
-        memberId,
+        memberId: String(memberId),
         name: nextName,
         status: nextActive ? "active" : "inactive",
-        storeIds: person.storeIds || [],
+        storeIds: (person.storeIds as string[] | undefined) || [],
         ...(draftPin ? { pin: draftPin } : {}),
         loginPhone: nextMobile || undefined,
         reason: nextActive ? "owner_updated_member" : "owner_removed_member",
@@ -293,6 +311,7 @@ export async function persistOrgConfigSnapshot({
       ...authArgs,
       storeId,
       patch,
+      reason: "owner_updated_operational_settings",
     });
   }
 

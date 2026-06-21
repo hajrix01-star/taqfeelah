@@ -10,7 +10,7 @@ const KNOWN_CHANNEL_TEXT_KEYS = new Set([
   "online",
 ]);
 
-const CHANNEL_ALIAS_TO_TEXT_KEY = {
+const CHANNEL_ALIAS_TO_TEXT_KEY: Record<string, string> = {
   cash: "cash",
   bank: "bank",
   mada: "mada",
@@ -33,11 +33,11 @@ const CHANNEL_ALIAS_TO_TEXT_KEY = {
   كيتا: "keeta",
 };
 
-function normalizeChannelAlias(value) {
+function normalizeChannelAlias(value: unknown) {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
-function resolveAliasTextKey(value) {
+function resolveAliasTextKey(value: unknown) {
   if (typeof value !== "string") return "";
   const trimmed = value.trim();
   if (!trimmed) return "";
@@ -48,9 +48,8 @@ function resolveAliasTextKey(value) {
 
 /**
  * Resolve a built-in sales channel copy key (cash, bank, mada, …) from channel metadata.
- * @param {Record<string, unknown> | null | undefined} channel
  */
-export function resolveSalesChannelTextKey(channel) {
+export function resolveSalesChannelTextKey(channel: Record<string, unknown> | null | undefined) {
   if (!channel || typeof channel !== "object") return "";
 
   if (channel.custom !== true && typeof channel.text === "string" && channel.text.trim()) {
@@ -77,12 +76,11 @@ export function resolveSalesChannelTextKey(channel) {
   return "";
 }
 
-/**
- * @param {Record<string, unknown> | null | undefined} channel
- * @param {"ar" | "en"} lang
- * @param {(lang: "ar" | "en", key: string) => string} textFn
- */
-export function resolveSalesChannelLabel(channel, lang, textFn) {
+export function resolveSalesChannelLabel(
+  channel: Record<string, unknown> | null | undefined,
+  lang: "ar" | "en",
+  textFn: (lang: "ar" | "en", key: string) => string,
+) {
   const textKey = resolveSalesChannelTextKey(channel);
   if (textKey) {
     const translated = textFn(lang, textKey);
@@ -99,13 +97,12 @@ export function resolveSalesChannelLabel(channel, lang, textFn) {
   return String(channel?.id || "");
 }
 
-/**
- * @param {Record<string, unknown>} row
- * @param {Array<Record<string, unknown>>} configuredChannels
- * @param {"ar" | "en"} lang
- * @param {(channel: Record<string, unknown>, lang: "ar" | "en") => string} channelNameFn
- */
-export function resolveSalesChannelRowLabel(row, configuredChannels = [], lang, channelNameFn) {
+export function resolveSalesChannelRowLabel(
+  row: Record<string, unknown>,
+  configuredChannels: Array<Record<string, unknown>> = [],
+  lang: "ar" | "en",
+  channelNameFn: (channel: Record<string, unknown>, lang: "ar" | "en") => string,
+) {
   const channelId = typeof row?.channelId === "string" ? row.channelId : "";
   const configured = configuredChannels.find((channel) => (
     channel?.id === channelId
@@ -127,10 +124,11 @@ export function resolveSalesChannelRowLabel(row, configuredChannels = [], lang, 
 
 /**
  * Stable key for register filters / exports — merges legacy UUID rows with catalog ids (cash, jahez, …).
- * @param {Record<string, unknown>} row
- * @param {Array<Record<string, unknown>>} configuredChannels
  */
-export function resolveRegisterIncomeSourceFilterKey(row, configuredChannels = []) {
+export function resolveRegisterIncomeSourceFilterKey(
+  row: Record<string, unknown>,
+  configuredChannels: Array<Record<string, unknown>> = [],
+) {
   const shape = resolveAggregatedChannelShape(row, configuredChannels);
   const textKey = resolveSalesChannelTextKey(shape);
   if (textKey) return textKey;
@@ -149,17 +147,19 @@ export function resolveRegisterIncomeSourceFilterKey(row, configuredChannels = [
       : "";
 }
 
-/**
- * @param {Record<string, unknown>} row
- * @param {string} filterKey
- * @param {Array<Record<string, unknown>>} configuredChannels
- */
-export function entryRowMatchesIncomeSourceFilter(row, filterKey, configuredChannels = []) {
+export function entryRowMatchesIncomeSourceFilter(
+  row: Record<string, unknown>,
+  filterKey: string,
+  configuredChannels: Array<Record<string, unknown>> = [],
+) {
   if (filterKey === "all") return true;
   return resolveRegisterIncomeSourceFilterKey(row, configuredChannels) === filterKey;
 }
 
-export function resolveAggregatedChannelShape(row, configuredChannels = []) {
+export function resolveAggregatedChannelShape(
+  row: Record<string, unknown>,
+  configuredChannels: Array<Record<string, unknown>> = [],
+) {
   const channelId = typeof row?.channelId === "string" ? row.channelId : "";
   const configured = configuredChannels.find((channel) => (
     channel?.id === channelId

@@ -1,16 +1,9 @@
-/**
- * @typedef {Object} OwnerSettingsDeleteTarget
- * @property {"archive" | "store" | "channel" | "staff"} type
- * @property {{ id: string }} item
- * @property {boolean} [hasRecords]
- * @property {Array<{ nameAr?: string, nameEn?: string }>} [affectedStaff]
- */
+import type { OwnerSettingsDeleteTarget } from "./org-config-client-types";
 
-/**
- * @param {OwnerSettingsDeleteTarget | null | undefined} deleteTarget
- * @param {(key: string) => string} translate
- */
-export function buildOwnerSettingsDeleteDialog(deleteTarget, translate) {
+export function buildOwnerSettingsDeleteDialog(
+  deleteTarget: OwnerSettingsDeleteTarget | null | undefined,
+  translate: (key: string) => string,
+) {
   if (!deleteTarget) return null;
 
   if (deleteTarget.type === "archive") {
