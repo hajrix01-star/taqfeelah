@@ -1,6 +1,7 @@
 import { readLocalStorageJson, safeSetLocalStorageItem } from "../demo/prototype-storage";
 import { storeIdsReferToSameStore } from "../employee-closeouts/employee-closeout-history";
 import { computeCloseoutTotals } from "./closeout-calculations";
+import { normalizeCloseoutSalesToArray } from "./closeout-sales-normalize";
 import { CLOSEOUT_STATUS } from "./closeout-status";
 import type {
   CloseoutEvent,
@@ -177,7 +178,7 @@ function normalizeCloseout(closeout: DailyCloseoutRecord | null | undefined): Da
       id: "",
       storeId: "",
       date: "",
-      sales: {},
+      sales: [],
       outflows: [],
       attachments: [],
       status: CLOSEOUT_STATUS.DRAFT,
@@ -185,7 +186,7 @@ function normalizeCloseout(closeout: DailyCloseoutRecord | null | undefined): Da
   }
   return {
     ...closeout,
-    sales: closeout.sales && typeof closeout.sales === "object" ? closeout.sales : {},
+    sales: normalizeCloseoutSalesToArray(closeout.sales),
     outflows: Array.isArray(closeout.outflows) ? closeout.outflows : [],
     attachments: Array.isArray(closeout.attachments) ? closeout.attachments.filter(Boolean) : [],
     status: normalizeCloseoutStatus(closeout),
