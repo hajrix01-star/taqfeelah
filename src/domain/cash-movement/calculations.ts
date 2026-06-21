@@ -7,7 +7,25 @@ export type UiEntryLike = {
   type: string;
   amount: number;
   status?: string;
+  salesChannels?: Array<{ amount?: number | null }>;
 };
+
+function resolveSummaryEntrySalesAmountRiyals(entry: UiEntryLike): number {
+  if (entry.type !== "summary") return entry.amount;
+  const channels = Array.isArray(entry.salesChannels) ? entry.salesChannels : [];
+  if (channels.length === 0) return entry.amount;
+  return sumUiAmounts(channels.map((row) => Number(row.amount ?? 0)));
+}
+
+export function rowsFromUiEntries(entries: UiEntryLike[]): MovementRow[] {
+  return entries
+    .filter((entry) => entry.status !== "voided")
+    .filter((entry) => entry.type === "summary" || OUTFLOW_ENTRY_TYPES.has(entry.type as EntryKind))
+    .map((entry) => ({
+      type: entry.type as EntryKind,
+      amountHalalas: toHalalas(resolveSummaryEntrySalesAmountRiyals(entry)),
+    }));
+}
 
 export type UiTotals = {
   sales: number;
@@ -60,16 +78,6 @@ export function combineDaySummaries(summaries: DaySummary[]): DaySummary {
     outflowRatio: ratio,
     outflowRatioStatus: status,
   };
-}
-
-export function rowsFromUiEntries(entries: UiEntryLike[]): MovementRow[] {
-  return entries
-    .filter((entry) => entry.status !== "voided")
-    .filter((entry) => entry.type === "summary" || OUTFLOW_ENTRY_TYPES.has(entry.type as EntryKind))
-    .map((entry) => ({
-      type: entry.type as EntryKind,
-      amountHalalas: toHalalas(entry.amount),
-    }));
 }
 
 export function daySummaryToUiTotals(

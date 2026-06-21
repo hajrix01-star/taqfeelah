@@ -33,7 +33,10 @@ function catalogSnapshotKey(catalog: OperationalEntry[]): string {
     const voidedAt = typeof entry?.voidedAt === "string" ? entry.voidedAt : "";
     const amount = String(entry?.amount ?? "");
     const type = typeof entry?.type === "string" ? entry.type : "";
-    return `${entryId}:${enteredBy}:${ownerEditedAt}:${status}:${voidedAt}:${amount}:${type}`;
+    const channelAmounts = Array.isArray(entry.salesChannels)
+      ? entry.salesChannels.map((row) => `${row.channelId ?? ""}:${row.amount ?? ""}`).join("+")
+      : "";
+    return `${entryId}:${enteredBy}:${ownerEditedAt}:${status}:${voidedAt}:${amount}:${type}:${channelAmounts}`;
   }).join("|");
 }
 

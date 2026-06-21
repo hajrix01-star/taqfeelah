@@ -67,7 +67,34 @@ describe("register-log-display", () => {
     });
     expect(summaries).toHaveLength(1);
     expect(summaries[0].totals.sales).toBe(100);
+    expect(summaries[0].displaySales).toBe(100);
     expect(summaries[0].totals.expense).toBe(10);
+  });
+
+  it("shows full collapsed income from salesChannels when summary amount is stale", () => {
+    const summaries = buildRegisterCloseoutSummaries({
+      filteredEntries: [
+        {
+          id: "e1",
+          closeoutId: "c1",
+          businessId: "b1",
+          date: "2026-06-17",
+          type: "summary",
+          status: "active",
+          amount: 100,
+          salesChannels: [{ channelId: "card", amount: 5000 }],
+          closeoutOwnerEditedAt: "2026-06-17T15:51:00.000Z",
+        },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fixture
+      ] as any[],
+      resolveChannelName: () => "بطاقة",
+      resolveStore: (businessId: string) => ({ id: businessId }),
+      resolveActorLabel: () => "محمد خالد",
+    });
+    expect(summaries[0].displaySales).toBe(5000);
+    expect(summaries[0].totals.sales).toBe(5000);
+    expect(summaries[0].totals.net).toBe(5000);
+    expect(summaries[0].salesChannels[0].amount).toBe(5000);
   });
 
   it("labels owner-entered closeouts with the owner fallback when name is missing", () => {

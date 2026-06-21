@@ -51,6 +51,23 @@ describe("rowsFromUiEntries", () => {
       ratio: "20.0%",
     });
   });
+
+  it("prefers salesChannels sum over stale summary amount after owner edit", () => {
+    const summary = calculateDaySummary(rowsFromUiEntries([
+      {
+        type: "summary",
+        amount: 100,
+        status: "active",
+        salesChannels: [{ amount: 5000 }],
+      },
+    ]));
+
+    expect(daySummaryToUiTotals(summary)).toMatchObject({
+      sales: 5000,
+      expense: 0,
+      net: 5000,
+    });
+  });
 });
 
 describe("addUiAmounts / sumUiAmounts", () => {
