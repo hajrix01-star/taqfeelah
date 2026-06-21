@@ -34,8 +34,8 @@ describe("golden accounting parity", () => {
     const clientTotals = summarizeEntries(fixture.uiEntries);
     const closeoutTotals = computeCloseoutTotals(fixture.closeoutSales, fixture.closeoutOutflows);
     const closeoutRatio = formatOutflowRatio(
-      Math.round(closeoutTotals.totalSales * 100),
-      Math.round(closeoutTotals.totalOutflow * 100),
+      Math.round((closeoutTotals.totalSales || 0) * 100),
+      Math.round((closeoutTotals.totalOutflow || 0) * 100),
     ).ratio;
 
     expectTotals(domainUi, fixture.expected, "domain");

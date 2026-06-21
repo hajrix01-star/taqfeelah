@@ -1,4 +1,4 @@
-type CloseoutSyncLang = "ar" | "en";
+export type CloseoutSyncLang = "ar" | "en";
 
 /**
  * Map server/API closeout sync errors to user-facing copy.

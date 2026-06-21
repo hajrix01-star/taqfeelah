@@ -61,7 +61,7 @@ export function EmployeeLoginScreen({
             {form.activeStaff.length > 0 ? (
               <div className="mb-4 flex flex-wrap gap-2">
                 {form.activeStaff.map((person) => (
-                  <button key={person.id} type="button" onClick={() => form.setSelectedId(person.id)} className={`rounded-full px-3 py-2 text-taq-meta font-black ${form.selectedId === person.id ? "bg-[#112A46] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]"}`}>
+                  <button key={person.id || person.apiUserId || person.legacyId} type="button" onClick={() => form.setSelectedId(person.id || "")} className={`rounded-full px-3 py-2 text-taq-meta font-black ${form.selectedId === person.id ? "bg-[#112A46] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]"}`}>
                     {lang === "ar" ? person.nameAr : person.nameEn}
                   </button>
                 ))}

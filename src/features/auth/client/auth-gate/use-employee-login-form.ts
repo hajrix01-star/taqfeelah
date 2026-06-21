@@ -75,7 +75,7 @@ export function useEmployeeLoginForm({
   }, []);
 
   useEffect(() => {
-    if (!selectedId && activeStaff[0]) setSelectedId(activeStaff[0].id);
+    if (!selectedId && activeStaff[0]) setSelectedId(activeStaff[0].id || "");
   }, [activeStaff, selectedId]);
 
   useEffect(() => {

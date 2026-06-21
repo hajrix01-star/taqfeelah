@@ -16,6 +16,7 @@ import { resolveEmployeeCloseoutsFetchWindow } from "@/features/employee-closeou
 import { normalizeCloseoutSubmitMode } from "@/features/closeouts/closeout-submit-mode";
 import { resolveOwnerCloseoutsFetchWindow } from "@/features/closeouts/client/owner-closeouts-fetch-window";
 import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
+import type { LoadOperationalEntriesFn } from "@/features/operations/client/operations-client-types";
 
 type CloseoutRecord = {
   id?: string;
@@ -57,7 +58,7 @@ export function usePrototypeRuntimeCloseoutsApi({
   employee?: boolean | EmployeeContext;
   storeOperationalSettings?: Record<string, unknown>;
   entriesApiEnabled?: boolean;
-  loadOperationalEntriesFromApi?: () => Promise<unknown> | unknown;
+  loadOperationalEntriesFromApi?: LoadOperationalEntriesFn;
   currentEmployeeChannelConfig?: { channels?: Array<Record<string, unknown>> };
   ownerCloseoutBusiness?: { id?: string };
   ownerCloseoutChannelConfig?: { channels?: Array<Record<string, unknown>> };
