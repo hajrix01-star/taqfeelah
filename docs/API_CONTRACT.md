@@ -1,7 +1,7 @@
-# تقفيلة — API Contract (planned + partial implementation)
+# تقفيلة — API Contract
 
-> **Status:** Partial implementation exists: `GET /stores/:storeId/summary/day|month|period`, `GET /reports/days|channels|outflow|attachments` (wired to owner reports when entries API is enabled), snapshot `POST /stores/:storeId/summary/day`, `POST /stores/:storeId/closeouts`, `GET /stores/:storeId/closeouts`, `GET /stores/:storeId/entries`, `GET /operational-events/stream` (SSE hybrid sync), Phase 8 org config routes, and Phase 9 duplicate-summary / notebook export / inline attachments are implemented; remaining endpoints are planned. Closeout owner-review (`POST .../closeouts/:closeoutId/review`) was removed under zero-review policy.  
-> **Auth:** Session rollout in progress. Preferred source is signed session cookie (`AUTH_SESSION_COOKIE_NAME`), with optional temporary header fallback controlled by `ALLOW_HEADER_AUTH_CONTEXT`.  
+> **Status (2026-06-22):** Core auth, operational, reporting, organization-config, attachment/export, signup, billing-entitlement, and SaaS Admin routes are implemented under `src/app/api/v1`. Sections marked `planned` remain non-contractual. Closeout owner-review was intentionally removed under the zero-review policy.
+> **Auth:** A signed session cookie (`AUTH_SESSION_COOKIE_NAME`) is the production source of identity. Header context is test-only and must be disabled in production with `ALLOW_HEADER_AUTH_CONTEXT=false`.
 > **Source-unification period:** Until auth launch, Prototype Access Mode remains ON and server APIs may accept `x-organization-id` / `x-user-id` / `x-member-role` when `ALLOW_HEADER_AUTH_CONTEXT=true`. Signed session cookies become required only in the explicit auth launch phase.  
 > **UI:** Must not require design changes — responses feed existing approved screens.
 
@@ -250,9 +250,9 @@ Behavior:
 - Creates entry rows (and summary channels when applicable) transactionally.
 - Writes audit event `entry_created`.
 
-### `POST /stores/:storeId/entries/:entryId/review` (implemented)
+### `POST /stores/:storeId/entries/:entryId/review` (removed)
 
-Marks active entry as reviewed and appends audit event `entry_reviewed`.
+Not exposed under the current zero-review policy. Use `void`/`restore` for the supported operational correction flow.
 
 ### `POST /stores/:storeId/entries/:entryId/void` (implemented)
 
@@ -266,7 +266,7 @@ Body: `{ "reason": "optional" }`
 
 Sets `status=active`, `restored_at` and appends audit event `entry_restored`.
 
-### `POST /entries`
+### `POST /entries` (historical plan — not implemented)
 
 Create purchase / expense / withdrawal / summary.
 
@@ -290,17 +290,17 @@ Body (summary example):
 - Write `audit_events.created`.
 - Attachments: separate upload flow → link `entry_id`.
 
-### `POST /entries/:entryId/void`
+### `POST /entries/:entryId/void` (historical plan — not implemented)
 
 Body: `{ "reason": "string" }`  
 Sets `status=voided`, `voided_at`, audit `voided`.
 
-### `POST /entries/:entryId/restore`
+### `POST /entries/:entryId/restore` (historical plan — not implemented)
 
 Body: `{ "reason": "string" }`  
 Sets `status=active`, `restored_at`, audit `restored`.
 
-### `POST /entries/:entryId/review` (owner)
+### `POST /entries/:entryId/review` (historical plan — not implemented)
 
 Marks attachment reviewed; audit `reviewed`.
 

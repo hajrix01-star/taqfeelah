@@ -41,7 +41,7 @@
 
 | البند | السبب |
 |-------|--------|
-| `TaqfeelahPrototypeRuntime.jsx` + `prototype-runtime/*` | **الواجهة المعتمدة** (baseline مجمد) |
+| `TaqfeelahPrototypeRuntime.tsx` + `prototype-runtime/*` | **الواجهة المعتمدة** ذات الاسم التاريخي |
 | `legacyId` في org-config mapper | ربط UI المجمد بـ UUID |
 | `scripts/seed-closeouts-foundation.mjs` | **اختياري للتطوير المحلي فقط** |
 | Playwright smoke | يختبر شاشة الدخول الحقيقية (بدون DB) |
@@ -73,11 +73,13 @@ pnpm dev
 
 | الأمر | ماذا يغطي |
 |-------|-----------|
-| `pnpm test` | 779+ وحدة/تكامل (مع mocks) |
+| `pnpm test` | اختبارات الوحدة والتكامل الحالية |
 | `pnpm smoke:browser` | شاشة `/app` auth + marketing + saas-admin shell |
-| `pnpm check:refactor` | lint + typecheck + test + smoke + build |
+| `pnpm check:refactor` | lint + typecheck + test + browser smoke |
+| `pnpm smoke:browser:db` | دخول ومسارات تشغيلية مع PostgreSQL حقيقي |
+| `pnpm check:db-source` | تحقق أن API/DB هو مصدر البيانات التشغيلي |
 
-**فجوة معروفة:** لا يوجد بعد E2E بـ PostgreSQL حقيقي + login كامل — مُخطَّط لدفعة لاحقة.
+اختبار PostgreSQL الحقيقي موجود في CI. يبقى الاختبار اليدوي على staging إلزاميًا قبل اعتماد الإطلاق.
 
 ---
 

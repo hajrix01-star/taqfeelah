@@ -80,25 +80,25 @@ Organization
 - كل بيانات الأعمال تحمل `organizationId`.
 - العزل الأمني في السيرفر وقاعدة البيانات — **ليس** بإخفاء أزرار في الواجهة فقط.
 
-### ترحيل الـ Prototype — `businessId` (قرار معتمد)
+### توافق الواجهة التاريخي — `businessId` (قرار معتمد)
 
-**داخل الـ Baseline الحالي (`TaqfeelahPrototypeRuntime.jsx`):**
+**داخل تركيب الواجهة الحالي (`TaqfeelahPrototypeRuntime.tsx` ومجلد `prototype-runtime`):**
 
-- أبقِ `businessId` و`configuredBusinesses` **كما هما**.
-- **لا** Rename ولا Migration داخل الـ Prototype الآن.
-- **لا** تعديل منطق العمليات بسبب تغيير الاسم.
-- **السبب:** الـ Runtime مرجع بصري وسلوكي عامل؛ تعديل واسع للمعرّفات قد يكسر السلوك أو يسبب انحرافًا قبل تثبيت الواجهة.
+- أبقِ `businessId` فقط في عقود واجهة التوافق التي لم تُرحّل بعد.
+- لا تنفذ Rename شاملًا دفعة واحدة؛ رحّل كل feature مع اختباراته.
+- لا يصل `businessId` إلى قاعدة البيانات كمصدر هوية.
+- السبب: الواجهة الحالية عاملة ومعتمدة؛ التغيير الواسع قد يكسر السلوك دون فائدة تشغيلية مباشرة.
 
-**عند بدء التفكيك الإنتاجي لاحقًا:**
+**في كل تفكيك إنتاجي جديد:**
 
-- الكود **الجديد فقط** يستخدم: `organizationId`, `storeId`, `userId`.
+- الكود الجديد يستخدم: `organizationId`, `storeId`, `userId`.
 - `businessId` في الـ Prototype = اسم قديم مؤقت يعادل **`storeId`** داخل المرجع فقط.
-- عند ترحيل كل feature من الـ Prototype: تحويل الربط إلى `storeId` + إضافة `organizationId` في طبقة Domain/Data الجديدة.
-- **لا** يُمرَّر `businessId` إلى قاعدة البيانات الإنتاجية المستقبلية.
+- عند ترحيل كل feature: تحويل الربط إلى `storeId` + إضافة `organizationId` في طبقة Domain/Data.
+- **لا** يُمرَّر `businessId` إلى قاعدة البيانات الإنتاجية.
 
 ---
 
-## 2. هيكلة الكود المستهدفة
+## 2. هيكلة الكود الحالية والمستهدفة
 
 ```text
 src/
@@ -125,10 +125,8 @@ src/
     organization/              # سياق المنشأة — لا تُنشأ core/tenant
     config/
     errors/
-  shared/
-    ui/
-    utils/
-    i18n/
+  components/                   # تركيب الواجهة الحالية؛ يفكك تدريجيًا
+  lib/                          # أدوات UI مشتركة محدودة
 ```
 
 ### ممنوع في الإنتاج
@@ -144,11 +142,11 @@ ledger
 
 - `page.tsx` يستورد feature فقط.
 - **UI لا يحسب** `totalSales`, `totalOutflow`, `netMovement`, `outflowRatio`.
-- كل الحسابات التشغيلية في `domain/cash-movement` (أو `lib/calculations` مؤقتًا حتى إنشاء الـ domain).
+- كل الحسابات التشغيلية المرجعية في `domain/cash-movement`.
 - لا ملف ضخم يجمع كل الشاشات والمنطق.
 - هدف الحجم: مكوّنات ~250–400 سطر كحد أقصى معقول؛ هوكات أصغر.
-- **TypeScript إلزامي** لكود الإنتاج الجديد.
-- `TaqfeelahPrototypeReference.tsx` و`TaqfeelahPrototypeRuntime.jsx`: **مرجع بصري / baseline** — ليست معمارية الإنتاج.
+- **TypeScript إلزامي** لكل كود المصدر.
+- `TaqfeelahPrototypeRuntime.tsx` وتركيب `prototype-runtime`: واجهة حالية ذات اسم تاريخي؛ لا تُستخدم كتبرير لوضع منطق DB/API داخل مكوّن ضخم.
 
 ---
 
@@ -210,6 +208,8 @@ type Money = {
 
 **ممنوع:** حذف فعلي للعمليات المؤثرة على الأرقام.
 
+**فجوة حالية يجب إغلاقها قبل الاعتماد النهائي:** مسارا تعديل التقفيلة وحذفها يعيدان بناء/يحذفان صفوف العمليات داخل transaction. لا يُعامل هذا السلوك كقاعدة معمارية معتمدة؛ خطة استبداله بـ void/versioning موثقة كـ P0 في `docs/PRODUCTION_STATUS.md`.
+
 ---
 
 ## 6. الأدوار
@@ -240,15 +240,15 @@ OrganizationMember
 
 - العمليات تُربط بـ `userId` — لا برقم جوال ولا اسم مستخدم في سجل العملية.
 - **في الإنتاج:** Auth حقيقي (جلسات/توكنات)، أسرار في متغيرات بيئة فقط — **ممنوع** في Git.
-- **في البروتايب (`/prototype-runtime`):** دخول تجريبي فقط (OTP/PIN ثابتة) — يبقى للعرض والمقارنة حتى استبدال المسار بـ `/app`.
-- username/password في البروتايب: مرجع UX؛ التنفيذ الإنتاجي يُحدَّد في `docs/` عند بدء `features/auth`.
+- **في الإنتاج (`/app`):** جلسة موقعة ودخول حقيقي فقط؛ لا OTP/PIN ثابتة ولا تجاوز تجريبي.
+- `/prototype-runtime` مرجع واجهة خارج مسار الإنتاج الطبيعي، ولا يغيّر عقد المصادقة الإنتاجي.
 
 ---
 
 ## 8. الاشتراكات والحدود
 
 - على مستوى `Organization` فقط.
-- Entitlements مركزية (مستقبلًا): `maxStores`, `maxEmployees`, `canUseAttachments`, `canExportPdf`, `canExportExcel`, `canUseMultiStore`.
+- Entitlements مركزية: `maxStores`, `maxEmployees` وقدرات الخطة التي يحلها خادم billing.
 - **لا** شروط باقات داخل مكوّنات UI.
 - **لا** دفع حقيقي الآن.
 
@@ -260,12 +260,12 @@ OrganizationMember
 
 **حالة الاعتماد (مالك المنتج، 2026-06):** واجهة التطبيق التشغيلي **معتمدة بصريًا** على الجوال والتابلت. **لا تعديل** على التصميم أو التوزيع أو CSS المرئي أو Prototype Runtime **إلا بأمر صريح** من مالك المنتج.
 
-**المسار الحالي للمرجع:** `/prototype-runtime` — بدون Landing Page في هذا الـ checkpoint. ملف **`TaqfeelahPrototypeRuntime.jsx` فقط** (`.jsx`، بدون نسخة `.tsx` موازية).
+**مسار المرجع:** `/prototype-runtime`. التطبيق الفعلي هو `/app` والموقع العام منفذ على `/`.
 
 ### ما يُمنع على ملف البروتايب
 
 - إعادة تصميم الشاشات أو نقل عناصر (هيدر، تنقل، دفتر في غير الرئيسية/التقارير) **بدون موافقة صريحة**.
-- إضافة منطق إنتاجي (API، DB، Auth حقيقي، فوترة) داخل الملف.
+- إضافة منطق إنتاجي جديد (API، DB، Auth، فوترة) داخل مكوّن الواجهة؛ يوضع في `features` أو `core`.
 - تفكيك أو Rename لـ `businessId` داخل البروتايب.
 - زيادة حجم الملف بميزات جديدة — الميزات الجديدة في `src/features/*` فقط.
 
@@ -276,10 +276,10 @@ OrganizationMember
 
 ### التفكيك الإنتاجي (المرحلة الحالية)
 
-- كود **جديد** فقط: TypeScript في `src/features`, `src/domain`, `src/core`, `src/shared`.
+- كل كود المصدر TypeScript؛ الميزات الجديدة في `src/features`, `src/domain`, `src/core`.
 - **مطابقة بصرية** لكل شاشة مع البروتايب قبل اعتبارها «منجزة».
-- **لا** تحويل الملف الضخم إلى TypeScript دفعة واحدة.
-- **لا** حذف `TaqfeelahPrototypeRuntime.jsx` حتى: (1) اكتمال `/app`, (2) مطابقة سلوكية، (3) موافقة صريحة.
+- لا تفكيك أو إعادة تسمية شاملة دفعة واحدة؛ استخدم دفعات صغيرة مع اختبارات.
+- لا تحذف تركيب الواجهة الحالي حتى يوجد بديل مطابق وموافقة صريحة.
 
 `TaqfeelahPrototypeReference.tsx` إن وُجد: مرجع قديم اختياري — **ليس** مصدر الحقيقة.
 
@@ -298,10 +298,10 @@ OrganizationMember
 
 | المسار | الغرض |
 |--------|--------|
-| `/` | **Marketing:** تعريف بالمنتج، الباقات، تسجيل/اشتراك (لاحقًا)، زر **«الدخول إلى التطبيق»** |
+| `/` | **Marketing:** تعريف بالمنتج والباقات وروابط التسجيل والدخول |
 | `/app` (أو `/login` → `/app`) | **التطبيق التشغيلي** — نفس شكل البروتايب المعتمد |
-| `/saas-admin` | **SaaS Admin (Final Phase):** لوحة إدارة المنصة والتقارير الاستثمارية (Desktop-first) |
-| `/prototype-runtime` | **مرجع مجمّد** — يبقى للمقارنة حتى إنهاء الترحيل |
+| `/saas-admin` | **SaaS Admin:** لوحة إدارة المنصة والتقارير الاستثمارية (Desktop-first) |
+| `/prototype-runtime` | **مرجع واجهة** خارج المسار الإنتاجي الطبيعي |
 
 - الزائر من الجوال أو الكمبيوتر يرى الهوم التعريفي أولًا؛ المستخدم المسجّل يُوجَّه إلى `/app` دون إعادة عرض التسويق في كل زيارة.
 - صفحة التسويق **منفصلة** عن مكوّنات التقفيلة — لا تُدمج في `features/closeout`.
@@ -315,19 +315,19 @@ OrganizationMember
 | Database | **PostgreSQL** |
 | ORM | **Drizzle ORM** + **drizzle-kit** migrations |
 | API shape | REST `/api/v1` (عقود في `docs/API_CONTRACT.md`) |
-| Hostinger VPS | مؤجل حتى اكتمال محلي + فحص السيرفر |
+| Hostinger VPS | منفذ؛ staging والإنتاج معزولان |
 
 **قواعد:**
 
 - **لا** Prisma بالتوازي.
 - **لا** تغيير DB/ORM دون موافقة مالك المنتج.
-- Auth / Billing / Object Storage / Export — موثّقة، **غير منفّذة** في مرحلة Foundation.
+- Auth وBilling الأساسي وExport منفذة. Object Storage الخارجي مؤجل لما بعد الإطلاق وعند التوسع؛ التخزين المحلي المعزول هو المسار الحالي.
 
 التفاصيل: `docs/ARCHITECTURE.md`.
 
 **ما يبقى مؤجلًا بعد النسخة الأولى التشغيلية:**
 
-مزود دفع · Feature Flags · Sentry · PDF/Excel سيرفري · Offline Sync / طابور عمليات · جدول `daily_store_summaries` (تحسين لاحق — `docs/PERFORMANCE_RULES.md`)
+مزود دفع · Sentry · Offline Sync / طابور عمليات · Object Storage خارجي · جدول `daily_store_summaries` عند إثبات الحاجة (`docs/PERFORMANCE_RULES.md`)
 
 ---
 
@@ -340,7 +340,7 @@ pnpm test
 pnpm build
 ```
 
-اختبارات إلزامية مستقبلًا لـ `domain/cash-movement`: تجميع، void، restore، تواريخ، نسبة الخارج عند مبيعات صفر.
+اختبارات `domain/cash-movement` للتجميع وvoid/restore والتواريخ ونسبة الخارج إلزامية وتوجد ضمن بوابة الاختبار.
 
 ---
 
@@ -362,23 +362,16 @@ pnpm build
 |---------|--------|
 | `businessId` في الـ Prototype | يبقى في المرجع؛ `storeId` + `organizationId` في الإنتاج فقط — §1 و§9 |
 | `core/tenant` | **لا يُستخدم** — `core/organization` فقط — §1 |
-| `.jsx` vs `.tsx` للـ Runtime | البروتايب **`.jsx` مجمّد**؛ الإنتاج **TypeScript** — §9 |
+| Runtime التاريخي | أصبح TypeScript؛ يفكك تدريجيًا دون تغيير الواجهة المعتمدة — §9 |
 | Landing vs Prototype مباشر | إنتاج: `/` تسويق + `/app` تشغيل؛ البروتايب يبقى على `/prototype-runtime` — §10 |
 
 ---
 
-## 15. مرحلة البناء الإنتاجي — قواعد التنفيذ
+## 15. قواعد التطوير الإنتاجي الحالية
 
-### ترتيب العمل (إلزامي)
+### الحالة
 
-1. وثائق Foundation + checkpoint UI (منجز)
-2. Drizzle schema + migrations (`docs/DATABASE_SCHEMA.md`)
-3. `domain/cash-movement` + اختبارات وحدة
-4. API ملخص يوم/شهر + سجل paginated — **تجميع SQL مباشر** على `entries` (بدون `daily_store_summaries` في المرحلة 1)
-5. Auth + سياق منشأة (بدون اعتمادات فعلية في repo)
-6. شاشات `/app` واحدة تلو الأخرى مطابقة للبروتايب
-7. Marketing `/` (لاحقًا — ليس في UI checkpoint الحالي)
-8. Final phase: SaaS admin desktop-first (`/saas-admin`) + analytics + investor reporting
+المعمارية وقاعدة البيانات والحسابات وواجهات API والمصادقة و`/app` والموقع العام وSaaS Admin منفذة. العمل الحالي هو تقوية سلامة البيانات، تبسيط الهيكل، وإثبات الأداء كما في `docs/PRODUCTION_STATUS.md`.
 
 ### قواعد كل PR / مهمة
 
@@ -394,11 +387,11 @@ pnpm build
 
 ---
 
-## 16. كيان DailyCloseout (مستقبلي — البروتايب حاليًا Demo UI فقط)
+## 16. كيان DailyCloseout (منفذ)
 
 واجهة الموظف والمالك تعتمد على كيان **`DailyCloseout`**: تقفيلة يوم واحد لمحل واحد، مرتبطة بالداخل (قنوات المحل)، الخارج، المرفقات، وسجل التدقيق.
 
-التنفيذ الحالي في `src/features/daily-closeouts/` و`src/features/employee-closeouts/` يشمل **Demo UI State** (`localStorage` + Context) بالإضافة إلى مسار API عند تفعيل الأعلام.
+التنفيذ الحالي في `src/features/daily-closeouts/` و`src/features/employee-closeouts/` يستخدم مسار API/DB في الإنتاج. حالة demo/local تبقى للتطوير خارج وضع الإنتاج فقط، ويمنع الحارس المركزي تخزين بيانات الأعمال في المتصفح إنتاجيًا.
 
 ### سياسة صفر مراجعة (مقصود — لا يُغيّر بدون قرار منتج)
 
@@ -436,7 +429,7 @@ pnpm build
 |--------|--------|
 | UI tag | `APPROVED UI BASELINE` |
 | Checkpoint commit | `checkpoint/approved-ui-baseline-before-backend` |
-| مرجع UX | `TaqfeelahPrototypeRuntime.jsx` |
+| مرجع UX | `TaqfeelahPrototypeRuntime.tsx` + `components/prototype-runtime` |
 | وثائق الباكند | `ARCHITECTURE`, `DATABASE_SCHEMA`, `API_CONTRACT`, `PERFORMANCE_RULES` |
 | نسخة تحميل الجوال | `src/prototype-build-stamp.mjs` |
 

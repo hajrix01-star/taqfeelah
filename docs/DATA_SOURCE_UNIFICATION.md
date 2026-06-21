@@ -12,7 +12,8 @@ This includes:
 - organization configuration, stores, channels, staff, and permissions
 - owner/runtime settings, notebook theme, and user-facing preferences
 - attachment metadata and server-managed object/inline storage references
-- authentication/session state through signed server sessions (future auth launch)
+- authentication/session state through signed server sessions
+- attachment metadata and local-VPS storage keys
 
 Browser storage is not a production source of truth.
 
@@ -36,9 +37,8 @@ ALLOW_HEADER_AUTH_CONTEXT=false
 NEXT_PUBLIC_AUTH_API_ENABLED=true
 AUTH_DB_CREDENTIALS_ENABLED=true
 AUTH_SESSION_SECRET=...
-AUTH_ORGANIZATION_ID=...
-AUTH_OWNER_USER_ID=...
-# Legacy ID maps optional after auth launch — see docs/PRODUCTION_STATUS.md
+# AUTH_ORGANIZATION_ID and AUTH_OWNER_USER_ID are optional seed/script inputs,
+# not normal runtime requirements for organizations created through SaaS Admin.
 ```
 
 **CI production deploy** (`deploy-production.yml`) enables auth launch + wave 7 SaaS.  
@@ -87,19 +87,20 @@ auditable, and repeatable:
 5. compare record counts and financial totals before/after
 6. disable the fallback only after the DB copy is verified
 
-## Current transitional state
+## Current production state
 
 - Entries, summaries, reports, closeouts, org config, auth, and runtime settings
-  already have DB/API paths behind feature flags.
+  use DB/API paths in production mode.
 - Browser persistence is now centrally blocked for production app mode.
 - Employee notebook-theme preferences are part of the runtime settings snapshot
   and persist through the runtime settings API/DB path when enabled.
 - Owner shell notification preferences, including closeout alert state and
   duplicate-sales acknowledgements, are part of the runtime settings snapshot
   when the DB settings API is enabled.
-- DB entry attachments now use a server-normalized inline storage key for new
-  writes, while legacy raw `data:` rows remain readable. IndexedDB remains only
-  a prototype/local fallback.
+- New production attachments use a server-managed local VPS storage key by
+  default. Inline and legacy raw `data:` values remain readable for tests and
+  compatibility. Moving attachments to external object storage is explicitly
+  deferred until after launch and actual scaling demand.
 - Prototype/demo mode can still use local browser storage until each legacy
   fallback has a DB-backed replacement and migration script.
 
@@ -107,7 +108,9 @@ auditable, and repeatable:
 
 ```text
 UI state: memory/cache only
-Durable data: UI -> API -> PostgreSQL/object storage
+Durable business data: UI -> API -> PostgreSQL
+Attachment bytes: UI -> API -> isolated local VPS storage (current)
+Future scale option: external object storage (deferred by owner decision)
 Prototype fallback: allowed only outside production app mode
 ```
 

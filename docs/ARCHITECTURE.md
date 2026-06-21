@@ -1,232 +1,178 @@
-# تقفيلة — Architecture (Backend Foundation)
+# تقفيلة — المعمارية الحالية
 
-> **Status:** Foundation completed partially — Drizzle schema/migration and initial API route exist; broader product APIs and auth/RBAC rollout are still in progress.  
-> **UI:** `APPROVED UI BASELINE` — frozen per `docs/APPROVED_UI_BASELINE.md`.
+> آخر تحديث: **2026-06-22**
+> الحالة: التطبيق التشغيلي والمصادقة ولوحة SaaS وواجهات البيانات منفذة. هذه الوثيقة تصف الواقع الحالي، لا خطة تأسيس مستقبلية.
 
----
+## 1. نطاق المنتج
 
-## 1. Product scope
-
-Taqfeelah is **daily operational cash movement**, not accounting:
+تقفيلة تطبيق تشغيل يومي مبسط:
 
 ```text
-الداخل − الخارج = الناتج
+المبيعات - الخارج = صافي الحركة
 ```
 
-Forbidden as core product scope: accounting, ledger, P&L, debit/credit, VAT/ZATCA, inventory, OCR, POS, invoicing, ERP expansion.
+ليس نظام محاسبة قانونيًا، ولا ERP أو POS أو نظام مخزون أو فواتير أو ضرائب. القواعد التفصيلية في `docs/CONVENTIONS.md`.
 
-Approved domains:
+## 2. النموذج متعدد المنشآت
+
+`Organization` هي وحدة العميل والاشتراك والعزل:
 
 ```text
-domain/cash-movement
-features/closeout
-features/entries
-features/reports
+Organization
+  ├── Stores
+  ├── Members and store access
+  ├── Subscription and entitlements
+  ├── Entries and daily closeouts
+  └── Attachments and audit events
 ```
 
-Full rules: `docs/CONVENTIONS.md`.
+المعرفات الرسمية:
 
----
+| المعرف | المعنى |
+|---|---|
+| `organizationId` | المنشأة/العميل |
+| `storeId` | المحل داخل المنشأة |
+| `userId` | المستخدم |
 
-## 2. SaaS model
+لا يُنشأ اسم موازٍ مثل `tenantId`. الخادم يشتق سياق المنشأة من الجلسة والعضوية، ولا يعتمد على جسم الطلب وحده.
 
-Multi-tenant from **first database migration** via `Organization`.
+## 3. التقنية
 
-| ID | Scope |
-|----|--------|
-| `organizationId` | Tenant / commercial customer |
-| `storeId` | Branch or shop |
-| `userId` | Person |
+| الطبقة | التقنية الحالية |
+|---|---|
+| الواجهة والخادم | Next.js 15 + React 19 + TypeScript |
+| قاعدة البيانات | PostgreSQL |
+| ORM والمهاجرات | Drizzle ORM + drizzle-kit |
+| التحقق | Zod |
+| اختبارات الوحدة | Vitest |
+| اختبارات المتصفح | Playwright |
+| السجل | Pino |
+| المزامنة | SSE مع تحديث احتياطي من العميل |
+| PWA | Serwist |
 
-- Subscription (later) attaches to `Organization`.
-- **Never** use `tenantId` as a parallel name.
-- Server **never trusts** `organizationId` from the client body alone — derive from session + membership (when auth exists).
+لا يضاف ORM ثانٍ بجانب Drizzle.
 
-### Prototype vs production
-
-| Layer | Store identifier |
-|-------|------------------|
-| `TaqfeelahPrototypeRuntime.jsx` | `businessId` (frozen) |
-| Production DB/API | `storeId` + `organizationId` |
-
----
-
-## 3. Technology stack (approved)
-
-| Layer | Choice |
-|-------|--------|
-| App framework | Next.js (existing `taqfeelah-V2`) |
-| Database | **PostgreSQL** |
-| ORM / query | **Drizzle ORM** |
-| Migrations | **drizzle-kit** |
-
-**Rules:**
-
-- Do **not** add Prisma in parallel.
-- Do not change DB/ORM without owner approval.
-- Hostinger VPS deployment is **deferred** until local app + server environment check.
-
-Auth, billing, object storage, and marketing site are **documented but not implemented** in foundation phase.
-
----
-
-## 4. Repository layout (target)
+## 4. طبقات المستودع
 
 ```text
-src/
-  app/                    # Routes only
-  features/
-    closeout/
-    entries/
-    reports/
-    stores/
-    memberships/
-    settings/
-    sharing/
-    auth/
-  domain/
-    cash-movement/        # All operational math
-    organizations/
-    stores/
-    entries/
-  core/
-    auth/
-    organization/
-    config/
-    errors/
-  shared/
-    ui/
-    utils/
-    i18n/
+src/app/          routes + API adapters
+src/components/   current UI composition
+src/features/     product use-cases grouped by feature
+src/domain/       pure business rules and calculations
+src/core/         auth, database, money, config, errors, sync
+src/lib/          shared UI utilities
 ```
 
-Prototype stays at `src/components/TaqfeelahPrototypeRuntime.jsx` until `/app` parity + owner sign-off.
+الاتجاه المفضل:
 
----
+```text
+route/UI -> feature service -> domain/core -> PostgreSQL
+```
 
-## 5. Routes (planned)
+- `app` يربط الطلب بالخدمة ولا يحتوي قواعد عمل.
+- `features` تملك حالة الاستخدام وواجهات client/server الخاصة بها.
+- `domain/cash-movement` يملك الحسابات التشغيلية المركزية.
+- `core` لا يعتمد على شاشة أو ميزة منتج محددة.
 
-| Route | Phase | Purpose |
-|-------|-------|---------|
-| `/prototype-runtime` | Now | Frozen UI baseline reference |
-| `/app` | Backend phase | Production operational app (visual parity) |
-| `/` | Later | Marketing + plans + “Enter app” CTA |
-| `/saas-admin` | Final phase | SaaS management console (desktop-first) |
+مجلد `components/prototype-runtime` يحمل اسمًا تاريخيًا لكنه يكوّن واجهة `/app` المعتمدة حاليًا. الاسم ليس تصريحًا باستخدام بيانات تجريبية في الإنتاج. تفكيكه وإعادة تسميته يتمان تدريجيًا فقط مع اختبارات تمنع تغيير السلوك.
 
-Current checkpoint: **no landing page** — direct prototype runtime.
+## 5. المسارات الفعلية
 
-### SaaS admin route (final phase)
+| المسار | الوظيفة |
+|---|---|
+| `/` | الموقع العام |
+| `/signup` | طلب إنشاء حساب مالك |
+| `/app` | التطبيق التشغيلي المحمي |
+| `/saas-admin` | إدارة المنصة والعملاء والخطط |
+| `/prototype-runtime` | مرجع واجهة خارج مسار الإنتاج الطبيعي |
+| `/api/v1/*` | API المصادقة والتشغيل والإدارة والتقارير |
 
-- `/saas-admin` is **separate** from the operational app UI.
-- Target audience: owner/super-admin operators and investors (authorized roles only).
-- UX policy: **desktop-first** (>= 1280px primary), tablet/mobile as limited responsive fallback.
-- Purpose: subscription operations, investor KPIs, tenant health, and growth analytics.
+العقد التفصيلي في `docs/API_CONTRACT.md`، والتنفيذ الفعلي في `src/app/api/v1`.
 
----
+## 6. المصادقة والصلاحيات
 
-## 6. Money
+- جلسة موقعة في cookie آمن هي السياق الأساسي.
+- دخول المالك بالجوال/كلمة المرور، ودخول الموظف بالجوال/PIN.
+- `ALLOW_HEADER_AUTH_CONTEXT` للاختبارات المعزولة فقط ويكون `false` في الإنتاج.
+- الوصول إلى المتجر يتحقق في الخادم من العضوية والدور.
+- تحديد السرعة يستخدم Redis عند ضبط Upstash، أو ذاكرة العملية للنسخة الواحدة.
+
+## 7. مصدر البيانات والمركزية
+
+في الإنتاج:
+
+```text
+UI memory/cache -> validated API -> PostgreSQL
+                                -> local VPS attachment storage
+```
+
+PostgreSQL هو المصدر الدائم للعمليات والتقفيلات والإعدادات والصلاحيات والجلسات. التخزين داخل المتصفح لا يُستخدم كمصدر بيانات إنتاجي. التفاصيل في `docs/DATA_SOURCE_UNIFICATION.md`.
+
+## 8. المال والحساب
 
 ```ts
 type Money = {
-  amountHalalas: number; // integer halalas, e.g. 125.75 SAR → 12575
+  amountHalalas: number;
   currency: "SAR";
 };
 ```
 
-All persistence and domain math use halalas. UI formats to riyal for display.
+- التخزين والجمع والطرح بالهللات الصحيحة.
+- التحويل إلى الريال للعرض فقط.
+- `summary` يمثل المبيعات، و`purchases | expense | withdrawal` تمثل الخارج.
+- العمليات الملغاة لا تدخل في الإجماليات.
+- الحساب المرجعي في `src/domain/cash-movement` وتتحقق مساواته مع تقارير SQL بالاختبارات.
 
-Calculations live only in `domain/cash-movement` (see `docs/CONVENTIONS.md` §4).
+## 9. دورة العمليات والتقفيلات
 
----
+- إنشاء عملية وسطور القنوات والمرفقات وسجل التدقيق يتم داخل transaction.
+- `void` و`restore` يحافظان على العملية وسجلها.
+- التقفيلة تستخدم `clientCloseoutId` لمنع تكرار الطلب نفسه، و`daySequence` لترتيب تقفيلات اليوم.
+- تعديل/حذف التقفيلة ما زال يعيد بناء/يحذف صفوفًا فعلية؛ هذا مسجل كأولوية سلامة بيانات قبل الاعتماد النهائي في `docs/PRODUCTION_STATUS.md`.
 
-## 7. Entries lifecycle
+## 10. المرفقات
 
-- No hard delete of financially relevant rows.
-- `void` / `restore` + `audit_events`.
-- Future corrections: void old row, create new row with `corrected_from_entry_id`, audit `corrected`.
+- جدول `attachments` يحفظ البيانات الوصفية و`storageKey` فقط.
+- وضع الإنتاج الافتراضي يحفظ الملف تحت جذر محلي معزول على VPS (`ATTACHMENT_STORAGE_MODE=local`).
+- inline متاح للاختبارات والتوافق مع بيانات قديمة، وليس هدف التوسع.
+- نقل الملفات إلى Object Storage/CDN مؤجل بقرار المالك إلى ما بعد الإطلاق وعند التوسع.
 
-`summary` = daily sales by channel only; multiple summaries per store/day allowed after owner `duplicate_approved` (no unique constraint blocking multiples).
+## 11. الأداء والتوسع
 
----
+- فهارس مركبة تبدأ بـ `organizationId` و`storeId`.
+- سجل العمليات والتقفيلات يستخدم keyset pagination.
+- التقارير تجمع داخل SQL ضمن تاريخ ومتجر محددين.
+- لا تُحمّل سنوات من العمليات إلى المتصفح.
+- Pool قاعدة البيانات مضبوط لنسخة التطبيق الحالية.
+- Redis وObject Storage وتشغيل عدة نسخ وجداول التجميع إجراءات توسع، وليست افتراضات مخفية في الإصدار الأول.
 
-## 8. Attachments
+راجع `docs/PERFORMANCE_RULES.md` للحدود وبوابة اختبار الضغط.
 
-- Metadata in `attachments` table; `storage_key` for object storage.
-- **No** file bytes in `entries` JSON.
-- Object storage provider TBD; implementation deferred.
+## 12. النشر والعزل
 
----
+- الإنتاج من `main` عبر `deploy-production.yml`.
+- staging من فرع التجربة عبر `deploy-staging.yml`.
+- لكل بيئة خدمة ومنفذ وقاعدة بيانات وإعدادات مستقلة.
+- migrations فقط على الإنتاج؛ لا demo seed ولا reset.
+- `/api/v1/meta` يعرض رقم البناء للتحقق بعد النشر.
 
-## 9. Performance strategy (phase 1)
+## 13. قواعد التغيير
 
-- Indexed `entries` + **scoped SQL aggregation** for day/month summaries.
-- **Mandatory pagination** for register/list APIs.
-- **No** loading multi-year history into the browser.
-- `daily_store_summaries` table: **not in phase 1** — documented future optimization only (`docs/PERFORMANCE_RULES.md`).
+أي تغيير معماري يجب أن:
 
----
+1. يحافظ على عزل المنشآت.
+2. يضيف migration جديدًا عند تغيير schema.
+3. يحدّث الاختبارات والوثيقة المتأثرة في التغيير نفسه.
+4. يمر عبر lint وtypecheck والاختبارات والبناء.
+5. يُختبر على staging قبل `main`.
 
-## 10. Related documents
+## 14. المراجع
 
-| Document | Content |
-|----------|---------|
-| `docs/CONVENTIONS.md` | Mandatory product + code rules |
-| `docs/DATABASE_SCHEMA.md` | Tables, columns, indexes |
-| `docs/API_CONTRACT.md` | Planned endpoints (contracts only) |
-| `docs/PERFORMANCE_RULES.md` | Query and pagination rules |
-| `docs/APPROVED_UI_BASELINE.md` | Frozen UI checkpoint |
-
----
-
-## 11. SaaS analytics and investor reporting (final phase)
-
-### KPI scope
-
-- Tenant lifecycle: `newOrganizations`, `activeOrganizations`, `suspendedOrganizations`, `churnedOrganizations`.
-- Revenue: `MRR`, `ARR`, `collections`, `failedPayments`, `refunds` (provider-dependent).
-- Product usage: `DAU`, `WAU`, `MAU` (organization + user levels).
-- Engagement/retention: cohorts, activation funnel, dormant organizations.
-- Operational value: aggregate daily `inside/outside/net` at organization/store portfolio level.
-
-### UI scope — desktop-first console
-
-- SaaS overview dashboard (time range + KPI cards + trend charts).
-- Subscription and plan management workspace.
-- Organization health table (usage, status, risk flags, last activity).
-- Investor-ready exports (CSV first, PDF optional later).
-- Strict role gating and audit logging for admin actions.
-
----
-
-## 12. Implementation order (after owner approval)
-
-1. Drizzle + PostgreSQL + first migration (schema in `DATABASE_SCHEMA.md`).
-2. `domain/cash-movement` + unit tests.
-3. Session/auth skeleton (no production credentials in repo).
-4. Entry APIs + audit.
-5. `/app` screens one-by-one matching prototype.
-6. Final phase: `/saas-admin` (desktop-first) + SaaS analytics + investor reporting.
-
-Stop after documentation + checkpoint until owner approves schema work.
-
----
-
-## 13. Production runtime mode (current hardening)
-
-Runtime mode is controlled by environment:
-
-- `NEXT_PUBLIC_APP_MODE=production` (client mode gate)
-- `APP_MODE=production` (server mode gate)
-
-Closeout API mode for unified source in production:
-
-- `NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true`
-- `NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID=<organization-uuid>`
-- `NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID=<owner-user-uuid>`
-- `NEXT_PUBLIC_ENTRIES_API_ENABLED=true` (optional, defaults to closeouts API flag)
-- `NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP=<json map>`
-- `NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP=<json map>`
-- `NEXT_PUBLIC_CLOSEOUTS_SALES_CHANNEL_ID_MAP=<json map>`
-
-In production mode, closeout sync is strict and should fail closed if required API mapping/env is missing.
-Operational register reads and writes are now expected through store-scoped entries APIs (`/api/v1/stores/:storeId/entries` and action routes).
+- `README.md`
+- `docs/README.md`
+- `docs/CONVENTIONS.md`
+- `docs/DATA_SOURCE_UNIFICATION.md`
+- `docs/DATABASE_SCHEMA.md`
+- `docs/API_CONTRACT.md`
+- `docs/PERFORMANCE_RULES.md`
+- `docs/PRODUCTION_STATUS.md`

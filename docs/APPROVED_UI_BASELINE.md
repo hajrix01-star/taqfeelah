@@ -9,18 +9,18 @@
 After the checkpoint commit, **do not change** without explicit owner approval:
 
 - Visual design, layout, spacing, typography colors (except logo swap only if owner requests).
-- `src/components/TaqfeelahPrototypeRuntime.jsx` structure and screen flows.
+- `src/components/TaqfeelahPrototypeRuntime.tsx` and `src/components/prototype-runtime/*` screen flows.
 - Prototype-visible CSS (`AppFontStyles`, Tailwind classes on prototype screens).
 - Mobile/tablet breakpoints and centered column layout (~530–560px on tablet).
 
 ## What the approved baseline includes
 
-- App entry at `/prototype-runtime` (no marketing landing in this checkpoint).
+- The approved operational composition now serves `/app`; `/prototype-runtime` remains a comparison route.
 - No fake phone frame; full viewport shell.
 - Owner: home (notebook), reports (notebook), register, settings, add flows.
 - Employee flows accepted visually.
 - Notebook ruled lines scroll with content; no vertical red margin line (removed 2026-06 per owner).
-- Prototype demo auth only — not production security.
+- The visual checkpoint originally used demo auth; production `/app` now uses signed sessions and real credentials.
 
 ## Allowed without re-approval
 
@@ -32,6 +32,7 @@ After the checkpoint commit, **do not change** without explicit owner approval:
 
 | File | Role |
 |------|------|
-| `src/components/TaqfeelahPrototypeRuntime.jsx` | Approved UX/behavior reference |
+| `src/components/TaqfeelahPrototypeRuntime.tsx` | Approved UX/behavior composition |
+| `src/components/prototype-runtime/*` | Extracted approved screens and UI pieces |
 | `src/prototype-build-stamp.mjs` | Load verification on devices |
 | `docs/CONVENTIONS.md` | Product and engineering rules |
