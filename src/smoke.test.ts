@@ -153,7 +153,6 @@ describe("prototype runtime module boundary smoke", () => {
       NEXT_PUBLIC_ENTRIES_API_ENABLED: "false",
       NEXT_PUBLIC_CLOSEOUTS_API_ENABLED: "false",
     });
-    expect(capabilities.prototypeAccessMode).toBe(false);
     expect(capabilities.bindsToServerAuth).toBe(true);
     expect(capabilities.entriesApiDbSource).toBe(false);
   });

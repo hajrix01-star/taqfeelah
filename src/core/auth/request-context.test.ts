@@ -123,7 +123,6 @@ describe("resolveRequestContext", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("APP_MODE", "production");
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
-    vi.stubEnv("NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE", "false");
     vi.stubEnv("ALLOW_HEADER_AUTH_CONTEXT", "true");
     vi.stubEnv("DATABASE_URL", "postgresql://example");
     vi.stubEnv("AUTH_SESSION_SECRET", "test-secret-min-16-chars");

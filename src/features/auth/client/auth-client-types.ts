@@ -87,12 +87,6 @@ export type EmployeeLoginCallback = (
   organizationId?: string,
 ) => void;
 
-export type SavedOwnerCredentials = {
-  username?: string;
-  password?: string;
-  phone?: string;
-};
-
 export type OwnerSessionBridgeInput = {
   username?: string;
   password?: string;

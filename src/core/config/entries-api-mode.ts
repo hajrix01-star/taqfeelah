@@ -1,5 +1,4 @@
 import { isProductionAppMode } from "@/core/config/app-mode";
-import { isPrototypeAccessMode } from "@/core/config/prototype-access-mode";
 
 type EntriesApiEnv = {
   NEXT_PUBLIC_ENTRIES_API_ENABLED?: string;
@@ -30,5 +29,5 @@ export function isEntriesApiDbSourceMode(
 
 /** Fail hard on API errors only when real server-auth production mode is active. */
 export function isEntriesApiStrictMode(): boolean {
-  return isProductionAppMode() && !isPrototypeAccessMode();
+  return isProductionAppMode();
 }

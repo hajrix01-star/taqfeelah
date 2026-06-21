@@ -1,5 +1,4 @@
 import { isProductionAppMode } from "@/core/config/app-mode";
-import { isPrototypeAccessMode } from "@/core/config/prototype-access-mode";
 
 type CloseoutsApiEnv = {
   NEXT_PUBLIC_CLOSEOUTS_API_ENABLED?: string;
@@ -26,5 +25,5 @@ export function isCloseoutsApiDbSourceMode(
 
 /** Fail hard on API errors only when real server-auth production mode is active. */
 export function isCloseoutsApiStrictMode(): boolean {
-  return isProductionAppMode() && !isPrototypeAccessMode();
+  return isProductionAppMode();
 }

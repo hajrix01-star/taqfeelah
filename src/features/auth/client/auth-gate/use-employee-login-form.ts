@@ -1,12 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { isUuid } from "@/core/client/api-id-utils";
-import {
-  clearEmployeeCredentials,
-  readEmployeeCredentials,
-  saveEmployeeCredentials,
-} from "@/features/demo/login-credentials-storage";
 import {
   employeePinMatches,
   filterActiveLoginStaff,
@@ -39,18 +33,15 @@ export function useEmployeeLoginForm({
   const [selectedId, setSelectedId] = useState("");
   const [manualEmployeeId, setManualEmployeeId] = useState("");
   const [employeePhone, setEmployeePhone] = useState("");
-  const [boundUserId, setBoundUserId] = useState("");
   const [pin, setPin] = useState("");
   const [trustDevice, setTrustDevice] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [rosterStaff, setRosterStaff] = useState<AuthStaffMember[]>([]);
   const [rosterLoading, setRosterLoading] = useState(APP_IN_PRODUCTION_MODE);
 
   const loginStaff = resolveEmployeeLoginStaff(staff, rosterStaff, APP_IN_PRODUCTION_MODE);
   const activeStaff = filterActiveLoginStaff(loginStaff);
-  const pinOnlyLogin = APP_IN_PRODUCTION_MODE && Boolean(boundUserId);
 
   useEffect(() => {
     // Production employee login uses phone + PIN only; roster is not shown publicly.
@@ -79,24 +70,6 @@ export function useEmployeeLoginForm({
   useEffect(() => {
     if (!selectedId && activeStaff[0]) setSelectedId(activeStaff[0].id || "");
   }, [activeStaff, selectedId]);
-
-  useEffect(() => {
-    const saved = readEmployeeCredentials();
-    if (!saved) return;
-    setRememberMe(true);
-    if (saved.employeeId && isUuid(saved.employeeId)) {
-      setBoundUserId(saved.employeeId);
-    } else if (saved.employeeId && activeStaff.some((person) => (
-      person.id === saved.employeeId
-      || person.legacyId === saved.employeeId
-      || person.apiUserId === saved.employeeId
-    ))) {
-      setSelectedId(saved.employeeId);
-    } else if (saved.employeeId) {
-      setManualEmployeeId(saved.employeeId);
-    }
-    if (saved.pin) setPin(saved.pin);
-  }, [activeStaff]);
 
   const submit = useCallback(async () => {
     if (submitting) return;
@@ -148,9 +121,7 @@ export function useEmployeeLoginForm({
       return;
     }
 
-    const employeeIdentifier = pinOnlyLogin
-      ? boundUserId
-      : (activeStaff.length > 0 ? selectedId : manualEmployeeId.trim());
+    const employeeIdentifier = activeStaff.length > 0 ? selectedId : manualEmployeeId.trim();
 
     const person = activeStaff.find((item) => (
       item.id === employeeIdentifier
@@ -169,19 +140,14 @@ export function useEmployeeLoginForm({
     }
 
     setError("");
-    if (rememberMe) saveEmployeeCredentials({ employeeId: employeeIdentifier, pin: pin.trim() });
-    else clearEmployeeCredentials();
     onLogin(person?.id || employeeIdentifier, "", person || null);
   }, [
     activeStaff,
-    boundUserId,
     employeePhone,
     lang,
     manualEmployeeId,
     onLogin,
     pin,
-    pinOnlyLogin,
-    rememberMe,
     selectedId,
     submitting,
     trustDevice,
@@ -190,7 +156,6 @@ export function useEmployeeLoginForm({
   return {
     activeStaff,
     rosterLoading,
-    pinOnlyLogin,
     selectedId,
     setSelectedId,
     manualEmployeeId,
@@ -203,8 +168,6 @@ export function useEmployeeLoginForm({
     setTrustDevice,
     error,
     submitting,
-    rememberMe,
-    setRememberMe,
     submit,
   };
 }

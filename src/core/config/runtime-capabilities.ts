@@ -6,7 +6,6 @@ import { isCloseoutsApiDbSourceMode, isCloseoutsApiEnabled, isCloseoutsApiStrict
 import { isEntriesApiDbSourceMode, isEntriesApiEnabled, isEntriesApiStrictMode } from "@/core/config/entries-api-mode";
 import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { isPhase9ApiEnabled } from "@/core/config/phase9-api-mode";
-import { isPrototypeAccessMode } from "@/core/config/prototype-access-mode";
 import { isRegisterEntriesPaginationEnabled } from "@/core/config/register-entries-pagination-mode";
 import { readPublicEnvString } from "@/core/config/public-env";
 import type {
@@ -42,7 +41,6 @@ export function resolveRuntimeCapabilities(
   env: RuntimeCapabilitiesEnv = readRuntimeCapabilitiesEnv(),
 ): RuntimeCapabilities {
   const appInProductionMode = isProductionAppMode();
-  const prototypeAccessMode = isPrototypeAccessMode();
   const bindsToServerAuth = appInProductionMode;
   const closeoutsApiEnabled = isCloseoutsApiEnabled(env);
   const entriesApiEnabled = isEntriesApiEnabled(env);
@@ -50,7 +48,6 @@ export function resolveRuntimeCapabilities(
 
   return {
     appInProductionMode,
-    prototypeAccessMode,
     bindsToServerAuth,
     closeoutsApiEnabled,
     closeoutsApiStrictMode: isCloseoutsApiStrictMode(),

@@ -155,7 +155,7 @@ async function seedCore(client) {
     );
   }
 
-  for (const [legacyId, name] of OUTFLOW_CATEGORIES) {
+  for (const [, name] of OUTFLOW_CATEGORIES) {
     await client.query(
       `insert into outflow_categories (organization_id, store_id, name, status)
        values ($1, $2, $3, 'active')`,

@@ -17,22 +17,11 @@ afterEach(() => {
 });
 
 describe("runtime capabilities", () => {
-  it("enables server auth only in production without prototype access", () => {
+  it("enables server auth in production", () => {
     process.env.NEXT_PUBLIC_APP_MODE = "production";
-    process.env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE = "false";
 
     const caps = resolveRuntimeCapabilities(asRuntimeEnv(process.env));
     expect(caps.appInProductionMode).toBe(true);
-    expect(caps.prototypeAccessMode).toBe(false);
-    expect(caps.bindsToServerAuth).toBe(true);
-  });
-
-  it("disables prototype access by default after auth launch", () => {
-    process.env.NEXT_PUBLIC_APP_MODE = "production";
-    delete process.env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE;
-
-    const caps = resolveRuntimeCapabilities(asRuntimeEnv(process.env));
-    expect(caps.prototypeAccessMode).toBe(false);
     expect(caps.bindsToServerAuth).toBe(true);
   });
 
@@ -107,7 +96,6 @@ describe("runtime capabilities", () => {
 
   it("prefers session organization id over env when server auth is active", () => {
     process.env.NEXT_PUBLIC_APP_MODE = "production";
-    process.env.NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE = "false";
     process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID = "11111111-1111-4111-8111-111111111111";
 
     const context = resolveRuntimeApiActorContext({

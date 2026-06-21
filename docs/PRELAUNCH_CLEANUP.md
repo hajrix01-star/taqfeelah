@@ -30,7 +30,7 @@
 
 | البند | السلوك الجديد |
 |-------|----------------|
-| `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` | **أُزيل من العقد** — `isPrototypeAccessMode()` دائمًا `false` |
+| `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` | **أُزيل من العقد والكود** — لا يوجد مسار رجوع تجريبي للإنتاج |
 | `enterPrototypeAsOwner/Employee` | حُذف من handlers |
 | خرائط ID في `deploy-production.yml` | لم تعد تُمرَّر افتراضيًا |
 | `vps_deploy.py` bootstrap | موجة 7 + auth حقيقي بدون maps وهمية |

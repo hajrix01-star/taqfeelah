@@ -13,7 +13,7 @@ Prototype Access Mode was a temporary development bypass:
 - No session cookies or `/api/v1/auth/session`
 - Often paired with `ALLOW_HEADER_AUTH_CONTEXT=true` and env ID maps
 
-This path is **no longer available**. `isPrototypeAccessMode()` always returns `false`.
+This path and its runtime flag implementation are **no longer present in the codebase**.
 
 ---
 

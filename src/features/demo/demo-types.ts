@@ -30,16 +30,6 @@ export type AuthBootState = {
   employeeBusinessId: string;
 };
 
-export type SavedOwnerCredentials = {
-  username: string;
-  password: string;
-};
-
-export type SavedEmployeeCredentials = {
-  employeeId: string;
-  pin: string;
-};
-
 export type PrototypeAuthBootOptions = {
   bindsToServerAuth?: boolean;
   readSavedSettings?: () => Record<string, unknown> | null;

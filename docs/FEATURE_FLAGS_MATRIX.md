@@ -21,7 +21,7 @@
 | `NEXT_PUBLIC_AUTH_API_ENABLED` | `false` | `true` | Auth API wired |
 | `AUTH_DB_CREDENTIALS_ENABLED` | `false` | `true` | `auth_identities` table |
 
-> **Removed:** `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` — prototype role picker deleted before launch. `isPrototypeAccessMode()` is always `false`.
+> **Removed:** `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` — prototype role picker and its runtime flag code were deleted before launch.
 
 `assertProductionRuntimeEnv()` rules:
 

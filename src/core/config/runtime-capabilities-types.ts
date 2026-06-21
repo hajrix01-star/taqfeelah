@@ -13,7 +13,6 @@ export type RuntimeCapabilitiesEnv = {
 
 export type RuntimeCapabilities = {
   appInProductionMode: boolean;
-  prototypeAccessMode: boolean;
   bindsToServerAuth: boolean;
   closeoutsApiEnabled: boolean;
   closeoutsApiStrictMode: boolean;

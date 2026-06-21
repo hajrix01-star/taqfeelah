@@ -2,13 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getEnabledOwnerLoginMethods, isOwnerLoginMethodEnabled } from "@/core/auth/owner-login-methods";
-import {
-  clearOwnerCredentials,
-  readOwnerCredentials,
-  saveOwnerCredentials,
-} from "@/features/demo/login-credentials-storage";
 import { loginOwnerViaSessionBridge } from "@/features/auth/client/session-bridge";
-import type { AuthLang, OwnerLoginCallback, SavedOwnerCredentials } from "@/features/auth/client/auth-client-types";
+import type { AuthLang, OwnerLoginCallback } from "@/features/auth/client/auth-client-types";
 import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
 import {
   APP_IN_PRODUCTION_MODE,
@@ -36,16 +31,6 @@ export function useOwnerLoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-
-  useEffect(() => {
-    const saved = readOwnerCredentials() as SavedOwnerCredentials | null;
-    if (!saved) return;
-    setRememberMe(true);
-    if (saved.username) setUsername(saved.username);
-    if (saved.phone) setOwnerPhone(saved.phone);
-    if (saved.password) setPassword(saved.password);
-  }, []);
 
   useEffect(() => {
     if (method === "phone" && !isOwnerLoginMethodEnabled("whatsapp_otp")) {
@@ -99,15 +84,12 @@ export function useOwnerLoginForm({
     }
 
     setError("");
-    if (rememberMe) saveOwnerCredentials({ username: username.trim(), password });
-    else clearOwnerCredentials();
     onOwnerLogin();
   }, [
     lang,
     onOwnerLogin,
     ownerPhone,
     password,
-    rememberMe,
     submitting,
     username,
   ]);
@@ -134,8 +116,6 @@ export function useOwnerLoginForm({
     error,
     setError,
     submitting,
-    rememberMe,
-    setRememberMe,
     submitOtp,
     submitPassword,
     canUsePhoneOtp,

@@ -11,7 +11,7 @@
 | `AUTH_DB_CREDENTIALS_ENABLED` | `true` | Login reads `auth_identities` |
 | `ALLOW_HEADER_AUTH_CONTEXT` | `false` | Session cookies only |
 
-> **Removed:** `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` — prototype role picker deleted before launch.
+> **Removed:** `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` — prototype role picker and its runtime flag code were deleted before launch.
 
 ## What was added (foundations)
 

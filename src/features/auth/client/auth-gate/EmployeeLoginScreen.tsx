@@ -55,7 +55,7 @@ export function EmployeeLoginScreen({
               </span>
             </label>
           </>
-        ) : !form.pinOnlyLogin ? (
+        ) : (
           <>
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "employee")}</p>
             {form.activeStaff.length > 0 ? (
@@ -80,10 +80,6 @@ export function EmployeeLoginScreen({
               />
             )}
           </>
-        ) : (
-          <p className="mb-4 rounded-2xl bg-[#EAF7EF] p-3 text-center text-taq-meta font-bold text-[#257844]">
-            {lang === "ar" ? "أدخل PIN الخاص بك للمتابعة" : "Enter your PIN to continue"}
-          </p>
         )}
         {!APP_IN_PRODUCTION_MODE ? (
           <>
@@ -91,15 +87,6 @@ export function EmployeeLoginScreen({
             <input dir="ltr" inputMode="numeric" value={form.pin} onChange={(event) => form.setPin(event.target.value)} placeholder="• • • •" className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-4 text-center text-xl font-black tracking-[0.45em] outline-none ring-1 ring-[#E8E1D4]" />
           </>
         ) : null}
-        <label className="mt-3 flex cursor-pointer items-center gap-2.5">
-          <input
-            type="checkbox"
-            checked={form.rememberMe}
-            onChange={(event) => form.setRememberMe(event.target.checked)}
-            className="h-4 w-4 rounded border-[#C8BCA4] text-[#112A46] accent-[#112A46]"
-          />
-          <span className="text-taq-meta font-black text-[#716753]">{text(lang, "rememberMe")}</span>
-        </label>
         <button type="button" onClick={() => { void form.submit(); }} disabled={form.submitting} className="mt-4 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white disabled:bg-[#B8C0B7]">{text(lang, "verifyContinue")}</button>
         {form.error ? <p className="mt-3 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{form.error}</p> : null}
       </div>

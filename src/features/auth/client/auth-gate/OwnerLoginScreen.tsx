@@ -99,15 +99,6 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onBack }: OwnerLoginS
               {...ownerPasswordInputProps}
               className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
             />
-            <label className="mt-3 flex cursor-pointer items-center gap-2.5">
-              <input
-                type="checkbox"
-                checked={form.rememberMe}
-                onChange={(event) => form.setRememberMe(event.target.checked)}
-                className="h-4 w-4 rounded border-[#C8BCA4] text-[#112A46] accent-[#112A46]"
-              />
-              <span className="text-taq-meta font-black text-[#716753]">{text(lang, "rememberMe")}</span>
-            </label>
             <button type="submit" disabled={form.submitting} className="mt-4 w-full rounded-2xl bg-[#39A160] py-4 text-sm font-black text-white disabled:bg-[#B8C0B7]">{text(lang, "verifyContinue")}</button>
             {APP_IN_PRODUCTION_MODE ? (
               <Link href="/auth/forgot-password" className="mt-3 block text-center text-taq-meta font-black text-[#9A823E]">
