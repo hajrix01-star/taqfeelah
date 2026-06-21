@@ -86,8 +86,6 @@ export function PrototypeRuntimePageContent({
   archivedBusinessIds,
   registerEntriesPaginationEnabled,
   resolveStoreSalesChannels,
-  onDeleteRegisterCloseout,
-  fetchCloseoutForRegisterSummary,
   configuredBusinesses,
   setConfiguredBusinesses,
   setArchivedBusinessIds,
@@ -277,9 +275,6 @@ export function PrototypeRuntimePageContent({
           archivedBusinessIds={archivedBusinessIds}
           notebookTheme={notebookTheme}
           resolveStoreSalesChannels={resolveStoreSalesChannels}
-          onDeleteRegisterCloseout={onDeleteRegisterCloseout}
-          fetchCloseoutForRegisterSummary={fetchCloseoutForRegisterSummary}
-          entriesApiDbSource={entriesApiDbSource}
           registerEntriesApiEnabled={entriesApiEnabled && registerEntriesPaginationEnabled}
           registerEntriesApiOrganizationId={closeoutsApiOrganizationId ?? undefined}
           registerEntriesApiActorUserId={ownerApiUserId ?? undefined}

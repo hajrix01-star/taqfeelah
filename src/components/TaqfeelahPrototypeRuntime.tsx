@@ -1,14 +1,6 @@
 ﻿"use client";
 
-import { useCallback } from "react";
 import { DailyCloseoutsProvider } from "@/features/daily-closeouts/DailyCloseoutsProvider";
-import { fetchStoreCloseoutsViaApi } from "@/features/closeouts/client/closeouts-api-client";
-import {
-  closeoutDeleteRequestToRecord,
-  resolveCloseoutRecordForRegisterSummary,
-} from "@/features/closeouts/client/register-closeout-summary-service";
-import type { RegisterCloseoutSummary } from "@/features/entries/client/register-log-display";
-import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
 import { AppDialogProvider } from "@/lib/ui/app-dialog/AppDialogProvider";
 import { TopBar } from "./prototype-runtime/prototype-runtime-chrome";
 import { AppFontStyles } from "./prototype-runtime/prototype-runtime-app-font-styles";
@@ -206,31 +198,6 @@ export default function TaqfeelahPrototypeRuntime() {
     loadCloseoutsFromApi,
   } = closeoutsApi;
 
-  const onDeleteRegisterCloseout = useCallback(async (request: {
-    closeoutId: string;
-    storeId: string;
-    date?: string;
-  }) => {
-    await syncDeleteCloseoutToApi({ closeout: closeoutDeleteRequestToRecord(request) });
-  }, [syncDeleteCloseoutToApi]);
-
-  const fetchCloseoutForRegisterSummary = useCallback(async (summary: RegisterCloseoutSummary) => {
-    const resolved = await resolveCloseoutRecordForRegisterSummary(summary, {
-      fetchStoreCloseouts: async (storeId, date) => {
-        const rows = await fetchStoreCloseoutsViaApi({
-          organizationId: closeoutsApiOrganizationId ?? undefined,
-          actorUserId: ownerApiUserId ?? undefined,
-          actorRole: "owner",
-          storeId,
-          dateFrom: date,
-          dateTo: date,
-        });
-        return rows;
-      },
-    });
-    return (resolved as DailyCloseoutRecord | null) ?? null;
-  }, [closeoutsApiOrganizationId, ownerApiUserId]);
-
   const {
     closeoutsAutoLoadQueryKey,
     closeoutAttachmentsApiProps,
@@ -406,8 +373,6 @@ export default function TaqfeelahPrototypeRuntime() {
                 archivedBusinessIds={archivedBusinessIds}
                 registerEntriesPaginationEnabled={REGISTER_ENTRIES_PAGINATION_ENABLED}
                 resolveStoreSalesChannels={resolveStoreSalesChannels}
-                onDeleteRegisterCloseout={onDeleteRegisterCloseout}
-                fetchCloseoutForRegisterSummary={fetchCloseoutForRegisterSummary}
                 configuredBusinesses={configuredBusinesses}
                 setConfiguredBusinesses={setConfiguredBusinesses}
                 setArchivedBusinessIds={setArchivedBusinessIds}

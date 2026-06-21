@@ -100,9 +100,6 @@ export function OwnerRegisterScreen({
   entryAttachmentsApiActorUserId = "",
   entryAttachmentsApiActorRole = "owner",
   resolveStoreSalesChannels,
-  onDeleteRegisterCloseout,
-  fetchCloseoutForRegisterSummary,
-  entriesApiDbSource = false,
 }: OwnerRegisterScreenProps) {
   const businessIds = useMemo(
     () => businessesList.map((business) => String(business.id || "")).filter(Boolean),
@@ -677,9 +674,6 @@ export function OwnerRegisterConnected({
   onCloseoutDeleted = async () => {},
   onVoidOperation = () => {},
   onRestoreOperation = () => {},
-  onDeleteRegisterCloseout,
-  fetchCloseoutForRegisterSummary,
-  entriesApiDbSource = false,
   lang = "ar" as DisplayLang,
   ...props
 }: OwnerRegisterScreenProps & {
@@ -689,16 +683,12 @@ export function OwnerRegisterConnected({
   const { syncError, closeouts, reloadCloseoutsFromApi, deleteCloseout } = useDailyCloseouts();
 
   const resolveSummaryCloseout = useCallback(async (summary: RegisterCloseoutSummary) => {
-    if (typeof fetchCloseoutForRegisterSummary === "function") {
-      const loaded = await fetchCloseoutForRegisterSummary(summary);
-      if (loaded) return loaded;
-    }
     const resolved = await resolveCloseoutRecordForRegisterSummary(summary, {
       cachedCloseouts: closeouts as import("@/features/operations/client/operations-client-types").CloseoutRecord[],
       reloadCloseouts: async () => reloadCloseoutsFromApi() as Promise<import("@/features/operations/client/operations-client-types").CloseoutRecord[]>,
     });
     return (resolved as DailyCloseoutRecord | null) ?? null;
-  }, [closeouts, fetchCloseoutForRegisterSummary, reloadCloseoutsFromApi]);
+  }, [closeouts, reloadCloseoutsFromApi]);
 
   const handleEditCloseout = useCallback(async (summary: RegisterCloseoutSummary) => {
     const closeout = await resolveSummaryCloseout(summary);
@@ -717,13 +707,9 @@ export function OwnerRegisterConnected({
     }
     if (!(await confirmCloseoutDelete(lang, text))) return;
     try {
-      if (entriesApiDbSource && typeof onDeleteRegisterCloseout === "function") {
-        await onDeleteRegisterCloseout(deleteRequest);
-      } else {
-        const closeout = closeoutDeleteRequestToRecord(deleteRequest);
-        await deleteCloseout(String(closeout.id || ""), closeout as DailyCloseoutRecord);
-      }
-      await onCloseoutDeleted(closeoutDeleteRequestToRecord(deleteRequest) as DailyCloseoutRecord);
+      const closeout = closeoutDeleteRequestToRecord(deleteRequest);
+      await deleteCloseout(String(closeout.id || ""), closeout as DailyCloseoutRecord);
+      await onCloseoutDeleted(closeout as DailyCloseoutRecord);
     } catch (error) {
       console.warn("closeout delete failed", error);
       await appAlert({
@@ -732,7 +718,7 @@ export function OwnerRegisterConnected({
         variant: "danger",
       });
     }
-  }, [deleteCloseout, entriesApiDbSource, lang, onCloseoutDeleted, onDeleteRegisterCloseout]);
+  }, [deleteCloseout, lang, onCloseoutDeleted]);
 
   return (
     <OwnerRegisterScreen

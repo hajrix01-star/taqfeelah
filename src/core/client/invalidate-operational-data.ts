@@ -3,6 +3,7 @@ import { operationalQueryKeys } from "./operational-query-keys";
 
 export type OperationalInvalidationScope =
   | "register"
+  | "closeouts"
   | "reports"
   | "summary"
   | "homeAttachments"
@@ -10,6 +11,7 @@ export type OperationalInvalidationScope =
 
 export const OPERATIONAL_SCOPES_AFTER_FINANCIAL_WRITE: OperationalInvalidationScope[] = [
   "register",
+  "closeouts",
   "reports",
   "summary",
   "homeAttachments",
@@ -24,6 +26,8 @@ function scopeQueryKey(scope: OperationalInvalidationScope) {
   switch (scope) {
     case "register":
       return operationalQueryKeys.registerEntriesPrefix();
+    case "closeouts":
+      return operationalQueryKeys.closeoutsPrefix();
     case "reports":
       return operationalQueryKeys.reportsPrefix();
     case "summary":

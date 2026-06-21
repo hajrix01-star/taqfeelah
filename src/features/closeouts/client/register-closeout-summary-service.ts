@@ -43,7 +43,9 @@ export type ResolveRegisterCloseoutOptions = {
 };
 
 /**
- * Resolve a full closeout record for owner edit — cache → reload → targeted API fetch.
+ * Resolve a full closeout record for owner edit.
+ * Uses the unified closeouts React Query cache (via DailyCloseoutsProvider) first,
+ * then reloadCloseouts, then optional date-scoped fetch fallback.
  */
 export async function resolveCloseoutRecordForRegisterSummary(
   summary: RegisterCloseoutSummaryRef,

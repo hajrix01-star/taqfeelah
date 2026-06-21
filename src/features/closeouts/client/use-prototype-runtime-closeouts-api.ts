@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import {
   buildCloseoutSubmitFailureMessage,
@@ -15,7 +16,7 @@ import { getStoreOperationalConfig } from "@/features/org-config/client/store-op
 import { resolveEmployeeCloseoutsFetchWindow } from "@/features/employee-closeouts/employee-closeout-history";
 import { normalizeCloseoutSubmitMode } from "@/features/closeouts/closeout-submit-mode";
 import { resolveOwnerCloseoutsFetchWindow } from "@/features/closeouts/client/owner-closeouts-fetch-window";
-import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
+import { refreshOperationalDataAfterWrite } from "@/features/operations/client/refresh-operational-data-after-write";
 import type { LoadOperationalEntriesFn } from "@/features/operations/client/operations-client-types";
 
 type StoreChannel = Record<string, unknown>;
@@ -68,6 +69,12 @@ export function usePrototypeRuntimeCloseoutsApi({
   resolveStoreSalesChannels?: (storeId: string) => StoreChannel[];
   notifyOperationalSyncWrite?: ((event: string) => void) | null;
 }) {
+  const queryClient = useQueryClient();
+
+  const refreshAfterCloseoutWrite = useCallback(async () => {
+    await refreshOperationalDataAfterWrite(queryClient, loadOperationalEntriesFromApi);
+  }, [loadOperationalEntriesFromApi, queryClient]);
+
   const syncSubmitCloseoutToApi = useCallback(async ({
     action,
     closeout,
@@ -120,9 +127,7 @@ export function usePrototypeRuntimeCloseoutsApi({
         ? "تعذر إرسال التقفيلة: لم يُرجع الخادم تأكيدًا."
         : "Closeout submit failed: server returned an empty response.");
     }
-    if (entriesApiEnabled) {
-      void refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
-    }
+    void refreshAfterCloseoutWrite();
     notifyOperationalSyncWrite?.("closeout.submitted");
     return result;
   }, [
@@ -131,10 +136,10 @@ export function usePrototypeRuntimeCloseoutsApi({
     currentEmployeeChannelConfig?.channels,
     entriesApiEnabled,
     lang,
-    loadOperationalEntriesFromApi,
     notifyOperationalSyncWrite,
     ownerCloseoutBusiness?.id,
     ownerCloseoutChannelConfig?.channels,
+    refreshAfterCloseoutWrite,
     resolveStoreSalesChannels,
   ]);
 
@@ -232,9 +237,7 @@ export function usePrototypeRuntimeCloseoutsApi({
       storeId: closeout.storeId,
       closeoutId: closeout.id,
     });
-    if (entriesApiEnabled) {
-      await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);
-    }
+    await refreshAfterCloseoutWrite();
     notifyOperationalSyncWrite?.("closeout.deleted");
     return result;
   }, [
@@ -242,10 +245,9 @@ export function usePrototypeRuntimeCloseoutsApi({
     apiActorUserId,
     closeoutsApiEnabled,
     closeoutsApiOrganizationId,
-    entriesApiEnabled,
     lang,
-    loadOperationalEntriesFromApi,
     notifyOperationalSyncWrite,
+    refreshAfterCloseoutWrite,
   ]);
 
   return {
