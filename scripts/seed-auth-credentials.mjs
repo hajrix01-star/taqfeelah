@@ -7,7 +7,8 @@
  *   DATABASE_URL=... node scripts/seed-auth-credentials.mjs
  *
  * Optional env:
- *   SEED_OWNER_USER_ID, AUTH_OWNER_USERNAME, AUTH_OWNER_PASSWORD
+ *   SEED_OWNER_USER_ID, AUTH_OWNER_USERNAME, AUTH_OWNER_PASSWORD,
+ *   AUTH_OWNER_LOGIN_PHONE (Saudi E.164, for example +9665xxxxxxxx)
  *   SEED_EMPLOYEE_PIN_MAP — JSON: { "<user-uuid>": "<pin>", ... }
  *   AUTH_SEED_FORCE_OWNER_CREDENTIALS=true — overwrite existing owner username/password
  *     (requires explicit AUTH_OWNER_USERNAME and AUTH_OWNER_PASSWORD; used by recovery flows)
@@ -24,6 +25,7 @@ import {
   canForceUpdateOwnerIdentity,
   shouldPreserveExistingOwnerIdentity,
 } from "./lib/auth-seed-policy.mjs";
+import { normalizeOptionalOwnerLoginPhone } from "./lib/normalize-owner-login-phone.mjs";
 
 function valueFromEnv(name, fallback = "") {
   const value = process.env[name];
@@ -48,7 +50,7 @@ function parseEmployeePinMap() {
   return DEFAULT_EMPLOYEE_PINS;
 }
 
-async function upsertOwnerIdentity(client, { userId, username, password }) {
+async function upsertOwnerIdentity(client, { userId, username, password, loginPhone }) {
   const passwordHash = await hashPassword(password);
   const normalizedUsername = username.trim().toLowerCase();
   const [existing] = (
@@ -82,10 +84,13 @@ async function upsertOwnerIdentity(client, { userId, username, password }) {
     await client.query(
       `
       update auth_identities
-      set username = $2, password_hash = $3, status = 'active', updated_at = now()
+      set username = $2, password_hash = $3,
+          login_phone = coalesce($4, login_phone),
+          phone_number = coalesce($4, phone_number),
+          status = 'active', updated_at = now()
       where id = $1
       `,
-      [existing.id, normalizedUsername, passwordHash],
+      [existing.id, normalizedUsername, passwordHash, loginPhone],
     );
     console.log(`Force-updated owner identity for user ${userId} (username=${normalizedUsername}).`);
     return;
@@ -93,10 +98,12 @@ async function upsertOwnerIdentity(client, { userId, username, password }) {
 
   await client.query(
     `
-    insert into auth_identities (user_id, provider, username, password_hash, status)
-    values ($1, 'username_password', $2, $3, 'active')
+    insert into auth_identities (
+      user_id, provider, username, password_hash, login_phone, phone_number, status
+    )
+    values ($1, 'username_password', $2, $3, $4, $4, 'active')
     `,
-    [userId, normalizedUsername, passwordHash],
+    [userId, normalizedUsername, passwordHash, loginPhone],
   );
   console.log(`Created owner identity for user ${userId} (username=${normalizedUsername}).`);
 }
@@ -151,6 +158,7 @@ async function main() {
   const ownerUserId = valueFromEnv("SEED_OWNER_USER_ID", valueFromEnv("AUTH_OWNER_USER_ID", DEFAULT_OWNER_USER_ID));
   const ownerUsername = valueFromEnv("AUTH_OWNER_USERNAME", "hajri");
   const ownerPassword = valueFromEnv("AUTH_OWNER_PASSWORD", "hajri123");
+  const ownerLoginPhone = normalizeOptionalOwnerLoginPhone(valueFromEnv("AUTH_OWNER_LOGIN_PHONE"));
   const employeePins = parseEmployeePinMap();
 
   const client = new Client({ connectionString: databaseUrl });
@@ -161,6 +169,7 @@ async function main() {
       userId: ownerUserId,
       username: ownerUsername,
       password: ownerPassword,
+      loginPhone: ownerLoginPhone,
     });
 
     for (const [userId, pin] of Object.entries(employeePins)) {

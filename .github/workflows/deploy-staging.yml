@@ -166,6 +166,7 @@ jobs:
           NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID=e8f3e35b-6051-4da3-8b10-979700c2f00f
           AUTH_OWNER_USERNAME=${STAGING_OWNER_USERNAME}
           AUTH_OWNER_PASSWORD=${STAGING_OWNER_PASSWORD}
+          AUTH_OWNER_LOGIN_PHONE=+966500000001
           SAAS_ADMIN_API_ENABLED=false
           NEXT_PUBLIC_SAAS_ADMIN_ENABLED=false
           AUTH_PASSWORD_RESET_ENABLED=false
@@ -264,7 +265,7 @@ jobs:
           set +a
           corepack pnpm db:migrate
           node scripts/seed-closeouts-foundation.mjs
-          node scripts/seed-auth-credentials.mjs
+          AUTH_SEED_FORCE_OWNER_CREDENTIALS=true node scripts/seed-auth-credentials.mjs
           sed -i '/^AUTH_OWNER_USERNAME=/d; /^AUTH_OWNER_PASSWORD=/d' .env.production
 
           systemctl stop "$SERVICE" 2>/dev/null || true
