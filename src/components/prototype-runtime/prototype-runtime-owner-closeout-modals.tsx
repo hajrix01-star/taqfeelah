@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { createPortal } from "react-dom";
 import DailyCloseoutEntryFlow from "@/features/employee-closeouts/DailyCloseoutEntryFlow";
 import OwnerCloseoutManagePanel from "@/features/owner-closeouts/OwnerCloseoutManagePanel";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
@@ -14,8 +15,11 @@ import type { DailyCloseoutRecord, SalesChannelConfig } from "@/features/daily-c
 import type {
   OwnerCloseoutEditFlowProps,
   OwnerCloseoutModalsProps,
-  PrototypeChannel,
 } from "./prototype-runtime-types";
+
+function salesChannelsKey(channels: SalesChannelConfig[]): string {
+  return channels.map((channel) => channel.id).join(",");
+}
 
 export function OwnerCloseoutEditFlow({
   lang,
@@ -31,37 +35,44 @@ export function OwnerCloseoutEditFlow({
   const storeId = String(editCloseout?.storeId || "");
   const salesChannels = useMemo(
     () => (editCloseout ? resolveSalesChannels(storeId) as SalesChannelConfig[] : []),
-    [editCloseout, editCloseout?.id, resolveSalesChannels, storeId],
+    [editCloseout, resolveSalesChannels, storeId],
   );
+  const salesChannelKey = useMemo(() => salesChannelsKey(salesChannels), [salesChannels]);
   const resolvedChannelLabel = useMemo(
     () => channelLabel
       || ((channel: SalesChannelConfig) => String(channel.displayName || channel.id || "")),
     [channelLabel],
   );
 
-  if (!editCloseout) return null;
+  if (!editCloseout || typeof document === "undefined") return null;
 
-  return (
-    <DailyCloseoutEntryFlow
-      key={`${editCloseout.id}-${storeId}-${salesChannels.length}`}
-      lang={lang}
-      notebookTheme={ownerNotebookTheme || editCloseout.notebookTheme}
-      closeout={editCloseout}
-      salesChannels={salesChannels}
-      storeName={editCloseout.storeName}
-      isOwnerEdit
-      saving={false}
-      channelLabel={resolvedChannelLabel}
-      onCancel={onClose}
-      onSubmit={async (nextCloseout) => {
-        const updated = await ownerEditCloseout({ closeout: nextCloseout, employee: ownerActor });
-        if (!updated || isCloseoutWorkflowFailure(updated)) return;
-        await onCloseoutUpdated(updated);
-        onClose();
-      }}
-      findForStoreDate={() => null}
-    />
+  const editFlow = (
+    <div className="fixed inset-0 z-[220] flex touch-auto flex-col overflow-hidden">
+      <DailyCloseoutEntryFlow
+        key={`${editCloseout.id}-${storeId}-${salesChannelKey}`}
+        lang={lang}
+        notebookTheme={ownerNotebookTheme || editCloseout.notebookTheme}
+        closeout={editCloseout}
+        salesChannels={salesChannels}
+        storeName={editCloseout.storeName}
+        isOwnerEdit
+        fullScreenOverlay
+        rootPosition="fill"
+        saving={false}
+        channelLabel={resolvedChannelLabel}
+        onCancel={onClose}
+        onSubmit={async (nextCloseout) => {
+          const updated = await ownerEditCloseout({ closeout: nextCloseout, employee: ownerActor });
+          if (!updated || isCloseoutWorkflowFailure(updated)) return;
+          await onCloseoutUpdated(updated);
+          onClose();
+        }}
+        findForStoreDate={() => null}
+      />
+    </div>
   );
+
+  return createPortal(editFlow, document.body);
 }
 
 export function OwnerCloseoutModals({

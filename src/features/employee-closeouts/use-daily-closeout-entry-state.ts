@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { text } from "../../components/prototype-runtime/prototype-runtime-demo-data";
 import { prepareAttachment } from "@/features/attachments/client/prototype-attachment-storage";
 import { sanitizeAmountInput, toAmount } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
@@ -32,6 +32,20 @@ import {
 
 type PreparedAttachment = { dataUrl?: string } | string;
 
+export function buildInitialCloseoutSalesValues(
+  initialCloseout: DailyCloseoutRecord | null | undefined,
+  salesChannels: SalesChannelConfig[],
+  labelChannel: (channel: SalesChannelConfig) => string,
+): Record<string, string> {
+  const salesRows = normalizeCloseoutSalesToArray(initialCloseout?.sales);
+  const values: Record<string, string> = {};
+  salesChannels.forEach((ch) => {
+    const row = findCloseoutSalesRowForChannel(salesRows, ch, labelChannel(ch));
+    values[ch.id] = row ? String(row.amount || "") : "";
+  });
+  return values;
+}
+
 export function useDailyCloseoutEntryState({
   lang,
   notebookTheme,
@@ -60,31 +74,9 @@ export function useDailyCloseoutEntryState({
     [channelLabel, lang],
   );
   const [date, setDate] = useState(initialCloseout?.date || todayIsoDate());
-  const [salesValues, setSalesValues] = useState<Record<string, string>>(() => {
-    const salesRows = normalizeCloseoutSalesToArray(initialCloseout?.sales);
-    const values: Record<string, string> = {};
-    salesChannels.forEach((ch) => {
-      const row = findCloseoutSalesRowForChannel(salesRows, ch, labelChannel(ch));
-      values[ch.id] = row ? String(row.amount || "") : "";
-    });
-    return values;
-  });
-  useEffect(() => {
-    if (!isOwnerEdit || salesChannels.length === 0) return;
-    setSalesValues((current) => {
-      const salesRows = normalizeCloseoutSalesToArray(initialCloseout?.sales);
-      let changed = false;
-      const next = { ...current };
-      salesChannels.forEach((ch) => {
-        if (Object.prototype.hasOwnProperty.call(next, ch.id)) return;
-        const row = findCloseoutSalesRowForChannel(salesRows, ch, labelChannel(ch));
-        if (!row) return;
-        next[ch.id] = String(row.amount || "");
-        changed = true;
-      });
-      return changed ? next : current;
-    });
-  }, [initialCloseout?.id, initialCloseout?.sales, isOwnerEdit, labelChannel, salesChannels]);
+  const [salesValues, setSalesValues] = useState<Record<string, string>>(() => (
+    buildInitialCloseoutSalesValues(initialCloseout, salesChannels, labelChannel)
+  ));
   const [outflows, setOutflows] = useState<CloseoutOutflowRow[]>(
     (initialCloseout?.outflows as CloseoutOutflowRow[] | undefined) || [],
   );

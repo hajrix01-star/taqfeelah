@@ -25,6 +25,7 @@ export type ResolvePullToRefreshTargetInput = {
   employeePage: string;
   employeeEntryActive: boolean;
   ownerEntryActive: boolean;
+  ownerEditActive: boolean;
   hasActiveEmployee: boolean;
 };
 

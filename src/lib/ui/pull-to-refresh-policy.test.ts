@@ -12,6 +12,7 @@ describe("resolvePullToRefreshTarget", () => {
       employeePage: "closeouts",
       employeeEntryActive: false,
       ownerEntryActive: false,
+      ownerEditActive: false,
       hasActiveEmployee: true,
     })).toBe("closeouts");
   });
@@ -23,6 +24,7 @@ describe("resolvePullToRefreshTarget", () => {
       employeePage: "closeouts",
       employeeEntryActive: true,
       ownerEntryActive: false,
+      ownerEditActive: false,
       hasActiveEmployee: true,
     })).toBeNull();
   });
@@ -35,6 +37,7 @@ describe("resolvePullToRefreshTarget", () => {
         employeePage: "closeouts",
         employeeEntryActive: false,
         ownerEntryActive: false,
+        ownerEditActive: false,
         hasActiveEmployee: false,
       })).toBe("operational-entries");
     }
@@ -47,6 +50,7 @@ describe("resolvePullToRefreshTarget", () => {
       employeePage: "closeouts",
       employeeEntryActive: false,
       ownerEntryActive: false,
+      ownerEditActive: false,
       hasActiveEmployee: false,
     })).toBe("closeouts");
   });
@@ -59,6 +63,7 @@ describe("resolvePullToRefreshTarget", () => {
         employeePage: "closeouts",
         employeeEntryActive: false,
         ownerEntryActive: false,
+        ownerEditActive: false,
         hasActiveEmployee: false,
       })).toBeNull();
     }
@@ -71,6 +76,19 @@ describe("resolvePullToRefreshTarget", () => {
       employeePage: "closeouts",
       employeeEntryActive: false,
       ownerEntryActive: true,
+      ownerEditActive: false,
+      hasActiveEmployee: false,
+    })).toBeNull();
+  });
+
+  it("disables owner refresh while owner closeout edit is active", () => {
+    expect(resolvePullToRefreshTarget({
+      employee: false,
+      ownerPage: "register",
+      employeePage: "closeouts",
+      employeeEntryActive: false,
+      ownerEntryActive: false,
+      ownerEditActive: true,
       hasActiveEmployee: false,
     })).toBeNull();
   });

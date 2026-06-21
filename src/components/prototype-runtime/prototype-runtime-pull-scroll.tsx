@@ -26,6 +26,7 @@ type PrototypeRuntimePullScrollProps = PrototypeChildrenProps & {
   employeePage: PrototypeEmployeePage;
   employeeEntryActive: boolean;
   ownerEntryActive: boolean;
+  ownerEditActive: boolean;
   hasActiveEmployee: boolean;
   notebookTheme?: NotebookThemeId | string;
   onRefreshOperationalEntries: PrototypeReloadOperationalEntriesFn;
@@ -38,6 +39,7 @@ export function PrototypeRuntimePullScroll({
   employeePage,
   employeeEntryActive,
   ownerEntryActive,
+  ownerEditActive,
   hasActiveEmployee,
   notebookTheme = "yellow",
   onRefreshOperationalEntries,
@@ -52,6 +54,7 @@ export function PrototypeRuntimePullScroll({
       employeePage,
       employeeEntryActive,
       ownerEntryActive,
+      ownerEditActive,
       hasActiveEmployee,
     }),
     [
@@ -60,6 +63,7 @@ export function PrototypeRuntimePullScroll({
       employeePage,
       employeeEntryActive,
       ownerEntryActive,
+      ownerEditActive,
       hasActiveEmployee,
     ],
   );

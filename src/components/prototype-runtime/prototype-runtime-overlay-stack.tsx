@@ -153,12 +153,17 @@ export function PrototypeRuntimeOverlayStack({
     (channel: PrototypeChannel | Record<string, unknown>) => (
       String((channel as PrototypeChannel).displayName || channelName(channel as PrototypeChannel, lang))
     ),
-    [lang],
+    [channelName, lang],
+  );
+
+  const resolveSalesChannelsForEdit = useCallback(
+    (storeId: string) => resolveStoreSalesChannels(storeId) as PrototypeChannel[],
+    [resolveStoreSalesChannels],
   );
 
   return (
     <>
-      {!(employee && employeeEntryActive) && !(!employee && ownerEntryActive) && (
+      {!(employee && employeeEntryActive) && !(!employee && ownerEntryActive) && !ownerEditCloseout && (
         <BottomNav
           lang={lang}
           employee={employee}
@@ -184,20 +189,22 @@ export function PrototypeRuntimeOverlayStack({
           onExpense={handleOpenQuickAddExpense}
         />
       )}
-      <OperationModal
-        key={resolvedSelected?.id || "operation-modal"}
-        lang={lang}
-        item={resolvedSelected}
-        onClose={() => setSelected(null)}
-        onVoid={requestVoidOperation}
-        onRestore={requestRestoreOperation}
-        onEditOwnerCloseout={!employee ? handleEditOwnerCloseoutFromEntry : undefined}
-        ownerEditSource={selectedOwnerEditSource}
-        canVoid={Boolean(resolvedSelected?.businessId) && !archivedBusinessIds.includes(String(resolvedSelected?.businessId))}
-        canRestore={Boolean(resolvedSelected?.businessId) && !archivedBusinessIds.includes(String(resolvedSelected?.businessId))}
-        businessesList={activeBusinesses as PrototypeBusiness[]}
-        {...entryAttachmentsApiProps}
-      />
+      {!ownerEditCloseout && (
+        <OperationModal
+          key={resolvedSelected?.id || "operation-modal"}
+          lang={lang}
+          item={resolvedSelected}
+          onClose={() => setSelected(null)}
+          onVoid={requestVoidOperation}
+          onRestore={requestRestoreOperation}
+          onEditOwnerCloseout={!employee ? handleEditOwnerCloseoutFromEntry : undefined}
+          ownerEditSource={selectedOwnerEditSource}
+          canVoid={Boolean(resolvedSelected?.businessId) && !archivedBusinessIds.includes(String(resolvedSelected?.businessId))}
+          canRestore={Boolean(resolvedSelected?.businessId) && !archivedBusinessIds.includes(String(resolvedSelected?.businessId))}
+          businessesList={activeBusinesses as PrototypeBusiness[]}
+          {...entryAttachmentsApiProps}
+        />
+      )}
       <DuplicateSalesDialog
         lang={lang}
         draft={pendingDuplicateSummary?.payload || null}
@@ -235,25 +242,27 @@ export function PrototypeRuntimeOverlayStack({
         notebookExportAuth={runtimeApiAuth}
         allowedFormats={(shareSnapshot as NotebookShareSnapshot | null)?.screen === "register" ? ["excel", "pdf"] : ["image", "pdf", "excel"]}
       />
-      <OwnerCloseoutModals
-        lang={lang}
-        ownerManageCloseout={ownerManageCloseout}
-        ownerDisplayName={ownerDisplayName}
-        ownerNotebookTheme={notebookTheme}
-        resolveSalesChannels={(storeId) => resolveStoreSalesChannels(storeId) as PrototypeChannel[]}
-        channelLabel={registerChannelLabel}
-        onCloseoutUpdated={(closeout) => handleOwnerCloseoutUpdated(closeout as PrototypeCloseoutRecord)}
-        onCloseoutDeleted={(closeout) => handleOwnerCloseoutDeleted(closeout as PrototypeCloseoutRecord)}
-        onClose={() => setOwnerManageCloseout(null)}
-        onOwnerEditCloseout={handleEditOwnerCloseoutFromManage}
-        {...ownerCloseoutAttachmentsApiProps}
-      />
+      {!ownerEditCloseout && (
+        <OwnerCloseoutModals
+          lang={lang}
+          ownerManageCloseout={ownerManageCloseout}
+          ownerDisplayName={ownerDisplayName}
+          ownerNotebookTheme={notebookTheme}
+          resolveSalesChannels={resolveSalesChannelsForEdit}
+          channelLabel={registerChannelLabel}
+          onCloseoutUpdated={(closeout) => handleOwnerCloseoutUpdated(closeout as PrototypeCloseoutRecord)}
+          onCloseoutDeleted={(closeout) => handleOwnerCloseoutDeleted(closeout as PrototypeCloseoutRecord)}
+          onClose={() => setOwnerManageCloseout(null)}
+          onOwnerEditCloseout={handleEditOwnerCloseoutFromManage}
+          {...ownerCloseoutAttachmentsApiProps}
+        />
+      )}
       <OwnerCloseoutEditFlow
         lang={lang}
         editCloseout={ownerEditCloseout}
         ownerActor={ownerCloseoutActor}
         ownerNotebookTheme={notebookTheme}
-        resolveSalesChannels={(storeId) => resolveStoreSalesChannels(storeId) as PrototypeChannel[]}
+        resolveSalesChannels={resolveSalesChannelsForEdit}
         channelLabel={registerChannelLabel}
         onCloseoutUpdated={(closeout) => handleOwnerCloseoutUpdated(closeout as PrototypeCloseoutRecord)}
         onClose={() => setOwnerEditCloseout(null)}

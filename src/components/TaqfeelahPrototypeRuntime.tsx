@@ -300,6 +300,7 @@ export default function TaqfeelahPrototypeRuntime() {
               employeePage={employeePage}
               employeeEntryActive={employeeEntryActive}
               ownerEntryActive={ownerEntryActive}
+              ownerEditActive={Boolean(ownerEditCloseout)}
               hasActiveEmployee={Boolean(activeEmployee)}
               notebookTheme={employee ? employeeNotebookTheme : notebookTheme}
               onRefreshOperationalEntries={loadOperationalEntriesFromApi}

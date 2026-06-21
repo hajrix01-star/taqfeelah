@@ -16,6 +16,7 @@ export function resolvePullToRefreshTarget({
   employeePage,
   employeeEntryActive,
   ownerEntryActive,
+  ownerEditActive,
   hasActiveEmployee,
 }: ResolvePullToRefreshTargetInput): PullToRefreshTarget | null {
   if (employee) {
@@ -24,7 +25,7 @@ export function resolvePullToRefreshTarget({
     return "closeouts";
   }
 
-  if (ownerEntryActive) return null;
+  if (ownerEntryActive || ownerEditActive) return null;
   if (!OWNER_PULL_TO_REFRESH_PAGES.has(ownerPage)) return null;
   if (ownerPage === "closeouts") return "closeouts";
   return "operational-entries";

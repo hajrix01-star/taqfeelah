@@ -1,45 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { findCloseoutSalesRowForChannel } from "../daily-closeouts/closeout-sales-normalize";
+import { buildInitialCloseoutSalesValues } from "./use-daily-closeout-entry-state";
 
-/** Mirrors owner-edit hydration guard in use-daily-closeout-entry-state. */
-function hydrateOwnerEditSalesValues(
-  current: Record<string, string>,
-  salesChannels: Array<{ id: string }>,
-  salesRows: Array<{ channelId?: string; name?: string; amount?: number }>,
-  labelChannel: (channel: { id: string }) => string,
-): Record<string, string> {
-  let changed = false;
-  const next = { ...current };
-  salesChannels.forEach((ch) => {
-    if (Object.prototype.hasOwnProperty.call(next, ch.id)) return;
-    const row = findCloseoutSalesRowForChannel(salesRows, ch, labelChannel(ch));
-    if (!row) return;
-    next[ch.id] = String(row.amount || "");
-    changed = true;
-  });
-  return changed ? next : current;
-}
-
-describe("owner edit sales hydration", () => {
-  it("does not re-hydrate channels already initialized with empty string values", () => {
-    const current = { cash: "", card: "100" };
-    const next = hydrateOwnerEditSalesValues(
-      current,
+describe("buildInitialCloseoutSalesValues", () => {
+  it("initializes empty string values for channels without sales rows", () => {
+    const values = buildInitialCloseoutSalesValues(
+      { id: "dc-1", sales: [] },
       [{ id: "cash" }, { id: "card" }],
-      [{ channelId: "cash", name: "نقد", amount: 0 }],
       (channel) => channel.id,
     );
-    expect(next).toBe(current);
+    expect(values).toEqual({ cash: "", card: "" });
   });
 
-  it("fills values for channels added after org-config hydration", () => {
-    const current = { cash: "50" };
-    const next = hydrateOwnerEditSalesValues(
-      current,
+  it("hydrates amounts from closeout sales rows", () => {
+    const values = buildInitialCloseoutSalesValues(
+      { id: "dc-1", sales: [{ channelId: "cash", name: "نقد", amount: 50 }, { channelId: "card", amount: 120 }] },
       [{ id: "cash" }, { id: "card" }],
-      [{ channelId: "card", name: "بطاقة", amount: 120 }],
       (channel) => channel.id,
     );
-    expect(next).toEqual({ cash: "50", card: "120" });
+    expect(values).toEqual({ cash: "50", card: "120" });
+  });
+
+  it("uses empty string for zero-amount channels (falsy amount guard)", () => {
+    const values = buildInitialCloseoutSalesValues(
+      { id: "dc-1", sales: [{ channelId: "cash", amount: 0 }] },
+      [{ id: "cash" }],
+      (channel) => channel.id,
+    );
+    expect(values).toEqual({ cash: "" });
   });
 });

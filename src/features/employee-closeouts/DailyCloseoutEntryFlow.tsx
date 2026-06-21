@@ -28,6 +28,7 @@ export default function DailyCloseoutEntryFlow({
   onSelectEntryStore = () => {},
   isOwnerEdit = false,
   fullScreenOverlay = true,
+  rootPosition,
   onCancel,
   onSubmit,
   findForStoreDate: _findForStoreDate,
@@ -45,6 +46,8 @@ export default function DailyCloseoutEntryFlow({
   onSelectEntryStore?: (storeId: string) => void | Promise<void>;
   isOwnerEdit?: boolean;
   fullScreenOverlay?: boolean;
+  /** When fullScreenOverlay is true: `fixed` covers the viewport; `fill` fills a positioned parent (e.g. portal). */
+  rootPosition?: "fixed" | "fill";
   onCancel: () => void;
   onSubmit: (closeout: DailyCloseoutRecord, meta: { isOwnerEdit: boolean }) => void | Promise<void>;
   findForStoreDate?: (date: string) => DailyCloseoutRecord | null;
@@ -74,9 +77,10 @@ export default function DailyCloseoutEntryFlow({
     preloadNotebookShareCapture();
   }, []);
 
-  const rootClassName = fullScreenOverlay
+  const resolvedRootPosition = rootPosition ?? (fullScreenOverlay ? "fixed" : "fill");
+  const rootClassName = resolvedRootPosition === "fixed"
     ? "fixed inset-0 z-[50] flex flex-col"
-    : "flex h-full min-h-0 flex-col";
+    : "relative flex h-full min-h-0 flex-col";
   const headerClassName = fullScreenOverlay
     ? "relative z-[2] flex shrink-0 items-center justify-between border-b border-[#ECE6DA]/80 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]"
     : "relative z-[2] flex shrink-0 items-center justify-between border-b border-[#ECE6DA]/80 px-4 pb-3 pt-3";
@@ -85,7 +89,7 @@ export default function DailyCloseoutEntryFlow({
   const formEnabled = !storeSelectionRequired || Boolean(selectedStoreId);
 
   return (
-    <div className={`${rootClassName} relative${sharePreviewOpen ? " pointer-events-none" : ""}`} style={notebookLinesBackground(notebookTheme || "yellow")}>
+    <div className={`${rootClassName}${sharePreviewOpen ? " pointer-events-none" : ""}`} style={notebookLinesBackground(notebookTheme || "yellow")}>
       <header
         className={headerClassName}
         style={notebookLinesBackground(notebookTheme || "yellow")}
