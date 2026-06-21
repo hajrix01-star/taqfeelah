@@ -51,9 +51,14 @@ export function useDailyCloseoutEntryState({
   onSubmit: (closeout: DailyCloseoutRecord, meta: { isOwnerEdit: boolean }) => void | Promise<void>;
   channelLabel?: (channel: SalesChannelConfig) => string;
 }) {
-  const labelChannel = channelLabel || ((channel: SalesChannelConfig) => (
-    lang === "ar" ? channel.nameAr || channel.nameEn : channel.nameEn || channel.nameAr
-  ) || channel.id);
+  const labelChannel = useCallback(
+    (channel: SalesChannelConfig) => (
+      channelLabel
+        ? channelLabel(channel)
+        : ((lang === "ar" ? channel.nameAr || channel.nameEn : channel.nameEn || channel.nameAr) || channel.id)
+    ),
+    [channelLabel, lang],
+  );
   const [date, setDate] = useState(initialCloseout?.date || todayIsoDate());
   const [salesValues, setSalesValues] = useState<Record<string, string>>(() => {
     const salesRows = normalizeCloseoutSalesToArray(initialCloseout?.sales);
