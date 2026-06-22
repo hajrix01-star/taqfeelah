@@ -93,6 +93,13 @@ owner-settings-section-views.tsx
 
 `owner-settings-section-frame.tsx` يملك إطار الحركة والمسافات المشترك. اختبار `src/smoke.test.ts` يحمل كل وحدة مباشرة لمنع كسر حدود الاستيراد أثناء التفكيك التدريجي.
 
+### تنظيم واجهتي الرئيسية والسجل
+
+- `prototype-runtime-owner-home-screen.tsx` ينسق ملخص المالك، بينما `owner-home-day-attachments.tsx` يملك عرض مرفقات اليوم وسياق فتحها ومشاركتها.
+- `prototype-runtime-owner-register-screen.tsx` ينسق التقرير والسجل، بينما `prototype-runtime-owner-register-connected.tsx` يربط التقفيلات المحفوظة بإجراءات التعديل والإلغاء المنطقي.
+- مكونات القوائم والفلاتر والمعارض تبقى في ملفات `owner-register-*` المتخصصة، ولا يعاد تنفيذها داخل شاشة السجل.
+- اختبار حدود الوحدات يحمل طبقات العرض والاتصال مباشرة حتى يظهر كسر الاستيراد قبل النشر.
+
 ## 5. المسارات الفعلية
 
 | المسار | الوظيفة |
