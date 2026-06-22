@@ -127,7 +127,9 @@ describe("prototype runtime module boundary smoke", () => {
 
   it("loads owner home screen exports", async () => {
     const home = await import("@/components/prototype-runtime/prototype-runtime-owner-home-screen");
+    const attachments = await import("@/components/prototype-runtime/owner-home-day-attachments");
     expect(home.OwnerHomeConnected).toBeTypeOf("function");
+    expect(attachments.OwnerHomeDayAttachments).toBeTypeOf("function");
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
   it("loads owner register screen exports", async () => {
