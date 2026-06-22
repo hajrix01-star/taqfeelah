@@ -17,6 +17,25 @@ import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-close
 import type { DisplayLang } from "@/core/i18n/display-locale";
 import type { OwnerRegisterScreenProps } from "./prototype-runtime-types";
 
+export function buildOwnerRegisterForwardedApiProps({
+  registerEntriesApiEnabled,
+  registerEntriesApiOrganizationId,
+  registerEntriesApiActorUserId,
+  registerEntriesApiActorRole,
+}: Pick<OwnerRegisterScreenProps,
+  | "registerEntriesApiEnabled"
+  | "registerEntriesApiOrganizationId"
+  | "registerEntriesApiActorUserId"
+  | "registerEntriesApiActorRole"
+>) {
+  return {
+    registerEntriesApiEnabled,
+    registerEntriesApiOrganizationId,
+    registerEntriesApiActorUserId,
+    registerEntriesApiActorRole,
+  };
+}
+
 export function OwnerRegisterConnected({
   setOwnerEditCloseout = () => {},
   onCloseoutDeleted = async () => {},
@@ -90,11 +109,18 @@ export function OwnerRegisterConnected({
     }
   }, [deleteCloseout, lang, onCloseoutDeleted]);
 
+  const registerApiProps = buildOwnerRegisterForwardedApiProps({
+    registerEntriesApiEnabled,
+    registerEntriesApiOrganizationId,
+    registerEntriesApiActorUserId,
+    registerEntriesApiActorRole,
+  });
+
   return (
     <OwnerRegisterScreen
       {...props}
       lang={lang}
-      registerEntriesApiEnabled={registerEntriesApiEnabled}
+      {...registerApiProps}
       onVoidOperation={onVoidOperation}
       onRestoreOperation={onRestoreOperation}
       onEditCloseout={handleEditCloseout}

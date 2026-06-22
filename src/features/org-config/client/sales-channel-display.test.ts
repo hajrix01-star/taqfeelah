@@ -87,4 +87,19 @@ describe("resolveAggregatedChannelShape", () => {
       amount: 0,
     });
   });
+
+  it("enriches a UUID-only configured channel with the authoritative snapshot name", () => {
+    const shape = resolveAggregatedChannelShape(
+      { channelId: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d", name: "Apple Pay" },
+      [{ id: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d" }],
+    );
+
+    expect(shape).toMatchObject({
+      id: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d",
+      name: "Apple Pay",
+      custom: true,
+    });
+    expect(resolveSalesChannelLabel(shape, "ar", text)).toBe("Apple Pay");
+    expect(resolveSalesChannelLabel(shape, "ar", text)).not.toContain("8d4b2f3a");
+  });
 });

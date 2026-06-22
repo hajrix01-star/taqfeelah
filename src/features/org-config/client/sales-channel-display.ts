@@ -174,7 +174,23 @@ export function resolveAggregatedChannelShape(
     || channel?.apiChannelId === channelId
   ));
   if (configured) {
-    return { ...configured, amount: 0 };
+    const snapshotName = typeof row?.name === "string" && row.name.trim()
+      ? row.name.trim()
+      : "";
+    const hasConfiguredLabel = [
+      configured.text,
+      configured.name,
+      configured.nameAr,
+      configured.nameEn,
+      configured.legacyId,
+    ].some((value) => typeof value === "string" && value.trim());
+    return {
+      ...configured,
+      ...(!hasConfiguredLabel && snapshotName
+        ? { name: snapshotName, custom: configured.custom ?? true }
+        : {}),
+      amount: 0,
+    };
   }
 
   const textKey = resolveSalesChannelTextKey({

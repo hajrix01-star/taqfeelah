@@ -61,12 +61,14 @@ export function mapChannelsReportToUiRows(
   (Array.isArray(channels) ? channels : []).forEach((row) => {
     const mappedId = reverseChannelMap[row?.salesChannelId || ""] || row?.salesChannelId;
     const configured = configuredById.get(mappedId);
-    const current = merged.get(String(mappedId)) || configured || resolveAggregatedChannelShape({
+    const resolved = resolveAggregatedChannelShape({
       channelId: mappedId,
       name: row?.channelName || mappedId,
     }, configuredChannels);
+    const current = merged.get(String(mappedId)) || configured || resolved;
     merged.set(String(mappedId), {
       ...current,
+      ...resolved,
       amount: Number(row?.amount?.amountHalalas || 0) / 100,
     });
   });

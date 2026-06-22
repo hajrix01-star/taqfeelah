@@ -82,6 +82,27 @@ describe("mapChannelsReportToUiRows", () => {
       { id: "cash-uuid", text: "cash", custom: false, amount: 50 },
     ]);
   });
+
+  it("uses the authoritative SQL channel name when configured metadata only has a UUID", () => {
+    const rows = mapChannelsReportToUiRows(
+      [
+        {
+          salesChannelId: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d",
+          channelName: "Apple Pay",
+          amount: { amountHalalas: 5556600 },
+        },
+      ],
+      [{ id: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d", amount: 0 }],
+      {},
+    );
+
+    expect(rows).toEqual([{
+      id: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d",
+      name: "Apple Pay",
+      custom: true,
+      amount: 55566,
+    }]);
+  });
 });
 
 describe("mapOutflowCategoriesToUi", () => {
