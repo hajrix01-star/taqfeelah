@@ -51,7 +51,7 @@ type SummaryReportDetailsProps = {
   businessesList?: PrototypeBusiness[];
   section?: "sales" | "outflow" | "both";
   operationalEntries?: OperationalEntry[];
-  apiChannelRows?: Array<{ id: string; amount: number }> | null;
+  apiChannelRows?: Array<{ id: string; amount: number; [key: string]: unknown }> | null;
   apiOutflowCategories?: Array<{ id: string; amount: number }> | null;
   salesBaseOverride?: number | null;
 };

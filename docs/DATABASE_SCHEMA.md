@@ -204,6 +204,12 @@ entries.amount_halalas = SUM(entry_sales_channels.amount_halalas)
 
 Reject commit if mismatch.
 
+Migration `0022_summary_channel_total_invariant` makes this rule a database
+constraint trigger, not only an application convention. It first reconciles
+historical summary totals from their channel rows, then validates both parent
+and child writes at transaction commit. The channel breakdown is therefore the
+authoritative source for a summary's stored total.
+
 ---
 
 ## entry_sales_channels

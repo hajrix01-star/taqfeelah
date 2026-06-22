@@ -310,7 +310,11 @@ export function OwnerHome({
                     businessesList={businessesList}
                     section="sales"
                     operationalEntries={operationalEntries}
-                    apiChannelRows={useApiDetailRows ? apiChannelRows.map((row) => ({ id: String(row.id || ""), amount: Number(row.amount || 0) })) : null}
+                    apiChannelRows={useApiDetailRows ? apiChannelRows.map((row) => ({
+                      ...row,
+                      id: String(row.id || ""),
+                      amount: Number(row.amount || 0),
+                    })) : null}
                     salesBaseOverride={result?.sales ?? 0}
                   />
                 )}

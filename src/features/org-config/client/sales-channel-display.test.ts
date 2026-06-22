@@ -102,4 +102,14 @@ describe("resolveAggregatedChannelShape", () => {
     expect(resolveSalesChannelLabel(shape, "ar", text)).toBe("Apple Pay");
     expect(resolveSalesChannelLabel(shape, "ar", text)).not.toContain("8d4b2f3a");
   });
+
+  it("does not treat a UUID legacy id as a human display label", () => {
+    const channelId = "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d";
+    const shape = resolveAggregatedChannelShape(
+      { channelId, name: "Apple Pay" },
+      [{ id: channelId, legacyId: channelId, custom: false }],
+    );
+
+    expect(resolveSalesChannelLabel(shape, "ar", text)).toBe("apple");
+  });
 });

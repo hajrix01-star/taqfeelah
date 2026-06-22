@@ -182,11 +182,13 @@ export function resolveAggregatedChannelShape(
       configured.name,
       configured.nameAr,
       configured.nameEn,
-      configured.legacyId,
     ].some((value) => typeof value === "string" && value.trim());
+    const hasHumanLegacyLabel = typeof configured.legacyId === "string"
+      && Boolean(configured.legacyId.trim())
+      && !isUuidLike(configured.legacyId);
     return {
       ...configured,
-      ...(!hasConfiguredLabel && snapshotName
+      ...(!hasConfiguredLabel && !hasHumanLegacyLabel && snapshotName
         ? { name: snapshotName, custom: configured.custom ?? true }
         : {}),
       amount: 0,
