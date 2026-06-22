@@ -36,7 +36,10 @@ export async function getSaasUsage(rawInput: z.infer<typeof inputSchema>): Promi
       total: count(),
     })
     .from(dailyCloseouts)
-    .where(gte(dailyCloseouts.date, sql`(current_date - make_interval(months => ${monthsBack}))::date`))
+    .where(and(
+      eq(dailyCloseouts.status, "approved"),
+      gte(dailyCloseouts.date, sql`(current_date - make_interval(months => ${monthsBack}))::date`),
+    ))
     .groupBy(sql`to_char(${dailyCloseouts.date}, 'YYYY-MM')`)
     .orderBy(sql`to_char(${dailyCloseouts.date}, 'YYYY-MM')`);
 

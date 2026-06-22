@@ -141,6 +141,13 @@
       "when": 1781022200000,
       "tag": "0020_organization_account_number",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1782082200000,
+      "tag": "0021_data_integrity_hardening",
+      "breakpoints": true
     }
   ]
 }

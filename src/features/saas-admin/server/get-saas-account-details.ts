@@ -158,6 +158,7 @@ export async function getSaasAccountDetails(
     .where(
       and(
         eq(dailyCloseouts.organizationId, input.organizationId),
+        eq(dailyCloseouts.status, "approved"),
         gte(dailyCloseouts.date, month.start),
         lte(dailyCloseouts.date, month.end),
       ),
@@ -188,7 +189,10 @@ export async function getSaasAccountDetails(
     })
     .from(dailyCloseouts)
     .innerJoin(stores, eq(dailyCloseouts.storeId, stores.id))
-    .where(eq(dailyCloseouts.organizationId, input.organizationId))
+    .where(and(
+      eq(dailyCloseouts.organizationId, input.organizationId),
+      eq(dailyCloseouts.status, "approved"),
+    ))
     .orderBy(desc(dailyCloseouts.createdAt))
     .limit(10);
 
@@ -238,6 +242,7 @@ export async function getSaasAccountDetails(
     .where(
       and(
         eq(dailyCloseouts.organizationId, input.organizationId),
+        eq(dailyCloseouts.status, "approved"),
         gte(dailyCloseouts.date, sql`(current_date - interval '6 months')::date`),
       ),
     )

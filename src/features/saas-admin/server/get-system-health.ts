@@ -1,4 +1,4 @@
-import { max, sql, sum } from "drizzle-orm";
+import { eq, max, sql, sum } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import {
@@ -36,7 +36,8 @@ export async function getSystemHealth(
 
   const [lastCloseout] = await db
     .select({ at: max(dailyCloseouts.createdAt) })
-    .from(dailyCloseouts);
+    .from(dailyCloseouts)
+    .where(eq(dailyCloseouts.status, "approved"));
 
   const [lastAttachment] = await db
     .select({ at: max(attachments.createdAt) })

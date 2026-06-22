@@ -38,6 +38,7 @@ export async function assertCloseoutLinkedEntry(
         eq(dailyCloseouts.id, input.closeoutId),
         eq(dailyCloseouts.organizationId, input.organizationId),
         eq(dailyCloseouts.storeId, input.storeId),
+        eq(dailyCloseouts.status, "approved"),
       ),
     )
     .limit(1);

@@ -192,7 +192,7 @@ describe("submitStoreCloseout", () => {
     expect(metadata?.dailyCloseoutId).toBe("daily-closeout-1");
   });
 
-  it("replaces prior entries when owner edits a closeout", async () => {
+  it("voids prior entries instead of deleting history when owner edits a closeout", async () => {
     txExistingCloseout = true;
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 
@@ -211,7 +211,11 @@ describe("submitStoreCloseout", () => {
       ],
     });
 
-    expect(deleteCalls.some((call) => call.table === entries)).toBe(true);
+    expect(deleteCalls.some((call) => call.table === entries)).toBe(false);
+    expect(updateCalls.some((call) => (
+      call.table === entries
+      && (call.set as { status?: string }).status === "voided"
+    ))).toBe(true);
     expect(updateCalls.some((call) => call.table === dailyCloseouts)).toBe(true);
     expect((auditInserts()[0]?.values as { action: string }).action).toBe("closeout_resubmitted");
   });

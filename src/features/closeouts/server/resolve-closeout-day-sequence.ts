@@ -6,6 +6,7 @@ import {
 } from "@/features/closeouts/closeout-submit-mode";
 
 type SequenceTx = {
+  execute?: (query: unknown) => Promise<unknown>;
   select: (fields: unknown) => {
     from: (table: unknown) => {
       where: (condition: unknown) => {
@@ -40,6 +41,13 @@ export async function resolveCloseoutDaySequence(
     };
     const existingRows = await existingQuery.limit(1);
     if (existingRows[0]?.daySequence) return existingRows[0].daySequence;
+  }
+
+  // Serialize sequence allocation for one store/day inside the surrounding
+  // transaction. This prevents concurrent submissions from choosing the same
+  // max(sequence) + 1 value. Test doubles may omit execute().
+  if (typeof tx.execute === "function") {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${input.storeId}:${input.date}`}, 0))`);
   }
 
   const maxRows = await (tx

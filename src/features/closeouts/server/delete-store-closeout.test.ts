@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { auditEvents, dailyCloseouts, entries } from "@/core/db/schema";
 
-type DeleteCall = { table: unknown };
+type UpdateCall = { table: unknown; values: unknown };
 
-const deleteCalls: DeleteCall[] = [];
+const updateCalls: UpdateCall[] = [];
 let existingCloseout = true;
 
 vi.mock("@/core/auth/assert-store-access", () => ({
@@ -34,12 +34,18 @@ vi.mock("@/core/db/client", () => ({
 
 function createTx() {
   return {
-    delete: (table: unknown) => {
-      deleteCalls.push({ table });
-      return {
-        where: async () => undefined,
-      };
-    },
+    update: (table: unknown) => ({
+      set: (values: unknown) => {
+        updateCalls.push({ table, values });
+        return {
+          where: () => ({
+            returning: async () => (
+              table === entries ? [{ id: "entry-1" }, { id: "entry-2" }] : []
+            ),
+          }),
+        };
+      },
+    }),
     insert: (table: unknown) => ({
       values: async (values: unknown) => {
         if (table === auditEvents) {
@@ -53,11 +59,11 @@ function createTx() {
 
 describe("deleteStoreCloseout", () => {
   beforeEach(() => {
-    deleteCalls.length = 0;
+    updateCalls.length = 0;
     existingCloseout = true;
   });
 
-  it("deletes entries and closeout for owner", async () => {
+  it("voids entries and closeout without deleting history for owner", async () => {
     const { deleteStoreCloseout } = await import("./delete-store-closeout");
 
     const result = await deleteStoreCloseout({
@@ -69,8 +75,14 @@ describe("deleteStoreCloseout", () => {
     });
 
     expect(result.deleted).toBe(true);
-    expect(deleteCalls.some((call) => call.table === entries)).toBe(true);
-    expect(deleteCalls.some((call) => call.table === dailyCloseouts)).toBe(true);
+    expect(updateCalls.some((call) => (
+      call.table === entries
+      && (call.values as { status?: string }).status === "voided"
+    ))).toBe(true);
+    expect(updateCalls.some((call) => (
+      call.table === dailyCloseouts
+      && (call.values as { status?: string }).status === "voided"
+    ))).toBe(true);
   });
 
   it("forbids employee delete", async () => {

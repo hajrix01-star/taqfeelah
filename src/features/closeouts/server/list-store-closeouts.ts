@@ -316,6 +316,7 @@ export async function listStoreCloseouts(rawInput: ListCloseoutsInput) {
       and(
         eq(dailyCloseouts.organizationId, input.organizationId),
         eq(dailyCloseouts.storeId, input.storeId),
+        eq(dailyCloseouts.status, "approved"),
         input.dateFrom ? sql`${dailyCloseouts.date} >= ${input.dateFrom}` : undefined,
         input.dateTo ? sql`${dailyCloseouts.date} <= ${input.dateTo}` : undefined,
         decodedCursor ? cursorBeforeClause(decodedCursor) : undefined,

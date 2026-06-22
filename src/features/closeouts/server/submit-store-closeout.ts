@@ -147,6 +147,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
             eq(dailyCloseouts.organizationId, input.organizationId),
             eq(dailyCloseouts.storeId, input.storeId),
             eq(dailyCloseouts.clientCloseoutId, input.closeoutId),
+            eq(dailyCloseouts.status, "approved"),
           ),
         )
         .limit(1);
@@ -165,16 +166,24 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
           reviewedAt,
           returnReason: null,
           note: input.note || null,
+          voidedByUserId: null,
+          voidedAt: null,
           updatedAt: new Date(),
         })
         .where(eq(dailyCloseouts.id, closeoutRowId));
       await tx
-        .delete(entries)
+        .update(entries)
+        .set({
+          status: "voided",
+          voidedAt: reviewedAt,
+          updatedAt: reviewedAt,
+        })
         .where(
           and(
             eq(entries.organizationId, input.organizationId),
             eq(entries.storeId, input.storeId),
             eq(entries.closeoutId, closeoutRowId),
+            eq(entries.status, "active"),
           ),
         );
     } else {

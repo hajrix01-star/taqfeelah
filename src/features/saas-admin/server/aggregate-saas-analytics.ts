@@ -136,6 +136,7 @@ async function mergeOperationalFallback(
     .from(dailyCloseouts)
     .where(
       and(
+        eq(dailyCloseouts.status, "approved"),
         gte(dailyCloseouts.date, windowStart),
         lte(dailyCloseouts.date, snapshotDate),
       ),
@@ -286,7 +287,10 @@ export async function aggregateSaasAnalytics(snapshotDateInput?: string) {
       closeoutsCount: count(),
     })
     .from(dailyCloseouts)
-    .where(eq(dailyCloseouts.date, snapshotDate))
+    .where(and(
+      eq(dailyCloseouts.status, "approved"),
+      eq(dailyCloseouts.date, snapshotDate),
+    ))
     .groupBy(dailyCloseouts.organizationId);
 
   const closeoutsByOrg = new Map(dayCloseoutRows.map((row) => [

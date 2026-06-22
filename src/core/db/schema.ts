@@ -2,7 +2,9 @@ import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  check,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -112,6 +114,10 @@ export const stores = pgTable(
   },
   (table) => ({
     organizationIdx: index("stores_organization_id_idx").on(table.organizationId),
+    organizationStoreIdUq: uniqueIndex("stores_organization_id_id_uq").on(
+      table.organizationId,
+      table.id,
+    ),
   }),
 );
 
@@ -133,34 +139,64 @@ export const memberStoreAccess = pgTable(
   }),
 );
 
-export const salesChannels = pgTable("sales_channels", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  organizationId: uuid("organization_id")
-    .notNull()
-    .references(() => organizations.id, { onDelete: "cascade" }),
-  storeId: uuid("store_id")
-    .notNull()
-    .references(() => stores.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  kind: text("kind").notNull().default("payment_method"),
-  status: text("status").notNull().default("active"),
-  createdAt,
-  retiredAt: timestamp("retired_at", { withTimezone: true }),
-});
+export const salesChannels = pgTable(
+  "sales_channels",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    kind: text("kind").notNull().default("payment_method"),
+    status: text("status").notNull().default("active"),
+    createdAt,
+    retiredAt: timestamp("retired_at", { withTimezone: true }),
+  },
+  (table) => ({
+    organizationStoreChannelIdUq: uniqueIndex("sales_channels_org_store_id_uq").on(
+      table.organizationId,
+      table.storeId,
+      table.id,
+    ),
+    storeTenantFk: foreignKey({
+      name: "sales_channels_org_store_fk",
+      columns: [table.organizationId, table.storeId],
+      foreignColumns: [stores.organizationId, stores.id],
+    }).onDelete("cascade"),
+  }),
+);
 
-export const outflowCategories = pgTable("outflow_categories", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  organizationId: uuid("organization_id")
-    .notNull()
-    .references(() => organizations.id, { onDelete: "cascade" }),
-  storeId: uuid("store_id")
-    .notNull()
-    .references(() => stores.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  status: text("status").notNull().default("active"),
-  createdAt,
-  retiredAt: timestamp("retired_at", { withTimezone: true }),
-});
+export const outflowCategories = pgTable(
+  "outflow_categories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    status: text("status").notNull().default("active"),
+    createdAt,
+    retiredAt: timestamp("retired_at", { withTimezone: true }),
+  },
+  (table) => ({
+    organizationStoreCategoryIdUq: uniqueIndex("outflow_categories_org_store_id_uq").on(
+      table.organizationId,
+      table.storeId,
+      table.id,
+    ),
+    storeTenantFk: foreignKey({
+      name: "outflow_categories_org_store_fk",
+      columns: [table.organizationId, table.storeId],
+      foreignColumns: [stores.organizationId, stores.id],
+    }).onDelete("cascade"),
+  }),
+);
 
 export const dailyCloseouts = pgTable(
   "daily_closeouts",
@@ -183,6 +219,8 @@ export const dailyCloseouts = pgTable(
     /** Set on auto-approve at submit (legacy column name from removed owner-review flow). */
     reviewedByUserId: uuid("reviewed_by_user_id").references(() => users.id),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    voidedByUserId: uuid("voided_by_user_id").references(() => users.id, { onDelete: "restrict" }),
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
     /** Legacy owner-return reason; unused under zero-review policy. */
     returnReason: text("return_reason"),
     note: text("note"),
@@ -212,6 +250,19 @@ export const dailyCloseouts = pgTable(
       table.createdAt,
       table.id,
     ),
+    organizationStoreCloseoutIdUq: uniqueIndex("daily_closeouts_org_store_id_uq").on(
+      table.organizationId,
+      table.storeId,
+      table.id,
+    ),
+    storeTenantFk: foreignKey({
+      name: "daily_closeouts_org_store_fk",
+      columns: [table.organizationId, table.storeId],
+      foreignColumns: [stores.organizationId, stores.id],
+    }).onDelete("cascade"),
+    sequencePositiveCheck: check("daily_closeouts_day_sequence_positive_chk", sql`${table.daySequence} > 0`),
+    statusCheck: check("daily_closeouts_status_chk", sql`${table.status} in ('approved', 'voided')`),
+    clientIdCheck: check("daily_closeouts_client_id_nonempty_chk", sql`btrim(${table.clientCloseoutId}) <> ''`),
   }),
 );
 
@@ -267,6 +318,33 @@ export const entries = pgTable(
       table.id,
     ),
     closeoutIdx: index("entries_closeout_idx").on(table.closeoutId),
+    organizationStoreEntryIdUq: uniqueIndex("entries_org_store_id_uq").on(
+      table.organizationId,
+      table.storeId,
+      table.id,
+    ),
+    storeTenantFk: foreignKey({
+      name: "entries_org_store_fk",
+      columns: [table.organizationId, table.storeId],
+      foreignColumns: [stores.organizationId, stores.id],
+    }).onDelete("cascade"),
+    closeoutTenantFk: foreignKey({
+      name: "entries_org_store_closeout_fk",
+      columns: [table.organizationId, table.storeId, table.closeoutId],
+      foreignColumns: [dailyCloseouts.organizationId, dailyCloseouts.storeId, dailyCloseouts.id],
+    }).onDelete("restrict"),
+    categoryTenantFk: foreignKey({
+      name: "entries_org_store_category_fk",
+      columns: [table.organizationId, table.storeId, table.categoryId],
+      foreignColumns: [outflowCategories.organizationId, outflowCategories.storeId, outflowCategories.id],
+    }).onDelete("restrict"),
+    typeCheck: check("entries_type_chk", sql`${table.type} in ('summary', 'purchases', 'expense', 'withdrawal')`),
+    amountCheck: check(
+      "entries_amount_chk",
+      sql`${table.amountHalalas} >= 0 and (${table.type} = 'summary' or ${table.amountHalalas} > 0)`,
+    ),
+    currencyCheck: check("entries_currency_chk", sql`${table.currency} = 'SAR'`),
+    statusCheck: check("entries_status_chk", sql`${table.status} in ('active', 'voided')`),
   }),
 );
 
@@ -296,6 +374,17 @@ export const entrySalesChannels = pgTable(
       table.storeId,
       table.salesChannelId,
     ),
+    entryTenantFk: foreignKey({
+      name: "entry_sales_channels_org_store_entry_fk",
+      columns: [table.organizationId, table.storeId, table.entryId],
+      foreignColumns: [entries.organizationId, entries.storeId, entries.id],
+    }).onDelete("cascade"),
+    channelTenantFk: foreignKey({
+      name: "entry_sales_channels_org_store_channel_fk",
+      columns: [table.organizationId, table.storeId, table.salesChannelId],
+      foreignColumns: [salesChannels.organizationId, salesChannels.storeId, salesChannels.id],
+    }).onDelete("restrict"),
+    amountPositiveCheck: check("entry_sales_channels_amount_positive_chk", sql`${table.amountHalalas} > 0`),
   }),
 );
 
@@ -324,6 +413,12 @@ export const attachments = pgTable(
       table.storeId,
       table.entryId,
     ),
+    entryTenantFk: foreignKey({
+      name: "attachments_org_store_entry_fk",
+      columns: [table.organizationId, table.storeId, table.entryId],
+      foreignColumns: [entries.organizationId, entries.storeId, entries.id],
+    }).onDelete("cascade"),
+    sizeCheck: check("attachments_size_nonnegative_chk", sql`${table.sizeBytes} >= 0`),
   }),
 );
 

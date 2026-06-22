@@ -139,16 +139,20 @@
 | `date` | date | business day |
 | `day_sequence` | integer | 1, 2, 3… per `store_id + date` |
 | `client_closeout_id` | text | client-generated id for idempotent submit |
-| `status` | text | **`approved`** on submit (zero-review). Default `approved` since migration `0003`. Legacy rows with `submitted` backfilled. |
+| `status` | text | `approved` \| `voided`; default `approved` under zero-review policy |
 | `submitted_by_user_id` | uuid FK → users | actor who sent the closeout |
 | `reviewed_by_user_id` | uuid nullable FK → users | **Legacy name:** set to submitter on auto-approve (not a pending owner review). |
 | `reviewed_at` | timestamptz nullable | auto-approve timestamp at submit |
+| `voided_by_user_id` | uuid nullable FK → users | owner/manager who logically deleted the closeout |
+| `voided_at` | timestamptz nullable | logical deletion timestamp |
 | `return_reason` | text nullable | **Legacy:** owner-return flow removed; column retained, unused |
 | `note` | text nullable | |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | |
 
-**Indexes:** `(store_id, date, day_sequence)` unique; `(organization_id, store_id, date, status)`
+**Indexes:** `(store_id, date, day_sequence)` unique; `(store_id, client_closeout_id)` unique; `(organization_id, store_id, date, status)`; `(organization_id, store_id, id)` unique for tenant-safe composite references.
+
+**Checks:** `day_sequence > 0`; non-empty `client_closeout_id`; status limited to `approved|voided`; composite FK proves that `store_id` belongs to `organization_id`.
 
 ---
 
@@ -182,6 +186,14 @@
 
 **No unique constraint** on `(organization_id, store_id, date, type=summary)` — multiple summaries per day allowed after owner approval flow.
 
+**Database checks (migration `0021`):**
+
+- type is one of `summary|purchases|expense|withdrawal`
+- currency is `SAR`
+- status is `active|voided`
+- summary amount may be zero for owner outflow-only closeouts; every outflow amount is positive
+- composite FKs prove that store, closeout, and category belong to the same organization/store
+
 ### Summary amount invariant
 
 When `type = summary`, inside the same DB transaction:
@@ -213,6 +225,8 @@ Reject commit if mismatch.
 
 Channel reports for a period query this table with date filter via join to `entries`.
 
+`amount_halalas` must be positive. Composite FKs ensure the entry and sales channel match the row's organization/store.
+
 ---
 
 ## attachments
@@ -223,13 +237,15 @@ Channel reports for a period query this table with date filter via join to `entr
 | `organization_id` | uuid FK | |
 | `store_id` | uuid FK | |
 | `entry_id` | uuid FK → entries | |
-| `storage_key` | text | object storage path |
+| `storage_key` | text | server-managed storage key; local VPS in the current production mode |
 | `original_file_name` | text nullable | |
 | `mime_type` | text | |
 | `size_bytes` | integer | |
 | `created_at` | timestamptz | |
 
 Binary files **not** stored in row JSON.
+
+`size_bytes` must be non-negative, and a composite FK ensures the attachment and entry share the same organization/store.
 
 ---
 

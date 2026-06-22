@@ -143,6 +143,7 @@ export async function getSaasAccounts(rawInput: z.infer<typeof inputSchema>): Pr
       .where(
         and(
           inArray(dailyCloseouts.organizationId, orgIds),
+          eq(dailyCloseouts.status, "approved"),
           gte(dailyCloseouts.date, month.start),
           lte(dailyCloseouts.date, month.end),
         ),

@@ -67,6 +67,7 @@ export async function getPlatformSnapshot(): Promise<PlatformSnapshot> {
     .from(dailyCloseouts)
     .where(
       and(
+        eq(dailyCloseouts.status, "approved"),
         gte(dailyCloseouts.date, month.start),
         lte(dailyCloseouts.date, month.end),
       ),
@@ -87,7 +88,8 @@ export async function getPlatformSnapshot(): Promise<PlatformSnapshot> {
 
   const [lastCloseout] = await db
     .select({ at: max(dailyCloseouts.createdAt) })
-    .from(dailyCloseouts);
+    .from(dailyCloseouts)
+    .where(eq(dailyCloseouts.status, "approved"));
   const [lastEntry] = await db
     .select({ at: max(entries.createdAt) })
     .from(entries)

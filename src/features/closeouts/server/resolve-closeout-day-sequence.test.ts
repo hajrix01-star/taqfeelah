@@ -4,8 +4,13 @@ import { resolveCloseoutDaySequence } from "./resolve-closeout-day-sequence";
 function createSequenceTx(options: {
   existingDaySequence?: number | null;
   maxSequence?: number;
+  onExecute?: () => void;
 }) {
   return {
+    execute: async () => {
+      options.onExecute?.();
+      return [];
+    },
     select: (fields: unknown) => ({
       from: () => {
         const isExistingSelect = Boolean(
@@ -32,8 +37,9 @@ function createSequenceTx(options: {
 
 describe("resolveCloseoutDaySequence", () => {
   it("assigns the next sequence for a new closeout on the same day", async () => {
+    let lockAcquired = false;
     const sequence = await resolveCloseoutDaySequence(
-      createSequenceTx({ maxSequence: 1 }) as Parameters<typeof resolveCloseoutDaySequence>[0],
+      createSequenceTx({ maxSequence: 1, onExecute: () => { lockAcquired = true; } }) as Parameters<typeof resolveCloseoutDaySequence>[0],
       {
         organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
         storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
@@ -44,6 +50,7 @@ describe("resolveCloseoutDaySequence", () => {
     );
 
     expect(sequence).toBe(2);
+    expect(lockAcquired).toBe(true);
   });
 
   it("reuses the same sequence on owner edit", async () => {

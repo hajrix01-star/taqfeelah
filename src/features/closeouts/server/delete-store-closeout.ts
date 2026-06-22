@@ -48,6 +48,7 @@ export async function deleteStoreCloseout(rawInput: DeleteCloseoutInput) {
         eq(dailyCloseouts.organizationId, input.organizationId),
         eq(dailyCloseouts.storeId, input.storeId),
         eq(dailyCloseouts.clientCloseoutId, input.clientCloseoutId),
+        eq(dailyCloseouts.status, "approved"),
       ),
     )
     .limit(1);
@@ -56,19 +57,34 @@ export async function deleteStoreCloseout(rawInput: DeleteCloseoutInput) {
     throw new ValidationError("Closeout not found.");
   }
 
+  const voidedAt = new Date();
+
   await db.transaction(async (tx) => {
-    await tx
-      .delete(entries)
+    const voidedEntries = await tx
+      .update(entries)
+      .set({
+        status: "voided",
+        voidedAt,
+        updatedAt: voidedAt,
+      })
       .where(
         and(
           eq(entries.organizationId, input.organizationId),
           eq(entries.storeId, input.storeId),
           eq(entries.closeoutId, closeoutRow.id),
+          eq(entries.status, "active"),
         ),
-      );
+      )
+      .returning({ id: entries.id });
 
     await tx
-      .delete(dailyCloseouts)
+      .update(dailyCloseouts)
+      .set({
+        status: "voided",
+        voidedAt,
+        voidedByUserId: input.actorUserId,
+        updatedAt: voidedAt,
+      })
       .where(
         and(
           eq(dailyCloseouts.organizationId, input.organizationId),
@@ -86,6 +102,8 @@ export async function deleteStoreCloseout(rawInput: DeleteCloseoutInput) {
       metadata: {
         closeoutId: closeoutRow.clientCloseoutId,
         date: closeoutRow.date,
+        voidedAt: voidedAt.toISOString(),
+        voidedEntryIds: voidedEntries.map((row) => row.id),
       },
     });
   });
