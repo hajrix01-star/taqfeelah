@@ -9,13 +9,11 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
-  FileText,
   Plus,
   ReceiptText,
   Smartphone,
   UserRound,
 } from "lucide-react";
-import { isNotebookThemeDirty } from "@/features/org-config/client/owner-settings-appearance-actions";
 import {
   formatPlanSubscriptionHomeLabel,
 } from "@/features/billing/client/subscription-display";
@@ -30,11 +28,11 @@ import {
   SettingsLink,
   SettingsPageHeader,
 } from "./owner-settings-ui-primitives";
-import { ThemePicker } from "./prototype-runtime-notebook";
 import { OwnerSettingsTeamSectionWithInvites } from "./owner-settings-team-section-with-invites";
 import { OwnerSettingsTeamRoster } from "./owner-settings-team-roster";
 import { OwnerSettingsAccountSection } from "./owner-settings-account-section";
-import { OwnerSettingsSubscriptionSection } from "./owner-settings-subscription-section";
+import { OwnerSettingsAppearanceSection } from "./owner-settings-appearance-section";
+import { OwnerSettingsSupportSection } from "./owner-settings-support-section";
 import { SettingsSectionFrame } from "./owner-settings-section-frame";
 import type {
   OwnerSettingsDeleteDialogProps,
@@ -351,92 +349,6 @@ export function OwnerSettingsTeamSection({
         </>
       )}
       <OwnerSettingsDeleteDialog {...deleteDialogProps} />
-    </SettingsSectionFrame>
-  );
-}
-
-export function OwnerSettingsAppearanceSection({
-  lang,
-  draftNotebookTheme,
-  setDraftNotebookTheme,
-  notebookTheme,
-  themeDirty,
-  setThemeDirty,
-  setNotebookTheme,
-  showSettingsSaved,
-  settingsSuccess,
-  setSection,
-  embedded = false,
-}: OwnerSettingsSectionCommonProps & {
-  draftNotebookTheme: string;
-  setDraftNotebookTheme: (value: string) => void;
-  notebookTheme: string;
-  themeDirty: boolean;
-  setThemeDirty: (value: boolean) => void;
-  setNotebookTheme: (value: string) => void;
-  showSettingsSaved: () => void;
-  settingsSuccess: boolean;
-}) {
-  return (
-    <SettingsSectionFrame embedded={embedded}>
-      {!embedded ? (
-        <SettingsPageHeader title={text(lang, "notebookAppearance")} onBack={() => setSection("home")} lang={lang} />
-      ) : null}
-      <div className="rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
-        <ThemePicker lang={lang} theme={draftNotebookTheme} onChange={(nextTheme) => { setDraftNotebookTheme(nextTheme); setThemeDirty(isNotebookThemeDirty(nextTheme, notebookTheme)); }} />
-        {themeDirty && (
-          <div className="mt-4 grid grid-cols-[0.9fr_1.35fr] gap-3">
-            <button onClick={() => { setDraftNotebookTheme(notebookTheme); setThemeDirty(false); }} className="rounded-2xl bg-[#F7F5EF] py-3 text-xs font-black">{text(lang, "cancelChanges")}</button>
-            <button onClick={() => { setNotebookTheme(draftNotebookTheme); setThemeDirty(false); showSettingsSaved(); }} className="rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">{text(lang, "saveSettings")}</button>
-          </div>
-        )}
-        {settingsSuccess && <div className="mt-4 rounded-xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">{text(lang, "changesSaved")}</div>}
-      </div>
-    </SettingsSectionFrame>
-  );
-}
-
-export function OwnerSettingsSupportSection({
-  lang,
-  setSection,
-  onOpenSupport,
-  onOpenHelp,
-  embedded = false,
-  entitlements = null,
-  entitlementsLoading = false,
-  entitlementsError = "",
-  reloadEntitlements = () => {},
-  ownerProfile = null,
-}: OwnerSettingsSectionCommonProps & {
-  onOpenSupport?: () => void;
-  onOpenHelp?: () => void;
-  entitlements?: ResolvedOrganizationEntitlements | null;
-  entitlementsLoading?: boolean;
-  entitlementsError?: string;
-  reloadEntitlements?: () => void | Promise<void>;
-  ownerProfile?: Record<string, unknown> | null;
-}) {
-  return (
-    <SettingsSectionFrame embedded={embedded}>
-      {!embedded ? (
-        <SettingsPageHeader title={text(lang, "support")} onBack={() => setSection("stores-team")} lang={lang} />
-      ) : null}
-      <OwnerSettingsSubscriptionSection
-        lang={lang}
-        setSection={setSection}
-        entitlements={entitlements}
-        entitlementsLoading={entitlementsLoading}
-        entitlementsError={entitlementsError}
-        reloadEntitlements={reloadEntitlements}
-        ownerProfile={ownerProfile ?? {}}
-        onOpenSupport={onOpenSupport}
-        embedded
-        hideUpgradeActions
-      />
-      <div className="mb-4 overflow-hidden rounded-3xl bg-white ring-1 ring-black/[0.045]">
-        <SettingsLink lang={lang} icon={Smartphone} title={text(lang, "whatsappSupport")} onClick={() => onOpenSupport?.()} border />
-        <SettingsLink lang={lang} icon={FileText} title={text(lang, "helpCenter")} onClick={() => onOpenHelp?.()} border={false} />
-      </div>
     </SettingsSectionFrame>
   );
 }
