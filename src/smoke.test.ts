@@ -88,8 +88,9 @@ describe("prototype runtime module boundary smoke", () => {
 
   it("loads owner register screen exports", async () => {
     const register = await import("@/components/prototype-runtime/prototype-runtime-owner-register-screen");
+    const connected = await import("@/components/prototype-runtime/prototype-runtime-owner-register-connected");
     expect(register.OwnerRegisterScreen).toBeTypeOf("function");
-    expect(register.OwnerRegisterConnected).toBeTypeOf("function");
+    expect(connected.OwnerRegisterConnected).toBeTypeOf("function");
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
   it("loads owner entry screen exports", async () => {
@@ -130,7 +131,7 @@ describe("prototype runtime module boundary smoke", () => {
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
   it("loads owner register screen exports", async () => {
-    const register = await import("@/components/prototype-runtime/prototype-runtime-owner-register-screen");
+    const register = await import("@/components/prototype-runtime/prototype-runtime-owner-register-connected");
     expect(register.OwnerRegisterConnected).toBeTypeOf("function");
   }, SMOKE_IMPORT_TIMEOUT_MS);
 

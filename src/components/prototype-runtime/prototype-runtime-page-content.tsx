@@ -13,7 +13,7 @@ import { OwnerSettingsScreen } from "./OwnerSettingsSection";
 import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { OwnerNotebookScreen } from "./prototype-runtime-owner-notebook-screen";
 import { OwnerHomeConnected } from "./prototype-runtime-owner-home-screen";
-import { OwnerRegisterConnected } from "./prototype-runtime-owner-register-screen";
+import { OwnerRegisterConnected } from "./prototype-runtime-owner-register-connected";
 import type { SalesChannelConfig } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { PrototypeRuntimePageContentProps, PrototypeBusiness, PrototypeChannel } from "./prototype-runtime-types";
 
