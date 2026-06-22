@@ -273,28 +273,28 @@ flowchart LR
 
 ---
 
-## قائمة حذف المكرر (Checklist تنفيذ)
+## سجل حذف المكرر (منفذ)
 
 ### UI
 
-- [ ] إزالة تبويب فرعي **«فريق»** — دمج المحتوى تحت **«محلات وفريق»**
-- [ ] إزالة **`OwnerSettingsAccountPlanPanel`** من `OwnerSettingsAccountSection`
-- [ ] إزالة **`OwnerSettingsStoreStaffPanel`** ومسار `staff` من overview المحل
-- [ ] إزالة كتلة **«الموظفون المرتبطون»** + زر **«إدارة الفريق والصلاحيات»** من تبويب «تشغيل» في `OwnerSettingsStoreFlattenedPanel`
-- [ ] إزالة **صفّي التبويبات** (4+3) → **4 تبويبات مسطّحة**
-- [ ] **شارة الخطة** + **`OwnerPlanPickerModal`** في رأس الإعدادات
-- [ ] إزالة أزرار ترقية مكررة من `OwnerSettingsSubscriptionSection` (الترقية من النافذة فقط)
-- [ ] rename تبويب «التطبيق» → **«الشكل»**
-- [ ] نقل تفاصيل الاشتراك (قراءة) إلى تبويب **«المساعدة»**
+- [x] إزالة تبويب فرعي **«فريق»** — دمج المحتوى تحت **«محلات وفريق»**
+- [x] إزالة **`OwnerSettingsAccountPlanPanel`** من `OwnerSettingsAccountSection`
+- [x] إزالة **`OwnerSettingsStoreStaffPanel`** ومسار `staff` من overview المحل
+- [x] إزالة كتلة **«الموظفون المرتبطون»** + زر **«إدارة الفريق والصلاحيات»** من تبويب «تشغيل» في `OwnerSettingsStoreFlattenedPanel`
+- [x] إزالة **صفّي التبويبات** (4+3) → **4 تبويبات مسطّحة**
+- [x] **شارة الخطة** + **`OwnerPlanPickerModal`** في رأس الإعدادات
+- [x] إزالة أزرار ترقية مكررة من `OwnerSettingsSubscriptionSection` (الترقية من النافذة فقط)
+- [x] rename تبويب «التطبيق» → **«الشكل»**
+- [x] نقل تفاصيل الاشتراك (قراءة) إلى تبويب **«المساعدة»**
 
 ### تنقل / كود
 
-- [ ] تحديث `owner-settings-tab-navigation.js` — 4 tabs: `stores-team`, `account`, `appearance`, `support`
-- [ ] مكوّنات جديدة: `OwnerPlanChip`, `OwnerPlanPickerModal` تحت `src/features/billing/client/` أو `prototype-runtime/`
-- [ ] `initialSettingsSection === "home"` → توجيه إلى `stores-team` (أو أول قسم في القائمة)
-- [ ] `SettingsPageHeader onBack={() => setSection("home")}` → رجوع للقائمة الرئيسية
-- [ ] تقييم إزالة **`OwnerSettingsHomeSection`** إن أصبحت القائمة الجديدة هي المدخل الوحيد
-- [ ] تحديث اختبارات `owner-settings-tab-navigation.test.ts`
+- [x] تحديث `owner-settings-tab-navigation.ts` — 4 tabs: `stores-team`, `account`, `appearance`, `support`
+- [x] مكوّنات `OwnerPlanChip` و`OwnerPlanPickerModal` تحت `src/features/billing/client/`
+- [x] `initialSettingsSection === "home"` يوجّه إلى `stores-team`
+- [x] توحيد رجوع الأقسام عبر خريطة التنقل الحالية
+- [x] تقييم **`OwnerSettingsHomeSection`**: أبقي كمسار توافق داخلي، بينما القشرة المبوّبة تبدأ من `stores-team`
+- [x] تحديث اختبارات `owner-settings-tab-navigation.test.ts` واختبار smoke لحدود وحدات الإعدادات
 
 ### ما لا يُمس
 
@@ -337,13 +337,13 @@ flowchart TB
 
 ---
 
-## ترتيب التنفيذ المقترح (دفعة PR واحدة)
+## حالة التنفيذ
 
-1. **هيكل القشرة** — قائمة/تبويبات جديدة + navigation
-2. **دمج محلات وفريق** — `OwnerSettingsStoresTeamSection`
-3. **تنظيف المحل** — حذف staff panels
-4. **تنظيف حسابي** — حذف plan panel
-5. **اختبارات + `pnpm check:refactor`**
+1. ✅ **هيكل القشرة** — قائمة/تبويبات + navigation منفصلة.
+2. ✅ **دمج محلات وفريق** — `OwnerSettingsStoresTeamSection` ينسق القسمين دون تكرار منطق العرض.
+3. ✅ **تنظيف المحل** — واجهة المحلات مستقلة ولا تكرر إدارة الفريق.
+4. ✅ **تنظيف حسابي** — الحساب والاشتراك قسمان مستقلان.
+5. ✅ **حدود الوحدات** — اختبار smoke يحمل كل قسم مباشرة، مع lint وtypecheck والاختبارات والبناء في CI.
 
 ---
 
@@ -351,12 +351,18 @@ flowchart TB
 
 | ملف | دور |
 |-----|-----|
-| `src/components/prototype-runtime/owner-settings-tabbed-shell.jsx` | القشرة الحالية — تبويبان |
-| `src/components/prototype-runtime/owner-settings-tab-primitives.jsx` | تعريف التبويبات |
-| `src/components/prototype-runtime/owner-settings-tab-navigation.js` | mapping section ↔ tab |
-| `src/components/prototype-runtime/owner-settings-section-views.jsx` | أقسام المحتوى + تكرار الاشتراك |
-| `src/components/prototype-runtime/owner-settings-store-views.jsx` | staff مكرر داخل المحل |
-| `src/components/prototype-runtime/owner-settings-team-roster.jsx` | ربط محلات من الفريق |
+| `src/components/prototype-runtime/owner-settings-tabbed-shell.tsx` | القشرة الحالية والتبديل بين التبويبات |
+| `src/components/prototype-runtime/owner-settings-tab-primitives.tsx` | تعريف عناصر التبويبات |
+| `src/components/prototype-runtime/owner-settings-tab-navigation.ts` | mapping بين القسم والتبويب |
+| `src/components/prototype-runtime/owner-settings-section-views.tsx` | التوجيه وتجميع الأقسام فقط |
+| `src/components/prototype-runtime/owner-settings-account-section.tsx` | حساب المالك والأمان |
+| `src/components/prototype-runtime/owner-settings-home-section.tsx` | الصفحة الرئيسية للإعدادات |
+| `src/components/prototype-runtime/owner-settings-stores-section.tsx` | عرض وإدارة المحلات |
+| `src/components/prototype-runtime/owner-settings-team-section.tsx` | الفريق والصلاحيات والدعوات |
+| `src/components/prototype-runtime/owner-settings-subscription-section.tsx` | الخطة والاستخدام والترقية |
+| `src/components/prototype-runtime/owner-settings-appearance-section.tsx` | مظهر الدفتر |
+| `src/components/prototype-runtime/owner-settings-support-section.tsx` | الدعم والمساعدة |
+| `src/components/prototype-runtime/owner-settings-section-frame.tsx` | إطار العرض المشترك للأقسام |
 
 ---
 

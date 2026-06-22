@@ -76,6 +76,23 @@ route/UI -> feature service -> domain/core -> PostgreSQL
 
 مجلد `components/prototype-runtime` يحمل اسمًا تاريخيًا لكنه يكوّن واجهة `/app` المعتمدة حاليًا. الاسم ليس تصريحًا باستخدام بيانات تجريبية في الإنتاج. تفكيكه وإعادة تسميته يتمان تدريجيًا فقط مع اختبارات تمنع تغيير السلوك.
 
+### تنظيم واجهة إعدادات المالك
+
+واجهة الإعدادات مقسمة حسب المسؤولية، ولا يحتوي ملف التوجيه على تفاصيل الأقسام:
+
+```text
+owner-settings-section-views.tsx
+  ├── owner-settings-home-section.tsx
+  ├── owner-settings-account-section.tsx
+  ├── owner-settings-stores-section.tsx
+  ├── owner-settings-team-section.tsx
+  ├── owner-settings-subscription-section.tsx
+  ├── owner-settings-appearance-section.tsx
+  └── owner-settings-support-section.tsx
+```
+
+`owner-settings-section-frame.tsx` يملك إطار الحركة والمسافات المشترك. اختبار `src/smoke.test.ts` يحمل كل وحدة مباشرة لمنع كسر حدود الاستيراد أثناء التفكيك التدريجي.
+
 ## 5. المسارات الفعلية
 
 | المسار | الوظيفة |
