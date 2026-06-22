@@ -34,6 +34,29 @@ describe("prototype runtime module boundary smoke", () => {
     expect(settings.ActionRow).toBeTypeOf("function");
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
+  it("loads split owner settings view modules", async () => {
+    const [account, appearance, home, stores, subscription, support, team, views] = await Promise.all([
+      import("@/components/prototype-runtime/owner-settings-account-section"),
+      import("@/components/prototype-runtime/owner-settings-appearance-section"),
+      import("@/components/prototype-runtime/owner-settings-home-section"),
+      import("@/components/prototype-runtime/owner-settings-stores-section"),
+      import("@/components/prototype-runtime/owner-settings-subscription-section"),
+      import("@/components/prototype-runtime/owner-settings-support-section"),
+      import("@/components/prototype-runtime/owner-settings-team-section"),
+      import("@/components/prototype-runtime/owner-settings-section-views"),
+    ]);
+
+    expect(account.OwnerSettingsAccountSection).toBeTypeOf("function");
+    expect(appearance.OwnerSettingsAppearanceSection).toBeTypeOf("function");
+    expect(home.OwnerSettingsHomeSection).toBeTypeOf("function");
+    expect(stores.OwnerSettingsStoresSection).toBeTypeOf("function");
+    expect(subscription.OwnerSettingsSubscriptionSection).toBeTypeOf("function");
+    expect(support.OwnerSettingsSupportSection).toBeTypeOf("function");
+    expect(team.OwnerSettingsTeamSection).toBeTypeOf("function");
+    expect(views.OwnerSettingsStoresTeamSection).toBeTypeOf("function");
+    expect(views.renderOwnerSettingsSection).toBeTypeOf("function");
+  }, SMOKE_IMPORT_TIMEOUT_MS);
+
   it("loads owner summary details exports", async () => {
     const details = await import("@/components/prototype-runtime/owner-summary-details");
     expect(details.SummaryReportDetails).toBeTypeOf("function");
