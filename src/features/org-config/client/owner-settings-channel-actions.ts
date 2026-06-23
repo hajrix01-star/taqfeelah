@@ -50,11 +50,12 @@ export function listUnifiedIncomeSourceRows(config: StoreChannelConfig) {
 
   for (const entry of INCOME_SOURCE_CATALOG) {
     const channel = findConfiguredChannelByLegacyId(config, entry.legacyId);
-    if (channel?.retired) continue;
+    const isRetired = Boolean(channel?.retired);
+    const toggleId = String(channel?.id || entry.legacyId);
 
     rows.push({
-      rowId: String(channel?.id || entry.legacyId),
-      toggleId: String(channel?.id || entry.legacyId),
+      rowId: toggleId,
+      toggleId,
       channel: channel || {
         id: entry.legacyId,
         legacyId: entry.legacyId,
@@ -63,7 +64,7 @@ export function listUnifiedIncomeSourceRows(config: StoreChannelConfig) {
         nameEn: entry.nameEn,
       },
       isCatalog: true,
-      isActive: channel ? config.activeIds.includes(String(channel.id)) : false,
+      isActive: channel ? config.activeIds.includes(String(channel.id)) && !isRetired : false,
     });
   }
 
@@ -86,6 +87,24 @@ export function toggleIncomeSourceActive(config: StoreChannelConfig, channelOrLe
     || findConfiguredChannelByLegacyId(config, channelOrLegacyId);
 
   if (configured) {
+    // Reactivating a previously retired channel should keep the same row id and clear retired.
+    if (configured.retired) {
+      const channelId = String(configured.id);
+      return {
+        config: {
+          ...config,
+          channels: config.channels.map((channel) => (
+            String(channel.id) === channelId ? { ...channel, retired: false } : channel
+          )),
+          activeIds: config.activeIds.includes(channelId)
+            ? config.activeIds
+            : [...config.activeIds, channelId],
+        },
+        blocked: false,
+        added: false,
+      };
+    }
+
     return toggleSalesChannelActive(config, String(configured.id));
   }
 

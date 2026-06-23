@@ -123,4 +123,44 @@ describe("owner settings channel actions", () => {
     expect("added" in disabled && disabled.added).toBe(false);
     expect(disabled.config.activeIds).toEqual(["cash"]);
   });
+
+  it("keeps retired catalog channels visible as inactive rows", () => {
+    const config = {
+      channels: [
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          legacyId: "jahez",
+          kind: "sales_channel",
+          retired: true,
+        },
+      ],
+      activeIds: [],
+    };
+
+    const rows = listUnifiedIncomeSourceRows(config);
+    const jahezRow = rows.find((row) => row.toggleId === "11111111-1111-4111-8111-111111111111");
+    expect(jahezRow).toBeTruthy();
+    expect(jahezRow?.isCatalog).toBe(true);
+    expect(jahezRow?.isActive).toBe(false);
+  });
+
+  it("reactivates configured retired channel on toggle", () => {
+    const channelId = "11111111-1111-4111-8111-111111111111";
+    const config = {
+      channels: [
+        {
+          id: channelId,
+          legacyId: "jahez",
+          kind: "sales_channel",
+          retired: true,
+        },
+      ],
+      activeIds: [],
+    };
+
+    const result = toggleIncomeSourceActive(config, channelId);
+    expect(result.blocked).toBe(false);
+    expect(result.config.activeIds).toContain(channelId);
+    expect(result.config.channels.find((channel) => channel.id === channelId)?.retired).toBe(false);
+  });
 });
