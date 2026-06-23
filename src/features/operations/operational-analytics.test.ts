@@ -90,6 +90,17 @@ describe("operational analytics summary helpers", () => {
     expect(resolveOwnerSingleStoreTotals(local, api, false, { entriesDbSource: true })).toEqual(api);
   });
 
+  it("never falls back to local financial totals in DB source mode when API totals are unavailable", () => {
+    const local = { sales: 900, expense: 50, net: 850, ratio: "5.6%", proofs: 3 };
+    expect(resolveOwnerSingleStoreTotals(local, null, false, { entriesDbSource: true })).toEqual({
+      sales: 0,
+      expense: 0,
+      net: 0,
+      ratio: "0.0%",
+      proofs: 0,
+    });
+  });
+
   it("aggregates sales channels with halala math", () => {
     const channels = aggregateSalesChannelsFromGroupEntries([
       {

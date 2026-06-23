@@ -223,7 +223,7 @@ jobs:
           VPS_SSH_COMMAND_TIMEOUT: "1200"
           VPS_SKIP_REMOTE_BUILD: "true"
           VPS_RUN_REMOTE_REPAIR_SCRIPTS: ${{ env.VPS_RUN_REMOTE_REPAIR_SCRIPTS }}
-          POST_DEPLOY_BASELINE_VERIFY: "false"
+          POST_DEPLOY_BASELINE_VERIFY: "true"
           RESET_FOUNDATION_ON_DEPLOY: ${{ contains(github.event.head_commit.message, '[reset-foundation]') }}
           RESET_FOUNDATION_CONFIRM: "reset-modern-foundation"
           DEPLOYMENT_WAVE: "7"
@@ -287,3 +287,48 @@ jobs:
             sleep "$sleep_seconds"
             workflow_attempt=$((workflow_attempt + 1))
           done
+
+      - name: Production live gate
+        env:
+          CHECK_BASE_URL: "https://taqfeelah.com"
+          CHECK_ORGANIZATION_ID: ${{ secrets.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID }}
+          CHECK_STORE_ID: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"
+          CHECK_EMPLOYEE_USER_ID: "4cf1450d-08d8-4ca1-b180-1c2642174a79"
+          CHECK_OWNER_USER_ID: ${{ secrets.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID }}
+          CHECK_SALES_CHANNEL_ID: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb"
+          CHECK_OWNER_USERNAME: ${{ secrets.AUTH_VERIFY_OWNER_USERNAME }}
+          CHECK_OWNER_PASSWORD: ${{ secrets.AUTH_VERIFY_OWNER_PASSWORD }}
+          CHECK_EMPLOYEE_ID: ${{ secrets.CHECK_EMPLOYEE_ID }}
+          CHECK_EMPLOYEE_PIN: ${{ secrets.CHECK_EMPLOYEE_PIN }}
+          APP_MODE: "production"
+          NEXT_PUBLIC_APP_MODE: "production"
+          ALLOW_HEADER_AUTH_CONTEXT: "false"
+          AUTH_DB_CREDENTIALS_ENABLED: "true"
+          NEXT_PUBLIC_AUTH_API_ENABLED: "true"
+          SAAS_ADMIN_API_ENABLED: "true"
+          NEXT_PUBLIC_SAAS_ADMIN_ENABLED: "true"
+          SAAS_PLATFORM_ADMIN_USER_IDS: ${{ secrets.SAAS_PLATFORM_ADMIN_USER_IDS }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AUTH_SESSION_SECRET: ${{ secrets.AUTH_SESSION_SECRET }}
+          AUTH_ORGANIZATION_ID: ${{ secrets.AUTH_ORGANIZATION_ID }}
+          AUTH_OWNER_USER_ID: ${{ secrets.AUTH_OWNER_USER_ID }}
+          NEXT_PUBLIC_CLOSEOUTS_API_ENABLED: "true"
+          NEXT_PUBLIC_ENTRIES_API_ENABLED: "true"
+          NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED: "true"
+          NEXT_PUBLIC_ORG_CONFIG_API_ENABLED: "true"
+          NEXT_PUBLIC_PHASE9_API_ENABLED: "true"
+          NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE: "true"
+          NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID: ${{ secrets.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID }}
+          NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID: ${{ secrets.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID }}
+          NEXT_PUBLIC_SUPPORT_WHATSAPP: "966533507223"
+          APP_PUBLIC_ORIGIN: "https://taqfeelah.com"
+          AUTH_PASSWORD_RESET_ENABLED: "true"
+          AUTH_PUBLIC_SIGNUP_ENABLED: "true"
+          NEXT_PUBLIC_PUBLIC_SIGNUP_ENABLED: "true"
+          AUTH_EMAIL_FROM: ${{ secrets.AUTH_EMAIL_FROM }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: node scripts/prelaunch-live-gate.mjs

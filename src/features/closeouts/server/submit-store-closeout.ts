@@ -66,6 +66,136 @@ const closeoutSubmitSchema = z.object({
 type CloseoutSubmitInput = Omit<z.infer<typeof closeoutSubmitSchema>, "mode"> & {
   mode?: CloseoutSubmitModeInput;
 };
+type ParsedCloseoutSubmitInput = z.infer<typeof closeoutSubmitSchema>;
+type NormalizedSalesChannel = Awaited<ReturnType<typeof resolveStoreSalesChannelsForWrite>>[number];
+type CloseoutReadExecutor = Pick<ReturnType<typeof getDb>, "select">;
+
+function stableJson(value: unknown): string {
+  return JSON.stringify(value);
+}
+
+function isUniqueConstraintViolation(error: unknown): boolean {
+  const record = error as { code?: unknown; cause?: { code?: unknown } } | null;
+  return record?.code === "23505" || record?.cause?.code === "23505";
+}
+
+function normalizedChannelSignature(channels: NormalizedSalesChannel[]): string {
+  return stableJson(
+    channels
+      .map((row) => ({
+        salesChannelId: row.salesChannelId,
+        amountHalalas: row.amountHalalas,
+      }))
+      .sort((a, b) => `${a.salesChannelId}`.localeCompare(`${b.salesChannelId}`)),
+  );
+}
+
+function normalizedOutflowSignature(outflows: ParsedCloseoutSubmitInput["outflows"]): string {
+  return stableJson(
+    outflows
+      .map((row) => ({
+        type: row.type,
+        amountHalalas: row.amountHalalas,
+        categoryId: row.categoryId || null,
+        note: row.note || null,
+      }))
+      .sort((a, b) => `${a.type}|${a.categoryId || ""}|${a.note || ""}|${a.amountHalalas}`.localeCompare(
+        `${b.type}|${b.categoryId || ""}|${b.note || ""}|${b.amountHalalas}`,
+      )),
+  );
+}
+
+async function resolveExistingSubmitResult(
+  dbOrTx: CloseoutReadExecutor,
+  input: ParsedCloseoutSubmitInput,
+  normalizedChannels: NormalizedSalesChannel[],
+) {
+  const [existingCloseout] = await dbOrTx
+    .select({
+      id: dailyCloseouts.id,
+      date: dailyCloseouts.date,
+      daySequence: dailyCloseouts.daySequence,
+    })
+    .from(dailyCloseouts)
+    .where(
+      and(
+        eq(dailyCloseouts.organizationId, input.organizationId),
+        eq(dailyCloseouts.storeId, input.storeId),
+        eq(dailyCloseouts.clientCloseoutId, input.closeoutId),
+        eq(dailyCloseouts.status, "approved"),
+      ),
+    )
+    .limit(1);
+
+  if (!existingCloseout) return null;
+
+  const existingEntries = await dbOrTx
+    .select({
+      id: entries.id,
+      type: entries.type,
+      amountHalalas: entries.amountHalalas,
+      categoryId: entries.categoryId,
+      note: entries.note,
+    })
+    .from(entries)
+    .where(
+      and(
+        eq(entries.organizationId, input.organizationId),
+        eq(entries.storeId, input.storeId),
+        eq(entries.closeoutId, existingCloseout.id),
+        eq(entries.status, "active"),
+      ),
+    );
+
+  const summaryEntry = existingEntries.find((row: { type: string }) => row.type === "summary");
+  if (!summaryEntry) {
+    throw new ValidationError("Closeout is already saved, but its financial summary is incomplete.");
+  }
+
+  const existingChannels = await dbOrTx
+    .select({
+      salesChannelId: entrySalesChannels.salesChannelId,
+      amountHalalas: entrySalesChannels.amountHalalas,
+    })
+    .from(entrySalesChannels)
+    .where(
+      and(
+        eq(entrySalesChannels.organizationId, input.organizationId),
+        eq(entrySalesChannels.storeId, input.storeId),
+        eq(entrySalesChannels.entryId, summaryEntry.id),
+      ),
+    );
+
+  const existingOutflows = existingEntries
+    .filter((row: { type: string }) => row.type !== "summary")
+    .map((row: { type: string; amountHalalas: number; categoryId: string | null; note: string | null }) => ({
+      type: row.type as "purchases" | "expense" | "withdrawal",
+      amountHalalas: row.amountHalalas,
+      categoryId: row.categoryId,
+      note: row.note || undefined,
+    }));
+
+  const channelsMatch = normalizedChannelSignature(existingChannels as NormalizedSalesChannel[])
+    === normalizedChannelSignature(normalizedChannels);
+  const outflowsMatch = normalizedOutflowSignature(existingOutflows)
+    === normalizedOutflowSignature(input.outflows);
+
+  if (!channelsMatch || !outflowsMatch) {
+    throw new ValidationError("Closeout is already saved with this closeoutId. Use owner edit to change it.");
+  }
+
+  const outflowEntryIds = existingEntries
+    .filter((row: { type: string }) => row.type !== "summary")
+    .map((row: { id: string }) => row.id);
+
+  return {
+    summaryEntryId: summaryEntry.id,
+    outflowEntryIds,
+    daySequence: existingCloseout.daySequence,
+    dailyCloseoutId: existingCloseout.id,
+    idempotentReplay: true,
+  };
+}
 
 function formatCloseoutSubmitValidationMessage(
   error: z.ZodError<CloseoutSubmitInput>,
@@ -127,7 +257,16 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
 
   const reviewedAt = new Date();
 
-  const txResult = await db.transaction(async (tx) => {
+  let txResult: {
+    summaryEntryId: string;
+    outflowEntryIds: string[];
+    daySequence: number;
+    dailyCloseoutId: string;
+    idempotentReplay?: boolean;
+  };
+
+  try {
+    txResult = await db.transaction(async (tx) => {
     const daySequence = await resolveCloseoutDaySequence(tx as Parameters<typeof resolveCloseoutDaySequence>[0], {
       organizationId: input.organizationId,
       storeId: input.storeId,
@@ -187,6 +326,9 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
           ),
         );
     } else {
+      const existingSubmitResult = await resolveExistingSubmitResult(tx, input, normalizedChannels);
+      if (existingSubmitResult) return existingSubmitResult;
+
       const [insertedCloseout] = await tx
         .insert(dailyCloseouts)
         .values({
@@ -308,21 +450,35 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
       daySequence,
       dailyCloseoutId: closeoutRowId,
     };
-  });
+    });
+  } catch (error) {
+    if (!isOwnerEditCloseoutMode(input.mode) && isUniqueConstraintViolation(error)) {
+      const existingSubmitResult = await resolveExistingSubmitResult(db, input, normalizedChannels);
+      if (existingSubmitResult) {
+        txResult = existingSubmitResult;
+      } else {
+        throw new ValidationError("Closeout is already saved with this closeoutId.");
+      }
+    } else {
+      throw error;
+    }
+  }
 
   const calculated = calculateDaySummary([
     { type: "summary", amountHalalas: totalSalesHalalas },
     ...input.outflows.map((row) => ({ type: row.type, amountHalalas: row.amountHalalas })),
   ]);
 
-  void fireUsageEventSafe({
-    organizationId: input.organizationId,
-    storeId: input.storeId,
-    userId: input.actorUserId,
-    eventName: "closeout_submitted",
-    eventDate: input.date,
-    metadata: { closeoutId: input.closeoutId, mode: input.mode },
-  });
+  if (!txResult.idempotentReplay) {
+    void fireUsageEventSafe({
+      organizationId: input.organizationId,
+      storeId: input.storeId,
+      userId: input.actorUserId,
+      eventName: "closeout_submitted",
+      eventDate: input.date,
+      metadata: { closeoutId: input.closeoutId, mode: input.mode },
+    });
+  }
 
   return {
     closeoutId: input.closeoutId,
@@ -331,6 +487,7 @@ export async function submitStoreCloseout(rawInput: CloseoutSubmitInput) {
     summaryEntryId: txResult.summaryEntryId,
     outflowEntryIds: txResult.outflowEntryIds,
     dailyCloseoutId: txResult.dailyCloseoutId,
+    idempotentReplay: txResult.idempotentReplay === true ? true : undefined,
     totals: {
       totalSalesHalalas: calculated.totalSalesHalalas,
       totalOutflowHalalas: calculated.totalOutflowHalalas,

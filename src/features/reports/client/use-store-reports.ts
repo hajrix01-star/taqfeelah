@@ -3,6 +3,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
+import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 import { resolveReportDateRange } from "./report-period-range";
 import { combineUiTotalsList } from "./map-reports-to-ui";
 import { fetchStoreReportsBundle } from "./fetch-store-reports-bundle";
@@ -37,6 +38,7 @@ export function useStoreReports({
   outflowCategory = "all",
   includeOutflowTransactions = false,
 }: UseStoreReportsProps) {
+  const strictDbSource = isEntriesApiDbSourceMode();
   const storeIdsKey = useMemo(() => {
     if (selectedStoreId && selectedStoreId !== "all") return selectedStoreId;
     return businesses.map((business) => business?.id).filter(Boolean).join("|");
@@ -100,9 +102,11 @@ export function useStoreReports({
   const businessesWithSummaries = useMemo(
     () => businesses.map((business) => ({
       ...business,
-      [period === "month" ? "month" : "day"]: totalsByStoreId[String(business.id)] || business[period === "month" ? "month" : "day"] || { ...emptyTotals },
+      [period === "month" ? "month" : "day"]: totalsByStoreId[String(business.id)]
+        || (strictDbSource ? { ...emptyTotals } : business[period === "month" ? "month" : "day"])
+        || { ...emptyTotals },
     })),
-    [businesses, period, totalsByStoreId],
+    [businesses, period, strictDbSource, totalsByStoreId],
   );
 
   const combinedTotals = useMemo(

@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Bell, ChevronDown, ChevronUp } from "lucide-react";
 import {
   buildBusinessesWithEntrySummaries,
-  entryTotalsHaveFinancialActivity,
   resolveOwnerPeriodSummaryPreference,
   resolveOwnerSingleStoreTotals,
   summarizeEntries,
@@ -89,6 +88,7 @@ export function OwnerHome({
   const currentBusiness = businessesList.find((business) => business.id === selectedBusiness) || businessesList[0] || null;
   const scopedBusinesses = isCombined ? businessesList : currentBusiness ? [currentBusiness] : [];
   const summaryApiActive = summaryApiEnabled;
+  const strictServerFinancialSource = summaryApiActive;
   const {
     businessesWithDaySummaries,
     combinedResult: apiCombinedResult,
@@ -140,11 +140,10 @@ export function OwnerHome({
     localTotals: localCombinedResult as AnalyticsTotals,
     apiTotals: apiCombinedResult as AnalyticsTotals | null | undefined,
     entriesLoading: operationalEntriesLoading,
+    entriesDbSource: strictServerFinancialSource,
   });
-  const localSummaryHasFinancialActivity = entryTotalsHaveFinancialActivity(localCombinedResult);
   const summaryLoadFailedWithoutFallback = summaryApiActive
     && summaryApiError
-    && !localSummaryHasFinancialActivity
     && !summaryApiHasData;
   const awaitingScopedApiTotals = summaryApiActive
     && !preferEntrySummaries
@@ -162,7 +161,7 @@ export function OwnerHome({
   const summaryLoadErrorMessage = lang === "ar"
     ? "تعذر تحميل الملخص المالي من الخادم. لم يتم عرض أرقام بديلة حتى لا تظهر أصفار غير صحيحة."
     : "Failed to load the financial summary from the server. No fallback figures are shown to avoid incorrect zero totals.";
-  const comparisonBusinesses = (preferEntrySummaries ? localComparisonBusinesses : businessesWithDaySummaries) as PrototypeBusiness[];
+  const comparisonBusinesses = (strictServerFinancialSource ? businessesWithDaySummaries : preferEntrySummaries ? localComparisonBusinesses : businessesWithDaySummaries) as PrototypeBusiness[];
   const result = isCombined
     ? preferEntrySummaries ? localCombinedResult : apiCombinedResult
     : monthly

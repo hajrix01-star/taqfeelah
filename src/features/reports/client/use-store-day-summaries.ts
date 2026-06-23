@@ -3,6 +3,7 @@
 import { keepPreviousData, useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
+import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 import { combineUiTotals, mapDaySummaryToUiTotals } from "./map-day-summary-to-ui";
 import { fetchStoreDaySummaryViaApi, fetchStoreMonthSummaryViaApi } from "./store-summary-api-client";
 import type { UiTotalsRecord, UseStoreDaySummariesProps } from "@/features/reports/client/reports-client-types";
@@ -54,6 +55,7 @@ export function useStoreDaySummaries({
   date = "",
   month = "",
 }: UseStoreDaySummariesProps) {
+  const strictDbSource = isEntriesApiDbSourceMode();
   const storeIds = useMemo(
     () => businesses.map((business) => business?.id).filter(Boolean) as string[],
     [businesses],
@@ -111,13 +113,13 @@ export function useStoreDaySummaries({
     () => businesses.map((business) => ({
       ...business,
       day: period === "day"
-        ? (summariesByStoreId[String(business.id)] || business.day || { ...emptyStoreRecord })
+        ? (summariesByStoreId[String(business.id)] || (strictDbSource ? { ...emptyStoreRecord } : business.day) || { ...emptyStoreRecord })
         : business.day,
       month: period === "month"
-        ? (summariesByStoreId[String(business.id)] || business.month || { ...emptyStoreRecord })
+        ? (summariesByStoreId[String(business.id)] || (strictDbSource ? { ...emptyStoreRecord } : business.month) || { ...emptyStoreRecord })
         : business.month,
     })),
-    [businesses, period, summariesByStoreId],
+    [businesses, period, strictDbSource, summariesByStoreId],
   );
 
   const combinedResult = useMemo(

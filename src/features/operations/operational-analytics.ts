@@ -30,6 +30,7 @@ import type {
 } from "@/features/operations/operations-types";
 
 export const OUTFLOW_ENTRY_TYPES = new Set(["purchases", "expense", "withdrawal"]);
+const EMPTY_ANALYTICS_TOTALS: AnalyticsTotals = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0 };
 
 export function entryHasAttachment(entry: AnalyticsEntry | null | undefined): boolean {
   if (Boolean(entry?.attachment)) return true;
@@ -242,7 +243,7 @@ export function resolveOwnerSingleStoreTotals(
 ): AnalyticsTotals {
   if (entriesDbSource) {
     if (apiTotals != null) return apiTotals;
-    return localTotals;
+    return { ...EMPTY_ANALYTICS_TOTALS };
   }
   return preferEntryDerived
     ? localTotals

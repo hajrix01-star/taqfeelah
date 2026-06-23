@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Share2 } from "lucide-react";
 import { resolveAppFontFamily } from "@/core/fonts/app-font-family";
+import { todayBusinessDateIso } from "@/core/date/business-date";
 import {
   NOTEBOOK_THEME_IDS,
   notebookThemes,
@@ -174,8 +175,7 @@ function isoCalendarDate(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 function todayIsoDate() {
-  const today = new Date();
-  return isoCalendarDate(today.getFullYear(), today.getMonth(), today.getDate());
+  return todayBusinessDateIso();
 }
 function monthSelectionValue(value: string) {
   const legacyMonths: Record<string, string> = { may2026: "2026-05", april2026: "2026-04", march2026: "2026-03" };

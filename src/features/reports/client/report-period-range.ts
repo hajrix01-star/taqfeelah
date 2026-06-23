@@ -1,3 +1,5 @@
+import { todayBusinessDateIso } from "@/core/date/business-date";
+
 export function resolveReportDateRange({
   period = "day",
   selectedDate = "",
@@ -25,6 +27,6 @@ export function resolveReportDateRange({
   if (period === "custom" && customFrom && customTo) {
     return { from: customFrom, to: customTo };
   }
-  const date = selectedDate || new Date().toISOString().slice(0, 10);
+  const date = selectedDate || todayBusinessDateIso();
   return { from: date, to: date };
 }

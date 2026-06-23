@@ -102,8 +102,8 @@ export function OwnerRegisterScreen({
   const [period, setPeriod] = useState("month");
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
-  const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
-  const [customFrom, setCustomFrom] = useState(() => `${new Date().getFullYear()}-01-01`);
+  const [selectedYear, setSelectedYear] = useState(() => todayIsoDate().slice(0, 4));
+  const [customFrom, setCustomFrom] = useState(() => `${todayIsoDate().slice(0, 4)}-01-01`);
   const [customTo, setCustomTo] = useState(() => todayIsoDate());
   const [generalReportGranularity, setGeneralReportGranularity] = useState(
     () => defaultRegisterReportGranularity("month"),
@@ -161,7 +161,7 @@ export function OwnerRegisterScreen({
       setSelectedMonth(today.slice(0, 7));
       setGeneralReportGranularity(REGISTER_REPORT_GRANULARITY.DAY);
     } else if (nextPeriod === "year") {
-      setSelectedYear(String(new Date().getFullYear()));
+      setSelectedYear(today.slice(0, 4));
       setGeneralReportGranularity(REGISTER_REPORT_GRANULARITY.MONTH);
     } else {
       setGeneralReportGranularity(REGISTER_REPORT_GRANULARITY.DAY);
@@ -366,7 +366,7 @@ export function OwnerRegisterScreen({
   const showGeneralReportGranularityToggle = logView === "report"
     && supportsRegisterReportGranularity(period)
     && safeBusinessId !== "all";
-  const generalReportNeedsStore = safeBusinessId === "all";
+  const generalReportNeedsStore = false;
   const generalReportPeriodEntries = useMemo(
     () => periodEntries.filter(entryIsActive),
     [periodEntries],
@@ -384,11 +384,11 @@ export function OwnerRegisterScreen({
     [generalReportPeriodEntries],
   );
   const generalReportApiEnabled = registerEntriesApiEnabled
-    && !generalReportNeedsStore
     && logView === "report";
   const {
     daysRows: apiGeneralReportRows,
     singleStoreTotals: apiGeneralReportTotals,
+    combinedTotals: apiGeneralReportCombinedTotals,
     loading: generalReportApiLoading,
     loaded: generalReportApiLoaded,
     error: generalReportApiError,
@@ -420,16 +420,25 @@ export function OwnerRegisterScreen({
       : []),
     [apiGeneralReportRows, generalReportApiEnabled, generalReportApiError, generalReportApiLoaded],
   );
-  const generalReportRows = generalReportApiEnabled && generalReportApiLoaded && !generalReportApiError
+  const strictGeneralReportSource = ENTRIES_API_DB_SOURCE && generalReportApiEnabled;
+  const generalReportApiReady = generalReportApiEnabled && generalReportApiLoaded && !generalReportApiError;
+  const apiGeneralReportTotalsSource = safeBusinessId === "all"
+    ? apiGeneralReportCombinedTotals
+    : apiGeneralReportTotals;
+  const generalReportRows = generalReportApiReady
     ? applyRegisterReportGranularity(apiDailyGeneralReportRows, resolvedGeneralReportGranularity)
-    : localGeneralReportRows;
-  const generalReportTotals = generalReportApiEnabled && generalReportApiLoaded && !generalReportApiError && apiGeneralReportTotals
+    : strictGeneralReportSource ? [] : localGeneralReportRows;
+  const generalReportTotals = generalReportApiReady && apiGeneralReportTotalsSource
     ? {
-      sales: apiGeneralReportTotals.sales ?? 0,
-      expense: apiGeneralReportTotals.expense ?? 0,
-      net: apiGeneralReportTotals.net ?? 0,
+      sales: apiGeneralReportTotalsSource.sales ?? 0,
+      expense: apiGeneralReportTotalsSource.expense ?? 0,
+      net: apiGeneralReportTotalsSource.net ?? 0,
     }
-    : {
+    : strictGeneralReportSource ? {
+      sales: 0,
+      expense: 0,
+      net: 0,
+    } : {
       sales: localGeneralReportTotals.sales ?? 0,
       expense: localGeneralReportTotals.expense ?? 0,
       net: localGeneralReportTotals.net ?? 0,
@@ -447,7 +456,7 @@ export function OwnerRegisterScreen({
   const generalReportLoadErrorMessage = lang === "ar"
     ? "تعذر تحميل تقرير الأيام من الخادم. تم عرض البيانات المحلية المتاحة."
     : "Failed to load the days report from the server. Showing available local data.";
-  const dashboardSummary = logView === "report" ? generalReportDashboardSummary : registerPeriodSummary;
+  const dashboardSummary = logView === "report" || ENTRIES_API_DB_SOURCE ? generalReportDashboardSummary : registerPeriodSummary;
   const dashboardShowFilters = logView !== "report";
   const openRegisterExport = () => onShareRegister({
     screen: "register",
@@ -641,8 +650,8 @@ export function OwnerRegisterScreen({
             rows={generalReportRows}
             totals={generalReportTotals}
             granularity={resolvedGeneralReportGranularity}
-            loading={generalReportApiEnabled && generalReportApiLoading && !generalReportApiLoaded && !dailyGeneralReportRows.length}
-            loadError={Boolean(generalReportLoadError && !dailyGeneralReportRows.length)}
+            loading={generalReportApiEnabled && generalReportApiLoading && !generalReportApiLoaded && !generalReportRows.length}
+            loadError={Boolean(generalReportLoadError && !generalReportRows.length)}
             loadErrorMessage={generalReportLoadErrorMessage}
             needsStoreSelection={generalReportNeedsStore}
           />

@@ -5,6 +5,7 @@ import type { StoreRef } from "@/features/daily-closeouts/daily-closeouts-types"
 
 import { isUuid, mapToUuid } from "@/core/client/api-id-utils";
 import { getRuntimeApiMaps } from "@/core/client/runtime-api-maps-state";
+import { todayBusinessDateIso } from "@/core/date/business-date";
 
 /** Compare legacy store ids (shami) with DB UUIDs from org-config hydration. */
 export function storeIdsReferToSameStore(left: string | null | undefined, right: string | null | undefined): boolean {
@@ -34,8 +35,7 @@ export const EMPLOYEE_HISTORY_VISIBILITY = {
 export const EMPLOYEE_CLOSEOUTS_ALL_CAP_DAYS = 90;
 
 export function todayIsoDate(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return todayBusinessDateIso();
 }
 
 function addDaysIso(isoDate: string, deltaDays: number): string {

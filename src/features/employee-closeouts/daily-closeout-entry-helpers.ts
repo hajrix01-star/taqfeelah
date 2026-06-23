@@ -1,5 +1,6 @@
 import { toAmount } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
 import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
+import { todayBusinessDateIso } from "@/core/date/business-date";
 import type { CloseoutSyncLang } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { CloseoutAttachmentPreview, CloseoutOutflowRow } from "./employee-closeouts-types";
 
@@ -25,8 +26,7 @@ export function formatCloseoutMoney(value: number | string | null | undefined, l
 }
 
 export function todayIsoDate(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return todayBusinessDateIso();
 }
 
 export function attachmentDataUrlsFromList(rawList: CloseoutAttachmentPreview[] | null | undefined): string[] {

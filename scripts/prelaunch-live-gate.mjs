@@ -34,6 +34,11 @@ runNodeScript("scripts/prelaunch-check.mjs", [
 ]);
 
 const baseUrl = process.env.CHECK_BASE_URL?.replace(/\/$/, "");
+const productionGate = process.env.APP_MODE === "production" || process.env.NEXT_PUBLIC_APP_MODE === "production";
+if (!baseUrl && productionGate) {
+  console.error("CHECK_BASE_URL is required for the production live gate.");
+  process.exit(1);
+}
 if (baseUrl) {
   console.log("");
   console.log(`Step 2/3: DB source API smoke (${baseUrl})`);

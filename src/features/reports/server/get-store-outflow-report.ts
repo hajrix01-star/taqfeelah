@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import { attachments, entries, outflowCategories } from "@/core/db/schema";
@@ -60,11 +60,9 @@ export async function getStoreOutflowReport(rawInput: z.infer<typeof inputSchema
       categoryId: entries.categoryId,
       categoryName: outflowCategories.name,
       amountHalalas: entries.amountHalalas,
-      attachmentId: attachments.id,
     })
     .from(entries)
     .leftJoin(outflowCategories, eq(outflowCategories.id, entries.categoryId))
-    .leftJoin(attachments, eq(attachments.entryId, entries.id))
     .where(entryScope)
     .orderBy(desc(entries.date), desc(entries.createdAt));
 
@@ -76,39 +74,64 @@ export async function getStoreOutflowReport(rawInput: z.infer<typeof inputSchema
     categoryKey: string;
     amountHalalas: number;
     hasAttachment: boolean;
+    attachmentCount: number;
   }> = [];
 
-  rows.forEach((row) => {
+  const filteredRows = rows
+    .map((row) => ({
+      ...row,
+      categoryKey: resolveOutflowCategoryKey({
+        type: row.type,
+        categoryId: row.categoryId,
+        categoryName: row.categoryName,
+      }),
+    }))
+    .filter((row) => !input.categoryKey || input.categoryKey === "all" || row.categoryKey === input.categoryKey);
+
+  const attachmentCountsByEntryId = new Map<string, number>();
+  if (input.includeTransactions && filteredRows.length > 0) {
+    const attachmentRows = await db
+      .select({
+        entryId: attachments.entryId,
+        count: sql<number>`count(${attachments.id})::int`,
+      })
+      .from(attachments)
+      .where(
+        and(
+          eq(attachments.organizationId, input.organizationId),
+          eq(attachments.storeId, input.storeId),
+          inArray(attachments.entryId, filteredRows.map((row) => row.id)),
+        ),
+      )
+      .groupBy(attachments.entryId);
+    attachmentRows.forEach((row) => {
+      attachmentCountsByEntryId.set(row.entryId, Number(row.count || 0));
+    });
+  }
+
+  filteredRows.forEach((row) => {
     const categoryKey = resolveOutflowCategoryKey({
       type: row.type,
       categoryId: row.categoryId,
       categoryName: row.categoryName,
     });
-    if (input.categoryKey && input.categoryKey !== "all" && categoryKey !== input.categoryKey) {
-      return;
-    }
     categoryTotals.set(categoryKey, (categoryTotals.get(categoryKey) || 0) + row.amountHalalas);
     if (input.includeTransactions) {
+      const attachmentCount = attachmentCountsByEntryId.get(row.id) || 0;
       transactions.push({
         id: row.id,
         date: row.date,
         type: row.type,
         categoryKey,
         amountHalalas: row.amountHalalas,
-        hasAttachment: Boolean(row.attachmentId),
+        hasAttachment: attachmentCount > 0,
+        attachmentCount,
       });
     }
   });
 
   const totalOutflowHalalas = [...categoryTotals.values()].reduce((sum, value) => sum + value, 0);
-  const transactionCount = rows.filter((row) => {
-    const categoryKey = resolveOutflowCategoryKey({
-      type: row.type,
-      categoryId: row.categoryId,
-      categoryName: row.categoryName,
-    });
-    return !input.categoryKey || input.categoryKey === "all" || categoryKey === input.categoryKey;
-  }).length;
+  const transactionCount = filteredRows.length;
 
   return {
     storeId: input.storeId,

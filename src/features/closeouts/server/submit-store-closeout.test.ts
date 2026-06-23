@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { auditEvents, dailyCloseouts, entries, entrySalesChannels } from "@/core/db/schema";
+import { todayBusinessDateIso } from "@/core/date/business-date";
 
 type InsertCall = { table: unknown; values: unknown };
 type UpdateCall = { table: unknown; set: unknown };
@@ -9,6 +10,8 @@ const insertCalls: InsertCall[] = [];
 const updateCalls: UpdateCall[] = [];
 const deleteCalls: DeleteCall[] = [];
 let txExistingCloseout = false;
+let txExistingEntries: Array<Record<string, unknown>> = [];
+let txExistingChannels: Array<Record<string, unknown>> = [];
 
 vi.mock("@/core/auth/assert-store-access", () => ({
   assertStoreAccess: vi.fn(async () => undefined),
@@ -34,12 +37,27 @@ vi.mock("@/core/db/client", () => ({
 }));
 
 function createTx({ existingCloseout = false } = {}) {
+  const selectRowsFor = (table: unknown) => {
+    if (table === dailyCloseouts) {
+      return existingCloseout
+        ? [{ id: "daily-closeout-1", date: "2026-06-05", daySequence: 1 }]
+        : [];
+    }
+    if (table === entries) return txExistingEntries;
+    if (table === entrySalesChannels) return txExistingChannels;
+    return [];
+  };
   return {
     select: () => ({
-      from: () => ({
-        where: () => ({
-          limit: async () => (existingCloseout ? [{ id: "daily-closeout-1" }] : []),
-        }),
+      from: (table: unknown) => ({
+        where: () => {
+          const rows = selectRowsFor(table);
+          const promise = Promise.resolve(rows) as Promise<Array<Record<string, unknown>>> & {
+            limit: () => Promise<Array<Record<string, unknown>>>;
+          };
+          promise.limit = async () => rows;
+          return promise;
+        },
       }),
     }),
     update: (table: unknown) => ({
@@ -109,6 +127,8 @@ function auditInserts() {
 describe("submitStoreCloseout", () => {
   beforeEach(() => {
     txExistingCloseout = false;
+    txExistingEntries = [];
+    txExistingChannels = [];
     insertCalls.length = 0;
     updateCalls.length = 0;
     deleteCalls.length = 0;
@@ -234,6 +254,60 @@ describe("submitStoreCloseout", () => {
     expect((auditInserts()[0]?.values as { action: string }).action).toBe("closeout_resubmitted");
   });
 
+  it("returns the existing result when submit repeats the same client closeout id and financial content", async () => {
+    txExistingCloseout = true;
+    txExistingEntries = [
+      {
+        id: "summary-existing",
+        type: "summary",
+        amountHalalas: 120000,
+        categoryId: null,
+        note: null,
+      },
+    ];
+    txExistingChannels = [
+      {
+        salesChannelId: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+        amountHalalas: 120000,
+      },
+    ];
+    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
+
+    const result = await submitStoreCloseout(baseInput);
+
+    expect(result).toMatchObject({
+      dailyCloseoutId: "daily-closeout-1",
+      summaryEntryId: "summary-existing",
+      idempotentReplay: true,
+    });
+    expect(closeoutInserts()).toHaveLength(0);
+    expect(entryInserts()).toHaveLength(0);
+    expect(auditInserts()).toHaveLength(0);
+  });
+
+  it("rejects repeated client closeout id when the financial content differs", async () => {
+    txExistingCloseout = true;
+    txExistingEntries = [
+      {
+        id: "summary-existing",
+        type: "summary",
+        amountHalalas: 1000,
+        categoryId: null,
+        note: null,
+      },
+    ];
+    txExistingChannels = [
+      {
+        salesChannelId: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+        amountHalalas: 1000,
+      },
+    ];
+    const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
+
+    await expect(submitStoreCloseout(baseInput)).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    expect(closeoutInserts()).toHaveLength(0);
+  });
+
   it("rejects future closeout dates", async () => {
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
 
@@ -245,15 +319,12 @@ describe("submitStoreCloseout", () => {
     ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
   });
 
-  it("accepts one calendar day ahead of UTC for east-of-UTC clients", async () => {
+  it("accepts the current Saudi business date", async () => {
     const { submitStoreCloseout } = await import("@/features/closeouts/server/submit-store-closeout");
-    const utcToday = new Date().toISOString().slice(0, 10);
-    const [y, m, d] = utcToday.split("-").map(Number);
-    const tomorrowUtc = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
 
     const result = await submitStoreCloseout({
       ...baseInput,
-      date: tomorrowUtc,
+      date: todayBusinessDateIso(),
     });
 
     expect(result.summaryEntryId).toBeTruthy();
