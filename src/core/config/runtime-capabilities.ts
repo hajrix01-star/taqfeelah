@@ -46,6 +46,11 @@ export function resolveRuntimeCapabilities(
   const entriesApiEnabled = isEntriesApiEnabled(env);
   const entriesApiDbSource = isEntriesApiDbSourceMode(env);
 
+  // In production builds, prefer the org-config API as the authoritative
+  // source of truth so the UI persists organization settings to the
+  // server/database instead of falling back to local prototype storage.
+  const orgConfigApiEnabled = appInProductionMode ? true : isOrgConfigApiEnabled(env);
+
   return {
     appInProductionMode,
     bindsToServerAuth,
@@ -55,7 +60,7 @@ export function resolveRuntimeCapabilities(
     entriesApiEnabled,
     entriesApiStrictMode: isEntriesApiStrictMode(),
     entriesApiDbSource,
-    orgConfigApiEnabled: isOrgConfigApiEnabled(env),
+    orgConfigApiEnabled,
     phase9ApiEnabled: isPhase9ApiEnabled(env),
     registerEntriesPaginationEnabled: isRegisterEntriesPaginationEnabled(env),
     runtimeSettingsDbSource: entriesApiDbSource,

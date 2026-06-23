@@ -1,0 +1,8 @@
+
+> taqfeelah-v2@2.0.0 db:migrate /workspaces/taqfeelah
+> drizzle-kit migrate
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/workspaces/taqfeelah/drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] applying migrations...[2K[1G[⣷] applying migrations... ELIFECYCLE  Command failed with exit code 1.
