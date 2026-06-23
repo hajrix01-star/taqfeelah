@@ -32,6 +32,17 @@ const channelRows = [
   },
 ];
 
+let pagedEntryRows: Array<Array<{
+  id: string;
+  date: string;
+  type: string;
+  amountHalalas: number;
+  note: string;
+  createdAt: Date;
+}>> = [entryRows];
+let mockedChannelRows = channelRows;
+let mockedAttachmentRows = [{ entryId: "11111111-1111-4111-8111-111111111111" }];
+
 vi.mock("@/features/reports/server/get-store-period-summary", () => ({
   getStorePeriodSummary: vi.fn(async () => ({
     totalSales: { amountHalalas: 150000, currency: "SAR" },
@@ -48,14 +59,14 @@ vi.mock("@/core/db/client", () => ({
       from: () => ({
         where: () => {
           if ("entryId" in fields) {
-            return Promise.resolve(channelRows);
+            return Promise.resolve(mockedChannelRows);
           }
           if ("id" in fields && Object.keys(fields).length === 1) {
-            return Promise.resolve([{ entryId: "11111111-1111-4111-8111-111111111111" }]);
+            return Promise.resolve(mockedAttachmentRows);
           }
           return {
             orderBy: () => ({
-              limit: async () => entryRows,
+              limit: async () => pagedEntryRows.shift() || [],
             }),
           };
         },
@@ -66,6 +77,10 @@ vi.mock("@/core/db/client", () => ({
 
 describe("getNotebookExport", () => {
   it("returns SQL-backed notebook export payload", async () => {
+    pagedEntryRows = [entryRows];
+    mockedChannelRows = channelRows;
+    mockedAttachmentRows = [{ entryId: "11111111-1111-4111-8111-111111111111" }];
+
     const { getNotebookExport } = await import("./get-notebook-export");
     const result = await getNotebookExport({
       organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -87,5 +102,43 @@ describe("getNotebookExport", () => {
     }]);
     expect(result.operations).toHaveLength(2);
     expect(result.operations[0].hasAttachment).toBe(true);
+  });
+
+  it("exports all operations across multiple pages for year filters", async () => {
+    const firstPage = Array.from({ length: 500 }, (_, index) => ({
+      id: `11111111-1111-4111-8111-${String(index + 1).padStart(12, "0")}`,
+      date: "2026-06-05",
+      type: "summary",
+      amountHalalas: 1000,
+      note: "page-1",
+      createdAt: new Date("2026-06-05T10:00:00.000Z"),
+    }));
+    const secondPage = Array.from({ length: 120 }, (_, index) => ({
+      id: `22222222-2222-4222-8222-${String(index + 1).padStart(12, "0")}`,
+      date: "2026-05-01",
+      type: "expense",
+      amountHalalas: 500,
+      note: "page-2",
+      createdAt: new Date("2026-05-01T09:00:00.000Z"),
+    }));
+
+    pagedEntryRows = [firstPage, secondPage];
+    mockedChannelRows = [];
+    mockedAttachmentRows = [];
+
+    const { getNotebookExport } = await import("./get-notebook-export");
+    const result = await getNotebookExport({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+      actorUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
+      actorRole: "owner",
+      from: "2026-01-01",
+      to: "2026-12-31",
+      period: "year",
+    });
+
+    expect(result.operations).toHaveLength(620);
+    expect(result.operations[0].id).toBe(firstPage[0].id);
+    expect(result.operations[619].id).toBe(secondPage[119].id);
   });
 });

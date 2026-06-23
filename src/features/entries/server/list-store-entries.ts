@@ -22,9 +22,8 @@ const inputSchema = z.object({
   dateFrom: dateSchema.optional(),
   dateTo: dateSchema.optional(),
   status: z.enum(["active", "voided", "all"]).default("all"),
-  limit: z.number().int().min(1).max(1000).default(500),
+  limit: z.number().int().min(1).max(100).default(50),
   cursor: z.string().trim().min(1).optional(),
-  paginated: z.boolean().default(false),
 });
 
 type Input = z.infer<typeof inputSchema>;
@@ -66,9 +65,7 @@ export async function listStoreEntries(rawInput: Input) {
     throw new ValidationError("dateFrom must be earlier than or equal to dateTo.");
   }
 
-  const effectiveLimit = input.paginated
-    ? Math.min(input.limit, 100)
-    : input.limit;
+  const effectiveLimit = input.limit;
 
   await assertStoreAccess({
     organizationId: input.organizationId,

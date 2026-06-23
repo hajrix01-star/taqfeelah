@@ -42,14 +42,6 @@ function assertEntriesApiContext(
   }
 }
 
-function resolveEntriesItemsPayload(payload: unknown, resource: string): OperationalEntry[] {
-  if (Array.isArray(payload)) return payload as OperationalEntry[];
-  if (payload && typeof payload === "object" && Array.isArray((payload as { items?: unknown }).items)) {
-    return (payload as { items: OperationalEntry[] }).items;
-  }
-  throw new Error(`${resource} API returned invalid payload.`);
-}
-
 type EntriesPagePayload = {
   items: OperationalEntry[];
   nextCursor?: string | null;
@@ -104,31 +96,36 @@ export async function fetchStoreEntriesViaApi({
   dateFrom = "",
   dateTo = "",
   status = "all",
-  limit = 800,
+  limit = 100,
 }: FetchStoreEntriesParams): Promise<OperationalEntry[]> {
-  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
-  assertEntriesApiContext(context, "entries fetch");
+  const pageSize = Number.isInteger(limit) && limit > 0 ? Math.min(limit, 100) : 100;
+  const allItems: OperationalEntry[] = [];
+  let nextCursor = "";
+  let pageCount = 0;
 
-  const search = new URLSearchParams();
-  if (typeof dateFrom === "string" && dateFrom) search.set("dateFrom", dateFrom);
-  if (typeof dateTo === "string" && dateTo) search.set("dateTo", dateTo);
-  if (status === "active" || status === "voided" || status === "all") search.set("status", status);
-  if (Number.isInteger(limit) && limit > 0) search.set("limit", String(limit));
-
-  const payload = await fetchApiJsonWithPrototypeContext(
-    `/api/v1/stores/${context.storeId}/entries?${search.toString()}`,
-    {
+  while (pageCount < 500) {
+    pageCount += 1;
+    const page = await fetchStoreEntriesPageViaApi({
       organizationId,
       actorUserId,
       actorRole,
-      errorMessage: "entries fetch api failed",
-      errorStyle: "status",
-    },
-  );
+      storeId,
+      dateFrom,
+      dateTo,
+      status,
+      limit: pageSize,
+      cursor: nextCursor,
+    });
+    allItems.push(...page.items);
+    if (!page.nextCursor) break;
+    nextCursor = page.nextCursor;
+  }
 
-  const { storeIdMap, salesChannelIdMap } = getMaps();
-  const items = resolveEntriesItemsPayload(payload, "entries fetch");
-  return mapEntryItems(items, { storeId, storeIdMap, salesChannelIdMap });
+  if (pageCount >= 500 && nextCursor) {
+    throw new Error("entries fetch pagination exceeded safety limit.");
+  }
+
+  return allItems;
 }
 
 export async function fetchStoreEntriesPageViaApi({

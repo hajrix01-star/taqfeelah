@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
@@ -19,9 +19,44 @@ const inputSchema = z.object({
 });
 
 const ALLOWED_TYPES = ["summary", "purchases", "expense", "withdrawal"] as const;
+const EXPORT_OPERATIONS_PAGE_SIZE = 500;
+const EXPORT_ID_CHUNK_SIZE = 1000;
+
+type ExportOperationRow = {
+  id: string;
+  date: string;
+  type: string;
+  amountHalalas: number;
+  note: string | null;
+  createdAt: Date;
+};
 
 function toRiyals(halalas: number): number {
   return Number((halalas / 100).toFixed(2));
+}
+
+function cursorBeforeClause(cursor: { date: string; createdAt: Date; id: string }) {
+  return or(
+    sql`${entries.date} < ${cursor.date}`,
+    and(
+      eq(entries.date, cursor.date),
+      sql`${entries.createdAt} < ${cursor.createdAt}`,
+    ),
+    and(
+      eq(entries.date, cursor.date),
+      sql`${entries.createdAt} = ${cursor.createdAt}`,
+      sql`${entries.id} < ${cursor.id}`,
+    ),
+  );
+}
+
+function chunkArray<T>(items: T[], chunkSize: number): T[][] {
+  if (items.length === 0) return [];
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize));
+  }
+  return chunks;
 }
 
 export async function getNotebookExport(rawInput: z.infer<typeof inputSchema>) {
@@ -51,60 +86,93 @@ export async function getNotebookExport(rawInput: z.infer<typeof inputSchema>) {
   });
 
   const db = getDb();
-  const entryRows = await db
-    .select({
-      id: entries.id,
-      date: entries.date,
-      type: entries.type,
-      amountHalalas: entries.amountHalalas,
-      note: entries.note,
-      createdAt: entries.createdAt,
-    })
-    .from(entries)
-    .where(
-      and(
-        eq(entries.organizationId, input.organizationId),
-        eq(entries.storeId, input.storeId),
-        gte(entries.date, range.from),
-        lte(entries.date, range.to),
-        eq(entries.status, "active"),
-        inArray(entries.type, ALLOWED_TYPES),
-      ),
-    )
-    .orderBy(desc(entries.date), desc(entries.createdAt))
-    .limit(500);
+  const entryRows: ExportOperationRow[] = [];
+
+  let cursor: { date: string; createdAt: Date; id: string } | null = null;
+  for (let page = 0; page < 10_000; page += 1) {
+    const pageRows: ExportOperationRow[] = await db
+      .select({
+        id: entries.id,
+        date: entries.date,
+        type: entries.type,
+        amountHalalas: entries.amountHalalas,
+        note: entries.note,
+        createdAt: entries.createdAt,
+      })
+      .from(entries)
+      .where(
+        and(
+          eq(entries.organizationId, input.organizationId),
+          eq(entries.storeId, input.storeId),
+          gte(entries.date, range.from),
+          lte(entries.date, range.to),
+          eq(entries.status, "active"),
+          inArray(entries.type, ALLOWED_TYPES),
+          cursor ? cursorBeforeClause(cursor) : undefined,
+        ),
+      )
+      .orderBy(desc(entries.date), desc(entries.createdAt), desc(entries.id))
+      .limit(EXPORT_OPERATIONS_PAGE_SIZE);
+
+    if (pageRows.length === 0) break;
+    entryRows.push(...pageRows);
+
+    if (pageRows.length < EXPORT_OPERATIONS_PAGE_SIZE) break;
+
+    const lastRow = pageRows[pageRows.length - 1];
+    cursor = {
+      date: lastRow.date,
+      createdAt: lastRow.createdAt,
+      id: lastRow.id,
+    };
+  }
 
   const entryIds = entryRows.map((row) => row.id);
-  const channelRows = entryIds.length
-    ? await db
-      .select({
-        entryId: entrySalesChannels.entryId,
-        salesChannelId: entrySalesChannels.salesChannelId,
-        channelNameSnapshot: entrySalesChannels.channelNameSnapshot,
-        amountHalalas: entrySalesChannels.amountHalalas,
-      })
-      .from(entrySalesChannels)
-      .where(
-        and(
-          eq(entrySalesChannels.organizationId, input.organizationId),
-          eq(entrySalesChannels.storeId, input.storeId),
-          inArray(entrySalesChannels.entryId, entryIds),
-        ),
-      )
-    : [];
+  const channelRows: Array<{
+    entryId: string;
+    salesChannelId: string;
+    channelNameSnapshot: string;
+    amountHalalas: number;
+  }> = [];
+  if (entryIds.length > 0) {
+    const entryIdChunks = chunkArray(entryIds, EXPORT_ID_CHUNK_SIZE);
+    for (const entryIdChunk of entryIdChunks) {
+      const rows = await db
+        .select({
+          entryId: entrySalesChannels.entryId,
+          salesChannelId: entrySalesChannels.salesChannelId,
+          channelNameSnapshot: entrySalesChannels.channelNameSnapshot,
+          amountHalalas: entrySalesChannels.amountHalalas,
+        })
+        .from(entrySalesChannels)
+        .where(
+          and(
+            eq(entrySalesChannels.organizationId, input.organizationId),
+            eq(entrySalesChannels.storeId, input.storeId),
+            inArray(entrySalesChannels.entryId, entryIdChunk),
+          ),
+        );
+      channelRows.push(...rows);
+    }
+  }
 
-  const attachmentRows = entryIds.length
-    ? await db
-      .select({ entryId: attachments.entryId })
-      .from(attachments)
-      .where(
-        and(
-          eq(attachments.organizationId, input.organizationId),
-          eq(attachments.storeId, input.storeId),
-          inArray(attachments.entryId, entryIds),
-        ),
-      )
-    : [];
+  const attachmentRows: Array<{ entryId: string }> = [];
+  if (entryIds.length > 0) {
+    const entryIdChunks = chunkArray(entryIds, EXPORT_ID_CHUNK_SIZE);
+    for (const entryIdChunk of entryIdChunks) {
+      const rows = await db
+        .select({ entryId: attachments.entryId })
+        .from(attachments)
+        .where(
+          and(
+            eq(attachments.organizationId, input.organizationId),
+            eq(attachments.storeId, input.storeId),
+            inArray(attachments.entryId, entryIdChunk),
+          ),
+        );
+      attachmentRows.push(...rows);
+    }
+  }
 
   const attachmentEntryIds = new Set(attachmentRows.map((row) => row.entryId));
   const channelTotals = new Map<string, { channelId: string; name: string; amountHalalas: number }>();

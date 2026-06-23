@@ -30,6 +30,7 @@
 
 - Keyset pagination on `(date DESC, created_at DESC, id DESC)`.
 - Default `limit=50`, max `100`.
+- `GET /stores/:storeId/entries` always returns `{ items, nextCursor }` (no bulk array mode).
 - Return slim DTOs — no embedded attachment bytes.
 
 ### Channel reports

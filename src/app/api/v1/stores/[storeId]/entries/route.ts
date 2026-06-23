@@ -35,7 +35,6 @@ export async function GET(request: Request, context: RouteContext) {
     }
 
     const cursor = searchParams.get("cursor") || undefined;
-    const paginated = searchParams.get("paginated") === "1" || Boolean(cursor);
 
     const result = await listStoreEntries({
       organizationId: requestContext.organizationId,
@@ -45,16 +44,10 @@ export async function GET(request: Request, context: RouteContext) {
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
       status: statusRaw,
-      limit: parsedLimit ?? (paginated ? 50 : 500),
+      limit: parsedLimit ?? 50,
       cursor,
-      paginated,
     });
-
-    if (paginated) {
-      return ok(result);
-    }
-
-    return ok(result.items);
+    return ok(result);
   } catch (error) {
     return fail(error);
   }

@@ -28,17 +28,20 @@ describe("store entries api client", () => {
   it("fetches entries and remaps ids to runtime keys", async () => {
     setMapsEnv();
     const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
-      async () => new Response(JSON.stringify([{
-        id: "entry-1",
-        businessId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
-        salesChannels: [
-          {
-            channelId: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
-            name: "Cash",
-            amount: 500,
-          },
-        ],
-      }]), { status: 200 }),
+      async () => new Response(JSON.stringify({
+        items: [{
+          id: "entry-1",
+          businessId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+          salesChannels: [
+            {
+              channelId: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+              name: "Cash",
+              amount: 500,
+            },
+          ],
+        }],
+        nextCursor: null,
+      }), { status: 200 }),
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -64,6 +67,7 @@ describe("store entries api client", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url] = fetchMock.mock.lastCall!;
     expect(String(url)).toContain("/api/v1/stores/302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c/entries");
+    expect(String(url)).toContain("paginated=1");
   });
 
   it("creates entry using mapped store and channel IDs", async () => {
@@ -133,6 +137,73 @@ describe("store entries api client", () => {
     expect(String(url)).toContain("dateFrom=2026-06-01");
   });
 
+  it("aggregates multiple pages and stops when nextCursor is empty", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async (input) => {
+        const url = String(input);
+        if (url.includes("cursor=cursor-1")) {
+          return new Response(JSON.stringify({
+            items: [{
+              id: "entry-2",
+              businessId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+              salesChannels: [],
+            }],
+            nextCursor: null,
+          }), { status: 200 });
+        }
+
+        return new Response(JSON.stringify({
+          items: [{
+            id: "entry-1",
+            businessId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+            salesChannels: [],
+          }],
+          nextCursor: "cursor-1",
+        }), { status: 200 });
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreEntriesViaApi } = await import("./store-entries-api-client");
+    const result = await fetchStoreEntriesViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      storeId: "shami",
+      limit: 100,
+    });
+
+    expect(result.map((entry) => entry.id)).toEqual(["entry-1", "entry-2"]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("throws when pagination does not terminate within safety bound", async () => {
+    setMapsEnv();
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => new Response(JSON.stringify({
+        items: [{
+          id: "entry-loop",
+          businessId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+          salesChannels: [],
+        }],
+        nextCursor: "cursor-loop",
+      }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchStoreEntriesViaApi } = await import("./store-entries-api-client");
+    await expect(fetchStoreEntriesViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "owner",
+      actorRole: "owner",
+      storeId: "shami",
+      limit: 100,
+    })).rejects.toThrow("pagination exceeded safety limit");
+
+    expect(fetchMock).toHaveBeenCalledTimes(500);
+  });
+
   it("throws a diagnostic error when entries context mapping is missing", async () => {
     process.env.NEXT_PUBLIC_CLOSEOUTS_STORE_ID_MAP = "{}";
     process.env.NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP = "{}";
@@ -150,7 +221,7 @@ describe("store entries api client", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("throws when entries payload is invalid instead of returning an empty list", async () => {
+  it("throws when entries page payload is invalid instead of returning an empty list", async () => {
     setMapsEnv();
     const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
       async () => new Response(JSON.stringify({ rows: [] }), { status: 200 }),
@@ -164,6 +235,6 @@ describe("store entries api client", () => {
       actorUserId: "owner",
       actorRole: "owner",
       storeId: "shami",
-    })).rejects.toThrow("entries fetch API returned invalid payload");
+    })).rejects.toThrow("entries page API returned invalid payload");
   });
 });

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ValidationError } from "@/core/errors/app-error";
 import {
   ownerRequest,
   readJsonBody,
@@ -41,7 +42,7 @@ describe("entries route integration", () => {
     expect(listStoreEntries).not.toHaveBeenCalled();
   });
 
-  it("GET returns entry items for non-paginated list", async () => {
+  it("GET returns paginated payload by default", async () => {
     listStoreEntries.mockResolvedValueOnce({
       items: [{ id: "entry-1", type: "summary", status: "active" }],
       nextCursor: null,
@@ -54,13 +55,13 @@ describe("entries route integration", () => {
     );
 
     expect(response.status).toBe(200);
-    const body = await readJsonBody<Array<{ id: string }>>(response);
-    expect(body).toHaveLength(1);
-    expect(body[0].id).toBe("entry-1");
+    const body = await readJsonBody<{ items: Array<{ id: string }>; nextCursor: string | null }>(response);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0].id).toBe("entry-1");
+    expect(body.nextCursor).toBeNull();
     expect(listStoreEntries).toHaveBeenCalledWith(expect.objectContaining({
       status: "active",
-      paginated: false,
-      limit: 500,
+      limit: 50,
     }));
   });
 
@@ -81,8 +82,24 @@ describe("entries route integration", () => {
     expect(body.items).toHaveLength(1);
     expect(body.nextCursor).toBe("cursor-1");
     expect(listStoreEntries).toHaveBeenCalledWith(expect.objectContaining({
-      paginated: true,
       limit: 25,
+    }));
+  });
+
+  it("GET uses max limit=100 policy by rejecting larger limits", async () => {
+    listStoreEntries.mockRejectedValueOnce(
+      new ValidationError("Invalid entries list input."),
+    );
+
+    const { GET } = await import("../stores/[storeId]/entries/route");
+    const response = await GET(
+      ownerRequest(`http://localhost/api/v1/stores/${TEST_STORE_ID}/entries?status=active&limit=500`),
+      routeStoreContext(),
+    );
+
+    expect(response.status).toBe(400);
+    expect(listStoreEntries).toHaveBeenCalledWith(expect.objectContaining({
+      limit: 500,
     }));
   });
 

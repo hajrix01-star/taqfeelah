@@ -366,17 +366,11 @@ Query:
 | `dateFrom` | date |
 | `dateTo` | date |
 | `status` | `active` \| `voided` \| `all` |
-| `limit` | default 500 (bulk) or 50 when paginated |
+| `limit` | default 50, max 100 |
 | `cursor` | opaque (Phase 6) |
-| `paginated` | `1` to return `{ items, nextCursor }` |
+| `paginated` | optional legacy flag; response is always paginated |
 
-Response (bulk — default):
-
-```json
-[ { "id", "type", "date", "amount", "status", "note", ... } ]
-```
-
-Response (paginated — `paginated=1` or `cursor` present):
+Response (always paginated):
 
 ```json
 {
@@ -385,7 +379,7 @@ Response (paginated — `paginated=1` or `cursor` present):
 }
 ```
 
-**Never** return unbounded arrays in paginated mode.
+**Never** return unbounded arrays.
 
 ### `GET /entries` (planned — org-wide register)
 
