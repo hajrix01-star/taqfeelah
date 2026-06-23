@@ -381,4 +381,80 @@ describe("org config runtime sync", () => {
     });
     expect(applied.storeChannelSettings.shami.activeIds).toContain(createdChannelId);
   });
+
+  it("reuses existing catalog api channel instead of creating a duplicate", async () => {
+    const existingCashId = "9bc40d4f-c773-4ba3-87db-b8bb1467dafb";
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({}), { status: 404 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync");
+    const applied = await persistOrgConfigSnapshot({
+      auth: {
+        organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+        actorUserId: "owner",
+        actorRole: "owner",
+      },
+      baseline: {
+        configuredBusinesses: [{
+          id: "shami",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {
+          shami: {
+            channels: [{
+              id: existingCashId,
+              apiChannelId: existingCashId,
+              legacyId: "cash",
+              text: "cash",
+              nameAr: "نقد",
+              nameEn: "Cash",
+            }],
+            activeIds: [existingCashId],
+          },
+        },
+        staff: [],
+      },
+      next: {
+        configuredBusinesses: [{
+          id: "shami",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {
+          shami: {
+            channels: [
+              {
+                id: existingCashId,
+                apiChannelId: existingCashId,
+                legacyId: "cash",
+                text: "cash",
+                nameAr: "نقد",
+                nameEn: "Cash",
+              },
+              {
+                id: "cash",
+                legacyId: "cash",
+                text: "cash",
+                kind: "payment_method",
+                nameAr: "نقد",
+                nameEn: "Cash",
+              },
+            ],
+            activeIds: [existingCashId, "cash"],
+          },
+        },
+        staff: [],
+      },
+    });
+
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      expect.stringContaining("/sales-channels"),
+      expect.objectContaining({ method: "POST" }),
+    );
+
+    const shamiChannels = applied.storeChannelSettings.shami;
+    expect(shamiChannels.activeIds).toEqual([existingCashId]);
+    expect(shamiChannels.channels.filter((channel) => channel.id === existingCashId)).toHaveLength(1);
+  });
 });

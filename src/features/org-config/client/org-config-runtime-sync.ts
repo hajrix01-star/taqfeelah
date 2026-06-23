@@ -37,6 +37,37 @@ function channelApiId(channel: Record<string, unknown>) {
   return "";
 }
 
+function normalizeChannelKey(value: unknown) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function channelLegacyKey(channel: Record<string, unknown>) {
+  const byLegacy = normalizeChannelKey(channel?.legacyId);
+  if (byLegacy) return byLegacy;
+
+  const byText = normalizeChannelKey(channel?.text);
+  if (byText) return byText;
+
+  const byId = normalizeChannelKey(channel?.id);
+  if (byId && !isUuid(byId)) return byId;
+
+  return "";
+}
+
+function channelNameKey(channel: Record<string, unknown>) {
+  return normalizeChannelKey(channel?.nameAr || channel?.nameEn || channel?.name);
+}
+
+function channelsSemanticallyMatch(a: Record<string, unknown>, b: Record<string, unknown>) {
+  const aLegacy = channelLegacyKey(a);
+  const bLegacy = channelLegacyKey(b);
+  if (aLegacy && bLegacy && aLegacy === bLegacy) return true;
+
+  const aName = channelNameKey(a);
+  const bName = channelNameKey(b);
+  return Boolean(aName && bName && aName === bName);
+}
+
 function channelIsActive(channel: Record<string, unknown>, activeIds: string[]) {
   return Array.isArray(activeIds) && activeIds.includes(String(channel.id)) && !channel.retired;
 }
@@ -54,11 +85,19 @@ function remapChannelIdInConfig(
   createdChannel: Record<string, unknown>,
 ): StoreChannelConfig {
   const mappedChannel = mapApiChannelToUi(createdChannel);
+  const nextChannels = config.channels.map((channel) => (
+    channel.id === oldId ? { ...channel, ...mappedChannel } : channel
+  ));
+  const dedupedChannels = Array.from(new Map(
+    nextChannels.map((channel) => [String(channel.id || ""), channel]),
+  ).values());
+  const dedupedActiveIds = Array.from(new Set(
+    config.activeIds.map((id) => (id === oldId ? String(mappedChannel.id || "") : id)).filter(Boolean),
+  ));
+
   return {
-    channels: config.channels.map((channel) => (
-      channel.id === oldId ? { ...channel, ...mappedChannel } : channel
-    )),
-    activeIds: config.activeIds.map((id) => (id === oldId ? String(mappedChannel.id || "") : id)),
+    channels: dedupedChannels,
+    activeIds: dedupedActiveIds,
   };
 }
 
@@ -179,6 +218,16 @@ export async function persistOrgConfigSnapshot({
     for (const afterChannel of afterConfig.channels || []) {
       const apiId = channelApiId(afterChannel);
       if (apiId) continue;
+
+      const matchedExisting = (beforeConfig.channels || []).find((beforeChannel) => (
+        Boolean(channelApiId(beforeChannel))
+        && channelsSemanticallyMatch(beforeChannel, afterChannel)
+      ));
+      if (matchedExisting) {
+        afterConfig = remapChannelIdInConfig(afterConfig, String(afterChannel.id), matchedExisting);
+        remappedStoreChannelSettings[storeId] = afterConfig;
+        continue;
+      }
 
       const name = resolveChannelPersistName(afterChannel, "ar");
       if (!name) continue;

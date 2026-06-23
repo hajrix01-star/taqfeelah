@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
@@ -53,6 +53,25 @@ export async function updateStoreSalesChannel(rawInput: z.infer<typeof inputSche
 
     if (!existing) {
       throw new ValidationError("Sales channel was not found for this store.");
+    }
+
+    if (input.status === "retired" && existing.status !== "retired") {
+      const [activeCounter] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(salesChannels)
+        .where(
+          and(
+            eq(salesChannels.organizationId, input.organizationId),
+            eq(salesChannels.storeId, input.storeId),
+            eq(salesChannels.status, "active"),
+            ne(salesChannels.id, existing.id),
+          ),
+        )
+        .limit(1);
+
+      if ((activeCounter?.count || 0) < 1) {
+        throw new ValidationError("At least one active sales channel is required per store.");
+      }
     }
 
     const [updated] = await tx
