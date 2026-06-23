@@ -457,4 +457,52 @@ describe("org config runtime sync", () => {
     expect(shamiChannels.activeIds).toEqual([existingCashId]);
     expect(shamiChannels.channels.filter((channel) => channel.id === existingCashId)).toHaveLength(1);
   });
+
+  it("deletes removed stores through store delete api", async () => {
+    const fetchMock = vi.fn(async (url, init) => {
+      if (String(url).includes("/api/v1/stores/302cf87a") && init?.method === "DELETE") {
+        return new Response(JSON.stringify({
+          id: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+          deleted: true,
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync");
+    await persistOrgConfigSnapshot({
+      auth: {
+        organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+        actorUserId: "owner",
+        actorRole: "owner",
+      },
+      baseline: {
+        configuredBusinesses: [{
+          id: "shami",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+          displayName: "Shami",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {
+          shami: { channels: [], activeIds: [] },
+        },
+        staff: [],
+      },
+      next: {
+        configuredBusinesses: [],
+        archivedBusinessIds: [],
+        storeChannelSettings: {},
+        staff: [],
+      },
+    });
+
+    const deleteCall = fetchMock.mock.calls.find(([url, init]) => (
+      String(url).includes("/api/v1/stores/302cf87a") && init?.method === "DELETE"
+    ));
+    expect(deleteCall).toBeTruthy();
+    expect(JSON.parse(String(deleteCall?.[1]?.body))).toMatchObject({
+      reason: "owner_deleted_store",
+    });
+  });
 });

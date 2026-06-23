@@ -1,5 +1,5 @@
 import { CreditCard } from "lucide-react";
-import { createOrganizationStoreViaApi } from "@/features/org-config/client/org-config-api-client";
+import { createOrganizationStoreViaApi, deleteOrganizationStoreViaApi } from "@/features/org-config/client/org-config-api-client";
 import {
   buildOwnerProfileUpdate,
   validateOwnerAuthCredentials,
@@ -309,7 +309,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
   );
 
   const openStoreDelete = (business: HandlerAny) => {
-    const hasRecords = storeHasRecords(business);
+    const hasRecords = orgConfigApiExpected ? false : storeHasRecords(business);
     setters.setDeleteTarget(buildRemoveStoreDeleteTarget(business, {
       hasRecords,
       affectedStaff: hasRecords ? staffWithoutActiveStoreAfterArchive(business.id) : [],
@@ -506,7 +506,31 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     setters.setNewEmployeeStoreIds((current: HandlerAny) => toggleStoreSelection(current, storeId));
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
+    if (
+      deleteTarget?.type === "store"
+      && orgConfigApiExpected
+      && orgConfigApiContext?.enabled
+      && typeof deleteTarget?.item?.id === "string"
+    ) {
+      try {
+        await deleteOrganizationStoreViaApi({
+          organizationId: String(orgConfigApiContext.organizationId || ""),
+          actorUserId: String(orgConfigApiContext.actorUserId || ""),
+          actorRole: String(orgConfigApiContext.actorRole || "owner"),
+          storeId: String(deleteTarget.item.id),
+          reason: "owner_deleted_store",
+        });
+      } catch (failure) {
+        setters.setSettingsNotice(
+          failure instanceof Error
+            ? failure.message
+            : (lang === "ar" ? "تعذر حذف المحل." : "Could not delete store."),
+        );
+        return;
+      }
+    }
+
     applyOwnerSettingsDeleteTarget({
       deleteTarget,
       selectedBusiness,

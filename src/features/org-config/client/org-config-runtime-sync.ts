@@ -4,6 +4,7 @@ import {
   createOrganizationMemberViaApi,
   createOrganizationStoreViaApi,
   createStoreSalesChannelViaApi,
+  deleteOrganizationStoreViaApi,
   updateOrganizationMemberViaApi,
   updateOrganizationStoreViaApi,
   updateStoreOperationalSettingsViaApi,
@@ -203,6 +204,21 @@ export async function persistOrgConfigSnapshot({
       );
     }
   });
+
+  const nextBusinessIds = new Set(remappedBusinesses.map((business) => String(business.id || "")));
+  for (const baselineBusiness of baseline.configuredBusinesses || []) {
+    const baselineId = String(baselineBusiness.id || "");
+    if (!baselineId || nextBusinessIds.has(baselineId)) continue;
+
+    const storeUuid = resolveStoreUuid(baselineBusiness);
+    if (!storeUuid) continue;
+
+    await deleteOrganizationStoreViaApi({
+      ...authArgs,
+      storeId: storeUuid,
+      reason: "owner_deleted_store",
+    });
+  }
 
   const baselineChannels = baseline.storeChannelSettings || {};
   const storeIds = new Set([

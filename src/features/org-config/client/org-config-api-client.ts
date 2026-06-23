@@ -206,6 +206,34 @@ export async function updateOrganizationStoreViaApi({
   };
 }
 
+export async function deleteOrganizationStoreViaApi({
+  organizationId,
+  actorUserId,
+  actorRole,
+  storeId,
+  reason,
+}: OrgConfigApiAuth & {
+  storeId: string;
+  reason?: string;
+}) {
+  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  if (!context) throw new Error("store delete api failed: missing store mapping");
+
+  const body: Record<string, unknown> = {};
+  if (typeof reason === "string" && reason.trim()) body.reason = reason.trim();
+
+  const payload = asApiPayload(await fetchApiJsonWithPrototypeContext(`/api/v1/stores/${context.storeId}`, {
+    organizationId,
+    actorUserId,
+    actorRole,
+    method: "DELETE",
+    body,
+    errorMessage: "store delete api failed",
+    errorStyle: "status",
+  }));
+  return payload.store || payload;
+}
+
 export async function createStoreSalesChannelViaApi({
   organizationId,
   actorUserId,
