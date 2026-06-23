@@ -283,9 +283,11 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
   const restoreSalesChannel = (channel: HandlerAny) => updateChannelDraft((config: HandlerAny) => restoreRetiredSalesChannel(config, channel));
 
   const addCustomIncomeSource = () => {
+    const creatorName = String(ownerProfile?.name || "").trim();
     const result = addCustomSalesChannel(channelConfig, newCustomIncomeSourceName, {
       icon: CreditCard,
       kind: "payment_method",
+      createdByName: creatorName || undefined,
     });
     if (!result.added) return;
     setters.setDraftStoreChannelConfig(result.config);

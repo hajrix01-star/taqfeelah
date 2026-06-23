@@ -55,18 +55,16 @@ function channelLegacyKey(channel: Record<string, unknown>) {
   return "";
 }
 
-function channelNameKey(channel: Record<string, unknown>) {
-  return normalizeChannelKey(channel?.nameAr || channel?.nameEn || channel?.name);
-}
-
 function channelsSemanticallyMatch(a: Record<string, unknown>, b: Record<string, unknown>) {
+  const aApiId = channelApiId(a);
+  const bApiId = channelApiId(b);
+  if (aApiId && bApiId && aApiId === bApiId) return true;
+
   const aLegacy = channelLegacyKey(a);
   const bLegacy = channelLegacyKey(b);
   if (aLegacy && bLegacy && aLegacy === bLegacy) return true;
 
-  const aName = channelNameKey(a);
-  const bName = channelNameKey(b);
-  return Boolean(aName && bName && aName === bName);
+  return false;
 }
 
 function channelIsActive(channel: Record<string, unknown>, activeIds: string[]) {

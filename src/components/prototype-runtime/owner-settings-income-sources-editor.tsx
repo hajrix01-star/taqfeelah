@@ -16,6 +16,16 @@ export function OwnerSettingsIncomeSourcesEditor({
   channelName,
 }: OwnerSettingsIncomeSourcesEditorProps) {
   const rows = listUnifiedIncomeSourceRows(channelConfig);
+  const resolveCreatorHint = (channel: Record<string, unknown>, isCatalog: boolean) => {
+    if (isCatalog) return "";
+    const createdByName = typeof channel.createdByName === "string"
+      ? channel.createdByName.trim()
+      : "";
+    if (createdByName) {
+      return lang === "ar" ? `بواسطة ${createdByName}` : `By ${createdByName}`;
+    }
+    return lang === "ar" ? "بواسطة العميل" : "By customer";
+  };
 
   return (
     <>
@@ -25,7 +35,9 @@ export function OwnerSettingsIncomeSourcesEditor({
             {lang === "ar" ? "لا توجد بنود." : "No items."}
           </p>
         ) : (
-          rows.map((row, index) => (
+          rows.map((row, index) => {
+            const creatorHint = resolveCreatorHint(row.channel, row.isCatalog);
+            return (
             <div
               key={row.rowId}
               className={`flex items-center justify-between gap-3 bg-white px-4 py-4 ${index < rows.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}
@@ -35,6 +47,11 @@ export function OwnerSettingsIncomeSourcesEditor({
                 <p className="mt-1 text-taq-meta font-bold text-[#827762]">
                   {row.isActive ? text(lang, "active") : text(lang, "stopChannel")}
                 </p>
+                {creatorHint ? (
+                  <p className="mt-1 text-[11px] font-semibold text-[#A79D8E]">
+                    {creatorHint}
+                  </p>
+                ) : null}
               </div>
               <div className="flex items-center gap-2">
                 <SettingToggle
@@ -43,7 +60,8 @@ export function OwnerSettingsIncomeSourcesEditor({
                 />
               </div>
             </div>
-          ))
+            );
+          })
         )}
 
         <div className="border-t border-[#F0ECE2] bg-white px-4 py-4">
