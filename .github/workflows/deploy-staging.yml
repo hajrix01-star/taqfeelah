@@ -459,3 +459,17 @@ jobs:
           AUTH_PUBLIC_SIGNUP_ENABLED: "false"
           NEXT_PUBLIC_PUBLIC_SIGNUP_ENABLED: "false"
         run: node scripts/prelaunch-live-gate.mjs
+
+      - name: Dump staging logs after P0 live gate failure
+        if: failure()
+        run: |
+          set -euo pipefail
+          ssh_args=(-p "$VPS_PORT_EFFECTIVE" -o ConnectTimeout=20)
+          if [ "$AUTH_MODE" = "key" ]; then
+            ssh_cmd=(ssh "${ssh_args[@]}" -o BatchMode=yes -i "$HOME/.ssh/id_vps")
+          else
+            export SSHPASS="$VPS_PASS"
+            ssh_cmd=(sshpass -e ssh "${ssh_args[@]}")
+          fi
+          "${ssh_cmd[@]}" "$VPS_USER@$VPS_HOST" \
+            "journalctl -u taqfeelah-staging.service --no-pager -n 140 || true"
