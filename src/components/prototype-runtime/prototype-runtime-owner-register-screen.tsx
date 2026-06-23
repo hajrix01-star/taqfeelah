@@ -59,6 +59,9 @@ import { OwnerRegisterOperationsList } from "./owner-register-operations-list";
 import { OwnerRegisterAttachmentsGallery } from "./owner-register-attachments-gallery";
 import { RegisterStoreChips } from "./owner-register-store-filter";
 import { RegisterDashboardCard, OwnerRegisterReportGranularityToggle } from "./owner-register-ui-primitives";
+import {
+  buildRegisterAutoLoadContextKey,
+} from "./register-auto-load-guards";
 import type { OwnerRegisterScreenProps, PrototypeAttachmentPreviewState, PrototypeChannel } from "./prototype-runtime-types";
 
 export function OwnerRegisterScreen({
@@ -210,6 +213,21 @@ export function OwnerRegisterScreen({
     : "Failed to load closeouts from the server. No local fallback data is shown.";
   const registerLoadMoreRef = useRef(null);
   const attachmentsLoadMoreRef = useRef(null);
+  const closeoutsAutoLoadKeyRef = useRef("");
+  const closeoutsAutoLoadRequestedRef = useRef(false);
+  const closeoutsAutoLoadCompletedRef = useRef(false);
+  const attachmentsAutoLoadKeyRef = useRef("");
+  const attachmentsAutoLoadRequestedRef = useRef(false);
+  const attachmentsAutoLoadCompletedRef = useRef(false);
+  const registerAutoLoadContextKey = useMemo(() => buildRegisterAutoLoadContextKey({
+    safeBusinessId,
+    period,
+    selectedDate,
+    selectedMonth,
+    selectedYear,
+    customFrom,
+    customTo,
+  }), [customFrom, customTo, period, safeBusinessId, selectedDate, selectedMonth, selectedYear]);
   useEffect(() => {
     if (!registerEntriesApiEnabled || logView !== "operations" || !apiRegisterEntriesHasMore) return undefined;
     const target = registerLoadMoreRef.current;
@@ -236,11 +254,22 @@ export function OwnerRegisterScreen({
   }, [apiRegisterEntriesHasMore, loadMoreRegisterEntries, logView, periodEntries.length, registerEntriesApiEnabled]);
   useEffect(() => {
     if (!registerEntriesApiEnabled || logView !== "closeouts") return undefined;
-    void refetchRegisterEntries();
+    if (closeoutsAutoLoadKeyRef.current !== registerAutoLoadContextKey) {
+      closeoutsAutoLoadKeyRef.current = registerAutoLoadContextKey;
+      closeoutsAutoLoadRequestedRef.current = false;
+      closeoutsAutoLoadCompletedRef.current = false;
+    }
+    if (closeoutsAutoLoadCompletedRef.current) return undefined;
+    if (!closeoutsAutoLoadRequestedRef.current) {
+      closeoutsAutoLoadRequestedRef.current = true;
+      void refetchRegisterEntries();
+      return undefined;
+    }
     if (!apiRegisterEntriesHasMore) return undefined;
+    closeoutsAutoLoadCompletedRef.current = true;
     loadAllRegisterEntries();
     return undefined;
-  }, [apiRegisterEntriesHasMore, loadAllRegisterEntries, logView, refetchRegisterEntries, registerEntriesApiEnabled, safeBusinessId, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo]);
+  }, [apiRegisterEntriesHasMore, loadAllRegisterEntries, logView, refetchRegisterEntries, registerAutoLoadContextKey, registerEntriesApiEnabled]);
   const actorOptions = useMemo(() => {
     const seen = new Set();
     const options = [{ id: "all", label: lang === "ar" ? "الكل" : "All" }];
@@ -283,7 +312,19 @@ export function OwnerRegisterScreen({
     : (lang === "ar" ? "لا توجد مرفقات خارج مطابقة للتصفية." : "No matching outflow attachments.");
   useEffect(() => {
     if (!registerEntriesApiEnabled || logView !== "attachments" || !apiRegisterEntriesHasMore) return undefined;
+    if (attachmentsAutoLoadKeyRef.current !== registerAutoLoadContextKey) {
+      attachmentsAutoLoadKeyRef.current = registerAutoLoadContextKey;
+      attachmentsAutoLoadRequestedRef.current = false;
+      attachmentsAutoLoadCompletedRef.current = false;
+    }
+    if (attachmentsAutoLoadCompletedRef.current) return undefined;
+    if (!attachmentsAutoLoadRequestedRef.current) {
+      attachmentsAutoLoadRequestedRef.current = true;
+      loadMoreRegisterEntries();
+      return undefined;
+    }
     if (attachmentGallery.count > 0) return undefined;
+    attachmentsAutoLoadCompletedRef.current = true;
     loadMoreRegisterEntries();
     return undefined;
   }, [
@@ -291,6 +332,7 @@ export function OwnerRegisterScreen({
     attachmentGallery.count,
     loadMoreRegisterEntries,
     logView,
+    registerAutoLoadContextKey,
     periodEntries.length,
     registerEntriesApiEnabled,
   ]);
