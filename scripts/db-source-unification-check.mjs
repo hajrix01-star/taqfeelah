@@ -251,7 +251,7 @@ async function getOutflowReport(from, to) {
 }
 
 async function getRegisterEntries(date) {
-  return callJson(`${baseUrl}/api/v1/stores/${storeId}/entries?status=active&limit=500&dateFrom=${date}&dateTo=${date}`, {
+  return callJson(`${baseUrl}/api/v1/stores/${storeId}/entries?status=active&limit=100&dateFrom=${date}&dateTo=${date}`, {
     method: "GET",
     headers: requestHeaders("owner", ownerUserId),
   });
@@ -452,7 +452,7 @@ async function main() {
   assert(standaloneResponse.status === 400, `expected 400 for standalone entry, got ${standaloneResponse.status}`);
 
   console.log("14) Active entries list excludes orphan rows without closeoutId...");
-  const activeEntries = await callJson(`${baseUrl}/api/v1/stores/${storeId}/entries?status=active&limit=500`, {
+  const activeEntries = await callJson(`${baseUrl}/api/v1/stores/${storeId}/entries?status=active&limit=100`, {
     method: "GET",
     headers: requestHeaders("owner", ownerUserId),
   });
