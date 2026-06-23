@@ -51,7 +51,7 @@ import {
   resolveEmployeeLimitMessage,
   resolveStoreLimitMessage,
 } from "@/features/billing/client/entitlement-guards";
-import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
+import { resolveRuntimeCapabilities } from "@/core/config/runtime-capabilities";
 import { isFlattenedStoreSettingsEnabled } from "@/core/config/owner-settings-store-layout-mode";
 import { emptyStoreRecord, text } from "./prototype-runtime-demo-data";
 import { APP_IN_PRODUCTION_MODE, PROTOTYPE_EMPLOYEE_PIN_DEFAULT } from "./prototype-runtime-boot";
@@ -61,6 +61,9 @@ import type { OwnerSettingsScreenHandlersContext } from "./prototype-runtime-typ
 type HandlerAny = any;
 
 export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandlersContext) {
+  const runtimeCapabilities = resolveRuntimeCapabilities();
+  const orgConfigApiExpected = runtimeCapabilities.orgConfigApiEnabled;
+
   const {
     lang,
     settingsStoreId,
@@ -214,6 +217,11 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
   const saveChannelSettings = async () => {
     if (!settingsStoreId || !draftStoreChannelConfig) return;
 
+    if (orgConfigApiExpected && (!orgConfigApiContext?.enabled || !orgConfigApiContext.hydrated || typeof orgConfigApiContext.flushPersist !== "function")) {
+      setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
+      return;
+    }
+
     let nextStoreChannelSettings = null;
     setters.setStoreChannelSettings((current: HandlerAny) => {
       nextStoreChannelSettings = applyPersistedStoreChannelSettings(
@@ -224,11 +232,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       return nextStoreChannelSettings;
     });
 
-    if (
-      orgConfigApiContext?.enabled
-      && orgConfigApiContext.hydrated
-      && typeof orgConfigApiContext.flushPersist === "function"
-    ) {
+    if (orgConfigApiExpected) {
       try {
         setters.setSettingsNotice("");
         await orgConfigApiContext.flushPersist({
@@ -322,7 +326,12 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     const location = newStoreLocation.trim();
     if (!name) return;
 
-    if (isOrgConfigApiEnabled() && orgConfigApiContext?.enabled) {
+    if (orgConfigApiExpected && !orgConfigApiContext?.enabled) {
+      setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
+      return;
+    }
+
+    if (orgConfigApiExpected && orgConfigApiContext?.enabled) {
       if (!orgConfigApiContext.hydrated || orgConfigApiContext.loading) {
         setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
         return;
@@ -387,10 +396,15 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       draftAuthEmployeePins,
       authEmployeePins,
       defaultPin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT || "1234",
-      pinsFromAuthIdentitiesOnly: isOrgConfigApiEnabled(),
+      pinsFromAuthIdentitiesOnly: orgConfigApiExpected,
     });
 
-    if (isOrgConfigApiEnabled() && typeof orgConfigApiContext?.flushPersist === "function") {
+    if (orgConfigApiExpected && typeof orgConfigApiContext?.flushPersist !== "function") {
+      setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
+      return;
+    }
+
+    if (orgConfigApiExpected && typeof orgConfigApiContext?.flushPersist === "function") {
       if (!orgConfigApiContext.hydrated || orgConfigApiContext.loading) {
         setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
         return;
@@ -434,7 +448,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
           authOwnerUsername,
           authOwnerPassword,
           authEmployeePins: nextPins,
-          omitStaff: isOrgConfigApiEnabled(),
+          omitStaff: orgConfigApiExpected,
         }));
         showSettingsSaved();
       } catch (failure) {

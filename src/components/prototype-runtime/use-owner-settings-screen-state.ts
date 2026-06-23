@@ -27,8 +27,7 @@ import {
 import { createOwnerSettingsScreenHandlers } from "./owner-settings-screen-action-handlers";
 import { useOrganizationEntitlements } from "@/features/billing/client/use-organization-entitlements";
 import { useOwnerAccountSummary } from "@/features/owner-account/client/use-owner-account-summary";
-import { bindsToServerAuth } from "@/core/config/runtime-capabilities";
-import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
+import { bindsToServerAuth, resolveRuntimeCapabilities } from "@/core/config/runtime-capabilities";
 import type { UseOwnerSettingsScreenStateProps } from "./prototype-runtime-types";
 import type { StoreChannelConfig } from "@/features/org-config/client/org-config-client-types";
 import type { StoreOperationalSettings } from "@/domain/store-operational-settings/types";
@@ -70,10 +69,11 @@ export function useOwnerSettingsScreenState({
   orgConfigApiContext = null,
   initialSettingsSection = "home",
 }: UseOwnerSettingsScreenStateProps) {
+  const runtimeCapabilities = resolveRuntimeCapabilities();
   const billingEnabled = Boolean(
     billingApiContext?.organizationId
     && billingApiContext?.actorUserId
-    && (bindsToServerAuth() || isOrgConfigApiEnabled()),
+    && (bindsToServerAuth() || runtimeCapabilities.orgConfigApiEnabled),
   );
   const {
     entitlements,
