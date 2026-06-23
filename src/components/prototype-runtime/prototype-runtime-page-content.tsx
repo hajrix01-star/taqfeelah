@@ -348,7 +348,7 @@ export function PrototypeRuntimePageContent({
                 loading: orgConfigLoading,
                 hydrated: orgConfigHydrated,
                 reload: () => { void reloadOrgConfig(); },
-                flushPersist: () => { void flushOrgConfigPersist(); },
+                flushPersist: (overrides, options) => flushOrgConfigPersist(overrides, options),
               }
               : null
           }
