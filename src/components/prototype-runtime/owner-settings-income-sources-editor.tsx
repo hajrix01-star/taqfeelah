@@ -18,6 +18,10 @@ export function OwnerSettingsIncomeSourcesEditor({
   const rows = listUnifiedIncomeSourceRows(channelConfig);
   const resolveCreatorHint = (channel: Record<string, unknown>, isCatalog: boolean) => {
     if (isCatalog) return "";
+    const createdByLabel = typeof channel.createdByLabel === "string"
+      ? channel.createdByLabel.trim()
+      : "";
+    if (!createdByLabel) return "";
     const createdByName = typeof channel.createdByName === "string"
       ? channel.createdByName.trim()
       : "";

@@ -143,6 +143,26 @@ describe("org config runtime mapper", () => {
     expect(channel.nameEn).toBe("Talabat");
   });
 
+  it("maps Arabic built-in channel names to catalog legacy ids", () => {
+    const jahez = mapApiChannelToUi({
+      id: "aaaaaaaa-bbbb-4ccc-8ddd-111111111111",
+      name: "جاهز",
+      kind: "sales_channel",
+      status: "active",
+    });
+    expect(jahez.custom).not.toBe(true);
+    expect(jahez.legacyId).toBe("jahez");
+
+    const mada = mapApiChannelToUi({
+      id: "aaaaaaaa-bbbb-4ccc-8ddd-222222222222",
+      name: "مدى",
+      kind: "payment_method",
+      status: "active",
+    });
+    expect(mada.custom).not.toBe(true);
+    expect(mada.legacyId).toBe("mada");
+  });
+
   it("maps production sales channel API rows with RFC4122 UUID ids", () => {
     const productionChannels = [
       { id: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d", legacyId: "apple", name: "Apple Pay", status: "active" },

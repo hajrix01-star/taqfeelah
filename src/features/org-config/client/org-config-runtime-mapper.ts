@@ -37,13 +37,19 @@ const CHANNEL_NAME_TO_LEGACY: Record<string, string> = {
   نقد: "cash",
   بطاقة: "card",
   mada: "mada",
+  مدى: "mada",
   "apple pay": "apple",
+  "applepay": "apple",
   jahez: "jahez",
+  جاهز: "jahez",
   hungerstation: "hunger",
+  hunger: "hunger",
+  هنقرستيشن: "hunger",
   keeta: "keeta",
   كيتا: "keeta",
   card: "card",
   online: "online",
+  أونلاين: "online",
 };
 
 function normalizeChannelName(name: unknown) {
