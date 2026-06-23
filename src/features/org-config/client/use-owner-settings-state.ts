@@ -279,6 +279,8 @@ export function useOwnerSettingsState({
     onHydrate: applyRuntimeSettingsSnapshot as () => void,
   });
 
+  const runtimeSettingsApiEnabled = usesRuntimeSettingsApi();
+
   const resolveStoreSalesChannels = useCallback((storeId: string) => {
     const channelConfig = resolveStoreChannelConfig(storeChannelSettings, storeId, defaultStoreChannelConfig);
     return channelConfig.channels
@@ -312,11 +314,20 @@ export function useOwnerSettingsState({
   useEffect(() => {
     if (
       bindsToServerAuth
+      || orgConfigApiEnabled
+      || closeoutsApiDbSource
+      || runtimeSettingsApiEnabled
       || typeof window === "undefined"
       || !isBrowserPersistentStorageAllowed({ scope: "operational-fallback" })
     ) return;
     window.localStorage.setItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(lastCloseoutDates));
-  }, [bindsToServerAuth, lastCloseoutDates]);
+  }, [
+    bindsToServerAuth,
+    closeoutsApiDbSource,
+    lastCloseoutDates,
+    orgConfigApiEnabled,
+    runtimeSettingsApiEnabled,
+  ]);
 
   return {
     configuredBusinesses,
