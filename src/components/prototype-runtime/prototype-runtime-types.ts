@@ -337,6 +337,7 @@ export type OwnerSettingsApiContext = {
   organizationId?: string;
   actorUserId?: string;
   actorRole?: string;
+  error?: string;
   loading?: boolean;
   hydrated?: boolean;
   reload?: () => void | Promise<void>;

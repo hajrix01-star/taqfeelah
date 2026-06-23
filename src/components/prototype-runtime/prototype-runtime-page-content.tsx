@@ -339,14 +339,19 @@ export function PrototypeRuntimePageContent({
               : null
           }
           orgConfigApiContext={
-            closeoutsApiOrganizationId && ownerApiUserId && resolveRuntimeCapabilities().orgConfigApiEnabled
+            resolveRuntimeCapabilities().orgConfigApiEnabled
               ? {
-                enabled: true,
-                organizationId: closeoutsApiOrganizationId,
-                actorUserId: ownerApiUserId,
+                enabled: Boolean(closeoutsApiOrganizationId && ownerApiUserId),
+                organizationId: closeoutsApiOrganizationId ?? "",
+                actorUserId: ownerApiUserId ?? "",
                 actorRole: "owner",
                 loading: orgConfigLoading,
                 hydrated: orgConfigHydrated,
+                error: !closeoutsApiOrganizationId || !ownerApiUserId
+                  ? (lang === "ar"
+                    ? "تعذر تهيئة إعدادات المؤسسة: بيانات المصادقة غير مكتملة."
+                    : "Failed to initialize organization settings: missing auth identifiers.")
+                  : undefined,
                 reload: () => { void reloadOrgConfig(); },
                 flushPersist: (overrides, options) => flushOrgConfigPersist(overrides, options),
               }

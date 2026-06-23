@@ -225,8 +225,31 @@ function RegisterPeriodSummary({
 }: {
   lang: DisplayLang;
   periodLabel: string;
-  summary: Record<string, unknown> & { mode?: string; net?: number; label?: string; amount?: number; sales?: number; expense?: number };
+  summary: Record<string, unknown> & {
+    mode?: string;
+    net?: number;
+    label?: string;
+    amount?: number;
+    sales?: number;
+    expense?: number;
+    loading?: boolean;
+    loadError?: boolean;
+    loadErrorMessage?: string;
+  };
 }) {
+  if (summary.mode === "status") {
+    const statusMessage = summary.loadError
+      ? String(summary.loadErrorMessage ?? "")
+      : text(lang, "loading");
+    const statusToneClass = summary.loadError ? "text-[#B44747]" : "text-[#806528]";
+    return (
+      <div className="rounded-2xl bg-gradient-to-b from-white to-[#FDFBF7] px-4 py-5 ring-1 ring-[#ECE6DA]/90">
+        <p className="text-center text-[10px] font-bold text-[#A99D87]">{periodLabel}</p>
+        <p className={`mt-3 text-center text-[11px] font-bold ${statusToneClass}`}>{statusMessage}</p>
+      </div>
+    );
+  }
+
   const netPositive = summary.mode !== "channel" && Number(summary.net) >= 0;
 
   if (summary.mode === "channel") {

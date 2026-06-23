@@ -1,7 +1,6 @@
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 import { isCloseoutsApiDbSourceMode } from "@/core/config/closeouts-api-mode";
-import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
-import { bindsToServerAuth, usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
+import { bindsToServerAuth, resolveRuntimeCapabilities, usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
 import { isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
 import { isUuid } from "@/core/client/api-id-utils";
 import type {
@@ -29,7 +28,7 @@ export function resolveOwnerSettingsApiAuth({
   }
   const usesDbApis = isEntriesApiDbSourceMode()
     || isCloseoutsApiDbSourceMode()
-    || isOrgConfigApiEnabled();
+    || resolveRuntimeCapabilities().orgConfigApiEnabled;
   if (!usesDbApis) return {};
   const envOrg = process.env.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID || "";
   const envOwner = process.env.NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID || "";

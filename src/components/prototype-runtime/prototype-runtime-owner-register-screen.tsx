@@ -434,11 +434,7 @@ export function OwnerRegisterScreen({
       expense: apiGeneralReportTotalsSource.expense ?? 0,
       net: apiGeneralReportTotalsSource.net ?? 0,
     }
-    : strictGeneralReportSource ? {
-      sales: 0,
-      expense: 0,
-      net: 0,
-    } : {
+    : {
       sales: localGeneralReportTotals.sales ?? 0,
       expense: localGeneralReportTotals.expense ?? 0,
       net: localGeneralReportTotals.net ?? 0,
@@ -454,9 +450,22 @@ export function OwnerRegisterScreen({
   );
   const generalReportLoadError = Boolean(generalReportApiEnabled && generalReportApiLoaded && generalReportApiError);
   const generalReportLoadErrorMessage = lang === "ar"
-    ? "تعذر تحميل تقرير الأيام من الخادم. تم عرض البيانات المحلية المتاحة."
-    : "Failed to load the days report from the server. Showing available local data.";
-  const dashboardSummary = logView === "report" || ENTRIES_API_DB_SOURCE ? generalReportDashboardSummary : registerPeriodSummary;
+    ? "تعذر تحميل تقرير الأيام من الخادم."
+    : "Failed to load the days report from the server.";
+  const strictGeneralReportStatusSummary = useMemo(
+    () => ({
+      mode: "status",
+      loading: generalReportApiLoading,
+      loadError: generalReportLoadError,
+      loadErrorMessage: generalReportLoadErrorMessage,
+    }),
+    [generalReportApiLoading, generalReportLoadError, generalReportLoadErrorMessage],
+  );
+  const dashboardSummary = logView === "report" || ENTRIES_API_DB_SOURCE
+    ? (strictGeneralReportSource && (generalReportApiLoading || generalReportLoadError)
+      ? strictGeneralReportStatusSummary
+      : generalReportDashboardSummary)
+    : registerPeriodSummary;
   const dashboardShowFilters = logView !== "report";
   const openRegisterExport = () => onShareRegister({
     screen: "register",
