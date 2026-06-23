@@ -464,12 +464,37 @@ jobs:
         if: failure()
         run: |
           set -euo pipefail
-          ssh_args=(-p "$VPS_PORT_EFFECTIVE" -o ConnectTimeout=20)
-          if [ "$AUTH_MODE" = "key" ]; then
+          port="${VPS_PORT_EFFECTIVE:-${VPS_PORT:-22}}"
+          auth_mode="${AUTH_MODE:-}"
+
+          if [ -z "$auth_mode" ]; then
+            if [ -n "${VPS_SSH_PRIVATE_KEY:-}" ]; then
+              mkdir -p "$HOME/.ssh"
+              chmod 700 "$HOME/.ssh"
+              printf '%s\n' "$VPS_SSH_PRIVATE_KEY" > "$HOME/.ssh/id_vps"
+              chmod 600 "$HOME/.ssh/id_vps"
+              auth_mode='key'
+            elif [ -n "${VPS_PASS:-}" ]; then
+              command -v sshpass >/dev/null || {
+                sudo apt-get update -qq
+                sudo apt-get install -y -qq sshpass
+              }
+              auth_mode='password'
+            else
+              echo 'Skipping staging log dump: no SSH credentials available.'
+              exit 0
+            fi
+          fi
+
+          ssh_args=(-p "$port" -o ConnectTimeout=20)
+          if [ "$auth_mode" = "key" ]; then
             ssh_cmd=(ssh "${ssh_args[@]}" -o BatchMode=yes -i "$HOME/.ssh/id_vps")
           else
             export SSHPASS="$VPS_PASS"
             ssh_cmd=(sshpass -e ssh "${ssh_args[@]}")
           fi
-          "${ssh_cmd[@]}" "$VPS_USER@$VPS_HOST" \
-            "journalctl -u taqfeelah-staging.service --no-pager -n 140 || true"
+
+          if ! "${ssh_cmd[@]}" "$VPS_USER@$VPS_HOST" \
+            "journalctl -u taqfeelah-staging.service --no-pager -n 140 || true"; then
+            echo 'Staging log dump skipped: SSH unreachable.'
+          fi
