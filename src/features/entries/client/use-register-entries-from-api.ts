@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { resolveReportDateRange } from "@/features/reports/client/report-period-range";
 import {
+  fetchAllRegisterEntriesPages,
   cursorsMapFromRecord,
   fetchRegisterEntriesPageBundle,
 } from "./fetch-register-entries-page-bundle";
@@ -150,14 +151,50 @@ export function useRegisterEntriesFromApi({
     storeIdList,
   ]);
 
-  const loadAllRemaining = useCallback(async (): Promise<void> => {
-    if (!queryEnabled || loading || !hasMore) return;
+  const loadAllRemainingStrict = useCallback(async (): Promise<RegisterEntriesPageState> => {
+    if (!queryEnabled) return emptyRegisterEntriesState;
 
-    let keepLoading: boolean = hasMore;
-    while (keepLoading) {
-      keepLoading = await loadMore();
+    const current = queryClient.getQueryData<RegisterEntriesPageState>(queryKey) || emptyRegisterEntriesState;
+    if (!current.hasMore && current.entries.length > 0) {
+      return current;
     }
-  }, [hasMore, loadMore, loading, queryEnabled]);
+    setLoadingMore(true);
+    try {
+      const next = await fetchAllRegisterEntriesPages({
+        organizationId,
+        actorUserId,
+        actorRole,
+        storeIdList,
+        dateFrom: dateRange.from,
+        dateTo: dateRange.to,
+        pageSize,
+        initialState: current,
+      });
+      queryClient.setQueryData(queryKey, next);
+      return next;
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [
+    actorRole,
+    actorUserId,
+    dateRange.from,
+    dateRange.to,
+    organizationId,
+    pageSize,
+    queryClient,
+    queryEnabled,
+    queryKey,
+    storeIdList,
+  ]);
+
+  const loadAllRemaining = useCallback(async (): Promise<void> => {
+    try {
+      await loadAllRemainingStrict();
+    } catch (loadError) {
+      console.warn("register entries API full load failed", loadError);
+    }
+  }, [loadAllRemainingStrict]);
 
   return {
     entries,
@@ -168,6 +205,7 @@ export function useRegisterEntriesFromApi({
     error,
     loadMore,
     loadAllRemaining,
+    loadAllRemainingStrict,
     refetch: query.refetch,
     enabled,
   };

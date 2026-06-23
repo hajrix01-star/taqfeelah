@@ -62,6 +62,7 @@ import { RegisterDashboardCard, OwnerRegisterReportGranularityToggle } from "./o
 import {
   buildRegisterAutoLoadContextKey,
 } from "./register-auto-load-guards";
+import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import type { OwnerRegisterScreenProps, PrototypeAttachmentPreviewState, PrototypeChannel } from "./prototype-runtime-types";
 
 export function OwnerRegisterScreen({
@@ -180,6 +181,7 @@ export function OwnerRegisterScreen({
     hasMore: apiRegisterEntriesHasMore,
     loadMore: loadMoreRegisterEntries,
     loadAllRemaining: loadAllRegisterEntries,
+    loadAllRemainingStrict: loadAllRegisterEntriesStrict,
     refetch: refetchRegisterEntries,
     loadingMore: registerEntriesLoadingMore,
   } = useRegisterEntriesFromApi({
@@ -467,9 +469,18 @@ export function OwnerRegisterScreen({
   const apiGeneralReportTotalsSource = safeBusinessId === "all"
     ? apiGeneralReportCombinedTotals
     : apiGeneralReportTotals;
-  const generalReportRows = generalReportApiReady
-    ? applyRegisterReportGranularity(apiDailyGeneralReportRows, resolvedGeneralReportGranularity)
-    : strictGeneralReportSource ? [] : localGeneralReportRows;
+  const generalReportRows = useMemo(
+    () => (generalReportApiReady
+      ? applyRegisterReportGranularity(apiDailyGeneralReportRows, resolvedGeneralReportGranularity)
+      : strictGeneralReportSource ? [] : localGeneralReportRows),
+    [
+      apiDailyGeneralReportRows,
+      generalReportApiReady,
+      localGeneralReportRows,
+      resolvedGeneralReportGranularity,
+      strictGeneralReportSource,
+    ],
+  );
   const generalReportTotals = generalReportApiReady && apiGeneralReportTotalsSource
     ? {
       sales: apiGeneralReportTotalsSource.sales ?? 0,
@@ -509,27 +520,104 @@ export function OwnerRegisterScreen({
       : generalReportDashboardSummary)
     : registerPeriodSummary;
   const dashboardShowFilters = logView !== "report";
-  const openRegisterExport = () => onShareRegister({
-    screen: "register",
-    registerView: logView,
-    theme: notebookTheme,
+  const openRegisterExport = useCallback(async () => {
+    let exportPeriodEntries = periodEntries;
+
+    if (registerEntriesApiEnabled) {
+      try {
+        const next = await loadAllRegisterEntriesStrict();
+        exportPeriodEntries = next.entries;
+      } catch (error) {
+        await appAlert({
+          lang,
+          title: lang === "ar" ? "تعذر تجهيز التصدير الكامل" : "Failed to prepare full export",
+          description: error instanceof Error
+            ? error.message
+            : (lang === "ar" ? "حدث خطأ أثناء تحميل كل صفحات السجل للتصدير." : "An error occurred while loading all register pages for export."),
+          variant: "info",
+        });
+        return;
+      }
+    }
+
+    const exportFilteredEntries = filterRegisterLogEntries(
+      exportPeriodEntries,
+      logFilters,
+      entryCategory,
+      configuredChannels,
+    );
+    const exportAttachmentGallery = buildRegisterAttachmentGalleryModel(exportPeriodEntries, logFilters, {
+      resolveLabel: (entry, labelLang) => operationDisplayLabel(entry, labelLang, logFilters.salesChannel, configuredChannels),
+      resolveExpenseCategory: entryCategory,
+      configuredChannels,
+      todayIso: todayIsoDate(),
+      lang,
+    });
+    const exportCloseoutSummaries = buildRegisterCloseoutSummaries({
+      filteredEntries: exportFilteredEntries,
+      salesChannelFilter: logFilters.salesChannel,
+      configuredChannels,
+      resolveChannelName: resolveChannelRowLabel,
+      resolveStore: (businessId) => businessesList.find((business) => business.id === businessId) || null,
+      resolveActorLabel: (group) => resolveRegisterCloseoutActorLabel(group, {
+        ownerUserId: registerEntriesApiEnabled ? registerEntriesApiActorUserId : "",
+        lang,
+        enteredByOwnerLabel: text(lang, "enteredByOwner"),
+      }),
+    });
+    const exportGeneralReportRows = generalReportApiReady
+      ? generalReportRows
+      : applyRegisterReportGranularity(
+        buildRegisterDayReportRows(exportPeriodEntries.filter(entryIsActive)),
+        resolvedGeneralReportGranularity,
+      );
+
+    onShareRegister({
+      screen: "register",
+      registerView: logView,
+      theme: notebookTheme,
+      period,
+      selectedBusiness: safeBusinessId,
+      includedBusinessIds: registerTargetStoreIds,
+      selectedDate,
+      selectedMonth,
+      selectedYear,
+      customFrom,
+      customTo,
+      generalReportGranularity: resolvedGeneralReportGranularity,
+      exportData: {
+        visibleEntries: exportFilteredEntries,
+        closeoutSummaries: exportCloseoutSummaries,
+        generalReportRows: exportGeneralReportRows,
+        periodEntries: exportPeriodEntries,
+        attachmentGalleryItems: exportAttachmentGallery.items,
+      },
+    });
+  }, [
+    businessesList,
+    configuredChannels,
+    customFrom,
+    customTo,
+    generalReportApiReady,
+    generalReportRows,
+    lang,
+    loadAllRegisterEntriesStrict,
+    logFilters,
+    logView,
+    notebookTheme,
+    onShareRegister,
     period,
-    selectedBusiness: safeBusinessId,
-    includedBusinessIds: registerTargetStoreIds,
+    periodEntries,
+    registerEntriesApiActorUserId,
+    registerEntriesApiEnabled,
+    registerTargetStoreIds,
+    resolvedGeneralReportGranularity,
+    resolveChannelRowLabel,
+    safeBusinessId,
     selectedDate,
     selectedMonth,
     selectedYear,
-    customFrom,
-    customTo,
-    generalReportGranularity: resolvedGeneralReportGranularity,
-    exportData: {
-      visibleEntries,
-      closeoutSummaries,
-      generalReportRows,
-      periodEntries,
-      attachmentGalleryItems: attachmentGallery.items,
-    },
-  });
+  ]);
 
   return (
     <NotebookScrollSurface theme={notebookTheme} lang={lang}>
