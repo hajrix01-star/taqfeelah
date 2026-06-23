@@ -240,6 +240,63 @@ export function listVisibleChannelsByKind(
   return visibleChannels.filter((channel) => resolveIncomeSourceKind(channel) === kind);
 }
 
+function normalizeChannelSemanticKey(channel: Record<string, unknown>) {
+  const legacy = String(channel?.legacyId || channel?.text || "").trim().toLowerCase();
+  if (legacy) return `legacy:${legacy}`;
+
+  const name = String(channel?.nameAr || channel?.nameEn || "").trim().toLowerCase();
+  if (name) return `name:${name}`;
+
+  const id = String(channel?.id || "").trim().toLowerCase();
+  return id ? `id:${id}` : "";
+}
+
+function preferChannelForKeep(current: Record<string, unknown>, incoming: Record<string, unknown>) {
+  const currentCatalog = isCatalogConfiguredChannel(current);
+  const incomingCatalog = isCatalogConfiguredChannel(incoming);
+  if (incomingCatalog && !currentCatalog) return incoming;
+  if (!incomingCatalog && currentCatalog) return current;
+
+  const currentHasApi = Boolean(current?.apiChannelId);
+  const incomingHasApi = Boolean(incoming?.apiChannelId);
+  if (incomingHasApi && !currentHasApi) return incoming;
+  if (!incomingHasApi && currentHasApi) return current;
+
+  return current;
+}
+
+export function normalizeChannelConfigForPersist(config: StoreChannelConfig): StoreChannelConfig {
+  const channels = (config.channels || []).map((channel) => ({ ...channel }));
+  const byKey = new Map<string, Record<string, unknown>>();
+
+  for (const channel of channels) {
+    const key = normalizeChannelSemanticKey(channel);
+    if (!key) continue;
+    const kept = byKey.get(key);
+    if (!kept) {
+      byKey.set(key, channel);
+      continue;
+    }
+    const preferred = preferChannelForKeep(kept, channel);
+    const dropped = preferred === kept ? channel : kept;
+    dropped.retired = true;
+    byKey.set(key, preferred);
+  }
+
+  const activeIdSet = new Set((config.activeIds || []).map((id) => String(id)));
+  const activeIds = Array.from(new Set(
+    channels
+      .filter((channel) => !channel.retired && activeIdSet.has(String(channel.id || "")))
+      .map((channel) => String(channel.id || ""))
+      .filter(Boolean),
+  ));
+
+  return {
+    channels,
+    activeIds,
+  };
+}
+
 export function resolveChannelPersistName(
   channel: Record<string, unknown>,
   lang: "ar" | "en" = "ar",

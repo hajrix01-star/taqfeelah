@@ -19,6 +19,7 @@ import {
   addCustomSalesChannel,
   canRequestRetireSalesChannel,
   cloneStoreChannelDraft,
+  normalizeChannelConfigForPersist,
   restoreRetiredSalesChannel,
   retireSalesChannelInDraft,
   toggleIncomeSourceActive,
@@ -217,6 +218,8 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
   const saveChannelSettings = async () => {
     if (!settingsStoreId || !draftStoreChannelConfig) return;
 
+    const normalizedChannelConfig = normalizeChannelConfigForPersist(draftStoreChannelConfig);
+
     if (orgConfigApiExpected && (!orgConfigApiContext?.enabled || !orgConfigApiContext.hydrated || typeof orgConfigApiContext.flushPersist !== "function")) {
       setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
       return;
@@ -227,7 +230,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       nextStoreChannelSettings = applyPersistedStoreChannelSettings(
         current,
         settingsStoreId,
-        draftStoreChannelConfig,
+        normalizedChannelConfig,
       );
       return nextStoreChannelSettings;
     });

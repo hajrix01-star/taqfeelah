@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { listUnifiedIncomeSourceRows } from "@/features/org-config/client/owner-settings-channel-actions";
 import { SettingToggle } from "./owner-settings-ui-primitives";
 import type { OwnerSettingsIncomeSourcesEditorProps } from "./prototype-runtime-types";
@@ -8,12 +8,9 @@ import type { OwnerSettingsIncomeSourcesEditorProps } from "./prototype-runtime-
 export function OwnerSettingsIncomeSourcesEditor({
   lang,
   channelConfig,
-  retiredChannels,
   newCustomIncomeSourceName,
   setNewCustomIncomeSourceName,
   toggleChannel,
-  requestRetireChannel,
-  restoreSalesChannel,
   addCustomIncomeSource,
   text,
   channelName,
@@ -44,15 +41,6 @@ export function OwnerSettingsIncomeSourcesEditor({
                   enabled={row.isActive}
                   onToggle={() => toggleChannel(row.toggleId)}
                 />
-                {!row.isCatalog && (
-                  <button
-                    type="button"
-                    onClick={() => requestRetireChannel(row.channel)}
-                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFF1EE] text-[#B44747]"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
               </div>
             </div>
           ))
@@ -78,22 +66,6 @@ export function OwnerSettingsIncomeSourcesEditor({
         </div>
       </div>
 
-      {retiredChannels.length > 0 && (
-        <div className="mb-4 rounded-3xl bg-white p-4 ring-1 ring-black/[0.045]">
-          <p className="mb-2 text-taq-meta font-bold text-[#827762]">{text(lang, "stoppedChannels")}</p>
-          {retiredChannels.map((channel) => (
-            <button
-              key={channel.id}
-              type="button"
-              onClick={() => restoreSalesChannel(channel)}
-              className="mb-2 flex w-full items-center justify-between rounded-xl bg-[#F7F5EF] px-3 py-3 text-taq-meta font-black text-[#257844]"
-            >
-              <span>{channelName(channel, lang)}</span>
-              <span>{text(lang, "restoreChannel")}</span>
-            </button>
-          ))}
-        </div>
-      )}
     </>
   );
 }
