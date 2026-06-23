@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import {
@@ -52,12 +52,24 @@ async function ensureSalesChannelRow(
 ) {
   const db = resolveSalesChannelDb(executor);
   const [existing] = await db
-    .select({ id: salesChannels.id })
+    .select({ id: salesChannels.id, storeId: salesChannels.storeId })
     .from(salesChannels)
     .where(eq(salesChannels.id, channelUuid))
     .limit(1);
 
   if (existing?.id) {
+    if (existing.storeId !== storeUuid) {
+      const newChannelUuid = randomUUID();
+      await db.insert(salesChannels).values({
+        id: newChannelUuid,
+        organizationId,
+        storeId: storeUuid,
+        name: channelName,
+        status: "active",
+      });
+      return newChannelUuid;
+    }
+
     await db
       .update(salesChannels)
       .set({
@@ -66,7 +78,7 @@ async function ensureSalesChannelRow(
         name: channelName,
         status: "active",
       })
-      .where(eq(salesChannels.id, channelUuid));
+      .where(and(eq(salesChannels.id, channelUuid), eq(salesChannels.storeId, storeUuid)));
     return channelUuid;
   }
 
@@ -111,7 +123,7 @@ async function provisionStoreChannels(
     }
 
     if (channelUuid && isActive) {
-      await ensureSalesChannelRow(
+      channelUuid = await ensureSalesChannelRow(
         organizationId,
         storeUuid,
         channelUuid,

@@ -79,4 +79,36 @@ describe("provisionSalesChannels", () => {
     expect(result.shami?.channels?.[0]?.apiChannelId).toBe("9bc40d4f-c773-4ba3-87db-b8bb1467dafb");
     expect(result.shami?.channels?.[1]?.apiChannelId).toBe("7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c");
   });
+
+  it("does not move an existing sales channel row from another store", async () => {
+    selectLimit.mockResolvedValueOnce([
+      {
+        id: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+        storeId: "11111111-1111-4111-8111-111111111111",
+      },
+    ] as never);
+
+    const { provisionSalesChannels } = await import("./provision-sales-channels");
+    const result = await provisionSalesChannels(
+      "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      {
+        shami: {
+          channels: [{ id: "cash", text: "cash" }],
+          activeIds: ["cash"],
+        },
+      },
+      {
+        storeIdMap: { shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c" },
+        salesChannelIdMap: {
+          cash: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
+        },
+      },
+    );
+
+    expect(update).not.toHaveBeenCalled();
+    expect(insertValues).toHaveBeenCalledWith(expect.objectContaining({
+      storeId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+    }));
+    expect(result.shami?.channels?.[0]?.apiChannelId).not.toBe("9bc40d4f-c773-4ba3-87db-b8bb1467dafb");
+  });
 });
