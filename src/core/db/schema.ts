@@ -161,6 +161,11 @@ export const salesChannels = pgTable(
       table.storeId,
       table.id,
     ),
+    organizationStoreChannelNameNormUq: uniqueIndex("sales_channels_org_store_name_norm_uq").on(
+      table.organizationId,
+      table.storeId,
+      sql`lower(btrim(${table.name}))`,
+    ),
     storeTenantFk: foreignKey({
       name: "sales_channels_org_store_fk",
       columns: [table.organizationId, table.storeId],

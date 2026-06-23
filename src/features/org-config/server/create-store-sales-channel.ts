@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
@@ -34,22 +34,75 @@ export async function createStoreSalesChannel(rawInput: z.infer<typeof inputSche
 
   const db = getDb();
   const now = new Date();
+  const normalizedName = input.name.trim();
 
   return db.transaction(async (tx) => {
-    const [duplicate] = await tx
-      .select({ id: salesChannels.id })
+    const [existing] = await tx
+      .select({
+        id: salesChannels.id,
+        name: salesChannels.name,
+        kind: salesChannels.kind,
+        status: salesChannels.status,
+        retiredAt: salesChannels.retiredAt,
+        createdAt: salesChannels.createdAt,
+      })
       .from(salesChannels)
       .where(
         and(
           eq(salesChannels.organizationId, input.organizationId),
           eq(salesChannels.storeId, input.storeId),
-          eq(salesChannels.name, input.name),
+          sql`lower(btrim(${salesChannels.name})) = lower(btrim(${normalizedName}))`,
         ),
       )
       .limit(1);
 
-    if (duplicate?.id) {
-      throw new ValidationError("A sales channel with this name already exists for this store.");
+    if (existing?.id) {
+      const nextStatus = input.status;
+      const nextRetiredAt = nextStatus === "retired" ? now : null;
+
+      const [updated] = await tx
+        .update(salesChannels)
+        .set({
+          name: normalizedName,
+          kind: input.kind,
+          status: nextStatus,
+          retiredAt: nextRetiredAt,
+        })
+        .where(eq(salesChannels.id, existing.id))
+        .returning({
+          id: salesChannels.id,
+          name: salesChannels.name,
+          kind: salesChannels.kind,
+          status: salesChannels.status,
+          retiredAt: salesChannels.retiredAt,
+          createdAt: salesChannels.createdAt,
+        });
+
+      await tx.insert(auditEvents).values({
+        organizationId: input.organizationId,
+        storeId: input.storeId,
+        actorUserId: input.actorUserId,
+        action: existing.status === "retired" && updated.status === "active"
+          ? "sales_channel_reactivated"
+          : "sales_channel_upserted",
+        reason: input.reason || null,
+        metadata: {
+          salesChannelId: updated.id,
+          previousStatus: existing.status,
+          status: updated.status,
+          kind: updated.kind,
+          name: updated.name,
+        },
+      });
+
+      return {
+        id: updated.id,
+        name: updated.name,
+        kind: updated.kind,
+        status: updated.status,
+        retiredAt: updated.retiredAt ? updated.retiredAt.toISOString() : null,
+        createdAt: updated.createdAt.toISOString(),
+      };
     }
 
     const [created] = await tx
@@ -57,7 +110,7 @@ export async function createStoreSalesChannel(rawInput: z.infer<typeof inputSche
       .values({
         organizationId: input.organizationId,
         storeId: input.storeId,
-        name: input.name,
+        name: normalizedName,
         kind: input.kind,
         status: input.status,
         retiredAt: input.status === "retired" ? now : null,
