@@ -33,7 +33,11 @@ export function OwnerSettingsStoresTeamSection(props: OwnerSettingsViewState & O
     embedded = true,
   } = props;
 
-  const activeSubTab = section === "team" || section === "subscription" ? section : "stores";
+  const sectionSubTab = section === "team" || section === "subscription" ? section : "stores";
+  const [activeSubTab, setActiveSubTab] = React.useState(sectionSubTab);
+  React.useEffect(() => {
+    setActiveSubTab(sectionSubTab);
+  }, [sectionSubTab]);
   const counts = {
     stores: activeStoredBusinesses?.length || 0,
     team: visibleStaff?.length || 0,
@@ -54,7 +58,10 @@ export function OwnerSettingsStoresTeamSection(props: OwnerSettingsViewState & O
           <SettingsOrgSubTabs
             lang={props.lang}
             value={activeSubTab}
-            onChange={(next) => setSection(next)}
+            onChange={(next) => {
+              setActiveSubTab(next);
+              setSection(next);
+            }}
             counts={counts}
             ariaLabel={props.lang === "ar" ? "المحلات والفريق" : "Shops and team"}
             integrated

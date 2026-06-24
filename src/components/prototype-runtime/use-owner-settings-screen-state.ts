@@ -101,20 +101,16 @@ export function useOwnerSettingsScreenState({
   });
 
   const [section, setSection] = useState(() => {
-    if (initialSettingsSection === "home" || initialSettingsSection === "stores" || initialSettingsSection === "team") {
-      return "stores-team";
+    if (initialSettingsSection === "home" || initialSettingsSection === "stores-team") return "stores";
+    if (initialSettingsSection === "stores" || initialSettingsSection === "team" || initialSettingsSection === "subscription") {
+      return initialSettingsSection;
     }
-    if (initialSettingsSection === "subscription") return "support";
     return initialSettingsSection;
   });
   useEffect(() => {
-    const normalized = initialSettingsSection === "home"
-      || initialSettingsSection === "stores"
-      || initialSettingsSection === "team"
-      ? "stores-team"
-      : initialSettingsSection === "subscription"
-        ? "support"
-        : initialSettingsSection;
+    const normalized = initialSettingsSection === "home" || initialSettingsSection === "stores-team"
+      ? "stores"
+      : initialSettingsSection;
     setSection(normalized);
   }, [initialSettingsSection]);
 
