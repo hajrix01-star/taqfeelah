@@ -141,7 +141,7 @@ describe("owner settings screen action handlers", () => {
     expect(ctx.showSettingsSaved).toHaveBeenCalled();
   });
 
-  it("confirms staff delete as immediate inactive API save", async () => {
+  it("confirms staff delete as a draft change that waits for team save", async () => {
     process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED = "true";
     const flushPersist = vi.fn().mockResolvedValue(undefined);
     const staffMember = {
@@ -170,18 +170,19 @@ describe("owner settings screen action handlers", () => {
     await confirmDelete();
 
     expect(ctx.setters.setDeleteTarget).toHaveBeenCalledWith(null);
-    expect(flushPersist).toHaveBeenCalledWith(
-      {
-        staff: [expect.objectContaining({
-          id: staffMember.id,
-          active: false,
-          removed: true,
-        })],
-      },
-      { employeePins: {} },
-    );
+    expect(flushPersist).not.toHaveBeenCalled();
+    expect(ctx.setters.setDraftStaff).toHaveBeenCalledWith([
+      expect.objectContaining({
+        id: staffMember.id,
+        active: false,
+        removed: true,
+      }),
+    ]);
     expect(ctx.setters.setStaff).not.toHaveBeenCalled();
-    expect(ctx.showSettingsSaved).toHaveBeenCalled();
+    expect(ctx.showSettingsSaved).not.toHaveBeenCalled();
+    expect(ctx.setters.setSettingsNotice).toHaveBeenCalledWith(
+      "تم حذف الموظف من المسودة. اضغط حفظ صلاحيات الفريق لتثبيت التغيير.",
+    );
   });
 
   it("waits for channel API save and does not overwrite server-hydrated channel ids", async () => {

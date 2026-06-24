@@ -526,18 +526,11 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       setters.setDraftAuthEmployeePins((current: HandlerAny) => removeEmployeePinForPerson(current, personId));
       setters.setAuthEmployeePins((current: HandlerAny) => removeEmployeePinForPerson(current, personId));
       setters.setDeleteTarget(null);
-
-      if (isOrgConfigApiEnabled() || APP_IN_PRODUCTION_MODE) {
-        await persistTeamDraft(nextDraft, {
-          clearLocalPins: false,
-          employeePinsOverride: removeEmployeePinForPerson(draftAuthEmployeePins, personId),
-        });
-        return;
-      }
-
-      if (managingTeam) setters.setDraftStaff(nextDraft);
-      else setters.setStaff(nextDraft);
-      showSettingsSaved();
+      setters.setDraftStaff(nextDraft);
+      if (!managingTeam) setters.setManagingTeam(true);
+      setters.setSettingsNotice(lang === "ar"
+        ? "تم حذف الموظف من المسودة. اضغط حفظ صلاحيات الفريق لتثبيت التغيير."
+        : "Employee removed from the draft. Save team permissions to apply the change.");
       return;
     }
 
