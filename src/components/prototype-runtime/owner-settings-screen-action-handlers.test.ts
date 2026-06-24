@@ -1,5 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createOwnerSettingsScreenHandlers } from "./owner-settings-screen-action-handlers";
+
+const ORIGINAL_ORG_CONFIG_API_ENABLED = process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED;
+
+afterEach(() => {
+  process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED = ORIGINAL_ORG_CONFIG_API_ENABLED;
+});
 
 function buildHandlerContext(overrides: Record<string, unknown> = {}) {
   const setters = {
@@ -94,5 +100,91 @@ describe("owner settings screen action handlers", () => {
     expect(ctx.setters.setNewCustomIncomeSourceName).toHaveBeenCalledWith("");
     expect(ctx.setters.setSettingsStoreId).toHaveBeenCalledWith("arz");
     expect(ctx.setters.setStorePanel).toHaveBeenCalledWith("profile");
+  });
+
+  it("saves employee deactivation through org config API", async () => {
+    process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED = "true";
+    const flushPersist = vi.fn().mockResolvedValue(undefined);
+    const ctx = buildHandlerContext({
+      managingTeam: true,
+      draftStaff: [{
+        id: "55ec4109-d5fa-463f-8c23-7f34d2f8fd0b",
+        memberId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+        nameAr: "سارة",
+        nameEn: "Sara",
+        active: false,
+        removed: false,
+        storeIds: ["7cf1450d-08d8-4ca1-b180-1c2642174a79"],
+      }],
+      orgConfigApiContext: {
+        enabled: true,
+        hydrated: true,
+        loading: false,
+        flushPersist,
+      },
+    });
+
+    const { saveManagingTeam } = createOwnerSettingsScreenHandlers(ctx);
+    await saveManagingTeam();
+
+    expect(flushPersist).toHaveBeenCalledWith(
+      {
+        staff: [expect.objectContaining({
+          id: "55ec4109-d5fa-463f-8c23-7f34d2f8fd0b",
+          active: false,
+          removed: false,
+        })],
+      },
+      { employeePins: {} },
+    );
+    expect(ctx.setters.setStaff).toHaveBeenCalledWith([
+      expect.objectContaining({ active: false }),
+    ]);
+    expect(ctx.showSettingsSaved).toHaveBeenCalled();
+  });
+
+  it("confirms staff delete as immediate inactive API save", async () => {
+    process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED = "true";
+    const flushPersist = vi.fn().mockResolvedValue(undefined);
+    const staffMember = {
+      id: "55ec4109-d5fa-463f-8c23-7f34d2f8fd0b",
+      memberId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+      nameAr: "سارة",
+      nameEn: "Sara",
+      active: true,
+      removed: false,
+      storeIds: ["7cf1450d-08d8-4ca1-b180-1c2642174a79"],
+    };
+    const ctx = buildHandlerContext({
+      staff: [staffMember],
+      deleteTarget: { type: "staff", item: staffMember },
+      draftAuthEmployeePins: { [staffMember.id]: "1234" },
+      authEmployeePins: { [staffMember.id]: "1234" },
+      orgConfigApiContext: {
+        enabled: true,
+        hydrated: true,
+        loading: false,
+        flushPersist,
+      },
+    });
+
+    const { confirmDelete } = createOwnerSettingsScreenHandlers(ctx);
+    await confirmDelete();
+
+    expect(ctx.setters.setDeleteTarget).toHaveBeenCalledWith(null);
+    expect(flushPersist).toHaveBeenCalledWith(
+      {
+        staff: [expect.objectContaining({
+          id: staffMember.id,
+          active: false,
+          removed: true,
+        })],
+      },
+      { employeePins: {} },
+    );
+    expect(ctx.setters.setStaff).toHaveBeenCalledWith([
+      expect.objectContaining({ active: false, removed: true }),
+    ]);
+    expect(ctx.showSettingsSaved).toHaveBeenCalled();
   });
 });

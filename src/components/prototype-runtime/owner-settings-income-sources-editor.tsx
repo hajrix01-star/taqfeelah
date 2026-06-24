@@ -25,6 +25,7 @@ export function OwnerSettingsIncomeSourcesEditor({
   const rows = listUnifiedIncomeSourceRows(channelConfig);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [customNameEn, setCustomNameEn] = useState("");
+  const [actionNotice, setActionNotice] = useState("");
   const inactiveCatalogSources = useMemo(() => listInactiveCatalogSources(channelConfig), [channelConfig]);
   const retiredByLegacyId = useMemo(() => new Map<string, Record<string, unknown>>(
     retiredChannels.map((channel): [string, Record<string, unknown>] => [
@@ -45,6 +46,7 @@ export function OwnerSettingsIncomeSourcesEditor({
       const configured = findConfiguredChannelByLegacyId(channelConfig, legacyId);
       toggleChannel(String(configured?.id || legacyId));
     }
+    setActionNotice(lang === "ar" ? "تمت إضافة طريقة الدفع. اضغط حفظ لتثبيت التغيير." : "Payment method added. Save to apply the change.");
     setShowAddMenu(false);
   };
 
@@ -53,8 +55,20 @@ export function OwnerSettingsIncomeSourcesEditor({
       nameAr: newCustomIncomeSourceName,
       nameEn: customNameEn,
     });
+    setActionNotice(lang === "ar" ? "تمت إضافة طريقة الدفع. اضغط حفظ لتثبيت التغيير." : "Payment method added. Save to apply the change.");
     setCustomNameEn("");
     setShowAddMenu(false);
+  };
+
+  const toggleActiveRow = (row: (typeof rows)[number]) => {
+    const isLastActive = row.isActive && channelConfig.activeIds.length <= 1;
+    toggleChannel(row.toggleId);
+    if (isLastActive) return;
+    setActionNotice(
+      row.isActive
+        ? (lang === "ar" ? "تم تعطيل طريقة الدفع. ستظهر داخل زر الإضافة، اضغط حفظ لتثبيت التغيير." : "Payment method disabled. It will appear in Add; save to apply the change.")
+        : (lang === "ar" ? "تم تفعيل طريقة الدفع. اضغط حفظ لتثبيت التغيير." : "Payment method enabled. Save to apply the change."),
+    );
   };
 
   return (
@@ -79,7 +93,7 @@ export function OwnerSettingsIncomeSourcesEditor({
               <div className="flex items-center gap-2">
                 <SettingToggle
                   enabled={row.isActive}
-                  onToggle={() => toggleChannel(row.toggleId)}
+                  onToggle={() => toggleActiveRow(row)}
                 />
               </div>
             </div>
@@ -139,6 +153,11 @@ export function OwnerSettingsIncomeSourcesEditor({
                 </button>
               </div>
             </div>
+          ) : null}
+          {actionNotice ? (
+            <p className="mt-3 rounded-2xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">
+              {actionNotice}
+            </p>
           ) : null}
         </div>
       </div>

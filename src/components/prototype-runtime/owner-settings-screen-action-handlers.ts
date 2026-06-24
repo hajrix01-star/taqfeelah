@@ -382,30 +382,42 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     setters.setManagingTeam(true);
   };
 
-  const saveManagingTeam = async () => {
-    if (!draftStaff || teamSaving) return;
-    const { staff: nextStaff, employeePins: nextPins } = prepareSavedTeamDraft(draftStaff, {
+  const persistTeamDraft = async (
+    teamDraft: HandlerAny,
+    {
+      persistRuntimeFallback = true,
+      clearLocalPins = true,
+      employeePinsOverride,
+    }: {
+      persistRuntimeFallback?: boolean;
+      clearLocalPins?: boolean;
+      employeePinsOverride?: Record<string, string>;
+    } = {},
+  ) => {
+    const { staff: nextStaff, employeePins: nextPins } = prepareSavedTeamDraft(teamDraft, {
       draftAuthEmployeePins,
       authEmployeePins,
       defaultPin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT || "1234",
       pinsFromAuthIdentitiesOnly: isOrgConfigApiEnabled(),
     });
+    const persistPins = employeePinsOverride ?? nextPins;
 
     if (isOrgConfigApiEnabled() && typeof orgConfigApiContext?.flushPersist === "function") {
       if (!orgConfigApiContext.hydrated || orgConfigApiContext.loading) {
         setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
-        return;
+        return false;
       }
       setters.setTeamSaving(true);
       setters.setSettingsNotice("");
       try {
-        await orgConfigApiContext.flushPersist({ staff: nextStaff }, { employeePins: nextPins });
-        setters.setAuthEmployeePins({});
+        await orgConfigApiContext.flushPersist({ staff: nextStaff }, { employeePins: persistPins });
+        if (clearLocalPins) setters.setAuthEmployeePins({});
+        setters.setStaff(nextStaff);
         cancelManagingTeam();
         if (typeof reloadEntitlements === "function") {
           await reloadEntitlements();
         }
-        if (APP_IN_PRODUCTION_MODE && typeof onPersistSettingsNow === "function") {
+        if (persistRuntimeFallback && APP_IN_PRODUCTION_MODE && typeof onPersistSettingsNow === "function") {
           await onPersistSettingsNow(buildOwnerSettingsTeamPersistPayload({
             staff: nextStaff,
             authOwnerUsername,
@@ -417,16 +429,17 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
         showSettingsSaved();
       } catch (failure) {
         setters.setSettingsNotice(resolveTeamSaveFailureMessage(failure, lang));
+        return false;
       } finally {
         setters.setTeamSaving(false);
       }
-      return;
+      return true;
     }
 
     setters.setStaff(nextStaff);
-    setters.setAuthEmployeePins(nextPins);
+    setters.setAuthEmployeePins(persistPins);
     cancelManagingTeam();
-    if (APP_IN_PRODUCTION_MODE && typeof onPersistSettingsNow === "function") {
+    if (persistRuntimeFallback && APP_IN_PRODUCTION_MODE && typeof onPersistSettingsNow === "function") {
       setters.setTeamSaving(true);
       setters.setSettingsNotice("");
       try {
@@ -434,18 +447,25 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
           staff: nextStaff,
           authOwnerUsername,
           authOwnerPassword,
-          authEmployeePins: nextPins,
+          authEmployeePins: persistPins,
           omitStaff: isOrgConfigApiEnabled(),
         }));
         showSettingsSaved();
       } catch (failure) {
         setters.setSettingsNotice(resolveTeamSaveFailureMessage(failure, lang));
+        return false;
       } finally {
         setters.setTeamSaving(false);
       }
-      return;
+      return true;
     }
     showSettingsSaved();
+    return true;
+  };
+
+  const saveManagingTeam = async () => {
+    if (!draftStaff || teamSaving) return;
+    await persistTeamDraft(draftStaff);
   };
 
   const addStaff = () => {
@@ -490,7 +510,32 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     setters.setNewEmployeeStoreIds((current: HandlerAny) => toggleStoreSelection(current, storeId));
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
+    if (deleteTarget?.type === "staff") {
+      const personId = String(deleteTarget.item.id);
+      const removePerson = (current: HandlerAny) => current.map((person: HandlerAny) => (
+        person.id === personId ? { ...person, active: false, removed: true } : person
+      ));
+      const nextDraft = removePerson(managingTeam ? (draftStaff || staff) : staff);
+
+      setters.setDraftAuthEmployeePins((current: HandlerAny) => removeEmployeePinForPerson(current, personId));
+      setters.setAuthEmployeePins((current: HandlerAny) => removeEmployeePinForPerson(current, personId));
+      setters.setDeleteTarget(null);
+
+      if (isOrgConfigApiEnabled() || APP_IN_PRODUCTION_MODE) {
+        await persistTeamDraft(nextDraft, {
+          clearLocalPins: false,
+          employeePinsOverride: removeEmployeePinForPerson(draftAuthEmployeePins, personId),
+        });
+        return;
+      }
+
+      if (managingTeam) setters.setDraftStaff(nextDraft);
+      else setters.setStaff(nextDraft);
+      showSettingsSaved();
+      return;
+    }
+
     applyOwnerSettingsDeleteTarget({
       deleteTarget,
       selectedBusiness,

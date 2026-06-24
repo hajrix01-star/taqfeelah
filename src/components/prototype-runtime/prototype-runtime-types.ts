@@ -213,7 +213,7 @@ export type OwnerSettingsDeleteDialogProps = {
   lang: DisplayLang;
   deleteTarget: OwnerSettingsDeleteTarget | null;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   translate: (key: string) => string;
 };
 
