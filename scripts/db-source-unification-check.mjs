@@ -17,7 +17,7 @@ const salesChannelId = process.env.CHECK_SALES_CHANNEL_ID || "9bc40d4f-c773-4ba3
 const ownerUsername = process.env.CHECK_OWNER_USERNAME || "hajri";
 const ownerPassword = process.env.CHECK_OWNER_PASSWORD || "hajri123";
 const ownerPhone = process.env.CHECK_OWNER_PHONE || "";
-const employeeId = process.env.CHECK_EMPLOYEE_ID || "ahmed";
+const employeeId = process.env.CHECK_EMPLOYEE_ID || employeeUserId;
 const employeePin = process.env.CHECK_EMPLOYEE_PIN || "1234";
 const employeePhone = process.env.CHECK_EMPLOYEE_PHONE || "";
 const tinyPngDataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
