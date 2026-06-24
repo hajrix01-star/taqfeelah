@@ -1,10 +1,7 @@
 import type { SettingsSection } from "./prototype-runtime-types";
 
 const LEGACY_SECTION_ALIASES: Record<string, SettingsSection> = {
-  home: "stores-team",
-  stores: "stores-team",
-  team: "stores-team",
-  subscription: "support",
+  home: "stores",
   organization: "stores-team",
 };
 
@@ -15,7 +12,7 @@ export function normalizeSettingsSection(section: SettingsSection | null | undef
 
 export function resolveSettingsMainTab(section: SettingsSection) {
   const normalized = normalizeSettingsSection(section);
-  if (normalized === "stores-team") return "stores-team";
+  if (normalized === "stores-team" || normalized === "stores" || normalized === "team" || normalized === "subscription") return "stores-team";
   if (normalized === "account") return "account";
   if (normalized === "appearance") return "shape";
   if (normalized === "support") return "help";
@@ -23,7 +20,7 @@ export function resolveSettingsMainTab(section: SettingsSection) {
 }
 
 export function sectionFromSettingsTabs(mainTab: string) {
-  if (mainTab === "stores-team") return "stores-team";
+  if (mainTab === "stores-team") return "stores";
   if (mainTab === "account") return "account";
   if (mainTab === "shape") return "appearance";
   if (mainTab === "help") return "support";

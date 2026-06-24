@@ -14,16 +14,16 @@ describe("owner settings tab navigation", () => {
     expect(resolveSettingsMainTab("account")).toBe("account");
     expect(resolveSettingsMainTab("appearance")).toBe("shape");
     expect(resolveSettingsMainTab("support")).toBe("help");
-    expect(resolveSettingsMainTab("subscription")).toBe("help");
+    expect(resolveSettingsMainTab("subscription")).toBe("stores-team");
   });
 
   it("normalizes legacy section ids", () => {
-    expect(normalizeSettingsSection("home")).toBe("stores-team");
-    expect(normalizeSettingsSection("subscription")).toBe("support");
+    expect(normalizeSettingsSection("home")).toBe("stores");
+    expect(normalizeSettingsSection("subscription")).toBe("subscription");
   });
 
   it("builds section ids from tab selections", () => {
-    expect(sectionFromSettingsTabs("stores-team")).toBe("stores-team");
+    expect(sectionFromSettingsTabs("stores-team")).toBe("stores");
     expect(sectionFromSettingsTabs("shape")).toBe("appearance");
     expect(sectionFromSettingsTabs("help")).toBe("support");
   });

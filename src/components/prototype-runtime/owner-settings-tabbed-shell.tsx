@@ -38,7 +38,7 @@ export function OwnerSettingsTabbedShell({ state, callbacks }: OwnerSettingsTabb
   const normalizedSection = normalizeSettingsSection(section);
   const mainTab = resolveSettingsMainTab(normalizedSection);
   const mainItem = resolveSettingsMainTabItem(lang, mainTab);
-  const panelSection = sectionFromSettingsTabs(mainTab);
+  const panelSection = mainTab === "stores-team" ? normalizedSection : sectionFromSettingsTabs(mainTab);
 
   const handleMainTabChange = (nextMainTab: string) => {
     if (nextMainTab === mainTab) return;

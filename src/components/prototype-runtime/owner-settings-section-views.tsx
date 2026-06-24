@@ -5,9 +5,15 @@ import { OwnerSettingsAccountSection } from "./owner-settings-account-section";
 import { OwnerSettingsAppearanceSection } from "./owner-settings-appearance-section";
 import { OwnerSettingsHomeSection } from "./owner-settings-home-section";
 import { OwnerSettingsStoresSection } from "./owner-settings-stores-section";
+import { OwnerSettingsSubscriptionSection } from "./owner-settings-subscription-section";
 import { OwnerSettingsSupportSection } from "./owner-settings-support-section";
 import { OwnerSettingsTeamSection } from "./owner-settings-team-section";
 import { SettingsSectionFrame } from "./owner-settings-section-frame";
+import {
+  resolveSettingsOrgSubTabItem,
+  SettingsOrgSubTabs,
+  SettingsTabbedPanel,
+} from "./owner-settings-tab-primitives";
 import type {
   OwnerSettingsSectionCommonProps,
   OwnerSettingsSectionRenderOptions,
@@ -18,10 +24,21 @@ import type { StaffMember } from "@/features/org-config/client/org-config-client
 
 export function OwnerSettingsStoresTeamSection(props: OwnerSettingsViewState & OwnerSettingsSectionCommonProps) {
   const {
+    section,
+    setSection,
     visibleStaff,
     employeeStoreIds,
+    activeStoredBusinesses,
+    entitlements,
     embedded = true,
   } = props;
+
+  const activeSubTab = section === "team" || section === "subscription" ? section : "stores";
+  const counts = {
+    stores: activeStoredBusinesses?.length || 0,
+    team: visibleStaff?.length || 0,
+  };
+  const tabItem = resolveSettingsOrgSubTabItem(props.lang, counts, activeSubTab);
 
   const countEmployeesForStore = React.useCallback((storeId: string) => (
     (visibleStaff as StaffMember[]).filter((person) => (employeeStoreIds as (person: StaffMember) => string[])(person).includes(storeId)).length
@@ -29,16 +46,48 @@ export function OwnerSettingsStoresTeamSection(props: OwnerSettingsViewState & O
 
   return (
     <SettingsSectionFrame embedded={embedded}>
-      <OwnerSettingsStoresSection
-        {...props as React.ComponentProps<typeof OwnerSettingsStoresSection>}
-        embedded={embedded}
-        countEmployeesForStore={countEmployeesForStore}
-      />
-      <div className="my-4 border-t border-[#E8E1D4]/90" />
-      <OwnerSettingsTeamSection
-        {...props as React.ComponentProps<typeof OwnerSettingsTeamSection>}
-        embedded={embedded}
-      />
+      <SettingsTabbedPanel
+        sticky={false}
+        surfaceClass={tabItem.contentSurfaceClass}
+        accentClass={tabItem.contentAccentClass}
+        tabs={(
+          <SettingsOrgSubTabs
+            lang={props.lang}
+            value={activeSubTab}
+            onChange={(next) => setSection(next)}
+            counts={counts}
+            ariaLabel={props.lang === "ar" ? "المحلات والفريق" : "Shops and team"}
+            integrated
+          />
+        )}
+      >
+        {activeSubTab === "stores" ? (
+          <OwnerSettingsStoresSection
+            {...props as React.ComponentProps<typeof OwnerSettingsStoresSection>}
+            embedded
+            countEmployeesForStore={countEmployeesForStore}
+          />
+        ) : null}
+        {activeSubTab === "team" ? (
+          <OwnerSettingsTeamSection
+            {...props as React.ComponentProps<typeof OwnerSettingsTeamSection>}
+            embedded
+          />
+        ) : null}
+        {activeSubTab === "subscription" ? (
+          <OwnerSettingsSubscriptionSection
+            lang={props.lang}
+            setSection={setSection}
+            entitlements={entitlements}
+            entitlementsLoading={props.entitlementsLoading}
+            entitlementsError={props.entitlementsError}
+            reloadEntitlements={props.reloadEntitlements}
+            ownerProfile={props.ownerProfile ?? {}}
+            embedded
+            hideUpgradeActions
+          />
+        ) : null}
+      </SettingsTabbedPanel>
     </SettingsSectionFrame>
   );
 }
@@ -77,7 +126,7 @@ export function renderOwnerSettingsSection(
       />
     );
   }
-  if (section === "stores-team" || section === "stores" || section === "team") {
+  if (section === "stores-team" || section === "stores" || section === "team" || section === "subscription") {
     return (
       <OwnerSettingsStoresTeamSection
         {...common}
