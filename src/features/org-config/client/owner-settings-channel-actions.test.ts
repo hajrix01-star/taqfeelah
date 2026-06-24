@@ -6,6 +6,7 @@ import {
   cloneStoreChannelDraft,
   findConfiguredChannelByLegacyId,
   listAddableCatalogSources,
+  listInactiveCatalogSources,
   listUnifiedIncomeSourceRows,
   restoreRetiredSalesChannel,
   retireSalesChannelInDraft,
@@ -54,10 +55,17 @@ describe("owner settings channel actions", () => {
   });
 
   it("adds custom sales channel when name is provided", () => {
-    const result = addCustomSalesChannel(baseConfig, "  Delivery  ", { id: "channel-test" });
+    const result = addCustomSalesChannel(baseConfig, {
+      nameAr: "  توصيل  ",
+      nameEn: "  Delivery  ",
+    }, { id: "channel-test" });
     expect(result.added).toBe(true);
     expect(result.config.channels).toHaveLength(3);
     expect(result.config.activeIds).toContain("channel-test");
+    expect(result.config.channels.find((item) => item.id === "channel-test")).toMatchObject({
+      nameAr: "توصيل",
+      nameEn: "Delivery",
+    });
   });
 
   it("adds catalog payment method and sales channel presets", () => {
@@ -87,27 +95,28 @@ describe("owner settings channel actions", () => {
     expect(listAddableCatalogSources(baseConfig, "payment_method").map((entry) => entry.legacyId)).not.toContain("cash");
   });
 
-  it("lists unified income source rows with full catalog and custom channels", () => {
+  it("lists only active income source rows with custom channels", () => {
     const withCustom = addCustomSalesChannel(baseConfig, "Delivery", { id: "delivery" }).config;
     const rows = listUnifiedIncomeSourceRows(withCustom);
 
     expect(rows.filter((row) => row.isCatalog).map((row) => row.toggleId)).toEqual([
       "cash",
-      "card",
       "mada",
-      "bank",
-      "apple",
-      "online",
-      "jahez",
-      "hunger",
-      "keeta",
     ]);
     expect(rows.find((row) => row.rowId === "delivery")).toMatchObject({
       isCatalog: false,
       isActive: true,
     });
     expect(rows.find((row) => row.toggleId === "cash")?.isActive).toBe(true);
-    expect(rows.find((row) => row.toggleId === "keeta")?.isActive).toBe(false);
+    expect(rows.find((row) => row.toggleId === "keeta")).toBeUndefined();
+  });
+
+  it("lists inactive catalog sources for the add menu", () => {
+    const inactive = listInactiveCatalogSources(baseConfig).map((entry) => entry.legacyId);
+    expect(inactive).toContain("card");
+    expect(inactive).toContain("keeta");
+    expect(inactive).not.toContain("cash");
+    expect(inactive).not.toContain("mada");
   });
 
   it("enables catalog income sources on first toggle", () => {

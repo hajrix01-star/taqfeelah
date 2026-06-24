@@ -94,6 +94,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     draftStoreLocation,
     draftStoreChannelConfig,
     draftStoreOperationalConfig,
+    storeChannelSettings,
     operationalEntries,
     activeStoredBusinesses,
     visibleStaff,
@@ -214,15 +215,11 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
   const saveChannelSettings = async () => {
     if (!settingsStoreId || !draftStoreChannelConfig) return;
 
-    let nextStoreChannelSettings = null;
-    setters.setStoreChannelSettings((current: HandlerAny) => {
-      nextStoreChannelSettings = applyPersistedStoreChannelSettings(
-        current,
-        settingsStoreId,
-        draftStoreChannelConfig,
-      );
-      return nextStoreChannelSettings;
-    });
+    const nextStoreChannelSettings = applyPersistedStoreChannelSettings(
+      storeChannelSettings || {},
+      settingsStoreId,
+      draftStoreChannelConfig,
+    );
 
     if (
       orgConfigApiContext?.enabled
@@ -244,6 +241,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       }
     }
 
+    setters.setStoreChannelSettings(nextStoreChannelSettings);
     showSettingsSaved();
     leaveStorePanelAfterSave();
   };
@@ -275,8 +273,11 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
 
   const restoreSalesChannel = (channel: HandlerAny) => updateChannelDraft((config: HandlerAny) => restoreRetiredSalesChannel(config, channel));
 
-  const addCustomIncomeSource = () => {
-    const result = addCustomSalesChannel(channelConfig, newCustomIncomeSourceName, {
+  const addCustomIncomeSource = (names?: { nameAr?: string; nameEn?: string }) => {
+    const result = addCustomSalesChannel(channelConfig, {
+      nameAr: names?.nameAr ?? newCustomIncomeSourceName,
+      nameEn: names?.nameEn ?? newCustomIncomeSourceName,
+    }, {
       icon: CreditCard,
       kind: "payment_method",
     });

@@ -37,7 +37,8 @@ function isCatalogConfiguredChannel(channel: Record<string, unknown>) {
 }
 
 /**
- * Unified owner-settings rows: full catalog (toggle-only) plus custom channels.
+ * Owner-settings rows: active income sources only. Inactive catalog/custom
+ * sources are offered through the add menu, so the main list stays clean.
  */
 export function listUnifiedIncomeSourceRows(config: StoreChannelConfig) {
   const rows: Array<{
@@ -51,6 +52,7 @@ export function listUnifiedIncomeSourceRows(config: StoreChannelConfig) {
   for (const entry of INCOME_SOURCE_CATALOG) {
     const channel = findConfiguredChannelByLegacyId(config, entry.legacyId);
     if (channel?.retired) continue;
+    if (!channel || !config.activeIds.includes(String(channel.id))) continue;
 
     rows.push({
       rowId: String(channel?.id || entry.legacyId),
@@ -69,6 +71,7 @@ export function listUnifiedIncomeSourceRows(config: StoreChannelConfig) {
 
   for (const channel of config.channels) {
     if (channel.retired || isCatalogConfiguredChannel(channel)) continue;
+    if (!config.activeIds.includes(String(channel.id))) continue;
     rows.push({
       rowId: String(channel.id),
       toggleId: String(channel.id),
@@ -106,6 +109,15 @@ export function listAddableCatalogSources(
   kind: "payment_method" | "sales_channel",
 ) {
   return listCatalogByKind(kind).filter((entry) => !channelExistsInConfig(config, entry.legacyId));
+}
+
+export function listInactiveCatalogSources(config: StoreChannelConfig) {
+  return INCOME_SOURCE_CATALOG.filter((entry) => {
+    const channel = findConfiguredChannelByLegacyId(config, entry.legacyId);
+    if (!channel) return true;
+    if (channel.retired) return true;
+    return !config.activeIds.includes(String(channel.id));
+  });
 }
 
 export function isLastActiveSalesChannel(config: StoreChannelConfig, channelId: string) {
@@ -195,11 +207,13 @@ export function addCatalogIncomeSource(
 
 export function addCustomSalesChannel(
   config: StoreChannelConfig,
-  name: string,
+  name: string | { nameAr?: string; nameEn?: string },
   options: { id?: string; icon?: unknown; kind?: "payment_method" | "sales_channel" } = {},
 ) {
-  const trimmed = name.trim();
-  if (!trimmed) {
+  const nameAr = typeof name === "string" ? name.trim() : String(name.nameAr || "").trim();
+  const nameEn = typeof name === "string" ? name.trim() : String(name.nameEn || "").trim();
+  const primaryName = nameAr || nameEn;
+  if (!primaryName) {
     return { config, added: false, channelId: "" };
   }
 
@@ -213,8 +227,8 @@ export function addCustomSalesChannel(
           id: channelId,
           custom: true,
           kind,
-          nameAr: trimmed,
-          nameEn: trimmed,
+          nameAr: nameAr || primaryName,
+          nameEn: nameEn || primaryName,
           icon: options.icon,
         },
       ],

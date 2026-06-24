@@ -401,7 +401,7 @@ export type OwnerSettingsStoreFlattenedPanelProps = {
   toggleChannel: (channelId: string) => void;
   requestRetireChannel: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
   restoreSalesChannel: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
-  addCustomIncomeSource: () => void;
+  addCustomIncomeSource: (names?: { nameAr?: string; nameEn?: string }) => void;
   saveChannelSettings: () => void;
   cancelChannelDraft: () => void;
   toggleCategory: (categoryId: string) => void;
@@ -557,7 +557,7 @@ export type OwnerSettingsStoreChannelsPanelProps = StorePanelLangProps & {
   toggleChannel: (channelId: string) => void;
   requestRetireChannel: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
   restoreSalesChannel: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
-  addCustomIncomeSource: () => void;
+  addCustomIncomeSource: (names?: { nameAr?: string; nameEn?: string }) => void;
   settingsNotice: string;
   backFromStorePanel: () => void;
   saveChannelSettings: () => void;
@@ -622,7 +622,7 @@ export type OwnerSettingsIncomeSourcesEditorProps = {
   toggleChannel: (channelId: string) => void;
   requestRetireChannel: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
   restoreSalesChannel: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
-  addCustomIncomeSource: () => void;
+  addCustomIncomeSource: (names?: { nameAr?: string; nameEn?: string }) => void;
   text: (lang: DisplayLang, key: string) => string;
   channelName: (channel: PrototypeChannel | Record<string, unknown>, lang: DisplayLang) => string;
 };

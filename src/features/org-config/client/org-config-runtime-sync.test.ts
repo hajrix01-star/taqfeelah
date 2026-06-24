@@ -177,6 +177,71 @@ describe("org config runtime sync", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("persists production employee disable through members api with canonical ids", async () => {
+    process.env.NEXT_PUBLIC_APP_MODE = "production";
+    const memberId = "11111111-1111-4111-8111-111111111111";
+    const userId = "4cf1450d-08d8-4ca1-b180-1c2642174a79";
+    const fetchMock = vi.fn(async (url, init) => {
+      if (String(url).endsWith(`/api/v1/members/${memberId}`) && init?.method === "PATCH") {
+        return new Response(JSON.stringify({
+          member: {
+            memberId,
+            userId,
+            name: "Ahmed",
+            role: "employee",
+            status: "inactive",
+            storeIds: [],
+          },
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync");
+    await persistOrgConfigSnapshot({
+      auth: {
+        organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+        actorUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
+        actorRole: "owner",
+      },
+      baseline: {
+        configuredBusinesses: [],
+        archivedBusinessIds: [],
+        storeChannelSettings: {},
+        staff: [{
+          id: userId,
+          memberId,
+          nameAr: "Ahmed",
+          active: true,
+          storeIds: ["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"],
+        }],
+      },
+      next: {
+        configuredBusinesses: [],
+        archivedBusinessIds: [],
+        storeChannelSettings: {},
+        staff: [{
+          id: userId,
+          memberId,
+          nameAr: "Ahmed",
+          active: false,
+          removed: true,
+          storeIds: ["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"],
+        }],
+      },
+    });
+
+    const patchCall = fetchMock.mock.calls.find(([url, init]) => (
+      String(url).endsWith(`/api/v1/members/${memberId}`) && init?.method === "PATCH"
+    ));
+    expect(patchCall).toBeTruthy();
+    expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({
+      status: "inactive",
+      reason: "owner_removed_member",
+    });
+  });
+
   it("persists store operational settings through dedicated patch api", async () => {
     const fetchMock = vi.fn(async (url, init) => {
       if (String(url).includes("/operational-settings") && init?.method === "PATCH") {
