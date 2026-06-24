@@ -347,8 +347,8 @@ export function PrototypeRuntimePageContent({
                 actorRole: "owner",
                 loading: orgConfigLoading,
                 hydrated: orgConfigHydrated,
-                reload: () => { void reloadOrgConfig(); },
-                flushPersist: () => { void flushOrgConfigPersist(); },
+                reload: reloadOrgConfig,
+                flushPersist: flushOrgConfigPersist,
               }
               : null
           }

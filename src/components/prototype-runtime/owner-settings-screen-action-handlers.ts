@@ -239,6 +239,10 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
         );
         return;
       }
+      setters.setDraftStoreChannelConfig(null);
+      showSettingsSaved();
+      leaveStorePanelAfterSave();
+      return;
     }
 
     setters.setStoreChannelSettings(nextStoreChannelSettings);
@@ -412,7 +416,6 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       try {
         await orgConfigApiContext.flushPersist({ staff: nextStaff }, { employeePins: persistPins });
         if (clearLocalPins) setters.setAuthEmployeePins({});
-        setters.setStaff(nextStaff);
         cancelManagingTeam();
         if (typeof reloadEntitlements === "function") {
           await reloadEntitlements();

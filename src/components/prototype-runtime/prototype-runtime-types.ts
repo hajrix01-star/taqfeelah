@@ -23,6 +23,7 @@ import type {
   UseOperationalSyncProps,
 } from "@/features/operations/client/operations-client-types";
 import type {
+  OrgConfigRuntimeSnapshot,
   OwnerSettingsDeleteTarget,
   StaffMember,
   StoreChannelConfig,
@@ -339,7 +340,10 @@ export type OwnerSettingsApiContext = {
   loading?: boolean;
   hydrated?: boolean;
   reload?: () => void | Promise<void>;
-  flushPersist?: () => void | Promise<void>;
+  flushPersist?: (
+    overrides?: Partial<OrgConfigRuntimeSnapshot>,
+    options?: { employeePins?: Record<string, string> },
+  ) => Promise<void>;
 } | null;
 
 export type OwnerSettingsScreenProps = {

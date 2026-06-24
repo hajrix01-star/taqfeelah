@@ -137,9 +137,7 @@ describe("owner settings screen action handlers", () => {
       },
       { employeePins: {} },
     );
-    expect(ctx.setters.setStaff).toHaveBeenCalledWith([
-      expect.objectContaining({ active: false }),
-    ]);
+    expect(ctx.setters.setStaff).not.toHaveBeenCalled();
     expect(ctx.showSettingsSaved).toHaveBeenCalled();
   });
 
@@ -182,9 +180,52 @@ describe("owner settings screen action handlers", () => {
       },
       { employeePins: {} },
     );
-    expect(ctx.setters.setStaff).toHaveBeenCalledWith([
-      expect.objectContaining({ active: false, removed: true }),
-    ]);
+    expect(ctx.setters.setStaff).not.toHaveBeenCalled();
+    expect(ctx.showSettingsSaved).toHaveBeenCalled();
+  });
+
+  it("waits for channel API save and does not overwrite server-hydrated channel ids", async () => {
+    process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED = "true";
+    const flushPersist = vi.fn().mockResolvedValue(undefined);
+    const ctx = buildHandlerContext({
+      settingsStoreId: "7cf1450d-08d8-4ca1-b180-1c2642174a79",
+      storeChannelSettings: {
+        "7cf1450d-08d8-4ca1-b180-1c2642174a79": {
+          channels: [{ id: "cash", legacyId: "cash", retired: false }],
+          activeIds: ["cash"],
+        },
+      },
+      draftStoreChannelConfig: {
+        channels: [
+          { id: "cash", legacyId: "cash", retired: false },
+          { id: "custom-temp", custom: true, nameAr: "توصيل", nameEn: "Delivery", retired: false },
+        ],
+        activeIds: ["cash", "custom-temp"],
+      },
+      orgConfigApiContext: {
+        enabled: true,
+        hydrated: true,
+        loading: false,
+        flushPersist,
+      },
+    });
+
+    const { saveChannelSettings } = createOwnerSettingsScreenHandlers(ctx);
+    await saveChannelSettings();
+
+    expect(flushPersist).toHaveBeenCalledWith({
+      storeChannelSettings: {
+        "7cf1450d-08d8-4ca1-b180-1c2642174a79": {
+          channels: [
+            { id: "cash", legacyId: "cash", retired: false },
+            { id: "custom-temp", custom: true, nameAr: "توصيل", nameEn: "Delivery", retired: false },
+          ],
+          activeIds: ["cash", "custom-temp"],
+        },
+      },
+    });
+    expect(ctx.setters.setStoreChannelSettings).not.toHaveBeenCalled();
+    expect(ctx.setters.setDraftStoreChannelConfig).toHaveBeenCalledWith(null);
     expect(ctx.showSettingsSaved).toHaveBeenCalled();
   });
 });
