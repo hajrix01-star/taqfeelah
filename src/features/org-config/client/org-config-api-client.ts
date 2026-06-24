@@ -1,5 +1,6 @@
 import { isUuid, mapToUuid, reverseLookupKeyByUuid } from "@/core/client/api-id-utils";
 import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+import { readPublicAppMode } from "@/core/config/app-mode";
 import {
   getRuntimeApiMaps,
   setRuntimeApiIdMaps,
@@ -19,6 +20,24 @@ export function setOrgConfigRuntimeApiIdMaps(overrides: Record<string, unknown>)
 
 function getMaps() {
   return getRuntimeApiMaps();
+}
+
+function assertProductionUuid(value: unknown, message: string) {
+  if (readPublicAppMode() !== "production") return;
+  if (!isUuid(value)) {
+    throw new Error(message);
+  }
+}
+
+function mapStoreIdsForWrite(storeIds: string[] = []) {
+  if (readPublicAppMode() === "production") {
+    storeIds.forEach((storeId) => assertProductionUuid(storeId, "production org-config writes require canonical store ids."));
+    return storeIds;
+  }
+  const { storeIdMap } = getMaps();
+  return storeIds
+    .map((id) => mapToUuid(id, storeIdMap))
+    .filter((value): value is string => isUuid(value));
 }
 
 export async function fetchOrganizationStoresViaApi({
@@ -143,6 +162,7 @@ export async function updateStoreOperationalSettingsViaApi({
   patch: Record<string, unknown>;
   reason?: string;
 }) {
+  assertProductionUuid(storeId, "production store operational settings update requires canonical store id.");
   const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
   if (!context) throw new Error("store operational settings api failed: missing store mapping");
 
@@ -180,6 +200,7 @@ export async function updateOrganizationStoreViaApi({
   status?: string;
   reason?: string;
 }) {
+  assertProductionUuid(storeId, "production store update requires canonical store id.");
   const { storeIdMap } = getMaps();
   const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
   if (!context) throw new Error("store update api failed: missing store mapping");
@@ -222,6 +243,7 @@ export async function createStoreSalesChannelViaApi({
   status?: string;
   reason?: string;
 }) {
+  assertProductionUuid(storeId, "production sales channel create requires canonical store id.");
   const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
   if (!context) throw new Error("sales channel create api failed: missing store mapping");
   if (!name?.trim()) throw new Error("sales channel create api failed: missing channel name");
@@ -260,6 +282,7 @@ export async function updateStoreSalesChannelViaApi({
   status?: string;
   reason?: string;
 }) {
+  assertProductionUuid(storeId, "production sales channel update requires canonical store id.");
   const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
   if (!context) throw new Error("sales channel update api failed: missing store mapping");
   if (!isUuid(salesChannelId)) throw new Error("sales channel update api failed: missing channel id");
@@ -299,10 +322,7 @@ export async function createOrganizationMemberViaApi({
   pin?: string;
   loginPhone?: string;
 }) {
-  const { storeIdMap } = getMaps();
-  const mappedStoreIds = storeIds
-    .map((id) => mapToUuid(id, storeIdMap))
-    .filter((value): value is string => isUuid(value));
+  const mappedStoreIds = mapStoreIdsForWrite(storeIds);
 
   const body: Record<string, unknown> = {
     name,
@@ -350,14 +370,11 @@ export async function updateOrganizationMemberViaApi({
 }) {
   if (!isUuid(memberId)) throw new Error("member update api failed: missing member id");
 
-  const { storeIdMap } = getMaps();
   const body: Record<string, unknown> = {};
   if (typeof name === "string" && name.trim()) body.name = name.trim();
   if (status === "active" || status === "inactive") body.status = status;
   if (Array.isArray(storeIds)) {
-    body.storeIds = storeIds
-      .map((id) => mapToUuid(id, storeIdMap))
-      .filter((value): value is string => isUuid(value));
+    body.storeIds = mapStoreIdsForWrite(storeIds);
   }
   if (typeof pin === "string" && pin.trim()) {
     body.credentials = { type: "employee_pin", pin: pin.trim() };

@@ -95,4 +95,42 @@ describe("org config api client", () => {
     expect(bundle.members[0].storeAccess).toHaveLength(1);
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/v1/members"))).toBe(false);
   });
+
+  it("rejects production sales-channel writes with legacy store ids", async () => {
+    setMapsEnv();
+    process.env.NEXT_PUBLIC_APP_MODE = "production";
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { createStoreSalesChannelViaApi } = await import("./org-config-api-client.js");
+
+    await expect(createStoreSalesChannelViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
+      actorRole: "owner",
+      storeId: "shami",
+      name: "Delivery",
+    })).rejects.toThrow("production sales channel create requires canonical store id");
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects production member writes with legacy store ids", async () => {
+    setMapsEnv();
+    process.env.NEXT_PUBLIC_APP_MODE = "production";
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { updateOrganizationMemberViaApi } = await import("./org-config-api-client.js");
+
+    await expect(updateOrganizationMemberViaApi({
+      organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+      actorUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
+      actorRole: "owner",
+      memberId: "11111111-1111-4111-8111-111111111111",
+      storeIds: ["shami"],
+    })).rejects.toThrow("production org-config writes require canonical store ids");
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

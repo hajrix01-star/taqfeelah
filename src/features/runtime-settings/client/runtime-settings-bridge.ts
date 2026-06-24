@@ -1,6 +1,7 @@
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 import { isCloseoutsApiDbSourceMode } from "@/core/config/closeouts-api-mode";
 import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
+import { readPublicAppMode } from "@/core/config/app-mode";
 import { bindsToServerAuth, usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
 import { isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
 import { isUuid } from "@/core/client/api-id-utils";
@@ -58,12 +59,17 @@ export function buildRuntimeSettingsSnapshot({
   storeChannelSettings,
   staff,
 }: RuntimeSettingsSnapshotInput): Record<string, unknown> {
-  const shared = {
-    storeOperationalSettings,
+  const uiPreferences = {
     notebookTheme,
     employeePreferences,
     ownerShellPreferences,
     ownerProfile,
+  };
+  if (orgConfigApiEnabled && readPublicAppMode() === "production") return uiPreferences;
+
+  const shared = {
+    storeOperationalSettings,
+    ...uiPreferences,
     authConfig,
   };
   if (orgConfigApiEnabled) return shared;

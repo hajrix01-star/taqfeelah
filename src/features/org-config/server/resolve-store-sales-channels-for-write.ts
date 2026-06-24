@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import { readServerAppMode } from "@/core/config/app-mode";
 import type { getDb } from "@/core/db/client";
 import { salesChannels } from "@/core/db/schema";
 import { ValidationError } from "@/core/errors/app-error";
@@ -15,7 +16,8 @@ function normalizeChannelName(value: string): string {
 
 /**
  * Map client channel ids to store-scoped sales_channels rows.
- * Accepts canonical ids when present; otherwise resolves by channel name snapshot.
+ * Production accepts canonical ids only. Name fallback is kept only for
+ * non-production compatibility while the prototype/runtime cutover is completed.
  */
 export async function resolveStoreSalesChannelsForWrite(
   db: ReturnType<typeof getDb>,
@@ -42,6 +44,11 @@ export async function resolveStoreSalesChannelsForWrite(
 
   return positive.map((row) => {
     if (byId.has(row.salesChannelId)) return row;
+    if (readServerAppMode() === "production") {
+      throw new ValidationError(
+        "Sales channel id is required and must be configured for this store.",
+      );
+    }
     const matched = byName.get(normalizeChannelName(row.channelName));
     if (matched) {
       return { ...row, salesChannelId: matched.id };

@@ -139,6 +139,44 @@ describe("org config runtime sync", () => {
     expect(applied.staff[0]?.id).toBe("4cf1450d-08d8-4ca1-b180-1c2642174a79");
   });
 
+  it("rejects production staff updates that still use legacy runtime ids", async () => {
+    process.env.NEXT_PUBLIC_APP_MODE = "production";
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({}), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync");
+    await expect(persistOrgConfigSnapshot({
+      auth: {
+        organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+        actorUserId: "owner",
+        actorRole: "owner",
+      },
+      baseline: {
+        configuredBusinesses: [],
+        archivedBusinessIds: [],
+        storeChannelSettings: {},
+        staff: [{
+          id: "ahmed",
+          memberId: "11111111-1111-4111-8111-111111111111",
+          active: true,
+        }],
+      },
+      next: {
+        configuredBusinesses: [],
+        archivedBusinessIds: [],
+        storeChannelSettings: {},
+        staff: [{
+          id: "ahmed",
+          memberId: "11111111-1111-4111-8111-111111111111",
+          active: false,
+          removed: true,
+        }],
+      },
+    })).rejects.toThrow("production staff update requires canonical user id");
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("persists store operational settings through dedicated patch api", async () => {
     const fetchMock = vi.fn(async (url, init) => {
       if (String(url).includes("/operational-settings") && init?.method === "PATCH") {
@@ -291,6 +329,51 @@ describe("org config runtime sync", () => {
     expect(remapped.channels.some((channel) => channel.id === createdChannelId)).toBe(true);
     expect(remapped.activeIds).toContain(createdChannelId);
     expect(remapped.activeIds).not.toContain("channel-1718040000000");
+  });
+
+  it("rejects production channel writes keyed by legacy store id", async () => {
+    process.env.NEXT_PUBLIC_APP_MODE = "production";
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({}), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync");
+    await expect(persistOrgConfigSnapshot({
+      auth: {
+        organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+        actorUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
+        actorRole: "owner",
+      },
+      baseline: {
+        configuredBusinesses: [{
+          id: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {},
+        staff: [],
+      },
+      next: {
+        configuredBusinesses: [{
+          id: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {
+          shami: {
+            channels: [{
+              id: "channel-1718040000000",
+              custom: true,
+              nameAr: "Delivery",
+              nameEn: "Delivery",
+            }],
+            activeIds: ["channel-1718040000000"],
+          },
+        },
+        staff: [],
+      },
+    })).rejects.toThrow("production sales channel create requires canonical store id");
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("creates catalog sales channels even when only legacy preset metadata is present", async () => {

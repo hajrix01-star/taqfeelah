@@ -1,35 +1,55 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const updateWhere = vi.fn(async () => undefined);
+const updateSet = vi.fn(() => ({ where: updateWhere }));
+const update = vi.fn(() => ({ set: updateSet }));
+const insertValues = vi.fn(async () => undefined);
+const insert = vi.fn(() => ({ values: insertValues }));
+const selectLimit = vi.fn(async () => []);
+const selectWhere = vi.fn(() => ({ limit: selectLimit }));
+const selectFrom = vi.fn(() => ({ where: selectWhere }));
+const select = vi.fn(() => ({ from: selectFrom }));
+const deactivateEmployeePinIdentity = vi.fn(async () => undefined);
+const upsertEmployeePinIdentity = vi.fn(async () => undefined);
 
 vi.mock("@/core/db/client", () => ({
   getDb: () => ({
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          limit: vi.fn(async () => []),
-        })),
-      })),
-    })),
-    insert: vi.fn(() => ({
-      values: vi.fn(async () => undefined),
-    })),
-    update: vi.fn(() => ({
-      set: vi.fn(() => ({
-        where: vi.fn(async () => undefined),
-      })),
-    })),
+    select,
+    insert,
+    update,
   }),
 }));
 
+vi.mock("@/features/auth/server/auth-identities", () => ({
+  deactivateEmployeePinIdentity,
+  upsertEmployeePinIdentity,
+}));
+
 describe("provisionStaffMembers", () => {
-  it("returns inactive staff without provisioning", async () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    selectLimit.mockResolvedValue([]);
+  });
+
+  it("marks inactive staff inactive in DB instead of only hiding them in runtime settings", async () => {
     const { provisionStaffMembers } = await import("@/features/runtime-settings/server/provision-staff-members");
     const result = await provisionStaffMembers(
       "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
-      [{ id: "staff-1", nameEn: "Ali", active: false }],
+      [{
+        id: "staff-1",
+        apiUserId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+        nameEn: "Ali",
+        active: false,
+      }],
       { storeIdMap: {}, userIdMap: {} },
     );
+
     expect(result).toHaveLength(1);
     expect(result[0]?.id).toBe("staff-1");
+    expect(update).toHaveBeenCalled();
+    expect(updateSet).toHaveBeenCalledWith(expect.objectContaining({ status: "inactive" }));
+    expect(deactivateEmployeePinIdentity).toHaveBeenCalledWith("4cf1450d-08d8-4ca1-b180-1c2642174a79");
+    expect(insert).not.toHaveBeenCalled();
   });
 
   it("resolves custom store ids from merged store map", async () => {

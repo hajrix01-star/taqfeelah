@@ -5,42 +5,29 @@
  */
 
 import process from "node:process";
+import { readFileSync } from "node:fs";
 import { Client } from "pg";
 
 const DEFAULT_ORG = "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const INCOME_SOURCE_CATALOG = JSON.parse(
+  readFileSync(new URL("../src/core/client/income-source-catalog-data.json", import.meta.url), "utf8"),
+);
 const BOOTSTRAP_STORE_ID_MAP = {
   shami: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
 };
 
-const DEFAULT_SALES_CHANNEL_UUIDS = {
-  cash: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
-  bank: "b1a2c3d4-e5f6-4789-a012-3456789abcde",
-  mada: "7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c",
-  apple: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d",
-  jahez: "9e5c3a4b-0d6f-4a1c-a3e4-5f6a7b8c9d0e",
-  hunger: "af6d4b5c-1e7a-4b2d-a4f5-6a7b8c9d0e1f",
-  card: "bb16ea8f-8abf-4ca9-ab0d-e3a8f69f8db1",
-  online: "f0f8dd28-4fbe-4bf2-9074-2be703f10ccd",
-  keeta: "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
-};
+const DEFAULT_SALES_CHANNEL_UUIDS = Object.fromEntries(
+  INCOME_SOURCE_CATALOG.map((entry) => [entry.legacyId, entry.uuid]),
+);
 
-const CHANNEL_LABELS = {
-  cash: "Cash",
-  bank: "Bank",
-  mada: "Mada",
-  apple: "Apple Pay",
-  jahez: "Jahez",
-  hunger: "HungerStation",
-  card: "Card",
-  online: "Online",
-  keeta: "Keeta",
-};
+const CHANNEL_LABELS = Object.fromEntries(
+  INCOME_SOURCE_CATALOG.map((entry) => [entry.legacyId, entry.nameAr || entry.nameEn]),
+);
 
-const DEFAULT_PROTOTYPE_CHANNELS = [
-  { id: "cash" },
-  { id: "card" },
-];
+const DEFAULT_PROTOTYPE_CHANNELS = INCOME_SOURCE_CATALOG
+  .filter((entry) => entry.defaultActive)
+  .map((entry) => ({ id: entry.legacyId }));
 
 function parseOrgId() {
   const index = process.argv.indexOf("--org");

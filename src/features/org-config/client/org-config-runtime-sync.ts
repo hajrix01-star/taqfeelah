@@ -1,4 +1,5 @@
 import { diffStoreOperationalSettingsPatch } from "@/domain/store-operational-settings/normalize";
+import { readPublicAppMode } from "@/core/config/app-mode";
 import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
 import {
   createOrganizationMemberViaApi,
@@ -35,6 +36,20 @@ function channelApiId(channel: Record<string, unknown>) {
   if (isUuid(channel?.apiChannelId)) return String(channel.apiChannelId);
   if (isUuid(channel?.id)) return String(channel.id);
   return "";
+}
+
+function isProductionStaffIdentityStrict() {
+  return readPublicAppMode() === "production";
+}
+
+function assertProductionExistingStaffIdentity(person: Record<string, unknown>, memberId: unknown) {
+  if (!isProductionStaffIdentityStrict()) return;
+  if (!isUuid(person.id)) {
+    throw new Error("production staff update requires canonical user id.");
+  }
+  if (!isUuid(memberId)) {
+    throw new Error("production staff update requires canonical memberId.");
+  }
 }
 
 function channelIsActive(channel: Record<string, unknown>, activeIds: string[]) {
@@ -228,6 +243,9 @@ export async function persistOrgConfigSnapshot({
     const draftPin = typeof employeePins[String(person.id)] === "string" ? employeePins[String(person.id)].trim() : "";
 
     if (!previous?.memberId && (isClientGeneratedId(person.id) || !isUuid(person.memberId))) {
+      if (isProductionStaffIdentityStrict() && !isClientGeneratedId(person.id)) {
+        throw new Error("production staff create/update requires API-created member identity.");
+      }
       const pin = draftPin || (typeof person.pin === "string" ? person.pin.trim() : "");
       if (!pin) {
         throw new Error("employee pin is required when creating a team member");
@@ -261,6 +279,7 @@ export async function persistOrgConfigSnapshot({
     }
 
     const memberId = person.memberId || previous?.memberId;
+    assertProductionExistingStaffIdentity(person, memberId);
     if (!isUuid(memberId)) continue;
 
     const nextName = String(person.nameAr || person.nameEn || "");

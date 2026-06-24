@@ -1,4 +1,5 @@
-import { CreditCard, Landmark, ShoppingBag, Smartphone, Wallet } from "lucide-react";
+﻿import { CreditCard, Landmark, ShoppingBag, Smartphone, Wallet } from "lucide-react";
+import { INCOME_SOURCE_CATALOG, getCatalogEntry } from "@/core/client/income-source-catalog";
 import { normalizeStoreOperationalSettings } from "@/domain/store-operational-settings/normalize";
 import { isUuid } from "@/features/closeouts/client/closeouts-api-client";
 import type {
@@ -18,33 +19,33 @@ export function assertCanonicalUuidId(entityName: string, value: unknown) {
   }
 }
 
-const CHANNEL_TEMPLATES: Record<string, Record<string, unknown>> = {
-  cash: { id: "cash", text: "cash", kind: "payment_method", icon: Wallet },
-  bank: { id: "bank", text: "bank", kind: "payment_method", icon: Landmark },
-  mada: { id: "mada", text: "mada", kind: "payment_method", icon: CreditCard },
-  apple: { id: "apple", text: "apple", kind: "payment_method", icon: Smartphone },
-  card: { id: "card", text: "card", kind: "payment_method", icon: CreditCard },
-  online: { id: "online", text: "online", kind: "payment_method", icon: CreditCard },
-  jahez: { id: "jahez", text: "jahez", kind: "sales_channel", icon: ShoppingBag },
-  hunger: { id: "hunger", text: "hunger", kind: "sales_channel", icon: ShoppingBag },
-  keeta: { id: "keeta", text: "keeta", kind: "sales_channel", icon: ShoppingBag },
-};
+function catalogIcon(legacyId: string, kind: string) {
+  if (legacyId === "cash") return Wallet;
+  if (legacyId === "bank") return Landmark;
+  if (legacyId === "apple") return Smartphone;
+  if (kind === "sales_channel") return ShoppingBag;
+  return CreditCard;
+}
 
-const CHANNEL_NAME_TO_LEGACY: Record<string, string> = {
-  cash: "cash",
-  bank: "bank",
-  بنك: "bank",
-  نقد: "cash",
-  بطاقة: "card",
-  mada: "mada",
-  "apple pay": "apple",
-  jahez: "jahez",
-  hungerstation: "hunger",
-  keeta: "keeta",
-  كيتا: "keeta",
-  card: "card",
-  online: "online",
-};
+const CHANNEL_TEMPLATES: Record<string, Record<string, unknown>> = Object.fromEntries(
+  INCOME_SOURCE_CATALOG.map((entry) => [
+    entry.legacyId,
+    {
+      id: entry.legacyId,
+      text: entry.legacyId,
+      kind: entry.kind,
+      icon: catalogIcon(entry.legacyId, entry.kind),
+    },
+  ]),
+);
+
+const CHANNEL_NAME_TO_LEGACY: Record<string, string> = Object.fromEntries(
+  INCOME_SOURCE_CATALOG.flatMap((entry) => [
+    [entry.legacyId.toLowerCase(), entry.legacyId],
+    [entry.nameEn.trim().toLowerCase(), entry.legacyId],
+    [entry.nameAr.trim().toLowerCase(), entry.legacyId],
+  ]),
+);
 
 function normalizeChannelName(name: unknown) {
   return typeof name === "string" ? name.trim().toLowerCase() : "";
@@ -64,11 +65,14 @@ export function mapApiChannelToUi(channel: ApiChannelRow) {
   const retired = channel?.status === "retired";
   assertCanonicalUuidId("sales channel", channel?.id);
   if (template) {
+    const catalogEntry = getCatalogEntry(legacyId);
     return {
       ...template,
       id: channel.id,
       legacyId,
       apiChannelId: channel.id,
+      nameAr: catalogEntry?.nameAr,
+      nameEn: catalogEntry?.nameEn,
       retired,
     };
   }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import rawIncomeSourceCatalog from "./income-source-catalog-data.json";
 
 export type IncomeSourceKind = "payment_method" | "sales_channel";
 
@@ -11,75 +12,11 @@ export type CatalogIncomeSource = {
   defaultActive?: boolean;
 };
 
-export const INCOME_SOURCE_CATALOG: CatalogIncomeSource[] = [
-  {
-    legacyId: "cash",
-    kind: "payment_method",
-    nameAr: "نقد",
-    nameEn: "Cash",
-    uuid: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb",
-    defaultActive: true,
-  },
-  {
-    legacyId: "card",
-    kind: "payment_method",
-    nameAr: "بطاقة",
-    nameEn: "Card",
-    uuid: "bb16ea8f-8abf-4ca9-ab0d-e3a8f69f8db1",
-    defaultActive: true,
-  },
-  {
-    legacyId: "mada",
-    kind: "payment_method",
-    nameAr: "مدى",
-    nameEn: "Mada",
-    uuid: "7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c",
-  },
-  {
-    legacyId: "bank",
-    kind: "payment_method",
-    nameAr: "بنك",
-    nameEn: "Bank transfer",
-    uuid: "b1a2c3d4-e5f6-4789-a012-3456789abcde",
-  },
-  {
-    legacyId: "apple",
-    kind: "payment_method",
-    nameAr: "Apple Pay",
-    nameEn: "Apple Pay",
-    uuid: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d",
-  },
-  {
-    legacyId: "online",
-    kind: "payment_method",
-    nameAr: "أونلاين",
-    nameEn: "Online",
-    uuid: "f0f8dd28-4fbe-4bf2-9074-2be703f10ccd",
-  },
-  {
-    legacyId: "jahez",
-    kind: "sales_channel",
-    nameAr: "جاهز",
-    nameEn: "Jahez",
-    uuid: "9e5c3a4b-0d6f-4a1c-a3e4-5f6a7b8c9d0e",
-  },
-  {
-    legacyId: "hunger",
-    kind: "sales_channel",
-    nameAr: "هنقرستيشن",
-    nameEn: "HungerStation",
-    uuid: "af6d4b5c-1e7a-4b2d-a4f5-6a7b8c9d0e1f",
-  },
-  {
-    legacyId: "keeta",
-    kind: "sales_channel",
-    nameAr: "كيتا",
-    nameEn: "Keeta",
-    uuid: "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
-  },
-];
+export const INCOME_SOURCE_CATALOG: CatalogIncomeSource[] = rawIncomeSourceCatalog as CatalogIncomeSource[];
 
-export const DEFAULT_NEW_STORE_INCOME_SOURCE_IDS = ["cash", "card"] as const;
+export const DEFAULT_NEW_STORE_INCOME_SOURCE_IDS = INCOME_SOURCE_CATALOG
+  .filter((entry) => entry.defaultActive)
+  .map((entry) => entry.legacyId);
 
 /** @deprecated Use DEFAULT_NEW_STORE_INCOME_SOURCE_IDS */
 export const DEFAULT_NEW_STORE_SALES_CHANNEL_IDS = DEFAULT_NEW_STORE_INCOME_SOURCE_IDS;

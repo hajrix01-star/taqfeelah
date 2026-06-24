@@ -1,0 +1,18 @@
+[
+  {
+    "legacyId": "ahmed",
+    "userId": "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+    "nameAr": "أحمد",
+    "nameEn": "Ahmed",
+    "role": "employee",
+    "pin": "1234"
+  },
+  {
+    "legacyId": "sara",
+    "userId": "85f696d6-f655-4f2d-9f56-1f13c2f4c66c",
+    "nameAr": "سارة",
+    "nameEn": "Sara",
+    "role": "employee",
+    "pin": "1234"
+  }
+]

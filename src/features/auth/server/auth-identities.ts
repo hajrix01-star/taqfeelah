@@ -172,6 +172,25 @@ export async function updateEmployeeLoginPhone(
   return { id: existing.id, userId, provider: "employee_pin" as const };
 }
 
+export async function deactivateEmployeePinIdentity(
+  userId: string,
+  executor?: AuthIdentityDb,
+) {
+  const db = resolveDb(executor);
+  await db
+    .update(authIdentities)
+    .set({
+      status: "inactive",
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(authIdentities.userId, userId),
+        eq(authIdentities.provider, "employee_pin"),
+      ),
+    );
+}
+
 export async function getOwnerPasswordIdentityFlags(userId: string) {
   const db = getDb();
   const [identity] = await db

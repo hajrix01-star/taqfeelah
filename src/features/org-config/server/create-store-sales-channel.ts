@@ -1,4 +1,3 @@
-import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
@@ -36,22 +35,6 @@ export async function createStoreSalesChannel(rawInput: z.infer<typeof inputSche
   const now = new Date();
 
   return db.transaction(async (tx) => {
-    const [duplicate] = await tx
-      .select({ id: salesChannels.id })
-      .from(salesChannels)
-      .where(
-        and(
-          eq(salesChannels.organizationId, input.organizationId),
-          eq(salesChannels.storeId, input.storeId),
-          eq(salesChannels.name, input.name),
-        ),
-      )
-      .limit(1);
-
-    if (duplicate?.id) {
-      throw new ValidationError("A sales channel with this name already exists for this store.");
-    }
-
     const [created] = await tx
       .insert(salesChannels)
       .values({

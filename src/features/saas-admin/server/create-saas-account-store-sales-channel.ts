@@ -1,4 +1,3 @@
-import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import { auditEvents, salesChannels } from "@/core/db/schema";
@@ -26,22 +25,6 @@ export async function createSaasAccountStoreSalesChannel(rawInput: z.infer<typeo
 
   return db.transaction(async (tx) => {
     await assertSaasStoreBelongsToOrg(tx, input.organizationId, input.storeId);
-
-    const [duplicate] = await tx
-      .select({ id: salesChannels.id })
-      .from(salesChannels)
-      .where(
-        and(
-          eq(salesChannels.organizationId, input.organizationId),
-          eq(salesChannels.storeId, input.storeId),
-          eq(salesChannels.name, input.name),
-        ),
-      )
-      .limit(1);
-
-    if (duplicate?.id) {
-      throw new ValidationError("A sales channel with this name already exists for this store.");
-    }
 
     const [created] = await tx
       .insert(salesChannels)

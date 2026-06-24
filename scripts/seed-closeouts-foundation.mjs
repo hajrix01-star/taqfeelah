@@ -9,8 +9,16 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import process from "node:process";
 import { Client } from "pg";
+
+const INCOME_SOURCE_CATALOG = JSON.parse(
+  readFileSync(new URL("../src/core/client/income-source-catalog-data.json", import.meta.url), "utf8"),
+);
+const DEMO_STAFF_CATALOG = JSON.parse(
+  readFileSync(new URL("../src/core/client/demo-staff-catalog-data.json", import.meta.url), "utf8"),
+);
 
 function valueFromEnv(name, fallback = "") {
   const value = process.env[name];
@@ -24,20 +32,12 @@ const DEFAULTS = {
   storeName: "مشويات المعلم الشامي",
   ownerUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
   ownerName: "Owner",
-  employeeOneUserId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
-  employeeOneName: "Ahmed",
-  employeeTwoUserId: "85f696d6-f655-4f2d-9f56-1f13c2f4c66c",
-  employeeTwoName: "Sara",
-  salesChannels: [
-    { legacyId: "cash", id: "9bc40d4f-c773-4ba3-87db-b8bb1467dafb", name: "Cash" },
-    { legacyId: "mada", id: "7c3a1f2e-8b4d-4e9a-a1c2-3d4e5f6a7b8c", name: "Mada" },
-    { legacyId: "apple", id: "8d4b2f3a-9c5e-4f0b-b2d3-4e5f6a7b8c9d", name: "Apple Pay" },
-    { legacyId: "jahez", id: "9e5c3a4b-0d6f-4a1c-a3e4-5f6a7b8c9d0e", name: "Jahez" },
-    { legacyId: "hunger", id: "af6d4b5c-1e7a-4b2d-a4f5-6a7b8c9d0e1f", name: "HungerStation" },
-    { legacyId: "card", id: "bb16ea8f-8abf-4ca9-ab0d-e3a8f69f8db1", name: "Card" },
-    { legacyId: "online", id: "f0f8dd28-4fbe-4bf2-9074-2be703f10ccd", name: "Online" },
-    { legacyId: "keeta", id: "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f", name: "Keeta" },
-  ],
+  staff: DEMO_STAFF_CATALOG,
+  salesChannels: INCOME_SOURCE_CATALOG.map((entry) => ({
+    legacyId: entry.legacyId,
+    id: entry.uuid,
+    name: entry.nameAr || entry.nameEn,
+  })),
 };
 
 function buildConfig() {
@@ -48,10 +48,7 @@ function buildConfig() {
     storeName: valueFromEnv("SEED_STORE_NAME", DEFAULTS.storeName),
     ownerUserId: valueFromEnv("SEED_OWNER_USER_ID", DEFAULTS.ownerUserId),
     ownerName: valueFromEnv("SEED_OWNER_NAME", DEFAULTS.ownerName),
-    employeeOneUserId: valueFromEnv("SEED_EMPLOYEE_ONE_USER_ID", DEFAULTS.employeeOneUserId),
-    employeeOneName: valueFromEnv("SEED_EMPLOYEE_ONE_NAME", DEFAULTS.employeeOneName),
-    employeeTwoUserId: valueFromEnv("SEED_EMPLOYEE_TWO_USER_ID", DEFAULTS.employeeTwoUserId),
-    employeeTwoName: valueFromEnv("SEED_EMPLOYEE_TWO_NAME", DEFAULTS.employeeTwoName),
+    staff: DEFAULTS.staff,
   };
 }
 
@@ -85,8 +82,11 @@ async function upsertFoundation(client, cfg) {
 
     const users = [
       { id: cfg.ownerUserId, name: cfg.ownerName, role: "owner" },
-      { id: cfg.employeeOneUserId, name: cfg.employeeOneName, role: "employee" },
-      { id: cfg.employeeTwoUserId, name: cfg.employeeTwoName, role: "employee" },
+      ...cfg.staff.map((person) => ({
+        id: person.userId,
+        name: person.nameAr || person.nameEn,
+        role: person.role || "employee",
+      })),
     ];
 
     const memberIds = {};
@@ -137,7 +137,7 @@ async function upsertFoundation(client, cfg) {
       }
     }
 
-    for (const employeeUserId of [cfg.employeeOneUserId, cfg.employeeTwoUserId]) {
+    for (const employeeUserId of cfg.staff.map((person) => person.userId)) {
       await client.query(
         `
         insert into member_store_access (organization_member_id, store_id)
@@ -176,8 +176,7 @@ async function upsertFoundation(client, cfg) {
     console.log(
       `NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP=${JSON.stringify({
         owner: cfg.ownerUserId,
-        ahmed: cfg.employeeOneUserId,
-        sara: cfg.employeeTwoUserId,
+        ...Object.fromEntries(cfg.staff.map((person) => [person.legacyId, person.userId])),
       })}`,
     );
     console.log(
@@ -218,33 +217,21 @@ async function seedRuntimeSettings(client, cfg) {
         location: "",
       },
     ],
-    staff: [
-      {
-        id: "ahmed",
-        nameAr: "أحمد",
-        nameEn: cfg.employeeOneName,
-        mobile: "",
-        active: true,
-        storeIds: ["shami"],
-        apiUserId: cfg.employeeOneUserId,
-      },
-      {
-        id: "sara",
-        nameAr: "سارة",
-        nameEn: cfg.employeeTwoName,
-        mobile: "",
-        active: true,
-        storeIds: ["shami"],
-        apiUserId: cfg.employeeTwoUserId,
-      },
-    ],
+    staff: cfg.staff.map((person) => ({
+      id: person.legacyId,
+      legacyId: person.legacyId,
+      nameAr: person.nameAr,
+      nameEn: person.nameEn,
+      mobile: "",
+      active: true,
+      removed: false,
+      storeIds: ["shami"],
+      apiUserId: person.userId,
+    })),
     authConfig: {
       ownerUsername: process.env.AUTH_OWNER_USERNAME || "hajri",
       ownerPassword: process.env.AUTH_OWNER_PASSWORD || "123",
-      employeePins: {
-        ahmed: "1234",
-        sara: "1234",
-      },
+      employeePins: Object.fromEntries(cfg.staff.map((person) => [person.legacyId, person.pin])),
     },
   };
 

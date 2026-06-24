@@ -136,6 +136,16 @@ async function ensureOrganizationMember(client, organizationId, userId) {
   return memberId;
 }
 
+async function deactivateOrganizationMember(client, organizationId, userId) {
+  const { rowCount } = await client.query(
+    `UPDATE organization_members
+     SET status = 'inactive', updated_at = NOW()
+     WHERE organization_id = $1 AND user_id = $2`,
+    [organizationId, userId],
+  );
+  return rowCount > 0;
+}
+
 async function grantStoreAccess(client, memberId, storeId) {
   const { rowCount } = await client.query(
     `INSERT INTO member_store_access (organization_member_id, store_id)
@@ -187,12 +197,20 @@ async function main() {
     let grants = 0;
 
     for (const person of staff) {
-      if (!person || person.active === false || person.removed === true) continue;
+      if (!person) continue;
 
       let apiUserId = typeof person.apiUserId === "string" ? person.apiUserId.trim() : "";
       if (!UUID_PATTERN.test(apiUserId)) {
         apiUserId = randomUUID();
         console.log(`Assigned new apiUserId ${apiUserId} for staff ${person.id || person.nameEn || "unknown"}`);
+      }
+
+      if (person.active === false || person.removed === true) {
+        const deactivated = await deactivateOrganizationMember(client, organizationId, apiUserId);
+        if (deactivated) {
+          console.log(`Deactivated staff ${person.id || apiUserId} (${apiUserId})`);
+        }
+        continue;
       }
 
       const storeUuids = (Array.isArray(person.storeIds) ? person.storeIds : [])

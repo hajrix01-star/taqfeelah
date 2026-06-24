@@ -3,7 +3,10 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { isAuthDbCredentialsEnabled } from "@/core/config/auth-api-mode";
 import { getDb } from "@/core/db/client";
-import { upsertEmployeePinIdentity } from "@/features/auth/server/auth-identities";
+import {
+  deactivateEmployeePinIdentity,
+  upsertEmployeePinIdentity,
+} from "@/features/auth/server/auth-identities";
 import {
   memberStoreAccess,
   organizationMembers,
@@ -157,6 +160,29 @@ async function ensureStaffUser(
   return userId;
 }
 
+async function deactivateStaffMember(
+  organizationId: string,
+  person: StaffRecord,
+  userIdMap: Record<string, string>,
+) {
+  const userId = typeof person.apiUserId === "string" && isUuid(person.apiUserId)
+    ? person.apiUserId
+    : resolveEmployeeUserId(person.id || "", userIdMap, { staff: [person] });
+  if (!userId) return;
+
+  const db = getDb();
+  await db
+    .update(organizationMembers)
+    .set({ status: "inactive", updatedAt: new Date() })
+    .where(
+      and(
+        eq(organizationMembers.organizationId, organizationId),
+        eq(organizationMembers.userId, userId),
+      ),
+    );
+  await deactivateEmployeePinIdentity(userId);
+}
+
 export async function provisionStaffMembers(
   organizationId: string,
   staff: unknown,
@@ -175,6 +201,7 @@ export async function provisionStaffMembers(
     const person: StaffRecord = { ...entry };
 
     if (person.removed || person.active === false) {
+      await deactivateStaffMember(organizationId, person, options.userIdMap);
       provisioned.push(person);
       continue;
     }

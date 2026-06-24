@@ -13,7 +13,9 @@ describe("runtime settings bridge", () => {
     vi.unstubAllEnvs();
   });
 
-  it("buildRuntimeSettingsSnapshot omits org entities when org config API is enabled", () => {
+  it("buildRuntimeSettingsSnapshot keeps shared settings outside production when org config API is enabled", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+
     const snapshot = buildRuntimeSettingsSnapshot({
       orgConfigApiEnabled: true,
       storeOperationalSettings: { shami: { reviewEnabled: true } },
@@ -38,6 +40,31 @@ describe("runtime settings bridge", () => {
     });
     expect(snapshot).not.toHaveProperty("staff");
     expect(snapshot).not.toHaveProperty("configuredBusinesses");
+  });
+
+  it("buildRuntimeSettingsSnapshot sends only UI preferences in production org-config DB/API mode", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
+
+    const snapshot = buildRuntimeSettingsSnapshot({
+      orgConfigApiEnabled: true,
+      storeOperationalSettings: { shami: { reviewEnabled: true } },
+      notebookTheme: "yellow",
+      employeePreferences: { ahmed: { notebookTheme: "classic" } },
+      ownerShellPreferences: { acknowledgedDuplicateSales: { shami: true } },
+      ownerProfile: { nameAr: "مالك" },
+      authConfig: { ownerUsername: "owner", ownerPassword: "demo", employeePins: {} },
+      configuredBusinesses: [{ id: "shami" }],
+      archivedBusinessIds: ["old"],
+      storeChannelSettings: { shami: [] },
+      staff: [{ id: "ahmed" }],
+    });
+
+    expect(snapshot).toEqual({
+      notebookTheme: "yellow",
+      employeePreferences: { ahmed: { notebookTheme: "classic" } },
+      ownerShellPreferences: { acknowledgedDuplicateSales: { shami: true } },
+      ownerProfile: { nameAr: "مالك" },
+    });
   });
 
   it("buildRuntimeSettingsSnapshot includes org entities when org config API is disabled", () => {

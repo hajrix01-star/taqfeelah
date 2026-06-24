@@ -3,6 +3,7 @@ import { z } from "zod";
 import { assertOrganizationAccess } from "@/core/auth/assert-organization-access";
 import { getDb } from "@/core/db/client";
 import { auditEvents, memberStoreAccess, organizationMembers, stores, users } from "@/core/db/schema";
+import { readServerAppMode } from "@/core/config/app-mode";
 import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { buildRuntimeApiIdMaps } from "@/core/client/runtime-api-id-maps";
 import { getProductionAuthRuntimeConfig } from "@/core/config/env";
@@ -42,6 +43,46 @@ function normalizeRuntimeSettings(settings: Record<string, unknown> | null | und
     ...settings,
     staff: enrichStaffWithApiUserIds(settings.staff, envAuth.userIdMap),
   };
+}
+
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" && z.string().uuid().safeParse(value).success;
+}
+
+export function assertProductionStaffUsesCanonicalIds(staff: unknown[]) {
+  if (readServerAppMode() !== "production") return;
+  for (const person of staff) {
+    if (!person || typeof person !== "object") continue;
+    const row = person as Record<string, unknown>;
+    const active = row.active !== false && row.removed !== true;
+    if (!active) continue;
+    if (!isUuid(row.id) || !isUuid(row.memberId)) {
+      throw new ValidationError("Production staff settings require canonical user id and memberId.");
+    }
+  }
+}
+
+const PRODUCTION_OPERATIONAL_RUNTIME_KEYS = [
+  "authConfig",
+  "configuredBusinesses",
+  "archivedBusinessIds",
+  "staff",
+  "storeChannelSettings",
+  "storeOperationalSettings",
+] as const;
+
+function isProductionRuntimePersistenceRestricted() {
+  return readServerAppMode() === "production" && isOrgConfigApiEnabled();
+}
+
+export function stripProductionOperationalRuntimeSettings(settings: Record<string, unknown>) {
+  if (!isProductionRuntimePersistenceRestricted()) return settings;
+
+  const stripped = { ...settings };
+  for (const key of PRODUCTION_OPERATIONAL_RUNTIME_KEYS) {
+    delete stripped[key];
+  }
+  return stripped;
 }
 
 /** Strip sensitive authConfig fields for non-owner roles */
@@ -200,21 +241,27 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
     envSalesChannelIdMap: envAuth.salesChannelIdMap,
   });
   const staffInput = Array.isArray(input.settings.staff) ? input.settings.staff : [];
+  if (isOrgConfigApiEnabled()) {
+    assertProductionStaffUsesCanonicalIds(staffInput);
+  }
+  const productionRuntimePersistenceRestricted = isProductionRuntimePersistenceRestricted();
   const provisionedStaff = isOrgConfigApiEnabled()
     ? enrichStaffWithApiUserIds(staffInput, envAuth.userIdMap)
     : await provisionStaffMembers(input.organizationId, staffInput, {
       storeIdMap: runtimeApiMaps.storeIdMap,
       userIdMap: runtimeApiMaps.userIdMap,
     });
-  const provisionedStoreChannelSettings = await provisionSalesChannels(
-    input.organizationId,
-    storeChannelSettings,
-    {
-      storeIdMap: runtimeApiMaps.storeIdMap,
-      salesChannelIdMap: runtimeApiMaps.salesChannelIdMap,
-    },
-  );
-  const normalizedSettings: Record<string, unknown> = {
+  const provisionedStoreChannelSettings = productionRuntimePersistenceRestricted
+    ? storeChannelSettings
+    : await provisionSalesChannels(
+      input.organizationId,
+      storeChannelSettings,
+      {
+        storeIdMap: runtimeApiMaps.storeIdMap,
+        salesChannelIdMap: runtimeApiMaps.salesChannelIdMap,
+      },
+    );
+  let normalizedSettings: Record<string, unknown> = {
     ...input.settings,
     staff: provisionedStaff,
     storeChannelSettings: provisionedStoreChannelSettings,
@@ -224,6 +271,7 @@ export async function saveRuntimeSettings(rawInput: SaveSettingsInput) {
     delete authConfig.employeePins;
     normalizedSettings.authConfig = authConfig;
   }
+  normalizedSettings = stripProductionOperationalRuntimeSettings(normalizedSettings);
 
   const db = getDb();
   const [saved] = await db

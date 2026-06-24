@@ -17,6 +17,28 @@ This includes:
 
 Browser storage is not a production source of truth.
 
+## Source-of-truth cutover plan
+
+The controlled plan for removing the remaining production-reachable fallback
+paths is documented in:
+
+- [`PRODUCTION_SOURCE_OF_TRUTH_CUTOVER_PLAN.md`](./PRODUCTION_SOURCE_OF_TRUTH_CUTOVER_PLAN.md)
+
+That plan is the implementation guide for the sales-channel and employee
+cutover. Its target is:
+
+```text
+Production = Database/API only
+Frontend = input/display only
+IDs = canonical links
+Names = display labels only
+No operational/financial fallback
+```
+
+Until the cutover is complete, production changes must not expand the legacy
+runtime/prototype paths. Any fallback removal must be done gradually, behind
+prelaunch/live-gate checks, and only after the matching DB/API path is verified.
+
 ## Production readiness contract
 
 Production source-unification mode must be DB-backed with real auth on `/app`.
@@ -91,7 +113,19 @@ auditable, and repeatable:
 
 - Entries, summaries, reports, closeouts, org config, auth, and runtime settings
   use DB/API paths in production mode.
+- Production runtime settings are restricted to UI preferences. Operational
+  organization data (`configuredBusinesses`, `storeChannelSettings`, `staff`,
+  `authConfig`, and store operational settings) is stripped before saving when
+  the org-config API is enabled.
+- The production client snapshot follows the same rule and sends only UI
+  preferences to the runtime settings API.
 - Browser persistence is now centrally blocked for production app mode.
+- Sales channels and employees still have historical runtime/prototype overlap in
+  client compatibility code, but production persistence no longer treats runtime
+  settings as their source of truth.
+- Production org-config write paths require canonical UUID store IDs. Legacy
+  IDs are retained only for display/backward compatibility outside production
+  write paths.
 - Employee notebook-theme preferences are part of the runtime settings snapshot
   and persist through the runtime settings API/DB path when enabled.
 - Owner shell notification preferences, including closeout alert state and

@@ -14,6 +14,7 @@ import { assertValidLoginPhone } from "@/core/phone/normalize-login-phone";
 import { assertOrganizationEntitlement } from "@/features/billing/server/assert-organization-entitlement";
 import { ensureEmployeeLoginPhoneAvailable } from "@/features/auth/server/employee-login-phone-availability";
 import {
+  deactivateEmployeePinIdentity,
   updateEmployeeLoginPhone,
   upsertEmployeePinIdentity,
   upsertOwnerPasswordIdentity,
@@ -139,6 +140,10 @@ export async function updateOrganizationMember(rawInput: z.infer<typeof inputSch
           updatedAt: now,
         })
         .where(eq(organizationMembers.id, member.memberId));
+
+      if (nextStatus === "inactive" && nextRole !== "owner") {
+        await deactivateEmployeePinIdentity(member.userId, tx);
+      }
     }
 
     if (uniqueStoreIds) {
