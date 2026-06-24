@@ -154,6 +154,7 @@ export const salesChannels = pgTable(
     status: text("status").notNull().default("active"),
     createdAt,
     retiredAt: timestamp("retired_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => ({
     organizationStoreChannelIdUq: uniqueIndex("sales_channels_org_store_id_uq").on(

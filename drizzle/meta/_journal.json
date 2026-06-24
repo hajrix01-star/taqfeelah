@@ -162,6 +162,13 @@
       "when": 1782178800000,
       "tag": "0023_fix_summary_channel_total_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1782327000000,
+      "tag": "0024_sales_channel_soft_delete",
+      "breakpoints": true
     }
   ]
 }

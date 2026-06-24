@@ -104,6 +104,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       actorRole: requestContext.role!,
       salesChannelId: typeof body?.salesChannelId === "string" ? body.salesChannelId : "",
       status: body.status,
+      deleted: body?.deleted === true,
       reason: typeof body?.reason === "string" ? body.reason : undefined,
     });
 

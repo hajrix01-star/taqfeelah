@@ -19,6 +19,7 @@ import {
   addCustomSalesChannel,
   canRequestRetireSalesChannel,
   cloneStoreChannelDraft,
+  deleteCustomSalesChannelInDraft,
   restoreRetiredSalesChannel,
   retireSalesChannelInDraft,
   toggleIncomeSourceActive,
@@ -276,6 +277,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
   };
 
   const restoreSalesChannel = (channel: HandlerAny) => updateChannelDraft((config: HandlerAny) => restoreRetiredSalesChannel(config, channel));
+  const deleteCustomIncomeSource = (channel: HandlerAny) => updateChannelDraft((config: HandlerAny) => deleteCustomSalesChannelInDraft(config, channel));
 
   const addCustomIncomeSource = (names?: { nameAr?: string; nameEn?: string }) => {
     const result = addCustomSalesChannel(channelConfig, {
@@ -617,6 +619,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     toggleChannel,
     requestRetireChannel,
     restoreSalesChannel,
+    deleteCustomIncomeSource,
     addCustomIncomeSource,
     toggleCategory,
     toggleArchive,

@@ -13,6 +13,7 @@ const inputSchema = z.object({
   actorRole: z.enum(["owner", "manager", "employee"]),
   salesChannelId: z.string().uuid(),
   status: z.enum(["active", "retired"]),
+  deleted: z.boolean().optional(),
   reason: z.string().trim().max(500).optional(),
 });
 
@@ -60,6 +61,7 @@ export async function updateStoreSalesChannel(rawInput: z.infer<typeof inputSche
       .set({
         status: input.status,
         retiredAt: input.status === "retired" ? now : null,
+        deletedAt: input.deleted ? now : null,
       })
       .where(eq(salesChannels.id, existing.id))
       .returning({
@@ -67,6 +69,7 @@ export async function updateStoreSalesChannel(rawInput: z.infer<typeof inputSche
         name: salesChannels.name,
         status: salesChannels.status,
         retiredAt: salesChannels.retiredAt,
+        deletedAt: salesChannels.deletedAt,
         createdAt: salesChannels.createdAt,
       });
 
@@ -74,7 +77,7 @@ export async function updateStoreSalesChannel(rawInput: z.infer<typeof inputSche
       organizationId: input.organizationId,
       storeId: input.storeId,
       actorUserId: input.actorUserId,
-      action: input.status === "retired" ? "sales_channel_retired" : "sales_channel_activated",
+      action: input.deleted ? "sales_channel_deleted" : (input.status === "retired" ? "sales_channel_retired" : "sales_channel_activated"),
       reason: input.reason || null,
       metadata: {
         salesChannelId: updated.id,
@@ -89,6 +92,7 @@ export async function updateStoreSalesChannel(rawInput: z.infer<typeof inputSche
       name: updated.name,
       status: updated.status,
       retiredAt: updated.retiredAt ? updated.retiredAt.toISOString() : null,
+      deletedAt: updated.deletedAt ? updated.deletedAt.toISOString() : null,
       createdAt: updated.createdAt.toISOString(),
     };
   });

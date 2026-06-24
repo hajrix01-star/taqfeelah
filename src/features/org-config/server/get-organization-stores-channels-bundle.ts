@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { assertOrganizationAccess } from "@/core/auth/assert-organization-access";
 import { getDb } from "@/core/db/client";
@@ -40,8 +40,10 @@ export async function getOrganizationStoresChannelsBundle(rawInput: z.input<type
       return { stores: [], channelsByStoreId: {} as Record<string, Array<{
         id: string;
         name: string;
+        kind?: string;
         status: string;
         retiredAt: string | null;
+        deletedAt?: string | null;
         createdAt: string;
       }>> };
     }
@@ -71,8 +73,10 @@ export async function getOrganizationStoresChannelsBundle(rawInput: z.input<type
   const channelsByStoreId: Record<string, Array<{
     id: string;
     name: string;
+    kind?: string;
     status: string;
     retiredAt: string | null;
+    deletedAt?: string | null;
     createdAt: string;
   }>> = {};
 
@@ -86,8 +90,10 @@ export async function getOrganizationStoresChannelsBundle(rawInput: z.input<type
         id: salesChannels.id,
         storeId: salesChannels.storeId,
         name: salesChannels.name,
+        kind: salesChannels.kind,
         status: salesChannels.status,
         retiredAt: salesChannels.retiredAt,
+        deletedAt: salesChannels.deletedAt,
         createdAt: salesChannels.createdAt,
       })
       .from(salesChannels)
@@ -96,6 +102,7 @@ export async function getOrganizationStoresChannelsBundle(rawInput: z.input<type
           eq(salesChannels.organizationId, input.organizationId),
           inArray(salesChannels.storeId, storeIds),
           input.channelStatus === "all" ? undefined : eq(salesChannels.status, input.channelStatus),
+          isNull(salesChannels.deletedAt),
         ),
       )
       .orderBy(asc(salesChannels.storeId), asc(salesChannels.name), asc(salesChannels.id));
@@ -105,8 +112,10 @@ export async function getOrganizationStoresChannelsBundle(rawInput: z.input<type
       current.push({
         id: row.id,
         name: row.name,
+        kind: row.kind,
         status: row.status,
         retiredAt: row.retiredAt ? row.retiredAt.toISOString() : null,
+        deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
         createdAt: row.createdAt.toISOString(),
       });
       channelsByStoreId[row.storeId] = current;

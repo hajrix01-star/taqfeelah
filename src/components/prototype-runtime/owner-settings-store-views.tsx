@@ -65,6 +65,7 @@ export function OwnerSettingsStoreChannelsPanel({
   toggleChannel,
   requestRetireChannel,
   restoreSalesChannel,
+  deleteCustomIncomeSource,
   addCustomIncomeSource,
   settingsNotice,
   backFromStorePanel,
@@ -83,6 +84,7 @@ export function OwnerSettingsStoreChannelsPanel({
         toggleChannel={toggleChannel}
         requestRetireChannel={requestRetireChannel}
         restoreSalesChannel={restoreSalesChannel}
+        deleteCustomIncomeSource={deleteCustomIncomeSource}
         addCustomIncomeSource={addCustomIncomeSource}
         text={text}
         channelName={channelName}
@@ -234,6 +236,7 @@ export function OwnerSettingsStoreFlattenedPanel({
   toggleChannel,
   requestRetireChannel,
   restoreSalesChannel,
+  deleteCustomIncomeSource,
   addCustomIncomeSource,
   saveChannelSettings,
   cancelChannelDraft,
@@ -307,6 +310,7 @@ export function OwnerSettingsStoreFlattenedPanel({
                 toggleChannel={toggleChannel}
                 requestRetireChannel={requestRetireChannel}
                 restoreSalesChannel={restoreSalesChannel}
+                deleteCustomIncomeSource={deleteCustomIncomeSource}
                 addCustomIncomeSource={addCustomIncomeSource}
                 text={text}
                 channelName={channelName}
@@ -409,6 +413,7 @@ export function renderOwnerSettingsStorePanel(storePanel: string, state: OwnerSe
         toggleChannel={state.toggleChannel}
         requestRetireChannel={state.requestRetireChannel}
         restoreSalesChannel={state.restoreSalesChannel}
+        deleteCustomIncomeSource={state.deleteCustomIncomeSource}
         addCustomIncomeSource={state.addCustomIncomeSource}
         settingsNotice={state.settingsNotice}
         backFromStorePanel={state.backFromStorePanel}

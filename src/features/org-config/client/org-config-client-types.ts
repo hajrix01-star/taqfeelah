@@ -42,6 +42,8 @@ export type ApiChannelRow = Record<string, unknown> & {
   name?: string;
   kind?: string;
   status?: string;
+  deleted?: boolean;
+  deletedAt?: string | null;
 };
 
 export type ApiMemberRow = Record<string, unknown> & {

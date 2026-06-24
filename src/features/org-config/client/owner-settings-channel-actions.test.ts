@@ -4,9 +4,11 @@ import {
   addCustomSalesChannel,
   canRequestRetireSalesChannel,
   cloneStoreChannelDraft,
+  deleteCustomSalesChannelInDraft,
   findConfiguredChannelByLegacyId,
   listAddableCatalogSources,
   listInactiveCatalogSources,
+  listInactiveIncomeSourceRows,
   listUnifiedIncomeSourceRows,
   restoreRetiredSalesChannel,
   retireSalesChannelInDraft,
@@ -117,6 +119,32 @@ describe("owner settings channel actions", () => {
     expect(inactive).toContain("keeta");
     expect(inactive).not.toContain("cash");
     expect(inactive).not.toContain("mada");
+  });
+
+  it("lists inactive custom payment methods in the add menu with delete option", () => {
+    const withCustom = addCustomSalesChannel(baseConfig, "Delivery", { id: "delivery" }).config;
+    const disabled = toggleIncomeSourceActive(withCustom, "delivery").config;
+
+    const inactiveRows = listInactiveIncomeSourceRows(disabled);
+
+    expect(inactiveRows.find((row) => row.rowId === "delivery")).toMatchObject({
+      isCatalog: false,
+      canDelete: true,
+      nameEn: "Delivery",
+    });
+  });
+
+  it("marks custom payment methods as deleted so they disappear from active and add lists", () => {
+    const withCustom = addCustomSalesChannel(baseConfig, "Delivery", { id: "delivery" }).config;
+    const deleted = deleteCustomSalesChannelInDraft(withCustom, { id: "delivery" });
+
+    expect(deleted.activeIds).not.toContain("delivery");
+    expect(deleted.channels.find((item) => item.id === "delivery")).toMatchObject({
+      retired: true,
+      deleted: true,
+    });
+    expect(listUnifiedIncomeSourceRows(deleted).find((row) => row.rowId === "delivery")).toBeUndefined();
+    expect(listInactiveIncomeSourceRows(deleted).find((row) => row.rowId === "delivery")).toBeUndefined();
   });
 
   it("enables catalog income sources on first toggle", () => {

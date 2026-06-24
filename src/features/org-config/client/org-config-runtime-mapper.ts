@@ -63,6 +63,7 @@ export function mapApiChannelToUi(channel: ApiChannelRow) {
   const legacyId = resolveChannelLegacyId(channel);
   const template = CHANNEL_TEMPLATES[legacyId];
   const retired = channel?.status === "retired";
+  const deleted = Boolean(channel?.deleted || channel?.deletedAt);
   assertCanonicalUuidId("sales channel", channel?.id);
   if (template) {
     const catalogEntry = getCatalogEntry(legacyId);
@@ -74,6 +75,7 @@ export function mapApiChannelToUi(channel: ApiChannelRow) {
       nameAr: catalogEntry?.nameAr,
       nameEn: catalogEntry?.nameEn,
       retired,
+      deleted,
     };
   }
   const label = typeof channel?.name === "string" ? channel.name.trim() : legacyId;
@@ -90,6 +92,7 @@ export function mapApiChannelToUi(channel: ApiChannelRow) {
     nameEn: label,
     icon: kind === "sales_channel" ? ShoppingBag : CreditCard,
     retired,
+    deleted,
   };
 }
 
@@ -133,7 +136,8 @@ export function mapApiMemberToStaff(
     nameEn: member?.name || "",
     mobile: member?.loginPhone || member?.mobile || "",
     active: member?.status === "active",
-    removed: member?.status === "inactive",
+    removed: false,
+    status: member?.status || "active",
     storeIds,
     pin,
     pinConfigured: Boolean(member?.pinConfigured),
@@ -180,7 +184,7 @@ export function mapOrgConfigBundleToRuntime({
   configuredBusinesses.forEach((business) => {
     const storeUuid = String(business.dbStoreId || business.id || "");
     const channelRows = channelsByStoreId[storeUuid] || channelsByStoreId[String(business.id || "")] || [];
-    const channels = channelRows.map((row) => mapApiChannelToUi(row));
+    const channels = channelRows.map((row) => mapApiChannelToUi(row)).filter((channel) => !channel.deleted);
     storeChannelSettings[String(business.id || "")] = {
       channels,
       activeIds: channels.filter((channel) => !channel.retired).map((channel) => String(channel.id || "")),

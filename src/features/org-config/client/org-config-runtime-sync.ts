@@ -56,6 +56,10 @@ function channelIsActive(channel: Record<string, unknown>, activeIds: string[]) 
   return Array.isArray(activeIds) && activeIds.includes(String(channel.id)) && !channel.retired;
 }
 
+function channelIsDeleted(channel: Record<string, unknown> | undefined) {
+  return Boolean(channel?.deleted || channel?.deletedAt);
+}
+
 function cloneStoreChannelConfig(config: StoreChannelConfig = { channels: [], activeIds: [] }): StoreChannelConfig {
   return {
     channels: (config.channels || []).map((channel) => ({ ...channel })),
@@ -192,6 +196,7 @@ export async function persistOrgConfigSnapshot({
     const beforeById = new Map((beforeConfig.channels || []).map((channel) => [String(channel.id), channel]));
 
     for (const afterChannel of afterConfig.channels || []) {
+      if (channelIsDeleted(afterChannel)) continue;
       const apiId = channelApiId(afterChannel);
       if (apiId) continue;
 
@@ -224,14 +229,21 @@ export async function persistOrgConfigSnapshot({
 
       const wasActive = beforeChannel ? channelIsActive(beforeChannel, beforeConfig.activeIds) : false;
       const isActive = channelIsActive(afterChannel, afterConfig.activeIds);
-      if (wasActive === isActive && Boolean(beforeChannel?.retired) === Boolean(afterChannel?.retired)) continue;
+      const wasDeleted = channelIsDeleted(beforeChannel);
+      const isDeleted = channelIsDeleted(afterChannel);
+      if (
+        wasActive === isActive
+        && Boolean(beforeChannel?.retired) === Boolean(afterChannel?.retired)
+        && wasDeleted === isDeleted
+      ) continue;
 
       await updateStoreSalesChannelViaApi({
         ...authArgs,
         storeId,
         salesChannelId: apiId,
-        status: isActive ? "active" : "retired",
-        reason: isActive ? "owner_activated_channel" : "owner_retired_channel",
+        status: isActive && !isDeleted ? "active" : "retired",
+        deleted: isDeleted,
+        reason: isDeleted ? "owner_deleted_channel" : (isActive ? "owner_activated_channel" : "owner_retired_channel"),
       });
     }
   }

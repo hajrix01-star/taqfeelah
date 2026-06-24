@@ -275,11 +275,13 @@ export async function updateStoreSalesChannelViaApi({
   storeId,
   salesChannelId,
   status,
+  deleted,
   reason,
 }: OrgConfigApiAuth & {
   storeId: string;
   salesChannelId: string;
   status?: string;
+  deleted?: boolean;
   reason?: string;
 }) {
   assertProductionUuid(storeId, "production sales channel update requires canonical store id.");
@@ -297,6 +299,7 @@ export async function updateStoreSalesChannelViaApi({
       body: {
         salesChannelId,
         status,
+        ...(deleted ? { deleted: true } : {}),
         reason,
       },
       errorMessage: "sales channel update api failed",

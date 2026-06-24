@@ -240,6 +240,7 @@ describe("org config runtime sync", () => {
       status: "inactive",
       reason: "owner_removed_member",
     });
+    expect(JSON.parse(String(patchCall?.[1]?.body))).not.toHaveProperty("loginPhone");
   });
 
   it("persists store operational settings through dedicated patch api", async () => {
@@ -394,6 +395,82 @@ describe("org config runtime sync", () => {
     expect(remapped.channels.some((channel) => channel.id === createdChannelId)).toBe(true);
     expect(remapped.activeIds).toContain(createdChannelId);
     expect(remapped.activeIds).not.toContain("channel-1718040000000");
+  });
+
+  it("persists custom payment method permanent delete through sales channel patch api", async () => {
+    const channelId = "22222222-2222-4222-8222-222222222222";
+    const fetchMock = vi.fn(async (url, init) => {
+      if (String(url).includes("/sales-channels") && init?.method === "PATCH") {
+        return new Response(JSON.stringify({
+          channel: {
+            id: channelId,
+            name: "Delivery",
+            status: "retired",
+            retiredAt: "2026-06-12T00:00:00.000Z",
+            deletedAt: "2026-06-12T00:00:00.000Z",
+            createdAt: "2026-06-12T00:00:00.000Z",
+          },
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const channel = {
+      id: channelId,
+      apiChannelId: channelId,
+      custom: true,
+      nameAr: "Delivery",
+      nameEn: "Delivery",
+      retired: false,
+    };
+    const { persistOrgConfigSnapshot } = await import("./org-config-runtime-sync");
+    await persistOrgConfigSnapshot({
+      auth: {
+        organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
+        actorUserId: "owner",
+        actorRole: "owner",
+      },
+      baseline: {
+        configuredBusinesses: [{
+          id: "shami",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {
+          shami: {
+            channels: [channel],
+            activeIds: [channelId],
+          },
+        },
+        staff: [],
+      },
+      next: {
+        configuredBusinesses: [{
+          id: "shami",
+          dbStoreId: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        }],
+        archivedBusinessIds: [],
+        storeChannelSettings: {
+          shami: {
+            channels: [{ ...channel, retired: true, deleted: true }],
+            activeIds: [],
+          },
+        },
+        staff: [],
+      },
+    });
+
+    const patchCall = fetchMock.mock.calls.find(([url, init]) => (
+      String(url).includes("/sales-channels") && init?.method === "PATCH"
+    ));
+    expect(patchCall).toBeTruthy();
+    expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({
+      salesChannelId: channelId,
+      status: "retired",
+      deleted: true,
+      reason: "owner_deleted_channel",
+    });
   });
 
   it("rejects production channel writes keyed by legacy store id", async () => {

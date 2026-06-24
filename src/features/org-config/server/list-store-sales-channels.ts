@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
@@ -46,6 +46,7 @@ export async function listStoreSalesChannels(rawInput: z.infer<typeof inputSchem
         eq(salesChannels.organizationId, input.organizationId),
         eq(salesChannels.storeId, input.storeId),
         input.status === "all" ? undefined : eq(salesChannels.status, input.status),
+        isNull(salesChannels.deletedAt),
       ),
     )
     .orderBy(asc(salesChannels.name), asc(salesChannels.id));

@@ -90,6 +90,21 @@ describe("org config runtime mapper", () => {
     expect(staff.pin).toBe("9876");
   });
 
+  it("keeps inactive employees visible so owners can reactivate them", () => {
+    const staff = mapApiMemberToStaff({
+      memberId: "11111111-1111-4111-8111-111111111111",
+      userId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+      name: "Sara",
+      role: "employee",
+      status: "inactive",
+      storeAccess: [],
+    });
+
+    expect(staff.active).toBe(false);
+    expect(staff.removed).toBe(false);
+    expect(staff.status).toBe("inactive");
+  });
+
   it("maps store operational settings from API rows", () => {
     const mapped = mapOrgConfigBundleToRuntime({
       stores: [{
@@ -141,6 +156,28 @@ describe("org config runtime mapper", () => {
     expect(channel.custom).toBe(true);
     expect(channel.kind).toBe("sales_channel");
     expect(channel.nameEn).toBe("Talabat");
+  });
+
+  it("filters deleted sales channels from runtime channel settings", () => {
+    const mapped = mapOrgConfigBundleToRuntime({
+      stores: [{
+        id: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c",
+        legacyId: "shami",
+        name: "Shami",
+        status: "active",
+      }],
+      channelsByStoreId: {
+        "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c": [{
+          id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          name: "Delivery",
+          status: "retired",
+          deletedAt: "2026-06-24T00:00:00.000Z",
+        }],
+      },
+      members: [],
+    });
+
+    expect(mapped.storeChannelSettings["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"].channels).toEqual([]);
   });
 
   it("maps production sales channel API rows with RFC4122 UUID ids", () => {

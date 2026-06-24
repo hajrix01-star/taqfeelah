@@ -51,6 +51,7 @@ export function listUnifiedIncomeSourceRows(config: StoreChannelConfig) {
 
   for (const entry of INCOME_SOURCE_CATALOG) {
     const channel = findConfiguredChannelByLegacyId(config, entry.legacyId);
+    if (channel?.deleted) continue;
     if (channel?.retired) continue;
     if (!channel || !config.activeIds.includes(String(channel.id))) continue;
 
@@ -70,7 +71,7 @@ export function listUnifiedIncomeSourceRows(config: StoreChannelConfig) {
   }
 
   for (const channel of config.channels) {
-    if (channel.retired || isCatalogConfiguredChannel(channel)) continue;
+    if (channel.deleted || channel.retired || isCatalogConfiguredChannel(channel)) continue;
     if (!config.activeIds.includes(String(channel.id))) continue;
     rows.push({
       rowId: String(channel.id),
@@ -114,10 +115,52 @@ export function listAddableCatalogSources(
 export function listInactiveCatalogSources(config: StoreChannelConfig) {
   return INCOME_SOURCE_CATALOG.filter((entry) => {
     const channel = findConfiguredChannelByLegacyId(config, entry.legacyId);
+    if (channel?.deleted) return false;
     if (!channel) return true;
     if (channel.retired) return true;
     return !config.activeIds.includes(String(channel.id));
   });
+}
+
+export function listInactiveIncomeSourceRows(config: StoreChannelConfig) {
+  const rows: Array<{
+    rowId: string;
+    legacyId?: string;
+    channel?: Record<string, unknown>;
+    nameAr: string;
+    nameEn: string;
+    isCatalog: boolean;
+    canDelete: boolean;
+  }> = [];
+
+  for (const entry of listInactiveCatalogSources(config)) {
+    const channel = findConfiguredChannelByLegacyId(config, entry.legacyId);
+    rows.push({
+      rowId: String(channel?.id || entry.legacyId),
+      legacyId: entry.legacyId,
+      channel,
+      nameAr: entry.nameAr,
+      nameEn: entry.nameEn,
+      isCatalog: true,
+      canDelete: false,
+    });
+  }
+
+  for (const channel of config.channels) {
+    if (channel.deleted || isCatalogConfiguredChannel(channel)) continue;
+    const isActive = config.activeIds.includes(String(channel.id)) && !channel.retired;
+    if (isActive) continue;
+    rows.push({
+      rowId: String(channel.id),
+      channel,
+      nameAr: String(channel.nameAr || channel.nameEn || channel.id || ""),
+      nameEn: String(channel.nameEn || channel.nameAr || channel.id || ""),
+      isCatalog: false,
+      canDelete: true,
+    });
+  }
+
+  return rows;
 }
 
 export function isLastActiveSalesChannel(config: StoreChannelConfig, channelId: string) {
@@ -168,6 +211,18 @@ export function retireSalesChannelInDraft(
     activeIds: config.activeIds.filter((id) => id !== channel.id),
     channels: config.channels.map((item) => (
       item.id === channel.id ? { ...item, retired: true } : item
+    )),
+  };
+}
+
+export function deleteCustomSalesChannelInDraft(
+  config: StoreChannelConfig,
+  channel: { id: string },
+): StoreChannelConfig {
+  return {
+    activeIds: config.activeIds.filter((id) => id !== channel.id),
+    channels: config.channels.map((item) => (
+      item.id === channel.id ? { ...item, retired: true, deleted: true } : item
     )),
   };
 }
