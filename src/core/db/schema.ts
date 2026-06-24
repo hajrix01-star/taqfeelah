@@ -83,6 +83,7 @@ export const organizationMembers = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     role: text("role").notNull(),
     status: text("status").notNull().default("active"),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt,
     updatedAt,
   },
@@ -91,6 +92,11 @@ export const organizationMembers = pgTable(
       table.organizationId,
       table.userId,
       table.status,
+    ),
+    orgStatusDeletedIdx: index("organization_members_org_status_deleted_idx").on(
+      table.organizationId,
+      table.status,
+      table.deletedAt,
     ),
   }),
 );

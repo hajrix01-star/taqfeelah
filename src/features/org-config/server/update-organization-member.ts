@@ -41,6 +41,7 @@ const inputSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
   role: z.enum(["owner", "manager", "employee"]).optional(),
   status: z.enum(["active", "inactive"]).optional(),
+  deleted: z.boolean().optional(),
   storeIds: z.array(z.string().uuid()).optional(),
   loginPhone: z.string().trim().min(1).max(30).optional(),
   credentials: credentialsSchema.optional(),
@@ -68,6 +69,7 @@ export async function updateOrganizationMember(rawInput: z.infer<typeof inputSch
       userId: organizationMembers.userId,
       role: organizationMembers.role,
       status: organizationMembers.status,
+      deletedAt: organizationMembers.deletedAt,
       name: users.name,
     })
     .from(organizationMembers)
@@ -89,7 +91,7 @@ export async function updateOrganizationMember(rawInput: z.infer<typeof inputSch
   }
 
   const nextRole = input.role || member.role;
-  const nextStatus = input.status || member.status;
+  const nextStatus = input.deleted ? "inactive" : (input.status || member.status);
   const uniqueStoreIds = input.storeIds ? [...new Set(input.storeIds)] : null;
 
   let normalizedLoginPhone: string | undefined;
@@ -131,12 +133,13 @@ export async function updateOrganizationMember(rawInput: z.infer<typeof inputSch
       await tx.update(users).set({ name: input.name, updatedAt: now }).where(eq(users.id, member.userId));
     }
 
-    if (input.role || input.status) {
+    if (input.role || input.status || input.deleted !== undefined) {
       await tx
         .update(organizationMembers)
         .set({
           role: nextRole,
           status: nextStatus,
+          deletedAt: input.deleted ? now : null,
           updatedAt: now,
         })
         .where(eq(organizationMembers.id, member.memberId));
@@ -215,6 +218,8 @@ export async function updateOrganizationMember(rawInput: z.infer<typeof inputSch
         nextRole,
         previousStatus: member.status,
         nextStatus,
+        previousDeletedAt: member.deletedAt ? member.deletedAt.toISOString() : null,
+        nextDeletedAt: input.deleted ? now.toISOString() : null,
         storeIds: uniqueStoreIds,
         hasCredentials: Boolean(input.credentials),
         loginPhoneUpdated: Boolean(normalizedLoginPhone),
@@ -227,6 +232,8 @@ export async function updateOrganizationMember(rawInput: z.infer<typeof inputSch
       name: input.name || member.name,
       role: nextRole,
       status: nextStatus,
+      deleted: Boolean(input.deleted),
+      deletedAt: input.deleted ? now.toISOString() : null,
       loginPhone: normalizedLoginPhone ?? null,
       storeIds: uniqueStoreIds,
       updatedAt: now.toISOString(),

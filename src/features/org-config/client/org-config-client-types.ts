@@ -53,6 +53,8 @@ export type ApiMemberRow = Record<string, unknown> & {
   name?: string;
   role?: string;
   status?: string;
+  deleted?: boolean;
+  deletedAt?: string | null;
   loginPhone?: string;
   mobile?: string;
   pinConfigured?: boolean;
@@ -71,6 +73,8 @@ export type StaffMember = Record<string, unknown> & {
   id: string;
   active?: boolean;
   removed?: boolean;
+  deleted?: boolean;
+  deletedAt?: string | null;
   storeIds?: string[];
   pin?: string;
   nameAr?: string;

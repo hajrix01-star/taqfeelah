@@ -358,6 +358,7 @@ export async function updateOrganizationMemberViaApi({
   memberId,
   name,
   status,
+  deleted,
   storeIds,
   pin,
   loginPhone,
@@ -366,6 +367,7 @@ export async function updateOrganizationMemberViaApi({
   memberId: string;
   name?: string;
   status?: string;
+  deleted?: boolean;
   storeIds?: string[];
   pin?: string;
   loginPhone?: string;
@@ -376,6 +378,7 @@ export async function updateOrganizationMemberViaApi({
   const body: Record<string, unknown> = {};
   if (typeof name === "string" && name.trim()) body.name = name.trim();
   if (status === "active" || status === "inactive") body.status = status;
+  if (deleted === true) body.deleted = true;
   if (Array.isArray(storeIds)) {
     body.storeIds = mapStoreIdsForWrite(storeIds);
   }

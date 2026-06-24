@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { assertOrganizationAccess } from "@/core/auth/assert-organization-access";
 import { getDb } from "@/core/db/client";
@@ -34,6 +34,7 @@ export async function listOrganizationMembers(rawInput: z.infer<typeof inputSche
       name: users.name,
       role: organizationMembers.role,
       status: organizationMembers.status,
+      deletedAt: organizationMembers.deletedAt,
       createdAt: organizationMembers.createdAt,
       updatedAt: organizationMembers.updatedAt,
     })
@@ -42,6 +43,7 @@ export async function listOrganizationMembers(rawInput: z.infer<typeof inputSche
     .where(
       and(
         eq(organizationMembers.organizationId, input.organizationId),
+        isNull(organizationMembers.deletedAt),
         input.status === "all" ? undefined : eq(organizationMembers.status, input.status),
       ),
     )
@@ -109,6 +111,8 @@ export async function listOrganizationMembers(rawInput: z.infer<typeof inputSche
       name: row.name,
       role: row.role,
       status: row.status,
+      deleted: Boolean(row.deletedAt),
+      deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
       loginPhone: loginPhoneByUserId.get(row.userId) ?? null,
       pinConfigured: pinConfiguredByUserId.has(row.userId),
       storeAccess: storeAccessByMemberId.get(row.memberId) || [],

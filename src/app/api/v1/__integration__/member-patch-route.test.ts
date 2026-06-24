@@ -82,6 +82,30 @@ describe("member patch route integration", () => {
     }));
   });
 
+  it("PATCH soft deletes a member", async () => {
+    updateOrganizationMember.mockResolvedValueOnce({
+      memberId: TEST_MEMBER_ID,
+      status: "inactive",
+      deleted: true,
+      deletedAt: "2026-06-24T00:00:00.000Z",
+    });
+
+    const { PATCH } = await import("../members/[memberId]/route");
+    const response = await PATCH(
+      ownerRequest(`http://localhost/api/v1/members/${TEST_MEMBER_ID}`, {
+        method: "PATCH",
+        body: JSON.stringify({ deleted: true, reason: "owner_deleted_member" }),
+      }),
+      routeMemberContext(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateOrganizationMember).toHaveBeenCalledWith(expect.objectContaining({
+      deleted: true,
+      reason: "owner_deleted_member",
+    }));
+  });
+
   it("PATCH surfaces server validation errors", async () => {
     updateOrganizationMember.mockRejectedValueOnce(new ValidationError("Invalid member update input."));
 

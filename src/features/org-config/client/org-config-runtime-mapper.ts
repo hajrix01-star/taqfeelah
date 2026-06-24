@@ -118,6 +118,7 @@ export function mapApiMemberToStaff(
   member: ApiMemberRow,
   { employeePins = {} }: { employeePins?: Record<string, string> } = {},
 ) {
+  const deleted = Boolean(member?.deleted || member?.deletedAt);
   const storeIds = (member?.storeAccess || [])
     .map((row) => String(row.storeId || ""))
     .filter(Boolean);
@@ -135,8 +136,10 @@ export function mapApiMemberToStaff(
     nameAr: member?.name || "",
     nameEn: member?.name || "",
     mobile: member?.loginPhone || member?.mobile || "",
-    active: member?.status === "active",
+    active: member?.status === "active" && !deleted,
     removed: false,
+    deleted,
+    deletedAt: member?.deletedAt || null,
     status: member?.status || "active",
     storeIds,
     pin,
@@ -192,7 +195,7 @@ export function mapOrgConfigBundleToRuntime({
   });
 
   const staff = members
-    .filter((member) => member.role === "employee")
+    .filter((member) => member.role === "employee" && !member?.deleted && !member?.deletedAt)
     .map((member) => mapApiMemberToStaff(member, { employeePins }));
 
   const storeOperationalSettings: Record<string, unknown> = {};
@@ -278,6 +281,7 @@ export function buildOrgConfigPersistBaseline(snapshot: OrgConfigRuntimeSnapshot
       mobile: person.mobile || "",
       active: Boolean(person.active),
       removed: Boolean(person.removed),
+      deleted: Boolean(person.deleted || person.deletedAt),
       storeIds: [...(person.storeIds as string[] | undefined || [])].sort(),
     })),
   });

@@ -519,7 +519,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     if (deleteTarget?.type === "staff") {
       const personId = String(deleteTarget.item.id);
       const removePerson = (current: HandlerAny) => current.map((person: HandlerAny) => (
-        person.id === personId ? { ...person, active: false, removed: true } : person
+        person.id === personId ? { ...person, active: false, removed: true, deleted: true } : person
       ));
       const nextDraft = removePerson(managingTeam ? (draftStaff || staff) : staff);
 
@@ -582,7 +582,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
         },
         removeStaffMember: (personId: string) => {
           const removePerson = (current: HandlerAny) => current.map((person: HandlerAny) => (
-            person.id === personId ? { ...person, active: false, removed: true } : person
+            person.id === personId ? { ...person, active: false, removed: true, deleted: true } : person
           ));
           if (managingTeam) setters.setDraftStaff((current: HandlerAny) => removePerson(current || staff));
           else setters.setStaff(removePerson);

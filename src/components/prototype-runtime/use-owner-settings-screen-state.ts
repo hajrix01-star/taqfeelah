@@ -153,7 +153,7 @@ export function useOwnerSettingsScreenState({
   const selectedStore = configuredBusinesses.find((business) => business.id === settingsStoreId) || null;
   const archived = selectedStore ? archivedBusinessIds.includes(selectedStore.id) : false;
   const staffWorkingSet = managingTeam && draftStaff ? draftStaff : staff;
-  const visibleStaff = staffWorkingSet.filter((person: StaffMember) => !person.removed);
+  const visibleStaff = staffWorkingSet.filter((person: StaffMember) => !person.removed && !person.deleted && !person.deletedAt);
   const employeeStoreIds = (person: StaffMember) => (person.storeIds as string[] | undefined) || ["shami"];
   const displayBusinessName = useCallback((business: PrototypeBusiness) => businessName(business, lang), [lang]);
   const displayLocation = useCallback((business: PrototypeBusiness) => businessLocation(business, lang), [lang]);

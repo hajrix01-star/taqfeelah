@@ -253,8 +253,15 @@ export async function persistOrgConfigSnapshot({
     const person = remappedStaff[index];
     const previous = baselineStaffById.get(String(person.id));
     const draftPin = typeof employeePins[String(person.id)] === "string" ? employeePins[String(person.id)].trim() : "";
+    const nextDeleted = Boolean(person.deleted || person.deletedAt || person.removed);
+    const prevDeleted = Boolean(previous?.deleted || previous?.deletedAt || previous?.removed);
 
     if (!previous?.memberId && (isClientGeneratedId(person.id) || !isUuid(person.memberId))) {
+      if (nextDeleted) {
+        remappedStaff.splice(index, 1);
+        index -= 1;
+        continue;
+      }
       if (isProductionStaffIdentityStrict() && !isClientGeneratedId(person.id)) {
         throw new Error("production staff create/update requires API-created member identity.");
       }
@@ -300,14 +307,15 @@ export async function persistOrgConfigSnapshot({
     const prevMobile = String(previous?.mobile || "").trim();
     const nextStoreIds = [...((person.storeIds as string[] | undefined) || [])].sort().join("|");
     const prevStoreIds = [...((previous?.storeIds as string[] | undefined) || [])].sort().join("|");
-    const nextActive = Boolean(person.active) && !person.removed;
-    const prevActive = Boolean(previous?.active) && !previous?.removed;
+    const nextActive = Boolean(person.active) && !nextDeleted;
+    const prevActive = Boolean(previous?.active) && !prevDeleted;
 
     if (
       nextName !== prevName
       || nextMobile !== prevMobile
       || nextStoreIds !== prevStoreIds
       || nextActive !== prevActive
+      || nextDeleted !== prevDeleted
       || Boolean(draftPin)
     ) {
       await updateOrganizationMemberViaApi({
@@ -315,10 +323,11 @@ export async function persistOrgConfigSnapshot({
         memberId: String(memberId),
         name: nextName,
         status: nextActive ? "active" : "inactive",
+        deleted: nextDeleted,
         storeIds: (person.storeIds as string[] | undefined) || [],
         ...(draftPin ? { pin: draftPin } : {}),
         loginPhone: nextMobile || undefined,
-        reason: nextActive ? "owner_updated_member" : "owner_removed_member",
+        reason: nextDeleted ? "owner_deleted_member" : (nextActive ? "owner_updated_member" : "owner_removed_member"),
       });
     }
   }

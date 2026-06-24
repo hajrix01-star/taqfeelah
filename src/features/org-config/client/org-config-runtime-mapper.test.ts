@@ -105,6 +105,25 @@ describe("org config runtime mapper", () => {
     expect(staff.status).toBe("inactive");
   });
 
+  it("filters soft-deleted employees from the owner team runtime", () => {
+    const mapped = mapOrgConfigBundleToRuntime({
+      stores: [],
+      channelsByStoreId: {},
+      members: [{
+        memberId: "11111111-1111-4111-8111-111111111111",
+        userId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+        name: "Sara",
+        role: "employee",
+        status: "inactive",
+        deleted: true,
+        deletedAt: "2026-06-24T00:00:00.000Z",
+        storeAccess: [],
+      }],
+    });
+
+    expect(mapped.staff).toEqual([]);
+  });
+
   it("maps store operational settings from API rows", () => {
     const mapped = mapOrgConfigBundleToRuntime({
       stores: [{

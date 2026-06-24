@@ -169,6 +169,13 @@
       "when": 1782327000000,
       "tag": "0024_sales_channel_soft_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1782327600000,
+      "tag": "0025_organization_member_soft_delete",
+      "breakpoints": true
     }
   ]
 }
