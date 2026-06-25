@@ -1266,7 +1266,9 @@ def cmd_baseline_verify(vps: VPS) -> None:
 def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     wave_org_id = PRODUCTION_ENV_BOOTSTRAP_DEFAULTS["NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID"]
     wave_owner_id = PRODUCTION_ENV_BOOTSTRAP_DEFAULTS["NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID"]
-    wave_store_id = "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"
+    verify_store_id_file = "/tmp/taqfeelah-verify-store-id"
+    verify_store_ref = f"$(cat {verify_store_id_file})"
+    store_url = lambda path: f"'https://{domain}/api/v1/stores/{verify_store_ref}{path}'"
     analytics_verify = deployment_wave_requires_analytics_verify()
     pagination_verify = deployment_wave_requires_pagination_verify()
     org_config_verify = deployment_wave_requires_org_config_verify()
@@ -1315,6 +1317,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
         ),
         *([
             f"rm -f {shlex.quote(VERIFY_COOKIE_JAR)}",
+            f"rm -f {shlex.quote(verify_store_id_file)}",
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave6-auth-owner.json "
                 f"-w '%{{http_code}}' -c {shlex.quote(VERIFY_COOKIE_JAR)} "
@@ -1332,8 +1335,26 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
         ] if auth_verify else []),
         *([
             (
+                f"curl -sS --max-time 20 -o /tmp/taqfeelah-verify-stores.json "
+                f"-w '%{{http_code}}' "
+                f"'https://{domain}/api/v1/stores?status=active' "
+                f"{auth_flags}"
+            ),
+            (
+                "node -e \"const fs=require('fs');"
+                "const p=JSON.parse(fs.readFileSync('/tmp/taqfeelah-verify-stores.json','utf8'));"
+                "const stores=Array.isArray(p.stores)?p.stores:(Array.isArray(p)?p:[]);"
+                "const store=stores.find(s=>s&&s.id)||stores[0];"
+                "if(!store||!store.id){console.error('No active store available for deploy verification.');process.exit(1)}"
+                f"fs.writeFileSync('{verify_store_id_file}', String(store.id));"
+                "console.log(`Deploy verify store: ${store.id}${store.name?` (${store.name})`:''}`);\""
+            ),
+        ] if not skip_authenticated_api else []),
+        *([
+            (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave1-entries.json "
-                f"-w '%{{http_code}}' https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/entries "
+                f"-w '%{{http_code}}' "
+                f"{store_url('/entries')} "
                 f"{auth_flags}"
             ),
         ] if not skip_authenticated_api else []),
@@ -1341,15 +1362,14 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave2-summary-day.json "
                 f"-w '%{{http_code}}' "
-                f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/summary/day"
-                f"?date=$(date -u +%Y-%m-%d) "
+                f"{store_url('/summary/day?date=$(date -u +%Y-%m-%d)')} "
                 f"{auth_flags}"
             ),
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave2-reports-days.json "
                 f"-w '%{{http_code}}' "
                 f"'https://{shlex.quote(domain)}/api/v1/reports/days?"
-                f"storeId={wave_store_id}&from=2026-01-01&to=2026-12-31' "
+                f"storeId=$(cat {verify_store_id_file})&from=2026-01-01&to=2026-12-31' "
                 f"{auth_flags}"
             ),
         ] if analytics_verify and not skip_authenticated_api else []),
@@ -1357,8 +1377,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave3-entries-paginated.json "
                 f"-w '%{{http_code}}' "
-                f"'https://{domain}/api/v1/stores/{wave_store_id}/entries"
-                f"?status=active&paginated=1&limit=25' "
+                f"{store_url('/entries?status=active&paginated=1&limit=25')} "
                 f"{auth_flags}"
             ),
         ] if pagination_verify and not skip_authenticated_api else []),
@@ -1378,8 +1397,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave4-sales-channels.json "
                 f"-w '%{{http_code}}' "
-                f"'https://{domain}/api/v1/stores/{wave_store_id}/sales-channels"
-                f"?status=active' "
+                f"{store_url('/sales-channels?status=active')} "
                 f"{auth_flags}"
             ),
         ] if org_config_verify and not skip_authenticated_api else []),
@@ -1388,8 +1406,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave5-notebook-export.json "
                 f"-w '%{{http_code}}' "
                 f"'https://{domain}/api/v1/exports/notebook?"
-                f"storeId={wave_store_id}&period=day&date='"
-                f"$(date -u +%Y-%m-%d) "
+                f"storeId=$(cat {verify_store_id_file})&period=day&date=$(date -u +%Y-%m-%d)' "
                 f"{auth_flags}"
             ),
             (
@@ -1398,8 +1415,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"{auth_flags} "
                 f"-H 'content-type: application/json' "
                 f"-d '{{}}' "
-                f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/entries/"
-                f"duplicate-summary/acknowledge"
+                f"{store_url('/entries/duplicate-summary/acknowledge')}"
             ),
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave5-inline-attachment.json "
@@ -1407,7 +1423,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"{auth_flags} "
                 f"-H 'content-type: application/json' "
                 f"-d '{{}}' "
-                f"https://{shlex.quote(domain)}/api/v1/stores/{wave_store_id}/attachments/inline"
+                f"{store_url('/attachments/inline')}"
             ),
         ] if phase9_verify and not skip_authenticated_api else []),
         *([

@@ -24,6 +24,15 @@ on:
         options:
           - "false"
           - "true"
+      deploy_attempts:
+        description: "Full deploy attempts (use 1 for fast validation, 3 for SSH/fail2ban retries)"
+        required: false
+        default: "1"
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
 
 concurrency:
   group: vps-operations
@@ -172,6 +181,7 @@ jobs:
         env:
           DISPATCH_WAIT_MINUTES: ${{ github.event.inputs.preflight_wait_minutes || '0' }}
           DISPATCH_RUN_REPAIRS: ${{ github.event.inputs.run_repair_scripts || 'false' }}
+          DISPATCH_DEPLOY_ATTEMPTS: ${{ github.event.inputs.deploy_attempts || '1' }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
@@ -183,14 +193,18 @@ jobs:
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$DISPATCH_WAIT_MINUTES" != "0" ]; then
             wait_seconds=$((DISPATCH_WAIT_MINUTES * 60))
             echo "Manual deploy: cooldown ${wait_seconds}s before SSH…"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            wait_seconds=0
+            echo "Manual deploy: no preflight wait requested."
           elif printf '%s' "$COMMIT_MESSAGE" | grep -qiE 'chore\(deploy\)|deploy-retry|\[deploy-retry\]'; then
             wait_seconds=600
             echo "Deploy retry commit: cooldown ${wait_seconds}s before SSH (fail2ban recovery)…"
           else
-            wait_seconds=180
+            wait_seconds=30
             echo "Routine deploy: minimum ${wait_seconds}s preflight before SSH…"
           fi
           echo "VPS_PREFLIGHT_WAIT_SECONDS=${wait_seconds}" >> "$GITHUB_ENV"
+          echo "VPS_FULL_DEPLOY_ATTEMPTS=${DISPATCH_DEPLOY_ATTEMPTS}" >> "$GITHUB_ENV"
 
           run_repairs="false"
           if [ "$DISPATCH_RUN_REPAIRS" = "true" ]; then
@@ -220,6 +234,7 @@ jobs:
           VPS_PROBE_RETRIES: "5"
           VPS_PROBE_RETRY_DELAY_SECONDS: "30"
           VPS_PREFLIGHT_WAIT_SECONDS: ${{ env.VPS_PREFLIGHT_WAIT_SECONDS }}
+          VPS_FULL_DEPLOY_ATTEMPTS: ${{ env.VPS_FULL_DEPLOY_ATTEMPTS }}
           VPS_SSH_COMMAND_TIMEOUT: "1200"
           VPS_SKIP_REMOTE_BUILD: "true"
           VPS_RUN_REMOTE_REPAIR_SCRIPTS: ${{ env.VPS_RUN_REMOTE_REPAIR_SCRIPTS }}
@@ -268,7 +283,7 @@ jobs:
         run: |
           set -euo pipefail
           workflow_attempt=1
-          max_workflow_attempts=3
+          max_workflow_attempts="${VPS_FULL_DEPLOY_ATTEMPTS:-1}"
           while [ "$workflow_attempt" -le "$max_workflow_attempts" ]; do
             echo "Full deploy attempt ${workflow_attempt}/${max_workflow_attempts} (one SSH session per try)"
             if python scripts/vps_deploy.py deploy-production \
