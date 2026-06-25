@@ -756,6 +756,16 @@ def deployment_wave_requires_saas_verify() -> bool:
     return int(wave) >= 7
 
 
+def deploy_verify_profile() -> str:
+    profile = os.environ.get("DEPLOY_VERIFY_PROFILE", "quick").strip().lower()
+    if profile not in {"quick", "full"}:
+        raise RuntimeError(
+            "DEPLOY_VERIFY_PROFILE must be either 'quick' or 'full' "
+            f"(got {profile!r})."
+        )
+    return profile
+
+
 def verify_request_auth_flags(
     auth_verify: bool,
     wave_org_id: str,
@@ -1266,6 +1276,8 @@ def cmd_baseline_verify(vps: VPS) -> None:
 def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     wave_org_id = PRODUCTION_ENV_BOOTSTRAP_DEFAULTS["NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID"]
     wave_owner_id = PRODUCTION_ENV_BOOTSTRAP_DEFAULTS["NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID"]
+    verify_profile = deploy_verify_profile()
+    full_verify = verify_profile == "full"
     verify_store_id_file = "/tmp/taqfeelah-verify-store-id"
     verify_store_ref = f"$(cat {verify_store_id_file})"
     store_url = lambda path: f"'https://{domain}/api/v1/stores/{verify_store_ref}{path}'"
@@ -1278,13 +1290,13 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
         f"fs.writeFileSync('{verify_store_id_file}', String(store.id));"
         "console.log('Deploy verify store: '+store.id+(store.name?' ('+store.name+')':''));"
     )
-    analytics_verify = deployment_wave_requires_analytics_verify()
-    pagination_verify = deployment_wave_requires_pagination_verify()
-    org_config_verify = deployment_wave_requires_org_config_verify()
-    phase9_verify = deployment_wave_requires_phase9_verify()
+    analytics_verify = full_verify and deployment_wave_requires_analytics_verify()
+    pagination_verify = full_verify and deployment_wave_requires_pagination_verify()
+    org_config_verify = full_verify and deployment_wave_requires_org_config_verify()
+    phase9_verify = full_verify and deployment_wave_requires_phase9_verify()
     auth_verify = should_run_deploy_auth_verify()
     skip_authenticated_api = skip_authenticated_deploy_verify()
-    saas_verify = deployment_wave_requires_saas_verify()
+    saas_verify = full_verify and deployment_wave_requires_saas_verify()
     auth_owner_username, auth_owner_password = (
         resolve_auth_verify_credentials() if auth_verify else ("", "")
     )
@@ -1457,10 +1469,12 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"-H 'content-type: application/json' "
                 f"-d {shlex.quote(auth_employee_payload)}"
             ),
-        ] if auth_verify else []),
+        ] if full_verify and auth_verify else []),
         f"curl -I --max-time 15 https://{shlex.quote(www_domain)} || true",
-        "curl -I --max-time 15 https://hajrix.com || true",
-        "curl -I --max-time 15 https://arz-lounge.com || true",
+        *([
+            "curl -I --max-time 15 https://hajrix.com || true",
+            "curl -I --max-time 15 https://arz-lounge.com || true",
+        ] if full_verify else []),
     ]
     auth_status_code: str | None = None
     entries_status_code: str | None = None

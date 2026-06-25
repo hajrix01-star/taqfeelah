@@ -33,6 +33,14 @@ on:
           - "1"
           - "2"
           - "3"
+      verify_profile:
+        description: "Post-deploy verification profile"
+        required: false
+        default: "quick"
+        type: choice
+        options:
+          - "quick"
+          - "full"
 
 concurrency:
   group: vps-operations
@@ -182,6 +190,7 @@ jobs:
           DISPATCH_WAIT_MINUTES: ${{ github.event.inputs.preflight_wait_minutes || '0' }}
           DISPATCH_RUN_REPAIRS: ${{ github.event.inputs.run_repair_scripts || 'false' }}
           DISPATCH_DEPLOY_ATTEMPTS: ${{ github.event.inputs.deploy_attempts || '1' }}
+          DISPATCH_VERIFY_PROFILE: ${{ github.event.inputs.verify_profile || 'quick' }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
@@ -205,6 +214,12 @@ jobs:
           fi
           echo "VPS_PREFLIGHT_WAIT_SECONDS=${wait_seconds}" >> "$GITHUB_ENV"
           echo "VPS_FULL_DEPLOY_ATTEMPTS=${DISPATCH_DEPLOY_ATTEMPTS}" >> "$GITHUB_ENV"
+          echo "DEPLOY_VERIFY_PROFILE=${DISPATCH_VERIFY_PROFILE}" >> "$GITHUB_ENV"
+          if [ "$DISPATCH_VERIFY_PROFILE" = "full" ]; then
+            echo "POST_DEPLOY_BASELINE_VERIFY=true" >> "$GITHUB_ENV"
+          else
+            echo "POST_DEPLOY_BASELINE_VERIFY=false" >> "$GITHUB_ENV"
+          fi
 
           run_repairs="false"
           if [ "$DISPATCH_RUN_REPAIRS" = "true" ]; then
@@ -235,10 +250,11 @@ jobs:
           VPS_PROBE_RETRY_DELAY_SECONDS: "30"
           VPS_PREFLIGHT_WAIT_SECONDS: ${{ env.VPS_PREFLIGHT_WAIT_SECONDS }}
           VPS_FULL_DEPLOY_ATTEMPTS: ${{ env.VPS_FULL_DEPLOY_ATTEMPTS }}
+          DEPLOY_VERIFY_PROFILE: ${{ env.DEPLOY_VERIFY_PROFILE }}
           VPS_SSH_COMMAND_TIMEOUT: "1200"
           VPS_SKIP_REMOTE_BUILD: "true"
           VPS_RUN_REMOTE_REPAIR_SCRIPTS: ${{ env.VPS_RUN_REMOTE_REPAIR_SCRIPTS }}
-          POST_DEPLOY_BASELINE_VERIFY: "true"
+          POST_DEPLOY_BASELINE_VERIFY: ${{ env.POST_DEPLOY_BASELINE_VERIFY }}
           RESET_FOUNDATION_ON_DEPLOY: ${{ contains(github.event.head_commit.message, '[reset-foundation]') }}
           RESET_FOUNDATION_CONFIRM: "reset-modern-foundation"
           DEPLOYMENT_WAVE: "7"
