@@ -3,7 +3,6 @@
 import { text } from "./prototype-runtime-demo-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";
 import { SettingsPageHeader } from "./owner-settings-ui-primitives";
-import { OwnerSettingsTeamSectionWithInvites } from "./owner-settings-team-section-with-invites";
 import { OwnerSettingsTeamRoster } from "./owner-settings-team-roster";
 import { SettingsSectionFrame } from "./owner-settings-section-frame";
 import type {
@@ -39,7 +38,6 @@ export function OwnerSettingsTeamSection({
   saveManagingTeam,
   setSection,
   deleteDialogProps,
-  inviteApiContext,
   orgConfigLoading = false,
   settingsNotice = "",
   embedded = false,
@@ -89,35 +87,6 @@ export function OwnerSettingsTeamSection({
         </div>
       ) : (
         <>
-      {inviteApiContext?.organizationId && inviteApiContext?.actorUserId ? (
-        <OwnerSettingsTeamSectionWithInvites
-          inviteApiContext={inviteApiContext}
-          lang={lang}
-          activeStoredBusinesses={activeStoredBusinesses}
-          displayBusinessName={displayBusinessName}
-          rosterProps={{
-            lang,
-            managingTeam,
-            startManagingTeam,
-            cancelManagingTeam,
-            visibleStaff,
-            employeeStoreIds,
-            toggleEmployeeActive,
-            setDeleteTarget,
-            toggleEmployeeStore,
-            draftAuthEmployeePins,
-            updateDraftEmployeePin,
-            updateEmployeeMobile,
-            newEmployeeName,
-            setNewEmployeeName,
-            newEmployeeMobile,
-            setNewEmployeeMobile,
-            newEmployeeStoreIds,
-            toggleNewEmployeeStore,
-            addStaff,
-          } as import("./prototype-runtime-types").OwnerSettingsTeamRosterProps}
-        />
-      ) : (
         <OwnerSettingsTeamRoster
           lang={lang}
           managingTeam={managingTeam}
@@ -141,7 +110,6 @@ export function OwnerSettingsTeamSection({
           toggleNewEmployeeStore={toggleNewEmployeeStore}
           addStaff={addStaff}
         />
-      )}
       {managingTeam && (
         <div className="grid grid-cols-[0.9fr_1.35fr] gap-3">
           <button onClick={cancelManagingTeam} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button>

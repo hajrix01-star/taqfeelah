@@ -5,7 +5,6 @@ import { OwnerSettingsAccountSection } from "./owner-settings-account-section";
 import { OwnerSettingsAppearanceSection } from "./owner-settings-appearance-section";
 import { OwnerSettingsHomeSection } from "./owner-settings-home-section";
 import { OwnerSettingsStoresSection } from "./owner-settings-stores-section";
-import { OwnerSettingsSubscriptionSection } from "./owner-settings-subscription-section";
 import { OwnerSettingsSupportSection } from "./owner-settings-support-section";
 import { OwnerSettingsTeamSection } from "./owner-settings-team-section";
 import { SettingsSectionFrame } from "./owner-settings-section-frame";
@@ -29,11 +28,10 @@ export function OwnerSettingsStoresTeamSection(props: OwnerSettingsViewState & O
     visibleStaff,
     employeeStoreIds,
     activeStoredBusinesses,
-    entitlements,
     embedded = true,
   } = props;
 
-  const sectionSubTab = section === "team" || section === "subscription" ? section : "stores";
+  const sectionSubTab = section === "team" ? section : "stores";
   const [activeSubTab, setActiveSubTab] = React.useState(sectionSubTab);
   React.useEffect(() => {
     setActiveSubTab(sectionSubTab);
@@ -81,19 +79,6 @@ export function OwnerSettingsStoresTeamSection(props: OwnerSettingsViewState & O
             embedded
           />
         ) : null}
-        {activeSubTab === "subscription" ? (
-          <OwnerSettingsSubscriptionSection
-            lang={props.lang}
-            setSection={setSection}
-            entitlements={entitlements}
-            entitlementsLoading={props.entitlementsLoading}
-            entitlementsError={props.entitlementsError}
-            reloadEntitlements={props.reloadEntitlements}
-            ownerProfile={props.ownerProfile ?? {}}
-            embedded
-            hideUpgradeActions
-          />
-        ) : null}
       </SettingsTabbedPanel>
     </SettingsSectionFrame>
   );
@@ -133,7 +118,7 @@ export function renderOwnerSettingsSection(
       />
     );
   }
-  if (section === "stores-team" || section === "stores" || section === "team" || section === "subscription") {
+  if (section === "stores-team" || section === "stores" || section === "team") {
     return (
       <OwnerSettingsStoresTeamSection
         {...common}

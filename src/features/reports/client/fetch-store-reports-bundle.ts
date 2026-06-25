@@ -29,6 +29,7 @@ export async function fetchStoreReportsBundle({
   configuredChannels,
   outflowCategory,
   includeOutflowTransactions,
+  includeDetails = true,
 }: FetchStoreReportsBundleInput): Promise<StoreReportsBundle> {
   const summaryResults = await Promise.all(
     storeIds.map((storeId) => fetchStorePeriodSummaryViaApi({
@@ -50,7 +51,7 @@ export async function fetchStoreReportsBundle({
   });
 
   const isSingleStore = storeIds.length === 1;
-  if (!isSingleStore) {
+  if (!isSingleStore || !includeDetails) {
     return {
       totalsByStoreId,
       daysRows: [],

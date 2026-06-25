@@ -14,7 +14,7 @@ describe("owner settings tab navigation", () => {
     expect(resolveSettingsMainTab("account")).toBe("account");
     expect(resolveSettingsMainTab("appearance")).toBe("shape");
     expect(resolveSettingsMainTab("support")).toBe("help");
-    expect(resolveSettingsMainTab("subscription")).toBe("stores-team");
+    expect(resolveSettingsMainTab("subscription")).toBe("help");
   });
 
   it("normalizes legacy section ids", () => {

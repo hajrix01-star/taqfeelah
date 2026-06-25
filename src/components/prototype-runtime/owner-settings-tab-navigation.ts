@@ -12,9 +12,10 @@ export function normalizeSettingsSection(section: SettingsSection | null | undef
 
 export function resolveSettingsMainTab(section: SettingsSection) {
   const normalized = normalizeSettingsSection(section);
-  if (normalized === "stores-team" || normalized === "stores" || normalized === "team" || normalized === "subscription") return "stores-team";
+  if (normalized === "stores-team" || normalized === "stores" || normalized === "team") return "stores-team";
   if (normalized === "account") return "account";
   if (normalized === "appearance") return "shape";
+  if (normalized === "subscription") return "help";
   if (normalized === "support") return "help";
   return "stores-team";
 }
@@ -30,7 +31,6 @@ export function sectionFromSettingsTabs(mainTab: string) {
 /** @deprecated Org sub-tabs removed — kept for legacy store panel aliases only */
 export function resolveSettingsOrgSubTab(section: string) {
   if (section === "team") return "team";
-  if (section === "subscription") return "subscription";
   return "stores";
 }
 

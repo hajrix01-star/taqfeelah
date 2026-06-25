@@ -1,1 +1,1 @@
-export { default } from "@/features/demo/AppRuntimePage";
+export { default } from "@/features/taqfeelah-app/TaqfeelahAppPage";

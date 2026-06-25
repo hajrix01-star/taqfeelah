@@ -120,6 +120,7 @@ export function useOwnerSettingsState({
   const [notebookTheme, setNotebookTheme] = useState<string>(() => {
     const savedTheme = initialSettings?.notebookTheme;
     if (isValidNotebookTheme(savedTheme)) return String(savedTheme);
+    if (skipDemoBootstrap) return "yellow";
     if (!isBrowserPersistentStorageAllowed({ scope: "ui-preferences" })) return "yellow";
     if (typeof window === "undefined") return "yellow";
     return window.localStorage.getItem("taqfeelah_notebook_theme") || "yellow";
@@ -288,12 +289,12 @@ export function useOwnerSettingsState({
 
   useEffect(() => {
     if (
-      typeof window !== "undefined"
-      && isBrowserPersistentStorageAllowed({ scope: "ui-preferences" })
-    ) {
-      window.localStorage.setItem("taqfeelah_notebook_theme", notebookTheme);
-    }
-  }, [notebookTheme]);
+      skipDemoBootstrap
+      || typeof window === "undefined"
+      || !isBrowserPersistentStorageAllowed({ scope: "ui-preferences" })
+    ) return;
+    window.localStorage.setItem("taqfeelah_notebook_theme", notebookTheme);
+  }, [notebookTheme, skipDemoBootstrap]);
 
   useEffect(() => {
     const businessIds = configuredBusinesses.map((business) => String(business.id));
@@ -311,12 +312,12 @@ export function useOwnerSettingsState({
 
   useEffect(() => {
     if (
-      bindsToServerAuth
+      skipDemoBootstrap
       || typeof window === "undefined"
       || !isBrowserPersistentStorageAllowed({ scope: "operational-fallback" })
     ) return;
     window.localStorage.setItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(lastCloseoutDates));
-  }, [bindsToServerAuth, lastCloseoutDates]);
+  }, [lastCloseoutDates, skipDemoBootstrap]);
 
   return {
     configuredBusinesses,

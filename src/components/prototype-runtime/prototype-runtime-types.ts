@@ -12,7 +12,6 @@ import type {
 import type { CreateOperationalEntryInApiParams } from "@/features/operations/client/operations-client-types";
 import type { RegisterCloseoutSummary } from "@/features/entries/client/register-log-display";
 import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
-import type { TeamInvitation } from "@/features/member-invitations/client/member-invitations-client-types";
 import type { OwnerNotebookNote } from "@/features/owner-notebook/owner-notebook-types";
 import type { StaffMember as OrgStaffMember } from "@/features/org-config/client/org-config-client-types";
 import type {
@@ -656,70 +655,6 @@ export type OwnerSettingsTeamRosterProps = Record<string, unknown> & {
   newEmployeeStoreIds: string[];
   toggleNewEmployeeStore: (storeId: string) => void;
   addStaff: () => void;
-  groupedInvites?: {
-    usedInvitesByUserId?: Map<string, Record<string, unknown>> | null;
-  } | null;
-};
-
-export type OwnerSettingsPendingInvite = Record<string, unknown> & {
-  invitationId: string;
-  displayName?: string;
-  status?: string;
-  phoneNumber?: string;
-  storeName?: string;
-};
-
-export type OwnerSettingsTeamInviteForm = {
-  displayName: string;
-  phoneNumber: string;
-  pin: string;
-  storeId: string;
-  role: string;
-  canCreate: boolean;
-  creating: boolean;
-  copiedField: string | null;
-  error: string | null;
-  createdInvite: TeamInvitation | null;
-  setDisplayName: (value: string) => void;
-  setPhoneNumber: (value: string) => void;
-  setPin: (value: string) => void;
-  setStoreId: (value: string) => void;
-  setRole: (value: string) => void;
-  createInvite: () => void | Promise<void>;
-  copyText: (value: string, field: string) => void | Promise<void>;
-  shareInviteWhatsApp: (invite: TeamInvitation) => void;
-  revokeInvite: (invitationId: string) => void | Promise<void>;
-};
-
-export type OwnerSettingsTeamInviteCreateProps = {
-  lang: DisplayLang;
-  activeStoredBusinesses: PrototypeBusiness[];
-  displayBusinessName: (business: PrototypeBusiness) => string;
-  invites: OwnerSettingsTeamInviteForm;
-};
-
-export type OwnerSettingsTeamPendingInvitesProps = {
-  lang: DisplayLang;
-  pendingInvites: OwnerSettingsPendingInvite[];
-  loading: boolean;
-  onRevokeInvite: (invitationId: string) => void | Promise<void>;
-};
-
-export type OwnerSettingsTeamSectionWithInvitesProps = {
-  inviteApiContext: NonNullable<OwnerSettingsApiContext> & {
-    organizationId?: string;
-    actorUserId?: string;
-    actorRole?: string;
-  };
-  lang: DisplayLang;
-  activeStoredBusinesses: PrototypeBusiness[];
-  displayBusinessName: (business: PrototypeBusiness) => string;
-  rosterProps: OwnerSettingsTeamRosterProps;
-};
-
-export type OwnerSettingsStaffInviteLineProps = {
-  lang: DisplayLang;
-  invite: Record<string, unknown> | null;
 };
 
 export type RegisterUiProps = {

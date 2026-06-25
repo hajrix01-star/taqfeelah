@@ -6,7 +6,6 @@ import { buildOperationalEntriesFromCloseout } from "@/features/daily-closeouts/
 import {
   makeAttachment,
   storeAttachmentPayload,
-  stripEmbeddedAttachmentImages,
 } from "@/features/attachments/client/prototype-attachment-storage";
 import type { PreparedAttachment } from "@/features/attachments/client/attachments-client-types";
 import { hasCloseoutApiActorMapping, isUuid } from "@/features/closeouts/client/closeouts-api-client";
@@ -21,7 +20,6 @@ import {
 } from "@/features/operations/client/owner-duplicate-watch";
 import { mergeLastCloseoutDateForStore } from "@/features/operations/operational-entry-save-helpers";
 import { resolveInlineAttachmentPayloadForApi } from "@/features/exports-attachments/client/inline-attachment-api-flow";
-import { safeSetLocalStorageItem } from "@/features/demo/prototype-storage";
 import { todayIsoDate } from "@/components/prototype-runtime/prototype-runtime-notebook";
 import {
   buildEntry,
@@ -29,9 +27,7 @@ import {
   readOperationalEntries,
 } from "@/components/prototype-runtime/prototype-runtime-demo-operational-entries";
 import {
-  BINDS_TO_SERVER_AUTH,
   ENTRIES_API_DB_SOURCE,
-  OPERATIONAL_ENTRIES_STORAGE_KEY,
   REGISTER_ENTRIES_PAGINATION_ENABLED,
 } from "@/components/prototype-runtime/prototype-runtime-boot";
 import { entryIsActive } from "@/components/prototype-runtime/prototype-runtime-entry-helpers";
@@ -363,15 +359,6 @@ export function usePrototypeRuntimeOperationalEntries({
     if (!operationalEntriesSyncError) return;
     console.warn(operationalEntriesSyncError);
   }, [operationalEntriesSyncError]);
-
-  useEffect(() => {
-    if (BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE || typeof window === "undefined") return;
-    safeSetLocalStorageItem(
-      OPERATIONAL_ENTRIES_STORAGE_KEY,
-      JSON.stringify(stripEmbeddedAttachmentImages(bulkOperationalEntries)),
-      { scope: "operational-fallback" },
-    );
-  }, [bulkOperationalEntries]);
 
   return {
     operationalEntries,

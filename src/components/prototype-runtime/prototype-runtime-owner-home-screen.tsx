@@ -31,7 +31,6 @@ import {
 } from "./prototype-runtime-notebook";
 import { InkTab } from "./prototype-runtime-shell-ui";
 import { isOwnerApiSummaryPending } from "@/features/reports/client/owner-summary-loading";
-import { useStoreDaySummaries } from "@/features/reports/client/use-store-day-summaries";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { formatNetMarginOfSalesRatio } from "@/features/entries/client/register-log-display";
 import { useHomeDayAttachments } from "@/features/entries/client/use-home-day-attachments";
@@ -90,22 +89,25 @@ export function OwnerHome({
   const summaryApiActive = summaryApiEnabled;
   const strictServerFinancialSource = summaryApiActive;
   const {
-    businessesWithDaySummaries,
-    combinedResult: apiCombinedResult,
+    businessesWithSummaries: businessesWithDaySummaries,
+    combinedTotals: apiCombinedResult,
     getStoreResult,
     loading: summaryApiLoading,
     loaded: summaryApiLoaded,
     hasData: summaryApiHasData,
     error: summaryApiError,
-  } = useStoreDaySummaries({
+  } = useStoreReports({
     enabled: summaryApiActive,
     period: monthly ? "month" : "day",
     organizationId: summaryApiOrganizationId,
     actorUserId: summaryApiActorUserId,
     actorRole: summaryApiActorRole,
     businesses: businessesList,
-    date: selectedDate,
-    month: selectedMonth,
+    selectedStoreId: selectedBusiness,
+    selectedDate,
+    selectedMonth,
+    configuredChannels,
+    includeDetails: false,
   });
   const {
     channelRows: apiChannelRows,
@@ -165,8 +167,8 @@ export function OwnerHome({
   const result = isCombined
     ? preferEntrySummaries ? localCombinedResult : apiCombinedResult
     : monthly
-      ? resolveOwnerSingleStoreTotals(localMonthResult as AnalyticsTotals, apiStoreResult as AnalyticsTotals | null | undefined, preferEntrySummaries)
-      : resolveOwnerSingleStoreTotals(daySummary as AnalyticsTotals, apiStoreResult as AnalyticsTotals | null | undefined, preferEntrySummaries);
+      ? resolveOwnerSingleStoreTotals(localMonthResult as AnalyticsTotals, apiStoreResult as AnalyticsTotals | null | undefined, preferEntrySummaries, { entriesDbSource: strictServerFinancialSource })
+      : resolveOwnerSingleStoreTotals(daySummary as AnalyticsTotals, apiStoreResult as AnalyticsTotals | null | undefined, preferEntrySummaries, { entriesDbSource: strictServerFinancialSource });
   const netMarginRatio = formatNetMarginOfSalesRatio(result?.sales ?? 0, result?.net ?? 0);
   const selectedBusinessEntries = currentBusiness ? operationalEntries.filter((entry) => entry.businessId === currentBusiness.id && entryDateMatches(entry, "day", selectedDate, selectedMonth, "2026", "2026-01-01", "2026-12-31")) : [];
   const useApiDetailRows = summaryApiActive

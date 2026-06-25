@@ -59,14 +59,15 @@ export function NotebookShareModal({
     apiChannelRows,
     apiDayRows,
     loading: apiLoading,
+    error: apiError,
   } = useNotebookExportShareData({
     enabled: notebookExportApiEnabled,
     auth: notebookExportAuth,
     snapshot,
   });
-  const shouldWaitForApi = canFetchNotebookExportForSnapshot(snapshot, notebookExportApiEnabled)
-    && apiLoading
-    && !snapshot?.summaryRecord;
+  const apiDataRequired = canFetchNotebookExportForSnapshot(snapshot, notebookExportApiEnabled);
+  const shouldWaitForApi = apiDataRequired && apiLoading;
+  const apiDataUnavailable = apiDataRequired && !apiLoading && (Boolean(apiError) || !apiRecord);
 
   useEffect(() => { if (snapshot) { setFormat(allowedFormats[0] || "excel"); setImageError(""); setShareHint(""); cachedImageFileRef.current = null; } }, [snapshot, allowedFormats]);
 
@@ -103,6 +104,7 @@ export function NotebookShareModal({
 
   const model = useMemo(() => {
     if (!snapshot) return null;
+    if (apiDataRequired && (shouldWaitForApi || apiDataUnavailable)) return null;
     return buildNotebookShareModel({
       snapshot,
       lang,
@@ -124,10 +126,14 @@ export function NotebookShareModal({
     apiRecord,
     apiChannelRows,
     apiDayRows,
+    apiDataRequired,
+    shouldWaitForApi,
+    apiDataUnavailable,
   ]);
 
   const exportModel = useMemo(() => {
     if (!snapshot) return null;
+    if (apiDataRequired && (shouldWaitForApi || apiDataUnavailable)) return null;
     return buildDataExportModel({
       snapshot,
       lang,
@@ -149,9 +155,35 @@ export function NotebookShareModal({
     apiRecord,
     apiChannelRows,
     apiDayRows,
+    apiDataRequired,
+    shouldWaitForApi,
+    apiDataUnavailable,
   ]);
 
-  if (!snapshot || !model || !exportModel) return null;
+  if (!snapshot) return null;
+  if (apiDataRequired && (shouldWaitForApi || apiDataUnavailable)) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 flex flex-col justify-end bg-[#112A46]/45 sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0">
+        <div className="max-h-[92%] overflow-y-auto rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:w-full sm:max-w-[700px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-taq-meta font-bold text-[#827762]">{text(lang, "shareOptions")}</p>
+              <h3 className="text-base font-black">{format === "image" ? text(lang, "notebookImagePreview") : text(lang, "professionalReportPreview")}</h3>
+            </div>
+            <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white"><X className="h-4 w-4" /></button>
+          </div>
+          <div className={`rounded-2xl px-4 py-5 text-center ring-1 ${apiDataUnavailable ? "bg-[#FFF7F5] ring-[#F0C7C1]" : "bg-white ring-[#ECE6DA]"}`}>
+            <p className={`text-sm font-black ${apiDataUnavailable ? "text-[#B44747]" : "text-[#112A46]"}`}>
+              {apiDataUnavailable
+                ? (lang === "ar" ? "تعذر تجهيز التصدير من الخادم. لم يتم استخدام بيانات محلية بديلة." : "Failed to prepare the export from the server. No local fallback data is used.")
+                : (lang === "ar" ? "جاري تجهيز التصدير من الخادم..." : "Preparing export from the server...")}
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+  if (!model || !exportModel) return null;
 
   const {
     shareCaption,

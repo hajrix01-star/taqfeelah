@@ -5,9 +5,7 @@ import { ChevronDown, Trash2 } from "lucide-react";
 import { StandardLoginPhoneField } from "@/core/phone/StandardLoginPhoneField";
 import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 import { buildStaffDeleteTarget } from "@/features/org-config/client/owner-settings-team-actions";
-import { resolveStaffInviteUserKey } from "@/features/member-invitations/client/group-team-invitations";
 import { SettingToggle } from "./OwnerSettingsSection";
-import { OwnerSettingsStaffInviteLine } from "./owner-settings-staff-invite-line";
 import { text } from "./prototype-runtime-demo-data";
 import type { OwnerSettingsTeamRosterProps } from "./prototype-runtime-types";
 
@@ -33,9 +31,7 @@ export function OwnerSettingsTeamRoster({
   newEmployeeStoreIds,
   toggleNewEmployeeStore,
   addStaff,
-  groupedInvites = null,
 }: OwnerSettingsTeamRosterProps) {
-  const usedInvitesByUserId = groupedInvites?.usedInvitesByUserId || null;
   const [expandedStaffId, setExpandedStaffId] = useState("");
   const activeStaffCount = useMemo(
     () => visibleStaff.filter((person) => Boolean(person.active)).length,
@@ -83,9 +79,6 @@ export function OwnerSettingsTeamRoster({
         {visibleStaff.length ? visibleStaff.map((person, index) => {
           const personId = String(person.id);
           const expanded = expandedStaffId === personId;
-          const staffInvite = usedInvitesByUserId
-            ? usedInvitesByUserId.get(resolveStaffInviteUserKey(person)) || null
-            : null;
           const assignedStoreCount = employeeStoreIds(person).length;
 
           return (
@@ -111,7 +104,6 @@ export function OwnerSettingsTeamRoster({
                       </p>
                     )
                   ) : null}
-                  <OwnerSettingsStaffInviteLine lang={lang} invite={staffInvite} />
                 </button>
 
                 <div className="flex shrink-0 items-center gap-2">

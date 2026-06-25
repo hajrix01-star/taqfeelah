@@ -142,15 +142,6 @@ export function buildSettingsOrgSubTabItems(lang: DisplayLang, counts: SettingsT
       contentSurfaceClass: "bg-[#F4FAF6]",
       contentAccentClass: "border-t-2 border-[#257844]/40",
     },
-    {
-      id: "subscription",
-      label: lang === "ar" ? "اشتراك" : "Plan",
-      hideCount: true,
-      activeClass: "bg-[#E4B84A] text-[#112A46]",
-      inactiveClass: `${SETTINGS_TAB_NEUTRAL_INACTIVE} text-[#957D43]/80`,
-      contentSurfaceClass: "bg-[#FFFBF0]",
-      contentAccentClass: "border-t-2 border-[#E4B84A]/45",
-    },
   ];
 }
 

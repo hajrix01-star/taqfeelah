@@ -1,5 +1,1 @@
-import { redirect } from "next/navigation";
-
-export default function PrototypeRuntimePage() {
-  redirect("/app");
-}
+export { default } from "@/features/demo/AppRuntimePage";

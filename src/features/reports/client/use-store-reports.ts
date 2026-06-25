@@ -1,6 +1,6 @@
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
@@ -37,6 +37,7 @@ export function useStoreReports({
   configuredChannels = [],
   outflowCategory = "all",
   includeOutflowTransactions = false,
+  includeDetails = true,
 }: UseStoreReportsProps) {
   const strictDbSource = isEntriesApiDbSourceMode();
   const storeIdsKey = useMemo(() => {
@@ -77,6 +78,7 @@ export function useStoreReports({
       to: dateRange.to,
       outflowCategory,
       includeOutflowTransactions,
+      includeDetails,
     }),
     queryFn: async () => fetchStoreReportsBundle({
       organizationId,
@@ -88,14 +90,14 @@ export function useStoreReports({
       configuredChannels,
       outflowCategory,
       includeOutflowTransactions,
+      includeDetails,
     }),
     enabled: queryEnabled,
-    placeholderData: keepPreviousData,
   });
 
   const bundle = query.data ?? emptyReportsBundle;
   const totalsByStoreId = bundle.totalsByStoreId;
-  const loading = queryEnabled && query.isPending && !query.isPlaceholderData;
+  const loading = queryEnabled && query.isPending;
   const loaded = queryEnabled && (query.isSuccess || query.isError);
   const error = query.isError ? "failed" : "";
 
@@ -136,5 +138,6 @@ export function useStoreReports({
     outflowTransactionCount: bundle.outflowTransactionCount,
     outflowTotal: bundle.outflowTotal,
     attachmentProofs: bundle.attachmentProofs,
+    getStoreResult: (storeId: string) => totalsByStoreId[storeId] || null,
   };
 }

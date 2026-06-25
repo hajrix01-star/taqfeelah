@@ -5,7 +5,6 @@ import { OWNER_SETTINGS_STORAGE_KEY } from "@/features/runtime-settings/client/m
 import { CLOSEOUT_ALERTS_STORAGE_KEY } from "@/features/owner-shell/client/owner-shell-storage";
 import { migrateSavedSettings as applyLocalSavedSettingsMigration } from "@/features/runtime-settings/client/migrate-local-saved-settings";
 import { loadLocalCloseoutsOnBoot } from "@/features/daily-closeouts/daily-closeouts-demo-store";
-import { PROTOTYPE_DEMO_OPERATIONAL_ENTRIES_KEY } from "@/features/demo/prototype-month-demo-seed";
 import { buildPrototypeDefaultStaff } from "@/features/demo/prototype-auth-boot";
 
 const {
@@ -39,8 +38,6 @@ const readSavedSettings = createReadSavedSettings({
   enabled: !BINDS_TO_SERVER_AUTH && !RUNTIME_SETTINGS_DB_SOURCE,
   migrate: migrateSavedSettings,
 });
-const OPERATIONAL_ENTRIES_STORAGE_KEY = PROTOTYPE_DEMO_OPERATIONAL_ENTRIES_KEY;
-
 const PROTOTYPE_DEFAULT_STAFF = buildPrototypeDefaultStaff(PROTOTYPE_EMPLOYEE_PIN_DEFAULT);
 
 export {
@@ -58,6 +55,5 @@ export {
   PROTOTYPE_EMPLOYEE_PIN_DEFAULT,
   migrateSavedSettings,
   readSavedSettings,
-  OPERATIONAL_ENTRIES_STORAGE_KEY,
   PROTOTYPE_DEFAULT_STAFF,
 };

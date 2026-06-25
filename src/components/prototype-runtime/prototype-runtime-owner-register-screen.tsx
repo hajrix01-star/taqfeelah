@@ -7,7 +7,7 @@ import { employeeDisplayName } from "@/features/employee-closeouts/employee-entr
 import {
   buildRegisterCloseoutDayContext,
 } from "@/features/entries/client/register-operation-display";
-import { useRegisterEntriesFromApi } from "@/features/entries/client/use-register-entries-from-api";
+import { useRegisterServerReadModel } from "@/features/entries/client/use-register-server-read-model";
 import { newestEntries } from "@/features/operations/operational-analytics";
 import {
   DEFAULT_REGISTER_LOG_FILTERS,
@@ -32,7 +32,6 @@ import {
   supportsRegisterReportGranularity,
   REGISTER_REPORT_GRANULARITY,
 } from "@/features/reports/client/register-report-granularity";
-import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { entryIsActive, summarizeEntries } from "@/features/operations/operational-analytics";
 import {
   businesses,
@@ -173,24 +172,35 @@ export function OwnerRegisterScreen({
   );
   const {
     entries: apiRegisterEntries,
-    error: apiRegisterEntriesError,
-    hasMore: apiRegisterEntriesHasMore,
-    loadMore: loadMoreRegisterEntries,
-    loadAllRemaining: loadAllRegisterEntries,
-    refetch: refetchRegisterEntries,
-    loadingMore: registerEntriesLoadingMore,
-  } = useRegisterEntriesFromApi({
+    entriesLoading: apiRegisterEntriesLoading,
+    entriesError: apiRegisterEntriesError,
+    entriesHasMore: apiRegisterEntriesHasMore,
+    loadMoreEntries: loadMoreRegisterEntries,
+    loadAllEntries: loadAllRegisterEntries,
+    refetchEntries: refetchRegisterEntries,
+    entriesLoadingMore: registerEntriesLoadingMore,
+    reportDaysRows: apiGeneralReportRows,
+    reportSingleStoreTotals: apiGeneralReportTotals,
+    reportCombinedTotals: apiGeneralReportCombinedTotals,
+    reportLoading: generalReportApiLoading,
+    reportLoaded: generalReportApiLoaded,
+    reportError: generalReportApiError,
+  } = useRegisterServerReadModel({
     enabled: registerEntriesApiEnabled,
     organizationId: registerEntriesApiOrganizationId,
     actorUserId: registerEntriesApiActorUserId,
     actorRole: registerEntriesApiActorRole,
     storeIds: registerTargetStoreIds,
+    selectedStoreId: safeBusinessId,
     period,
     selectedDate,
     selectedMonth,
     selectedYear,
     customFrom,
     customTo,
+    logView,
+    businesses: businessesList,
+    configuredChannels,
   });
   const localPeriodEntries = useMemo(
     () => operationalEntries.filter((entry) => (safeBusinessId === "all" ? activeBusinesses.some((business) => business.id === entry.businessId) : entry.businessId === safeBusinessId) && entryDateMatches(entry, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo)),
@@ -199,6 +209,7 @@ export function OwnerRegisterScreen({
   const periodEntries = registerEntriesApiEnabled
     ? apiRegisterEntries
     : localPeriodEntries;
+  const strictRegisterSource = ENTRIES_API_DB_SOURCE && registerEntriesApiEnabled;
   const registerEntriesLoadError = Boolean(registerEntriesApiEnabled && (apiRegisterEntriesError || registerEntriesSyncError));
   // Closeout cards are built from register entries — do not block on closeouts-provider sync errors.
   const closeoutsLoadError = Boolean(registerEntriesApiEnabled && (apiRegisterEntriesError || registerEntriesSyncError));
@@ -385,29 +396,6 @@ export function OwnerRegisterScreen({
   );
   const generalReportApiEnabled = registerEntriesApiEnabled
     && logView === "report";
-  const {
-    daysRows: apiGeneralReportRows,
-    singleStoreTotals: apiGeneralReportTotals,
-    combinedTotals: apiGeneralReportCombinedTotals,
-    loading: generalReportApiLoading,
-    loaded: generalReportApiLoaded,
-    error: generalReportApiError,
-  } = useStoreReports({
-    enabled: generalReportApiEnabled,
-    organizationId: registerEntriesApiOrganizationId,
-    actorUserId: registerEntriesApiActorUserId,
-    actorRole: registerEntriesApiActorRole,
-    businesses: businessesList,
-    selectedStoreId: safeBusinessId,
-    period,
-    selectedDate,
-    selectedMonth,
-    selectedYear,
-    customFrom,
-    customTo,
-    configuredChannels,
-    includeOutflowTransactions: false,
-  });
   const apiDailyGeneralReportRows = useMemo(
     () => (generalReportApiEnabled && generalReportApiLoaded && !generalReportApiError
       ? apiGeneralReportRows.map((row) => ({
@@ -454,9 +442,15 @@ export function OwnerRegisterScreen({
   );
   const generalReportLoadError = Boolean(generalReportApiEnabled && generalReportApiLoaded && generalReportApiError);
   const generalReportLoadErrorMessage = lang === "ar"
-    ? "تعذر تحميل تقرير الأيام من الخادم. تم عرض البيانات المحلية المتاحة."
-    : "Failed to load the days report from the server. Showing available local data.";
-  const dashboardSummary = logView === "report" || ENTRIES_API_DB_SOURCE ? generalReportDashboardSummary : registerPeriodSummary;
+    ? "تعذر تحميل تقرير الأيام من الخادم. لم يتم عرض بيانات محلية بديلة."
+    : "Failed to load the days report from the server. No local fallback data is shown.";
+  const dashboardSummary = logView === "report" ? generalReportDashboardSummary : registerPeriodSummary;
+  const dashboardSummaryLoading = logView === "report"
+    ? Boolean(generalReportApiEnabled && generalReportApiLoading && !generalReportApiLoaded)
+    : Boolean(strictRegisterSource && apiRegisterEntriesLoading && !periodEntries.length);
+  const dashboardSummaryErrorMessage = logView === "report"
+    ? (generalReportLoadError ? generalReportLoadErrorMessage : "")
+    : (registerEntriesLoadError ? registerEntriesLoadErrorMessage : "");
   const dashboardShowFilters = logView !== "report";
   const openRegisterExport = () => onShareRegister({
     screen: "register",
@@ -535,6 +529,8 @@ export function OwnerRegisterScreen({
             onOpenFilters={openFiltersSheet}
             periodLabel={registerPeriodLabel}
             summary={dashboardSummary}
+            summaryLoading={dashboardSummaryLoading}
+            summaryErrorMessage={dashboardSummaryErrorMessage}
             showFilters={dashboardShowFilters}
           />
         </div>

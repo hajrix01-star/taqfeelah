@@ -1,6 +1,6 @@
 "use client";
 
-import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { resolveReportDateRange } from "@/features/reports/client/report-period-range";
@@ -94,12 +94,11 @@ export function useRegisterEntriesFromApi({
       currentEntries: [],
     }),
     enabled: queryEnabled,
-    placeholderData: keepPreviousData,
   });
 
   const entries = query.data?.entries ?? emptyRegisterEntriesState.entries;
   const hasMore = query.data?.hasMore ?? false;
-  const loading = queryEnabled && query.isPending && !query.isPlaceholderData;
+  const loading = queryEnabled && query.isPending;
   const error = query.isError ? "failed" : "";
 
   const loadMore = useCallback(async (): Promise<boolean> => {
@@ -163,7 +162,7 @@ export function useRegisterEntriesFromApi({
     entries,
     loading,
     loadingMore,
-    loadingAll: query.isFetching && query.isPlaceholderData && !loadingMore,
+    loadingAll: query.isFetching && !query.isPending && !loadingMore,
     hasMore,
     error,
     loadMore,

@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import {
   APP_RUNTIME_LOAD_MAX_ATTEMPTS,
   APP_RUNTIME_LOAD_RETRY_MS,
-  loadTaqfeelahPrototypeRuntime,
-} from "./load-taqfeelah-prototype-runtime";
+  loadTaqfeelahAppRuntime,
+} from "./load-taqfeelah-app-runtime";
 
-describe("loadTaqfeelahPrototypeRuntime", () => {
+describe("loadTaqfeelahAppRuntime", () => {
   it("retries transient import failures before succeeding", async () => {
     const RuntimeStub = (() => null) as import("react").ComponentType;
     const importRuntime = vi
@@ -15,7 +15,7 @@ describe("loadTaqfeelahPrototypeRuntime", () => {
 
     const wait = vi.fn(async () => {});
 
-    const runtime = await loadTaqfeelahPrototypeRuntime({
+    const runtime = await loadTaqfeelahAppRuntime({
       importRuntime,
       maxAttempts: APP_RUNTIME_LOAD_MAX_ATTEMPTS,
       retryDelayMs: APP_RUNTIME_LOAD_RETRY_MS,
@@ -35,7 +35,7 @@ describe("loadTaqfeelahPrototypeRuntime", () => {
     const wait = vi.fn(async () => {});
 
     await expect(
-      loadTaqfeelahPrototypeRuntime({
+      loadTaqfeelahAppRuntime({
         importRuntime,
         maxAttempts: 2,
         retryDelayMs: 10,

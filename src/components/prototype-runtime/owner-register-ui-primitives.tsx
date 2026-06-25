@@ -279,6 +279,8 @@ export function RegisterDashboardCard({
   onOpenFilters,
   periodLabel,
   summary,
+  summaryLoading = false,
+  summaryErrorMessage = "",
   showFilters = true,
 }: {
   lang: DisplayLang;
@@ -289,12 +291,23 @@ export function RegisterDashboardCard({
   onOpenFilters: () => void;
   periodLabel: string;
   summary: Record<string, unknown>;
+  summaryLoading?: boolean;
+  summaryErrorMessage?: string;
   showFilters?: boolean;
 }) {
   const useIndexTabs = REGISTER_INDEX_TABS_ENABLED;
   const activeView = resolveRegisterViewItem(lang, tabCounts, logView);
 
-  const summaryBody = (
+  const summaryBody = summaryLoading ? (
+    <div className="rounded-2xl bg-gradient-to-b from-white to-[#FDFBF7] px-4 py-5 text-center ring-1 ring-[#ECE6DA]/90">
+      <p className="text-[10px] font-bold text-[#A99D87]">{periodLabel}</p>
+      <p className="mt-2 text-xs font-black text-[#112A46]">{lang === "ar" ? "جاري تحميل الأرقام من الخادم..." : "Loading figures from the server..."}</p>
+    </div>
+  ) : summaryErrorMessage ? (
+    <div className="rounded-2xl bg-[#FFF7F5] px-4 py-5 text-center ring-1 ring-[#F0C7C1]">
+      <p className="text-xs font-black text-[#B44747]">{summaryErrorMessage}</p>
+    </div>
+  ) : (
     <RegisterPeriodSummary
       lang={lang}
       periodLabel={periodLabel}

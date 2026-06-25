@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ComponentType } from "react";
-import { loadTaqfeelahPrototypeRuntime } from "@/lib/brand/load-taqfeelah-prototype-runtime";
+import { loadTaqfeelahAppRuntime } from "@/lib/brand/load-taqfeelah-app-runtime";
 
-export function useTaqfeelahPrototypeRuntime() {
+export function useTaqfeelahAppRuntime() {
   const [Runtime, setRuntime] = useState<ComponentType | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -12,14 +12,14 @@ export function useTaqfeelahPrototypeRuntime() {
     let cancelled = false;
     setLoadError(false);
 
-    void loadTaqfeelahPrototypeRuntime()
+    void loadTaqfeelahAppRuntime()
       .then((component) => {
         if (cancelled) return;
         setRuntime(() => component);
       })
       .catch((error) => {
         if (cancelled) return;
-        console.error("Failed to load TaqfeelahPrototypeRuntime", error);
+        console.error("Failed to load TaqfeelahAppRuntime", error);
         setLoadError(true);
       });
 

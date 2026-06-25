@@ -1,5 +1,4 @@
 import { createPrototypeMonthDemoOperationalEntries } from "@/features/demo/prototype-month-demo-seed";
-import { readLocalStorageJson } from "@/features/demo/prototype-storage";
 import { summaryDayFromEntries } from "@/features/operations/operational-analytics";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import type { FormatDayLabelFn } from "@/features/operations/operations-types";
@@ -9,7 +8,6 @@ import { toAmount } from "./prototype-runtime-entry-form-utils";
 import {
   BINDS_TO_SERVER_AUTH,
   ENTRIES_API_DB_SOURCE,
-  OPERATIONAL_ENTRIES_STORAGE_KEY,
 } from "./prototype-runtime-boot";
 import { noteLabel } from "./prototype-runtime-entry-helpers";
 import { opTime } from "./prototype-runtime-demo-data";
@@ -80,14 +78,7 @@ export function createDemoOperationalEntries() {
 export function readOperationalEntries(): OperationalEntry[] {
   if (typeof window === "undefined") return BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE ? [] : createDemoOperationalEntries();
   if (BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE) return [];
-  const stored = readLocalStorageJson<OperationalEntry[] | null>(OPERATIONAL_ENTRIES_STORAGE_KEY, null);
-  if (!stored || !Array.isArray(stored) || stored.length === 0) return createDemoOperationalEntries();
-  return stored.map((entry: OperationalEntry) => ({
-    ...(entry as OperationalEntry),
-    auditTrail: Array.isArray((entry as OperationalEntry).auditTrail) && (entry as OperationalEntry).auditTrail?.length
-      ? (entry as OperationalEntry).auditTrail
-      : [{ action: "created", at: (entry as OperationalEntry).createdAt || new Date().toISOString(), by: (entry as OperationalEntry).enteredBy || prototypeOwnerActor, reason: "" }],
-  }));
+  return createDemoOperationalEntries();
 }
 export function summaryDayFromEntriesWithLabels(entries: OperationalEntry[], businessId: string, date: string) {
   return summaryDayFromEntries(entries, businessId, date, formatCalendarDate as FormatDayLabelFn);

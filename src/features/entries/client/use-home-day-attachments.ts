@@ -1,6 +1,6 @@
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { attachmentsFromEntries } from "@/components/prototype-runtime/prototype-runtime-demo-operational-entries";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
@@ -17,6 +17,7 @@ export function shouldFetchHomeDayAttachments({
   actorUserId = "",
   storeId = "",
   selectedDate = "",
+  strictServerSource = false,
 } = {}): boolean {
   return enabled
     && entriesApiEnabled
@@ -24,7 +25,7 @@ export function shouldFetchHomeDayAttachments({
     && Boolean(selectedDate)
     && Boolean(organizationId)
     && Boolean(actorUserId)
-    && proofsCount > localItemCount;
+    && (strictServerSource ? proofsCount > 0 : proofsCount > localItemCount);
 }
 
 export function resolveHomeDayAttachmentGroup({
@@ -33,18 +34,21 @@ export function resolveHomeDayAttachmentGroup({
   shouldFetchDayEntries = false,
   fetchSucceeded = false,
   fetchFailed = false,
+  strictServerSource = false,
 }: {
   localGroup?: HomeAttachmentGroup;
   fetchedGroup?: HomeAttachmentGroup;
   shouldFetchDayEntries?: boolean;
   fetchSucceeded?: boolean;
   fetchFailed?: boolean;
+  strictServerSource?: boolean;
 } = {}): HomeAttachmentGroup {
   const localItemCount = localGroup?.items?.length || 0;
   const fetchedItemCount = fetchedGroup?.items?.length || 0;
 
   if (shouldFetchDayEntries) {
     if (fetchSucceeded) return fetchedGroup;
+    if (strictServerSource) return fetchedGroup;
     if (fetchFailed && localItemCount > 0) return localGroup;
     return fetchedGroup;
   }
@@ -76,8 +80,8 @@ export function useHomeDayAttachments({
   storeId?: string;
 } = {}) {
   const localGroup = useMemo(
-    () => resolveAttachmentGroupForDate(attachmentsFromEntries(localDayEntries), selectedDate),
-    [localDayEntries, selectedDate],
+    () => (entriesApiEnabled ? null : resolveAttachmentGroupForDate(attachmentsFromEntries(localDayEntries), selectedDate)),
+    [entriesApiEnabled, localDayEntries, selectedDate],
   );
 
   const localItemCount = localGroup?.items?.length || 0;
@@ -90,6 +94,7 @@ export function useHomeDayAttachments({
     actorUserId,
     storeId,
     selectedDate,
+    strictServerSource: entriesApiEnabled,
   });
 
   const query = useQuery({
@@ -114,10 +119,9 @@ export function useHomeDayAttachments({
       return Array.isArray(items) ? items : [];
     },
     enabled: shouldFetchDayEntries,
-    placeholderData: keepPreviousData,
   });
 
-  const loading = shouldFetchDayEntries && query.isPending && !query.isPlaceholderData;
+  const loading = shouldFetchDayEntries && query.isPending;
   const fetchError = shouldFetchDayEntries && query.isError;
 
   const fetchedGroup = useMemo(() => {
@@ -131,6 +135,7 @@ export function useHomeDayAttachments({
     shouldFetchDayEntries,
     fetchSucceeded: shouldFetchDayEntries && query.isSuccess,
     fetchFailed: shouldFetchDayEntries && query.isError,
+    strictServerSource: entriesApiEnabled,
   });
   const itemCount = group?.items?.length || 0;
 

@@ -112,6 +112,7 @@ export type FetchStoreReportsBundleInput = ReportsAuthContext & {
   configuredChannels: Array<Record<string, unknown>>;
   outflowCategory: string;
   includeOutflowTransactions: boolean;
+  includeDetails?: boolean;
 };
 
 export type StoreReportsBundle = {
@@ -179,14 +180,7 @@ export type UseStoreReportsProps = ReportsAuthContext & {
   configuredChannels?: Array<Record<string, unknown>>;
   outflowCategory?: string;
   includeOutflowTransactions?: boolean;
-};
-
-export type UseStoreDaySummariesProps = ReportsAuthContext & {
-  enabled?: boolean;
-  period?: ReportPeriod;
-  businesses?: Array<Record<string, unknown> & { id?: string; day?: UiTotalsRecord; month?: UiTotalsRecord }>;
-  date?: string;
-  month?: string;
+  includeDetails?: boolean;
 };
 
 export type FetchStoreSummaryArgs = ReportsAuthContext & {
