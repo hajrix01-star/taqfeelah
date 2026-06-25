@@ -49,6 +49,112 @@ describe("buildDataExportModel", () => {
     expect(model?.sheets[0]?.rows[1]?.amount).toBe(-250);
   });
 
+  it("does not export partial register operations from screen data when server export is required", () => {
+    const model = buildDataExportModel({
+      lang: "ar",
+      businessesList,
+      operationalEntries: [],
+      archivedBusinessIds: [],
+      snapshot: {
+        screen: "register",
+        registerView: "operations",
+        selectedBusiness: "all",
+        includedBusinessIds: ["shami", "arz"],
+        period: "year",
+        selectedYear: "2026",
+        exportData: {
+          requiresServerExport: true,
+          visibleEntries: [
+            { id: "partial", businessId: "shami", date: "2026-06-05", type: "summary", amount: 1000 },
+          ],
+        },
+      },
+    });
+
+    expect(model?.sheets[0]?.rows).toHaveLength(1);
+    expect(String(model?.sheets[0]?.rows[0]?.message)).toContain("لا يستخدم بيانات الشاشة الجزئية");
+  });
+
+  it("exports register operations from server entries when server data is available", () => {
+    const model = buildDataExportModel({
+      lang: "en",
+      businessesList,
+      operationalEntries: [],
+      archivedBusinessIds: [],
+      apiEntries: [
+        { id: "server-1", businessId: "shami", date: "2026-06-05", type: "summary", amount: 1000 },
+        { id: "server-2", businessId: "arz", date: "2026-06-06", type: "expense", amount: 250, categoryId: "rent" },
+      ],
+      snapshot: {
+        screen: "register",
+        registerView: "operations",
+        selectedBusiness: "all",
+        includedBusinessIds: ["shami", "arz"],
+        period: "year",
+        selectedYear: "2026",
+        exportData: {
+          requiresServerExport: true,
+          visibleEntries: [{ id: "partial", businessId: "shami", date: "2026-06-05", type: "summary", amount: 1 }],
+        },
+      },
+    });
+
+    expect(model?.sheets[0]?.rows).toHaveLength(2);
+    expect(model?.sheets[0]?.rows[0]?.amount).toBe(1000);
+    expect(model?.sheets[0]?.rows[1]?.amount).toBe(-250);
+  });
+
+  it("does not export partial combined register report rows when server export is required", () => {
+    const model = buildDataExportModel({
+      lang: "en",
+      businessesList,
+      operationalEntries: [],
+      archivedBusinessIds: [],
+      snapshot: {
+        screen: "register",
+        registerView: "report",
+        selectedBusiness: "all",
+        includedBusinessIds: ["shami", "arz"],
+        period: "year",
+        selectedYear: "2026",
+        exportData: {
+          requiresServerExport: true,
+          periodEntries: [],
+        },
+      },
+    });
+
+    expect(model?.sheets[0]?.rows).toHaveLength(1);
+    expect(String(model?.sheets[0]?.rows[0]?.message)).toContain("complete server export");
+  });
+
+  it("exports combined register report from server day rows when available", () => {
+    const model = buildDataExportModel({
+      lang: "en",
+      businessesList,
+      operationalEntries: [],
+      archivedBusinessIds: [],
+      apiDayRows: [
+        { date: "2026-06-05", sales: 1500, expense: 250, net: 1250 },
+        { date: "2026-06-06", sales: 500, expense: 100, net: 400 },
+      ],
+      snapshot: {
+        screen: "register",
+        registerView: "report",
+        selectedBusiness: "all",
+        includedBusinessIds: ["shami", "arz"],
+        period: "year",
+        selectedYear: "2026",
+        exportData: {
+          requiresServerExport: true,
+        },
+      },
+    });
+
+    expect(model?.sheets[0]?.rows).toHaveLength(2);
+    expect(model?.sheets[0]?.rows[0]?.sales).toBe(1500);
+  });
+
   it("builds register attachments sheet from gallery items", () => {
     const model = buildDataExportModel({
       lang: "ar",

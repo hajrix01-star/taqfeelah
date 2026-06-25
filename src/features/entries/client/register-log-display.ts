@@ -31,6 +31,7 @@ import type {
   RegisterLogFilters,
   RegisterReportRow,
 } from "./entries-client-types";
+import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
 
 export const DEFAULT_REGISTER_LOG_FILTERS: RegisterLogFilters = {
   status: "all",
@@ -382,6 +383,157 @@ export function buildRegisterCloseoutSummaries({
         : 1,
     }))
     .filter((group) => salesChannelFilter === "all" || group.salesChannels.length > 0)
+    .sort((a, b) => {
+      if (a.date !== b.date) return (b.date || "").localeCompare(a.date || "");
+      const aStamp = `${a.date}|${a.operations[0]?.createdAt || ""}`;
+      const bStamp = `${b.date}|${b.operations[0]?.createdAt || ""}`;
+      return bStamp.localeCompare(aStamp);
+    });
+}
+
+function closeoutSalesRows(record: DailyCloseoutRecord): OperationalEntrySalesChannelRow[] {
+  if (Array.isArray(record.sales)) {
+    return record.sales.map((row) => ({
+      channelId: row.channelId || row.id,
+      name: row.name,
+      amount: Number(row.amount) || 0,
+    }));
+  }
+  if (!record.sales || typeof record.sales !== "object") return [];
+  return Object.entries(record.sales).map(([key, value]) => {
+    if (value && typeof value === "object") {
+      const row = value as { channelId?: string; id?: string; name?: string; amount?: number | string };
+      return {
+        channelId: row.channelId || row.id || key,
+        name: row.name,
+        amount: Number(row.amount) || 0,
+      };
+    }
+    return { channelId: key, name: key, amount: Number(value) || 0 };
+  });
+}
+
+function closeoutRecordToEntries(record: DailyCloseoutRecord): OperationalEntry[] {
+  const closeoutId = String(record.id || "");
+  const businessId = String(record.storeId || "");
+  const date = String(record.date || "");
+  const actor = {
+    userId: String(record.submittedByUserId || record.openedByUserId || ""),
+    nameAr: String(record.submittedByName || record.openedByName || record.employeeName || ""),
+    nameEn: String(record.submittedByName || record.openedByName || record.employeeName || ""),
+  };
+  const salesRows = closeoutSalesRows(record);
+  const salesTotal = Number(record.totals?.sales ?? record.totals?.totalSales ?? 0);
+  const summaryEntry: OperationalEntry = {
+    id: `${closeoutId || businessId}-${date}-summary`,
+    businessId,
+    closeoutId,
+    date,
+    createdAt: String(record.submittedAt || record.createdAt || ""),
+    type: "summary",
+    status: "active",
+    amount: salesTotal,
+    salesChannels: salesRows,
+    enteredBy: actor,
+    attachments: Array.isArray(record.attachments) ? record.attachments as OperationalEntry["attachments"] : [],
+    attachment: Array.isArray(record.attachments) && record.attachments[0]
+      ? record.attachments[0] as OperationalEntry["attachment"]
+      : null,
+    daySequence: Number.isInteger(record.daySequence) ? record.daySequence : null,
+    closeoutOwnerEditedAt: record.ownerEditedAt || undefined,
+  };
+  const outflowEntries = (record.outflows || []).map((outflow, index): OperationalEntry => ({
+    id: String(outflow.id || `${closeoutId || businessId}-${date}-outflow-${index + 1}`),
+    businessId,
+    closeoutId,
+    date,
+    createdAt: String(record.submittedAt || record.createdAt || ""),
+    type: outflow.type || "expense",
+    categoryId: outflow.categoryId || null,
+    status: "active",
+    amount: Number(outflow.amount) || 0,
+    note: outflow.note || "",
+    enteredBy: actor,
+    attachments: Array.isArray(outflow.attachments) ? outflow.attachments as OperationalEntry["attachments"] : [],
+    attachment: Array.isArray(outflow.attachments) && outflow.attachments[0]
+      ? outflow.attachments[0] as OperationalEntry["attachment"]
+      : null,
+    daySequence: Number.isInteger(record.daySequence) ? record.daySequence : null,
+  }));
+  return [summaryEntry, ...outflowEntries];
+}
+
+export function buildRegisterCloseoutSummariesFromRecords({
+  closeouts = [],
+  salesChannelFilter = "all",
+  configuredChannels = [],
+  resolveChannelName,
+  resolveStore,
+}: {
+  closeouts?: DailyCloseoutRecord[];
+  salesChannelFilter?: string;
+  configuredChannels?: Array<Record<string, unknown>>;
+  resolveChannelName: (row: OperationalEntrySalesChannelRow) => string;
+  resolveStore: (businessId: string) => Record<string, unknown> | null;
+}): RegisterCloseoutSummary[] {
+  const summaries = (Array.isArray(closeouts) ? closeouts : []).map((record) => {
+    const entries = closeoutRecordToEntries(record);
+    const businessId = String(record.storeId || "");
+    const closeoutId = String(record.id || "");
+    const group: RegisterCloseoutGroup = {
+      key: closeoutId ? `closeout|${closeoutId}` : `legacy-day|${businessId}|${record.date || ""}`,
+      businessId,
+      closeoutId: closeoutId || null,
+      date: String(record.date || ""),
+      entries,
+    };
+    const totals = {
+      sales: Number(record.totals?.sales ?? record.totals?.totalSales ?? 0),
+      expense: Number(record.totals?.expense ?? record.totals?.totalOutflow ?? 0),
+      net: Number(record.totals?.net ?? record.totals?.netMovement ?? 0),
+    };
+    const salesChannels = aggregateSalesChannelsFromGroupEntries(
+      entries,
+      salesChannelFilter,
+      resolveChannelName,
+      configuredChannels,
+    );
+    const channelSalesTotal = sumUiAmounts(salesChannels.map((row) => row.amount));
+    const displaySales = salesChannelFilter === "all" ? totals.sales : channelSalesTotal;
+    const displayNet = addUiAmounts(displaySales, -totals.expense);
+    return {
+      ...group,
+      store: resolveStore(businessId),
+      totals: salesChannelFilter === "all"
+        ? totals
+        : { ...totals, sales: displaySales, net: displayNet },
+      salesChannels,
+      displaySales,
+      operations: newestEntries(entries),
+      actorLabel: String(record.submittedByName || record.openedByName || record.employeeName || ""),
+      daySequence: Number.isInteger(record.daySequence) ? record.daySequence ?? null : null,
+      ownerEditedAt: record.ownerEditedAt || null,
+      ownerEditedByUserId: record.ownerEditedByUserId || null,
+      ownerEditedByName: record.ownerEditedByName || null,
+    };
+  });
+
+  const sameDayCloseoutCountByStoreDate = new Map<string, number>();
+  summaries.forEach((summary) => {
+    if (!summary.closeoutId) return;
+    const key = `${summary.businessId}|${summary.date}`;
+    sameDayCloseoutCountByStoreDate.set(key, (sameDayCloseoutCountByStoreDate.get(key) || 0) + 1);
+  });
+
+  return summaries
+    .map((summary) => ({
+      ...summary,
+      actorLabel: summary.actorLabel || "مستخدم",
+      sameDayCloseoutCount: summary.closeoutId
+        ? sameDayCloseoutCountByStoreDate.get(`${summary.businessId}|${summary.date}`) || 1
+        : 1,
+    }))
+    .filter((summary) => salesChannelFilter === "all" || summary.salesChannels.length > 0)
     .sort((a, b) => {
       if (a.date !== b.date) return (b.date || "").localeCompare(a.date || "");
       const aStamp = `${a.date}|${a.operations[0]?.createdAt || ""}`;

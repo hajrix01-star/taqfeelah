@@ -71,8 +71,7 @@ export async function getNotebookExport(rawInput: z.infer<typeof inputSchema>) {
         inArray(entries.type, ALLOWED_TYPES),
       ),
     )
-    .orderBy(desc(entries.date), desc(entries.createdAt))
-    .limit(500);
+    .orderBy(desc(entries.date), desc(entries.createdAt));
 
   const entryIds = entryRows.map((row) => row.id);
   const channelRows = entryIds.length

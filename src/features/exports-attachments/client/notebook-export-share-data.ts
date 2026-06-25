@@ -13,7 +13,16 @@ import type {
 
 export function canFetchNotebookExportForSnapshot(snapshot: ExportSnapshot | null | undefined, enabled: boolean) {
   if (!enabled || !snapshot || typeof snapshot !== "object") return false;
-  if (snapshot.selectedBusiness === "all") return false;
+  if (snapshot.screen === "register") {
+    const view = String(snapshot.registerView || "");
+    if (view === "closeouts") return false;
+    if (view === "report") {
+      const exportData = snapshot.exportData as Record<string, unknown> | undefined;
+      return Boolean(exportData?.requiresServerExport);
+    }
+    if (view !== "operations" && view !== "attachments") return false;
+  }
+  if (snapshot.selectedBusiness === "all") return (snapshot.includedBusinessIds?.length || 0) > 0;
   if (!snapshot.selectedBusiness) return false;
   return true;
 }
@@ -44,6 +53,17 @@ export function buildNotebookExportRequest(snapshot: ExportSnapshot): NotebookEx
   }
 
   return request;
+}
+
+export function buildNotebookExportRequests(snapshot: ExportSnapshot): NotebookExportRequest[] {
+  if (snapshot.selectedBusiness !== "all") return [buildNotebookExportRequest(snapshot)];
+  return (snapshot.includedBusinessIds || [])
+    .filter(Boolean)
+    .map((storeId) => buildNotebookExportRequest({
+      ...snapshot,
+      selectedBusiness: storeId,
+      includedBusinessIds: [storeId],
+    }));
 }
 
 function mapNotebookExportSalesChannels(
@@ -100,7 +120,9 @@ export function mapNotebookExportToShareData(
 ): NotebookExportShareData | null {
   if (!payload || typeof payload !== "object") return null;
 
-  const businessId = String(snapshot?.selectedBusiness || payload.storeId || "");
+  const businessId = String(snapshot?.selectedBusiness === "all"
+    ? payload.storeId || ""
+    : snapshot?.selectedBusiness || payload.storeId || "");
   const totals = (payload.totals && typeof payload.totals === "object"
     ? payload.totals as Record<string, unknown>
     : {});
@@ -148,5 +170,48 @@ export function mapNotebookExportToShareData(
     shareChannelRows,
     shareDayRows,
     proofs: record.proofs,
+  };
+}
+
+export function combineNotebookExportShareData(items: Array<NotebookExportShareData | null>): NotebookExportShareData | null {
+  const validItems = items.filter(Boolean) as NotebookExportShareData[];
+  if (!validItems.length) return null;
+  const entries = validItems.flatMap((item) => item.entries);
+  const recordTotals = summarizeEntries(entries);
+  const channels = new Map<string, { id?: string; label: string; amount: number }>();
+  validItems.forEach((item) => {
+    item.shareChannelRows.forEach((row) => {
+      const key = row.id || row.label;
+      const current = channels.get(key) || { id: row.id, label: row.label, amount: 0 };
+      channels.set(key, {
+        ...current,
+        amount: current.amount + (Number(row.amount) || 0),
+      });
+    });
+  });
+  const dayTotals = new Map<string, ReturnType<typeof summarizeEntries>>();
+  entries.forEach((entry) => {
+    if (!entry.date || dayTotals.has(entry.date)) return;
+    dayTotals.set(entry.date, summarizeEntries(entries.filter((item) => item.date === entry.date)));
+  });
+  return {
+    entries,
+    record: {
+      sales: recordTotals.sales,
+      expense: recordTotals.expense,
+      net: recordTotals.net,
+      ratio: recordTotals.ratio,
+      proofs: recordTotals.proofs,
+    },
+    shareChannelRows: [...channels.values()].filter((row) => row.amount > 0),
+    shareDayRows: [...dayTotals.entries()]
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([date, totals]) => ({
+        date,
+        sales: totals.sales,
+        expense: totals.expense,
+        net: totals.net,
+      })),
+    proofs: recordTotals.proofs,
   };
 }

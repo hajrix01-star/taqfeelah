@@ -2,7 +2,9 @@
 
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { useRegisterEntriesFromApi } from "@/features/entries/client/use-register-entries-from-api";
+import { useRegisterCloseoutsFromApi } from "@/features/entries/client/use-register-closeouts-from-api";
 import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
+import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { UiDayReportRow, UiTotalsRecord } from "@/features/reports/client/reports-client-types";
 
 type UseRegisterServerReadModelProps = {
@@ -21,6 +23,7 @@ type UseRegisterServerReadModelProps = {
   logView: string;
   businesses: Array<Record<string, unknown> & { id?: string }>;
   configuredChannels: Array<Record<string, unknown>>;
+  closeoutsEnabled?: boolean;
 };
 
 export type RegisterServerReadModel = {
@@ -34,6 +37,11 @@ export type RegisterServerReadModel = {
   loadMoreEntries: () => Promise<boolean>;
   loadAllEntries: () => Promise<void>;
   refetchEntries: () => unknown;
+  closeouts: DailyCloseoutRecord[];
+  closeoutsLoading: boolean;
+  closeoutsLoaded: boolean;
+  closeoutsError: string;
+  refetchCloseouts: () => unknown;
   reportDaysRows: UiDayReportRow[];
   reportSingleStoreTotals: UiTotalsRecord | null;
   reportCombinedTotals: UiTotalsRecord;
@@ -64,6 +72,14 @@ type RegisterReportReadState = {
   error: string;
 };
 
+type RegisterCloseoutsReadState = {
+  closeouts: DailyCloseoutRecord[];
+  loading: boolean;
+  loaded: boolean;
+  error: string;
+  refetch: () => unknown;
+};
+
 export function shouldEnableRegisterReportRead({
   enabled,
 }: {
@@ -75,9 +91,11 @@ export function shouldEnableRegisterReportRead({
 export function buildRegisterServerReadModel({
   entries,
   report,
+  closeouts,
 }: {
   entries: RegisterEntriesReadState;
   report: RegisterReportReadState;
+  closeouts: RegisterCloseoutsReadState;
 }): RegisterServerReadModel {
   return {
     entries: entries.entries,
@@ -90,6 +108,11 @@ export function buildRegisterServerReadModel({
     loadMoreEntries: entries.loadMore,
     loadAllEntries: entries.loadAllRemaining,
     refetchEntries: entries.refetch,
+    closeouts: closeouts.closeouts,
+    closeoutsLoading: closeouts.loading,
+    closeoutsLoaded: closeouts.loaded,
+    closeoutsError: closeouts.error,
+    refetchCloseouts: closeouts.refetch,
     reportDaysRows: report.daysRows,
     reportSingleStoreTotals: report.singleStoreTotals,
     reportCombinedTotals: report.combinedTotals,
@@ -115,6 +138,7 @@ export function useRegisterServerReadModel({
   logView,
   businesses,
   configuredChannels,
+  closeoutsEnabled = false,
 }: UseRegisterServerReadModelProps): RegisterServerReadModel {
   const entries = useRegisterEntriesFromApi({
     enabled,
@@ -149,5 +173,19 @@ export function useRegisterServerReadModel({
     includeDetails: logView === "report",
   });
 
-  return buildRegisterServerReadModel({ entries, report });
+  const closeouts = useRegisterCloseoutsFromApi({
+    enabled: enabled && closeoutsEnabled,
+    organizationId,
+    actorUserId,
+    actorRole,
+    storeIds,
+    period,
+    selectedDate,
+    selectedMonth,
+    selectedYear,
+    customFrom,
+    customTo,
+  });
+
+  return buildRegisterServerReadModel({ entries, report, closeouts });
 }

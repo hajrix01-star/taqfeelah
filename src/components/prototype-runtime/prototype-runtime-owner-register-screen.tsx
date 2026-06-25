@@ -13,6 +13,7 @@ import {
   DEFAULT_REGISTER_LOG_FILTERS,
   applyRegisterReportGranularity,
   buildRegisterCloseoutSummaries,
+  buildRegisterCloseoutSummariesFromRecords,
   buildRegisterDayReportRows,
   buildRegisterSalesChannelOptions,
   filterRegisterLogEntries,
@@ -77,6 +78,7 @@ export function OwnerRegisterScreen({
   duplicateSummaryFocus = null,
   notebookTheme = "yellow",
   registerEntriesApiEnabled = false,
+  closeoutsApiEnabled = false,
   registerEntriesApiOrganizationId = "",
   registerEntriesApiActorUserId = "",
   registerEntriesApiActorRole = "owner",
@@ -180,6 +182,10 @@ export function OwnerRegisterScreen({
     loadAllEntries: loadAllRegisterEntries,
     entriesLoadingMore: registerEntriesLoadingMore,
     entriesLoadingAll: registerEntriesLoadingAll,
+    closeouts: apiCloseouts,
+    closeoutsLoading: apiCloseoutsLoading,
+    closeoutsLoaded: apiCloseoutsLoaded,
+    closeoutsError: apiCloseoutsError,
     reportDaysRows: apiGeneralReportRows,
     reportSingleStoreTotals: apiGeneralReportTotals,
     reportCombinedTotals: apiGeneralReportCombinedTotals,
@@ -202,6 +208,7 @@ export function OwnerRegisterScreen({
     logView,
     businesses: businessesList,
     configuredChannels,
+    closeoutsEnabled: closeoutsApiEnabled,
   });
   const localPeriodEntries = useMemo(
     () => operationalEntries.filter((entry) => (safeBusinessId === "all" ? activeBusinesses.some((business) => business.id === entry.businessId) : entry.businessId === safeBusinessId) && entryDateMatches(entry, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo)),
@@ -212,10 +219,16 @@ export function OwnerRegisterScreen({
     : localPeriodEntries;
   const strictRegisterSource = ENTRIES_API_DB_SOURCE && registerEntriesApiEnabled;
   const registerEntriesLoadError = Boolean(registerEntriesApiEnabled && (apiRegisterEntriesError || registerEntriesSyncError));
-  // Closeout cards are built from register entries — do not block on closeouts-provider sync errors.
-  const closeoutsLoadError = Boolean(registerEntriesApiEnabled && (apiRegisterEntriesError || registerEntriesSyncError));
+  // In API mode, closeout cards use the closeouts read model; entry-derived closeouts remain for non-server modes only.
+  const closeoutsReadModelEnabled = Boolean(registerEntriesApiEnabled && closeoutsApiEnabled);
+  const closeoutsLoadError = Boolean(
+    closeoutsReadModelEnabled
+      ? apiCloseoutsError
+      : registerEntriesApiEnabled && (apiRegisterEntriesError || registerEntriesSyncError),
+  );
   const closeoutServerEntriesIncomplete = Boolean(
     strictRegisterSource
+      && !closeoutsReadModelEnabled
       && logView === "closeouts"
       && !closeoutsLoadError
       && (!apiRegisterEntriesLoaded || apiRegisterEntriesHasMore || registerEntriesLoadingAll),
@@ -253,11 +266,11 @@ export function OwnerRegisterScreen({
     return () => observer.disconnect();
   }, [apiRegisterEntriesHasMore, loadMoreRegisterEntries, logView, periodEntries.length, registerEntriesApiEnabled]);
   useEffect(() => {
-    if (!registerEntriesApiEnabled || logView !== "closeouts") return undefined;
+    if (!registerEntriesApiEnabled || closeoutsReadModelEnabled || logView !== "closeouts") return undefined;
     if (!apiRegisterEntriesHasMore || registerEntriesLoadingAll) return undefined;
     loadAllRegisterEntries();
     return undefined;
-  }, [apiRegisterEntriesHasMore, loadAllRegisterEntries, logView, registerEntriesApiEnabled, registerEntriesLoadingAll]);
+  }, [apiRegisterEntriesHasMore, closeoutsReadModelEnabled, loadAllRegisterEntries, logView, registerEntriesApiEnabled, registerEntriesLoadingAll]);
   const actorOptions = useMemo(() => {
     const seen = new Set();
     const options = [{ id: "all", label: lang === "ar" ? "الكل" : "All" }];
@@ -323,7 +336,7 @@ export function OwnerRegisterScreen({
     () => buildRegisterCloseoutDayContext(periodEntries as import("@/features/entries/client/register-operation-display").CloseoutMetaEntry[], { trustServerDaySequenceOnly: ENTRIES_API_DB_SOURCE }),
     [periodEntries],
   );
-  const closeoutSummaries = useMemo(
+  const entryDerivedCloseoutSummaries = useMemo(
     () => buildRegisterCloseoutSummaries({
       filteredEntries: closeoutSourceEntries,
       salesChannelFilter: logFilters.salesChannel,
@@ -338,6 +351,17 @@ export function OwnerRegisterScreen({
     }),
     [businessesList, closeoutSourceEntries, configuredChannels, lang, logFilters.salesChannel, registerEntriesApiActorUserId, registerEntriesApiEnabled, resolveChannelRowLabel],
   );
+  const apiCloseoutSummaries = useMemo(
+    () => buildRegisterCloseoutSummariesFromRecords({
+      closeouts: apiCloseouts,
+      salesChannelFilter: logFilters.salesChannel,
+      configuredChannels,
+      resolveChannelName: resolveChannelRowLabel,
+      resolveStore: (businessId) => businessesList.find((business) => business.id === businessId) || null,
+    }),
+    [apiCloseouts, businessesList, configuredChannels, logFilters.salesChannel, resolveChannelRowLabel],
+  );
+  const closeoutSummaries = closeoutsReadModelEnabled ? apiCloseoutSummaries : entryDerivedCloseoutSummaries;
   useEffect(() => {
     if (!visibleEntries.length) {
       setExpandedEntryId(null);
@@ -460,7 +484,11 @@ export function OwnerRegisterScreen({
     : registerPeriodSummary;
   const dashboardSummaryLoading = logView === "report" || (strictRegisterSource && logFilters.salesChannel === "all")
     ? Boolean(registerEntriesApiEnabled && generalReportApiLoading && !generalReportApiLoaded)
-    : Boolean(closeoutServerEntriesIncomplete || (strictRegisterSource && apiRegisterEntriesLoading && !periodEntries.length));
+    : Boolean(
+      (closeoutsReadModelEnabled && apiCloseoutsLoading && !apiCloseoutsLoaded)
+        || closeoutServerEntriesIncomplete
+        || (strictRegisterSource && apiRegisterEntriesLoading && !periodEntries.length),
+    );
   const dashboardSummaryErrorMessage = logView === "report"
     ? (generalReportLoadError ? generalReportLoadErrorMessage : "")
     : (registerEntriesLoadError ? registerEntriesLoadErrorMessage : "");
@@ -482,8 +510,11 @@ export function OwnerRegisterScreen({
       visibleEntries,
       closeoutSummaries,
       generalReportRows,
-      periodEntries,
+      periodEntries: strictRegisterSource ? [] : periodEntries,
       attachmentGalleryItems: attachmentGallery.items,
+      completeServerData: strictRegisterSource,
+      requiresServerExport: strictRegisterSource
+        && (logView === "operations" || logView === "attachments" || (logView === "report" && showAllStores)),
     },
   });
 
@@ -639,7 +670,7 @@ export function OwnerRegisterScreen({
             onDeleteCloseout={onDeleteCloseout}
             onPreviewAttachment={openRegisterAttachmentPreview}
             registerScrollId={registerScrollId}
-            loading={closeoutServerEntriesIncomplete}
+            loading={Boolean((closeoutsReadModelEnabled && apiCloseoutsLoading && !apiCloseoutsLoaded) || closeoutServerEntriesIncomplete)}
             loadError={closeoutsLoadError}
             loadErrorMessage={closeoutsLoadErrorMessage}
             configuredChannels={configuredChannels}

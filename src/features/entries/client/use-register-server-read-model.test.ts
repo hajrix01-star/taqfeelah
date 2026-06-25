@@ -38,12 +38,21 @@ describe("register server read model", () => {
         loaded: true,
         error: "",
       },
+      closeouts: {
+        closeouts: [{ id: "closeout-1", storeId: "store-1", date: "2026-06-01" }],
+        loading: false,
+        loaded: true,
+        error: "",
+        refetch,
+      },
     });
 
     expect(model.entries).toEqual([entry]);
     expect(model.entriesLoaded).toBe(true);
     expect(model.entriesHasMore).toBe(true);
     expect(model.entriesLoadingAll).toBe(false);
+    expect(model.closeouts).toHaveLength(1);
+    expect(model.closeoutsLoaded).toBe(true);
     expect(model.reportLoaded).toBe(true);
     expect(model.reportCombinedTotals.net).toBe(25);
     await expect(model.loadMoreEntries()).resolves.toBe(true);

@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchNotebookExportViaApi } from "./exports-attachments-api-client";
 import {
-  buildNotebookExportRequest,
+  buildNotebookExportRequests,
   canFetchNotebookExportForSnapshot,
+  combineNotebookExportShareData,
   mapNotebookExportToShareData,
 } from "./notebook-export-share-data";
 import type {
@@ -22,7 +23,7 @@ export function useNotebookExportShareData({
   const [error, setError] = useState("");
   const snapshotKey = useMemo(() => {
     if (!canFetchNotebookExportForSnapshot(snapshot, enabled)) return "";
-    return JSON.stringify(buildNotebookExportRequest(snapshot!));
+    return JSON.stringify(buildNotebookExportRequests(snapshot!));
   }, [enabled, snapshot]);
 
   useEffect(() => {
@@ -34,19 +35,21 @@ export function useNotebookExportShareData({
     }
 
     let cancelled = false;
-    const request = buildNotebookExportRequest(snapshot);
+    const requests = buildNotebookExportRequests(snapshot);
     setLoading(true);
     setError("");
 
-    fetchNotebookExportViaApi({
+    Promise.all(requests.map((request) => fetchNotebookExportViaApi({
       organizationId: auth.organizationId || "",
       actorUserId: auth.actorUserId || "",
       actorRole: auth.actorRole || "owner",
       ...request,
-    })
-      .then((payload) => {
+    })))
+      .then((payloads) => {
         if (cancelled) return;
-        setShareData(mapNotebookExportToShareData(payload, snapshot));
+        setShareData(combineNotebookExportShareData(
+          payloads.map((payload) => mapNotebookExportToShareData(payload, snapshot)),
+        ));
         setError("");
       })
       .catch((failure) => {

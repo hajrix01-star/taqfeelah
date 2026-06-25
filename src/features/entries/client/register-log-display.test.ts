@@ -3,6 +3,7 @@ import {
   DEFAULT_REGISTER_LOG_FILTERS,
   applyRegisterReportGranularity,
   buildRegisterCloseoutSummaries,
+  buildRegisterCloseoutSummariesFromRecords,
   buildRegisterDayReportRows,
   buildRegisterReportRows,
   buildRegisterSalesChannelOptions,
@@ -335,5 +336,32 @@ describe("register-log-display", () => {
     });
     expect(summaries[0].ownerEditedAt).toBe("2026-06-11T10:00:00.000Z");
     expect(summaries[0].ownerEditedByName).toBe("Owner");
+  });
+
+  it("builds register closeout summaries from server closeout records", () => {
+    const summaries = buildRegisterCloseoutSummariesFromRecords({
+      closeouts: [
+        {
+          id: "closeout-1",
+          storeId: "b1",
+          date: "2026-06-06",
+          daySequence: 2,
+          submittedByName: "أحمد",
+          submittedByUserId: "employee-1",
+          submittedAt: "2026-06-06T10:00:00.000Z",
+          sales: [{ channelId: "cash", name: "نقد", amount: 100 }],
+          outflows: [{ id: "out-1", type: "expense", amount: 25, categoryId: "other" }],
+          totals: { sales: 100, expense: 25, net: 75 },
+        },
+      ],
+      resolveChannelName: (row) => String(row.name || row.channelId || ""),
+      resolveStore: (businessId: string) => ({ id: businessId }),
+    });
+
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0].closeoutId).toBe("closeout-1");
+    expect(summaries[0].actorLabel).toBe("أحمد");
+    expect(summaries[0].totals).toEqual({ sales: 100, expense: 25, net: 75 });
+    expect(summaries[0].operations).toHaveLength(2);
   });
 });

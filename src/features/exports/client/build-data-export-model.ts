@@ -205,9 +205,23 @@ function buildRegisterOperationsSheet(
   snapshot: ExportSnapshot,
   lang: DisplayLang,
   businessesList: ExportBusiness[],
+  serverEntries: OperationalEntry[] | null = null,
 ): ExportSheet {
   const exportData = snapshot.exportData as Record<string, unknown> | undefined;
-  const entries = (exportData?.visibleEntries as OperationalEntry[] | undefined) || [];
+  const entries = serverEntries?.length
+    ? serverEntries
+    : (exportData?.visibleEntries as OperationalEntry[] | undefined) || [];
+  if (exportData?.requiresServerExport && !serverEntries?.length) {
+    return {
+      name: lang === "ar" ? "العمليات" : "Operations",
+      columns: [exportColumn("message", lang === "ar" ? "الحالة" : "Status", "text")],
+      rows: [{
+        message: lang === "ar"
+          ? "تصدير العمليات للفترة المحددة يتطلب تصديرًا خادميًا كاملًا، ولا يستخدم بيانات الشاشة الجزئية."
+          : "Operations export for the selected period requires a complete server export and does not use partial screen data.",
+      }],
+    };
+  }
   const withStore = includeStoreColumn(snapshot);
   return {
     name: lang === "ar" ? "العمليات" : "Operations",
@@ -306,9 +320,32 @@ function buildRegisterAttachmentsSheet(
   snapshot: ExportSnapshot,
   lang: DisplayLang,
   businessesList: ExportBusiness[],
+  serverEntries: OperationalEntry[] | null = null,
 ): ExportSheet {
   const exportData = snapshot.exportData as Record<string, unknown> | undefined;
-  const items = (exportData?.attachmentGalleryItems as Array<Record<string, unknown>> | undefined) || [];
+  if (exportData?.requiresServerExport && !serverEntries?.length) {
+    return {
+      name: text(lang, "attachments"),
+      columns: [exportColumn("message", lang === "ar" ? "الحالة" : "Status", "text")],
+      rows: [{
+        message: lang === "ar"
+          ? "تصدير مرفقات الفترة المحددة يتطلب تصديرًا خادميًا كاملًا، ولا يستخدم بيانات الشاشة الجزئية."
+          : "Attachments export for the selected period requires a complete server export and does not use partial screen data.",
+      }],
+    };
+  }
+  const items = serverEntries?.length
+    ? serverEntries
+      .filter((entry) => entryIsOutflow(entry) && entryHasAttachment(entry))
+      .map((entry) => ({
+        businessId: entry.businessId,
+        date: entry.date,
+        label: operationDisplayLabel(entry, lang),
+        labelEn: operationDisplayLabel(entry, "en"),
+        amount: Number(entry.amount) || 0,
+        voided: false,
+      }))
+    : (exportData?.attachmentGalleryItems as Array<Record<string, unknown>> | undefined) || [];
   const withStore = includeStoreColumn(snapshot);
   return {
     name: text(lang, "attachments"),
@@ -334,17 +371,39 @@ function buildRegisterExportSheets(
   lang: DisplayLang,
   businessesList: ExportBusiness[],
   operationalEntries: OperationalEntry[],
+  apiEntries: OperationalEntry[] | null = null,
+  apiDayRows: Array<Record<string, unknown>> | null = null,
 ): { sheets: ExportSheet[] } {
   const exportData = snapshot.exportData as Record<string, unknown> | undefined;
   const view = String(snapshot.registerView || "report");
   const sheets: ExportSheet[] = [];
-  if (view === "operations") sheets.push(buildRegisterOperationsSheet(snapshot, lang, businessesList));
+  if (view === "operations") sheets.push(buildRegisterOperationsSheet(snapshot, lang, businessesList, apiEntries));
   if (view === "closeouts") sheets.push(buildRegisterCloseoutsSheet(snapshot, lang, businessesList));
-  if (view === "attachments") sheets.push(buildRegisterAttachmentsSheet(snapshot, lang, businessesList));
+  if (view === "attachments") sheets.push(buildRegisterAttachmentsSheet(snapshot, lang, businessesList, apiEntries));
   if (view === "report") {
+    if (exportData?.requiresServerExport && !apiDayRows?.length) {
+      sheets.push({
+        name: lang === "ar" ? "تقرير عام" : "General report",
+        columns: [exportColumn("message", lang === "ar" ? "الحالة" : "Status", "text")],
+        rows: [{
+          message: lang === "ar"
+            ? "تصدير التقرير للفترة المحددة يتطلب تصديرًا خادميًا كاملًا، ولا يستخدم بيانات الشاشة الجزئية."
+            : "Report export for the selected period requires a complete server export and does not use partial screen data.",
+        }],
+      });
+      return { sheets };
+    }
     const withStore = includeStoreColumn(snapshot);
     const granularity = resolveRegisterReportGranularityFromSnapshot(snapshot);
-    const rows = withStore || !(exportData?.generalReportRows as unknown[] | undefined)?.length
+    const apiReportRows = apiDayRows?.length ? apiDayRows : null;
+    const rows = apiReportRows
+      ? apiReportRows.map((row) => ({
+        date: formatRegisterReportRowLabel(String(row.date ?? ""), granularity, lang),
+        sales: Number(row.sales) || 0,
+        expense: Number(row.expense) || 0,
+        net: Number(row.net) || 0,
+      }))
+      : withStore || !(exportData?.generalReportRows as unknown[] | undefined)?.length
       ? buildRegisterReportExportSnapshotRows(snapshot, lang, businessesList, operationalEntries).map((row) => ({
         ...(withStore ? { store: row.store } : {}),
         date: formatRegisterReportRowLabel(row.date, granularity, lang),
@@ -413,7 +472,7 @@ export function buildDataExportModel({
   let sheets: ExportSheet[] = [];
   let shareModel: Record<string, unknown> | null = null;
   if (snapshot.screen === "register") {
-    ({ sheets } = buildRegisterExportSheets(snapshot, lang, businessesList, operationalEntries));
+    ({ sheets } = buildRegisterExportSheets(snapshot, lang, businessesList, operationalEntries, apiEntries, apiDayRows));
   } else {
     ({ sheets, shareModel } = buildHomeExportSheets(snapshot, lang, businessesList, operationalEntries, archivedBusinessIds, {
       apiEntries,

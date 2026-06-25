@@ -98,8 +98,22 @@ describe("register production source guard", () => {
     expect(screen).not.toContain("@/features/reports/client/use-store-reports");
     expect(adapter).toContain("useRegisterEntriesFromApi");
     expect(adapter).toContain("useStoreReports");
+    expect(adapter).toContain("useRegisterCloseoutsFromApi");
     expect(adapter).toContain("buildRegisterServerReadModel");
     expect(adapter).toContain("shouldEnableRegisterReportRead");
+  });
+
+  it("uses the server closeouts read model for register closeouts in API mode", () => {
+    const screen = readProjectFile("src/components/prototype-runtime/prototype-runtime-owner-register-screen.tsx");
+    const adapter = readProjectFile("src/features/entries/client/use-register-server-read-model.ts");
+    const closeoutHook = readProjectFile("src/features/entries/client/use-register-closeouts-from-api.ts");
+
+    expect(adapter).toContain("closeoutsEnabled");
+    expect(adapter).toContain("closeouts: closeouts.closeouts");
+    expect(closeoutHook).toContain("fetchStoreCloseoutsViaApi");
+    expect(closeoutHook).not.toContain("useRegisterEntriesFromApi");
+    expect(screen).toContain("buildRegisterCloseoutSummariesFromRecords");
+    expect(screen).toContain("closeoutsReadModelEnabled ? apiCloseoutSummaries : entryDerivedCloseoutSummaries");
   });
 
   it("does not keep stale home attachment rows as placeholder data in API mode", () => {
@@ -142,6 +156,19 @@ describe("register production source guard", () => {
     expect(source).toContain("apiDataRequired");
     expect(source).toContain("No local fallback data is used");
     expect(source).toContain("if (apiDataRequired && (shouldWaitForApi || apiDataUnavailable)) return null;");
+  });
+
+  it("does not export register operations from partial screen rows in server source mode", () => {
+    const screen = readProjectFile("src/components/prototype-runtime/prototype-runtime-owner-register-screen.tsx");
+    const exportModel = readProjectFile("src/features/exports/client/build-data-export-model.ts");
+    const serverExport = readProjectFile("src/features/exports/server/get-notebook-export.ts");
+
+    expect(screen).toContain("requiresServerExport: strictRegisterSource");
+    expect(screen).toContain("logView === \"operations\" || logView === \"attachments\" || (logView === \"report\" && showAllStores)");
+    expect(screen).toContain("periodEntries: strictRegisterSource ? [] : periodEntries");
+    expect(exportModel).toContain("requiresServerExport");
+    expect(exportModel).toContain("does not use partial screen data");
+    expect(serverExport).not.toContain(".limit(500)");
   });
 
   it("does not describe a local financial fallback in the register report error path", () => {
