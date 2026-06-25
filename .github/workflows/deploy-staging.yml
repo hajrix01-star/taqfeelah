@@ -61,6 +61,8 @@ jobs:
           NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID: e8f3e35b-6051-4da3-8b10-979700c2f00f
           NEXT_PUBLIC_SUPPORT_WHATSAPP: "966533507223"
           NEXT_PUBLIC_RELEASE_BUILD: ${{ github.sha }}
+          RELEASE_LABEL: "نسخة مرحلة 4"
+          NEXT_PUBLIC_RELEASE_LABEL: "نسخة مرحلة 4"
           APP_PUBLIC_ORIGIN: https://staging.taqfeelah.com
           DATABASE_URL: postgresql://taqfeelah_staging:${{ secrets.STAGING_DB_PASSWORD }}@127.0.0.1:5434/taqfeelah_staging
           AUTH_SESSION_SECRET: ${{ secrets.STAGING_AUTH_SESSION_SECRET }}
@@ -179,6 +181,8 @@ jobs:
           ATTACHMENT_STORAGE_ROOT=/var/lib/taqfeelah-staging/attachments
           RELEASE_BUILD=${GITHUB_SHA}
           NEXT_PUBLIC_RELEASE_BUILD=${GITHUB_SHA}
+          RELEASE_LABEL=نسخة مرحلة 4
+          NEXT_PUBLIC_RELEASE_LABEL=نسخة مرحلة 4
           EOF
           chmod 600 staging.env
 
