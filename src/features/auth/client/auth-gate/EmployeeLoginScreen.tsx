@@ -3,9 +3,9 @@
 import { motion } from "framer-motion";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import { useEmployeeLoginForm } from "@/features/auth/client/auth-gate/use-employee-login-form";
-import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
-import { APP_IN_PRODUCTION_MODE } from "@/components/prototype-runtime/prototype-runtime-boot";
-import { LanguageSwitch, Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
+import { APP_IN_PRODUCTION_MODE } from "@/components/taqfeelah-app/taqfeelah-app-boot";
+import { LanguageSwitch, Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
 import { AppLoginPhoneField } from "@/core/phone/AppLoginPhoneField";
 import type {
   AuthLangProps,

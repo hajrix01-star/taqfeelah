@@ -1,8 +1,8 @@
 # خطة معلومات إعدادات المالك (IA) — معتمدة
 
-> **الحالة:** معتمدة من مالك المنتج — **2026-06-19**  
-> **السياق:** مراجعة UX لقسم الإعدادات بعد PRs #329–#331 (حسابي، اشتراك، دعم واتساب)  
-> **التنفيذ:** دفعة واحدة — **لا نشر على `main`** إلا بطلب صريح «جاهز للايف»  
+> **الحالة:** معتمدة من مالك المنتج — **2026-06-19**
+> **السياق:** مراجعة UX لقسم الإعدادات بعد PRs #329–#331 (حسابي، اشتراك، دعم واتساب)
+> **التنفيذ:** دفعة واحدة — **لا نشر على `main`** إلا بطلب صريح «جاهز للايف»
 > **القيود:** احترام `docs/APPROVED_UI_BASELINE.md` — تغييرات تنظيمية (تبويبات/قوائم) بموافقة صريحة؛ لا تغيير ألوان/هوية بصرية بدون موافقة
 
 ---
@@ -351,18 +351,18 @@ flowchart TB
 
 | ملف | دور |
 |-----|-----|
-| `src/components/prototype-runtime/owner-settings-tabbed-shell.tsx` | القشرة الحالية والتبديل بين التبويبات |
-| `src/components/prototype-runtime/owner-settings-tab-primitives.tsx` | تعريف عناصر التبويبات |
-| `src/components/prototype-runtime/owner-settings-tab-navigation.ts` | mapping بين القسم والتبويب |
-| `src/components/prototype-runtime/owner-settings-section-views.tsx` | التوجيه وتجميع الأقسام فقط |
-| `src/components/prototype-runtime/owner-settings-account-section.tsx` | حساب المالك والأمان |
-| `src/components/prototype-runtime/owner-settings-home-section.tsx` | الصفحة الرئيسية للإعدادات |
-| `src/components/prototype-runtime/owner-settings-stores-section.tsx` | عرض وإدارة المحلات |
-| `src/components/prototype-runtime/owner-settings-team-section.tsx` | الفريق والصلاحيات والدعوات |
-| `src/components/prototype-runtime/owner-settings-subscription-section.tsx` | الخطة والاستخدام والترقية |
-| `src/components/prototype-runtime/owner-settings-appearance-section.tsx` | مظهر الدفتر |
-| `src/components/prototype-runtime/owner-settings-support-section.tsx` | الدعم والمساعدة |
-| `src/components/prototype-runtime/owner-settings-section-frame.tsx` | إطار العرض المشترك للأقسام |
+| `src/components/taqfeelah-app/owner-settings-tabbed-shell.tsx` | القشرة الحالية والتبديل بين التبويبات |
+| `src/components/taqfeelah-app/owner-settings-tab-primitives.tsx` | تعريف عناصر التبويبات |
+| `src/components/taqfeelah-app/owner-settings-tab-navigation.ts` | mapping بين القسم والتبويب |
+| `src/components/taqfeelah-app/owner-settings-section-views.tsx` | التوجيه وتجميع الأقسام فقط |
+| `src/components/taqfeelah-app/owner-settings-account-section.tsx` | حساب المالك والأمان |
+| `src/components/taqfeelah-app/owner-settings-home-section.tsx` | الصفحة الرئيسية للإعدادات |
+| `src/components/taqfeelah-app/owner-settings-stores-section.tsx` | عرض وإدارة المحلات |
+| `src/components/taqfeelah-app/owner-settings-team-section.tsx` | الفريق والصلاحيات والدعوات |
+| `src/components/taqfeelah-app/owner-settings-subscription-section.tsx` | الخطة والاستخدام والترقية |
+| `src/components/taqfeelah-app/owner-settings-appearance-section.tsx` | مظهر الدفتر |
+| `src/components/taqfeelah-app/owner-settings-support-section.tsx` | الدعم والمساعدة |
+| `src/components/taqfeelah-app/owner-settings-section-frame.tsx` | إطار العرض المشترك للأقسام |
 
 ---
 

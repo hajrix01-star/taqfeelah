@@ -1,6 +1,6 @@
 # Batch 4 — CSP nonce + full JS→TS migration
 
-> **Branch:** `cursor/batch-4-csp-ts-migration-3ebd`  
+> **Branch:** `cursor/batch-4-csp-ts-migration-3ebd`
 > **PR:** [#346](https://github.com/hajrix01-star/taqfeelah/pull/346)
 
 ---
@@ -21,7 +21,7 @@
 3. auth/client (15)
 4. operations + entries client (30)
 5. employee-closeouts + daily-closeouts (35)
-6. prototype-runtime + remainder (~170)
+6. taqfeelah-app + remainder (~170)
 
 ## Verify
 

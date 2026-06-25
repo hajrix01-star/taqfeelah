@@ -1,6 +1,6 @@
 # Prototype Access Mode — **REMOVED (prelaunch)**
 
-> **Status:** Removed before public launch (2026).  
+> **Status:** Removed before public launch (2026).
 > **Replacement:** Real auth on `/app` — see `docs/PRELAUNCH_CLEANUP.md` and `docs/PHASE_10_AUTH.md`.
 
 ---
@@ -42,6 +42,6 @@ Production launch should use **empty DB + SaaS Admin provisioning** instead.
 
 ## DB-first phases (archived)
 
-Phases 0–11 documented the gradual migration from `localStorage` to PostgreSQL.  
-All data-source flags are `true` in production deploy (wave 7).  
+Phases 0–11 documented the gradual migration from `localStorage` to PostgreSQL.
+All data-source flags are `true` in production deploy (wave 7).
 See `docs/DEPLOYMENT_WAVES.md` for the rollout history.

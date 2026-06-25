@@ -1,6 +1,6 @@
 "use client";
 
-import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
 import { StandardLoginPhoneField } from "@/core/phone/StandardLoginPhoneField";
 import { useInviteActivationForm } from "@/features/member-invitations/client/use-invite-activation-form";
 

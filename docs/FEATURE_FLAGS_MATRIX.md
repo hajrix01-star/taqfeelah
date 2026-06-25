@@ -1,6 +1,6 @@
 # Feature Flags Matrix
 
-> مرجع تفعيل المراحل على VPS والتطوير المحلي. أي PR يغيّر سلوك علم يحدّث هذا الملف.  
+> مرجع تفعيل المراحل على VPS والتطوير المحلي. أي PR يغيّر سلوك علم يحدّث هذا الملف.
 > **ما قبل الإطلاق:** راجع `docs/PRELAUNCH_CLEANUP.md`.
 
 ## Core runtime
@@ -52,7 +52,7 @@
 
 ## Legacy ID maps (optional)
 
-Required by `assertProductionRuntimeEnv()` **only when** `ALLOW_HEADER_AUTH_CONTEXT=true` (integration tests / legacy).  
+Required by `assertProductionRuntimeEnv()` **only when** `ALLOW_HEADER_AUTH_CONTEXT=true` (integration tests / legacy).
 Production launch uses session + org-config API — **no maps required**.
 
 | Variable | Purpose |

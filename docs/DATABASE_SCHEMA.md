@@ -1,7 +1,7 @@
 # تقفيلة — Database Schema (Phase 1 — documentation)
 
-> **ORM:** Drizzle ORM · **DB:** PostgreSQL  
-> **Not implemented yet** — this file is the contract for the first migration.  
+> **ORM:** Drizzle ORM · **DB:** PostgreSQL
+> **Not implemented yet** — this file is the contract for the first migration.
 > **UI baseline:** frozen — see `docs/APPROVED_UI_BASELINE.md`.
 
 ---
@@ -371,7 +371,7 @@ See `docs/PERFORMANCE_RULES.md`.
 | `net_halalas` | bigint | |
 | `updated_at` | timestamptz | |
 
-**Unique:** `(organization_id, metric_date)`  
+**Unique:** `(organization_id, metric_date)`
 **Purpose:** fast tenant-health and engagement dashboards.
 
 ### daily_saas_metrics

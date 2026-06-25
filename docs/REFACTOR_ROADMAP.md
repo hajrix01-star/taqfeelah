@@ -24,7 +24,7 @@
 | 2.ج.1 | ↳↳ `pnpm smoke:closeouts` (يتطلب DB) | 🟠 لم ينتهي | تحقق يدوي قبل إغلاق المرحلة |
 | 2.4 | ↳ تشك لست تشغيل (flags=ON، تقفيلتان/يوم، resubmit) | 🟠 لم ينتهي | تحقق يدوي على VPS |
 | 3 | **PR-3 — تفكيك UI فقط** *(مجزّأة)* | ✅ | مدمج في PR #85 — نقل حرفي |
-| 3.1 | ↳ TopBar + BottomNav → `prototype-runtime-chrome.jsx` | ✅ | ~3360 سطر في Runtime بعد النقل |
+| 3.1 | ↳ TopBar + BottomNav → `taqfeelah-app-chrome.jsx` | ✅ | ~3360 سطر في Runtime بعد النقل |
 | 3.2 | ↳ مكوّنات عرضية إضافية | ✅ | PR #90 مدمج؛ PR #91 يحذف legacy ميت + يستخرج إعدادات الموظف |
 | 3.3 | ↳ `pnpm check:refactor` كاملًا | ✅ | نفس بوابة 1.2 — محليًا 2026-06-08 |
 | 3.4 | ↳ تشك لست يدوي (TopBar + BottomNav) | ✅ | smoke يحمّل owner/employee shell مع Chrome |
@@ -66,7 +66,7 @@ main      →  دمج دفعة واحدة     →  نشر VPS تلقائي
 
 ## الهدف
 
-تفكيك `TaqfeelahPrototypeRuntime.jsx` وربط مصدر الحقيقة بقاعدة البيانات **بدون تغيير الشكل الخارجي أو تدفق الواجهة المعتمد** (`docs/APPROVED_UI_BASELINE.md`).
+تفكيك `TaqfeelahAppRuntimeShell.jsx` وربط مصدر الحقيقة بقاعدة البيانات **بدون تغيير الشكل الخارجي أو تدفق الواجهة المعتمد** (`docs/APPROVED_UI_BASELINE.md`).
 
 ---
 
@@ -116,21 +116,21 @@ corepack pnpm check:refactor
 
 يتضمن: `lint` → `typecheck` → `test` → `smoke:browser`
 
-**pre-commit الحالي:** `lint` + `typecheck` + `test` فقط (بدون browser smoke — عمدًا لأنه بطيء).  
+**pre-commit الحالي:** `lint` + `typecheck` + `test` فقط (بدون browser smoke — عمدًا لأنه بطيء).
 **CI:** يشغّل browser smoke كاملًا (`.github/workflows/ci.yml`).
 
 ---
 
 ## PR-1 — بوابة الاستقرار
 
-**الهدف:** منع تكرار `ReferenceError` وأخطاء النقل أثناء التفكيك.  
+**الهدف:** منع تكرار `ReferenceError` وأخطاء النقل أثناء التفكيك.
 **مخاطرة:** منخفضة | **UI:** لا تغيير (إصلاحات سلوك داخلية فقط حيث لزم).
 
 ### نطاق العمل
 
 - [x] استبدال `src/smoke.test.ts` باختبار حدود وحدات runtime
 - [x] إضافة script `check:refactor` في `package.json`
-- [x] تعزيز ESLint: `no-undef` على `TaqfeelahPrototypeRuntime.jsx` فقط
+- [x] تعزيز ESLint: `no-undef` على `TaqfeelahAppRuntimeShell.jsx` فقط
 - [x] إصلاح `RatioBadge` import (كان مفقودًا بعد استخراج `OwnerReportsSection`)
 - [x] إصلاح ترتيب hooks في `OperationModal` (قواعد React)
 - [x] `lint` + `typecheck` + `test` ✅
@@ -152,7 +152,7 @@ Revert PR واحد — لا أثر على بيانات أو API.
 
 ## PR-2 — عقد الداتا والتقفيلات
 
-**الهدف:** حسم مصدر الحقيقة وتثبيت `closeoutId` + `daySequence`.  
+**الهدف:** حسم مصدر الحقيقة وتثبيت `closeoutId` + `daySequence`.
 **مخاطرة:** متوسطة | **UI:** لا تغيير.
 
 ### نطاق العمل (مدمج في PR واحد)
@@ -201,12 +201,12 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 
 ## PR-3 — تفكيك UI فقط
 
-**الهدف:** تقليل حجم `TaqfeelahPrototypeRuntime.jsx` بنقل عرضي حرفي.  
+**الهدف:** تقليل حجم `TaqfeelahAppRuntimeShell.jsx` بنقل عرضي حرفي.
 **مخاطرة:** منخفضة | **UI:** نفس الشكل حرفيًا.
 
 ### نطاق العمل
 
-- [x] نقل `TopBar` → `prototype-runtime-chrome.jsx`
+- [x] نقل `TopBar` → `taqfeelah-app-chrome.jsx`
 - [x] نقل `BottomNav` في نفس PR
 - [x] إصلاح `OwnerSettingsSection.jsx` imports + `no-undef` ESLint
 - [x] مكوّنات عرضية إضافية (PR #90 مدمج؛ PR #91 تنظيف legacy)
@@ -275,16 +275,16 @@ Revert PR-2؛ إن وُجدت بيانات ملوّثة بـ fallback قديم �
 |---------|----------|
 | 2026-06-08 | إنشاء الملف. خطة 3 PRs. بدء PR-1: smoke.test.ts، check:refactor، eslint no-undef، إصلاح RatioBadge + OperationModal hooks |
 | 2026-06-08 | PR-1 مكتمل (كود). بدء PR-2: resolveSubmitCloseoutId، trustServerDaySequenceOnly، findCloseoutsForStoreDate، إصلاح دمج drafts، اختبارات |
-| 2026-06-08 | PR-3 مكتمل (كود): نقل TopBar وBottomNav إلى prototype-runtime-chrome.jsx؛ Runtime ~3360 سطر |
+| 2026-06-08 | PR-3 مكتمل (كود): نقل TopBar وBottomNav إلى taqfeelah-app-chrome.jsx؛ Runtime ~3360 سطر |
 | 2026-06-08 | دمج PR #85 على main (`f29f62b`). اعتماد سياسة: PR=اختبار، main=نشر دفعة واحدة |
 | 2026-06-08 | PR #86: سياسة merge-deploy، إصلاح OwnerSettingsSection imports، smoke + تنظيف imports في Runtime |
 | 2026-06-08 | دمج PR #86 (`54efa88`) + hotfix PR #88 (`254e16f`) — حماية channel config على الإنتاج |
 | 2026-06-08 | إضافة جدول **مراحل الانجاز والمتبقي** في أعلى الملف |
 | 2026-06-08 | PR #87: تنظيف imports إضافي (~60 سطر)، rebase على main، `check:refactor` ✅ محليًا |
 | 2026-06-08 | دمج PR #87 على main (`2fe613c`) — نشر VPS ✅ |
-| 2026-06-08 | بدء PR-4+: PR #89 — استخراج `prototype-attachment-storage` + `prototype-runtime-attachment-ui` من Runtime |
+| 2026-06-08 | بدء PR-4+: PR #89 — استخراج `prototype-attachment-storage` + `taqfeelah-app-attachment-ui` من Runtime |
 | 2026-06-08 | دمج PR #89 على main (`193be00`) — نشر VPS |
-| 2026-06-08 | PR #90 batch 2 محليًا: `prototype-runtime-operation-dialogs.jsx` — OperationModal، QuickAddSheet، void/restore/duplicate، SavedOutflowShare |
+| 2026-06-08 | PR #90 batch 2 محليًا: `taqfeelah-app-operation-dialogs.jsx` — OperationModal، QuickAddSheet، void/restore/duplicate، SavedOutflowShare |
 | 2026-06-08 | دمج PR #90 على main (`01d9cde`) — نشر VPS ✅ — تأكيد إنتاج سليم |
 | 2026-06-08 | بدء PR #91: حذف شاشات موظف legacy ميتة، استخراج `EmployeeSettingsScreen`، إصلاح `formatCalendarDate` import |
 | 2026-06-08 | دمج PR #91 على main (`8e4fc59`) — نشر VPS — Runtime ~2624 سطر |

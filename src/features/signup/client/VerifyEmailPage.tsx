@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
 import { verifyPublicSignupViaApi } from "@/features/signup/client/signup-api-client";
 
 type VerifyEmailPageProps = {

@@ -10,7 +10,7 @@ import {
 } from "../closeouts/client/closeout-attachment-utils";
 import { formatCloseoutDayLabel } from "../closeouts/client/closeout-day-label";
 import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
-import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
 import type { CloseoutSyncLang, DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
 
 function money(value: number | string | null | undefined, lang: CloseoutSyncLang) {

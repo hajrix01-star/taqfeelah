@@ -1,4 +1,4 @@
-import { downloadBlobFile } from "@/components/prototype-runtime/notebook-share-export-helpers";
+import { downloadBlobFile } from "@/components/taqfeelah-app/notebook-share-export-helpers";
 import { resolveExcelMoneyNumFmt, resolveExcelMoneyNumFmtForValues } from "@/core/money/format-display-money";
 import type { ExportColumn, ProfessionalExportPayload } from "@/features/exports/client/exports-client-types";
 

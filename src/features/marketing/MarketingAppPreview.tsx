@@ -77,7 +77,7 @@ export default function MarketingAppPreview() {
                   داخل
                 </p>
                 <p className="mt-1 text-sm font-black" style={{ color: MARKETING_INK }} dir="ltr">
-                  ١٢٬١٩٠
+                  ١٢٬١٩�
                 </p>
               </div>
               <div className="rounded-2xl bg-white/80 px-2 py-3 ring-1 ring-black/[0.04]">
@@ -85,13 +85,13 @@ export default function MarketingAppPreview() {
                   خارج
                 </p>
                 <p className="mt-1 text-sm font-black" style={{ color: MARKETING_INK }} dir="ltr">
-                  ٣٬٤٥٠
+                  ٣٬٤٥�
                 </p>
               </div>
               <div className="rounded-2xl bg-[#112A46] px-2 py-3 text-white">
                 <p className="text-[0.65rem] font-bold text-white/75">ناتج</p>
                 <p className="mt-1 text-sm font-black" dir="ltr">
-                  ٨٬٧٤٠
+                  ٨٬٧٤�
                 </p>
               </div>
             </div>

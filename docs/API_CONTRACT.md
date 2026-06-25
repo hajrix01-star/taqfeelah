@@ -2,7 +2,7 @@
 
 > **Status (2026-06-22):** Core auth, operational, reporting, organization-config, attachment/export, signup, billing-entitlement, and SaaS Admin routes are implemented under `src/app/api/v1`. Sections marked `planned` remain non-contractual. Closeout owner-review was intentionally removed under the zero-review policy.
 > **Auth:** A signed session cookie (`AUTH_SESSION_COOKIE_NAME`) is the production source of identity. Header context is test-only and must be disabled in production with `ALLOW_HEADER_AUTH_CONTEXT=false`.
-> **Source-unification period:** Until auth launch, Prototype Access Mode remains ON and server APIs may accept `x-organization-id` / `x-user-id` / `x-member-role` when `ALLOW_HEADER_AUTH_CONTEXT=true`. Signed session cookies become required only in the explicit auth launch phase.  
+> **Source-unification period:** Until auth launch, Prototype Access Mode remains ON and server APIs may accept `x-organization-id` / `x-user-id` / `x-member-role` when `ALLOW_HEADER_AUTH_CONTEXT=true`. Signed session cookies become required only in the explicit auth launch phase.
 > **UI:** Must not require design changes — responses feed existing approved screens.
 
 Base path (proposal): `/api/v1`
@@ -304,12 +304,12 @@ Body (summary example):
 
 ### `POST /entries/:entryId/void` (historical plan — not implemented)
 
-Body: `{ "reason": "string" }`  
+Body: `{ "reason": "string" }`
 Sets `status=voided`, `voided_at`, audit `voided`.
 
 ### `POST /entries/:entryId/restore` (historical plan — not implemented)
 
-Body: `{ "reason": "string" }`  
+Body: `{ "reason": "string" }`
 Sets `status=active`, `restored_at`, audit `restored`.
 
 ### `POST /entries/:entryId/review` (historical plan — not implemented)
@@ -409,7 +409,7 @@ All report endpoints require `from` + `to` (or `month`) — server rejects wide 
 
 ### `GET /reports/channels` (implemented)
 
-Query: `storeId`, `from`, `to`  
+Query: `storeId`, `from`, `to`
 Reads `entry_sales_channels` joined to active `entries` in range.
 
 Response:
@@ -427,19 +427,19 @@ Response:
 
 ### `GET /reports/outflow` (implemented)
 
-Query: `storeId`, `from`, `to`, optional `categoryKey`, optional `includeTransactions=true`  
+Query: `storeId`, `from`, `to`, optional `categoryKey`, optional `includeTransactions=true`
 Aggregates outflow types (`purchases`, `expense`, `withdrawal`) with optional category filter and transaction list.
 
 Response includes `totalOutflow`, `transactionCount`, `categories[]`, and `transactions[]` when requested.
 
 ### `GET /reports/days` (implemented)
 
-Query: `storeId`, `from`, `to`  
+Query: `storeId`, `from`, `to`
 Per-day sales / outflow / net (SQL `GROUP BY date`).
 
 ### `GET /reports/attachments` (implemented)
 
-Query: `storeId`, `from`, `to`  
+Query: `storeId`, `from`, `to`
 Counts, pending review stats, and item list for entries with attachments in range.
 
 ---
@@ -448,7 +448,7 @@ Counts, pending review stats, and item list for entries with attachments in rang
 
 ### `GET /api/v1/stores` (implemented)
 
-Query: optional `status=active|archived|all`  
+Query: optional `status=active|archived|all`
 Owner/manager: all org stores. Employee: assigned stores only.
 
 ### `POST /api/v1/stores` (implemented)
@@ -457,7 +457,7 @@ Body: `{ name, location? }` — owner only. Audit: `store_created`.
 
 ### `PATCH /api/v1/stores/:storeId` (implemented)
 
-Body: `{ name?, location?, status?: active|archived, reason? }` — owner only.  
+Body: `{ name?, location?, status?: active|archived, reason? }` — owner only.
 Archive via `status=archived` + audit `store_archived`.
 
 ### `GET /api/v1/stores/:storeId/sales-channels` (implemented)
@@ -474,7 +474,7 @@ Query: optional `status=active|retired|all`
 
 ### `GET /api/v1/members` (implemented)
 
-Query: optional `status=active|inactive|all` — manager+ only.  
+Query: optional `status=active|inactive|all` — manager+ only.
 Includes `storeAccess[]` per member.
 
 ### `POST /api/v1/members` (implemented — foundation)
@@ -580,7 +580,7 @@ Returns `503 SERVICE_UNAVAILABLE` when `AUTH_OTP_ENABLED` is not `true`.
 
 ## SaaS Admin API (disabled by default)
 
-> Requires `SAAS_ADMIN_API_ENABLED=true`, signed auth session cookie, and `SAAS_PLATFORM_ADMIN_USER_IDS` allowlist.  
+> Requires `SAAS_ADMIN_API_ENABLED=true`, signed auth session cookie, and `SAAS_PLATFORM_ADMIN_USER_IDS` allowlist.
 > `middleware.ts` returns `503` / `401` / `403` before route handlers when the API is disabled or the caller is not a platform admin.
 
 ### `GET /api/v1/saas-admin/overview` (implemented — gated)
@@ -626,7 +626,7 @@ Body:
   "name": "string",
   "role": "manager|employee",
   "pin": "string",
-  "storeIds": ["uuid"] 
+  "storeIds": ["uuid"]
 }
 ```
 
@@ -654,7 +654,7 @@ Body:
 }
 ```
 
-Returns `201` with `{ channel: { id, name, status, retiredAt, createdAt } }`.  
+Returns `201` with `{ channel: { id, name, status, retiredAt, createdAt } }`.
 Audit: `sales_channel_created` with `metadata.source = platform_admin`.
 
 ### `PATCH /api/v1/saas-admin/accounts/:id/stores/:storeId/sales-channels` (implemented — gated)

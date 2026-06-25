@@ -1,6 +1,6 @@
 # تنظيف ما قبل الإطلاق — تقفيلة
 
-> **الحالة:** نُفِّذ في دفعة `cursor/prelaunch-cleanup`  
+> **الحالة:** نُفِّذ في دفعة `cursor/prelaunch-cleanup`
 > **السياق:** التطبيق **لم يُطلق بعد**؛ العملاء السابقون على VPS/DB كانوا وهميين (bootstrap dev).
 
 ---
@@ -41,7 +41,7 @@
 
 | البند | السبب |
 |-------|--------|
-| `TaqfeelahPrototypeRuntime.tsx` + `prototype-runtime/*` | **الواجهة المعتمدة** ذات الاسم التاريخي |
+| `TaqfeelahAppRuntimeShell.tsx` + `taqfeelah-app/*` | **الواجهة المعتمدة** لمسار التطبيق الحقيقي |
 | `legacyId` في org-config mapper | ربط UI المجمد بـ UUID |
 | `scripts/seed-closeouts-foundation.mjs` | **اختياري للتطوير المحلي فقط** |
 | Playwright smoke | يختبر شاشة الدخول الحقيقية (بدون DB) |

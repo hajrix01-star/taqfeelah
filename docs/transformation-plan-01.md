@@ -10,7 +10,7 @@
 
 ## سبب الخطة
 
-من الفحص الفعلي للكود، التطبيق الحقيقي ما زال يمر عبر أسماء ومسارات تاريخية مثل `prototype-runtime` و `features/demo/AppRuntimePage`. كذلك قسم السجلات يحتوي أكثر من مسار بيانات للأرقام: عمليات من API، تقارير من API، وحسابات client محلية في بعض الحالات.
+من الفحص الفعلي للكود، التطبيق الحقيقي كان يمر عبر أسماء ومسارات تاريخية مثل `prototype-runtime` و `features/demo/AppRuntimePage`. كذلك قسم السجلات يحتوي أكثر من مسار بيانات للأرقام: عمليات من API، تقارير من API، وحسابات client محلية في بعض الحالات.
 
 هذا قد يسبب:
 
@@ -72,10 +72,11 @@
 
 ### Phase 4 — إعادة التسمية إلى Taqfeelah App
 
-- [ ] إعادة تسمية `prototype-runtime` تدريجيًا إلى `taqfeelah-app`.
-- [ ] تحديث imports والاختبارات بشكل ميكانيكي ومنضبط.
-- [ ] إبقاء التغيير بلا تعديل سلوكي قدر الإمكان.
-- [ ] تشغيل lint/typecheck/test/build بعد كل دفعة.
+- [x] إعادة تسمية مجلد الواجهة من `prototype-runtime` إلى `taqfeelah-app`.
+- [x] إعادة تسمية shell الجذر من `TaqfeelahPrototypeRuntime` إلى `TaqfeelahAppRuntimeShell`.
+- [x] تحديث imports والاختبارات بشكل ميكانيكي ومنضبط.
+- [x] إبقاء route المرجعي `/prototype-runtime` للمقارنة فقط، مع بقاء `/app` هو مسار التطبيق الإنتاجي.
+- [x] تشغيل lint/typecheck/test/build بعد الدفعة قبل إغلاق المرحلة.
 
 ### Phase 5 — اختبارات الحماية
 
@@ -103,7 +104,7 @@
 
 - إعادة تسمية شاملة دفعة واحدة.
 - إنشاء endpoint خلفي موحد جديد للسجل/التقارير؛ Phase 1 أغلقت توحيد read model على مستوى الواجهة، وأي عقد API أعمق يحتاج خطة API مستقلة قبل التنفيذ.
-- إعادة تسمية المكوّن الداخلي الكبير `TaqfeelahPrototypeRuntime` ومجلد `prototype-runtime`؛ هذه ضمن Phase 4 وليست ضمن إغلاق Phase 2.
+- تفكيك `TaqfeelahAppRuntimeShell` إلى وحدات أصغر لاحقًا؛ التسمية الإنتاجية أُنجزت ضمن Phase 4، أما التفكيك البنيوي الواسع فليس ضمن هذه الدفعة.
 - Object Storage.
 - Redis.
 - Sentry.

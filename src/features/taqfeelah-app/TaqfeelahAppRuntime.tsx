@@ -1,3 +1,3 @@
 "use client";
 
-export { default } from "@/components/TaqfeelahPrototypeRuntime";
+export { default } from "@/components/TaqfeelahAppRuntimeShell";

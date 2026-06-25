@@ -6,7 +6,7 @@ import NotebookScrollSurface from "../daily-closeouts/NotebookScrollSurface";
 import { preloadNotebookShareCapture } from "../daily-closeouts/notebook-share-capture";
 import { notebookLinesBackground } from "../daily-closeouts/notebook-themes";
 import AttachmentLightbox from "../../components/AttachmentLightbox";
-import { text } from "../../components/prototype-runtime/prototype-runtime-demo-data";
+import { text } from "../../components/taqfeelah-app/taqfeelah-app-demo-data";
 import { DailyCloseoutEntryFormBody } from "./daily-closeout-entry-form-body";
 import { useDailyCloseoutEntryState } from "./use-daily-closeout-entry-state";
 import type {

@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
 import { ownerPasswordInputProps } from "@/features/auth/client/auth-gate/owner-password-input-props";
 import { readPasswordResetTokenValid } from "@/features/auth/client/auth-api-response";
 import {

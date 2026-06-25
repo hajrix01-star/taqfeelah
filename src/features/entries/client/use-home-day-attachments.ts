@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { attachmentsFromEntries } from "@/components/prototype-runtime/prototype-runtime-demo-operational-entries";
+import { attachmentsFromEntries } from "@/components/taqfeelah-app/taqfeelah-app-demo-operational-entries";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { fetchStoreEntriesViaApi } from "./store-entries-api-client";
 import { resolveAttachmentGroupForDate } from "./attachments-from-entries";

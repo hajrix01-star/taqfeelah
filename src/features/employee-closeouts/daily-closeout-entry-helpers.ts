@@ -1,4 +1,4 @@
-import { toAmount } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
+import { toAmount } from "../../components/taqfeelah-app/taqfeelah-app-entry-form-utils";
 import { formatDisplayMoneyFromRiyals } from "@/core/money/format-display-money";
 import { todayBusinessDateIso } from "@/core/date/business-date";
 import type { CloseoutSyncLang } from "@/features/daily-closeouts/daily-closeouts-types";

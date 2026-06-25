@@ -15,22 +15,22 @@ import {
   businessName,
   text,
   outflowReportCategories,
-} from "@/components/prototype-runtime/prototype-runtime-demo-data";
+} from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
 import {
   entryCategory,
   entryDateMatches,
   entryHasAttachment,
   operationDisplayLabel,
   signedEntryAmount,
-} from "@/components/prototype-runtime/prototype-runtime-entry-helpers";
-import { todayIsoDate } from "@/components/prototype-runtime/prototype-runtime-notebook";
-import { buildNotebookShareModel } from "@/components/prototype-runtime/build-notebook-share-model";
-import type { PrototypeBusiness } from "@/components/prototype-runtime/prototype-runtime-types";
+} from "@/components/taqfeelah-app/taqfeelah-app-entry-helpers";
+import { todayIsoDate } from "@/components/taqfeelah-app/taqfeelah-app-notebook";
+import { buildNotebookShareModel } from "@/components/taqfeelah-app/build-notebook-share-model";
+import type { PrototypeBusiness } from "@/components/taqfeelah-app/taqfeelah-app-types";
 import type {
   NotebookShareChannelRow,
   NotebookShareDayRow,
   PrototypeStoreRecord,
-} from "@/components/prototype-runtime/prototype-runtime-types";
+} from "@/components/taqfeelah-app/taqfeelah-app-types";
 import type { DisplayLang } from "@/core/i18n/display-locale";
 import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
 import type {

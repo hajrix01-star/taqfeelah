@@ -63,7 +63,7 @@ AUTH_SESSION_SECRET=...
 # not normal runtime requirements for organizations created through SaaS Admin.
 ```
 
-**CI production deploy** (`deploy-production.yml`) enables auth launch + wave 7 SaaS.  
+**CI production deploy** (`deploy-production.yml`) enables auth launch + wave 7 SaaS.
 Legacy env ID maps are required only while `ALLOW_HEADER_AUTH_CONTEXT=true` (integration tests).
 
 For manual VPS rollout, auth-launch values:

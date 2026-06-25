@@ -1,8 +1,8 @@
 # Phase 11 — SaaS admin console
 
-> **الحالة (2026-06-12):** مفعّل على الإنتاج عند ضبط `SAAS_PLATFORM_ADMIN_USER_IDS` في أسرار النشر.  
-> **التسجيل الذاتي:** راجع `docs/OWNER_PUBLIC_SIGNUP.md` — يُفعَّل بـ `AUTH_PUBLIC_SIGNUP_ENABLED`.  
-> لا يُلغي مسار Admin — الحسابات يمكن أيضًا إنشاؤها من `/saas-admin/accounts/new`.  
+> **الحالة (2026-06-12):** مفعّل على الإنتاج عند ضبط `SAAS_PLATFORM_ADMIN_USER_IDS` في أسرار النشر.
+> **التسجيل الذاتي:** راجع `docs/OWNER_PUBLIC_SIGNUP.md` — يُفعَّل بـ `AUTH_PUBLIC_SIGNUP_ENABLED`.
+> لا يُلغي مسار Admin — الحسابات يمكن أيضًا إنشاؤها من `/saas-admin/accounts/new`.
 > الدفع الإلكتروني **مؤجّل** — راجع `docs/PRODUCTION_STATUS.md`.
 
 ## Flags (all OFF by default)
@@ -25,7 +25,7 @@
 - `/saas-admin/investor-metrics`
 - `/saas-admin/system-health`
 
-Layout guards: disabled → unauthenticated → unauthorized → `AdminShell`.  
+Layout guards: disabled → unauthenticated → unauthorized → `AdminShell`.
 `middleware.ts` enforces API auth early; page UX guards stay in `layout.tsx`.
 
 ## API routes

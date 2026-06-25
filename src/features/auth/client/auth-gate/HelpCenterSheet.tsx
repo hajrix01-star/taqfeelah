@@ -5,9 +5,9 @@ import { X } from "lucide-react";
 import { PROTOTYPE_BUILD_STAMP } from "@/prototype-build-stamp.mjs";
 import LanHintBanner from "@/features/demo/LanHintBanner";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
-import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
-import { APP_IN_PRODUCTION_MODE } from "@/components/prototype-runtime/prototype-runtime-boot";
-import { openWhatsAppSupport } from "@/components/prototype-runtime/prototype-runtime-support";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
+import { APP_IN_PRODUCTION_MODE } from "@/components/taqfeelah-app/taqfeelah-app-boot";
+import { openWhatsAppSupport } from "@/components/taqfeelah-app/taqfeelah-app-support";
 import type { AuthLang } from "@/features/auth/client/auth-client-types";
 
 type HelpCenterSheetProps = {

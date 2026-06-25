@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
 import { readPasswordResetRequestMessage } from "@/features/auth/client/auth-api-response";
 import { requestOwnerPasswordResetViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
 import { usePasswordResetEnabled } from "@/features/auth/client/use-password-reset-enabled";

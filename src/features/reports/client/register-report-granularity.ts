@@ -1,4 +1,4 @@
-import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
 import type { DisplayLang } from "@/core/i18n/display-locale";
 import { formatCalendarDate, formatSelectedMonth } from "./report-period-labels";
 

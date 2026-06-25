@@ -16,7 +16,7 @@ import type {
   ResolvedOrganizationEntitlements,
 } from "@/features/billing/client/billing-client-types";
 import type { DisplayLang } from "@/core/i18n/display-locale";
-import { Badge } from "@/components/prototype-runtime/owner-settings-ui-primitives";
+import { Badge } from "@/components/taqfeelah-app/owner-settings-ui-primitives";
 
 function buildCurrentPlanRow(
   entitlements: ResolvedOrganizationEntitlements,

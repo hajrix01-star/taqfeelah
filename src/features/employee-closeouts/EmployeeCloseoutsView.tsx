@@ -7,7 +7,7 @@ import { resolveCloseoutStoreName } from "./store-name-resolver";
 import { EmployeeCloseoutsListPanel } from "./employee-closeouts-list-panel";
 import { resolveEmployeeDisplayName } from "./employee-portal-session";
 import { useEmployeeCloseoutsViewState } from "./use-employee-closeouts-view-state";
-import { resolveStoreChannelConfig, channelName } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { resolveStoreChannelConfig, channelName } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
 import type { StoreChannelConfig } from "@/features/org-config/client/org-config-client-types";
 
 import type { EmployeeCloseoutsViewProps, EmployeeHistoryVisibility } from "./employee-closeouts-types";

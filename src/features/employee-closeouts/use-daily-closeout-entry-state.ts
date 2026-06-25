@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react";
-import { text } from "../../components/prototype-runtime/prototype-runtime-demo-data";
+import { text } from "../../components/taqfeelah-app/taqfeelah-app-demo-data";
 import { prepareAttachment } from "@/features/attachments/client/prototype-attachment-storage";
-import { sanitizeAmountInput, toAmount } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
+import { sanitizeAmountInput, toAmount } from "../../components/taqfeelah-app/taqfeelah-app-entry-form-utils";
 import { computeCloseoutTotals } from "../daily-closeouts/closeout-calculations";
 import {
   buildCloseoutSalesFromChannelValues,

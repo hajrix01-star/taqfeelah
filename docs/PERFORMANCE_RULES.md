@@ -1,6 +1,6 @@
 # تقفيلة — Performance Rules
 
-> Applies to production backend and `/app` client integration.  
+> Applies to production backend and `/app` client integration.
 > **Phase 1:** indexed `entries` + SQL aggregation — **no** `daily_store_summaries` table.
 
 ---

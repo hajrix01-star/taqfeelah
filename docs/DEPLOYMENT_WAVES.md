@@ -148,7 +148,7 @@
 
 ### الموجة 7 — SaaS Admin
 
-**الحالة:** ✅ **مفعّلة في CI** — `SAAS_ADMIN_API_ENABLED` و`NEXT_PUBLIC_SAAS_ADMIN_ENABLED` و`SAAS_PLATFORM_ADMIN_USER_IDS` من أسرار GitHub.  
+**الحالة:** ✅ **مفعّلة في CI** — `SAAS_ADMIN_API_ENABLED` و`NEXT_PUBLIC_SAAS_ADMIN_ENABLED` و`SAAS_PLATFORM_ADMIN_USER_IDS` من أسرار GitHub.
 راجع `docs/PRODUCTION_STATUS.md` للشفافية الكاملة.
 
 **المراحل التقنية:** 11

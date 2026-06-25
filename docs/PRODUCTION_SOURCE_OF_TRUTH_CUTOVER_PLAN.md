@@ -1,7 +1,7 @@
 # Production Source-of-Truth Cutover Plan
 
-Status: in progress  
-Scope: production hardening after the P0 staging baseline  
+Status: in progress
+Scope: production hardening after the P0 staging baseline
 Baseline commit for current limited-launch path: `0e1eca7`
 
 ## Executive rule
@@ -62,7 +62,7 @@ The codebase currently has overlapping concepts:
   - `organization_members`
   - `member_store_access`
 - Historical prototype/demo helpers:
-  - `prototype-runtime-demo-data`
+  - `taqfeelah-app-demo-data`
   - browser storage helpers
   - runtime maps from legacy ids to UUIDs
 
@@ -153,8 +153,8 @@ Files to inspect/change:
 - `src/features/org-config/server/resolve-store-sales-channels-for-write.ts`
 - `src/features/runtime-settings/server/provision-sales-channels.ts`
 - `src/features/org-config/client/owner-settings-channel-actions.ts`
-- `src/components/prototype-runtime/owner-settings-income-sources-editor.tsx`
-- `src/components/prototype-runtime/owner-settings-screen-action-handlers.ts`
+- `src/components/taqfeelah-app/owner-settings-income-sources-editor.tsx`
+- `src/components/taqfeelah-app/owner-settings-screen-action-handlers.ts`
 - `src/features/org-config/client/org-config-runtime-sync.ts`
 - `src/features/org-config/client/org-config-runtime-mapper.ts`
 
@@ -211,7 +211,7 @@ Files to inspect/change:
 - `src/features/org-config/server/update-organization-member.ts`
 - `src/features/runtime-settings/server/provision-staff-members.ts`
 - `src/features/runtime-settings/server/runtime-settings-service.ts`
-- `src/components/prototype-runtime/owner-settings-screen-action-handlers.ts`
+- `src/components/taqfeelah-app/owner-settings-screen-action-handlers.ts`
 - `src/features/org-config/client/owner-settings-team-actions.ts`
 - `src/features/auth/server/create-auth-session.ts`
 - `src/features/auth/server/resolve-employee-user-id.ts`

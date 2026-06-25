@@ -29,7 +29,7 @@ describe("register production source guard", () => {
   });
 
   it("does not seed or read local operational entries in server-authoritative modes", () => {
-    const source = readProjectFile("src/components/prototype-runtime/prototype-runtime-demo-operational-entries.ts");
+    const source = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-demo-operational-entries.ts");
 
     expect(source).toContain("if (typeof window === \"undefined\") return BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE ? [] : createDemoOperationalEntries();");
     expect(source).toContain("if (BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE) return [];");
@@ -81,7 +81,7 @@ describe("register production source guard", () => {
   });
 
   it("uses the reports read model for the owner home financial summary", () => {
-    const source = readProjectFile("src/components/prototype-runtime/prototype-runtime-owner-home-screen.tsx");
+    const source = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-owner-home-screen.tsx");
 
     expect(source).toContain("@/features/reports/client/use-store-reports");
     expect(source).not.toContain("@/features/reports/client/use-store-day-summaries");
@@ -90,7 +90,7 @@ describe("register production source guard", () => {
   });
 
   it("keeps register server reads behind a single read-model adapter", () => {
-    const screen = readProjectFile("src/components/prototype-runtime/prototype-runtime-owner-register-screen.tsx");
+    const screen = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-owner-register-screen.tsx");
     const adapter = readProjectFile("src/features/entries/client/use-register-server-read-model.ts");
 
     expect(screen).toContain("@/features/entries/client/use-register-server-read-model");
@@ -105,7 +105,7 @@ describe("register production source guard", () => {
   });
 
   it("uses the server closeouts read model for register closeouts in API mode", () => {
-    const screen = readProjectFile("src/components/prototype-runtime/prototype-runtime-owner-register-screen.tsx");
+    const screen = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-owner-register-screen.tsx");
     const adapter = readProjectFile("src/features/entries/client/use-register-server-read-model.ts");
     const closeoutHook = readProjectFile("src/features/entries/client/use-register-closeouts-from-api.ts");
     const overviewHook = readProjectFile("src/features/entries/client/use-register-overview-from-api.ts");
@@ -133,9 +133,9 @@ describe("register production source guard", () => {
   });
 
   it("does not persist operational entries to browser storage", () => {
-    const source = readProjectFile("src/features/operations/client/use-prototype-runtime-operational-entries.ts");
-    const boot = readProjectFile("src/components/prototype-runtime/prototype-runtime-boot.ts");
-    const demoEntries = readProjectFile("src/components/prototype-runtime/prototype-runtime-demo-operational-entries.ts");
+    const source = readProjectFile("src/features/operations/client/use-taqfeelah-app-operational-entries.ts");
+    const boot = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-boot.ts");
+    const demoEntries = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-demo-operational-entries.ts");
 
     expect(source).not.toContain("safeSetLocalStorageItem");
     expect(source).not.toContain("operational-fallback");
@@ -145,21 +145,21 @@ describe("register production source guard", () => {
   });
 
   it("does not expose duplicate subscription or invite-create UI roots in owner settings", () => {
-    const tabPrimitives = readProjectFile("src/components/prototype-runtime/owner-settings-tab-primitives.tsx");
-    const tabNavigation = readProjectFile("src/components/prototype-runtime/owner-settings-tab-navigation.ts");
-    const teamSection = readProjectFile("src/components/prototype-runtime/owner-settings-team-section.tsx");
+    const tabPrimitives = readProjectFile("src/components/taqfeelah-app/owner-settings-tab-primitives.tsx");
+    const tabNavigation = readProjectFile("src/components/taqfeelah-app/owner-settings-tab-navigation.ts");
+    const teamSection = readProjectFile("src/components/taqfeelah-app/owner-settings-team-section.tsx");
 
     expect(tabPrimitives).not.toContain("id: \"subscription\"");
     expect(tabNavigation).toContain("if (normalized === \"subscription\") return \"help\";");
     expect(teamSection).toContain("OwnerSettingsTeamRoster");
     expect(teamSection).not.toContain("OwnerSettingsTeamSectionWithInvites");
-    expect(() => readProjectFile("src/components/prototype-runtime/owner-settings-team-section-with-invites.tsx")).toThrow();
-    expect(() => readProjectFile("src/components/prototype-runtime/owner-settings-team-invite-create.tsx")).toThrow();
-    expect(() => readProjectFile("src/components/prototype-runtime/owner-settings-team-pending-invites.tsx")).toThrow();
+    expect(() => readProjectFile("src/components/taqfeelah-app/owner-settings-team-section-with-invites.tsx")).toThrow();
+    expect(() => readProjectFile("src/components/taqfeelah-app/owner-settings-team-invite-create.tsx")).toThrow();
+    expect(() => readProjectFile("src/components/taqfeelah-app/owner-settings-team-pending-invites.tsx")).toThrow();
   });
 
   it("blocks notebook export local fallback when server export data is required", () => {
-    const source = readProjectFile("src/components/prototype-runtime/prototype-runtime-notebook-share-modal.tsx");
+    const source = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-notebook-share-modal.tsx");
 
     expect(source).toContain("apiDataRequired");
     expect(source).toContain("No local fallback data is used");
@@ -167,7 +167,7 @@ describe("register production source guard", () => {
   });
 
   it("does not export register operations from partial screen rows in server source mode", () => {
-    const screen = readProjectFile("src/components/prototype-runtime/prototype-runtime-owner-register-screen.tsx");
+    const screen = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-owner-register-screen.tsx");
     const exportModel = readProjectFile("src/features/exports/client/build-data-export-model.ts");
     const serverExport = readProjectFile("src/features/exports/server/get-notebook-export.ts");
 
@@ -180,7 +180,7 @@ describe("register production source guard", () => {
   });
 
   it("does not describe a local financial fallback in the register report error path", () => {
-    const source = readProjectFile("src/components/prototype-runtime/prototype-runtime-owner-register-screen.tsx");
+    const source = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-owner-register-screen.tsx");
 
     expect(source).not.toContain("Showing available local data");
     expect(source).not.toContain("تم عرض البيانات المحلية المتاحة");
@@ -196,8 +196,8 @@ describe("register production source guard", () => {
   });
 
   it("saves store settings through confirmed org-config persistence in API mode", () => {
-    const handlers = readProjectFile("src/components/prototype-runtime/owner-settings-screen-action-handlers.ts");
-    const state = readProjectFile("src/components/prototype-runtime/use-owner-settings-screen-state.ts");
+    const handlers = readProjectFile("src/components/taqfeelah-app/owner-settings-screen-action-handlers.ts");
+    const state = readProjectFile("src/components/taqfeelah-app/use-owner-settings-screen-state.ts");
 
     expect(state).toContain("configuredBusinesses");
     expect(state).toContain("storeChannelSettings");

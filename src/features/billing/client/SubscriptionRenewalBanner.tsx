@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
 import {
   formatPeriodEndLabel,
   formatRenewalDaysRemainingLabel,

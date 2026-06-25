@@ -1,4 +1,4 @@
-import { todayIsoDate } from "@/components/prototype-runtime/prototype-runtime-notebook";
+import { todayIsoDate } from "@/components/taqfeelah-app/taqfeelah-app-notebook";
 import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
 
 function isoDaysBefore(referenceDate: string, days: number): string {

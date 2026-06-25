@@ -15,11 +15,11 @@ import type {
   EmployeeLoginCallback,
 } from "@/features/auth/client/auth-client-types";
 import { fetchEmployeeLoginRosterViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
-import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
 import {
   APP_IN_PRODUCTION_MODE,
   PROTOTYPE_EMPLOYEE_PIN_DEFAULT,
-} from "@/components/prototype-runtime/prototype-runtime-boot";
+} from "@/components/taqfeelah-app/taqfeelah-app-boot";
 
 export function useEmployeeLoginForm({
   lang,

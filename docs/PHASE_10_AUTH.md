@@ -1,6 +1,6 @@
 # Phase 10 — Auth foundations
 
-> **الحالة (2026-06-12):** مفعّل — مسار الدخول الوحيد على `/app` هو auth حقيقي.  
+> **الحالة (2026-06-12):** مفعّل — مسار الدخول الوحيد على `/app` هو auth حقيقي.
 > **ما قبل الإطلاق:** `docs/PRELAUNCH_CLEANUP.md` — لا وضع تجريبي.
 
 ## Flags (production)
@@ -35,4 +35,4 @@
 - OTP SMS/email provider (`AUTH_OTP_ENABLED` off)
 - Password reset emails (needs `RESEND_API_KEY` or SMTP — code ready)
 - Automated invite/setup emails (manual WhatsApp/copy link from SaaS admin)
-- `/app` still uses approved prototype runtime shell (visual baseline frozen)
+- `/app` still uses approved taqfeelah app shell (visual baseline frozen)

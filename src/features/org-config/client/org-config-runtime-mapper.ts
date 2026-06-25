@@ -1,4 +1,4 @@
-﻿import { CreditCard, Landmark, ShoppingBag, Smartphone, Wallet } from "lucide-react";
+import { CreditCard, Landmark, ShoppingBag, Smartphone, Wallet } from "lucide-react";
 import { INCOME_SOURCE_CATALOG, getCatalogEntry } from "@/core/client/income-source-catalog";
 import { normalizeStoreOperationalSettings } from "@/domain/store-operational-settings/normalize";
 import { isUuid } from "@/features/closeouts/client/closeouts-api-client";

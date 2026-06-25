@@ -1,6 +1,6 @@
 "use client";
 
-import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
 import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 import { useAccountSetupForm } from "@/features/account-setup/client/use-account-setup-form";
 

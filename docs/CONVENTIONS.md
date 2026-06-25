@@ -82,7 +82,7 @@ Organization
 
 ### توافق الواجهة التاريخي — `businessId` (قرار معتمد)
 
-**داخل تركيب الواجهة الحالي (`TaqfeelahPrototypeRuntime.tsx` ومجلد `prototype-runtime`):**
+**داخل تركيب الواجهة الحالي (`TaqfeelahAppRuntimeShell.tsx` ومجلد `taqfeelah-app`):**
 
 - أبقِ `businessId` فقط في عقود واجهة التوافق التي لم تُرحّل بعد.
 - لا تنفذ Rename شاملًا دفعة واحدة؛ رحّل كل feature مع اختباراته.
@@ -146,7 +146,7 @@ ledger
 - لا ملف ضخم يجمع كل الشاشات والمنطق.
 - هدف الحجم: مكوّنات ~250–400 سطر كحد أقصى معقول؛ هوكات أصغر.
 - **TypeScript إلزامي** لكل كود المصدر.
-- `TaqfeelahPrototypeRuntime.tsx` وتركيب `prototype-runtime`: واجهة حالية ذات اسم تاريخي؛ لا تُستخدم كتبرير لوضع منطق DB/API داخل مكوّن ضخم.
+- `TaqfeelahAppRuntimeShell.tsx` وتركيب `taqfeelah-app`: واجهة التطبيق الحالية؛ لا تُستخدم كتبرير لوضع منطق DB/API داخل مكوّن ضخم.
 
 ---
 
@@ -258,7 +258,7 @@ OrganizationMember
 
 **Tag:** `APPROVED UI BASELINE` — commit: `checkpoint/approved-ui-baseline-before-backend` (راجع `docs/APPROVED_UI_BASELINE.md`).
 
-**حالة الاعتماد (مالك المنتج، 2026-06):** واجهة التطبيق التشغيلي **معتمدة بصريًا** على الجوال والتابلت. **لا تعديل** على التصميم أو التوزيع أو CSS المرئي أو Prototype Runtime **إلا بأمر صريح** من مالك المنتج.
+**حالة الاعتماد (مالك المنتج، 2026-06):** واجهة التطبيق التشغيلي **معتمدة بصريًا** على الجوال والتابلت. **لا تعديل** على التصميم أو التوزيع أو CSS المرئي أو taqfeelah app **إلا بأمر صريح** من مالك المنتج.
 
 **مسار المرجع:** `/prototype-runtime`. التطبيق الفعلي هو `/app` والموقع العام منفذ على `/`.
 
@@ -404,7 +404,7 @@ pnpm build
 | `approved` | حالة DB للتقفيلة المرسلة | تُعرَض في UI كـ `reviewed` |
 | `reviewed` | تسمية UI للتقفيلة المرسلة/المعتمدة | ليست «بانتظار مراجعة» |
 | `returned` | حالة demo/localStorage قديمة | تُطبَّع إلى `reviewed` عند القراءة |
-| `waitingReview` | نصوص قديمة | حُذفت من `prototype-runtime-copy` |
+| `waitingReview` | نصوص قديمة | حُذفت من `taqfeelah-app-copy` |
 | `openCloseoutAlertInRegister` | فتح تنبيه التقفيلة في السجل | سابقًا `reviewCloseoutAlertRecord` |
 | `pendingOwnerCloseoutQueue` | طابور مالك فارغ (stub) | سابقًا `pendingSubmittedCloseouts` |
 | `openDuplicateSummaryInRegister` | فتح تنبيه ملخص مكرر في السجل | سابقًا `reviewDuplicateSalesAlert` |
@@ -429,7 +429,7 @@ pnpm build
 |--------|--------|
 | UI tag | `APPROVED UI BASELINE` |
 | Checkpoint commit | `checkpoint/approved-ui-baseline-before-backend` |
-| مرجع UX | `TaqfeelahPrototypeRuntime.tsx` + `components/prototype-runtime` |
+| مرجع UX | `TaqfeelahAppRuntimeShell.tsx` + `components/taqfeelah-app` |
 | وثائق الباكند | `ARCHITECTURE`, `DATABASE_SCHEMA`, `API_CONTRACT`, `PERFORMANCE_RULES` |
 | نسخة تحميل الجوال | `src/prototype-build-stamp.mjs` |
 

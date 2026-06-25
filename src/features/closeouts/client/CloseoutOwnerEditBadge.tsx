@@ -1,7 +1,7 @@
 "use client";
 
 import { closeoutOwnerEditLabel, resolveCloseoutOwnerEditMeta } from "./closeout-owner-edit-display";
-import { Badge } from "@/components/prototype-runtime/prototype-runtime-shell-ui";
+import { Badge } from "@/components/taqfeelah-app/taqfeelah-app-shell-ui";
 
 export default function CloseoutOwnerEditBadge({
   lang = "ar",

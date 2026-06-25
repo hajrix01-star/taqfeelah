@@ -2,7 +2,7 @@
 
 import { useState, type ChangeEvent, createElement } from "react";
 import { Plus } from "lucide-react";
-import { sanitizeAmountInput } from "../../components/prototype-runtime/prototype-runtime-entry-form-utils";
+import { sanitizeAmountInput } from "../../components/taqfeelah-app/taqfeelah-app-entry-form-utils";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import type { CloseoutSyncLang, SalesChannelConfig, StoreRef } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { DailyCloseoutEntryState } from "./use-daily-closeout-entry-state";
@@ -17,10 +17,10 @@ import { EntrySection } from "./daily-closeout-entry-ui-primitives";
 import {
   ProofAddButton,
   ProofAttachmentPreview,
-} from "@/components/prototype-runtime/prototype-runtime-attachment-ui";
+} from "@/components/taqfeelah-app/taqfeelah-app-attachment-ui";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
-import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
-import { DateSelector } from "@/components/prototype-runtime/prototype-runtime-notebook";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
+import { DateSelector } from "@/components/taqfeelah-app/taqfeelah-app-notebook";
 import { CloseoutEntryStorePicker } from "./closeout-entry-store-picker";
 
 type DailyCloseoutEntryFormBodyProps = DailyCloseoutEntryState & {

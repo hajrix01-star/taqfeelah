@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { AppFontStyles } from "@/components/prototype-runtime/prototype-runtime-app-font-styles";
+import { AppFontStyles } from "@/components/taqfeelah-app/taqfeelah-app-font-styles";
 import { buildSupportWhatsAppUrl } from "@/core/config/marketing-support";
 import { PWA_APP_NAME } from "@/core/config/pwa";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
@@ -27,7 +27,7 @@ import {
 const PUBLIC_SIGNUP_ENABLED = process.env.NEXT_PUBLIC_PUBLIC_SIGNUP_ENABLED === "true";
 const SIGNUP_HREF = PUBLIC_SIGNUP_ENABLED ? "/signup" : "/app";
 const APP_LOGIN_HREF = "/app";
-const contactMessage = "مرحبًا، أريد معرفة المزيد عن تقفيلة والباقات المتاحة.";
+const contactMessage = "ظ…ط±ط­ط¨ظ‹ط§طŒ ط£ط±ظٹط¯ ظ…ط¹ط±ظپط© ط§ظ„ظ…ط²ظٹط¯ ط¹ظ† طھظ‚ظپظٹظ„ط© ظˆط§ظ„ط¨ط§ظ‚ط§طھ ط§ظ„ظ…طھط§ط­ط©.";
 
 export default function MarketingPage() {
   const whatsappHref = buildSupportWhatsAppUrl(contactMessage);
@@ -48,22 +48,22 @@ export default function MarketingPage() {
             </Link>
             <nav className="hidden items-center gap-6 md:flex" style={{ color: marketingColors.muted }}>
               <a href="#features" className={marketingNavLinkClassName()}>
-                الميزات
+                ط§ظ„ظ…ظٹط²ط§طھ
               </a>
               <a href="#pricing" className={marketingNavLinkClassName()}>
-                الباقات
+                ط§ظ„ط¨ط§ظ‚ط§طھ
               </a>
               <a href="#contact" className={marketingNavLinkClassName()}>
-                تواصل
+                طھظˆط§طµظ„
               </a>
             </nav>
             <div className="hidden sm:flex items-center gap-2">
               {PUBLIC_SIGNUP_ENABLED ? (
                 <MarketingCta href={SIGNUP_HREF} variant="secondary">
-                  إنشاء حساب
+                  ط¥ظ†ط´ط§ط، ط­ط³ط§ط¨
                 </MarketingCta>
               ) : null}
-              <MarketingCta href={APP_LOGIN_HREF}>الدخول للتطبيق</MarketingCta>
+              <MarketingCta href={APP_LOGIN_HREF}>ط§ظ„ط¯ط®ظˆظ„ ظ„ظ„طھط·ط¨ظٹظ‚</MarketingCta>
             </div>
           </div>
         </header>
@@ -73,17 +73,17 @@ export default function MarketingPage() {
           <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-4 text-center text-xs font-bold sm:flex-row sm:px-6 sm:text-right" style={{ color: marketingColors.muted }}>
             <div className="space-y-1">
               <p>
-                © {new Date().getFullYear()} {PWA_APP_NAME} — متابعة تشغيل يومية
+                آ© {new Date().getFullYear()} {PWA_APP_NAME} â€” ظ…طھط§ط¨ط¹ط© طھط´ط؛ظٹظ„ ظٹظˆظ…ظٹط©
               </p>
               <ReleaseVersionLine className="text-[#A99D87]" lang="ar" showBuild />
             </div>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Link href={APP_LOGIN_HREF} className="no-underline hover:text-[#112A46]">
-                الدخول للتطبيق
+                ط§ظ„ط¯ط®ظˆظ„ ظ„ظ„طھط·ط¨ظٹظ‚
               </Link>
               {PUBLIC_SIGNUP_ENABLED ? (
                 <Link href={SIGNUP_HREF} className="no-underline hover:text-[#112A46]">
-                  إنشاء حساب
+                  ط¥ظ†ط´ط§ط، ط­ط³ط§ط¨
                 </Link>
               ) : null}
               <a
@@ -92,7 +92,7 @@ export default function MarketingPage() {
                 rel="noopener noreferrer"
                 className="no-underline hover:text-[#112A46]"
               >
-                الدعم
+                ط§ظ„ط¯ط¹ظ…
               </a>
             </div>
           </div>
@@ -100,8 +100,8 @@ export default function MarketingPage() {
       }
       mobileCta={
         PUBLIC_SIGNUP_ENABLED
-          ? <MarketingCta href={SIGNUP_HREF}>ابدأ مجانًا</MarketingCta>
-          : <MarketingCta href={APP_LOGIN_HREF}>الدخول للتطبيق</MarketingCta>
+          ? <MarketingCta href={SIGNUP_HREF}>ط§ط¨ط¯ط£ ظ…ط¬ط§ظ†ظ‹ط§</MarketingCta>
+          : <MarketingCta href={APP_LOGIN_HREF}>ط§ظ„ط¯ط®ظˆظ„ ظ„ظ„طھط·ط¨ظٹظ‚</MarketingCta>
       }
     >
       <AppFontStyles />
@@ -117,31 +117,31 @@ export default function MarketingPage() {
             className="inline-flex rounded-full bg-white px-3 py-1 text-taq-meta font-black ring-1 ring-black/[0.05]"
             style={{ color: marketingColors.gold }}
           >
-            تشغيل يومي للمحلات — ليس محاسبة
+            طھط´ط؛ظٹظ„ ظٹظˆظ…ظٹ ظ„ظ„ظ…ط­ظ„ط§طھ â€” ظ„ظٹط³ ظ…ط­ط§ط³ط¨ط©
           </p>
           <h1 className="text-3xl font-black leading-[1.15] sm:text-4xl lg:text-[2.65rem]">
-            الداخل − الخارج = الناتج
+            ط§ظ„ط¯ط§ط®ظ„ âˆ’ ط§ظ„ط®ط§ط±ط¬ = ط§ظ„ظ†ط§طھط¬
           </h1>
           <p className={`max-w-xl ${marketingMutedTextClassName()} sm:text-base`} style={{ color: marketingColors.soft }}>
-            {PWA_APP_NAME} يحوّل يومك في المحل إلى صورة واضحة: داخل، خارج، تقفيلات
-            موظفين، وتقارير — بنفس روح الدفتر المعتمدة في التطبيق.
+            {PWA_APP_NAME} ظٹط­ظˆظ‘ظ„ ظٹظˆظ…ظƒ ظپظٹ ط§ظ„ظ…ط­ظ„ ط¥ظ„ظ‰ طµظˆط±ط© ظˆط§ط¶ط­ط©: ط¯ط§ط®ظ„طŒ ط®ط§ط±ط¬طŒ طھظ‚ظپظٹظ„ط§طھ
+            ظ…ظˆط¸ظپظٹظ†طŒ ظˆطھظ‚ط§ط±ظٹط± â€” ط¨ظ†ظپط³ ط±ظˆط­ ط§ظ„ط¯ظپطھط± ط§ظ„ظ…ط¹طھظ…ط¯ط© ظپظٹ ط§ظ„طھط·ط¨ظٹظ‚.
           </p>
           <div className="flex flex-wrap gap-3">
             <MarketingCta href={PUBLIC_SIGNUP_ENABLED ? SIGNUP_HREF : APP_LOGIN_HREF}>
-              {PUBLIC_SIGNUP_ENABLED ? "ابدأ مجانًا" : "جرّب التطبيق الآن"}
+              {PUBLIC_SIGNUP_ENABLED ? "ط§ط¨ط¯ط£ ظ…ط¬ط§ظ†ظ‹ط§" : "ط¬ط±ظ‘ط¨ ط§ظ„طھط·ط¨ظٹظ‚ ط§ظ„ط¢ظ†"}
             </MarketingCta>
             <MarketingCta href={APP_LOGIN_HREF} variant="secondary">
-              الدخول للتطبيق
+              ط§ظ„ط¯ط®ظˆظ„ ظ„ظ„طھط·ط¨ظٹظ‚
             </MarketingCta>
             <MarketingCta href="#pricing" variant="secondary">
-              عرض الباقات
+              ط¹ط±ط¶ ط§ظ„ط¨ط§ظ‚ط§طھ
             </MarketingCta>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              { label: "واجهة دفتر", value: "مألوفة وسريعة" },
-              { label: "PWA", value: "تثبيت على الجوال" },
-              { label: "تعدد محلات", value: "منشأة واحدة" },
+              { label: "ظˆط§ط¬ظ‡ط© ط¯ظپطھط±", value: "ظ…ط£ظ„ظˆظپط© ظˆط³ط±ظٹط¹ط©" },
+              { label: "PWA", value: "طھط«ط¨ظٹطھ ط¹ظ„ظ‰ ط§ظ„ط¬ظˆط§ظ„" },
+              { label: "طھط¹ط¯ط¯ ظ…ط­ظ„ط§طھ", value: "ظ…ظ†ط´ط£ط© ظˆط§ط­ط¯ط©" },
             ].map((item) => (
               <div
                 key={item.label}
@@ -164,8 +164,8 @@ export default function MarketingPage() {
           <MarketingFadeIn>
             <MarketingSectionIntro
               eyebrow="Features"
-              title="ميزات تناسب يومك في المحل"
-              description="كل ما تحتاجه لمتابعة التشغيل — بدون فواتير ضريبية أو مخزون معقّد."
+              title="ظ…ظٹط²ط§طھ طھظ†ط§ط³ط¨ ظٹظˆظ…ظƒ ظپظٹ ط§ظ„ظ…ط­ظ„"
+              description="ظƒظ„ ظ…ط§ طھط­طھط§ط¬ظ‡ ظ„ظ…طھط§ط¨ط¹ط© ط§ظ„طھط´ط؛ظٹظ„ â€” ط¨ط¯ظˆظ† ظپظˆط§طھظٹط± ط¶ط±ظٹط¨ظٹط© ط£ظˆ ظ…ط®ط²ظˆظ† ظ…ط¹ظ‚ظ‘ط¯."
             />
           </MarketingFadeIn>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -194,8 +194,8 @@ export default function MarketingPage() {
           <MarketingFadeIn>
             <MarketingSectionIntro
               eyebrow="Pricing"
-              title="باقات مرنة للبداية والنمو"
-              description="ابدأ مجانًا في مرحلة الإطلاق، ثم اختر الباقة المناسبة عند التوسع."
+              title="ط¨ط§ظ‚ط§طھ ظ…ط±ظ†ط© ظ„ظ„ط¨ط¯ط§ظٹط© ظˆط§ظ„ظ†ظ…ظˆ"
+              description="ط§ط¨ط¯ط£ ظ…ط¬ط§ظ†ظ‹ط§ ظپظٹ ظ…ط±ط­ظ„ط© ط§ظ„ط¥ط·ظ„ط§ظ‚طŒ ط«ظ… ط§ط®طھط± ط§ظ„ط¨ط§ظ‚ط© ط§ظ„ظ…ظ†ط§ط³ط¨ط© ط¹ظ†ط¯ ط§ظ„طھظˆط³ط¹."
             />
           </MarketingFadeIn>
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
@@ -207,7 +207,7 @@ export default function MarketingPage() {
                       className="mb-3 inline-flex self-start rounded-full px-3 py-1 text-taq-meta font-black text-white"
                       style={{ backgroundColor: marketingColors.gold }}
                     >
-                      الأكثر طلبًا
+                      ط§ظ„ط£ظƒط«ط± ط·ظ„ط¨ظ‹ط§
                     </p>
                   ) : null}
                   <p className="text-sm font-black" style={{ color: marketingColors.muted }}>
@@ -223,7 +223,7 @@ export default function MarketingPage() {
                   <ul className="mt-5 space-y-2 text-sm font-bold">
                     {plan.highlights.map((item) => (
                       <li key={item} className="flex items-start gap-2">
-                        <span style={{ color: marketingColors.gold }}>•</span>
+                        <span style={{ color: marketingColors.gold }}>â€¢</span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -249,15 +249,15 @@ export default function MarketingPage() {
           <MarketingFadeIn>
             <MarketingSectionIntro
               eyebrow="Try the app"
-              title="جرّب التطبيق مباشرة"
-              description="بعد إنشاء الحساب أو الدخول تنتقل إلى التطبيق التشغيلي — نفس التجربة على الجوال والكمبيوتر."
+              title="ط¬ط±ظ‘ط¨ ط§ظ„طھط·ط¨ظٹظ‚ ظ…ط¨ط§ط´ط±ط©"
+              description="ط¨ط¹ط¯ ط¥ظ†ط´ط§ط، ط§ظ„ط­ط³ط§ط¨ ط£ظˆ ط§ظ„ط¯ط®ظˆظ„ طھظ†طھظ‚ظ„ ط¥ظ„ظ‰ ط§ظ„طھط·ط¨ظٹظ‚ ط§ظ„طھط´ط؛ظٹظ„ظٹ â€” ظ†ظپط³ ط§ظ„طھط¬ط±ط¨ط© ط¹ظ„ظ‰ ط§ظ„ط¬ظˆط§ظ„ ظˆط§ظ„ظƒظ…ط¨ظٹظˆطھط±."
             />
             <div className="mt-6 flex flex-wrap gap-3">
               {PUBLIC_SIGNUP_ENABLED ? (
-                <MarketingCta href={SIGNUP_HREF}>إنشاء حساب</MarketingCta>
+                <MarketingCta href={SIGNUP_HREF}>ط¥ظ†ط´ط§ط، ط­ط³ط§ط¨</MarketingCta>
               ) : null}
               <MarketingCta href={APP_LOGIN_HREF} variant={PUBLIC_SIGNUP_ENABLED ? "secondary" : "primary"}>
-                الدخول إلى التطبيق
+                ط§ظ„ط¯ط®ظˆظ„ ط¥ظ„ظ‰ ط§ظ„طھط·ط¨ظٹظ‚
               </MarketingCta>
             </div>
           </MarketingFadeIn>
@@ -283,19 +283,19 @@ export default function MarketingPage() {
               <p className="text-taq-meta font-black uppercase tracking-wide" style={{ color: marketingColors.gold }}>
                 Contact
               </p>
-              <h2 className="mt-2 text-2xl font-black sm:text-3xl">تواصل معنا</h2>
+              <h2 className="mt-2 text-2xl font-black sm:text-3xl">طھظˆط§طµظ„ ظ…ط¹ظ†ط§</h2>
               <p
                 className={`mx-auto mt-3 max-w-2xl ${marketingMutedTextClassName()} sm:text-base`}
                 style={{ color: marketingColors.soft }}
               >
-                لديك سؤال عن الباقات أو تفعيل منشأتك؟ راسلنا على واتساب وسنرد في أقرب وقت.
+                ظ„ط¯ظٹظƒ ط³ط¤ط§ظ„ ط¹ظ† ط§ظ„ط¨ط§ظ‚ط§طھ ط£ظˆ طھظپط¹ظٹظ„ ظ…ظ†ط´ط£طھظƒطں ط±ط§ط³ظ„ظ†ط§ ط¹ظ„ظ‰ ظˆط§طھط³ط§ط¨ ظˆط³ظ†ط±ط¯ ظپظٹ ط£ظ‚ط±ط¨ ظˆظ‚طھ.
               </p>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                 <MarketingCta href={whatsappHref} variant="whatsapp" external>
-                  واتساب — تواصل معنا
+                  ظˆط§طھط³ط§ط¨ â€” طھظˆط§طµظ„ ظ…ط¹ظ†ط§
                 </MarketingCta>
                 <MarketingCta href={PUBLIC_SIGNUP_ENABLED ? SIGNUP_HREF : APP_LOGIN_HREF} variant="secondary">
-                  {PUBLIC_SIGNUP_ENABLED ? "إنشاء حساب" : "تسجيل / دخول"}
+                  {PUBLIC_SIGNUP_ENABLED ? "ط¥ظ†ط´ط§ط، ط­ط³ط§ط¨" : "طھط³ط¬ظٹظ„ / ط¯ط®ظˆظ„"}
                 </MarketingCta>
               </div>
             </MarketingCard>

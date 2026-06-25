@@ -74,7 +74,7 @@ route/UI -> feature service -> domain/core -> PostgreSQL
 - `domain/cash-movement` يملك الحسابات التشغيلية المركزية.
 - `core` لا يعتمد على شاشة أو ميزة منتج محددة.
 
-مجلد `components/prototype-runtime` يحمل اسمًا تاريخيًا لكنه يكوّن واجهة `/app` المعتمدة حاليًا. الاسم ليس تصريحًا باستخدام بيانات تجريبية في الإنتاج. تفكيكه وإعادة تسميته يتمان تدريجيًا فقط مع اختبارات تمنع تغيير السلوك.
+مجلد `components/taqfeelah-app` يكوّن واجهة `/app` المعتمدة حاليًا بعد إزالة اسم `prototype-runtime` من تركيب التطبيق الحقيقي. الاسم ليس تصريحًا باستخدام بيانات تجريبية في الإنتاج، وأي تفكيك لاحق يجب أن يتم تدريجيًا فقط مع اختبارات تمنع تغيير السلوك.
 
 ### تنظيم واجهة إعدادات المالك
 
@@ -95,8 +95,8 @@ owner-settings-section-views.tsx
 
 ### تنظيم واجهتي الرئيسية والسجل
 
-- `prototype-runtime-owner-home-screen.tsx` ينسق ملخص المالك، بينما `owner-home-day-attachments.tsx` يملك عرض مرفقات اليوم وسياق فتحها ومشاركتها.
-- `prototype-runtime-owner-register-screen.tsx` ينسق التقرير والسجل، بينما `prototype-runtime-owner-register-connected.tsx` يربط التقفيلات المحفوظة بإجراءات التعديل والإلغاء المنطقي.
+- `taqfeelah-app-owner-home-screen.tsx` ينسق ملخص المالك، بينما `owner-home-day-attachments.tsx` يملك عرض مرفقات اليوم وسياق فتحها ومشاركتها.
+- `taqfeelah-app-owner-register-screen.tsx` ينسق التقرير والسجل، بينما `taqfeelah-app-owner-register-connected.tsx` يربط التقفيلات المحفوظة بإجراءات التعديل والإلغاء المنطقي.
 - مكونات القوائم والفلاتر والمعارض تبقى في ملفات `owner-register-*` المتخصصة، ولا يعاد تنفيذها داخل شاشة السجل.
 - اختبار حدود الوحدات يحمل طبقات العرض والاتصال مباشرة حتى يظهر كسر الاستيراد قبل النشر.
 

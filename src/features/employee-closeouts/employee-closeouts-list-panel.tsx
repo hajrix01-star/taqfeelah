@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
 import DailyCloseoutCard from "./DailyCloseoutCard";
 import CloseoutsListLoading from "./CloseoutsListLoading";
 import { resolveEmployeeStoreName } from "./store-name-resolver";

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useOwnerPasswordChangeForm } from "@/features/auth/client/auth-gate/use-owner-password-change-form";
 import { ownerPasswordInputProps } from "@/features/auth/client/auth-gate/owner-password-input-props";
 import type { AuthLangProps } from "@/features/auth/client/auth-client-types";
-import { LanguageSwitch, Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { LanguageSwitch, Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
 
 type OwnerPasswordChangeScreenProps = AuthLangProps & {
   onComplete: () => void;

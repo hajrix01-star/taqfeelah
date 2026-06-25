@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { Logo } from "@/components/prototype-runtime/prototype-runtime-chrome";
+import { Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
 import { AppLoginPhoneField } from "@/core/phone/AppLoginPhoneField";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import { requestPublicSignupViaApi } from "@/features/signup/client/signup-api-client";

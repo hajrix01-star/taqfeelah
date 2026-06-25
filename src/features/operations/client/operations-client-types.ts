@@ -77,7 +77,7 @@ export type OperationalSyncScheduleOptions = {
   actorUserId?: string;
 };
 
-export type UsePrototypeRuntimeOperationalEntriesProps = {
+export type UseTaqfeelahAppOperationalEntriesProps = {
   lang: DisplayLang;
   loggedIn: boolean;
   runtimeApiStoresReady: boolean;

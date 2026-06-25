@@ -4,13 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { getEnabledOwnerLoginMethods, isOwnerLoginMethodEnabled } from "@/core/auth/owner-login-methods";
 import { loginOwnerViaSessionBridge } from "@/features/auth/client/session-bridge";
 import type { AuthLang, OwnerLoginCallback } from "@/features/auth/client/auth-client-types";
-import { text } from "@/components/prototype-runtime/prototype-runtime-demo-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
 import {
   APP_IN_PRODUCTION_MODE,
   PROTOTYPE_DEMO_OTP,
   PROTOTYPE_OWNER_PASSWORD,
   PROTOTYPE_OWNER_USERNAME,
-} from "@/components/prototype-runtime/prototype-runtime-boot";
+} from "@/components/taqfeelah-app/taqfeelah-app-boot";
 
 export function useOwnerLoginForm({
   lang,

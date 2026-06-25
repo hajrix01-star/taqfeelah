@@ -1,4 +1,4 @@
-import { todayIsoDate } from "@/components/prototype-runtime/prototype-runtime-notebook";
+import { todayIsoDate } from "@/components/taqfeelah-app/taqfeelah-app-notebook";
 
 export const OWNER_CLOSEOUTS_FETCH_CAP_DAYS = 90;
 
