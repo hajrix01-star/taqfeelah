@@ -248,13 +248,8 @@ jobs:
           VPS_RETRY_DELAY_SECONDS: "15"
           VPS_PROBE_RETRIES: "5"
           VPS_PROBE_RETRY_DELAY_SECONDS: "30"
-          VPS_PREFLIGHT_WAIT_SECONDS: ${{ env.VPS_PREFLIGHT_WAIT_SECONDS }}
-          VPS_FULL_DEPLOY_ATTEMPTS: ${{ env.VPS_FULL_DEPLOY_ATTEMPTS }}
-          DEPLOY_VERIFY_PROFILE: ${{ env.DEPLOY_VERIFY_PROFILE }}
           VPS_SSH_COMMAND_TIMEOUT: "1200"
           VPS_SKIP_REMOTE_BUILD: "true"
-          VPS_RUN_REMOTE_REPAIR_SCRIPTS: ${{ env.VPS_RUN_REMOTE_REPAIR_SCRIPTS }}
-          POST_DEPLOY_BASELINE_VERIFY: ${{ env.POST_DEPLOY_BASELINE_VERIFY }}
           RESET_FOUNDATION_ON_DEPLOY: ${{ contains(github.event.head_commit.message, '[reset-foundation]') }}
           RESET_FOUNDATION_CONFIRM: "reset-modern-foundation"
           DEPLOYMENT_WAVE: "7"
