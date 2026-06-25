@@ -3,10 +3,14 @@
  * Start Next.js with production DB flags and run db-source-unification-check.
  */
 import { spawn } from "node:child_process";
+import os from "node:os";
+import path from "node:path";
 import process from "node:process";
 
 const PORT = process.env.CHECK_PORT || "3101";
 const baseUrl = `http://127.0.0.1:${PORT}`;
+const attachmentStorageRoot = process.env.ATTACHMENT_STORAGE_ROOT
+  || path.join(os.tmpdir(), "taqfeelah-ci-attachments");
 
 const SEED_ORG = process.env.E2E_ORGANIZATION_ID || "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1";
 const SEED_OWNER = process.env.E2E_OWNER_USER_ID || "e8f3e35b-6051-4da3-8b10-979700c2f00f";
@@ -31,6 +35,7 @@ const serverEnv = {
   AUTH_OWNER_USER_ID: SEED_OWNER,
   NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID: SEED_ORG,
   NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID: SEED_OWNER,
+  ATTACHMENT_STORAGE_ROOT: attachmentStorageRoot,
 };
 
 async function waitForReady(maxAttempts = 60) {
