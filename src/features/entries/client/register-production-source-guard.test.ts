@@ -98,6 +98,7 @@ describe("register production source guard", () => {
     expect(screen).not.toContain("@/features/reports/client/use-store-reports");
     expect(adapter).toContain("useRegisterEntriesFromApi");
     expect(adapter).toContain("useStoreReports");
+    expect(adapter).toContain("useRegisterOverviewFromApi");
     expect(adapter).toContain("useRegisterCloseoutsFromApi");
     expect(adapter).toContain("buildRegisterServerReadModel");
     expect(adapter).toContain("shouldEnableRegisterReportRead");
@@ -107,9 +108,13 @@ describe("register production source guard", () => {
     const screen = readProjectFile("src/components/prototype-runtime/prototype-runtime-owner-register-screen.tsx");
     const adapter = readProjectFile("src/features/entries/client/use-register-server-read-model.ts");
     const closeoutHook = readProjectFile("src/features/entries/client/use-register-closeouts-from-api.ts");
+    const overviewHook = readProjectFile("src/features/entries/client/use-register-overview-from-api.ts");
 
     expect(adapter).toContain("closeoutsEnabled");
-    expect(adapter).toContain("closeouts: closeouts.closeouts");
+    expect(adapter).toContain("overviewEnabled");
+    expect(adapter).toContain("closeouts: overview.closeouts");
+    expect(overviewHook).toContain("fetchRegisterOverviewViaApi");
+    expect(overviewHook).toContain("operationalQueryKeys.registerOverview");
     expect(closeoutHook).toContain("fetchStoreCloseoutsViaApi");
     expect(closeoutHook).not.toContain("useRegisterEntriesFromApi");
     expect(screen).toContain("buildRegisterCloseoutSummariesFromRecords");

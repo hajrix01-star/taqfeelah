@@ -3,6 +3,7 @@
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { useRegisterEntriesFromApi } from "@/features/entries/client/use-register-entries-from-api";
 import { useRegisterCloseoutsFromApi } from "@/features/entries/client/use-register-closeouts-from-api";
+import { useRegisterOverviewFromApi } from "@/features/entries/client/use-register-overview-from-api";
 import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
 import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { UiDayReportRow, UiTotalsRecord } from "@/features/reports/client/reports-client-types";
@@ -82,10 +83,14 @@ type RegisterCloseoutsReadState = {
 
 export function shouldEnableRegisterReportRead({
   enabled,
+  overviewEnabled = false,
+  logView = "report",
 }: {
   enabled: boolean;
+  overviewEnabled?: boolean;
+  logView?: string;
 }): boolean {
-  return enabled;
+  return enabled && (!overviewEnabled || logView === "report");
 }
 
 export function buildRegisterServerReadModel({
@@ -140,8 +145,15 @@ export function useRegisterServerReadModel({
   configuredChannels,
   closeoutsEnabled = false,
 }: UseRegisterServerReadModelProps): RegisterServerReadModel {
+  const overviewEnabled = enabled && closeoutsEnabled;
+  const entriesEnabled = enabled && (
+    logView === "operations"
+    || logView === "attachments"
+    || !overviewEnabled
+  );
+
   const entries = useRegisterEntriesFromApi({
-    enabled,
+    enabled: entriesEnabled,
     organizationId,
     actorUserId,
     actorRole,
@@ -154,7 +166,21 @@ export function useRegisterServerReadModel({
     customTo,
   });
 
-  const reportEnabled = shouldEnableRegisterReportRead({ enabled });
+  const overview = useRegisterOverviewFromApi({
+    enabled: overviewEnabled,
+    organizationId,
+    actorUserId,
+    actorRole,
+    storeIds,
+    period,
+    selectedDate,
+    selectedMonth,
+    selectedYear,
+    customFrom,
+    customTo,
+  });
+
+  const reportEnabled = shouldEnableRegisterReportRead({ enabled, overviewEnabled, logView });
   const report = useStoreReports({
     enabled: reportEnabled,
     organizationId,
@@ -174,7 +200,7 @@ export function useRegisterServerReadModel({
   });
 
   const closeouts = useRegisterCloseoutsFromApi({
-    enabled: enabled && closeoutsEnabled,
+    enabled: enabled && closeoutsEnabled && !overviewEnabled,
     organizationId,
     actorUserId,
     actorRole,
@@ -187,5 +213,26 @@ export function useRegisterServerReadModel({
     customTo,
   });
 
-  return buildRegisterServerReadModel({ entries, report, closeouts });
+  const overviewLoaded = overviewEnabled && overview.loaded && !overview.error;
+  const overviewReport: RegisterReportReadState = {
+    ...report,
+    singleStoreTotals: overviewLoaded && selectedStoreId !== "all"
+      ? overview.totalsByStoreId[selectedStoreId] ?? null
+      : report.singleStoreTotals,
+    combinedTotals: overviewLoaded ? overview.combinedTotals : report.combinedTotals,
+    loading: overviewEnabled && !overview.loaded ? overview.loading : report.loading,
+    loaded: overviewEnabled ? overview.loaded || report.loaded : report.loaded,
+    error: overview.error || report.error,
+  };
+  const overviewCloseouts: RegisterCloseoutsReadState = overviewEnabled
+    ? {
+        closeouts: overview.closeouts,
+        loading: overview.loading,
+        loaded: overview.loaded,
+        error: overview.error,
+        refetch: overview.refetch,
+      }
+    : closeouts;
+
+  return buildRegisterServerReadModel({ entries, report: overviewReport, closeouts: overviewCloseouts });
 }

@@ -22,6 +22,12 @@ export const operationalQueryKeys = {
     serializeContext(context),
   ] as const,
   registerEntriesPrefix: () => [...operationalQueryRoot, "register-entries"] as const,
+  registerOverview: (context: OperationalQueryKeyContext) => [
+    ...operationalQueryRoot,
+    "register-overview",
+    serializeContext(context),
+  ] as const,
+  registerOverviewPrefix: () => [...operationalQueryRoot, "register-overview"] as const,
   summaryPeriod: (context: OperationalQueryKeyContext) => [
     ...operationalQueryRoot,
     "summary",
