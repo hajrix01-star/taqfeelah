@@ -119,8 +119,12 @@ export function mapApiMemberToStaff(
   { employeePins = {} }: { employeePins?: Record<string, string> } = {},
 ) {
   const deleted = Boolean(member?.deleted || member?.deletedAt);
-  const storeIds = (member?.storeAccess || [])
-    .map((row) => String(row.storeId || ""))
+  const storeIds = (
+    member?.storeAccess?.length
+      ? member.storeAccess.map((row) => row.storeId)
+      : member?.storeIds || []
+  )
+    .map((storeId) => String(storeId || ""))
     .filter(Boolean);
   const memberId = member?.memberId || "";
   const userId = member?.userId || "";

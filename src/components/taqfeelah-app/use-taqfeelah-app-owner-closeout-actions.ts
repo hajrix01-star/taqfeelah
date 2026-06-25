@@ -10,6 +10,14 @@ import type {
   UseTaqfeelahAppOwnerCloseoutActionsProps,
 } from "./taqfeelah-app-types";
 
+export function shouldOpenOwnerCloseoutEntryForQuickExpense({
+  entriesApiDbSource,
+}: {
+  entriesApiDbSource: boolean;
+}) {
+  return entriesApiDbSource;
+}
+
 export function useTaqfeelahAppOwnerCloseoutActions({
   lang,
   entriesApiDbSource,
@@ -100,8 +108,12 @@ export function useTaqfeelahAppOwnerCloseoutActions({
   }, [entriesApiDbSource, openOwnerCloseoutEntry, openQuickAddSummary]);
 
   const handleOpenQuickAddExpense = useCallback(() => {
+    if (shouldOpenOwnerCloseoutEntryForQuickExpense({ entriesApiDbSource })) {
+      openOwnerCloseoutEntry();
+      return;
+    }
     openQuickAddExpense();
-  }, [openQuickAddExpense]);
+  }, [entriesApiDbSource, openOwnerCloseoutEntry, openQuickAddExpense]);
 
   const handleOwnerQuickAddOpen = useCallback(() => {
     setQuickAddOpen(true);

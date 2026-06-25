@@ -90,6 +90,19 @@ describe("org config runtime mapper", () => {
     expect(staff.pin).toBe("9876");
   });
 
+  it("keeps employee store access when member API responses expose storeIds", () => {
+    const staff = mapApiMemberToStaff({
+      memberId: "11111111-1111-4111-8111-111111111111",
+      userId: "4cf1450d-08d8-4ca1-b180-1c2642174a79",
+      name: "Ahmed",
+      role: "employee",
+      status: "active",
+      storeIds: ["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"],
+    });
+
+    expect(staff.storeIds).toEqual(["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"]);
+  });
+
   it("keeps inactive employees visible so owners can reactivate them", () => {
     const staff = mapApiMemberToStaff({
       memberId: "11111111-1111-4111-8111-111111111111",
