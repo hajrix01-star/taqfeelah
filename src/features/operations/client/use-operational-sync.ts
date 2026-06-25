@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { applyOperationalSyncRefresh } from "@/core/client/apply-operational-sync-refresh";
 import { connectOperationalSyncStream } from "@/core/client/connect-operational-sync-stream";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/core/client/operational-sync-broadcast";
 import {
   resolveOperationalSyncRefreshTarget,
+  shouldPauseOperationalSyncRefresh,
   shouldEnableOperationalSyncFocusRefetch,
   shouldEnableOperationalSyncPolling,
 } from "@/core/client/resolve-operational-sync-target";
@@ -42,14 +43,14 @@ export function useOperationalSync({
   const refreshQueuedRef = useRef<OperationalSyncEventType | typeof OPERATIONAL_SYNC_BACKGROUND_REFRESH | "refresh.all" | null>(null);
   const lastRefreshAtRef = useRef(0);
 
-  const syncContext = {
+  const syncContext = useMemo(() => ({
     employee,
     ownerPage,
     employeePage,
     ownerEntryActive,
     employeeEntryActive,
     syncEnabled: enabled,
-  };
+  }), [employee, employeeEntryActive, employeePage, enabled, ownerEntryActive, ownerPage]);
 
   const pollingEnabled = shouldEnableOperationalSyncPolling(syncContext);
   const focusRefetchEnabled = shouldEnableOperationalSyncFocusRefetch(syncContext);
@@ -76,6 +77,10 @@ export function useOperationalSync({
     eventType: OperationalSyncEventType | typeof OPERATIONAL_SYNC_BACKGROUND_REFRESH | "refresh.all",
     options: OperationalSyncScheduleOptions = {},
   ) => {
+    if (shouldPauseOperationalSyncRefresh(syncContext)) {
+      return;
+    }
+
     const { skipSelfEcho = false, actorUserId: sourceActorUserId = "" } = options;
     if (skipSelfEcho && sourceActorUserId && sourceActorUserId === actorUserId) {
       return;
@@ -117,7 +122,7 @@ export function useOperationalSync({
     window.setTimeout(() => {
       void execute();
     }, delay);
-  }, [actorUserId, runRefresh]);
+  }, [actorUserId, runRefresh, syncContext]);
 
   const notifyLocalWrite = useCallback((eventType: OperationalSyncEventType) => {
     notifyLocalOperationalSyncWrite(broadcastChannelRef.current, eventType, actorUserId);

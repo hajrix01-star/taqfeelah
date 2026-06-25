@@ -76,6 +76,7 @@ export function shouldEnableOperationalSyncPolling(input: {
 }): boolean {
   if (!input.syncEnabled) return false;
   if (input.ownerEntryActive || input.employeeEntryActive) return false;
+  if (!input.employee && input.ownerPage === "register") return false;
   if (input.employee) {
     return EMPLOYEE_OPERATIONAL_SYNC_PAGES.has(input.employeePage);
   }
@@ -91,4 +92,17 @@ export function shouldEnableOperationalSyncFocusRefetch(input: {
   syncEnabled: boolean;
 }): boolean {
   return shouldEnableOperationalSyncPolling(input);
+}
+
+export function shouldPauseOperationalSyncRefresh(input: {
+  employee: boolean;
+  ownerPage: string;
+  employeePage: string;
+  ownerEntryActive: boolean;
+  employeeEntryActive: boolean;
+  syncEnabled: boolean;
+}): boolean {
+  if (!input.syncEnabled) return true;
+  if (input.ownerEntryActive || input.employeeEntryActive) return true;
+  return !input.employee && input.ownerPage === "register";
 }
