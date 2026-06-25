@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { assertOrganizationAccess } from "@/core/auth/assert-organization-access";
 import { getDb } from "@/core/db/client";
@@ -81,6 +81,11 @@ const deleteNoteInputSchema = actorInputSchema.extend({
   noteId: z.string().uuid(),
 });
 
+const listNotesInputSchema = actorInputSchema.extend({
+  limit: z.number().int().min(1).max(100).default(50),
+  cursor: z.string().trim().min(1).optional(),
+});
+
 export type OwnerNotebookNotePayload = {
   id: string;
   text: string;
@@ -91,6 +96,42 @@ export type OwnerNotebookNotePayload = {
   createdAt: string;
   updatedAt: string;
 };
+
+type NotebookListCursor = {
+  updatedAt: string;
+  id: string;
+};
+
+function encodeNotebookListCursor(cursor: NotebookListCursor) {
+  return Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
+}
+
+function decodeNotebookListCursor(cursor: string): NotebookListCursor {
+  try {
+    const decoded = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as Partial<NotebookListCursor>;
+    if (
+      typeof decoded.updatedAt === "string"
+      && Number.isFinite(new Date(decoded.updatedAt).getTime())
+      && typeof decoded.id === "string"
+      && decoded.id.trim()
+    ) {
+      return { updatedAt: decoded.updatedAt, id: decoded.id };
+    }
+  } catch {
+    // Fall through to a validation error.
+  }
+  throw new ValidationError("Invalid owner notebook cursor.");
+}
+
+function cursorBeforeClause(cursor: NotebookListCursor) {
+  return or(
+    sql`${ownerNotebookNotes.updatedAt} < ${new Date(cursor.updatedAt)}`,
+    and(
+      sql`${ownerNotebookNotes.updatedAt} = ${new Date(cursor.updatedAt)}`,
+      sql`${ownerNotebookNotes.id} < ${cursor.id}`,
+    ),
+  );
+}
 
 function assertOwnerOnly(actorRole: z.infer<typeof actorInputSchema>["actorRole"]) {
   if (actorRole !== "owner") {
@@ -184,14 +225,15 @@ function isOnlyDoneMutation(
 }
 
 export async function listOwnerNotebookNotes(
-  rawInput: z.infer<typeof actorInputSchema>,
-): Promise<{ notes: OwnerNotebookNotePayload[] }> {
-  const parsed = actorInputSchema.safeParse(rawInput);
+  rawInput: z.input<typeof listNotesInputSchema>,
+): Promise<{ notes: OwnerNotebookNotePayload[]; nextCursor: string | null }> {
+  const parsed = listNotesInputSchema.safeParse(rawInput);
   if (!parsed.success) {
     throw new ValidationError("Invalid owner notebook list input.", parsed.error.flatten());
   }
   const input = parsed.data;
   await assertOwnerNotebookAccess(input);
+  const decodedCursor = input.cursor ? decodeNotebookListCursor(input.cursor) : null;
 
   const db = getDb();
   const rows = await db
@@ -210,11 +252,23 @@ export async function listOwnerNotebookNotes(
       and(
         eq(ownerNotebookNotes.organizationId, input.organizationId),
         eq(ownerNotebookNotes.userId, input.actorUserId),
+        decodedCursor ? cursorBeforeClause(decodedCursor) : undefined,
       ),
     )
-    .orderBy(desc(ownerNotebookNotes.updatedAt), desc(ownerNotebookNotes.id));
+    .orderBy(desc(ownerNotebookNotes.updatedAt), desc(ownerNotebookNotes.id))
+    .limit(input.limit + 1);
 
-  return { notes: rows.map(mapRow) };
+  const hasMore = rows.length > input.limit;
+  const pageRows = hasMore ? rows.slice(0, input.limit) : rows;
+  const lastRow = pageRows[pageRows.length - 1];
+  const nextCursor = hasMore && lastRow
+    ? encodeNotebookListCursor({
+      updatedAt: lastRow.updatedAt.toISOString(),
+      id: lastRow.id,
+    })
+    : null;
+
+  return { notes: pageRows.map(mapRow), nextCursor };
 }
 
 export async function createOwnerNotebookNote(

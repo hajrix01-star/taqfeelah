@@ -18,7 +18,7 @@ import {
   updateOwnerNotebookNoteViaApi,
 } from "./owner-notebook-api-client";
 import {
-  mergeLegacyOwnerNotebookNotesIntoLocal,
+  mergeLegacyOwnerNotebookNotesIntoDemoLocal,
   migrateOwnerNotebookNotesToApi,
 } from "./owner-notebook-legacy-migration";
 import type {
@@ -28,6 +28,8 @@ import type {
   OwnerNotebookNotePatch,
   UseOwnerNotebookNotesProps,
 } from "@/features/owner-notebook/client/owner-notebook-client-types";
+
+const OWNER_NOTEBOOK_PAGE_SIZE = 50;
 
 function buildNotebookScopeKey(organizationId = "", userId = "") {
   return `${organizationId || "default-org"}:${userId || "default-user"}`;
@@ -42,6 +44,9 @@ export function useOwnerNotebookNotes({
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<OwnerNotebookFilter>("active");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const scopeKey = buildNotebookScopeKey(organizationId, userId);
   const notesRef = useRef(notes);
   notesRef.current = notes;
@@ -51,6 +56,9 @@ export function useOwnerNotebookNotes({
     setHydrated(false);
     setNotes([]);
     setEditingId(null);
+    setLoadError(null);
+    setNextCursor(null);
+    setLoadingMore(false);
 
     const load = async () => {
       if (apiEnabled) {
@@ -58,19 +66,23 @@ export function useOwnerNotebookNotes({
           const loaded = await fetchOwnerNotebookNotesViaApi({
             organizationId,
             actorUserId: userId,
+            limit: OWNER_NOTEBOOK_PAGE_SIZE,
           });
           if (cancelled) return;
           const migration = await migrateOwnerNotebookNotesToApi({
             organizationId,
             actorUserId: userId,
-            apiNotes: loaded,
+            apiNotes: loaded.notes,
           });
           if (cancelled) return;
           setNotes(sortOwnerNotebookNotes(migration.notes));
+          setNextCursor(loaded.nextCursor);
         } catch (error) {
           console.warn("owner notebook load failed", error);
           if (!cancelled) {
-            setNotes(mergeLegacyOwnerNotebookNotesIntoLocal({ organizationId, userId }));
+            setLoadError("owner-notebook-api-load-failed");
+            setNotes([]);
+            setNextCursor(null);
           }
         } finally {
           if (!cancelled) setHydrated(true);
@@ -78,7 +90,8 @@ export function useOwnerNotebookNotes({
         return;
       }
 
-      setNotes(mergeLegacyOwnerNotebookNotesIntoLocal({ organizationId, userId }));
+      setNotes(mergeLegacyOwnerNotebookNotesIntoDemoLocal({ organizationId, userId }));
+      setNextCursor(null);
       setHydrated(true);
     };
 
@@ -111,9 +124,11 @@ export function useOwnerNotebookNotes({
         if (!created) return null;
         const nextNotes = sortOwnerNotebookNotes([created, ...notesRef.current]);
         setNotes(nextNotes);
+        setLoadError(null);
         return created;
       } catch (error) {
         console.warn("owner notebook create failed", error);
+        setLoadError("owner-notebook-api-write-failed");
         return null;
       }
     }
@@ -138,8 +153,10 @@ export function useOwnerNotebookNotes({
           notesRef.current.map((note) => (note.id === noteId ? saved : note)),
         );
         setNotes(nextNotes);
+        setLoadError(null);
       } catch (error) {
         console.warn("owner notebook update failed", error);
+        setLoadError("owner-notebook-api-write-failed");
       }
       return;
     }
@@ -158,8 +175,10 @@ export function useOwnerNotebookNotes({
         const nextNotes = notesRef.current.filter((note) => note.id !== noteId);
         setNotes(nextNotes);
         setEditingId((current) => (current === noteId ? null : current));
+        setLoadError(null);
       } catch (error) {
         console.warn("owner notebook delete failed", error);
+        setLoadError("owner-notebook-api-write-failed");
       }
       return;
     }
@@ -183,8 +202,10 @@ export function useOwnerNotebookNotes({
         if (!saved) return;
         const nextNotes = notesRef.current.map((note) => (note.id === noteId ? saved : note));
         setNotes(nextNotes);
+        setLoadError(null);
       } catch (error) {
         console.warn("owner notebook toggle failed", error);
+        setLoadError("owner-notebook-api-write-failed");
       }
       return;
     }
@@ -212,8 +233,10 @@ export function useOwnerNotebookNotes({
         if (!saved) return;
         const nextNotes = notesRef.current.map((note) => (note.id === noteId ? saved : note));
         setNotes(nextNotes);
+        setLoadError(null);
       } catch (error) {
         console.warn("owner notebook checklist toggle failed", error);
+        setLoadError("owner-notebook-api-write-failed");
       }
       return;
     }
@@ -226,10 +249,42 @@ export function useOwnerNotebookNotes({
     [filter, notes],
   );
 
+  const loadMore = useCallback(async () => {
+    if (!apiEnabled || !nextCursor || loadingMore) return false;
+    setLoadingMore(true);
+    try {
+      const page = await fetchOwnerNotebookNotesViaApi({
+        organizationId,
+        actorUserId: userId,
+        limit: OWNER_NOTEBOOK_PAGE_SIZE,
+        cursor: nextCursor,
+      });
+      const seen = new Set(notesRef.current.map((note) => note.id));
+      const merged = sortOwnerNotebookNotes([
+        ...notesRef.current,
+        ...page.notes.filter((note) => !seen.has(note.id)),
+      ]);
+      setNotes(merged);
+      setNextCursor(page.nextCursor);
+      setLoadError(null);
+      return Boolean(page.nextCursor);
+    } catch (error) {
+      console.warn("owner notebook load more failed", error);
+      setLoadError("owner-notebook-api-load-failed");
+      return false;
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [apiEnabled, loadingMore, nextCursor, organizationId, userId]);
+
   return {
     hydrated,
+    loadError,
     notes,
     visibleNotes,
+    hasMore: Boolean(nextCursor),
+    loadingMore,
+    loadMore,
     filter,
     setFilter,
     editingId,

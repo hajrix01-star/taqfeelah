@@ -28,7 +28,7 @@ describe("extractCloseoutSalesChannels", () => {
     }]);
   });
 
-  it("uses Channel fallback when no label or legacy id is available", async () => {
+  it("uses an explicit unknown-channel label when no label or legacy id is available", async () => {
     const { extractCloseoutSalesChannels } = await import("./resolve-closeout-sales-channels");
     const { setRuntimeApiIdMaps } = await import("./closeouts-api-client");
     setRuntimeApiIdMaps({
@@ -43,6 +43,6 @@ describe("extractCloseoutSalesChannels", () => {
       sales: [{ channelId: "f47ac10b-58cc-4372-a567-0e02b2c3d479", amount: 50 }],
     });
 
-    expect(rows[0]?.channelName).toBe("Channel");
+    expect(rows[0]?.channelName).toBe("Unknown channel");
   });
 });

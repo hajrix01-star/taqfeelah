@@ -28,8 +28,12 @@ export function OwnerNotebookScreen({
 }: OwnerNotebookScreenProps) {
   const {
     hydrated,
+    loadError,
     notes,
     visibleNotes,
+    hasMore,
+    loadingMore,
+    loadMore,
     filter,
     setFilter,
     editingId,
@@ -81,7 +85,8 @@ export function OwnerNotebookScreen({
   );
 
   const showGlobalEmpty = hydrated && filter === "active" && notes.length === 0 && !composerOpen;
-  const showTabEmpty = hydrated && visibleNotes.length === 0 && !showGlobalEmpty;
+  const showError = hydrated && Boolean(loadError);
+  const showTabEmpty = hydrated && visibleNotes.length === 0 && !showGlobalEmpty && !showError;
 
   return (
     <NotebookScrollSurface theme={notebookTheme} lang={lang}>
@@ -129,6 +134,15 @@ export function OwnerNotebookScreen({
                 <div className="px-2 py-8 text-center text-taq-meta font-bold text-[#827762]">
                   {text(lang, "loading")}
                 </div>
+              ) : showError ? (
+                <div className="px-3 py-8 text-center">
+                  <p className="text-taq-meta font-black text-[#B44747]">
+                    {lang === "ar" ? "تعذر تحميل الدفتري من الخادم." : "Could not load notebook from the server."}
+                  </p>
+                  <p className="mt-1 text-[10px] font-bold text-[#827762]">
+                    {lang === "ar" ? "أعد المحاولة بعد التأكد من الاتصال." : "Check the connection and try again."}
+                  </p>
+                </div>
               ) : showGlobalEmpty ? (
                 <NotebookEmptyState lang={lang} onAddNew={openComposer} />
               ) : showTabEmpty ? (
@@ -158,6 +172,18 @@ export function OwnerNotebookScreen({
                       onShare={(note) => setShareNote(note as OwnerNotebookNote)}
                     />
                   ))}
+                  {hasMore ? (
+                    <button
+                      type="button"
+                      disabled={loadingMore}
+                      onClick={() => { void loadMore(); }}
+                      className="w-full rounded-2xl bg-white py-3 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-60"
+                    >
+                      {loadingMore
+                        ? (lang === "ar" ? "جارٍ التحميل..." : "Loading...")
+                        : (lang === "ar" ? "تحميل المزيد" : "Load more")}
+                    </button>
+                  ) : null}
                 </div>
               )}
             </div>

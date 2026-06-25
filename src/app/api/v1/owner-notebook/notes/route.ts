@@ -17,10 +17,14 @@ export async function GET(request: Request) {
     }
 
     const requestContext = resolveRequestContext(request, { requireUser: true });
+    const { searchParams } = new URL(request.url);
+    const rawLimit = Number(searchParams.get("limit") || "50");
     const result = await listOwnerNotebookNotes({
       organizationId: requestContext.organizationId,
       actorUserId: requestContext.userId!,
       actorRole: requestContext.role!,
+      limit: Number.isFinite(rawLimit) ? rawLimit : 50,
+      cursor: searchParams.get("cursor") || undefined,
     });
 
     return ok(result);

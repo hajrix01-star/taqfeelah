@@ -99,7 +99,7 @@ export function markOwnerNotebookMigrationComplete({ organizationId = "", userId
   );
 }
 
-export function mergeLegacyOwnerNotebookNotesIntoLocal({ organizationId = "", userId = "" }: OwnerNotebookStorageScope = {}) {
+export function mergeLegacyOwnerNotebookNotesIntoDemoLocal({ organizationId = "", userId = "" }: OwnerNotebookStorageScope = {}) {
   const legacyNotes = readLegacyOwnerNotebookNotes({ organizationId, userId });
   const currentNotes = readOwnerNotebookNotes({ organizationId, userId });
   const merged = sortOwnerNotebookNotes([

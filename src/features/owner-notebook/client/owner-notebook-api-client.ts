@@ -2,6 +2,8 @@ import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
 import type {
   CreateOwnerNotebookNoteViaApiInput,
   DeleteOwnerNotebookNoteViaApiInput,
+  FetchOwnerNotebookNotesViaApiInput,
+  FetchOwnerNotebookNotesViaApiResult,
   OwnerNotebookApiContext,
   UpdateOwnerNotebookNoteViaApiInput,
 } from "@/features/owner-notebook/client/owner-notebook-client-types";
@@ -18,12 +20,22 @@ function buildOwnerNotebookApiContext({
   };
 }
 
-export async function fetchOwnerNotebookNotesViaApi(context: OwnerNotebookApiContext = {}) {
-  const payload = await fetchApiJsonWithPrototypeContext("/api/v1/owner-notebook/notes", {
+export async function fetchOwnerNotebookNotesViaApi({
+  limit = 50,
+  cursor = null,
+  ...context
+}: FetchOwnerNotebookNotesViaApiInput = {}): Promise<FetchOwnerNotebookNotesViaApiResult> {
+  const search = new URLSearchParams();
+  search.set("limit", String(limit));
+  if (cursor) search.set("cursor", cursor);
+  const payload = await fetchApiJsonWithPrototypeContext(`/api/v1/owner-notebook/notes?${search.toString()}`, {
     ...buildOwnerNotebookApiContext(context),
     errorMessage: "Failed to load owner notebook notes.",
-  }) as { notes?: OwnerNotebookNote[] };
-  return Array.isArray(payload?.notes) ? payload.notes : [];
+  }) as { notes?: OwnerNotebookNote[]; nextCursor?: string | null };
+  return {
+    notes: Array.isArray(payload?.notes) ? payload.notes : [],
+    nextCursor: typeof payload?.nextCursor === "string" ? payload.nextCursor : null,
+  };
 }
 
 export async function createOwnerNotebookNoteViaApi({

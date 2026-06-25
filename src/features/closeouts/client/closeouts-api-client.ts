@@ -326,7 +326,7 @@ export async function fetchStoreCloseoutsViaApi({
         const salesRow = row as Record<string, unknown>;
         const channelId = reverseLookupKeyByUuid(String(salesRow?.channelId), salesChannelIdMap) || salesRow?.channelId;
         const rawName = salesRow?.name;
-        const fallbackLabel = typeof channelId === "string" && !isUuidLike(channelId) ? channelId : "Channel";
+        const fallbackLabel = typeof channelId === "string" && !isUuidLike(channelId) ? channelId : "Unknown channel";
         return {
           ...salesRow,
           channelId,

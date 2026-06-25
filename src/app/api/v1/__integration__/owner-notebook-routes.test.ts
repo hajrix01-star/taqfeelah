@@ -38,18 +38,22 @@ describe("owner notebook routes integration", () => {
   it("GET lists owner notebook notes for the authenticated owner", async () => {
     listOwnerNotebookNotes.mockResolvedValueOnce({
       notes: [{ id: TEST_NOTE_ID, text: "تذكير", kind: "note", done: false, color: "yellow" }],
+      nextCursor: "cursor-2",
     });
 
     const { GET } = await import("../owner-notebook/notes/route");
-    const response = await GET(ownerRequest("http://localhost/api/v1/owner-notebook/notes"));
+    const response = await GET(ownerRequest("http://localhost/api/v1/owner-notebook/notes?limit=25&cursor=cursor-1"));
 
     expect(response.status).toBe(200);
-    const body = await readJsonBody<{ notes: Array<{ id: string; text: string }> }>(response);
+    const body = await readJsonBody<{ notes: Array<{ id: string; text: string }>; nextCursor: string }>(response);
     expect(body.notes).toHaveLength(1);
+    expect(body.nextCursor).toBe("cursor-2");
     expect(listOwnerNotebookNotes).toHaveBeenCalledWith(expect.objectContaining({
       organizationId: TEST_ORGANIZATION_ID,
       actorUserId: TEST_OWNER_USER_ID,
       actorRole: "owner",
+      limit: 25,
+      cursor: "cursor-1",
     }));
   });
 

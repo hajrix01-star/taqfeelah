@@ -28,33 +28,43 @@ export function shouldFetchHomeDayAttachments({
     && (strictServerSource ? proofsCount > 0 : proofsCount > localItemCount);
 }
 
-export function resolveHomeDayAttachmentGroup({
-  localGroup = null,
+export function resolveHomeDayAttachmentGroupFromServer({
+  fetchedGroup = null,
+  shouldFetchDayEntries = false,
+  fetchSucceeded = false,
+}: {
+  fetchedGroup?: HomeAttachmentGroup;
+  shouldFetchDayEntries?: boolean;
+  fetchSucceeded?: boolean;
+} = {}): HomeAttachmentGroup {
+  if (!shouldFetchDayEntries) return null;
+  return fetchSucceeded ? fetchedGroup : null;
+}
+
+export function resolveHomeDayAttachmentGroupFromLocal({
+  demoLocalGroup = null,
   fetchedGroup = null,
   shouldFetchDayEntries = false,
   fetchSucceeded = false,
   fetchFailed = false,
-  strictServerSource = false,
 }: {
-  localGroup?: HomeAttachmentGroup;
+  demoLocalGroup?: HomeAttachmentGroup;
   fetchedGroup?: HomeAttachmentGroup;
   shouldFetchDayEntries?: boolean;
   fetchSucceeded?: boolean;
   fetchFailed?: boolean;
-  strictServerSource?: boolean;
 } = {}): HomeAttachmentGroup {
-  const localItemCount = localGroup?.items?.length || 0;
+  const localItemCount = demoLocalGroup?.items?.length || 0;
   const fetchedItemCount = fetchedGroup?.items?.length || 0;
 
   if (shouldFetchDayEntries) {
     if (fetchSucceeded) return fetchedGroup;
-    if (strictServerSource) return fetchedGroup;
-    if (fetchFailed && localItemCount > 0) return localGroup;
+    if (fetchFailed && localItemCount > 0) return demoLocalGroup;
     return fetchedGroup;
   }
 
   if (fetchedItemCount > localItemCount) return fetchedGroup;
-  if (localItemCount > 0) return localGroup;
+  if (localItemCount > 0) return demoLocalGroup;
   return fetchedGroup;
 }
 
@@ -79,12 +89,12 @@ export function useHomeDayAttachments({
   actorRole?: string;
   storeId?: string;
 } = {}) {
-  const localGroup = useMemo(
+  const demoLocalGroup = useMemo(
     () => (entriesApiEnabled ? null : resolveAttachmentGroupForDate(attachmentsFromEntries(localDayEntries), selectedDate)),
     [entriesApiEnabled, localDayEntries, selectedDate],
   );
 
-  const localItemCount = localGroup?.items?.length || 0;
+  const localItemCount = demoLocalGroup?.items?.length || 0;
   const shouldFetchDayEntries = shouldFetchHomeDayAttachments({
     enabled,
     localItemCount,
@@ -129,14 +139,19 @@ export function useHomeDayAttachments({
     return resolveAttachmentGroupForDate(attachmentsFromEntries(fetchedDayEntries), selectedDate);
   }, [query.data, selectedDate, shouldFetchDayEntries]);
 
-  const group = resolveHomeDayAttachmentGroup({
-    localGroup,
-    fetchedGroup,
-    shouldFetchDayEntries,
-    fetchSucceeded: shouldFetchDayEntries && query.isSuccess,
-    fetchFailed: shouldFetchDayEntries && query.isError,
-    strictServerSource: entriesApiEnabled,
-  });
+  const group = entriesApiEnabled
+    ? resolveHomeDayAttachmentGroupFromServer({
+      fetchedGroup,
+      shouldFetchDayEntries,
+      fetchSucceeded: shouldFetchDayEntries && query.isSuccess,
+    })
+    : resolveHomeDayAttachmentGroupFromLocal({
+      demoLocalGroup,
+      fetchedGroup,
+      shouldFetchDayEntries,
+      fetchSucceeded: shouldFetchDayEntries && query.isSuccess,
+      fetchFailed: shouldFetchDayEntries && query.isError,
+    });
   const itemCount = group?.items?.length || 0;
 
   return {

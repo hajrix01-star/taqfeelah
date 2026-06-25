@@ -53,9 +53,9 @@ function normalizeSubmitChannelName(rawName: unknown, legacyChannelId = ""): str
   const fromRaw = sanitizeCloseoutChannelDisplayName(rawName, "");
   if (fromRaw) return fromRaw;
   if (legacyChannelId && !isUuidLike(legacyChannelId)) {
-    return sanitizeCloseoutChannelDisplayName(legacyChannelId, "Channel");
+    return sanitizeCloseoutChannelDisplayName(legacyChannelId, "Unknown channel");
   }
-  return "Channel";
+  return "Unknown channel";
 }
 
 export type ExtractedCloseoutSalesChannel = {

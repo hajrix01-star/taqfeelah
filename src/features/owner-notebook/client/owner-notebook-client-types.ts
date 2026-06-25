@@ -1,6 +1,7 @@
 import type { RuntimeSettingsAuth } from "@/features/runtime-settings/client/runtime-settings-client-types";
 import type {
   OwnerNotebookChecklistItem,
+  OwnerNotebookNote,
   OwnerNotebookNoteInput,
   OwnerNotebookNotePatch,
   OwnerNotebookNoteKind,
@@ -8,6 +9,16 @@ import type {
 
 export type OwnerNotebookApiContext = RuntimeSettingsAuth & {
   actorUserId?: string;
+};
+
+export type FetchOwnerNotebookNotesViaApiInput = OwnerNotebookApiContext & {
+  limit?: number;
+  cursor?: string | null;
+};
+
+export type FetchOwnerNotebookNotesViaApiResult = {
+  notes: OwnerNotebookNote[];
+  nextCursor: string | null;
 };
 
 export type CreateOwnerNotebookNoteViaApiInput = OwnerNotebookApiContext & OwnerNotebookNoteInput;

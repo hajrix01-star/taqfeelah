@@ -95,7 +95,9 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     draftStoreLocation,
     draftStoreChannelConfig,
     draftStoreOperationalConfig,
+    configuredBusinesses,
     storeChannelSettings,
+    storeOperationalSettings,
     operationalEntries,
     activeStoredBusinesses,
     visibleStaff,
@@ -193,6 +195,14 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     if (!isFlattenedStoreSettingsEnabled()) backFromStorePanel();
   };
 
+  const canFlushOrgConfig = () => Boolean(
+    isOrgConfigApiEnabled()
+    && orgConfigApiContext?.enabled
+    && orgConfigApiContext.hydrated
+    && !orgConfigApiContext.loading
+    && typeof orgConfigApiContext.flushPersist === "function",
+  );
+
   const cancelChannelDraft = () => {
     setters.setDraftStoreChannelConfig(cloneStoreChannelDraft(savedChannelConfig));
     setters.setSettingsNotice("");
@@ -203,12 +213,42 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     setters.setSettingsNotice("");
   };
 
-  const saveStoreProfile = () => {
+  const saveStoreProfile = async () => {
     if (!settingsStoreId || !draftStoreName.trim()) return;
-    setters.setConfiguredBusinesses((current: HandlerAny) => applyStoreProfileUpdate(current, settingsStoreId, {
+    const nextConfiguredBusinesses = applyStoreProfileUpdate(configuredBusinesses || [], settingsStoreId, {
       name: draftStoreName,
       location: draftStoreLocation,
-    }));
+    });
+
+    if (isOrgConfigApiEnabled() && orgConfigApiContext?.enabled) {
+      if (!canFlushOrgConfig()) {
+        setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
+        return;
+      }
+      setters.setStoreSaving(true);
+      setters.setSettingsNotice("");
+      try {
+        await orgConfigApiContext.flushPersist({
+          configuredBusinesses: nextConfiguredBusinesses,
+        });
+      } catch {
+        setters.setSettingsNotice(
+          lang === "ar"
+            ? "تعذر حفظ بيانات المحل على الخادم. أعد المحاولة."
+            : "Could not save shop details on the server. Please retry.",
+        );
+        return;
+      } finally {
+        setters.setStoreSaving(false);
+      }
+      setters.setDraftStoreName("");
+      setters.setDraftStoreLocation("");
+      showSettingsSaved();
+      leaveStorePanelAfterSave();
+      return;
+    }
+
+    setters.setConfiguredBusinesses(nextConfiguredBusinesses);
     showSettingsSaved();
     leaveStorePanelAfterSave();
   };
@@ -222,12 +262,13 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       draftStoreChannelConfig,
     );
 
-    if (
-      orgConfigApiContext?.enabled
-      && orgConfigApiContext.hydrated
-      && typeof orgConfigApiContext.flushPersist === "function"
-    ) {
+    if (isOrgConfigApiEnabled() && orgConfigApiContext?.enabled) {
+      if (!canFlushOrgConfig()) {
+        setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
+        return;
+      }
       try {
+        setters.setStoreSaving(true);
         setters.setSettingsNotice("");
         await orgConfigApiContext.flushPersist({
           storeChannelSettings: nextStoreChannelSettings,
@@ -239,6 +280,8 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
             : "Could not save income channels on the server. Please retry.",
         );
         return;
+      } finally {
+        setters.setStoreSaving(false);
       }
       setters.setDraftStoreChannelConfig(null);
       showSettingsSaved();
@@ -251,9 +294,42 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     leaveStorePanelAfterSave();
   };
 
-  const saveOperationalSettings = () => {
+  const saveOperationalSettings = async () => {
     if (!settingsStoreId || !draftStoreOperationalConfig) return;
-    setters.setStoreOperationalSettings((current: HandlerAny) => applyPersistedStoreOperationalSettings(current, settingsStoreId, draftStoreOperationalConfig));
+    const nextStoreOperationalSettings = applyPersistedStoreOperationalSettings(
+      storeOperationalSettings || {},
+      settingsStoreId,
+      draftStoreOperationalConfig,
+    );
+
+    if (isOrgConfigApiEnabled() && orgConfigApiContext?.enabled) {
+      if (!canFlushOrgConfig()) {
+        setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
+        return;
+      }
+      setters.setStoreSaving(true);
+      setters.setSettingsNotice("");
+      try {
+        await orgConfigApiContext.flushPersist({
+          storeOperationalSettings: nextStoreOperationalSettings,
+        });
+      } catch {
+        setters.setSettingsNotice(
+          lang === "ar"
+            ? "تعذر حفظ إعدادات التشغيل على الخادم. أعد المحاولة."
+            : "Could not save operating settings on the server. Please retry.",
+        );
+        return;
+      } finally {
+        setters.setStoreSaving(false);
+      }
+      setters.setDraftStoreOperationalConfig(null);
+      showSettingsSaved();
+      leaveStorePanelAfterSave();
+      return;
+    }
+
+    setters.setStoreOperationalSettings(nextStoreOperationalSettings);
     showSettingsSaved();
     leaveStorePanelAfterSave();
   };

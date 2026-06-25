@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  resolveHomeDayAttachmentGroup,
+  resolveHomeDayAttachmentGroupFromLocal,
+  resolveHomeDayAttachmentGroupFromServer,
   shouldFetchHomeDayAttachments,
 } from "./use-home-day-attachments";
 
@@ -58,7 +59,30 @@ describe("shouldFetchHomeDayAttachments", () => {
   });
 });
 
-describe("resolveHomeDayAttachmentGroup", () => {
+describe("resolveHomeDayAttachmentGroupFromServer", () => {
+  const salesAndPurchases = {
+    date: "2026-06-10",
+    items: [{ id: "sales-proof" }, { id: "purchase-proof" }],
+  };
+
+  it("uses fetched attachments only after a successful API fetch", () => {
+    expect(resolveHomeDayAttachmentGroupFromServer({
+      fetchedGroup: salesAndPurchases,
+      shouldFetchDayEntries: true,
+      fetchSucceeded: true,
+    })).toEqual(salesAndPurchases);
+  });
+
+  it("does not use a local fallback when the API fetch is unavailable", () => {
+    expect(resolveHomeDayAttachmentGroupFromServer({
+      fetchedGroup: null,
+      shouldFetchDayEntries: true,
+      fetchSucceeded: false,
+    })).toBeNull();
+  });
+});
+
+describe("resolveHomeDayAttachmentGroupFromLocal", () => {
   const salesOnly = { date: "2026-06-10", items: [{ id: "sales-proof" }] };
   const salesAndPurchases = {
     date: "2026-06-10",
@@ -66,8 +90,8 @@ describe("resolveHomeDayAttachmentGroup", () => {
   };
 
   it("prefers fetched day entries after a successful fetch", () => {
-    expect(resolveHomeDayAttachmentGroup({
-      localGroup: salesOnly,
+    expect(resolveHomeDayAttachmentGroupFromLocal({
+      demoLocalGroup: salesOnly,
       fetchedGroup: salesAndPurchases,
       shouldFetchDayEntries: true,
       fetchSucceeded: true,
@@ -75,8 +99,8 @@ describe("resolveHomeDayAttachmentGroup", () => {
   });
 
   it("falls back to local attachments when fetch fails", () => {
-    expect(resolveHomeDayAttachmentGroup({
-      localGroup: salesOnly,
+    expect(resolveHomeDayAttachmentGroupFromLocal({
+      demoLocalGroup: salesOnly,
       fetchedGroup: null,
       shouldFetchDayEntries: true,
       fetchFailed: true,
@@ -84,8 +108,8 @@ describe("resolveHomeDayAttachmentGroup", () => {
   });
 
   it("uses local attachments when fetch is not needed", () => {
-    expect(resolveHomeDayAttachmentGroup({
-      localGroup: salesOnly,
+    expect(resolveHomeDayAttachmentGroupFromLocal({
+      demoLocalGroup: salesOnly,
       fetchedGroup: null,
       shouldFetchDayEntries: false,
     })).toEqual(salesOnly);

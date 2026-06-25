@@ -49,8 +49,8 @@ describe("register production source guard", () => {
     const settingsState = readProjectFile("src/features/org-config/client/use-owner-settings-state.ts");
     const themeReadIndex = settingsState.indexOf("window.localStorage.getItem(\"taqfeelah_notebook_theme\")");
     const themeWriteIndex = settingsState.indexOf("window.localStorage.setItem(\"taqfeelah_notebook_theme\", notebookTheme)");
-    const skipReadIndex = settingsState.indexOf("if (skipDemoBootstrap) return \"yellow\";");
-    const skipWriteIndex = settingsState.indexOf("skipDemoBootstrap\n      || typeof window");
+    const skipReadIndex = settingsState.indexOf("function readDemoLocalNotebookTheme(skipDemoBootstrap: boolean)");
+    const skipWriteIndex = settingsState.indexOf("function writeDemoLocalNotebookTheme(notebookTheme: string, skipDemoBootstrap: boolean)");
 
     expect(skipReadIndex).toBeGreaterThan(-1);
     expect(themeReadIndex).toBeGreaterThan(skipReadIndex);
@@ -127,6 +127,9 @@ describe("register production source guard", () => {
     expect(source).not.toContain("keepPreviousData");
     expect(source).not.toContain("placeholderData");
     expect(source).toContain("strictServerSource");
+    expect(source).toContain("resolveHomeDayAttachmentGroupFromServer");
+    expect(source).toContain("resolveHomeDayAttachmentGroupFromLocal");
+    expect(source).not.toContain("resolveHomeDayAttachmentGroup({");
   });
 
   it("does not persist operational entries to browser storage", () => {
@@ -182,5 +185,39 @@ describe("register production source guard", () => {
     expect(source).not.toContain("Showing available local data");
     expect(source).not.toContain("تم عرض البيانات المحلية المتاحة");
     expect(source).toContain("No local fallback data is shown");
+  });
+  it("does not fall back to local owner notebook notes in API mode", () => {
+    const source = readProjectFile("src/features/owner-notebook/client/use-owner-notebook-notes.ts");
+    const apiBranch = source.slice(source.indexOf("if (apiEnabled)"), source.indexOf("setNotes(mergeLegacyOwnerNotebookNotesIntoDemoLocal"));
+
+    expect(apiBranch).toContain("setLoadError(\"owner-notebook-api-load-failed\")");
+    expect(apiBranch).toContain("setNotes([])");
+    expect(apiBranch).not.toContain("mergeLegacyOwnerNotebookNotesIntoDemoLocal");
+  });
+
+  it("saves store settings through confirmed org-config persistence in API mode", () => {
+    const handlers = readProjectFile("src/components/prototype-runtime/owner-settings-screen-action-handlers.ts");
+    const state = readProjectFile("src/components/prototype-runtime/use-owner-settings-screen-state.ts");
+
+    expect(state).toContain("configuredBusinesses");
+    expect(state).toContain("storeChannelSettings");
+    expect(state).toContain("storeOperationalSettings");
+    expect(handlers).toContain("canFlushOrgConfig");
+    expect(handlers).toContain("configuredBusinesses: nextConfiguredBusinesses");
+    expect(handlers).toContain("storeChannelSettings: nextStoreChannelSettings");
+    expect(handlers).toContain("storeOperationalSettings: nextStoreOperationalSettings");
+  });
+
+  it("uses explicit unknown labels instead of generic channel fallbacks", () => {
+    const entriesApi = readProjectFile("src/features/entries/client/store-entries-api-client.ts");
+    const closeoutsApi = readProjectFile("src/features/closeouts/client/closeouts-api-client.ts");
+    const closeoutSales = readProjectFile("src/features/closeouts/client/resolve-closeout-sales-channels.ts");
+
+    expect(entriesApi).not.toContain(": \"Channel\"");
+    expect(closeoutsApi).not.toContain(": \"Channel\"");
+    expect(closeoutSales).not.toContain("return \"Channel\"");
+    expect(entriesApi).toContain("Unknown channel");
+    expect(closeoutsApi).toContain("Unknown channel");
+    expect(closeoutSales).toContain("Unknown channel");
   });
 });

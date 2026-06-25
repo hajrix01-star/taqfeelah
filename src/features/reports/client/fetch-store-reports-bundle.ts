@@ -17,7 +17,34 @@ import {
 import type {
   FetchStoreReportsBundleInput,
   StoreReportsBundle,
+  UiDayReportRow,
 } from "@/features/reports/client/reports-client-types";
+
+function combineDayRows(rows: UiDayReportRow[]): UiDayReportRow[] {
+  const byDate = new Map<string, UiDayReportRow>();
+  rows.forEach((row) => {
+    const date = String(row.id || row.dayEn || row.dayAr || "");
+    if (!date) return;
+    const current = byDate.get(date) || {
+      id: date,
+      dayAr: date,
+      dayEn: date,
+      sales: 0,
+      expense: 0,
+      net: 0,
+      ratio: "0.0%",
+      proofs: 0,
+    };
+    byDate.set(date, {
+      ...current,
+      sales: current.sales + Number(row.sales || 0),
+      expense: current.expense + Number(row.expense || 0),
+      net: current.net + Number(row.net || 0),
+      proofs: current.proofs + Number(row.proofs || 0),
+    });
+  });
+  return [...byDate.values()].sort((left, right) => right.id.localeCompare(left.id));
+}
 
 export async function fetchStoreReportsBundle({
   organizationId,
@@ -51,10 +78,33 @@ export async function fetchStoreReportsBundle({
   });
 
   const isSingleStore = storeIds.length === 1;
-  if (!isSingleStore || !includeDetails) {
+  if (!includeDetails) {
     return {
       totalsByStoreId,
       daysRows: [],
+      channelRows: [],
+      outflowCategories: [],
+      outflowTransactions: [],
+      outflowTransactionCount: 0,
+      outflowTotal: 0,
+      attachmentProofs: { proofs: 0, items: [] },
+    };
+  }
+
+  if (!isSingleStore) {
+    const daysReports = await Promise.all(
+      storeIds.map((storeId) => fetchStoreDaysReportViaApi({
+        organizationId,
+        actorUserId,
+        actorRole,
+        storeId,
+        from: dateRange.from,
+        to: dateRange.to,
+      })),
+    );
+    return {
+      totalsByStoreId,
+      daysRows: combineDayRows(daysReports.flatMap((report) => mapDaysReportToUiRows(report?.days))),
       channelRows: [],
       outflowCategories: [],
       outflowTransactions: [],

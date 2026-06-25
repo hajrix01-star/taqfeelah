@@ -80,7 +80,7 @@ function mapEntryItems(
       ? item.salesChannels.map((row: OperationalEntrySalesChannelRow) => {
         const channelId = reverseLookupKeyByUuid(row?.channelId ?? "", salesChannelIdMap) || row?.channelId;
         const rawName = row?.name ?? row?.channelName ?? row?.channelLabel;
-        const fallbackLabel = typeof channelId === "string" && !isUuidLike(channelId) ? channelId : "Channel";
+        const fallbackLabel = typeof channelId === "string" && !isUuidLike(channelId) ? channelId : "Unknown channel";
         return {
           ...row,
           channelId,
