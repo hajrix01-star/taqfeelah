@@ -42,6 +42,7 @@ export function useRegisterEntriesFromApi({
 } = {}) {
   const queryClient = useQueryClient();
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingAll, setLoadingAll] = useState(false);
   const storeIdsKey = useMemo(
     () => (Array.isArray(storeIds) ? storeIds.filter(Boolean).join("|") : ""),
     [storeIds],
@@ -99,6 +100,7 @@ export function useRegisterEntriesFromApi({
   const entries = query.data?.entries ?? emptyRegisterEntriesState.entries;
   const hasMore = query.data?.hasMore ?? false;
   const loading = queryEnabled && query.isPending;
+  const loaded = queryEnabled && (query.isSuccess || query.isError);
   const error = query.isError ? "failed" : "";
 
   const loadMore = useCallback(async (): Promise<boolean> => {
@@ -150,19 +152,25 @@ export function useRegisterEntriesFromApi({
   ]);
 
   const loadAllRemaining = useCallback(async (): Promise<void> => {
-    if (!queryEnabled || loading || !hasMore) return;
+    if (!queryEnabled || loading || loadingAll || !hasMore) return;
 
-    let keepLoading: boolean = hasMore;
-    while (keepLoading) {
-      keepLoading = await loadMore();
+    setLoadingAll(true);
+    try {
+      let keepLoading: boolean = hasMore;
+      while (keepLoading) {
+        keepLoading = await loadMore();
+      }
+    } finally {
+      setLoadingAll(false);
     }
-  }, [hasMore, loadMore, loading, queryEnabled]);
+  }, [hasMore, loadingAll, loadMore, loading, queryEnabled]);
 
   return {
     entries,
     loading,
+    loaded,
     loadingMore,
-    loadingAll: query.isFetching && !query.isPending && !loadingMore,
+    loadingAll,
     hasMore,
     error,
     loadMore,

@@ -6,10 +6,9 @@ import {
 import type { OperationalEntry } from "./entries-client-types";
 
 describe("register server read model", () => {
-  it("enables report reads only for the register report view", () => {
-    expect(shouldEnableRegisterReportRead({ enabled: true, logView: "report" })).toBe(true);
-    expect(shouldEnableRegisterReportRead({ enabled: true, logView: "operations" })).toBe(false);
-    expect(shouldEnableRegisterReportRead({ enabled: false, logView: "report" })).toBe(false);
+  it("enables report reads for the register server source", () => {
+    expect(shouldEnableRegisterReportRead({ enabled: true })).toBe(true);
+    expect(shouldEnableRegisterReportRead({ enabled: false })).toBe(false);
   });
 
   it("maps entries and report states into one register read model", async () => {
@@ -22,9 +21,11 @@ describe("register server read model", () => {
       entries: {
         entries: [entry],
         loading: false,
+        loaded: true,
         error: "",
         hasMore: true,
         loadingMore: false,
+        loadingAll: false,
         loadMore,
         loadAllRemaining,
         refetch,
@@ -40,7 +41,9 @@ describe("register server read model", () => {
     });
 
     expect(model.entries).toEqual([entry]);
+    expect(model.entriesLoaded).toBe(true);
     expect(model.entriesHasMore).toBe(true);
+    expect(model.entriesLoadingAll).toBe(false);
     expect(model.reportLoaded).toBe(true);
     expect(model.reportCombinedTotals.net).toBe(25);
     await expect(model.loadMoreEntries()).resolves.toBe(true);

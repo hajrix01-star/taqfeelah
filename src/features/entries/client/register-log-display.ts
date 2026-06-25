@@ -47,12 +47,17 @@ export function resolveRegisterCloseoutActorLabel(
   group: RegisterCloseoutGroup,
   { ownerUserId = "", lang = "ar" as DisplayLang, enteredByOwnerLabel = "المالك" } = {},
 ): string {
-  const ownerEntered = (ownerUserId
-    ? group.entries.find((entry) => entry.enteredBy?.userId === ownerUserId)
-    : null)
-    || group.entries.find((entry) => entry.enteredBy?.role === "owner")
+  const orderedEntries = newestEntries(group.entries);
+  const actorEntry = orderedEntries.find((entry) => entry.type === "summary")
+    || orderedEntries[0]
     || group.entries[0];
-  return employeeDisplayName(ownerEntered, lang) || enteredByOwnerLabel;
+  const actorName = employeeDisplayName(actorEntry, lang);
+  if (actorName) return actorName;
+  const actor = actorEntry?.enteredBy;
+  if ((ownerUserId && actor?.userId === ownerUserId) || actor?.role === "owner") {
+    return enteredByOwnerLabel;
+  }
+  return lang === "ar" ? "مستخدم" : "User";
 }
 
 export function registerLogFilterCount(filters: RegisterLogFilters): number {

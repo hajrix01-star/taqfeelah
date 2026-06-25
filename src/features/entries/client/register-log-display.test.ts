@@ -153,8 +153,8 @@ describe("register-log-display", () => {
   it("labels owner-entered closeouts with the owner fallback when name is missing", () => {
     const label = resolveRegisterCloseoutActorLabel({
       entries: [
-        { enteredBy: { userId: "employee-1", nameAr: "أحمد", nameEn: "Ahmed" } },
-        { enteredBy: { userId: "owner-uuid", role: "owner", nameAr: "", nameEn: "" } },
+        { type: "summary", enteredBy: { userId: "owner-uuid", role: "owner", nameAr: "", nameEn: "" } },
+        { type: "expense", enteredBy: { userId: "employee-1", nameAr: "أحمد", nameEn: "Ahmed" } },
       ],
     }, {
       ownerUserId: "owner-uuid",
@@ -164,18 +164,31 @@ describe("register-log-display", () => {
     expect(label).toBe("المالك");
   });
 
-  it("does not fall back to the first employee when owner uuid is provided", () => {
+  it("labels closeouts from the summary actor instead of a mixed owner operation", () => {
     const label = resolveRegisterCloseoutActorLabel({
       entries: [
-        { enteredBy: { userId: "employee-1", nameAr: "أحمد", nameEn: "Ahmed" } },
-        { enteredBy: { userId: "owner-uuid", role: "owner", nameAr: "خالد", nameEn: "Khalid" } },
+        { type: "expense", createdAt: "2026-06-06T11:00:00.000Z", enteredBy: { userId: "owner-uuid", role: "owner", nameAr: "خالد", nameEn: "Khalid" } },
+        { type: "summary", createdAt: "2026-06-06T10:00:00.000Z", enteredBy: { userId: "employee-1", nameAr: "أحمد", nameEn: "Ahmed" } },
       ],
     }, {
       ownerUserId: "owner-uuid",
       lang: "ar",
       enteredByOwnerLabel: "المالك",
     });
-    expect(label).toBe("خالد");
+    expect(label).toBe("أحمد");
+  });
+
+  it("does not label a deleted non-owner actor as the owner when the name snapshot is missing", () => {
+    const label = resolveRegisterCloseoutActorLabel({
+      entries: [
+        { type: "summary", enteredBy: { userId: "deleted-user", role: "employee", nameAr: "", nameEn: "" } },
+      ],
+    }, {
+      ownerUserId: "owner-uuid",
+      lang: "ar",
+      enteredByOwnerLabel: "المالك",
+    });
+    expect(label).toBe("مستخدم");
   });
 
   it("builds register day report rows sorted by newest date", () => {

@@ -26,9 +26,11 @@ type UseRegisterServerReadModelProps = {
 export type RegisterServerReadModel = {
   entries: OperationalEntry[];
   entriesLoading: boolean;
+  entriesLoaded: boolean;
   entriesError: string;
   entriesHasMore: boolean;
   entriesLoadingMore: boolean;
+  entriesLoadingAll: boolean;
   loadMoreEntries: () => Promise<boolean>;
   loadAllEntries: () => Promise<void>;
   refetchEntries: () => unknown;
@@ -43,9 +45,11 @@ export type RegisterServerReadModel = {
 type RegisterEntriesReadState = {
   entries: OperationalEntry[];
   loading: boolean;
+  loaded: boolean;
   error: string;
   hasMore: boolean;
   loadingMore: boolean;
+  loadingAll: boolean;
   loadMore: () => Promise<boolean>;
   loadAllRemaining: () => Promise<void>;
   refetch: () => unknown;
@@ -62,12 +66,10 @@ type RegisterReportReadState = {
 
 export function shouldEnableRegisterReportRead({
   enabled,
-  logView,
 }: {
   enabled: boolean;
-  logView: string;
 }): boolean {
-  return enabled && logView === "report";
+  return enabled;
 }
 
 export function buildRegisterServerReadModel({
@@ -80,9 +82,11 @@ export function buildRegisterServerReadModel({
   return {
     entries: entries.entries,
     entriesLoading: entries.loading,
+    entriesLoaded: entries.loaded,
     entriesError: entries.error,
     entriesHasMore: entries.hasMore,
     entriesLoadingMore: entries.loadingMore,
+    entriesLoadingAll: entries.loadingAll,
     loadMoreEntries: entries.loadMore,
     loadAllEntries: entries.loadAllRemaining,
     refetchEntries: entries.refetch,
@@ -126,7 +130,7 @@ export function useRegisterServerReadModel({
     customTo,
   });
 
-  const reportEnabled = shouldEnableRegisterReportRead({ enabled, logView });
+  const reportEnabled = shouldEnableRegisterReportRead({ enabled });
   const report = useStoreReports({
     enabled: reportEnabled,
     organizationId,
@@ -142,6 +146,7 @@ export function useRegisterServerReadModel({
     customTo,
     configuredChannels,
     includeOutflowTransactions: false,
+    includeDetails: logView === "report",
   });
 
   return buildRegisterServerReadModel({ entries, report });

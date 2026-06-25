@@ -98,6 +98,7 @@ export function OwnerRegisterCloseoutsList({
   onDeleteCloseout = () => {},
   onPreviewAttachment,
   registerScrollId,
+  loading,
   loadError,
   loadErrorMessage,
   configuredChannels,
@@ -117,6 +118,7 @@ export function OwnerRegisterCloseoutsList({
   onDeleteCloseout?: (summary: RegisterCloseoutSummaryRow) => void;
   onPreviewAttachment?: (src: string, context?: Record<string, unknown>) => void;
   registerScrollId: (key: string) => string;
+  loading?: boolean;
   loadError?: boolean;
   loadErrorMessage?: string;
   configuredChannels?: PrototypeChannel[];
@@ -124,6 +126,14 @@ export function OwnerRegisterCloseoutsList({
   if (loadError) {
     return (
       <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10">{loadErrorMessage}</div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">
+        {lang === "ar" ? "جاري تحميل التقفيلات من الخادم..." : "Loading closeouts from the server..."}
+      </div>
     );
   }
 

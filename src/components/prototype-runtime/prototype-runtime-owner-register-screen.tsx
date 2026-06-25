@@ -173,12 +173,13 @@ export function OwnerRegisterScreen({
   const {
     entries: apiRegisterEntries,
     entriesLoading: apiRegisterEntriesLoading,
+    entriesLoaded: apiRegisterEntriesLoaded,
     entriesError: apiRegisterEntriesError,
     entriesHasMore: apiRegisterEntriesHasMore,
     loadMoreEntries: loadMoreRegisterEntries,
     loadAllEntries: loadAllRegisterEntries,
-    refetchEntries: refetchRegisterEntries,
     entriesLoadingMore: registerEntriesLoadingMore,
+    entriesLoadingAll: registerEntriesLoadingAll,
     reportDaysRows: apiGeneralReportRows,
     reportSingleStoreTotals: apiGeneralReportTotals,
     reportCombinedTotals: apiGeneralReportCombinedTotals,
@@ -213,6 +214,12 @@ export function OwnerRegisterScreen({
   const registerEntriesLoadError = Boolean(registerEntriesApiEnabled && (apiRegisterEntriesError || registerEntriesSyncError));
   // Closeout cards are built from register entries — do not block on closeouts-provider sync errors.
   const closeoutsLoadError = Boolean(registerEntriesApiEnabled && (apiRegisterEntriesError || registerEntriesSyncError));
+  const closeoutServerEntriesIncomplete = Boolean(
+    strictRegisterSource
+      && logView === "closeouts"
+      && !closeoutsLoadError
+      && (!apiRegisterEntriesLoaded || apiRegisterEntriesHasMore || registerEntriesLoadingAll),
+  );
   const registerEntriesLoadErrorMessage = lang === "ar"
     ? "تعذر تحميل العمليات من الخادم. لم يتم عرض بيانات محلية بديلة."
     : "Failed to load operations from the server. No local fallback data is shown.";
@@ -247,11 +254,10 @@ export function OwnerRegisterScreen({
   }, [apiRegisterEntriesHasMore, loadMoreRegisterEntries, logView, periodEntries.length, registerEntriesApiEnabled]);
   useEffect(() => {
     if (!registerEntriesApiEnabled || logView !== "closeouts") return undefined;
-    void refetchRegisterEntries();
-    if (!apiRegisterEntriesHasMore) return undefined;
+    if (!apiRegisterEntriesHasMore || registerEntriesLoadingAll) return undefined;
     loadAllRegisterEntries();
     return undefined;
-  }, [apiRegisterEntriesHasMore, loadAllRegisterEntries, logView, refetchRegisterEntries, registerEntriesApiEnabled, safeBusinessId, period, selectedDate, selectedMonth, selectedYear, customFrom, customTo]);
+  }, [apiRegisterEntriesHasMore, loadAllRegisterEntries, logView, registerEntriesApiEnabled, registerEntriesLoadingAll]);
   const actorOptions = useMemo(() => {
     const seen = new Set();
     const options = [{ id: "all", label: lang === "ar" ? "الكل" : "All" }];
@@ -278,6 +284,10 @@ export function OwnerRegisterScreen({
   const filteredEntries = useMemo(
     () => filterRegisterLogEntries(periodEntries, logFilters, entryCategory, configuredChannels),
     [configuredChannels, periodEntries, logFilters],
+  );
+  const closeoutSourceEntries = useMemo(
+    () => (closeoutServerEntriesIncomplete ? [] : filteredEntries),
+    [closeoutServerEntriesIncomplete, filteredEntries],
   );
   const attachmentGallery = useMemo(
     () => buildRegisterAttachmentGalleryModel(periodEntries, logFilters, {
@@ -315,7 +325,7 @@ export function OwnerRegisterScreen({
   );
   const closeoutSummaries = useMemo(
     () => buildRegisterCloseoutSummaries({
-      filteredEntries,
+      filteredEntries: closeoutSourceEntries,
       salesChannelFilter: logFilters.salesChannel,
       configuredChannels,
       resolveChannelName: resolveChannelRowLabel,
@@ -326,7 +336,7 @@ export function OwnerRegisterScreen({
         enteredByOwnerLabel: text(lang, "enteredByOwner"),
       }),
     }),
-    [businessesList, configuredChannels, filteredEntries, lang, logFilters.salesChannel, registerEntriesApiActorUserId, registerEntriesApiEnabled, resolveChannelRowLabel],
+    [businessesList, closeoutSourceEntries, configuredChannels, lang, logFilters.salesChannel, registerEntriesApiActorUserId, registerEntriesApiEnabled, resolveChannelRowLabel],
   );
   useEffect(() => {
     if (!visibleEntries.length) {
@@ -413,10 +423,11 @@ export function OwnerRegisterScreen({
   const apiGeneralReportTotalsSource = safeBusinessId === "all"
     ? apiGeneralReportCombinedTotals
     : apiGeneralReportTotals;
+  const registerReportTotalsApiReady = registerEntriesApiEnabled && generalReportApiLoaded && !generalReportApiError;
   const generalReportRows = generalReportApiReady
     ? applyRegisterReportGranularity(apiDailyGeneralReportRows, resolvedGeneralReportGranularity)
     : strictGeneralReportSource ? [] : localGeneralReportRows;
-  const generalReportTotals = generalReportApiReady && apiGeneralReportTotalsSource
+  const generalReportTotals = registerReportTotalsApiReady && apiGeneralReportTotalsSource
     ? {
       sales: apiGeneralReportTotalsSource.sales ?? 0,
       expense: apiGeneralReportTotalsSource.expense ?? 0,
@@ -444,10 +455,12 @@ export function OwnerRegisterScreen({
   const generalReportLoadErrorMessage = lang === "ar"
     ? "تعذر تحميل تقرير الأيام من الخادم. لم يتم عرض بيانات محلية بديلة."
     : "Failed to load the days report from the server. No local fallback data is shown.";
-  const dashboardSummary = logView === "report" ? generalReportDashboardSummary : registerPeriodSummary;
-  const dashboardSummaryLoading = logView === "report"
-    ? Boolean(generalReportApiEnabled && generalReportApiLoading && !generalReportApiLoaded)
-    : Boolean(strictRegisterSource && apiRegisterEntriesLoading && !periodEntries.length);
+  const dashboardSummary = logView === "report" || (strictRegisterSource && logFilters.salesChannel === "all")
+    ? generalReportDashboardSummary
+    : registerPeriodSummary;
+  const dashboardSummaryLoading = logView === "report" || (strictRegisterSource && logFilters.salesChannel === "all")
+    ? Boolean(registerEntriesApiEnabled && generalReportApiLoading && !generalReportApiLoaded)
+    : Boolean(closeoutServerEntriesIncomplete || (strictRegisterSource && apiRegisterEntriesLoading && !periodEntries.length));
   const dashboardSummaryErrorMessage = logView === "report"
     ? (generalReportLoadError ? generalReportLoadErrorMessage : "")
     : (registerEntriesLoadError ? registerEntriesLoadErrorMessage : "");
@@ -626,6 +639,7 @@ export function OwnerRegisterScreen({
             onDeleteCloseout={onDeleteCloseout}
             onPreviewAttachment={openRegisterAttachmentPreview}
             registerScrollId={registerScrollId}
+            loading={closeoutServerEntriesIncomplete}
             loadError={closeoutsLoadError}
             loadErrorMessage={closeoutsLoadErrorMessage}
             configuredChannels={configuredChannels}
