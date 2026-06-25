@@ -1269,6 +1269,15 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     verify_store_id_file = "/tmp/taqfeelah-verify-store-id"
     verify_store_ref = f"$(cat {verify_store_id_file})"
     store_url = lambda path: f"'https://{domain}/api/v1/stores/{verify_store_ref}{path}'"
+    resolve_verify_store_script = (
+        "const fs=require('fs');"
+        "const p=JSON.parse(fs.readFileSync('/tmp/taqfeelah-verify-stores.json','utf8'));"
+        "const stores=Array.isArray(p.stores)?p.stores:(Array.isArray(p)?p:[]);"
+        "const store=stores.find(s=>s&&s.id)||stores[0];"
+        "if(!store||!store.id){console.error('No active store available for deploy verification.');process.exit(1)}"
+        f"fs.writeFileSync('{verify_store_id_file}', String(store.id));"
+        "console.log('Deploy verify store: '+store.id+(store.name?' ('+store.name+')':''));"
+    )
     analytics_verify = deployment_wave_requires_analytics_verify()
     pagination_verify = deployment_wave_requires_pagination_verify()
     org_config_verify = deployment_wave_requires_org_config_verify()
@@ -1341,13 +1350,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"{auth_flags}"
             ),
             (
-                "node -e \"const fs=require('fs');"
-                "const p=JSON.parse(fs.readFileSync('/tmp/taqfeelah-verify-stores.json','utf8'));"
-                "const stores=Array.isArray(p.stores)?p.stores:(Array.isArray(p)?p:[]);"
-                "const store=stores.find(s=>s&&s.id)||stores[0];"
-                "if(!store||!store.id){console.error('No active store available for deploy verification.');process.exit(1)}"
-                f"fs.writeFileSync('{verify_store_id_file}', String(store.id));"
-                "console.log(`Deploy verify store: ${store.id}${store.name?` (${store.name})`:''}`);\""
+                f"node -e {shlex.quote(resolve_verify_store_script)}"
             ),
         ] if not skip_authenticated_api else []),
         *([
