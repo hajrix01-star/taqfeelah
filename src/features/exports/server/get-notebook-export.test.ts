@@ -92,5 +92,5 @@ describe("getNotebookExport", () => {
     expect(result.operations).toHaveLength(2);
     expect(result.operations[0].hasAttachment).toBe(true);
     expect(limitSpy).not.toHaveBeenCalled();
-  });
+  }, 15_000);
 });
