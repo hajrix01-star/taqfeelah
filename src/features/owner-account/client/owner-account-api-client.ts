@@ -1,4 +1,4 @@
-import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+﻿import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import type { OwnerAccountSummary } from "@/features/owner-account/types";
 
 export async function fetchOwnerAccountSummaryViaApi({
@@ -10,7 +10,7 @@ export async function fetchOwnerAccountSummaryViaApi({
   actorUserId: string;
   actorRole: string;
 }) {
-  return fetchApiJsonWithPrototypeContext("/api/v1/owner/account", {
+  return fetchApiJsonWithRuntimeContext("/api/v1/owner/account", {
     organizationId,
     actorUserId,
     actorRole,

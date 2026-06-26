@@ -12,7 +12,7 @@ import {
   sortCloseoutsNewestFirst,
   withCloseoutTotals,
   writeDailyCloseouts,
-} from "./daily-closeouts-demo-store";
+} from "./daily-closeouts-local-store";
 import { resolveEmployeeDisplayName } from "@/features/employee-closeouts/employee-portal-session";
 import { mapCloseoutSyncErrorToUserMessage } from "@/features/closeouts/client/closeout-sync-errors";
 import { useCloseoutsQuery } from "@/features/closeouts/client/use-closeouts-query";
@@ -68,7 +68,7 @@ export function DailyCloseoutsProvider({
   const useApiWrites = apiStrictMode || dbSourceMode;
   const usesCloseoutsApi = typeof loadCloseoutsFromApi === "function";
 
-  const [demoCloseouts, setDemoCloseouts] = useState<DailyCloseoutRecord[]>(
+  const [localCloseouts, setLocalCloseouts] = useState<DailyCloseoutRecord[]>(
     () => (skipLocalPersistence ? [] : readDailyCloseouts()),
   );
   const [localDraftCloseouts, setLocalDraftCloseouts] = useState<DailyCloseoutRecord[]>([]);
@@ -104,7 +104,7 @@ export function DailyCloseoutsProvider({
     return sortCloseoutsNewestFirst([...apiCloseouts, ...localDrafts]);
   }, [apiCloseouts, localDraftCloseouts, skipLocalPersistence, usesCloseoutsApi]);
 
-  const closeouts = usesCloseoutsApi ? mergedApiCloseouts : demoCloseouts;
+  const closeouts = usesCloseoutsApi ? mergedApiCloseouts : localCloseouts;
 
   const persistCloseouts = useCallback((next: DailyCloseoutRecord[] | ((current: DailyCloseoutRecord[]) => DailyCloseoutRecord[])) => {
     let storageResult: StorageWriteResult = { ok: true };
@@ -118,7 +118,7 @@ export function DailyCloseoutsProvider({
       });
       return storageResult;
     }
-    setDemoCloseouts((current) => {
+    setLocalCloseouts((current) => {
       const resolved = typeof next === "function" ? next(current) : next;
       if (!skipLocalPersistence) {
         storageResult = writeDailyCloseouts(resolved);

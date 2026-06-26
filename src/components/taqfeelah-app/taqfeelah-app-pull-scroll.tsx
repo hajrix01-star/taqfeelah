@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { shouldResetOwnerShellScroll } from "@/lib/ui/owner-shell-scroll-reset";
@@ -12,24 +12,24 @@ import { resolvePullToRefreshSurfaceStyle } from "@/lib/ui/pull-to-refresh-surfa
 import { usePullToRefresh } from "@/lib/ui/use-pull-to-refresh";
 import type {
   NotebookThemeId,
-  PrototypeChildrenProps,
-  PrototypeEmployeePage,
-  PrototypeLang,
-  PrototypeOwnerPage,
-  PrototypeReloadOperationalEntriesFn,
+  AppChildrenProps,
+  AppEmployeePage,
+  AppLang,
+  AppOwnerPage,
+  AppReloadOperationalEntriesFn,
 } from "./taqfeelah-app-types";
 
-type TaqfeelahAppPullScrollProps = PrototypeChildrenProps & {
-  lang: PrototypeLang;
+type TaqfeelahAppPullScrollProps = AppChildrenProps & {
+  lang: AppLang;
   employee: boolean;
-  ownerPage: PrototypeOwnerPage;
-  employeePage: PrototypeEmployeePage;
+  ownerPage: AppOwnerPage;
+  employeePage: AppEmployeePage;
   employeeEntryActive: boolean;
   ownerEntryActive: boolean;
   ownerEditActive: boolean;
   hasActiveEmployee: boolean;
   notebookTheme?: NotebookThemeId | string;
-  onRefreshOperationalEntries: PrototypeReloadOperationalEntriesFn;
+  onRefreshOperationalEntries: AppReloadOperationalEntriesFn;
 };
 
 export function TaqfeelahAppPullScroll({

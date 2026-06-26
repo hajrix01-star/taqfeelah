@@ -2,9 +2,9 @@ import {
   clearAuthSession,
   resolveAuthStateFromSession,
   saveAuthSession,
-} from "@/features/demo/login-credentials-storage";
+} from "@/features/auth/client/local-auth-session-storage";
 import { clearOrganizationEntitlementsCache } from "@/features/billing/client/organization-entitlements-cache";
-import { readPrototypeAuthBoot } from "@/features/demo/prototype-auth-boot";
+import { readRuntimeAuthBootState } from "@/features/auth/client/auth-gate/runtime-auth-boot-state";
 import {
   changeOwnerPasswordViaApi,
   getSessionStatusViaApi,
@@ -26,9 +26,9 @@ import type {
 export { resolveAuthStateFromSession };
 
 export function readSessionBootState(
-  options: Parameters<typeof readPrototypeAuthBoot>[0] = {},
+  options: Parameters<typeof readRuntimeAuthBootState>[0] = {},
 ) {
-  return readPrototypeAuthBoot(options);
+  return readRuntimeAuthBootState(options);
 }
 
 export function persistLocalOwnerSession() {

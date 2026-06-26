@@ -1,4 +1,4 @@
-import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+﻿import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import type {
   ActivateMemberInvitationViaApiInput,
   CreateMemberInvitationViaApiInput,
@@ -16,7 +16,7 @@ export async function createMemberInvitationViaApi({
   phoneNumber,
   pin,
 }: CreateMemberInvitationViaApiInput) {
-  return fetchApiJsonWithPrototypeContext("/api/v1/member-invitations", {
+  return fetchApiJsonWithRuntimeContext("/api/v1/member-invitations", {
     organizationId,
     actorUserId,
     actorRole,
@@ -37,7 +37,7 @@ export async function fetchMemberInvitationsViaApi({
   actorUserId,
   actorRole,
 }: MemberInvitationsAuth) {
-  return fetchApiJsonWithPrototypeContext("/api/v1/member-invitations", {
+  return fetchApiJsonWithRuntimeContext("/api/v1/member-invitations", {
     organizationId,
     actorUserId,
     actorRole,
@@ -51,7 +51,7 @@ export async function revokeMemberInvitationViaApi({
   actorRole,
   invitationId,
 }: RevokeMemberInvitationViaApiInput) {
-  return fetchApiJsonWithPrototypeContext(`/api/v1/member-invitations/${invitationId}`, {
+  return fetchApiJsonWithRuntimeContext(`/api/v1/member-invitations/${invitationId}`, {
     organizationId,
     actorUserId,
     actorRole,

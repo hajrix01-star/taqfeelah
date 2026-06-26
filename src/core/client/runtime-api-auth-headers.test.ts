@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildPrototypeApiAuthHeaders } from "./prototype-api-auth-headers";
+﻿import { afterEach, describe, expect, it, vi } from "vitest";
+import { buildRuntimeApiAuthHeaders } from "./runtime-api-auth-headers";
 
-describe("buildPrototypeApiAuthHeaders", () => {
+describe("buildRuntimeApiAuthHeaders", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
   });
@@ -13,7 +13,7 @@ describe("buildPrototypeApiAuthHeaders", () => {
     );
 
     expect(
-      buildPrototypeApiAuthHeaders({
+      buildRuntimeApiAuthHeaders({
         organizationId: "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
         actorUserId: "owner",
         actorRole: "owner",

@@ -1,10 +1,10 @@
-import {
+﻿import {
   isUuid,
   mapToUuid,
   reverseLookupKeyByUuid,
   toMoneyHalalas,
 } from "@/core/client/api-id-utils";
-import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import {
   getRuntimeApiMaps,
   setRuntimeApiIdMaps,
@@ -71,7 +71,7 @@ export async function approveDuplicateSummaryViaApi({
   const mappedStoreId = mapToUuid(storeId, storeIdMap);
   if (!mappedStoreId || !isUuid(organizationId) || !date) return null;
 
-  return fetchApiJsonWithPrototypeContext(
+  return fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${mappedStoreId}/entries/duplicate-summary/approve`,
     {
       organizationId,
@@ -101,7 +101,7 @@ export async function acknowledgeDuplicateSummariesViaApi({
   const mappedEntryIds = (Array.isArray(entryIds) ? entryIds : []).filter((value) => isUuid(value));
   if (!mappedStoreId || !isUuid(organizationId) || !date || !mappedEntryIds.length) return null;
 
-  return fetchApiJsonWithPrototypeContext(
+  return fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${mappedStoreId}/entries/duplicate-summary/acknowledge`,
     {
       organizationId,
@@ -142,7 +142,7 @@ export async function fetchNotebookExportViaApi({
   if (date) search.set("date", date);
   if (month) search.set("month", month);
 
-  const payload = await fetchApiJsonWithPrototypeContext(
+  const payload = await fetchApiJsonWithRuntimeContext(
     `/api/v1/exports/notebook?${search.toString()}`,
     {
       organizationId,
@@ -170,7 +170,7 @@ export async function registerInlineAttachmentViaApi({
   const mappedStoreId = mapToUuid(storeId, storeIdMap);
   if (!mappedStoreId || !isUuid(organizationId) || !attachment) return null;
 
-  return fetchApiJsonWithPrototypeContext(
+  return fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${mappedStoreId}/attachments/inline`,
     {
       organizationId,

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import {
@@ -19,14 +19,14 @@ import {
   money,
   outflowReportCategories,
   text,
-} from "./taqfeelah-app-demo-data";
+} from "./taqfeelah-app-reference-data";
 import { entryCategory } from "./taqfeelah-app-entry-helpers";
 import { NotebookRow, MoneyValue } from "./taqfeelah-app-notebook";
 import type {
   OperationalEntry,
-  PrototypeBusiness,
-  PrototypeChannel,
-  PrototypeLang,
+  AppBusiness,
+  AppChannel,
+  AppLang,
 } from "./taqfeelah-app-types";
 
 function summaryDayFromEntriesWithLabels(
@@ -42,13 +42,13 @@ export function RatioBadge({ value }: { value: string }) {
 }
 
 type SummaryReportDetailsProps = {
-  lang: PrototypeLang;
+  lang: AppLang;
   monthly: boolean;
   selectedBusiness: string;
   selectedDate: string;
   selectedMonth: string;
-  reportChannels?: PrototypeChannel[];
-  businessesList?: PrototypeBusiness[];
+  reportChannels?: AppChannel[];
+  businessesList?: AppBusiness[];
   section?: "sales" | "outflow" | "both";
   operationalEntries?: OperationalEntry[];
   apiChannelRows?: Array<{ id: string; amount: number; [key: string]: unknown }> | null;

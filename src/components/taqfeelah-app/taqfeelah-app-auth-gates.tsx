@@ -10,18 +10,18 @@ import {
 } from "./AuthGateSection";
 import { AppFontStyles } from "./taqfeelah-app-font-styles";
 import type {
-  PrototypeAuthScreen,
-  PrototypeLang,
+  AppAuthScreen,
+  AppLang,
   TaqfeelahAppCallback,
-  PrototypeStaffMember,
+  AppStaffMember,
 } from "./taqfeelah-app-types";
 
 type TaqfeelahAppLoggedOutGateProps = {
-  lang: PrototypeLang;
-  setLang: (lang: PrototypeLang) => void;
-  authScreen: PrototypeAuthScreen;
-  setAuthScreen: (screen: PrototypeAuthScreen) => void;
-  staff: PrototypeStaffMember[];
+  lang: AppLang;
+  setLang: (lang: AppLang) => void;
+  authScreen: AppAuthScreen;
+  setAuthScreen: (screen: AppAuthScreen) => void;
+  staff: AppStaffMember[];
   onOwnerLogin: TaqfeelahAppCallback;
   onEmployeeLogin: TaqfeelahAppCallback;
 };
@@ -65,7 +65,7 @@ export function TaqfeelahAppLoggedOutGate({
   );
 }
 
-export function TaqfeelahAppOrgLoadingGate({ lang }: { lang: PrototypeLang }) {
+export function TaqfeelahAppOrgLoadingGate({ lang }: { lang: AppLang }) {
   return (
     <div dir={lang === "ar" ? "rtl" : "ltr"} className="taq-page-gutter flex min-h-[100dvh] items-center justify-center bg-[#F8F6F0] font-sans text-[#112A46]">
       <AppFontStyles />
@@ -77,8 +77,8 @@ export function TaqfeelahAppOrgLoadingGate({ lang }: { lang: PrototypeLang }) {
 }
 
 type TaqfeelahAppOwnerPasswordGateProps = {
-  lang: PrototypeLang;
-  setLang: (lang: PrototypeLang) => void;
+  lang: AppLang;
+  setLang: (lang: AppLang) => void;
   onComplete: () => void;
   onLogout: () => void;
 };
@@ -106,7 +106,7 @@ export function TaqfeelahAppOrgErrorGate({
   lang,
   orgConfigSyncError,
 }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   orgConfigSyncError?: string | null;
 }) {
   return (

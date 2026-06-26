@@ -1,4 +1,4 @@
-import { isUuid } from "@/core/client/api-id-utils";
+﻿import { isUuid } from "@/core/client/api-id-utils";
 import type { StoreRef } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { CloseoutSyncLang } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { EmployeeStaffMember, RuntimeApiMaps } from "./employee-closeouts-types";
@@ -281,7 +281,7 @@ export function patchEmployeeStaffStoreIdsFromHydration({
   };
 }
 
-export function upsertPrototypeEmployeeRosterStaff(
+export function upsertRuntimeEmployeeRosterStaff(
   staff: EmployeeStaffMember[] | null | undefined,
   rosterPerson: EmployeeStaffMember | null | undefined,
 ): EmployeeStaffMember[] {

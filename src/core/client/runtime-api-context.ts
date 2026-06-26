@@ -1,19 +1,19 @@
-import {
+﻿import {
   mapActorUserId,
   mapOrganizationId,
   mapSalesChannelId,
   mapStoreId,
 } from "@/core/client/runtime-api-maps-state";
 import { reverseLookupKeyByUuid } from "@/core/client/api-id-utils";
-import type { ResolvePrototypeApiContextInput, ResolvedPrototypeApiContext } from "@/core/client/client-types";
+import type { ResolveRuntimeApiContextInput, ResolvedRuntimeApiContext } from "@/core/client/client-types";
 import { getRuntimeApiMaps } from "@/core/client/runtime-api-maps-state";
 
-export function resolvePrototypeApiContext({
+export function resolveRuntimeApiContext({
   organizationId = "",
   actorUserId = "",
   actorRole = "",
   storeId = "",
-}: ResolvePrototypeApiContextInput = {}): ResolvedPrototypeApiContext | null {
+}: ResolveRuntimeApiContextInput = {}): ResolvedRuntimeApiContext | null {
   const mappedOrganizationId = mapOrganizationId(organizationId);
   const mappedActorUserId = mapActorUserId(actorUserId);
   const mappedStoreId = storeId ? mapStoreId(storeId) : "";

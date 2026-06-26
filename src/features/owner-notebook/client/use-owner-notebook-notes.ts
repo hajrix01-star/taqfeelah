@@ -18,7 +18,7 @@ import {
   updateOwnerNotebookNoteViaApi,
 } from "./owner-notebook-api-client";
 import {
-  mergeLegacyOwnerNotebookNotesIntoDemoLocal,
+  mergeLegacyOwnerNotebookNotesIntoLocalStore,
   migrateOwnerNotebookNotesToApi,
 } from "./owner-notebook-legacy-migration";
 import type {
@@ -90,7 +90,7 @@ export function useOwnerNotebookNotes({
         return;
       }
 
-      setNotes(mergeLegacyOwnerNotebookNotesIntoDemoLocal({ organizationId, userId }));
+      setNotes(mergeLegacyOwnerNotebookNotesIntoLocalStore({ organizationId, userId }));
       setNextCursor(null);
       setHydrated(true);
     };

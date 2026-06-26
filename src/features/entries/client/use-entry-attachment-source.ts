@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { isUuid } from "@/core/client/api-id-utils";
-import { readAttachmentPayload } from "@/features/attachments/client/prototype-attachment-storage";
+import { readAttachmentPayload } from "@/features/attachments/client/attachment-payload-storage";
 import { fetchStoreAttachmentViaApi } from "@/features/closeouts/client/closeout-attachments-api-client";
 import {
   clearEntryAttachmentSourceCache,

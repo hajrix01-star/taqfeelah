@@ -1,4 +1,4 @@
-import type { Dispatch, MutableRefObject, ReactNode, RefObject, SetStateAction } from "react";
+﻿import type { Dispatch, MutableRefObject, ReactNode, RefObject, SetStateAction } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { DisplayLang } from "@/core/i18n/display-locale";
 import type { NotebookThemeId } from "@/features/daily-closeouts/daily-closeouts-types";
@@ -31,25 +31,25 @@ import type { StoreOperationalSettings } from "@/domain/store-operational-settin
 
 export type { DisplayLang, OperationalEntry, OperationalEntryActor, OperationalEntryPayload, NotebookThemeId, RegisterLogFilters };
 
-export type PrototypeOperationalEntry = OperationalEntry & {
+export type AppOperationalEntry = OperationalEntry & {
   closeoutOwnerEditedByUserId?: string;
   closeoutOwnerEditedByName?: string;
 };
 
-export type PrototypeAttachmentPreviewState = {
+export type AppAttachmentPreviewState = {
   src: string;
   shareContext?: Record<string, unknown> | null;
 } | null;
 
-export type PrototypePendingDuplicateSummary = (NonNullable<PendingDuplicateSummary> & {
+export type AppPendingDuplicateSummary = (NonNullable<PendingDuplicateSummary> & {
   previousEntries?: OperationalEntry[];
 }) | null;
 
-export type PrototypeLang = DisplayLang;
+export type AppLang = DisplayLang;
 
-export type PrototypeAuthScreen = "gateway" | "owner" | "employee" | (string & {});
+export type AppAuthScreen = "gateway" | "owner" | "employee" | (string & {});
 
-export type PrototypeOwnerPage =
+export type AppOwnerPage =
   | "home"
   | "register"
   | "closeouts"
@@ -57,9 +57,9 @@ export type PrototypeOwnerPage =
   | "settings"
   | (string & {});
 
-export type PrototypeEmployeePage = "home" | "entries" | "settings" | (string & {});
+export type AppEmployeePage = "home" | "entries" | "settings" | (string & {});
 
-export type PrototypeStoreRecord = {
+export type AppStoreRecord = {
   sales: number;
   expense: number;
   ratio: string;
@@ -67,7 +67,7 @@ export type PrototypeStoreRecord = {
   proofs: number;
 };
 
-export type PrototypeBusiness = {
+export type AppBusiness = {
   id: string;
   nameKey?: string;
   nameAr?: string;
@@ -76,12 +76,12 @@ export type PrototypeBusiness = {
   locationKey?: string;
   displayName?: string;
   customLocation?: string;
-  day?: PrototypeStoreRecord;
-  month?: PrototypeStoreRecord;
+  day?: AppStoreRecord;
+  month?: AppStoreRecord;
   [key: string]: unknown;
 };
 
-export type PrototypeStaffMember = {
+export type AppStaffMember = {
   id?: string;
   nameAr?: string;
   nameEn?: string;
@@ -91,14 +91,14 @@ export type PrototypeStaffMember = {
   [key: string]: unknown;
 };
 
-export type PrototypeOwnerActor = OperationalEntryActor & {
+export type AppOwnerActor = OperationalEntryActor & {
   role?: string;
   userId?: string;
   nameAr?: string;
   nameEn?: string;
 };
 
-export type PrototypeChannel = {
+export type AppChannel = {
   id: string;
   text?: string;
   kind?: string;
@@ -107,79 +107,79 @@ export type PrototypeChannel = {
   [key: string]: unknown;
 };
 
-export type PrototypeExpenseCategory = {
+export type AppExpenseCategory = {
   id: string;
   label: string;
   amount?: number;
 };
 
-export type PrototypeOutflowCategory = PrototypeExpenseCategory & {
+export type AppOutflowCategory = AppExpenseCategory & {
   amount?: number;
 };
 
-export type PrototypeTextFn = (lang: PrototypeLang, key: string) => string;
+export type AppTextFn = (lang: AppLang, key: string) => string;
 
-export type PrototypeMoneyFn = (value: number, lang: PrototypeLang) => string;
+export type AppMoneyFn = (value: number, lang: AppLang) => string;
 
-export type PrototypeChannelNameFn = (
-  channel: PrototypeChannel | Record<string, unknown>,
-  lang: PrototypeLang,
+export type AppChannelNameFn = (
+  channel: AppChannel | Record<string, unknown>,
+  lang: AppLang,
 ) => string;
 
-export type PrototypeFormatCalendarDateFn = (
+export type AppFormatCalendarDateFn = (
   date: string,
-  lang: PrototypeLang,
+  lang: AppLang,
 ) => string;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TaqfeelahAppCallback = (...args: any[]) => any;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type PrototypeSetState<T = any> = Dispatch<SetStateAction<T>>;
+export type AppSetState<T = any> = Dispatch<SetStateAction<T>>;
 
-export type PrototypeRef<T> = MutableRefObject<T | null>;
+export type AppRef<T> = MutableRefObject<T | null>;
 
-export type PrototypeAttachmentsApiProps = {
+export type AppAttachmentsApiProps = {
   attachmentsApiEnabled?: boolean;
   attachmentsApiOrganizationId?: string;
   attachmentsApiActorUserId?: string;
   attachmentsApiActorRole?: string;
 };
 
-export type PrototypeEntryAttachmentsApiProps = {
+export type AppEntryAttachmentsApiProps = {
   entryAttachmentsApiEnabled?: boolean;
   entryAttachmentsApiOrganizationId?: string;
   entryAttachmentsApiActorUserId?: string;
   entryAttachmentsApiActorRole?: string;
 };
 
-export type PrototypeLangProps = {
-  lang: PrototypeLang;
+export type AppLangProps = {
+  lang: AppLang;
 };
 
-export type PrototypeNotebookThemeProps = {
+export type AppNotebookThemeProps = {
   notebookTheme?: NotebookThemeId | string;
 };
 
-export type PrototypeOperationalEntryList = OperationalEntry[];
+export type AppOperationalEntryList = OperationalEntry[];
 
-export type PrototypeCloseoutRecord = CloseoutRecord;
+export type AppCloseoutRecord = CloseoutRecord;
 
-export type PrototypeStoreChannelSettings = Record<string, StoreChannelConfig>;
+export type AppStoreChannelSettings = Record<string, StoreChannelConfig>;
 
-export type PrototypeStoreOperationalSettings = Record<string, StoreOperationalSettings>;
+export type AppStoreOperationalSettings = Record<string, StoreOperationalSettings>;
 
-export type PrototypeVoidRestoreTarget = OperationalEntry | null;
+export type AppVoidRestoreTarget = OperationalEntry | null;
 
-export type PrototypeShareSnapshot = Record<string, unknown> | null;
+export type AppShareSnapshot = Record<string, unknown> | null;
 
-export type PrototypeSavedOutflowShareTarget = OperationalEntry | null;
+export type AppSavedOutflowShareTarget = OperationalEntry | null;
 
-export type PrototypeSelectedOperation = OperationalEntry | null;
+export type AppSelectedOperation = OperationalEntry | null;
 
-export type PrototypeReloadOperationalEntriesFn = LoadOperationalEntriesFn;
+export type AppReloadOperationalEntriesFn = LoadOperationalEntriesFn;
 
-export type PrototypeChildrenProps = {
+export type AppChildrenProps = {
   children?: ReactNode;
 };
 
@@ -240,9 +240,9 @@ export type NotebookShareSnapshot = Record<string, unknown> & {
   showSummaryDetails?: boolean;
   showDetails?: boolean;
   showOutflowTransactions?: boolean;
-  reportChannels?: PrototypeChannel[];
+  reportChannels?: AppChannel[];
   summaryBusinessRows?: Array<Record<string, unknown>>;
-  summaryRecord?: PrototypeStoreRecord;
+  summaryRecord?: AppStoreRecord;
   snapshotOutflowCategories?: Array<{ id: string; amount?: number }>;
   snapshotChannelRows?: Array<{ label?: string; amount?: number } & Record<string, unknown>>;
 };
@@ -261,7 +261,7 @@ export type NotebookShareDayRow = {
 };
 
 export type NotebookShareBusinessRow = {
-  business: PrototypeBusiness;
+  business: AppBusiness;
   sales: number;
   expense: number;
   net: number;
@@ -289,7 +289,7 @@ export type NotebookShareModel = {
   isProofsReport: boolean;
   combined: boolean;
   shareDate: string;
-  record: PrototypeStoreRecord;
+  record: AppStoreRecord;
   netMarginRatio: string;
   title: string;
   periodLabel: string;
@@ -318,11 +318,11 @@ export type NotebookShareModel = {
 export type BuildNotebookShareModelInput = {
   snapshot: NotebookShareSnapshot;
   lang: DisplayLang;
-  businessesList: PrototypeBusiness[];
+  businessesList: AppBusiness[];
   operationalEntries: OperationalEntry[];
   archivedBusinessIds: string[];
   apiEntries?: OperationalEntry[] | null;
-  apiRecord?: PrototypeStoreRecord | null;
+  apiRecord?: AppStoreRecord | null;
   apiChannelRows?: NotebookShareChannelRow[] | null;
   apiDayRows?: NotebookShareDayRow[] | null;
 };
@@ -355,8 +355,8 @@ export type OwnerSettingsScreenProps = {
   setStoreChannelSettings: (value: Record<string, StoreChannelConfig>) => void;
   storeOperationalSettings: Record<string, StoreOperationalSettings>;
   setStoreOperationalSettings: (value: Record<string, StoreOperationalSettings>) => void;
-  configuredBusinesses: PrototypeBusiness[];
-  setConfiguredBusinesses: (value: PrototypeBusiness[]) => void;
+  configuredBusinesses: AppBusiness[];
+  setConfiguredBusinesses: (value: AppBusiness[]) => void;
   archivedBusinessIds: string[];
   setArchivedBusinessIds: (value: string[]) => void;
   staff: StaffMember[];
@@ -387,9 +387,9 @@ export type OwnerSettingsScreenProps = {
 
 export type OwnerSettingsStoreFlattenedPanelProps = {
   lang: DisplayLang;
-  selectedStore: PrototypeBusiness;
-  displayBusinessName: (business: PrototypeBusiness) => string;
-  displayLocation: (business: PrototypeBusiness) => string;
+  selectedStore: AppBusiness;
+  displayBusinessName: (business: AppBusiness) => string;
+  displayLocation: (business: AppBusiness) => string;
   archived: boolean;
   operationalConfig: StoreOperationalSettings;
   draftStoreName: string;
@@ -398,13 +398,13 @@ export type OwnerSettingsStoreFlattenedPanelProps = {
   setDraftStoreLocation: (value: string) => void;
   saveStoreProfile: () => void;
   channelConfig: StoreChannelConfig;
-  retiredChannels: PrototypeChannel[];
+  retiredChannels: AppChannel[];
   newCustomIncomeSourceName: string;
   setNewCustomIncomeSourceName: (value: string) => void;
   toggleChannel: (channelId: string) => void;
-  requestRetireChannel: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
-  restoreSalesChannel: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
-  deleteCustomIncomeSource: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
+  requestRetireChannel: (channel: AppChannel | Record<string, unknown> | string) => void;
+  restoreSalesChannel: (channel: AppChannel | Record<string, unknown> | string) => void;
+  deleteCustomIncomeSource: (channel: AppChannel | Record<string, unknown> | string) => void;
   addCustomIncomeSource: (names?: { nameAr?: string; nameEn?: string }) => void;
   saveChannelSettings: () => void;
   cancelChannelDraft: () => void;
@@ -418,8 +418,8 @@ export type OwnerSettingsStoreFlattenedPanelProps = {
   setSelectedBusiness: (value: string) => void;
   setOwnerPage: (value: string) => void;
   toggleArchive: (storeId: string) => void;
-  requestArchiveStore: (store?: PrototypeBusiness) => void;
-  openStoreDelete: (store: PrototypeBusiness) => void;
+  requestArchiveStore: (store?: AppBusiness) => void;
+  openStoreDelete: (store: AppBusiness) => void;
   settingsSuccess: boolean;
   settingsNotice: string;
   deleteDialogProps: OwnerSettingsDeleteDialogProps;
@@ -453,12 +453,12 @@ export type OwnerSettingsTabbedShellProps = {
 export type RegisterViewCounts = Partial<Record<"report" | "closeouts" | "operations" | "attachments", number>>;
 
 export type OwnerCloseoutModalsProps = {
-  lang: PrototypeLang;
+  lang: AppLang;
   ownerManageCloseout: DailyCloseoutRecord | null;
   ownerDisplayName?: string;
   ownerNotebookTheme?: NotebookThemeId | string;
-  resolveSalesChannels?: (storeId: string) => PrototypeChannel[];
-  channelLabel?: (channel: PrototypeChannel | Record<string, unknown>) => string;
+  resolveSalesChannels?: (storeId: string) => AppChannel[];
+  channelLabel?: (channel: AppChannel | Record<string, unknown>) => string;
   onCloseoutUpdated?: (closeout: DailyCloseoutRecord) => void | Promise<void>;
   onCloseoutDeleted?: (closeout: DailyCloseoutRecord) => void | Promise<void>;
   onClose: () => void;
@@ -470,21 +470,21 @@ export type OwnerCloseoutModalsProps = {
 };
 
 export type OwnerCloseoutEditFlowProps = {
-  lang: PrototypeLang;
+  lang: AppLang;
   editCloseout: DailyCloseoutRecord | null;
-  ownerActor: PrototypeOwnerActor | Record<string, unknown>;
+  ownerActor: AppOwnerActor | Record<string, unknown>;
   ownerNotebookTheme?: NotebookThemeId | string;
-  resolveSalesChannels?: (storeId: string) => PrototypeChannel[];
-  channelLabel?: (channel: PrototypeChannel | Record<string, unknown>) => string;
+  resolveSalesChannels?: (storeId: string) => AppChannel[];
+  channelLabel?: (channel: AppChannel | Record<string, unknown>) => string;
   onCloseoutUpdated?: (closeout: DailyCloseoutRecord) => void | Promise<void>;
   onClose: () => void;
 };
 
 export type NotebookShareModalProps = {
-  lang: PrototypeLang;
+  lang: AppLang;
   snapshot: NotebookShareSnapshot | null;
   onClose: () => void;
-  businessesList?: PrototypeBusiness[];
+  businessesList?: AppBusiness[];
   operationalEntries?: OperationalEntry[];
   archivedBusinessIds?: string[];
   notebookExportApiEnabled?: boolean;
@@ -493,16 +493,16 @@ export type NotebookShareModalProps = {
 };
 
 export type OwnerNotebookShareModalProps = {
-  lang: PrototypeLang;
+  lang: AppLang;
   note: OwnerNotebookNote | null;
   onClose: () => void;
 };
 
 export type EmployeeSettingsScreenProps = {
-  lang: PrototypeLang;
+  lang: AppLang;
   onBack: () => void;
-  currentStore: PrototypeBusiness | null;
-  assignedStores: PrototypeBusiness[];
+  currentStore: AppBusiness | null;
+  assignedStores: AppBusiness[];
   onSelectStore: (storeId: string) => void;
   employeeNotebookTheme: NotebookThemeId | string;
   setEmployeeNotebookTheme: (theme: NotebookThemeId | string) => void;
@@ -511,7 +511,7 @@ export type EmployeeSettingsScreenProps = {
 };
 
 export type OwnerNotebookScreenProps = {
-  lang: PrototypeLang;
+  lang: AppLang;
   notebookTheme?: NotebookThemeId | string;
   organizationId?: string;
   userId?: string;
@@ -555,13 +555,13 @@ export type OwnerSettingsStoreProfilePanelProps = StorePanelLangProps & {
 
 export type OwnerSettingsStoreChannelsPanelProps = StorePanelLangProps & {
   channelConfig: StoreChannelConfig;
-  retiredChannels: PrototypeChannel[];
+  retiredChannels: AppChannel[];
   newCustomIncomeSourceName: string;
   setNewCustomIncomeSourceName: (value: string) => void;
   toggleChannel: (channelId: string) => void;
-  requestRetireChannel: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
-  restoreSalesChannel: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
-  deleteCustomIncomeSource: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
+  requestRetireChannel: (channel: AppChannel | Record<string, unknown> | string) => void;
+  restoreSalesChannel: (channel: AppChannel | Record<string, unknown> | string) => void;
+  deleteCustomIncomeSource: (channel: AppChannel | Record<string, unknown> | string) => void;
   addCustomIncomeSource: (names?: { nameAr?: string; nameEn?: string }) => void;
   settingsNotice: string;
   backFromStorePanel: () => void;
@@ -586,9 +586,9 @@ export type OwnerSettingsStoreAlertsPanelProps = StorePanelLangProps & {
 };
 
 export type OwnerSettingsStoreOverviewPanelProps = StorePanelLangProps & {
-  selectedStore: PrototypeBusiness;
-  displayBusinessName: (business: PrototypeBusiness) => string;
-  displayLocation: (business: PrototypeBusiness) => string;
+  selectedStore: AppBusiness;
+  displayBusinessName: (business: AppBusiness) => string;
+  displayLocation: (business: AppBusiness) => string;
   archived: boolean;
   activeChannelCount: number;
   activeCategoryCount: number;
@@ -598,8 +598,8 @@ export type OwnerSettingsStoreOverviewPanelProps = StorePanelLangProps & {
   setSelectedBusiness: (value: string) => void;
   setOwnerPage: (value: string) => void;
   toggleArchive: (storeId: string) => void;
-  requestArchiveStore: (store?: PrototypeBusiness) => void;
-  openStoreDelete: (store: PrototypeBusiness) => void;
+  requestArchiveStore: (store?: AppBusiness) => void;
+  openStoreDelete: (store: AppBusiness) => void;
   settingsSuccess: boolean;
   closeStore: () => void;
   deleteDialogProps: OwnerSettingsDeleteDialogProps;
@@ -621,16 +621,16 @@ export type OwnerSettingsScreenHandlersContext = any;
 export type OwnerSettingsIncomeSourcesEditorProps = {
   lang: DisplayLang;
   channelConfig: StoreChannelConfig;
-  retiredChannels: PrototypeChannel[];
+  retiredChannels: AppChannel[];
   newCustomIncomeSourceName: string;
   setNewCustomIncomeSourceName: (value: string) => void;
   toggleChannel: (channelId: string) => void;
-  requestRetireChannel: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
-  restoreSalesChannel: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
-  deleteCustomIncomeSource: (channel: PrototypeChannel | Record<string, unknown> | string) => void;
+  requestRetireChannel: (channel: AppChannel | Record<string, unknown> | string) => void;
+  restoreSalesChannel: (channel: AppChannel | Record<string, unknown> | string) => void;
+  deleteCustomIncomeSource: (channel: AppChannel | Record<string, unknown> | string) => void;
   addCustomIncomeSource: (names?: { nameAr?: string; nameEn?: string }) => void;
   text: (lang: DisplayLang, key: string) => string;
-  channelName: (channel: PrototypeChannel | Record<string, unknown>, lang: DisplayLang) => string;
+  channelName: (channel: AppChannel | Record<string, unknown>, lang: DisplayLang) => string;
 };
 
 export type OwnerSettingsTeamRosterProps = Record<string, unknown> & {
@@ -642,8 +642,8 @@ export type OwnerSettingsTeamRosterProps = Record<string, unknown> & {
   employeeStoreIds: (person: StaffMember) => string[];
   toggleEmployeeActive: (personId: string) => void;
   setDeleteTarget: (target: OwnerSettingsDeleteTarget | Record<string, unknown> | null) => void;
-  activeStoredBusinesses: PrototypeBusiness[];
-  displayBusinessName: (business: PrototypeBusiness) => string;
+  activeStoredBusinesses: AppBusiness[];
+  displayBusinessName: (business: AppBusiness) => string;
   toggleEmployeeStore: (personId: string, storeId: string) => void;
   draftAuthEmployeePins: Record<string, string>;
   updateDraftEmployeePin: (personId: string, pin: string) => void;
@@ -662,17 +662,17 @@ export type RegisterUiProps = {
 };
 
 export type TaqfeelahAppPageContentProps = {
-  lang: PrototypeLang;
-  text: PrototypeTextFn;
-  channelName: PrototypeChannelNameFn;
-  formatCalendarDate: PrototypeFormatCalendarDateFn;
+  lang: AppLang;
+  text: AppTextFn;
+  channelName: AppChannelNameFn;
+  formatCalendarDate: AppFormatCalendarDateFn;
   employee: boolean;
-  employeePage: PrototypeEmployeePage;
-  activeEmployee: PrototypeStaffMember | null;
+  employeePage: AppEmployeePage;
+  activeEmployee: AppStaffMember | null;
   sessionDisplayName?: string;
   employeeRuntimeReady: boolean;
-  currentEmployeeBusiness: PrototypeBusiness | null;
-  assignedEmployeeBusinesses: PrototypeBusiness[];
+  currentEmployeeBusiness: AppBusiness | null;
+  assignedEmployeeBusinesses: AppBusiness[];
   setEmployeeBusinessId: (id: string) => void;
   currentEmployeeChannelConfig: StoreChannelConfig;
   employeeNotebookTheme: NotebookThemeId | string;
@@ -681,22 +681,22 @@ export type TaqfeelahAppPageContentProps = {
   handleEmployeeNotebookThemeSave: (theme: NotebookThemeId | string) => void;
   setHelpOpen: (open: boolean) => void;
   setEmployeeEntryActive: (active: boolean) => void;
-  employeeAddHandlerRef: PrototypeRef<() => void>;
-  employeeSettingsOpenerRef: PrototypeRef<() => void>;
+  employeeAddHandlerRef: AppRef<() => void>;
+  employeeSettingsOpenerRef: AppRef<() => void>;
   saving: boolean;
   closeoutsApiDbSource: boolean;
-  closeoutAttachmentsApiProps: PrototypeAttachmentsApiProps;
-  ownerPage: PrototypeOwnerPage;
+  closeoutAttachmentsApiProps: AppAttachmentsApiProps;
+  ownerPage: AppOwnerPage;
   ownerCloseoutActor: Record<string, unknown>;
   runtimeApiStoresReady: boolean;
-  ownerCloseoutBusiness: PrototypeBusiness | null;
-  activeBusinesses: Array<PrototypeBusiness | Record<string, unknown>>;
+  ownerCloseoutBusiness: AppBusiness | null;
+  activeBusinesses: Array<AppBusiness | Record<string, unknown>>;
   setSelectedBusiness: (value: string) => void;
   ownerCloseoutChannelConfig: StoreChannelConfig;
   notebookTheme: NotebookThemeId | string;
   setOwnerEntryActive: (active: boolean) => void;
-  ownerAddHandlerRef: PrototypeRef<() => void>;
-  setOwnerPage: (page: PrototypeOwnerPage) => void;
+  ownerAddHandlerRef: AppRef<() => void>;
+  setOwnerPage: (page: AppOwnerPage) => void;
   entriesApiDbSource: boolean;
   operationalEntries: OperationalEntry[];
   operationalEntriesLoading: boolean;
@@ -709,9 +709,9 @@ export type TaqfeelahAppPageContentProps = {
   handleOpenOwnerOperation: TaqfeelahAppCallback;
   requestVoidOperation: TaqfeelahAppCallback;
   requestRestoreOperation: TaqfeelahAppCallback;
-  setOwnerEditCloseout: (closeout: PrototypeCloseoutRecord | null) => void;
-  handleOwnerCloseoutDeleted: (closeout: PrototypeCloseoutRecord) => void | Promise<void>;
-  setShareSnapshot: PrototypeSetState<PrototypeShareSnapshot>;
+  setOwnerEditCloseout: (closeout: AppCloseoutRecord | null) => void;
+  handleOwnerCloseoutDeleted: (closeout: AppCloseoutRecord) => void | Promise<void>;
+  setShareSnapshot: AppSetState<AppShareSnapshot>;
   activeViewBusiness: string;
   homeReportChannelConfig: StoreChannelConfig;
   entriesApiEnabled: boolean;
@@ -719,38 +719,38 @@ export type TaqfeelahAppPageContentProps = {
   closeoutsApiOrganizationId: string | null;
   ownerApiUserId: string | null;
   ownerNotebookApiEnabled?: boolean;
-  entryAttachmentsApiProps: PrototypeEntryAttachmentsApiProps;
+  entryAttachmentsApiProps: AppEntryAttachmentsApiProps;
   saveOwnerSummary: (payload: OperationalEntryPayload) => Promise<void>;
   saveOwner: (payload: OperationalEntryPayload) => Promise<void>;
-  storeChannelSettings: PrototypeStoreChannelSettings;
-  storeOperationalSettings: PrototypeStoreOperationalSettings;
+  storeChannelSettings: AppStoreChannelSettings;
+  storeOperationalSettings: AppStoreOperationalSettings;
   duplicateSummaryFocus: Record<string, unknown> | null | unknown;
   archivedReadOnlyBusinessId: string | null;
   selectedBusiness: string;
-  reportingBusinesses: Array<PrototypeBusiness | Record<string, unknown>>;
+  reportingBusinesses: Array<AppBusiness | Record<string, unknown>>;
   archivedBusinessIds: string[];
   registerEntriesPaginationEnabled: boolean;
-  resolveStoreSalesChannels: (storeId: string) => Array<PrototypeChannel | Record<string, unknown>>;
-  configuredBusinesses: Array<PrototypeBusiness | Record<string, unknown>>;
-  setConfiguredBusinesses: PrototypeSetState<Array<PrototypeBusiness | Record<string, unknown>>>;
-  setArchivedBusinessIds: PrototypeSetState<string[]>;
-  staff: Array<PrototypeStaffMember | OrgStaffMember | Record<string, unknown>>;
-  setStaff: PrototypeSetState<Array<PrototypeStaffMember | OrgStaffMember | Record<string, unknown>>>;
+  resolveStoreSalesChannels: (storeId: string) => Array<AppChannel | Record<string, unknown>>;
+  configuredBusinesses: Array<AppBusiness | Record<string, unknown>>;
+  setConfiguredBusinesses: AppSetState<Array<AppBusiness | Record<string, unknown>>>;
+  setArchivedBusinessIds: AppSetState<string[]>;
+  staff: Array<AppStaffMember | OrgStaffMember | Record<string, unknown>>;
+  setStaff: AppSetState<Array<AppStaffMember | OrgStaffMember | Record<string, unknown>>>;
   ownerProfile: Record<string, unknown>;
-  setOwnerProfile: PrototypeSetState<Record<string, unknown>>;
+  setOwnerProfile: AppSetState<Record<string, unknown>>;
   authOwnerUsername: string;
   setAuthOwnerUsername: (value: string) => void;
   authOwnerPassword: string;
   setAuthOwnerPassword: (value: string) => void;
   authEmployeePins: Record<string, string>;
-  setAuthEmployeePins: PrototypeSetState<Record<string, string>>;
+  setAuthEmployeePins: AppSetState<Record<string, string>>;
   employeePreferences: Record<string, unknown>;
   ownerShellPreferences: Record<string, unknown>;
   setNotebookTheme: (theme: NotebookThemeId | string) => void;
-  setStoreChannelSettings: PrototypeSetState<PrototypeStoreChannelSettings>;
-  setStoreOperationalSettings: PrototypeSetState<PrototypeStoreOperationalSettings>;
+  setStoreChannelSettings: AppSetState<AppStoreChannelSettings>;
+  setStoreOperationalSettings: AppSetState<AppStoreOperationalSettings>;
   setArchivedReadOnlyBusinessId: (value: string | null) => void;
-  setLastCloseoutDates: PrototypeSetState;
+  setLastCloseoutDates: AppSetState;
   persistRuntimeSettingsNow: TaqfeelahAppCallback;
   reloadOrgConfig: TaqfeelahAppCallback;
   flushOrgConfigPersist: TaqfeelahAppCallback;
@@ -761,64 +761,64 @@ export type TaqfeelahAppPageContentProps = {
 };
 
 export type TaqfeelahAppOverlayStackProps = {
-  lang: PrototypeLang;
+  lang: AppLang;
   employee: boolean;
-  employeePage: PrototypeEmployeePage;
-  ownerPage: PrototypeOwnerPage;
+  employeePage: AppEmployeePage;
+  ownerPage: AppOwnerPage;
   employeeEntryActive: boolean;
   ownerEntryActive: boolean;
-  employeeAddHandlerRef: PrototypeRef<() => void>;
+  employeeAddHandlerRef: AppRef<() => void>;
   handleOwnerQuickAddOpen: () => void;
-  changeEmployeePage: (page: PrototypeEmployeePage) => void;
-  changeOwnerPage: (page: PrototypeOwnerPage) => void;
+  changeEmployeePage: (page: AppEmployeePage) => void;
+  changeOwnerPage: (page: AppOwnerPage) => void;
   setQuickAddOpen: (open: boolean) => void;
   quickAddOpen: boolean;
   handleOpenQuickAddSummary: () => void;
   handleOpenQuickAddExpense: () => void;
-  selected: PrototypeSelectedOperation;
-  setSelected: PrototypeSetState;
+  selected: AppSelectedOperation;
+  setSelected: AppSetState;
   requestVoidOperation: TaqfeelahAppCallback;
   requestRestoreOperation: TaqfeelahAppCallback;
   archivedBusinessIds: string[];
-  entryAttachmentsApiProps: PrototypeEntryAttachmentsApiProps;
-  pendingDuplicateSummary: PrototypePendingDuplicateSummary;
-  setPendingDuplicateSummary: PrototypeSetState;
-  activeBusinesses: Array<PrototypeBusiness | Record<string, unknown>>;
+  entryAttachmentsApiProps: AppEntryAttachmentsApiProps;
+  pendingDuplicateSummary: AppPendingDuplicateSummary;
+  setPendingDuplicateSummary: AppSetState;
+  activeBusinesses: Array<AppBusiness | Record<string, unknown>>;
   confirmDuplicateSummary: () => void | Promise<void>;
-  voidTarget: PrototypeVoidRestoreTarget;
-  setVoidTarget: PrototypeSetState;
+  voidTarget: AppVoidRestoreTarget;
+  setVoidTarget: AppSetState;
   confirmVoidOperation: () => void | Promise<void>;
-  restoreTarget: PrototypeVoidRestoreTarget;
-  setRestoreTarget: PrototypeSetState;
+  restoreTarget: AppVoidRestoreTarget;
+  setRestoreTarget: AppSetState;
   confirmRestoreOperation: () => void | Promise<void>;
-  savedOutflowShareTarget: PrototypeSavedOutflowShareTarget;
-  setSavedOutflowShareTarget: PrototypeSetState;
-  shareSnapshot: PrototypeShareSnapshot | unknown;
-  setShareSnapshot: PrototypeSetState<PrototypeShareSnapshot>;
-  reportingBusinesses: Array<PrototypeBusiness | Record<string, unknown>>;
+  savedOutflowShareTarget: AppSavedOutflowShareTarget;
+  setSavedOutflowShareTarget: AppSetState;
+  shareSnapshot: AppShareSnapshot | unknown;
+  setShareSnapshot: AppSetState<AppShareSnapshot>;
+  reportingBusinesses: Array<AppBusiness | Record<string, unknown>>;
   operationalEntries: OperationalEntry[];
   phase9ApiEnabled: boolean;
   entriesApiEnabled: boolean;
   closeoutsApiEnabled?: boolean;
   runtimeApiAuth: Record<string, unknown>;
-  ownerManageCloseout: PrototypeCloseoutRecord | null;
+  ownerManageCloseout: AppCloseoutRecord | null;
   ownerDisplayName: string;
   notebookTheme: NotebookThemeId | string;
-  resolveStoreSalesChannels: (storeId: string) => Array<PrototypeChannel | Record<string, unknown>>;
-  channelName: PrototypeChannelNameFn;
-  handleOwnerCloseoutUpdated: (closeout: PrototypeCloseoutRecord) => void | Promise<void>;
-  handleOwnerCloseoutDeleted: (closeout: PrototypeCloseoutRecord) => void | Promise<void>;
-  setOwnerManageCloseout: (closeout: PrototypeCloseoutRecord | null) => void;
-  ownerEditCloseout: PrototypeCloseoutRecord | null;
-  setOwnerEditCloseout: (closeout: PrototypeCloseoutRecord | null) => void;
+  resolveStoreSalesChannels: (storeId: string) => Array<AppChannel | Record<string, unknown>>;
+  channelName: AppChannelNameFn;
+  handleOwnerCloseoutUpdated: (closeout: AppCloseoutRecord) => void | Promise<void>;
+  handleOwnerCloseoutDeleted: (closeout: AppCloseoutRecord) => void | Promise<void>;
+  setOwnerManageCloseout: (closeout: AppCloseoutRecord | null) => void;
+  ownerEditCloseout: AppCloseoutRecord | null;
+  setOwnerEditCloseout: (closeout: AppCloseoutRecord | null) => void;
   ownerCloseoutActor: Record<string, unknown>;
-  ownerCloseoutAttachmentsApiProps: PrototypeAttachmentsApiProps;
+  ownerCloseoutAttachmentsApiProps: AppAttachmentsApiProps;
   helpOpen: boolean;
   setHelpOpen: (open: boolean) => void;
 };
 
 export type OwnerRegisterScreenProps = {
-  lang: PrototypeLang;
+  lang: AppLang;
   onOpenOperation?: (entry: OperationalEntry) => void;
   onVoidOperation?: (entryId: string) => void;
   onRestoreOperation?: (entryId: string) => void;
@@ -828,7 +828,7 @@ export type OwnerRegisterScreenProps = {
   operationalEntries?: OperationalEntry[];
   selectedBusiness?: string;
   setSelectedBusiness?: (value: string) => void;
-  businessesList?: PrototypeBusiness[];
+  businessesList?: AppBusiness[];
   archivedBusinessIds?: string[];
   archivedReadOnlyBusinessId?: string | null;
   duplicateSummaryFocus?: Record<string, unknown> | null;
@@ -843,12 +843,12 @@ export type OwnerRegisterScreenProps = {
   entryAttachmentsApiOrganizationId?: string;
   entryAttachmentsApiActorUserId?: string;
   entryAttachmentsApiActorRole?: string;
-  configuredChannels?: PrototypeChannel[];
-  resolveStoreSalesChannels?: (storeId: string) => Array<PrototypeChannel | Record<string, unknown>>;
+  configuredChannels?: AppChannel[];
+  resolveStoreSalesChannels?: (storeId: string) => Array<AppChannel | Record<string, unknown>>;
 };
 
 export type OwnerHomeProps = {
-  lang: PrototypeLang;
+  lang: AppLang;
   operationalEntries?: OperationalEntry[];
   operationalEntriesLoading?: boolean;
   duplicateSalesAlerts?: Array<Record<string, unknown>>;
@@ -862,8 +862,8 @@ export type OwnerHomeProps = {
   notebookTheme?: NotebookThemeId | string;
   selectedBusiness?: string;
   setSelectedBusiness?: (value: string) => void;
-  businessesList?: PrototypeBusiness[];
-  configuredChannels?: PrototypeChannel[];
+  businessesList?: AppBusiness[];
+  configuredChannels?: AppChannel[];
   summaryApiEnabled?: boolean;
   summaryApiOrganizationId?: string;
   summaryApiActorUserId?: string;
@@ -879,7 +879,7 @@ export type OwnerHomeProps = {
 export type UseOwnerSettingsScreenStateProps = OwnerSettingsScreenProps;
 
 export type UseTaqfeelahAppOwnerSaveActionsProps = {
-  lang: PrototypeLang;
+  lang: AppLang;
   savingRef: MutableRefObject<boolean>;
   setSaving: (value: boolean) => void;
   entriesApiDbSource: boolean;
@@ -887,14 +887,14 @@ export type UseTaqfeelahAppOwnerSaveActionsProps = {
   activeBusinessIds: string[];
   todayDate: string;
   createOperationalEntryInApi: (params: CreateOperationalEntryInApiParams) => Promise<unknown>;
-  loadOperationalEntriesFromApi: PrototypeReloadOperationalEntriesFn;
+  loadOperationalEntriesFromApi: AppReloadOperationalEntriesFn;
   ownerApiUserId: string;
-  currentOwnerActor: PrototypeOwnerActor;
-  setLastCloseoutDates: PrototypeSetState;
-  setOwnerPage: (page: PrototypeOwnerPage) => void;
+  currentOwnerActor: AppOwnerActor;
+  setLastCloseoutDates: AppSetState;
+  setOwnerPage: (page: AppOwnerPage) => void;
   setSavedOutflowShareTarget: (entry: OperationalEntry | null) => void;
   setSaved: (value: boolean) => void;
-  setOperationalEntries: PrototypeSetState<OperationalEntry[]>;
+  setOperationalEntries: AppSetState<OperationalEntry[]>;
   closeoutsApiEnabled?: boolean;
   closeoutsApiOrganizationId?: string;
   ownerCloseoutChannelConfig?: StoreChannelConfig;
@@ -902,26 +902,26 @@ export type UseTaqfeelahAppOwnerSaveActionsProps = {
 };
 
 export type UseTaqfeelahAppOwnerCloseoutActionsProps = {
-  lang: PrototypeLang;
+  lang: AppLang;
   entriesApiDbSource: boolean;
   runtimeApiStoresReady: boolean;
   activeViewBusiness: string;
-  activeBusinesses: PrototypeBusiness[];
+  activeBusinesses: AppBusiness[];
   activeOwnerStoreId: string;
-  storeChannelSettings: PrototypeStoreChannelSettings;
+  storeChannelSettings: AppStoreChannelSettings;
   ownerApiUserId: string;
-  currentOwnerActor: PrototypeOwnerActor;
+  currentOwnerActor: AppOwnerActor;
   ownerProfile: Record<string, unknown>;
   ownerDisplayName: string;
-  setOwnerPage: (page: PrototypeOwnerPage) => void;
+  setOwnerPage: (page: AppOwnerPage) => void;
   setQuickAddOpen: (open: boolean) => void;
   openQuickAddSummary: () => void;
   openQuickAddExpense: () => void;
-  loadOperationalEntriesFromApi: PrototypeReloadOperationalEntriesFn;
+  loadOperationalEntriesFromApi: AppReloadOperationalEntriesFn;
   removeOperationalEntriesForCloseout: (closeoutId: string, storeId?: string) => void;
   syncCloseoutToOperationalEntries: TaqfeelahAppCallback;
-  setCloseoutAlerts: PrototypeSetState<Array<Record<string, unknown>>>;
-  setOwnerManageCloseout: PrototypeSetState<PrototypeCloseoutRecord | null>;
+  setCloseoutAlerts: AppSetState<Array<Record<string, unknown>>>;
+  setOwnerManageCloseout: AppSetState<AppCloseoutRecord | null>;
 };
 
 export type RegisterViewItem = SettingsTabItem;

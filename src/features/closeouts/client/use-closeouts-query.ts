@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
-import { withCloseoutTotals } from "@/features/daily-closeouts/daily-closeouts-demo-store";
+import { withCloseoutTotals } from "@/features/daily-closeouts/daily-closeouts-local-store";
 import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
 
 export function normalizeCloseoutsQueryResult(raw: unknown[]): DailyCloseoutRecord[] {

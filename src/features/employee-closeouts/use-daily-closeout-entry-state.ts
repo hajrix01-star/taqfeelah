@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react";
-import { text } from "../../components/taqfeelah-app/taqfeelah-app-demo-data";
-import { prepareAttachment } from "@/features/attachments/client/prototype-attachment-storage";
+import { text } from "../../components/taqfeelah-app/taqfeelah-app-reference-data";
+import { prepareAttachment } from "@/features/attachments/client/attachment-payload-storage";
 import { sanitizeAmountInput, toAmount } from "../../components/taqfeelah-app/taqfeelah-app-entry-form-utils";
 import { computeCloseoutTotals } from "../daily-closeouts/closeout-calculations";
 import {
@@ -11,7 +11,7 @@ import {
   mergeCloseoutSalesFromChannelValues,
   normalizeCloseoutSalesToArray,
 } from "../daily-closeouts/closeout-sales-normalize";
-import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-demo-store";
+import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-local-store";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import { confirmCloseoutSubmit } from "@/lib/ui/app-dialog/app-dialog-helpers";
 import type {

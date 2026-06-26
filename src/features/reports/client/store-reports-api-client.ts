@@ -1,9 +1,9 @@
-import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+﻿import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import {
   getRuntimeApiMaps,
   setRuntimeApiIdMaps,
 } from "@/core/client/runtime-api-maps-state";
-import { resolvePrototypeApiContext } from "@/core/client/prototype-api-context";
+import { resolveRuntimeApiContext } from "@/core/client/runtime-api-context";
 import type {
   ApiAttachmentsReport,
   ApiChannelsReport,
@@ -21,9 +21,9 @@ export function setReportsRuntimeApiIdMaps(overrides: ReportsRuntimeApiMapOverri
 }
 
 function assertReportApiContext(
-  context: ReturnType<typeof resolvePrototypeApiContext>,
+  context: ReturnType<typeof resolveRuntimeApiContext>,
   resource: string,
-): asserts context is NonNullable<ReturnType<typeof resolvePrototypeApiContext>> {
+): asserts context is NonNullable<ReturnType<typeof resolveRuntimeApiContext>> {
   if (!context) {
     throw new Error(`${resource} API context missing/invalid: organizationId, actorUserId, or storeId mapping.`);
   }
@@ -73,11 +73,11 @@ async function fetchReport<T extends Record<string, unknown>>(
     extra = {},
   }: FetchReportArgs,
 ): Promise<T> {
-  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  const context = resolveRuntimeApiContext({ organizationId, actorUserId, actorRole, storeId });
   assertReportApiContext(context, `${path} report`);
   assertReportRange({ from, to }, `${path} report`);
 
-  const payload = await fetchApiJsonWithPrototypeContext(
+  const payload = await fetchApiJsonWithRuntimeContext(
     `/api/v1/reports/${path}?${buildReportQuery({
       storeId: context.storeId,
       from,
@@ -105,7 +105,7 @@ export async function fetchStorePeriodSummaryViaApi({
   to,
   period = "day",
 }: FetchStorePeriodSummaryArgs): Promise<ApiPeriodSummary> {
-  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  const context = resolveRuntimeApiContext({ organizationId, actorUserId, actorRole, storeId });
   assertReportApiContext(context, "period summary");
   assertReportRange({ from, to }, "period summary");
 
@@ -116,7 +116,7 @@ export async function fetchStorePeriodSummaryViaApi({
     path = `/api/v1/stores/${context.storeId}/summary/month?month=${encodeURIComponent(from.slice(0, 7))}`;
   }
 
-  const payload = await fetchApiJsonWithPrototypeContext(path, {
+  const payload = await fetchApiJsonWithRuntimeContext(path, {
     organizationId,
     actorUserId,
     actorRole,

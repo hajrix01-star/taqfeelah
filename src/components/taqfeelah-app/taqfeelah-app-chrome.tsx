@@ -17,9 +17,9 @@ import type { LucideIcon } from "lucide-react";
 import EmployeeFooterNav from "@/features/employee-closeouts/EmployeeFooterNav";
 import { notebookLinesBackground } from "@/features/daily-closeouts/notebook-themes";
 import { AppBrandMark } from "@/lib/brand/AppBrandMark";
-import { text } from "./taqfeelah-app-demo-data";
+import { text } from "./taqfeelah-app-reference-data";
 import { taqInteractive } from "@/core/ui/interactive-classes";
-import type { NotebookThemeId, PrototypeLang } from "./taqfeelah-app-types";
+import type { NotebookThemeId, AppLang } from "./taqfeelah-app-types";
 
 function Logo({ compact = false, centered = false, showTagline = false }: {
   compact?: boolean;
@@ -34,8 +34,8 @@ function Logo({ compact = false, centered = false, showTagline = false }: {
 }
 
 function LanguageSwitch({ lang, setLang }: {
-  lang: PrototypeLang;
-  setLang: (lang: PrototypeLang) => void;
+  lang: AppLang;
+  setLang: (lang: AppLang) => void;
 }) {
   return (
     <div className="flex shrink-0 items-center gap-1 rounded-full bg-white p-1 ring-1 ring-black/[0.05]">
@@ -48,7 +48,7 @@ function LanguageSwitch({ lang, setLang }: {
 function BackTitle({ title, onBack, lang, inNotebook = false }: {
   title: string;
   onBack: () => void;
-  lang: PrototypeLang;
+  lang: AppLang;
   inNotebook?: boolean;
 }) {
   const BackIcon = lang === "ar" ? ChevronRight : ChevronLeft;
@@ -67,8 +67,8 @@ function TopBar({
   notebookMode = false,
   notebookTheme = "yellow",
 }: {
-  lang: PrototypeLang;
-  setLang: (lang: PrototypeLang) => void;
+  lang: AppLang;
+  setLang: (lang: AppLang) => void;
   employee: boolean;
   onLogout?: () => void;
   onNotifications?: () => void;
@@ -160,7 +160,7 @@ function TopBar({
 type NavItem = { id: string; key: string; icon: LucideIcon };
 
 function BottomNav({ lang, employee, active, onChange, onAdd = () => {} }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   employee: boolean;
   active: string;
   onChange: (page: string) => void;

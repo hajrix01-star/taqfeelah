@@ -5,9 +5,9 @@ import { Building2, ChevronLeft, ChevronRight, CreditCard, ReceiptText, Smartpho
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import { formatPlanSubscriptionHomeLabel } from "@/features/billing/client/subscription-display";
 import { countEmployeeSeats } from "@/features/billing/client/entitlement-guards";
-import { text } from "./taqfeelah-app-demo-data";
+import { text } from "./taqfeelah-app-reference-data";
 import { SettingsLink } from "./owner-settings-ui-primitives";
-import type { OwnerSettingsSectionCommonProps, PrototypeBusiness } from "./taqfeelah-app-types";
+import type { OwnerSettingsSectionCommonProps, AppBusiness } from "./taqfeelah-app-types";
 import type { StaffMember } from "@/features/org-config/client/org-config-client-types";
 import type { ResolvedOrganizationEntitlements } from "@/features/billing/client/billing-client-types";
 
@@ -23,7 +23,7 @@ export function OwnerSettingsHomeSection({
   entitlementsLoading,
 }: OwnerSettingsSectionCommonProps & {
   ownerProfile: Record<string, unknown>;
-  activeStoredBusinesses: PrototypeBusiness[];
+  activeStoredBusinesses: AppBusiness[];
   visibleStaff: StaffMember[];
   notebookTheme: string;
   onLogout: () => void;

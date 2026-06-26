@@ -1,14 +1,14 @@
-import { bindsToServerAuth } from "@/core/config/runtime-capabilities";
-import type { PrototypeOwnerActor } from "./taqfeelah-app-types";
+﻿import { bindsToServerAuth } from "@/core/config/runtime-capabilities";
+import type { AppOwnerActor } from "./taqfeelah-app-types";
 
-export function resolveOwnerActor(prototypeOwnerActor: PrototypeOwnerActor): PrototypeOwnerActor {
+export function resolveOwnerActor(defaultOwnerActor: AppOwnerActor): AppOwnerActor {
   if (bindsToServerAuth()) {
     return {
       role: "owner",
-      userId: prototypeOwnerActor?.userId || "owner",
+      userId: defaultOwnerActor?.userId || "owner",
       nameAr: "",
       nameEn: "",
     };
   }
-  return prototypeOwnerActor;
+  return defaultOwnerActor;
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
   buildInitialStoreChannelSettings,
   createDefaultStoreChannelConfig,
@@ -58,7 +58,7 @@ describe("store channel config", () => {
       {},
       ["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"],
       defaultConfig,
-      { allowPrototypeDefaults: false },
+      { allowLocalDefaults: false },
     );
     expect(next["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"]).toEqual({ channels: [], activeIds: [] });
   });

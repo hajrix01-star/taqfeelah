@@ -1,4 +1,4 @@
-import {
+﻿import {
   isUuid,
   mapToUuid,
   reverseLookupKeyByUuid,
@@ -7,12 +7,12 @@ import {
 import { isEntriesApiDbSourceMode } from "@/core/config/entries-api-mode";
 import { sanitizeCloseoutChannelDisplayName } from "@/features/daily-closeouts/closeout-sales-normalize";
 import { isUuidLike } from "@/features/org-config/client/sales-channel-display";
-import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import {
   getRuntimeApiMaps,
   setRuntimeApiIdMaps as applyRuntimeApiIdMaps,
 } from "@/core/client/runtime-api-maps-state";
-import { resolvePrototypeApiContext } from "@/core/client/prototype-api-context";
+import { resolveRuntimeApiContext } from "@/core/client/runtime-api-context";
 import { closeoutRequiredEntryMessage } from "@/features/operations/client/closeout-required-entry-message";
 import type {
   CreateStoreEntryApiBody,
@@ -106,7 +106,7 @@ export async function fetchStoreEntriesViaApi({
   status = "all",
   limit = 800,
 }: FetchStoreEntriesParams): Promise<OperationalEntry[]> {
-  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  const context = resolveRuntimeApiContext({ organizationId, actorUserId, actorRole, storeId });
   assertEntriesApiContext(context, "entries fetch");
 
   const search = new URLSearchParams();
@@ -115,7 +115,7 @@ export async function fetchStoreEntriesViaApi({
   if (status === "active" || status === "voided" || status === "all") search.set("status", status);
   if (Number.isInteger(limit) && limit > 0) search.set("limit", String(limit));
 
-  const payload = await fetchApiJsonWithPrototypeContext(
+  const payload = await fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${context.storeId}/entries?${search.toString()}`,
     {
       organizationId,
@@ -142,7 +142,7 @@ export async function fetchStoreEntriesPageViaApi({
   limit = 50,
   cursor = "",
 }: FetchStoreEntriesPageParams): Promise<{ items: OperationalEntry[]; nextCursor: string | null }> {
-  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  const context = resolveRuntimeApiContext({ organizationId, actorUserId, actorRole, storeId });
   assertEntriesApiContext(context, "entries page");
 
   const search = new URLSearchParams({ paginated: "1" });
@@ -152,7 +152,7 @@ export async function fetchStoreEntriesPageViaApi({
   if (Number.isInteger(limit) && limit > 0) search.set("limit", String(limit));
   if (typeof cursor === "string" && cursor) search.set("cursor", cursor);
 
-  const payload = await fetchApiJsonWithPrototypeContext(
+  const payload = await fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${context.storeId}/entries?${search.toString()}`,
     {
       organizationId,
@@ -189,7 +189,7 @@ export async function createStoreEntryViaApi({
   payload,
 }: EntriesApiActorParams & { payload: CreateStoreEntryApiPayload }): Promise<unknown> {
   const { salesChannelIdMap } = getMaps();
-  const context = resolvePrototypeApiContext({
+  const context = resolveRuntimeApiContext({
     organizationId,
     actorUserId,
     actorRole,
@@ -239,7 +239,7 @@ export async function createStoreEntryViaApi({
     };
   }
 
-  return fetchApiJsonWithPrototypeContext(`/api/v1/stores/${context.storeId}/entries`, {
+  return fetchApiJsonWithRuntimeContext(`/api/v1/stores/${context.storeId}/entries`, {
     organizationId,
     actorUserId,
     actorRole,
@@ -257,7 +257,7 @@ export async function voidStoreEntryViaApi({
   entry,
   reason = "",
 }: EntriesApiActorParams & { entry: OperationalEntry; reason?: string }): Promise<unknown> {
-  const context = resolvePrototypeApiContext({
+  const context = resolveRuntimeApiContext({
     organizationId,
     actorUserId,
     actorRole,
@@ -265,7 +265,7 @@ export async function voidStoreEntryViaApi({
   });
   if (!context || !isUuid(entry?.id)) return null;
 
-  return fetchApiJsonWithPrototypeContext(
+  return fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${context.storeId}/entries/${encodeURIComponent(entry.id!)}/void`,
     {
       organizationId,
@@ -286,7 +286,7 @@ export async function restoreStoreEntryViaApi({
   entry,
   reason = "",
 }: EntriesApiActorParams & { entry: OperationalEntry; reason?: string }): Promise<unknown> {
-  const context = resolvePrototypeApiContext({
+  const context = resolveRuntimeApiContext({
     organizationId,
     actorUserId,
     actorRole,
@@ -294,7 +294,7 @@ export async function restoreStoreEntryViaApi({
   });
   if (!context || !isUuid(entry?.id)) return null;
 
-  return fetchApiJsonWithPrototypeContext(
+  return fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${context.storeId}/entries/${encodeURIComponent(entry.id!)}/restore`,
     {
       organizationId,

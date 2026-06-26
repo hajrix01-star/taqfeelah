@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { attachmentsFromEntries } from "@/components/taqfeelah-app/taqfeelah-app-demo-operational-entries";
+import { attachmentsFromEntries } from "@/components/taqfeelah-app/taqfeelah-app-operational-entry-helpers";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { fetchStoreEntriesViaApi } from "./store-entries-api-client";
 import { resolveAttachmentGroupForDate } from "./attachments-from-entries";
@@ -42,29 +42,29 @@ export function resolveHomeDayAttachmentGroupFromServer({
 }
 
 export function resolveHomeDayAttachmentGroupFromLocal({
-  demoLocalGroup = null,
+  localAttachmentGroup = null,
   fetchedGroup = null,
   shouldFetchDayEntries = false,
   fetchSucceeded = false,
   fetchFailed = false,
 }: {
-  demoLocalGroup?: HomeAttachmentGroup;
+  localAttachmentGroup?: HomeAttachmentGroup;
   fetchedGroup?: HomeAttachmentGroup;
   shouldFetchDayEntries?: boolean;
   fetchSucceeded?: boolean;
   fetchFailed?: boolean;
 } = {}): HomeAttachmentGroup {
-  const localItemCount = demoLocalGroup?.items?.length || 0;
+  const localItemCount = localAttachmentGroup?.items?.length || 0;
   const fetchedItemCount = fetchedGroup?.items?.length || 0;
 
   if (shouldFetchDayEntries) {
     if (fetchSucceeded) return fetchedGroup;
-    if (fetchFailed && localItemCount > 0) return demoLocalGroup;
+    if (fetchFailed && localItemCount > 0) return localAttachmentGroup;
     return fetchedGroup;
   }
 
   if (fetchedItemCount > localItemCount) return fetchedGroup;
-  if (localItemCount > 0) return demoLocalGroup;
+  if (localItemCount > 0) return localAttachmentGroup;
   return fetchedGroup;
 }
 
@@ -89,12 +89,12 @@ export function useHomeDayAttachments({
   actorRole?: string;
   storeId?: string;
 } = {}) {
-  const demoLocalGroup = useMemo(
+  const localAttachmentGroup = useMemo(
     () => (entriesApiEnabled ? null : resolveAttachmentGroupForDate(attachmentsFromEntries(localDayEntries), selectedDate)),
     [entriesApiEnabled, localDayEntries, selectedDate],
   );
 
-  const localItemCount = demoLocalGroup?.items?.length || 0;
+  const localItemCount = localAttachmentGroup?.items?.length || 0;
   const shouldFetchDayEntries = shouldFetchHomeDayAttachments({
     enabled,
     localItemCount,
@@ -146,7 +146,7 @@ export function useHomeDayAttachments({
       fetchSucceeded: shouldFetchDayEntries && query.isSuccess,
     })
     : resolveHomeDayAttachmentGroupFromLocal({
-      demoLocalGroup,
+      localAttachmentGroup,
       fetchedGroup,
       shouldFetchDayEntries,
       fetchSucceeded: shouldFetchDayEntries && query.isSuccess,

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect } from "react";
 import { isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
@@ -7,9 +7,9 @@ import { useEmployeePreferencesFromApi } from "@/features/runtime-settings/clien
 import { usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
 import type {
   NotebookThemeId,
-  PrototypeLang,
-  PrototypeSetState,
-  PrototypeStaffMember,
+  AppLang,
+  AppSetState,
+  AppStaffMember,
 } from "./taqfeelah-app-types";
 
 type EmployeePreferencesMap = Record<string, { notebookTheme?: NotebookThemeId | string; [key: string]: unknown }>;
@@ -18,11 +18,11 @@ type UseTaqfeelahAppEmployeeThemeSyncProps = {
   employee: boolean;
   loggedIn: boolean;
   employeeRuntimeReady: boolean;
-  lang: PrototypeLang;
+  lang: AppLang;
   sessionUserId: string;
-  activeEmployee: PrototypeStaffMember | null;
+  activeEmployee: AppStaffMember | null;
   employeePreferences: EmployeePreferencesMap;
-  setEmployeePreferences: PrototypeSetState<EmployeePreferencesMap>;
+  setEmployeePreferences: AppSetState<EmployeePreferencesMap>;
   employeeThemeOverride: NotebookThemeId | string;
   setEmployeeThemeOverride: (theme: NotebookThemeId | string) => void;
 };

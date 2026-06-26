@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { resolveReportDateRange } from "@/features/reports/client/report-period-range";
 import { fetchStoreCloseoutsViaApi } from "@/features/closeouts/client/closeouts-api-client";
-import { withCloseoutTotals } from "@/features/daily-closeouts/daily-closeouts-demo-store";
+import { withCloseoutTotals } from "@/features/daily-closeouts/daily-closeouts-local-store";
 import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
 
 export function useRegisterCloseoutsFromApi({

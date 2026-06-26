@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
   resolveHomeDayAttachmentGroupFromLocal,
   resolveHomeDayAttachmentGroupFromServer,
@@ -91,7 +91,7 @@ describe("resolveHomeDayAttachmentGroupFromLocal", () => {
 
   it("prefers fetched day entries after a successful fetch", () => {
     expect(resolveHomeDayAttachmentGroupFromLocal({
-      demoLocalGroup: salesOnly,
+      localAttachmentGroup: salesOnly,
       fetchedGroup: salesAndPurchases,
       shouldFetchDayEntries: true,
       fetchSucceeded: true,
@@ -100,7 +100,7 @@ describe("resolveHomeDayAttachmentGroupFromLocal", () => {
 
   it("falls back to local attachments when fetch fails", () => {
     expect(resolveHomeDayAttachmentGroupFromLocal({
-      demoLocalGroup: salesOnly,
+      localAttachmentGroup: salesOnly,
       fetchedGroup: null,
       shouldFetchDayEntries: true,
       fetchFailed: true,
@@ -109,7 +109,7 @@ describe("resolveHomeDayAttachmentGroupFromLocal", () => {
 
   it("uses local attachments when fetch is not needed", () => {
     expect(resolveHomeDayAttachmentGroupFromLocal({
-      demoLocalGroup: salesOnly,
+      localAttachmentGroup: salesOnly,
       fetchedGroup: null,
       shouldFetchDayEntries: false,
     })).toEqual(salesOnly);

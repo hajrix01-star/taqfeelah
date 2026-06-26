@@ -1,11 +1,11 @@
-import { resolveRuntimeCapabilities } from "@/core/config/runtime-capabilities";
+﻿import { resolveRuntimeCapabilities } from "@/core/config/runtime-capabilities";
 import { resolveSupportWhatsAppNumber } from "@/core/config/marketing-support";
 import { createMigrateSavedSettings, createReadSavedSettings } from "@/features/org-config/client/owner-settings-bootstrap";
 import { OWNER_SETTINGS_STORAGE_KEY } from "@/features/runtime-settings/client/migrate-local-saved-settings";
 import { CLOSEOUT_ALERTS_STORAGE_KEY } from "@/features/owner-shell/client/owner-shell-storage";
 import { migrateSavedSettings as applyLocalSavedSettingsMigration } from "@/features/runtime-settings/client/migrate-local-saved-settings";
-import { loadLocalCloseoutsOnBoot } from "@/features/daily-closeouts/daily-closeouts-demo-store";
-import { buildPrototypeDefaultStaff } from "@/features/demo/prototype-auth-boot";
+import { loadLocalCloseoutsOnBoot } from "@/features/daily-closeouts/daily-closeouts-local-store";
+import type { AuthStaffMember } from "@/features/auth/client/auth-client-types";
 
 const {
   appInProductionMode: APP_IN_PRODUCTION_MODE,
@@ -18,11 +18,11 @@ const {
 } = resolveRuntimeCapabilities();
 
 const PROTOTYPE_SUPPORT_WHATSAPP = resolveSupportWhatsAppNumber();
-const PROTOTYPE_DEMO_OTP = process.env.NEXT_PUBLIC_DEMO_OTP || (APP_IN_PRODUCTION_MODE ? "" : "1234");
-const PROTOTYPE_OWNER_USERNAME = (
+const LOCAL_DEV_OTP = process.env.NEXT_PUBLIC_DEMO_OTP || (APP_IN_PRODUCTION_MODE ? "" : "1234");
+const LOCAL_DEV_OWNER_USERNAME = (
   process.env.NEXT_PUBLIC_DEMO_OWNER_USERNAME || (APP_IN_PRODUCTION_MODE ? "hajri" : "owner")
 ).trim().toLowerCase();
-const PROTOTYPE_OWNER_PASSWORD = process.env.NEXT_PUBLIC_DEMO_OWNER_PASSWORD || (APP_IN_PRODUCTION_MODE ? "" : "demo123");
+const LOCAL_DEV_OWNER_PASSWORD = process.env.NEXT_PUBLIC_DEMO_OWNER_PASSWORD || (APP_IN_PRODUCTION_MODE ? "" : "demo123");
 const PROTOTYPE_EMPLOYEE_PIN_DEFAULT = process.env.NEXT_PUBLIC_DEMO_EMPLOYEE_PIN_DEFAULT || (APP_IN_PRODUCTION_MODE ? "" : "1234");
 const migrateSavedSettings = createMigrateSavedSettings({
   bindsToServerAuth: BINDS_TO_SERVER_AUTH,
@@ -38,7 +38,7 @@ const readSavedSettings = createReadSavedSettings({
   enabled: !BINDS_TO_SERVER_AUTH && !RUNTIME_SETTINGS_DB_SOURCE,
   migrate: migrateSavedSettings,
 });
-const PROTOTYPE_DEFAULT_STAFF = buildPrototypeDefaultStaff(PROTOTYPE_EMPLOYEE_PIN_DEFAULT);
+const DEFAULT_STAFF: AuthStaffMember[] = [];
 
 export {
   APP_IN_PRODUCTION_MODE,
@@ -49,11 +49,11 @@ export {
   RUNTIME_SETTINGS_DB_SOURCE,
   ORG_CONFIG_API_ENABLED,
   PROTOTYPE_SUPPORT_WHATSAPP,
-  PROTOTYPE_DEMO_OTP,
-  PROTOTYPE_OWNER_USERNAME,
-  PROTOTYPE_OWNER_PASSWORD,
+  LOCAL_DEV_OTP,
+  LOCAL_DEV_OWNER_USERNAME,
+  LOCAL_DEV_OWNER_PASSWORD,
   PROTOTYPE_EMPLOYEE_PIN_DEFAULT,
   migrateSavedSettings,
   readSavedSettings,
-  PROTOTYPE_DEFAULT_STAFF,
+  DEFAULT_STAFF,
 };

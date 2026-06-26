@@ -1,16 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildPrototypeDefaultStaff, readPrototypeAuthBoot } from "./prototype-auth-boot";
+import { readRuntimeAuthBootState } from "./runtime-auth-boot-state";
 
-describe("prototype auth boot", () => {
-  it("builds default demo staff with provided pin", () => {
-    const staff = buildPrototypeDefaultStaff("9999");
-    expect(staff).toHaveLength(2);
-    expect(staff[0]?.pin).toBe("9999");
-    expect(staff[1]?.storeIds).toContain("arz");
-  });
-
+describe("runtime auth boot state", () => {
   it("returns logged-out boot when server auth is not active", () => {
-    expect(readPrototypeAuthBoot({
+    expect(readRuntimeAuthBootState({
       bindsToServerAuth: false,
     })).toEqual({
       loggedIn: false,
@@ -28,7 +21,7 @@ describe("prototype auth boot", () => {
       employeeBusinessId: "shami",
     }));
 
-    const boot = readPrototypeAuthBoot({
+    const boot = readRuntimeAuthBootState({
       bindsToServerAuth: true,
       readSavedSettings: () => ({ staff: [{ id: "ahmed", active: true, storeIds: ["shami"] }] }),
       resolveAuthState,
@@ -46,7 +39,7 @@ describe("prototype auth boot", () => {
       employeeBusinessId: "",
     }));
 
-    readPrototypeAuthBoot({
+    readRuntimeAuthBootState({
       bindsToServerAuth: true,
       readSavedSettings: () => null,
       defaultStaff: [],

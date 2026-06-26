@@ -1,4 +1,4 @@
-import {
+﻿import {
   filterSummaryChannelRows,
   summarySalesChannelLabel as buildSummarySalesChannelLabel,
 } from "@/features/entries/client/register-operation-display";
@@ -14,31 +14,31 @@ import {
   channels,
   expenseCategories,
   text,
-} from "./taqfeelah-app-demo-data";
-import type { OperationalEntry, PrototypeChannel, PrototypeLang } from "./taqfeelah-app-types";
+} from "./taqfeelah-app-reference-data";
+import type { OperationalEntry, AppChannel, AppLang } from "./taqfeelah-app-types";
 
-const noteLabel = (entry: OperationalEntry, lang: PrototypeLang) => {
+const noteLabel = (entry: OperationalEntry, lang: AppLang) => {
   if (entry.type === "summary") return summarySalesChannelLabel(entry, lang);
   if (entry.noteKey) return text(lang, entry.noteKey);
   return entry.note || text(lang, entry.type || "");
 };
 const entryCategory = (entry: OperationalEntry) => entry.type === "purchases" ? "purchases" : entry.type === "withdrawal" ? "withdrawal" : (entry.categoryId || "other");
-function resolveConfiguredChannels(configuredChannels?: PrototypeChannel[]): PrototypeChannel[] {
-  return configuredChannels?.length ? configuredChannels : (channels as PrototypeChannel[]);
+function resolveConfiguredChannels(configuredChannels?: AppChannel[]): AppChannel[] {
+  return configuredChannels?.length ? configuredChannels : (channels as AppChannel[]);
 }
 
 function resolveSummaryChannelName(
   row: Record<string, unknown>,
-  lang: PrototypeLang,
-  configuredChannels?: PrototypeChannel[],
+  lang: AppLang,
+  configuredChannels?: AppChannel[],
 ) {
   return resolveSalesChannelRowLabel(row, resolveConfiguredChannels(configuredChannels), lang, channelName);
 }
 function summarySalesChannelLabel(
   entry: OperationalEntry,
-  lang: PrototypeLang,
+  lang: AppLang,
   salesChannelFilter = "all",
-  configuredChannels?: PrototypeChannel[],
+  configuredChannels?: AppChannel[],
 ) {
   return buildSummarySalesChannelLabel(
     entry,
@@ -49,9 +49,9 @@ function summarySalesChannelLabel(
 }
 const operationDisplayLabel = (
   entry: OperationalEntry,
-  lang: PrototypeLang,
+  lang: AppLang,
   salesChannelFilter = "all",
-  configuredChannels?: PrototypeChannel[],
+  configuredChannels?: AppChannel[],
 ) => {
   if (entry.type === "expense") return text(lang, expenseCategories.find((item) => item.id === entryCategory(entry))?.label || "other");
   if (entry.type === "summary") return summarySalesChannelLabel(entry, lang, salesChannelFilter, configuredChannels);
@@ -59,9 +59,9 @@ const operationDisplayLabel = (
 };
 function expandRegisterCloseoutOperationRows(
   item: OperationalEntry,
-  lang: PrototypeLang,
+  lang: AppLang,
   salesChannelFilter = "all",
-  configuredChannels?: PrototypeChannel[],
+  configuredChannels?: AppChannel[],
 ) {
   const channelCatalog = resolveConfiguredChannels(configuredChannels);
   if (item.type !== "summary") {

@@ -10,7 +10,7 @@ import {
 } from "@/features/operations/operational-entry-mutation-helpers";
 import { canManageRegisterCloseoutSummary } from "@/features/operations/client/register-closeout-summary-actions";
 import { registerSalesChannelBadgeLabel } from "@/features/entries/client/register-log-display";
-import { businessName, money, opTime, text } from "./taqfeelah-app-demo-data";
+import { businessName, money, opTime, text } from "./taqfeelah-app-reference-data";
 import {
   entryHasAttachment,
   entryIsVoided,
@@ -20,7 +20,7 @@ import { MoneyValue } from "./taqfeelah-app-notebook";
 import { RegisterStoreBadge } from "./owner-register-ui-primitives";
 import CloseoutOwnerEditBadge from "@/features/closeouts/client/CloseoutOwnerEditBadge";
 import { AttachmentThumbButton } from "./taqfeelah-app-attachment-ui";
-import type { DisplayLang, EntryAttachmentApiContext, PrototypeBusiness, PrototypeChannel, RegisterLogFilters } from "./taqfeelah-app-types";
+import type { DisplayLang, EntryAttachmentApiContext, AppBusiness, AppChannel, RegisterLogFilters } from "./taqfeelah-app-types";
 import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
 import type { RegisterCloseoutSummary } from "@/features/entries/client/register-log-display";
 import type { Dispatch, SetStateAction } from "react";
@@ -121,7 +121,7 @@ export function OwnerRegisterCloseoutsList({
   loading?: boolean;
   loadError?: boolean;
   loadErrorMessage?: string;
-  configuredChannels?: PrototypeChannel[];
+  configuredChannels?: AppChannel[];
 }) {
   if (loadError) {
     return (
@@ -147,7 +147,7 @@ export function OwnerRegisterCloseoutsList({
     <div className="space-y-2.5">
       {closeoutSummaries.map((summary) => {
         const isExpanded = expandedCloseoutKey === summary.key;
-        const store = summary.store as PrototypeBusiness | null | undefined;
+        const store = summary.store as AppBusiness | null | undefined;
         const storeLabel = businessName(store, lang, true) || businessName(store, lang);
         const operationRows = summary.operations.flatMap((item) => expandRegisterCloseoutOperationRows(item, lang, logFilters.salesChannel, configuredChannels));
         const summaryBusinessId = String(summary.businessId ?? store?.id ?? "");

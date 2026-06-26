@@ -1,6 +1,6 @@
 "use client";
 
-import { storeAttachmentPayload } from "@/features/attachments/client/prototype-attachment-storage";
+import { storeAttachmentPayload } from "@/features/attachments/client/attachment-payload-storage";
 import {
   isFutureOperationalEntryDate,
   mergeLastCloseoutDateForStore,
@@ -18,10 +18,10 @@ import {
   isOwnerStandaloneOutflowPayload,
 } from "@/features/operations/client/build-owner-outflow-closeout-draft";
 import { buildCloseoutSubmitFailureMessage, diagnoseCloseoutSubmitFailure } from "@/features/closeouts/client/closeouts-api-client";
-import { text } from "./taqfeelah-app-demo-data";
+import { text } from "./taqfeelah-app-reference-data";
 import {
   buildEntry,
-} from "./taqfeelah-app-demo-operational-entries";
+} from "./taqfeelah-app-operational-entry-helpers";
 import { entryIsActive } from "./taqfeelah-app-entry-helpers";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import type {
@@ -29,7 +29,7 @@ import type {
   UseTaqfeelahAppOwnerSaveActionsProps,
   OperationalEntry,
 } from "./taqfeelah-app-types";
-import { DEFAULT_STORE_CHANNEL_CONFIG } from "./taqfeelah-app-demo-data";
+import { DEFAULT_STORE_CHANNEL_CONFIG } from "./taqfeelah-app-reference-data";
 
 export function useTaqfeelahAppOwnerSaveActions({
   lang,

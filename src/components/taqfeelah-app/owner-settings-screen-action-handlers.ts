@@ -54,7 +54,7 @@ import {
 } from "@/features/billing/client/entitlement-guards";
 import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { isFlattenedStoreSettingsEnabled } from "@/core/config/owner-settings-store-layout-mode";
-import { emptyStoreRecord, text } from "./taqfeelah-app-demo-data";
+import { emptyStoreRecord, text } from "./taqfeelah-app-reference-data";
 import { APP_IN_PRODUCTION_MODE, PROTOTYPE_EMPLOYEE_PIN_DEFAULT } from "./taqfeelah-app-boot";
 import type { OwnerSettingsScreenHandlersContext } from "./taqfeelah-app-types";
 

@@ -21,7 +21,7 @@ import {
   ensureStoreChannelSettingsForBusinesses,
   resolveStoreChannelConfig,
 } from "./store-channel-config";
-import { LAST_CLOSEOUT_STORAGE_KEY, readDemoLastCloseoutDates } from "./owner-settings-storage";
+import { LAST_CLOSEOUT_STORAGE_KEY, readLocalLastCloseoutDates } from "./owner-settings-storage";
 import type { OrgConfigApiAuth, StoreChannelConfig } from "./org-config-client-types";
 import type { StoreOperationalSettings } from "@/domain/store-operational-settings/types";
 
@@ -41,28 +41,28 @@ function readBusinessList(
     : fallback;
 }
 
-function readDemoLocalNotebookTheme(skipDemoBootstrap: boolean) {
-  if (skipDemoBootstrap) return "yellow";
+function readLocalLocalNotebookTheme(skipLocalBootstrap: boolean) {
+  if (skipLocalBootstrap) return "yellow";
   if (!isBrowserPersistentStorageAllowed({ scope: "ui-preferences" })) return "yellow";
   if (typeof window === "undefined") return "yellow";
   return window.localStorage.getItem("taqfeelah_notebook_theme") || "yellow";
 }
 
-function writeDemoLocalNotebookTheme(notebookTheme: string, skipDemoBootstrap: boolean) {
+function writeLocalLocalNotebookTheme(notebookTheme: string, skipLocalBootstrap: boolean) {
   if (
-    skipDemoBootstrap
+    skipLocalBootstrap
     || typeof window === "undefined"
     || !isBrowserPersistentStorageAllowed({ scope: "ui-preferences" })
   ) return;
   window.localStorage.setItem("taqfeelah_notebook_theme", notebookTheme);
 }
 
-function writeDemoLocalLastCloseoutDates(
+function writeLocalLocalLastCloseoutDates(
   lastCloseoutDates: Partial<Record<string, string>>,
-  skipDemoBootstrap: boolean,
+  skipLocalBootstrap: boolean,
 ) {
   if (
-    skipDemoBootstrap
+    skipLocalBootstrap
     || typeof window === "undefined"
     || !isBrowserPersistentStorageAllowed({ scope: "operational-fallback" })
   ) return;
@@ -82,8 +82,8 @@ export function useOwnerSettingsState({
   migrateSavedSettings,
   defaultBusinesses,
   defaultStaff,
-  prototypeOwnerUsername,
-  prototypeOwnerPassword,
+  fallbackOwnerUsername,
+  fallbackOwnerPassword,
   defaultStoreChannelConfig,
   ownerActor,
   channelNameFn,
@@ -100,18 +100,18 @@ export function useOwnerSettingsState({
   migrateSavedSettings: (raw: unknown) => unknown;
   defaultBusinesses: Array<Record<string, unknown>>;
   defaultStaff: Array<Record<string, unknown>>;
-  prototypeOwnerUsername: string;
-  prototypeOwnerPassword: string;
+  fallbackOwnerUsername: string;
+  fallbackOwnerPassword: string;
   defaultStoreChannelConfig: StoreChannelConfig;
   ownerActor: Record<string, unknown>;
   channelNameFn: (channel: Record<string, unknown>, lang: "ar" | "en") => string;
 }) {
   const initialSettings = readSavedSettings();
   const initialAuthConfig = readAuthConfig(initialSettings);
-  const skipDemoBootstrap = bindsToServerAuth || orgConfigApiEnabled || closeoutsApiDbSource;
+  const skipLocalBootstrap = bindsToServerAuth || orgConfigApiEnabled || closeoutsApiDbSource;
   const initialBusinesses = readBusinessList(
     initialSettings,
-    skipDemoBootstrap ? [] : defaultBusinesses,
+    skipLocalBootstrap ? [] : defaultBusinesses,
   );
 
   const [configuredBusinesses, setConfiguredBusinesses] = useState<Array<Record<string, unknown>>>(initialBusinesses);
@@ -125,7 +125,7 @@ export function useOwnerSettingsState({
   const [staff, setStaff] = useState<Array<Record<string, unknown>>>(
     Array.isArray(initialSettings?.staff)
       ? initialSettings.staff as Array<Record<string, unknown>>
-      : (skipDemoBootstrap ? [] : defaultStaff),
+      : (skipLocalBootstrap ? [] : defaultStaff),
   );
   const [ownerProfile, setOwnerProfile] = useState<Record<string, unknown>>(
     initialSettings?.ownerProfile && typeof initialSettings.ownerProfile === "object"
@@ -148,7 +148,7 @@ export function useOwnerSettingsState({
   const [notebookTheme, setNotebookTheme] = useState<string>(() => {
     const savedTheme = initialSettings?.notebookTheme;
     if (isValidNotebookTheme(savedTheme)) return String(savedTheme);
-    return readDemoLocalNotebookTheme(skipDemoBootstrap);
+    return readLocalLocalNotebookTheme(skipLocalBootstrap);
   });
   const [employeePreferences, setEmployeePreferences] = useState<Record<string, unknown>>(
     () => (initialSettings?.employeePreferences && typeof initialSettings.employeePreferences === "object"
@@ -163,19 +163,19 @@ export function useOwnerSettingsState({
   const [authOwnerUsername, setAuthOwnerUsername] = useState(
     () => (bindsToServerAuth
       ? String(initialAuthConfig.ownerUsername || "").trim()
-      : String(initialAuthConfig.ownerUsername || prototypeOwnerUsername || "hajri")),
+      : String(initialAuthConfig.ownerUsername || fallbackOwnerUsername || "hajri")),
   );
   const [authOwnerPassword, setAuthOwnerPassword] = useState(
     () => (bindsToServerAuth
       ? ""
-      : String(initialAuthConfig.ownerPassword || prototypeOwnerPassword || "123")),
+      : String(initialAuthConfig.ownerPassword || fallbackOwnerPassword || "123")),
   );
   const [authEmployeePins, setAuthEmployeePins] = useState<Record<string, string>>(
     () => (initialAuthConfig.employeePins && typeof initialAuthConfig.employeePins === "object"
       ? initialAuthConfig.employeePins as Record<string, string>
       : {}),
   );
-  const [lastCloseoutDates, setLastCloseoutDates] = useState(() => readDemoLastCloseoutDates(skipDemoBootstrap));
+  const [lastCloseoutDates, setLastCloseoutDates] = useState(() => readLocalLastCloseoutDates(skipLocalBootstrap));
 
   const currentOwnerActor = useMemo(
     () => ({
@@ -313,8 +313,8 @@ export function useOwnerSettingsState({
   }, [channelNameFn, defaultStoreChannelConfig, lang, storeChannelSettings]);
 
   useEffect(() => {
-    writeDemoLocalNotebookTheme(notebookTheme, skipDemoBootstrap);
-  }, [notebookTheme, skipDemoBootstrap]);
+    writeLocalLocalNotebookTheme(notebookTheme, skipLocalBootstrap);
+  }, [notebookTheme, skipLocalBootstrap]);
 
   useEffect(() => {
     const businessIds = configuredBusinesses.map((business) => String(business.id));
@@ -322,7 +322,7 @@ export function useOwnerSettingsState({
       current,
       businessIds,
       defaultStoreChannelConfig,
-      { allowPrototypeDefaults: !closeoutsApiDbSource && !orgConfigApiEnabled },
+      { allowLocalDefaults: !closeoutsApiDbSource && !orgConfigApiEnabled },
     ));
     setStoreOperationalSettings((current) => ensureStoreOperationalSettingsForBusinesses(
       current,
@@ -331,8 +331,8 @@ export function useOwnerSettingsState({
   }, [closeoutsApiDbSource, configuredBusinesses, defaultStoreChannelConfig, orgConfigApiEnabled]);
 
   useEffect(() => {
-    writeDemoLocalLastCloseoutDates(lastCloseoutDates, skipDemoBootstrap);
-  }, [lastCloseoutDates, skipDemoBootstrap]);
+    writeLocalLocalLastCloseoutDates(lastCloseoutDates, skipLocalBootstrap);
+  }, [lastCloseoutDates, skipLocalBootstrap]);
 
   return {
     configuredBusinesses,

@@ -4,5 +4,5 @@ export {
   EmployeeLoginScreen,
   OwnerPasswordChangeScreen,
   HelpCenterSheet,
-  readPrototypeAuthBoot,
+  readRuntimeAuthBoot,
 } from "@/features/auth/client/auth-gate";

@@ -15,7 +15,7 @@ import {
   businessName,
   text,
   outflowReportCategories,
-} from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
+} from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
 import {
   entryCategory,
   entryDateMatches,
@@ -25,11 +25,11 @@ import {
 } from "@/components/taqfeelah-app/taqfeelah-app-entry-helpers";
 import { todayIsoDate } from "@/components/taqfeelah-app/taqfeelah-app-notebook";
 import { buildNotebookShareModel } from "@/components/taqfeelah-app/build-notebook-share-model";
-import type { PrototypeBusiness } from "@/components/taqfeelah-app/taqfeelah-app-types";
+import type { AppBusiness } from "@/components/taqfeelah-app/taqfeelah-app-types";
 import type {
   NotebookShareChannelRow,
   NotebookShareDayRow,
-  PrototypeStoreRecord,
+  AppStoreRecord,
 } from "@/components/taqfeelah-app/taqfeelah-app-types";
 import type { DisplayLang } from "@/core/i18n/display-locale";
 import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
@@ -64,7 +64,7 @@ function resolveStoreTitle(snapshot: ExportSnapshot, lang: DisplayLang, business
     return text(lang, snapshot.screen === "register" ? "combinedCloseout" : "combinedCloseout");
   }
   const business = businessesList.find((item) => item.id === snapshot.selectedBusiness) || businessesList[0];
-  return business ? businessName(business as PrototypeBusiness, lang) : text(lang, "store");
+  return business ? businessName(business as AppBusiness, lang) : text(lang, "store");
 }
 
 function entryTypeLabel(entry: OperationalEntry, lang: DisplayLang): string {
@@ -86,7 +86,7 @@ function storeCell(
   lang: DisplayLang,
 ): string {
   const business = businessesList.find((item) => item.id === businessId);
-  return business ? businessName(business as PrototypeBusiness, lang) : businessId || "";
+  return business ? businessName(business as AppBusiness, lang) : businessId || "";
 }
 
 function buildHomeExportSheets(
@@ -100,11 +100,11 @@ function buildHomeExportSheets(
   const shareModel = buildNotebookShareModel({
     snapshot,
     lang,
-    businessesList: businessesList as PrototypeBusiness[],
+    businessesList: businessesList as AppBusiness[],
     operationalEntries,
     archivedBusinessIds,
     apiEntries: apiExtras.apiEntries ?? undefined,
-    apiRecord: (apiExtras.apiRecord ?? undefined) as PrototypeStoreRecord | null | undefined,
+    apiRecord: (apiExtras.apiRecord ?? undefined) as AppStoreRecord | null | undefined,
     apiChannelRows: (apiExtras.apiChannelRows ?? undefined) as NotebookShareChannelRow[] | null | undefined,
     apiDayRows: (apiExtras.apiDayRows ?? undefined) as NotebookShareDayRow[] | null | undefined,
   }) as Record<string, unknown> & {
@@ -125,7 +125,7 @@ function buildHomeExportSheets(
       exportColumn("net", text(lang, "result"), "number", true),
     ];
     const rows = shareModel.shareBusinessRows.map((row) => ({
-      ...(withStore ? { store: businessName(row.business as PrototypeBusiness, lang) } : {}),
+      ...(withStore ? { store: businessName(row.business as AppBusiness, lang) } : {}),
       sales: Number(row.sales) || 0,
       expense: Number(row.expense) || 0,
       net: Number(row.net) || 0,
@@ -273,7 +273,7 @@ function buildRegisterCloseoutsSheet(
       return {
         ...(withStore ? {
           store: store
-            ? businessName(store as PrototypeBusiness, lang)
+            ? businessName(store as AppBusiness, lang)
             : storeCell(snapshot, String(summary.businessId || ""), businessesList, lang),
         } : {}),
         date: formatCalendarDate(String(summary.date || ""), lang),

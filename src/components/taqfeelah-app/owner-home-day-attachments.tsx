@@ -1,10 +1,10 @@
 "use client";
 
-import { businesses, businessName, money, opTime, text } from "./taqfeelah-app-demo-data";
+import { businesses, businessName, money, opTime, text } from "./taqfeelah-app-reference-data";
 import { AttachmentThumbButton } from "./taqfeelah-app-attachment-ui";
 import { signedEntryAmount } from "./taqfeelah-app-entry-helpers";
 import { MoneyValue, NotebookRow } from "./taqfeelah-app-notebook";
-import type { OwnerHomeProps, PrototypeBusiness } from "./taqfeelah-app-types";
+import type { OwnerHomeProps, AppBusiness } from "./taqfeelah-app-types";
 
 export function OwnerHomeDayAttachments({
   lang,
@@ -22,7 +22,7 @@ export function OwnerHomeDayAttachments({
 }: {
   lang: OwnerHomeProps["lang"];
   group: { items?: Array<Record<string, unknown>> } | null;
-  businessesList?: PrototypeBusiness[];
+  businessesList?: AppBusiness[];
   loading?: boolean;
   loadFailed?: boolean;
   proofsCount?: number;

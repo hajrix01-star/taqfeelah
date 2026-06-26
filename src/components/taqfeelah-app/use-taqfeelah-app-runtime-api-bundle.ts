@@ -1,13 +1,13 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo } from "react";
 import { getStoreOperationalConfig } from "@/features/org-config/client/store-operational-config";
 import { resolveEmployeeCloseoutsFetchWindow } from "@/features/employee-closeouts/employee-closeout-history";
 import { resolveOwnerCloseoutsFetchWindow } from "@/features/closeouts/client/owner-closeouts-fetch-window";
 import type {
-  PrototypeCloseoutRecord,
-  PrototypeOwnerPage,
-  PrototypeStoreOperationalSettings,
+  AppCloseoutRecord,
+  AppOwnerPage,
+  AppStoreOperationalSettings,
 } from "./taqfeelah-app-types";
 
 type UseTaqfeelahAppRuntimeApiBundleProps = {
@@ -18,9 +18,9 @@ type UseTaqfeelahAppRuntimeApiBundleProps = {
   runtimeApiStoresReady: boolean;
   apiTargetStoreIdsKey: string;
   employee: boolean;
-  storeOperationalSettings: PrototypeStoreOperationalSettings;
-  ownerPage: PrototypeOwnerPage;
-  ownerManageCloseout: PrototypeCloseoutRecord | null;
+  storeOperationalSettings: AppStoreOperationalSettings;
+  ownerPage: AppOwnerPage;
+  ownerManageCloseout: AppCloseoutRecord | null;
   closeoutsApiOrganizationId: string;
   apiActorUserId: string;
   apiActorRole: string;

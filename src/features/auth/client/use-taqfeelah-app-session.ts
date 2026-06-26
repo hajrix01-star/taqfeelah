@@ -24,26 +24,26 @@ import {
   BINDS_TO_SERVER_AUTH,
   ORG_CONFIG_API_ENABLED,
 } from "@/components/taqfeelah-app/taqfeelah-app-boot";
-import { readPrototypeAuthBoot } from "@/features/auth/client/auth-gate/read-runtime-auth-boot";
+import { readRuntimeAuthBoot } from "@/features/auth/client/auth-gate/read-runtime-auth-boot";
 
 export function useTaqfeelahAppSessionState() {
-  const prototypeAuthBoot = readPrototypeAuthBoot();
+  const runtimeAuthBoot = readRuntimeAuthBoot();
   const [lang, setLang] = useState<AuthLang>("ar");
   const [sessionOrganizationId, setSessionOrganizationId] = useState("");
   const [sessionUserId, setSessionUserId] = useState("");
-  const [loggedIn, setLoggedIn] = useState(() => prototypeAuthBoot.loggedIn);
+  const [loggedIn, setLoggedIn] = useState(() => runtimeAuthBoot.loggedIn);
   const [authScreen, setAuthScreen] = useState("gateway");
-  const [employee, setEmployee] = useState(() => prototypeAuthBoot.employee);
+  const [employee, setEmployee] = useState(() => runtimeAuthBoot.employee);
   const [loggedInEmployeeId, setLoggedInEmployeeId] = useState<string | null>(() => {
-    const bootEmployeeId = prototypeAuthBoot.loggedInEmployeeId;
+    const bootEmployeeId = runtimeAuthBoot.loggedInEmployeeId;
     return typeof bootEmployeeId === "string" ? bootEmployeeId : null;
   });
-  const [employeeRuntimeReady, setEmployeeRuntimeReady] = useState(() => !prototypeAuthBoot.employee);
+  const [employeeRuntimeReady, setEmployeeRuntimeReady] = useState(() => !runtimeAuthBoot.employee);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [sessionDisplayName, setSessionDisplayName] = useState("");
 
   return {
-    prototypeAuthBoot,
+    runtimeAuthBoot,
     lang,
     setLang,
     sessionOrganizationId,

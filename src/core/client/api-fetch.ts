@@ -1,4 +1,4 @@
-import { buildPrototypeApiAuthHeaders } from "@/core/client/prototype-api-auth-headers";
+﻿import { buildRuntimeApiAuthHeaders } from "@/core/client/runtime-api-auth-headers";
 
 export async function parseApiErrorMessage(response: Response, fallback: string): Promise<string> {
   try {
@@ -10,7 +10,7 @@ export async function parseApiErrorMessage(response: Response, fallback: string)
   }
 }
 
-export function buildPrototypeContextHeaders({
+export function buildRuntimeContextHeaders({
   organizationId = "",
   actorUserId = "",
   actorRole = "",
@@ -22,7 +22,7 @@ export function buildPrototypeContextHeaders({
   contentType?: string;
 } = {}): Record<string, string> {
   const headers: Record<string, string> = {
-    ...buildPrototypeApiAuthHeaders({ organizationId, actorUserId, actorRole }),
+    ...buildRuntimeApiAuthHeaders({ organizationId, actorUserId, actorRole }),
   };
   if (contentType) {
     headers["content-type"] = contentType;
@@ -80,7 +80,7 @@ export async function fetchApiJson(
   return response.json();
 }
 
-export type FetchApiJsonWithPrototypeContextOptions = {
+export type fetchApiJsonWithRuntimeContextOptions = {
   organizationId?: string;
   actorUserId?: string;
   actorRole?: string;
@@ -91,7 +91,7 @@ export type FetchApiJsonWithPrototypeContextOptions = {
   contentType?: string;
 };
 
-export async function fetchApiJsonWithPrototypeContext(
+export async function fetchApiJsonWithRuntimeContext(
   url: string,
   {
     organizationId = "",
@@ -102,7 +102,7 @@ export async function fetchApiJsonWithPrototypeContext(
     errorMessage = "API request failed.",
     errorStyle = "message",
     contentType = method === "GET" || method === "DELETE" ? "" : "application/json",
-  }: FetchApiJsonWithPrototypeContextOptions = {},
+  }: fetchApiJsonWithRuntimeContextOptions = {},
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentional open API boundary; callers narrow
 ): Promise<any> {
   return fetchApiJson(url, {
@@ -110,7 +110,7 @@ export async function fetchApiJsonWithPrototypeContext(
     body,
     errorMessage,
     errorStyle,
-    headers: buildPrototypeContextHeaders({
+    headers: buildRuntimeContextHeaders({
       organizationId,
       actorUserId,
       actorRole,

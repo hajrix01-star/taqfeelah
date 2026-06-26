@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { CLOSEOUT_STATUS } from "./closeout-status";
-import { isLocalDraftCloseout } from "./daily-closeouts-demo-store";
+import { isLocalDraftCloseout } from "./daily-closeouts-local-store";
 import { closeoutDeleteRequestToRecord } from "@/features/closeouts/client/register-closeout-summary-service";
 
 describe("register closeout delete workflow", () => {

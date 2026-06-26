@@ -9,7 +9,7 @@
 
 | Rule | Rationale |
 |------|-----------|
-| Never load years of `entries` into the browser | Prototype pattern does not scale |
+| Never load years of `entries` into the browser | Browser aggregation does not scale |
 | Every list API is paginated | Register, audit trails if exposed |
 | Summaries are computed for **one period** per request | Day or month or bounded range |
 | Money math in `domain/cash-movement` | Consistent + testable |
@@ -99,6 +99,6 @@ Results filed in repo or deployment checklist when available.
 
 ---
 
-## 8. Prototype disclaimer
+## 8. Removed local reference route
 
-`/prototype-runtime` uses `localStorage` and in-memory filters — **not** a performance reference for production.
+The old `/prototype-runtime` route was removed. `/app` must remain server/API-authoritative for production data.

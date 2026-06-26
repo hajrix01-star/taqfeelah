@@ -1,4 +1,4 @@
-import { buildPrototypeApiAuthHeaders } from "@/core/client/prototype-api-auth-headers";
+﻿import { buildRuntimeApiAuthHeaders } from "@/core/client/runtime-api-auth-headers";
 import { parseSseChunk } from "@/core/client/parse-sse-stream";
 import {
   operationalSyncEventSchema,
@@ -27,7 +27,7 @@ export async function connectOperationalSyncStream({
   let response: Response;
   const authHeaders = new Headers(
     Object.entries(
-      buildPrototypeApiAuthHeaders({
+      buildRuntimeApiAuthHeaders({
         organizationId,
         actorUserId,
         actorRole,

@@ -1,4 +1,4 @@
-import { readLocalStorageJson, safeSetLocalStorageItem } from "../demo/prototype-storage";
+import { readLocalStorageJson, safeSetLocalStorageItem } from "@/core/client/safe-local-storage";
 import { storeIdsReferToSameStore } from "../employee-closeouts/employee-closeout-history";
 import { computeCloseoutTotals } from "./closeout-calculations";
 import { normalizeCloseoutSalesToArray } from "./closeout-sales-normalize";
@@ -276,12 +276,12 @@ export function pendingOwnerCloseoutQueue(): DailyCloseoutRecord[] {
   return [];
 }
 
-/** Demo boot hook — returns local closeouts unchanged (no owner approval queue). */
+/** Local boot hook — returns local closeouts unchanged (no owner approval queue). */
 export function loadLocalCloseoutsOnBoot(): DailyCloseoutRecord[] {
   return readDailyCloseouts();
 }
 
-/** Demo timeline labels. `approved` / `returned` are legacy event types from removed owner-review flow. */
+/** Local timeline labels. `approved` / `returned` are legacy event types from removed owner-review flow. */
 export function closeoutEventMessage(event: CloseoutEvent, lang: CloseoutSyncLang = "ar"): string {
   const name = event.actorName || (lang === "ar" ? "مستخدم" : "User");
   const store = event.storeName || "";

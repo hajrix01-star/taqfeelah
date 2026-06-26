@@ -16,14 +16,14 @@ vi.mock("@/features/runtime-settings/client/runtime-session-and-settings-api-cli
   getSessionStatusViaApi,
 }));
 
-vi.mock("@/features/demo/login-credentials-storage", () => ({
+vi.mock("@/features/auth/client/local-auth-session-storage", () => ({
   saveAuthSession,
   clearAuthSession,
   resolveAuthStateFromSession: vi.fn(),
 }));
 
-vi.mock("@/features/demo/prototype-auth-boot", () => ({
-  readPrototypeAuthBoot: vi.fn(() => ({
+vi.mock("@/features/auth/client/auth-gate/runtime-auth-boot-state", () => ({
+  readRuntimeAuthBootState: vi.fn(() => ({
     loggedIn: false,
     employee: false,
     loggedInEmployeeId: null,

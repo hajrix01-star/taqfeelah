@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Bell, Building2, CreditCard, ReceiptText } from "lucide-react";
 import EmployeeHistoryVisibilityPicker from "@/features/employee-closeouts/EmployeeHistoryVisibilityPicker";
-import { channelName, expenseCategories, text } from "./taqfeelah-app-demo-data";
+import { channelName, expenseCategories, text } from "./taqfeelah-app-reference-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";
 import {
   Badge,

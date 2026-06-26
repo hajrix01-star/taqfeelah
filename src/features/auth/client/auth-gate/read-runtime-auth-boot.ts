@@ -4,7 +4,7 @@ import {
   readSavedSettings,
 } from "@/components/taqfeelah-app/taqfeelah-app-boot";
 
-export function readPrototypeAuthBoot() {
+export function readRuntimeAuthBoot() {
   return readSessionBootState({
     bindsToServerAuth: BINDS_TO_SERVER_AUTH,
     readSavedSettings,

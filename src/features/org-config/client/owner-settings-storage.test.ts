@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { readDemoLastCloseoutDates } from "./owner-settings-storage";
+﻿import { describe, expect, it, vi } from "vitest";
+import { readLocalLastCloseoutDates } from "./owner-settings-storage";
 
 describe("owner settings storage", () => {
   it("does not read demo last closeout dates when demo defaults are skipped", () => {
@@ -8,7 +8,7 @@ describe("owner settings storage", () => {
       localStorage: { getItem },
     });
 
-    expect(readDemoLastCloseoutDates(true)).toEqual({});
+    expect(readLocalLastCloseoutDates(true)).toEqual({});
     expect(getItem).not.toHaveBeenCalled();
 
     vi.unstubAllGlobals();

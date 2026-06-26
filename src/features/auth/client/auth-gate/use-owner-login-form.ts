@@ -1,15 +1,15 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { getEnabledOwnerLoginMethods, isOwnerLoginMethodEnabled } from "@/core/auth/owner-login-methods";
 import { loginOwnerViaSessionBridge } from "@/features/auth/client/session-bridge";
 import type { AuthLang, OwnerLoginCallback } from "@/features/auth/client/auth-client-types";
-import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
 import {
   APP_IN_PRODUCTION_MODE,
-  PROTOTYPE_DEMO_OTP,
-  PROTOTYPE_OWNER_PASSWORD,
-  PROTOTYPE_OWNER_USERNAME,
+  LOCAL_DEV_OTP,
+  LOCAL_DEV_OWNER_PASSWORD,
+  LOCAL_DEV_OWNER_USERNAME,
 } from "@/components/taqfeelah-app/taqfeelah-app-boot";
 
 export function useOwnerLoginForm({
@@ -26,7 +26,7 @@ export function useOwnerLoginForm({
   const [stage, setStage] = useState("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
-  const [username, setUsername] = useState(PROTOTYPE_OWNER_USERNAME);
+  const [username, setUsername] = useState(LOCAL_DEV_OWNER_USERNAME);
   const [ownerPhone, setOwnerPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -39,7 +39,7 @@ export function useOwnerLoginForm({
   }, [method]);
 
   const submitOtp = useCallback(() => {
-    if (`${code}`.trim() !== PROTOTYPE_DEMO_OTP) {
+    if (`${code}`.trim() !== LOCAL_DEV_OTP) {
       setError(text(lang, "invalidOtp"));
       return;
     }
@@ -76,8 +76,8 @@ export function useOwnerLoginForm({
     }
 
     if (
-      username.trim().toLowerCase() !== PROTOTYPE_OWNER_USERNAME
-      || password !== PROTOTYPE_OWNER_PASSWORD
+      username.trim().toLowerCase() !== LOCAL_DEV_OWNER_USERNAME
+      || password !== LOCAL_DEV_OWNER_PASSWORD
     ) {
       setError(text(lang, "invalidCredentials"));
       return;

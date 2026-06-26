@@ -10,7 +10,7 @@ import {
 import { buildRegisterCloseoutResolveOptions } from "@/features/closeouts/client/register-closeout-resolution";
 import { confirmCloseoutDelete, alertCloseoutNotFound } from "@/lib/ui/app-dialog/app-dialog-helpers";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
-import { text } from "./taqfeelah-app-demo-data";
+import { text } from "./taqfeelah-app-reference-data";
 import { OwnerRegisterScreen } from "./taqfeelah-app-owner-register-screen";
 import type { RegisterCloseoutSummary } from "@/features/entries/client/register-log-display";
 import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";

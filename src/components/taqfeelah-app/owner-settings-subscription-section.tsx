@@ -17,7 +17,7 @@ import {
 } from "@/features/billing/client/subscription-display";
 import { SubscriptionRenewalBanner } from "@/features/billing/client/SubscriptionRenewalBanner";
 import { countEmployeeSeats } from "@/features/billing/client/entitlement-guards";
-import { text } from "./taqfeelah-app-demo-data";
+import { text } from "./taqfeelah-app-reference-data";
 import { Badge, SettingsPageHeader } from "./owner-settings-ui-primitives";
 import { SettingsSectionFrame } from "./owner-settings-section-frame";
 import type { DisplayLang, OwnerSettingsSectionCommonProps } from "./taqfeelah-app-types";

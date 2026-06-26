@@ -15,7 +15,7 @@ import { OwnerNotebookScreen } from "./taqfeelah-app-owner-notebook-screen";
 import { OwnerHomeConnected } from "./taqfeelah-app-owner-home-screen";
 import { OwnerRegisterConnected } from "./taqfeelah-app-owner-register-connected";
 import type { SalesChannelConfig } from "@/features/daily-closeouts/daily-closeouts-types";
-import type { TaqfeelahAppPageContentProps, PrototypeBusiness, PrototypeChannel } from "./taqfeelah-app-types";
+import type { TaqfeelahAppPageContentProps, AppBusiness, AppChannel } from "./taqfeelah-app-types";
 
 export function TaqfeelahAppPageContent({
   lang,
@@ -142,7 +142,7 @@ export function TaqfeelahAppPageContent({
           onSelectStore={setEmployeeBusinessId}
           salesChannels={currentEmployeeChannelConfig.channels
             .filter((channel) => currentEmployeeChannelConfig.activeIds.includes(String(channel.id)) && !channel.retired)
-            .map((channel) => ({ ...channel, displayName: channelName(channel as PrototypeChannel, lang) })) as SalesChannelConfig[]}
+            .map((channel) => ({ ...channel, displayName: channelName(channel as AppChannel, lang) })) as SalesChannelConfig[]}
           notebookTheme={employeeNotebookTheme}
           employeeHistoryVisibility={currentEmployeeOperationalConfig.employeeHistoryVisibility || "month"}
           formatCalendarDate={formatCalendarDate}
@@ -183,7 +183,7 @@ export function TaqfeelahAppPageContent({
           onSelectStore={setSelectedBusiness}
           salesChannels={ownerCloseoutChannelConfig.channels
             .filter((channel) => ownerCloseoutChannelConfig.activeIds.includes(String(channel.id)) && !channel.retired)
-            .map((channel) => ({ ...channel, displayName: channelName(channel as PrototypeChannel, lang) })) as SalesChannelConfig[]}
+            .map((channel) => ({ ...channel, displayName: channelName(channel as AppChannel, lang) })) as SalesChannelConfig[]}
           notebookTheme={notebookTheme}
           employeeHistoryVisibility="all"
           formatCalendarDate={formatCalendarDate}
@@ -213,12 +213,12 @@ export function TaqfeelahAppPageContent({
             onOpenDuplicateSummaryInRegister={openDuplicateSummaryInRegister}
             onAcknowledgeDuplicate={acknowledgeDuplicateSales}
             onOpenOperation={handleOpenOwnerOperation}
-            onShareNotebook={(snapshot) => setShareSnapshot(snapshot as import("./taqfeelah-app-types").PrototypeShareSnapshot)}
+            onShareNotebook={(snapshot) => setShareSnapshot(snapshot as import("./taqfeelah-app-types").AppShareSnapshot)}
             notebookTheme={notebookTheme}
             selectedBusiness={activeViewBusiness}
             setSelectedBusiness={setSelectedBusiness}
-            businessesList={activeBusinesses as PrototypeBusiness[]}
-            configuredChannels={homeReportChannelConfig.channels as PrototypeChannel[]}
+            businessesList={activeBusinesses as AppBusiness[]}
+            configuredChannels={homeReportChannelConfig.channels as AppChannel[]}
             summaryApiEnabled={entriesApiEnabled}
             summaryApiOrganizationId={closeoutsApiOrganizationId ?? undefined}
             summaryApiActorUserId={ownerApiUserId ?? undefined}
@@ -232,7 +232,7 @@ export function TaqfeelahAppPageContent({
           lang={lang}
           saving={saving}
           selectedBusiness={activeViewBusiness}
-          businessesList={activeBusinesses as PrototypeBusiness[]}
+          businessesList={activeBusinesses as AppBusiness[]}
           storeChannelSettings={storeChannelSettings}
           onBack={() => setOwnerPage("home")}
           onSave={saveOwnerSummary}
@@ -243,7 +243,7 @@ export function TaqfeelahAppPageContent({
           lang={lang}
           saving={saving}
           selectedBusiness={activeViewBusiness}
-          businessesList={activeBusinesses as PrototypeBusiness[]}
+          businessesList={activeBusinesses as AppBusiness[]}
           storeOperationalSettings={storeOperationalSettings}
           onBack={() => setOwnerPage("home")}
           onSave={saveOwner}
@@ -266,13 +266,13 @@ export function TaqfeelahAppPageContent({
           onRestoreOperation={requestRestoreOperation}
           setOwnerEditCloseout={setOwnerEditCloseout as (closeout: import("@/features/daily-closeouts/daily-closeouts-types").DailyCloseoutRecord | null) => void}
           onCloseoutDeleted={handleOwnerCloseoutDeleted as (closeout: import("@/features/daily-closeouts/daily-closeouts-types").DailyCloseoutRecord) => void | Promise<void>}
-          onShareRegister={(snapshot) => setShareSnapshot(snapshot as import("./taqfeelah-app-types").PrototypeShareSnapshot)}
+          onShareRegister={(snapshot) => setShareSnapshot(snapshot as import("./taqfeelah-app-types").AppShareSnapshot)}
           duplicateSummaryFocus={duplicateSummaryFocus as Record<string, unknown> | null}
           archivedReadOnlyBusinessId={archivedReadOnlyBusinessId ?? undefined}
           operationalEntries={operationalEntries}
           selectedBusiness={selectedBusiness ?? undefined}
           setSelectedBusiness={setSelectedBusiness}
-          businessesList={reportingBusinesses as PrototypeBusiness[]}
+          businessesList={reportingBusinesses as AppBusiness[]}
           archivedBusinessIds={archivedBusinessIds}
           notebookTheme={notebookTheme}
           resolveStoreSalesChannels={resolveStoreSalesChannels}
@@ -302,12 +302,12 @@ export function TaqfeelahAppPageContent({
           setStoreChannelSettings={setStoreChannelSettings}
           storeOperationalSettings={storeOperationalSettings}
           setStoreOperationalSettings={setStoreOperationalSettings}
-          configuredBusinesses={configuredBusinesses as PrototypeBusiness[]}
-          setConfiguredBusinesses={setConfiguredBusinesses as import("./taqfeelah-app-types").PrototypeSetState<PrototypeBusiness[]>}
+          configuredBusinesses={configuredBusinesses as AppBusiness[]}
+          setConfiguredBusinesses={setConfiguredBusinesses as import("./taqfeelah-app-types").AppSetState<AppBusiness[]>}
           archivedBusinessIds={archivedBusinessIds}
           setArchivedBusinessIds={setArchivedBusinessIds}
           staff={staff as import("@/features/org-config/client/org-config-client-types").StaffMember[]}
-          setStaff={setStaff as import("./taqfeelah-app-types").PrototypeSetState<import("@/features/org-config/client/org-config-client-types").StaffMember[]>}
+          setStaff={setStaff as import("./taqfeelah-app-types").AppSetState<import("@/features/org-config/client/org-config-client-types").StaffMember[]>}
           ownerProfile={ownerProfile}
           setOwnerProfile={setOwnerProfile}
           authOwnerUsername={authOwnerUsername}
@@ -315,7 +315,7 @@ export function TaqfeelahAppPageContent({
           authOwnerPassword={authOwnerPassword}
           setAuthOwnerPassword={setAuthOwnerPassword}
           authEmployeePins={authEmployeePins as Record<string, string>}
-          setAuthEmployeePins={setAuthEmployeePins as import("./taqfeelah-app-types").PrototypeSetState<Record<string, string>>}
+          setAuthEmployeePins={setAuthEmployeePins as import("./taqfeelah-app-types").AppSetState<Record<string, string>>}
           onPersistSettingsNow={() => { void persistRuntimeSettingsNow(); }}
           onLogout={logout}
           onOpenSupport={() => openWhatsAppSupport(lang)}

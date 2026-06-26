@@ -1,5 +1,5 @@
-import { mapToUuid, reverseLookupKeyByUuid } from "@/core/client/api-id-utils";
-import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+﻿import { mapToUuid, reverseLookupKeyByUuid } from "@/core/client/api-id-utils";
+import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import { getRuntimeApiMaps } from "@/core/client/runtime-api-maps-state";
 import { sanitizeCloseoutChannelDisplayName } from "@/features/daily-closeouts/closeout-sales-normalize";
 
@@ -36,7 +36,7 @@ export async function fetchRegisterOverviewViaApi({
     to,
   });
 
-  const payload = await fetchApiJsonWithPrototypeContext(`/api/v1/register/overview?${search.toString()}`, {
+  const payload = await fetchApiJsonWithRuntimeContext(`/api/v1/register/overview?${search.toString()}`, {
     organizationId,
     actorUserId,
     actorRole,

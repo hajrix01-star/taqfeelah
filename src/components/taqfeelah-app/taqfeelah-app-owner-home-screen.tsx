@@ -11,12 +11,12 @@ import {
   summaryMonthFromEntries,
 } from "@/features/operations/operational-analytics";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
-import { businesses, businessName, channelName, channels, money, text } from "./taqfeelah-app-demo-data";
+import { businesses, businessName, channelName, channels, money, text } from "./taqfeelah-app-reference-data";
 import AttachmentLightbox from "../AttachmentLightbox";
 import {
   entryDateMatches,
 } from "./taqfeelah-app-entry-helpers";
-import { summaryDayFromEntriesWithLabels } from "./taqfeelah-app-demo-operational-entries";
+import { summaryDayFromEntriesWithLabels } from "./taqfeelah-app-operational-entry-helpers";
 import {
   Notebook,
   NotebookRow,
@@ -39,7 +39,7 @@ import { SubscriptionRenewalBanner } from "@/features/billing/client/Subscriptio
 import { resolveSubscriptionRenewalBanner } from "@/features/billing/client/subscription-display";
 import { SummaryReportDetails } from "./owner-summary-details";
 import { OwnerHomeDayAttachments } from "./owner-home-day-attachments";
-import type { OwnerHomeProps, PrototypeAttachmentPreviewState, PrototypeBusiness } from "./taqfeelah-app-types";
+import type { OwnerHomeProps, AppAttachmentPreviewState, AppBusiness } from "./taqfeelah-app-types";
 import type { AnalyticsTotals } from "@/features/operations/operations-types";
 import type { ResolvedOrganizationEntitlements } from "@/features/billing/types";
 
@@ -77,7 +77,7 @@ export function OwnerHome({
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
   const [showReportDetails, setShowReportDetails] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
-  const [homeAttachmentPreview, setHomeAttachmentPreview] = useState<PrototypeAttachmentPreviewState>(null);
+  const [homeAttachmentPreview, setHomeAttachmentPreview] = useState<AppAttachmentPreviewState>(null);
   const openHomeAttachmentPreview = (src: string, shareContext: Record<string, unknown> | null = null) => {
     setHomeAttachmentPreview({ src, shareContext });
   };
@@ -163,7 +163,7 @@ export function OwnerHome({
   const summaryLoadErrorMessage = lang === "ar"
     ? "تعذر تحميل الملخص المالي من الخادم. لم يتم عرض أرقام بديلة حتى لا تظهر أصفار غير صحيحة."
     : "Failed to load the financial summary from the server. No fallback figures are shown to avoid incorrect zero totals.";
-  const comparisonBusinesses = (strictServerFinancialSource ? businessesWithDaySummaries : preferEntrySummaries ? localComparisonBusinesses : businessesWithDaySummaries) as PrototypeBusiness[];
+  const comparisonBusinesses = (strictServerFinancialSource ? businessesWithDaySummaries : preferEntrySummaries ? localComparisonBusinesses : businessesWithDaySummaries) as AppBusiness[];
   const result = isCombined
     ? preferEntrySummaries ? localCombinedResult : apiCombinedResult
     : monthly

@@ -8,20 +8,20 @@ export type RuntimeApiMaps = {
 
 export type RuntimeApiMapOverrides = Partial<RuntimeApiMaps>;
 
-export type PrototypeApiAuthHeadersInput = {
+export type RuntimeApiAuthHeadersInput = {
   organizationId?: string;
   actorUserId?: string;
   actorRole?: string;
 };
 
-export type ResolvePrototypeApiContextInput = {
+export type ResolveRuntimeApiContextInput = {
   organizationId?: string;
   actorUserId?: string;
   actorRole?: string;
   storeId?: string;
 };
 
-export type ResolvedPrototypeApiContext = {
+export type ResolvedRuntimeApiContext = {
   organizationId: string;
   actorUserId: string;
   actorRole: string;

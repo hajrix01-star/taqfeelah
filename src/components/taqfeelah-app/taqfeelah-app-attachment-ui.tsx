@@ -5,7 +5,7 @@ import type { ChangeEvent, MouseEvent } from "react";
 import { Camera, Check, Image as ImageIcon, Plus, Send } from "lucide-react";
 import {
   prepareAttachment,
-} from "@/features/attachments/client/prototype-attachment-storage";
+} from "@/features/attachments/client/attachment-payload-storage";
 import { useEntryAttachmentSource } from "@/features/entries/client/use-entry-attachment-source";
 import {
   buildEntryAttachmentShareCaption,
@@ -13,12 +13,12 @@ import {
   shareEntryAttachmentImage,
 } from "@/features/entries/client/entry-attachment-share";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
-import { text } from "./taqfeelah-app-demo-data";
-import type { EntryAttachmentApiContext, OperationalEntry, PrototypeLang } from "./taqfeelah-app-types";
+import { text } from "./taqfeelah-app-reference-data";
+import type { EntryAttachmentApiContext, OperationalEntry, AppLang } from "./taqfeelah-app-types";
 
 type PreparedAttachment = Awaited<ReturnType<typeof prepareAttachment>>;
 
-export function useAttachmentCapture(lang: PrototypeLang) {
+export function useAttachmentCapture(lang: AppLang) {
   const [attachment, setAttachment] = useState<PreparedAttachment | null>(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
@@ -117,7 +117,7 @@ export function AttachmentThumbButton({
   buttonClassName?: string;
   storeId?: string;
   attachmentApiContext?: EntryAttachmentApiContext;
-  lang?: PrototypeLang;
+  lang?: AppLang;
 }) {
   const { source, loading, unavailable } = useAttachmentSource(attachment, attachmentApiContext, storeId);
   const unavailableLabel = lang === "ar" ? "تعذر تحميل الصورة" : "Image unavailable";
@@ -157,7 +157,7 @@ export function EntryAttachmentShareButton({
   compact = false,
   className = "",
 }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   attachment: Record<string, unknown> | null | undefined;
   entry?: OperationalEntry | null;
   storeName?: string;
@@ -240,7 +240,7 @@ export function ProofAddButton({
   processing = false,
   className = "",
 }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   onSelect: (event: ChangeEvent<HTMLInputElement>) => void;
   multiple?: boolean;
   disabled?: boolean;
@@ -339,7 +339,7 @@ export function ProofAttachmentPreview({
   onRemove,
   compact = false,
 }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   src: string;
   onOpen?: (src: string) => void;
   onRemove?: () => void;
@@ -379,7 +379,7 @@ export function AttachmentImageSourcePicker({
   disabled = false,
   className = "",
 }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   onSelect: (event: ChangeEvent<HTMLInputElement>) => void;
   multiple?: boolean;
   disabled?: boolean;
@@ -445,7 +445,7 @@ export function AttachmentCapture({
   onClear,
   tall = false,
 }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   attachment: PreparedAttachment | null;
   processing: boolean;
   error: string;

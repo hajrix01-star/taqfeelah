@@ -1,4 +1,4 @@
-import type { LocalStorageWriteResult } from "@/features/demo/demo-types";
+import type { LocalStorageWriteResult } from "@/core/client/safe-local-storage";
 
 export type OwnerNotebookNoteKind = "note" | "task";
 

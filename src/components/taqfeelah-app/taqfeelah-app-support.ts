@@ -1,7 +1,7 @@
-import type { PrototypeLang } from "./taqfeelah-app-types";
+import type { AppLang } from "./taqfeelah-app-types";
 import { PROTOTYPE_SUPPORT_WHATSAPP } from "./taqfeelah-app-boot";
 
-export function openWhatsAppSupport(lang: PrototypeLang) {
+export function openWhatsAppSupport(lang: AppLang) {
   window.open(
     `https://wa.me/${PROTOTYPE_SUPPORT_WHATSAPP}?text=${encodeURIComponent(lang === "ar" ? "مرحبًا، أحتاج دعم تقفيلة" : "Hello, I need Taqfeelah support")}`,
     "_blank",

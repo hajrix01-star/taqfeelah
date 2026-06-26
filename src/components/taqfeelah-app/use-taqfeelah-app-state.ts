@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { storeAttachmentPayload } from "@/features/attachments/client/prototype-attachment-storage";
-import { readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-demo-store";
+import { storeAttachmentPayload } from "@/features/attachments/client/attachment-payload-storage";
+import { readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-local-store";
 import { applyNotebookThemeCssVariables } from "@/features/daily-closeouts/notebook-themes";
 import { readEmployeeNotebookTheme } from "@/features/employee-closeouts/employee-theme-storage";
 import { isUuid } from "@/core/client/api-id-utils";
@@ -29,18 +29,18 @@ import {
   expenseCategories,
   businesses,
   text,
-} from "./taqfeelah-app-demo-data";
+} from "./taqfeelah-app-reference-data";
 import {
   BINDS_TO_SERVER_AUTH,
   ENTRIES_API_DB_SOURCE,
   REGISTER_ENTRIES_PAGINATION_ENABLED,
   CLOSEOUTS_API_DB_SOURCE,
   ORG_CONFIG_API_ENABLED,
-  PROTOTYPE_OWNER_USERNAME,
-  PROTOTYPE_OWNER_PASSWORD,
+  LOCAL_DEV_OWNER_USERNAME,
+  LOCAL_DEV_OWNER_PASSWORD,
   migrateSavedSettings,
   readSavedSettings,
-  PROTOTYPE_DEFAULT_STAFF,
+  DEFAULT_STAFF,
 } from "./taqfeelah-app-boot";
 import {
   entryIsActive,
@@ -49,8 +49,8 @@ import {
 import { todayIsoDate } from "./taqfeelah-app-notebook";
 import {
   buildEntry,
-  prototypeOwnerActor,
-} from "./taqfeelah-app-demo-operational-entries";
+  defaultOwnerActor,
+} from "./taqfeelah-app-operational-entry-helpers";
 import { resolveOwnerActor } from "./resolve-owner-actor";
 import { nextDayIso } from "./taqfeelah-app-date-helpers";
 import { useTaqfeelahAppEmployeeThemeSync } from "./use-taqfeelah-app-employee-theme-sync";
@@ -70,7 +70,7 @@ import type { StoreOperationalSettings } from "@/domain/store-operational-settin
 export function useTaqfeelahAppState() {
   const session = useTaqfeelahAppSessionState();
   const {
-    prototypeAuthBoot,
+    runtimeAuthBoot,
     lang,
     setLang,
     sessionOrganizationId,
@@ -113,11 +113,11 @@ export function useTaqfeelahAppState() {
     readSavedSettings,
     migrateSavedSettings,
     defaultBusinesses: businesses,
-    defaultStaff: PROTOTYPE_DEFAULT_STAFF,
-    prototypeOwnerUsername: PROTOTYPE_OWNER_USERNAME,
-    prototypeOwnerPassword: PROTOTYPE_OWNER_PASSWORD,
+    defaultStaff: DEFAULT_STAFF,
+    fallbackOwnerUsername: LOCAL_DEV_OWNER_USERNAME,
+    fallbackOwnerPassword: LOCAL_DEV_OWNER_PASSWORD,
     defaultStoreChannelConfig: DEFAULT_STORE_CHANNEL_CONFIG,
-    ownerActor: resolveOwnerActor(prototypeOwnerActor),
+    ownerActor: resolveOwnerActor(defaultOwnerActor),
     channelNameFn: channelName,
   });
 
@@ -181,9 +181,9 @@ export function useTaqfeelahAppState() {
     lastCloseoutDates: lastCloseoutDates as Record<string, string>,
     todayDate: todayIsoDate(),
     nextDay: nextDayIso,
-    initialEmployeeBusinessId: prototypeAuthBoot.employeeBusinessId,
-    initialEmployeeThemeOverride: prototypeAuthBoot.employee && prototypeAuthBoot.loggedInEmployeeId && !usesRuntimeSettingsApi()
-      ? readEmployeeNotebookTheme(String(prototypeAuthBoot.loggedInEmployeeId))
+    initialEmployeeBusinessId: runtimeAuthBoot.employeeBusinessId,
+    initialEmployeeThemeOverride: runtimeAuthBoot.employee && runtimeAuthBoot.loggedInEmployeeId && !usesRuntimeSettingsApi()
+      ? readEmployeeNotebookTheme(String(runtimeAuthBoot.loggedInEmployeeId))
       : null,
   });
 
@@ -208,7 +208,7 @@ export function useTaqfeelahAppState() {
     sessionUserId,
     activeEmployee,
     employeePreferences: employeePreferences as Record<string, { notebookTheme?: NotebookThemeId | string }>,
-    setEmployeePreferences: setEmployeePreferences as import("./taqfeelah-app-types").PrototypeSetState<Record<string, { notebookTheme?: NotebookThemeId | string }>>,
+    setEmployeePreferences: setEmployeePreferences as import("./taqfeelah-app-types").AppSetState<Record<string, { notebookTheme?: NotebookThemeId | string }>>,
     employeeThemeOverride: employeeThemeOverride ?? notebookTheme,
     setEmployeeThemeOverride: setEmployeeThemeOverride as import("@/features/entries/client/entries-client-types").SetState<string | null>,
   });
@@ -458,11 +458,11 @@ export function useTaqfeelahAppState() {
     entriesApiDbSource: ENTRIES_API_DB_SOURCE,
     runtimeApiStoresReady,
     activeViewBusiness,
-    activeBusinesses: activeBusinesses as import("./taqfeelah-app-types").PrototypeBusiness[],
+    activeBusinesses: activeBusinesses as import("./taqfeelah-app-types").AppBusiness[],
     activeOwnerStoreId: activeOwnerStoreId || "",
     storeChannelSettings,
     ownerApiUserId,
-    currentOwnerActor: currentOwnerActor as import("./taqfeelah-app-types").PrototypeOwnerActor,
+    currentOwnerActor: currentOwnerActor as import("./taqfeelah-app-types").AppOwnerActor,
     ownerProfile,
     ownerDisplayName,
     setOwnerPage,
@@ -472,7 +472,7 @@ export function useTaqfeelahAppState() {
     loadOperationalEntriesFromApi,
     removeOperationalEntriesForCloseout,
     syncCloseoutToOperationalEntries,
-    setCloseoutAlerts: setCloseoutAlerts as import("./taqfeelah-app-types").PrototypeSetState<Array<Record<string, unknown>>>,
+    setCloseoutAlerts: setCloseoutAlerts as import("./taqfeelah-app-types").AppSetState<Array<Record<string, unknown>>>,
     setOwnerManageCloseout,
   });
 
@@ -510,7 +510,7 @@ export function useTaqfeelahAppState() {
     createOperationalEntryInApi: createOperationalEntryInApiWithSync,
     loadOperationalEntriesFromApi,
     ownerApiUserId,
-    currentOwnerActor: currentOwnerActor as import("./taqfeelah-app-types").PrototypeOwnerActor,
+    currentOwnerActor: currentOwnerActor as import("./taqfeelah-app-types").AppOwnerActor,
     setLastCloseoutDates,
     setOwnerPage,
     setSavedOutflowShareTarget: setSavedOutflowShareTarget as (entry: OperationalEntry | null) => void,
@@ -566,7 +566,7 @@ export function useTaqfeelahAppState() {
     entriesApiDbSource: ENTRIES_API_DB_SOURCE,
     closeoutsApiOrganizationId,
     ownerApiUserId,
-    currentOwnerActor: currentOwnerActor as import("./taqfeelah-app-types").PrototypeOwnerActor,
+    currentOwnerActor: currentOwnerActor as import("./taqfeelah-app-types").AppOwnerActor,
     activeEmployee,
     entryIsActive,
     entryIsVoided,

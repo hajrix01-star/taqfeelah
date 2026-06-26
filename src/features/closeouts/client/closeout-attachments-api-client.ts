@@ -1,6 +1,6 @@
-import { isUuid } from "@/core/client/api-id-utils";
-import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
-import { resolvePrototypeApiContext } from "@/core/client/prototype-api-context";
+﻿import { isUuid } from "@/core/client/api-id-utils";
+import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
+import { resolveRuntimeApiContext } from "@/core/client/runtime-api-context";
 
 export async function fetchStoreAttachmentViaApi({
   organizationId,
@@ -15,7 +15,7 @@ export async function fetchStoreAttachmentViaApi({
   storeId?: string;
   attachmentId?: string;
 }): Promise<{ dataUrl: string }> {
-  const context = resolvePrototypeApiContext({
+  const context = resolveRuntimeApiContext({
     organizationId,
     actorUserId,
     actorRole,
@@ -25,7 +25,7 @@ export async function fetchStoreAttachmentViaApi({
     throw new Error("attachment fetch API context missing/invalid.");
   }
 
-  const payload = await fetchApiJsonWithPrototypeContext(
+  const payload = await fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${context.storeId}/attachments/${attachmentId}`,
     {
       organizationId,

@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";
 import { resolveReportDateRange } from "@/features/reports/client/report-period-range";
 import { mapPeriodSummaryToTotals, combineUiTotalsList } from "@/features/reports/client/map-reports-to-ui";
-import { withCloseoutTotals } from "@/features/daily-closeouts/daily-closeouts-demo-store";
+import { withCloseoutTotals } from "@/features/daily-closeouts/daily-closeouts-local-store";
 import { fetchRegisterOverviewViaApi } from "./register-overview-api-client";
 import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { ApiPeriodSummary } from "@/features/reports/client/reports-client-types";

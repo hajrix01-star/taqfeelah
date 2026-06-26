@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { businessName, money, opTime, text } from "./taqfeelah-app-demo-data";
+import { businessName, money, opTime, text } from "./taqfeelah-app-reference-data";
 import { MoneyValue } from "./taqfeelah-app-notebook";
 import { AttachmentThumbButton } from "./taqfeelah-app-attachment-ui";
 import { RegisterStoreBadge } from "./owner-register-ui-primitives";
-import type { DisplayLang, EntryAttachmentApiContext, PrototypeBusiness } from "./taqfeelah-app-types";
+import type { DisplayLang, EntryAttachmentApiContext, AppBusiness } from "./taqfeelah-app-types";
 import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
 import type { RefObject } from "react";
 
@@ -32,7 +32,7 @@ function GalleryTile({
     attachment?: Record<string, unknown>;
   };
   lang: DisplayLang;
-  businessesList: PrototypeBusiness[];
+  businessesList: AppBusiness[];
   showStoreBadge: boolean;
   entryAttachmentApiContext?: EntryAttachmentApiContext;
   onOpenOperation: (item: OperationalEntry) => void;
@@ -153,7 +153,7 @@ export function OwnerRegisterAttachmentsGallery({
 }: {
   lang: DisplayLang;
   sections?: AttachmentGallerySection[];
-  businessesList?: PrototypeBusiness[];
+  businessesList?: AppBusiness[];
   showStoreBadge?: boolean;
   entryAttachmentApiContext?: EntryAttachmentApiContext;
   daySequenceByCloseoutId?: Map<string, number | null>;

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useMemo } from "react";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
@@ -23,10 +23,10 @@ import { BottomNav } from "./taqfeelah-app-chrome";
 import { HelpCenterSheet } from "./AuthGateSection";
 import { NotebookShareModal } from "./taqfeelah-app-notebook-share-modal";
 import { OwnerCloseoutEditFlow, OwnerCloseoutModals } from "./taqfeelah-app-owner-closeout-modals";
-import { text } from "./taqfeelah-app-demo-data";
+import { text } from "./taqfeelah-app-reference-data";
 import { alertCloseoutNotFoundForEntry, alertCloseoutNotFound } from "@/lib/ui/app-dialog/app-dialog-helpers";
-import type { OperationalEntry, PrototypeBusiness, PrototypeChannel, NotebookShareSnapshot } from "./taqfeelah-app-types";
-import type { TaqfeelahAppOverlayStackProps, PrototypeCloseoutRecord } from "./taqfeelah-app-types";
+import type { OperationalEntry, AppBusiness, AppChannel, NotebookShareSnapshot } from "./taqfeelah-app-types";
+import type { TaqfeelahAppOverlayStackProps, AppCloseoutRecord } from "./taqfeelah-app-types";
 import type { DailyCloseoutRecord } from "@/features/daily-closeouts/daily-closeouts-types";
 
 export function TaqfeelahAppOverlayStack({
@@ -129,7 +129,7 @@ export function TaqfeelahAppOverlayStack({
       await alertCloseoutNotFoundForEntry(lang, text);
       return;
     }
-    setOwnerEditCloseout(closeout as PrototypeCloseoutRecord);
+    setOwnerEditCloseout(closeout as AppCloseoutRecord);
   }, [closeoutResolveOptions, lang, setOwnerEditCloseout, setSelected]);
 
   const handleEditOwnerCloseoutFromManage = useCallback(async (closeout: DailyCloseoutRecord) => {
@@ -146,18 +146,18 @@ export function TaqfeelahAppOverlayStack({
       await alertCloseoutNotFound(lang, text);
       return;
     }
-    setOwnerEditCloseout(resolved as PrototypeCloseoutRecord);
+    setOwnerEditCloseout(resolved as AppCloseoutRecord);
   }, [closeoutResolveOptions, lang, setOwnerEditCloseout, setOwnerManageCloseout]);
 
   const registerChannelLabel = useCallback(
-    (channel: PrototypeChannel | Record<string, unknown>) => (
-      String((channel as PrototypeChannel).displayName || channelName(channel as PrototypeChannel, lang))
+    (channel: AppChannel | Record<string, unknown>) => (
+      String((channel as AppChannel).displayName || channelName(channel as AppChannel, lang))
     ),
     [channelName, lang],
   );
 
   const resolveSalesChannelsForEdit = useCallback(
-    (storeId: string) => resolveStoreSalesChannels(storeId) as PrototypeChannel[],
+    (storeId: string) => resolveStoreSalesChannels(storeId) as AppChannel[],
     [resolveStoreSalesChannels],
   );
 
@@ -201,7 +201,7 @@ export function TaqfeelahAppOverlayStack({
           ownerEditSource={selectedOwnerEditSource}
           canVoid={Boolean(resolvedSelected?.businessId) && !archivedBusinessIds.includes(String(resolvedSelected?.businessId))}
           canRestore={Boolean(resolvedSelected?.businessId) && !archivedBusinessIds.includes(String(resolvedSelected?.businessId))}
-          businessesList={activeBusinesses as PrototypeBusiness[]}
+          businessesList={activeBusinesses as AppBusiness[]}
           {...entryAttachmentsApiProps}
         />
       )}
@@ -209,7 +209,7 @@ export function TaqfeelahAppOverlayStack({
         lang={lang}
         draft={pendingDuplicateSummary?.payload || null}
         previousEntries={pendingDuplicateSummary?.previousEntries || []}
-        businessesList={activeBusinesses as PrototypeBusiness[]}
+        businessesList={activeBusinesses as AppBusiness[]}
         onCancel={() => setPendingDuplicateSummary(null)}
         onConfirm={confirmDuplicateSummary}
       />
@@ -228,14 +228,14 @@ export function TaqfeelahAppOverlayStack({
       <SavedOutflowShareDialog
         lang={lang}
         item={savedOutflowShareTarget}
-        businessesList={activeBusinesses as PrototypeBusiness[]}
+        businessesList={activeBusinesses as AppBusiness[]}
         onClose={() => setSavedOutflowShareTarget(null)}
       />
       <NotebookShareModal
         lang={lang}
         snapshot={shareSnapshot as NotebookShareSnapshot | null}
         onClose={() => setShareSnapshot(null)}
-        businessesList={reportingBusinesses as PrototypeBusiness[]}
+        businessesList={reportingBusinesses as AppBusiness[]}
         operationalEntries={operationalEntries}
         archivedBusinessIds={archivedBusinessIds}
         notebookExportApiEnabled={phase9ApiEnabled && entriesApiEnabled}
@@ -250,8 +250,8 @@ export function TaqfeelahAppOverlayStack({
           ownerNotebookTheme={notebookTheme}
           resolveSalesChannels={resolveSalesChannelsForEdit}
           channelLabel={registerChannelLabel}
-          onCloseoutUpdated={(closeout) => handleOwnerCloseoutUpdated(closeout as PrototypeCloseoutRecord)}
-          onCloseoutDeleted={(closeout) => handleOwnerCloseoutDeleted(closeout as PrototypeCloseoutRecord)}
+          onCloseoutUpdated={(closeout) => handleOwnerCloseoutUpdated(closeout as AppCloseoutRecord)}
+          onCloseoutDeleted={(closeout) => handleOwnerCloseoutDeleted(closeout as AppCloseoutRecord)}
           onClose={() => setOwnerManageCloseout(null)}
           onOwnerEditCloseout={handleEditOwnerCloseoutFromManage}
           {...ownerCloseoutAttachmentsApiProps}
@@ -264,7 +264,7 @@ export function TaqfeelahAppOverlayStack({
         ownerNotebookTheme={notebookTheme}
         resolveSalesChannels={resolveSalesChannelsForEdit}
         channelLabel={registerChannelLabel}
-        onCloseoutUpdated={(closeout) => handleOwnerCloseoutUpdated(closeout as PrototypeCloseoutRecord)}
+        onCloseoutUpdated={(closeout) => handleOwnerCloseoutUpdated(closeout as AppCloseoutRecord)}
         onClose={() => setOwnerEditCloseout(null)}
       />
       <HelpCenterSheet lang={lang} open={helpOpen} onClose={() => setHelpOpen(false)} />

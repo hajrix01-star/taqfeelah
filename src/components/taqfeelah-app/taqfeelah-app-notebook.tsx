@@ -19,13 +19,13 @@ import {
   combinedTotals,
   money,
   text,
-} from "./taqfeelah-app-demo-data";
+} from "./taqfeelah-app-reference-data";
 import { InkTab } from "./taqfeelah-app-shell-ui";
 import type { ReactNode } from "react";
 import type {
   NotebookThemeId,
-  PrototypeBusiness,
-  PrototypeLang,
+  AppBusiness,
+  AppLang,
 } from "./taqfeelah-app-types";
 
 function resolveNotebookTheme(theme: NotebookThemeId | string): NotebookThemeId {
@@ -35,7 +35,7 @@ function resolveNotebookTheme(theme: NotebookThemeId | string): NotebookThemeId 
 function Notebook({ children, theme = "yellow", lang = "ar", fullPage = false }: {
   children: ReactNode;
   theme?: NotebookThemeId | string;
-  lang?: PrototypeLang;
+  lang?: AppLang;
   fullPage?: boolean;
 }) {
   const isArabic = lang === "ar";
@@ -61,7 +61,7 @@ function Notebook({ children, theme = "yellow", lang = "ar", fullPage = false }:
   );
 }
 function ThemePicker({ lang, theme, onChange, compact = false }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   theme: NotebookThemeId | string;
   onChange: (theme: NotebookThemeId) => void;
   compact?: boolean;
@@ -149,7 +149,7 @@ function NumberLine({ label, value, valueClassName = "text-[#112A46]" }: {
 }
 
 function FinancialRows({ lang, rows = [] }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   rows?: Array<{ id?: string; label: ReactNode; value: ReactNode; valueClassName?: string }>;
 }) {
   return (
@@ -208,7 +208,7 @@ function DateSelector({
   maxDate = "",
   initialOpen = false,
 }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   period: string;
   setPeriod: (value: string) => void;
   allowedPeriods?: string[];
@@ -367,10 +367,10 @@ function DateSelector({
 }
 
 function StoreScopeTabs({ lang, selectedBusiness, setSelectedBusiness, businessesList = businesses }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   selectedBusiness: string;
   setSelectedBusiness: (value: string) => void;
-  businessesList?: PrototypeBusiness[];
+  businessesList?: AppBusiness[];
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -418,9 +418,9 @@ function StoreScopeTabs({ lang, selectedBusiness, setSelectedBusiness, businesse
 }
 
 function StoreComparison({ lang, monthly, businessesList = businesses }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   monthly: boolean;
-  businessesList?: PrototypeBusiness[];
+  businessesList?: AppBusiness[];
 }) {
   const [showStores, setShowStores] = useState(false);
   const total = combinedTotals(monthly, businessesList);
@@ -447,7 +447,7 @@ function StoreComparison({ lang, monthly, businessesList = businesses }: {
 }
 
 function NotebookHeading({ lang, label = null, dateSelector = null, onShare = null }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   label?: ReactNode;
   dateSelector?: ReactNode;
   onShare?: (() => void) | null;
@@ -486,7 +486,7 @@ function NotebookDateBar({ dateSelector }: { dateSelector: ReactNode }) {
   return <NotebookRow className="justify-end">{dateSelector}</NotebookRow>;
 }
 
-function SummaryLoadingRow({ lang, lines = 3 }: { lang: PrototypeLang; lines?: number }) {
+function SummaryLoadingRow({ lang, lines = 3 }: { lang: AppLang; lines?: number }) {
   return (
     <NotebookRow lines={lines}>
       <p className="w-full text-taq-meta font-bold text-[#806528]">

@@ -62,7 +62,7 @@ The codebase currently has overlapping concepts:
   - `organization_members`
   - `member_store_access`
 - Historical prototype/demo helpers:
-  - `taqfeelah-app-demo-data`
+  - `taqfeelah-app-reference-data` for shared UI copy/catalog labels
   - browser storage helpers
   - runtime maps from legacy ids to UUIDs
 

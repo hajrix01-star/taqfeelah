@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -19,7 +19,7 @@ import {
   businessLocation,
   text,
   DEFAULT_STORE_CHANNEL_CONFIG,
-} from "./taqfeelah-app-demo-data";
+} from "./taqfeelah-app-reference-data";
 import {
   APP_IN_PRODUCTION_MODE,
   RUNTIME_SETTINGS_DB_SOURCE,
@@ -33,7 +33,7 @@ import type { UseOwnerSettingsScreenStateProps } from "./taqfeelah-app-types";
 import type { StoreChannelConfig } from "@/features/org-config/client/org-config-client-types";
 import type { StoreOperationalSettings } from "@/domain/store-operational-settings/types";
 import type { StaffMember, OwnerSettingsDeleteTarget } from "@/features/org-config/client/org-config-client-types";
-import type { PrototypeBusiness } from "./taqfeelah-app-types";
+import type { AppBusiness } from "./taqfeelah-app-types";
 
 export function useOwnerSettingsScreenState({
   lang,
@@ -151,8 +151,8 @@ export function useOwnerSettingsScreenState({
   const staffWorkingSet = managingTeam && draftStaff ? draftStaff : staff;
   const visibleStaff = staffWorkingSet.filter((person: StaffMember) => !person.removed && !person.deleted && !person.deletedAt);
   const employeeStoreIds = (person: StaffMember) => (person.storeIds as string[] | undefined) || ["shami"];
-  const displayBusinessName = useCallback((business: PrototypeBusiness) => businessName(business, lang), [lang]);
-  const displayLocation = useCallback((business: PrototypeBusiness) => businessLocation(business, lang), [lang]);
+  const displayBusinessName = useCallback((business: AppBusiness) => businessName(business, lang), [lang]);
+  const displayLocation = useCallback((business: AppBusiness) => businessLocation(business, lang), [lang]);
   const savedChannelConfig = resolveStoreChannelConfig(
     storeChannelSettings,
     settingsStoreId || "",

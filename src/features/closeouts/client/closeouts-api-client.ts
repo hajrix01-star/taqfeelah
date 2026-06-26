@@ -4,7 +4,7 @@ import {
   reverseLookupKeyByUuid,
   toMoneyHalalas,
 } from "@/core/client/api-id-utils";
-import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import { sanitizeCloseoutChannelDisplayName } from "@/features/daily-closeouts/closeout-sales-normalize";
 import { isUuidLike } from "@/features/org-config/client/sales-channel-display";
 import { normalizeCloseoutSubmitMode } from "@/features/closeouts/closeout-submit-mode";
@@ -234,7 +234,7 @@ export async function submitCloseoutViaApi({
   const outflows = extractOutflows(closeout);
   if (!salesChannels.length && !outflows.length) return null;
 
-  return fetchApiJsonWithPrototypeContext(`/api/v1/stores/${mappedStoreId}/closeouts`, {
+  return fetchApiJsonWithRuntimeContext(`/api/v1/stores/${mappedStoreId}/closeouts`, {
     organizationId,
     actorUserId,
     actorRole,
@@ -292,7 +292,7 @@ export async function fetchStoreCloseoutsViaApi({
     if (cursor) pageSearch.set("cursor", cursor);
     const query = pageSearch.toString();
 
-    const payload = await fetchApiJsonWithPrototypeContext(
+    const payload = await fetchApiJsonWithRuntimeContext(
       `/api/v1/stores/${mappedStoreId}/closeouts?${query}`,
       {
         organizationId,
@@ -371,7 +371,7 @@ export async function deleteCloseoutViaApi({
     throw new Error("closeout delete API requires closeoutId.");
   }
 
-  return fetchApiJsonWithPrototypeContext(
+  return fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${mappedStoreId}/closeouts/${encodeURIComponent(closeoutId)}`,
     {
       method: "DELETE",

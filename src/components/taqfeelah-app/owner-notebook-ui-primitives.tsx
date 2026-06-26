@@ -9,7 +9,7 @@ import {
   hasOwnerNotebookTaskContent,
   normalizeChecklist,
 } from "@/features/owner-notebook/owner-notebook-checklist";
-import { text } from "./taqfeelah-app-demo-data";
+import { text } from "./taqfeelah-app-reference-data";
 import { buildIndexTabBorderClass } from "./index-tab-button-styles";
 import { Badge } from "./taqfeelah-app-shell-ui";
 import type { DisplayLang, SettingsTabCounts } from "./taqfeelah-app-types";

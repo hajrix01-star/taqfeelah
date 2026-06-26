@@ -18,7 +18,7 @@ import {
   opDate,
   opTime,
   auditDateTime,
-} from "./taqfeelah-app-demo-data";
+} from "./taqfeelah-app-reference-data";
 import {
   noteLabel,
   operationDisplayLabel,
@@ -35,15 +35,15 @@ import {
 import { Badge } from "./taqfeelah-app-shell-ui";
 import type {
   OperationalEntry,
-  PrototypeBusiness,
-  PrototypeLang,
-  PrototypeOperationalEntry,
+  AppBusiness,
+  AppLang,
+  AppOperationalEntry,
 } from "./taqfeelah-app-types";
 
 export function SavedOutflowShareDialog({ lang, item, businessesList = businesses, onClose }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   item: OperationalEntry | null;
-  businessesList?: PrototypeBusiness[];
+  businessesList?: AppBusiness[];
   onClose: () => void;
 }) {
   if (!item) return null;
@@ -75,7 +75,7 @@ export function OperationModal({
   entryAttachmentsApiActorUserId = "",
   entryAttachmentsApiActorRole = "owner",
 }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   item: OperationalEntry | null;
   onClose: () => void;
   onVoid?: (entryId: string) => void;
@@ -84,7 +84,7 @@ export function OperationModal({
   ownerEditSource?: Record<string, unknown> | null;
   canVoid?: boolean;
   canRestore?: boolean;
-  businessesList?: PrototypeBusiness[];
+  businessesList?: AppBusiness[];
   entryAttachmentsApiEnabled?: boolean;
   entryAttachmentsApiOrganizationId?: string;
   entryAttachmentsApiActorUserId?: string;
@@ -105,7 +105,7 @@ export function OperationModal({
 
   if (!item) return null;
   const store = businessesList.find((business) => business.id === item.businessId);
-  const itemWithCloseoutEdit = item as PrototypeOperationalEntry;
+  const itemWithCloseoutEdit = item as AppOperationalEntry;
   const isSale = item.type === "summary";
   const voided = entryIsVoided(item);
   const auditTrail = item.auditTrail || [];
@@ -258,10 +258,10 @@ export function OperationModal({
 }
 
 export function DuplicateSalesDialog({ lang, draft, previousEntries = [], businessesList = businesses, onCancel, onConfirm }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   draft: import("@/features/entries/client/entries-client-types").OperationalEntryPayload | null;
   previousEntries?: OperationalEntry[];
-  businessesList?: PrototypeBusiness[];
+  businessesList?: AppBusiness[];
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -277,7 +277,7 @@ export function DuplicateSalesDialog({ lang, draft, previousEntries = [], busine
 }
 
 export function VoidOperationDialog({ lang, item, onCancel, onConfirm }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   item: OperationalEntry | null;
   onCancel: () => void;
   onConfirm: (reason: string) => void;
@@ -290,7 +290,7 @@ export function VoidOperationDialog({ lang, item, onCancel, onConfirm }: {
 }
 
 export function RestoreOperationDialog({ lang, item, onCancel, onConfirm }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   item: OperationalEntry | null;
   onCancel: () => void;
   onConfirm: (reason: string) => void;
@@ -303,7 +303,7 @@ export function RestoreOperationDialog({ lang, item, onCancel, onConfirm }: {
 }
 
 export function QuickAddSheet({ lang, employee, open, onClose, onSummary, onExpense }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   employee: boolean;
   open: boolean;
   onClose: () => void;

@@ -5,7 +5,7 @@ import { formatCloseoutDayLabel } from "@/features/closeouts/client/closeout-day
 import { summaryEntryDisplayAmount } from "@/features/entries/client/register-operation-display";
 import { employeeDisplayName } from "@/features/employee-closeouts/employee-entries-display";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
-import { businessName, money, opTime, text } from "./taqfeelah-app-demo-data";
+import { businessName, money, opTime, text } from "./taqfeelah-app-reference-data";
 import {
   entryHasAttachment,
   entryIsVoided,
@@ -15,7 +15,7 @@ import { MoneyValue } from "./taqfeelah-app-notebook";
 import { Badge } from "./taqfeelah-app-shell-ui";
 import { RegisterStoreBadge } from "./owner-register-ui-primitives";
 import { AttachmentThumbButton } from "./taqfeelah-app-attachment-ui";
-import type { DisplayLang, EntryAttachmentApiContext, PrototypeBusiness, PrototypeChannel, RegisterLogFilters } from "./taqfeelah-app-types";
+import type { DisplayLang, EntryAttachmentApiContext, AppBusiness, AppChannel, RegisterLogFilters } from "./taqfeelah-app-types";
 import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 
@@ -40,7 +40,7 @@ export function OwnerRegisterOperationsList({
   configuredChannels,
 }: {
   lang: DisplayLang;
-  businessesList: PrototypeBusiness[];
+  businessesList: AppBusiness[];
   visibleEntries: OperationalEntry[];
   logFilters: RegisterLogFilters;
   daySequenceByCloseoutId: Map<string, number | null>;
@@ -56,7 +56,7 @@ export function OwnerRegisterOperationsList({
   registerLoadMoreRef?: RefObject<HTMLDivElement | null>;
   loadError?: boolean;
   loadErrorMessage?: string;
-  configuredChannels?: PrototypeChannel[];
+  configuredChannels?: AppChannel[];
 }) {
   if (loadError) {
     return (

@@ -1,4 +1,4 @@
-import type { PrototypeLang } from "./taqfeelah-app-types";
+﻿import type { AppLang } from "./taqfeelah-app-types";
 import { isoCalendarDate } from "./taqfeelah-app-notebook";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 
@@ -8,12 +8,12 @@ export function nextDayIso(dateString: string) {
   return isoCalendarDate(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-export function formatDateTimeLabel(iso: string, lang: PrototypeLang) {
+export function formatDateTimeLabel(iso: string, lang: AppLang) {
   if (!iso) return "";
   const datePart = iso.slice(0, 10);
   const time = new Date(iso).toLocaleTimeString(
     lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
     { hour: "2-digit", minute: "2-digit" },
   );
-  return `${formatCalendarDate(datePart, lang)} · ${time}`;
+  return `${formatCalendarDate(datePart, lang)} آ· ${time}`;
 }

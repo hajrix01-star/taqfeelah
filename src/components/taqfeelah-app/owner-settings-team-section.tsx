@@ -1,6 +1,6 @@
 "use client";
 
-import { text } from "./taqfeelah-app-demo-data";
+import { text } from "./taqfeelah-app-reference-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";
 import { SettingsPageHeader } from "./owner-settings-ui-primitives";
 import { OwnerSettingsTeamRoster } from "./owner-settings-team-roster";
@@ -8,7 +8,7 @@ import { SettingsSectionFrame } from "./owner-settings-section-frame";
 import type {
   OwnerSettingsDeleteDialogProps,
   OwnerSettingsSectionCommonProps,
-  PrototypeBusiness,
+  AppBusiness,
 } from "./taqfeelah-app-types";
 import type { StaffMember } from "@/features/org-config/client/org-config-client-types";
 
@@ -49,8 +49,8 @@ export function OwnerSettingsTeamSection({
   employeeStoreIds: (person: StaffMember) => string[];
   toggleEmployeeActive: (personId: string) => void;
   setDeleteTarget: (target: unknown) => void;
-  activeStoredBusinesses: PrototypeBusiness[];
-  displayBusinessName: (business: PrototypeBusiness) => string;
+  activeStoredBusinesses: AppBusiness[];
+  displayBusinessName: (business: AppBusiness) => string;
   toggleEmployeeStore: (personId: string, storeId: string) => void;
   draftAuthEmployeePins: Record<string, string>;
   updateDraftEmployeePin: (personId: string, pin: string) => void;

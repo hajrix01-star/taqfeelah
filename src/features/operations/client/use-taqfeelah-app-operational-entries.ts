@@ -2,11 +2,11 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { buildOperationalEntriesFromCloseout } from "@/features/daily-closeouts/daily-closeouts-demo-store";
+import { buildOperationalEntriesFromCloseout } from "@/features/daily-closeouts/daily-closeouts-local-store";
 import {
   makeAttachment,
   storeAttachmentPayload,
-} from "@/features/attachments/client/prototype-attachment-storage";
+} from "@/features/attachments/client/attachment-payload-storage";
 import type { PreparedAttachment } from "@/features/attachments/client/attachments-client-types";
 import { hasCloseoutApiActorMapping, isUuid } from "@/features/closeouts/client/closeouts-api-client";
 import {
@@ -25,13 +25,13 @@ import {
   buildEntry,
   isoDaysAgo,
   readOperationalEntries,
-} from "@/components/taqfeelah-app/taqfeelah-app-demo-operational-entries";
+} from "@/components/taqfeelah-app/taqfeelah-app-operational-entry-helpers";
 import {
   ENTRIES_API_DB_SOURCE,
   REGISTER_ENTRIES_PAGINATION_ENABLED,
 } from "@/components/taqfeelah-app/taqfeelah-app-boot";
 import { entryIsActive } from "@/components/taqfeelah-app/taqfeelah-app-entry-helpers";
-import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
 import { invalidateOperationalData } from "@/core/client/invalidate-operational-data";
 import { refreshOperationalDataAfterWrite } from "@/features/operations/client/refresh-operational-data-after-write";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";

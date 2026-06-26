@@ -19,7 +19,7 @@ import {
   opTime,
   text,
   outflowReportCategories,
-} from "./taqfeelah-app-demo-data";
+} from "./taqfeelah-app-reference-data";
 import {
   entryHasAttachment,
   entryIsActive,
@@ -28,10 +28,10 @@ import {
   operationDisplayLabel,
   signedEntryAmount,
 } from "./taqfeelah-app-entry-helpers";
-import { summaryDayFromEntriesWithLabels } from "./taqfeelah-app-demo-operational-entries";
+import { summaryDayFromEntriesWithLabels } from "./taqfeelah-app-operational-entry-helpers";
 import { todayIsoDate } from "./taqfeelah-app-notebook";
 import type { NotebookThemeId } from "@/features/daily-closeouts/daily-closeouts-types";
-import type { BuildNotebookShareModelInput, NotebookShareBusinessRow, NotebookShareChannelRow, NotebookShareModel, PrototypeBusiness } from "./taqfeelah-app-types";
+import type { BuildNotebookShareModelInput, NotebookShareBusinessRow, NotebookShareChannelRow, NotebookShareModel, AppBusiness } from "./taqfeelah-app-types";
 
 export function buildNotebookShareModel({
   snapshot,
@@ -50,10 +50,10 @@ export function buildNotebookShareModel({
   const isChannelsReport = snapshot.screen === "reports" && snapshot.tab === "channels";
   const isDaysReport = snapshot.screen === "reports" && snapshot.tab === "days";
   const isProofsReport = snapshot.screen === "reports" && snapshot.tab === "proofs";
-  const activeShareBusinesses = businessesList.filter((business: PrototypeBusiness) => !archivedBusinessIds.includes(business.id));
-  const includedBusinessIds = snapshot.includedBusinessIds || activeShareBusinesses.map((business: PrototypeBusiness) => business.id);
+  const activeShareBusinesses = businessesList.filter((business: AppBusiness) => !archivedBusinessIds.includes(business.id));
+  const includedBusinessIds = snapshot.includedBusinessIds || activeShareBusinesses.map((business: AppBusiness) => business.id);
   const combined = snapshot.selectedBusiness === "all";
-  const business = businessesList.find((item: PrototypeBusiness) => item.id === snapshot.selectedBusiness) || businessesList[0] || businesses[0];
+  const business = businessesList.find((item: AppBusiness) => item.id === snapshot.selectedBusiness) || businessesList[0] || businesses[0];
   const shareDate = snapshot.selectedDate || todayIsoDate();
   const shareYear = snapshot.selectedYear || String(new Date().getFullYear());
   const shareFrom = snapshot.customFrom || `${shareYear}-01-01`;

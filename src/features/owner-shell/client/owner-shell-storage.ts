@@ -1,4 +1,4 @@
-import { readLocalStorageJson } from "@/features/demo/prototype-storage";
+import { readLocalStorageJson } from "@/core/client/safe-local-storage";
 import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 import type { CloseoutAlertItem } from "@/features/owner-shell/client/owner-shell-client-types";
 

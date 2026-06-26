@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { readLocalStorageJson, safeSetLocalStorageItem } from "./prototype-storage";
+import { readLocalStorageJson, safeSetLocalStorageItem } from "@/core/client/safe-local-storage";
 
-describe("prototype storage helpers", () => {
+describe("safe local storage helpers", () => {
   const getItem = vi.fn();
   const setItem = vi.fn();
 
@@ -19,19 +19,19 @@ describe("prototype storage helpers", () => {
     vi.unstubAllGlobals();
   });
 
-  it("reads and writes browser storage in prototype mode", () => {
+  it("reads and writes browser storage outside production mode", () => {
     getItem.mockReturnValue(JSON.stringify({ ok: true }));
 
-    expect(readLocalStorageJson("taqfeelah_demo", {})).toEqual({ ok: true });
-    expect(safeSetLocalStorageItem("taqfeelah_demo", "value")).toEqual({ ok: true });
-    expect(setItem).toHaveBeenCalledWith("taqfeelah_demo", "value");
+    expect(readLocalStorageJson("taqfeelah_local", {})).toEqual({ ok: true });
+    expect(safeSetLocalStorageItem("taqfeelah_local", "value")).toEqual({ ok: true });
+    expect(setItem).toHaveBeenCalledWith("taqfeelah_local", "value");
   });
 
   it("blocks browser storage when persistence is disabled", () => {
     vi.stubEnv("NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE", "true");
 
-    expect(readLocalStorageJson("taqfeelah_demo", { fallback: true })).toEqual({ fallback: true });
-    expect(safeSetLocalStorageItem("taqfeelah_demo", "value")).toEqual({ ok: false, error: "disabled" });
+    expect(readLocalStorageJson("taqfeelah_local", { fallback: true })).toEqual({ fallback: true });
+    expect(safeSetLocalStorageItem("taqfeelah_local", "value")).toEqual({ ok: false, error: "disabled" });
     expect(getItem).not.toHaveBeenCalled();
     expect(setItem).not.toHaveBeenCalled();
   });

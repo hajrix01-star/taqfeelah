@@ -1,13 +1,13 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
-import { businesses, businessLocation, businessName, text } from "./taqfeelah-app-demo-data";
+import { businesses, businessLocation, businessName, text } from "./taqfeelah-app-reference-data";
 import { NotebookRow } from "./taqfeelah-app-notebook";
-import type { DisplayLang, PrototypeBusiness } from "./taqfeelah-app-types";
+import type { DisplayLang, AppBusiness } from "./taqfeelah-app-types";
 
-export function LogStoreFilter({ lang, businessesList = businesses, selectedBusiness, setSelectedBusiness, locked = false }: { lang: DisplayLang; businessesList?: PrototypeBusiness[]; selectedBusiness: string; setSelectedBusiness: (value: string) => void; locked?: boolean }) {
+export function LogStoreFilter({ lang, businessesList = businesses, selectedBusiness, setSelectedBusiness, locked = false }: { lang: DisplayLang; businessesList?: AppBusiness[]; selectedBusiness: string; setSelectedBusiness: (value: string) => void; locked?: boolean }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const filterRef = useRef<HTMLDivElement | null>(null);
@@ -66,7 +66,7 @@ export function LogStoreFilter({ lang, businessesList = businesses, selectedBusi
   );
 }
 
-export function RegisterStoreChips({ lang, businessesList, selectedBusiness, setSelectedBusiness, locked = false }: { lang: DisplayLang; businessesList: PrototypeBusiness[]; selectedBusiness: string; setSelectedBusiness: (value: string) => void; locked?: boolean }) {
+export function RegisterStoreChips({ lang, businessesList, selectedBusiness, setSelectedBusiness, locked = false }: { lang: DisplayLang; businessesList: AppBusiness[]; selectedBusiness: string; setSelectedBusiness: (value: string) => void; locked?: boolean }) {
   if (businessesList.length <= 1) {
     if (!businessesList[0]) return null;
     return (

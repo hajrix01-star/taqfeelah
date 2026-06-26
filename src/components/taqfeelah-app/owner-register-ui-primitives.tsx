@@ -5,7 +5,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { isRegisterIndexTabsEnabled } from "@/core/config/register-dashboard-tabs-mode";
 import { REGISTER_REPORT_GRANULARITY } from "@/features/reports/client/register-report-granularity";
 import { buildIndexTabBorderClass } from "./index-tab-button-styles";
-import { money, text } from "./taqfeelah-app-demo-data";
+import { money, text } from "./taqfeelah-app-reference-data";
 import { MoneyValue } from "./taqfeelah-app-notebook";
 import type { DisplayLang, RegisterViewCounts, SettingsTabItem } from "./taqfeelah-app-types";
 

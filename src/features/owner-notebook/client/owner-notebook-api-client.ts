@@ -1,4 +1,4 @@
-import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+﻿import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import type {
   CreateOwnerNotebookNoteViaApiInput,
   DeleteOwnerNotebookNoteViaApiInput,
@@ -28,7 +28,7 @@ export async function fetchOwnerNotebookNotesViaApi({
   const search = new URLSearchParams();
   search.set("limit", String(limit));
   if (cursor) search.set("cursor", cursor);
-  const payload = await fetchApiJsonWithPrototypeContext(`/api/v1/owner-notebook/notes?${search.toString()}`, {
+  const payload = await fetchApiJsonWithRuntimeContext(`/api/v1/owner-notebook/notes?${search.toString()}`, {
     ...buildOwnerNotebookApiContext(context),
     errorMessage: "Failed to load owner notebook notes.",
   }) as { notes?: OwnerNotebookNote[]; nextCursor?: string | null };
@@ -45,7 +45,7 @@ export async function createOwnerNotebookNoteViaApi({
   checklist,
   ...context
 }: CreateOwnerNotebookNoteViaApiInput = {}) {
-  const payload = await fetchApiJsonWithPrototypeContext("/api/v1/owner-notebook/notes", {
+  const payload = await fetchApiJsonWithRuntimeContext("/api/v1/owner-notebook/notes", {
     ...buildOwnerNotebookApiContext(context),
     method: "POST",
     body: {
@@ -64,7 +64,7 @@ export async function updateOwnerNotebookNoteViaApi({
   patch = {},
   ...context
 }: UpdateOwnerNotebookNoteViaApiInput) {
-  const payload = await fetchApiJsonWithPrototypeContext(`/api/v1/owner-notebook/notes/${noteId}`, {
+  const payload = await fetchApiJsonWithRuntimeContext(`/api/v1/owner-notebook/notes/${noteId}`, {
     ...buildOwnerNotebookApiContext(context),
     method: "PATCH",
     body: patch,
@@ -77,7 +77,7 @@ export async function deleteOwnerNotebookNoteViaApi({
   noteId,
   ...context
 }: DeleteOwnerNotebookNoteViaApiInput) {
-  return fetchApiJsonWithPrototypeContext(`/api/v1/owner-notebook/notes/${noteId}`, {
+  return fetchApiJsonWithRuntimeContext(`/api/v1/owner-notebook/notes/${noteId}`, {
     ...buildOwnerNotebookApiContext(context),
     method: "DELETE",
     errorMessage: "Failed to delete owner notebook note.",

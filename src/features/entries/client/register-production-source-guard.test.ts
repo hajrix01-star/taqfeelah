@@ -11,14 +11,14 @@ function readProjectFile(path: string) {
 describe("register production source guard", () => {
   it("serves /app through the Taqfeelah App entry instead of the demo page", () => {
     const appRoute = readProjectFile("src/app/app/page.tsx");
-    const prototypeRoute = readProjectFile("src/app/prototype-runtime/page.tsx");
     const appClientGate = readProjectFile("src/features/taqfeelah-app/TaqfeelahAppClientGate.tsx");
     const appPage = readProjectFile("src/features/taqfeelah-app/TaqfeelahAppPage.tsx");
     const appRuntimeLoader = readProjectFile("src/lib/brand/load-taqfeelah-app-runtime.ts");
 
     expect(appRoute).toContain("@/features/taqfeelah-app/TaqfeelahAppPage");
     expect(appRoute).not.toContain("@/features/demo/AppRuntimePage");
-    expect(prototypeRoute).toContain("@/features/demo/AppRuntimePage");
+    expect(() => readProjectFile("src/app/prototype-runtime/page.tsx")).toThrow();
+    expect(() => readProjectFile("src/features/demo/AppRuntimePage.tsx")).toThrow();
     expect(appClientGate).not.toContain("migratePrototypeDemoDatasetIfNeeded");
     expect(appClientGate).not.toContain("prototype-demo-migrate");
     expect(appPage).toContain("@/lib/brand/use-taqfeelah-app-runtime");
@@ -29,19 +29,20 @@ describe("register production source guard", () => {
   });
 
   it("does not seed or read local operational entries in server-authoritative modes", () => {
-    const source = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-demo-operational-entries.ts");
+    const source = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-operational-entry-helpers.ts");
 
-    expect(source).toContain("if (typeof window === \"undefined\") return BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE ? [] : createDemoOperationalEntries();");
-    expect(source).toContain("if (BINDS_TO_SERVER_AUTH || ENTRIES_API_DB_SOURCE) return [];");
+    expect(source).not.toContain("@/features/demo");
+    expect(source).not.toContain("createPrototypeMonthDemoOperationalEntries");
+    expect(source).toContain("return [];");
   });
 
   it("does not read or write demo last-closeout storage in server-authoritative settings modes", () => {
     const storage = readProjectFile("src/features/org-config/client/owner-settings-storage.ts");
     const settingsState = readProjectFile("src/features/org-config/client/use-owner-settings-state.ts");
 
-    expect(storage).toContain("if (skipDemoDefaults) return {};");
-    expect(settingsState).toContain("const skipDemoBootstrap = bindsToServerAuth || orgConfigApiEnabled || closeoutsApiDbSource;");
-    expect(settingsState).toContain("skipDemoBootstrap");
+    expect(storage).toContain("if (skipLocalDefaults) return {};");
+    expect(settingsState).toContain("const skipLocalBootstrap = bindsToServerAuth || orgConfigApiEnabled || closeoutsApiDbSource;");
+    expect(settingsState).toContain("skipLocalBootstrap");
     expect(settingsState).not.toContain("if (\n      bindsToServerAuth\n      || typeof window");
   });
 
@@ -49,8 +50,8 @@ describe("register production source guard", () => {
     const settingsState = readProjectFile("src/features/org-config/client/use-owner-settings-state.ts");
     const themeReadIndex = settingsState.indexOf("window.localStorage.getItem(\"taqfeelah_notebook_theme\")");
     const themeWriteIndex = settingsState.indexOf("window.localStorage.setItem(\"taqfeelah_notebook_theme\", notebookTheme)");
-    const skipReadIndex = settingsState.indexOf("function readDemoLocalNotebookTheme(skipDemoBootstrap: boolean)");
-    const skipWriteIndex = settingsState.indexOf("function writeDemoLocalNotebookTheme(notebookTheme: string, skipDemoBootstrap: boolean)");
+    const skipReadIndex = settingsState.indexOf("function readLocalLocalNotebookTheme(skipLocalBootstrap: boolean)");
+    const skipWriteIndex = settingsState.indexOf("function writeLocalLocalNotebookTheme(notebookTheme: string, skipLocalBootstrap: boolean)");
 
     expect(skipReadIndex).toBeGreaterThan(-1);
     expect(themeReadIndex).toBeGreaterThan(skipReadIndex);
@@ -135,7 +136,7 @@ describe("register production source guard", () => {
   it("does not persist operational entries to browser storage", () => {
     const source = readProjectFile("src/features/operations/client/use-taqfeelah-app-operational-entries.ts");
     const boot = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-boot.ts");
-    const demoEntries = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-demo-operational-entries.ts");
+    const demoEntries = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-operational-entry-helpers.ts");
 
     expect(source).not.toContain("safeSetLocalStorageItem");
     expect(source).not.toContain("operational-fallback");
@@ -188,11 +189,11 @@ describe("register production source guard", () => {
   });
   it("does not fall back to local owner notebook notes in API mode", () => {
     const source = readProjectFile("src/features/owner-notebook/client/use-owner-notebook-notes.ts");
-    const apiBranch = source.slice(source.indexOf("if (apiEnabled)"), source.indexOf("setNotes(mergeLegacyOwnerNotebookNotesIntoDemoLocal"));
+    const apiBranch = source.slice(source.indexOf("if (apiEnabled)"), source.indexOf("setNotes(mergeLegacyOwnerNotebookNotesIntoLocalStore"));
 
     expect(apiBranch).toContain("setLoadError(\"owner-notebook-api-load-failed\")");
     expect(apiBranch).toContain("setNotes([])");
-    expect(apiBranch).not.toContain("mergeLegacyOwnerNotebookNotesIntoDemoLocal");
+    expect(apiBranch).not.toContain("mergeLegacyOwnerNotebookNotesIntoLocalStore");
   });
 
   it("saves store settings through confirmed org-config persistence in API mode", () => {

@@ -5,7 +5,7 @@ import {
   filterActiveLoginStaff,
   patchEmployeeStaffStoreIdsFromHydration,
   patchRuntimeApiMapsForEmployeeSession,
-  upsertPrototypeEmployeeRosterStaff,
+  upsertRuntimeEmployeeRosterStaff,
   resolveActiveEmployee,
   resolveAssignedEmployeeBusinesses,
   resolveCurrentEmployeeBusiness,
@@ -226,7 +226,7 @@ describe("employee-portal-session", () => {
       storeIds: [],
     };
 
-    const merged = upsertPrototypeEmployeeRosterStaff(staff, rosterPerson);
+    const merged = upsertRuntimeEmployeeRosterStaff(staff, rosterPerson);
 
     expect(merged).toHaveLength(1);
     expect(merged[0].active).toBe(true);

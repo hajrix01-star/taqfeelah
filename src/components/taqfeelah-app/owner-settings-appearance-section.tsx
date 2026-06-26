@@ -1,7 +1,7 @@
 "use client";
 
 import { isNotebookThemeDirty } from "@/features/org-config/client/owner-settings-appearance-actions";
-import { text } from "./taqfeelah-app-demo-data";
+import { text } from "./taqfeelah-app-reference-data";
 import { SettingsPageHeader } from "./owner-settings-ui-primitives";
 import { ThemePicker } from "./taqfeelah-app-notebook";
 import { SettingsSectionFrame } from "./owner-settings-section-frame";

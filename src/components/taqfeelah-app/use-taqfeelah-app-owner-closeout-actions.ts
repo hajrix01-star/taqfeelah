@@ -1,12 +1,12 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { resolveStoreChannelConfig, EMPTY_STORE_CHANNEL_CONFIG } from "@/features/org-config/client/store-channel-config";
-import { text } from "./taqfeelah-app-demo-data";
+import { text } from "./taqfeelah-app-reference-data";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
 import type {
-  PrototypeCloseoutRecord,
+  AppCloseoutRecord,
   UseTaqfeelahAppOwnerCloseoutActionsProps,
 } from "./taqfeelah-app-types";
 
@@ -42,7 +42,7 @@ export function useTaqfeelahAppOwnerCloseoutActions({
 }: UseTaqfeelahAppOwnerCloseoutActionsProps) {
   const ownerAddHandlerRef = useRef<(() => void) | null>(null);
   const [ownerEntryActive, setOwnerEntryActive] = useState(false);
-  const [ownerEditCloseout, setOwnerEditCloseout] = useState<PrototypeCloseoutRecord | null>(null);
+  const [ownerEditCloseout, setOwnerEditCloseout] = useState<AppCloseoutRecord | null>(null);
 
   const resolvedOwnerName = String(ownerProfile?.name || "").trim() || ownerDisplayName || "";
   const ownerCloseoutActor = useMemo(() => ({
@@ -119,7 +119,7 @@ export function useTaqfeelahAppOwnerCloseoutActions({
     setQuickAddOpen(true);
   }, [setQuickAddOpen]);
 
-  const handleOwnerCloseoutUpdated = useCallback(async (closeout: PrototypeCloseoutRecord) => {
+  const handleOwnerCloseoutUpdated = useCallback(async (closeout: AppCloseoutRecord) => {
     if (!closeout) return;
     if (closeout.status === "reviewed") {
       await syncCloseoutToOperationalEntries({ ...closeout, syncedToEntries: false }, { force: true });
@@ -132,7 +132,7 @@ export function useTaqfeelahAppOwnerCloseoutActions({
     removeOperationalEntriesForCloseout(closeout.id || "", closeout.storeId);
   }, [entriesApiDbSource, loadOperationalEntriesFromApi, removeOperationalEntriesForCloseout, syncCloseoutToOperationalEntries]);
 
-  const handleOwnerCloseoutDeleted = useCallback(async (closeout: PrototypeCloseoutRecord) => {
+  const handleOwnerCloseoutDeleted = useCallback(async (closeout: AppCloseoutRecord) => {
     if (!closeout) return;
     if (entriesApiDbSource) {
       await refreshOperationalEntriesBestEffort(loadOperationalEntriesFromApi);

@@ -1,4 +1,4 @@
-import { safeSetLocalStorageItem } from "@/features/demo/prototype-storage";
+import { safeSetLocalStorageItem } from "@/core/client/safe-local-storage";
 import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 import {
   OWNER_NOTEBOOK_STORAGE_KEY,
@@ -99,7 +99,7 @@ export function markOwnerNotebookMigrationComplete({ organizationId = "", userId
   );
 }
 
-export function mergeLegacyOwnerNotebookNotesIntoDemoLocal({ organizationId = "", userId = "" }: OwnerNotebookStorageScope = {}) {
+export function mergeLegacyOwnerNotebookNotesIntoLocalStore({ organizationId = "", userId = "" }: OwnerNotebookStorageScope = {}) {
   const legacyNotes = readLegacyOwnerNotebookNotes({ organizationId, userId });
   const currentNotes = readOwnerNotebookNotes({ organizationId, userId });
   const merged = sortOwnerNotebookNotes([

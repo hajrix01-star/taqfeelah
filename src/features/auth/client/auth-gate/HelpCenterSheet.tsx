@@ -1,11 +1,10 @@
-"use client";
+﻿"use client";
 
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
-import { PROTOTYPE_BUILD_STAMP } from "@/prototype-build-stamp.mjs";
-import LanHintBanner from "@/features/demo/LanHintBanner";
+import { APP_BUILD_STAMP } from "@/app-build-stamp.mjs";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
-import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
 import { APP_IN_PRODUCTION_MODE } from "@/components/taqfeelah-app/taqfeelah-app-boot";
 import { openWhatsAppSupport } from "@/components/taqfeelah-app/taqfeelah-app-support";
 import type { AuthLang } from "@/features/auth/client/auth-client-types";
@@ -36,10 +35,9 @@ export function HelpCenterSheet({ lang, open, onClose }: HelpCenterSheetProps) {
           />
           {!APP_IN_PRODUCTION_MODE ? (
             <p className="mt-2 text-center text-taq-meta font-bold text-[#827762]">
-              {text(lang, "prototypeBuildLabel")}: <span dir="ltr">{PROTOTYPE_BUILD_STAMP}</span>
+              {text(lang, "appBuildLabel")}: <span dir="ltr">{APP_BUILD_STAMP}</span>
             </p>
           ) : null}
-          {!APP_IN_PRODUCTION_MODE ? <LanHintBanner lang={lang} /> : null}
           <button type="button" onClick={() => { openWhatsAppSupport(lang); onClose(); }} className="mt-4 w-full rounded-2xl bg-[#25D366] py-3.5 text-xs font-black text-white">{text(lang, "whatsappSupport")}</button>
         </motion.div>
       </motion.div>

@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { PROTOTYPE_BUILD_STAMP } from "@/prototype-build-stamp.mjs";
-import LanHintBanner from "@/features/demo/LanHintBanner";
+import { APP_BUILD_STAMP } from "@/app-build-stamp.mjs";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import { useOwnerLoginForm } from "@/features/auth/client/auth-gate/use-owner-login-form";
-import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
 import { APP_IN_PRODUCTION_MODE } from "@/components/taqfeelah-app/taqfeelah-app-boot";
 import { LanguageSwitch, Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
 import { AppLoginPhoneField } from "@/core/phone/AppLoginPhoneField";
@@ -112,7 +111,6 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onBack }: OwnerLoginS
       <button type="button" onClick={onBack} className="mt-4 w-full text-xs font-black text-[#9A823E]">
         {text(lang, "backToLoginGateway")}
       </button>
-      {!APP_IN_PRODUCTION_MODE ? <LanHintBanner lang={lang} /> : null}
       <ReleaseVersionLine
         className="mt-4 text-center text-taq-meta font-bold text-[#827762]"
         lang={lang}
@@ -120,7 +118,7 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onBack }: OwnerLoginS
       />
       {!APP_IN_PRODUCTION_MODE ? (
         <p className="mt-2 text-center text-taq-meta font-bold text-[#A99D87]">
-          {text(lang, "prototypeBuildLabel")}: <span dir="ltr" className="font-black text-[#112A46]">{PROTOTYPE_BUILD_STAMP}</span>
+          {text(lang, "appBuildLabel")}: <span dir="ltr" className="font-black text-[#112A46]">{APP_BUILD_STAMP}</span>
         </p>
       ) : null}
     </motion.section>

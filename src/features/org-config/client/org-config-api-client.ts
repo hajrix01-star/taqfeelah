@@ -1,11 +1,11 @@
 import { isUuid, mapToUuid, reverseLookupKeyByUuid } from "@/core/client/api-id-utils";
-import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import { readPublicAppMode } from "@/core/config/app-mode";
 import {
   getRuntimeApiMaps,
   setRuntimeApiIdMaps,
 } from "@/core/client/runtime-api-maps-state";
-import { resolvePrototypeApiContext } from "@/core/client/prototype-api-context";
+import { resolveRuntimeApiContext } from "@/core/client/runtime-api-context";
 import {
   asApiPayload,
   type ApiChannelRow,
@@ -48,7 +48,7 @@ export async function fetchOrganizationStoresViaApi({
 }: OrgConfigApiAuth & { status?: string }) {
   const { storeIdMap } = getMaps();
   const search = new URLSearchParams({ status });
-  const payload = asApiPayload(await fetchApiJsonWithPrototypeContext(`/api/v1/stores?${search.toString()}`, {
+  const payload = asApiPayload(await fetchApiJsonWithRuntimeContext(`/api/v1/stores?${search.toString()}`, {
     organizationId,
     actorUserId,
     actorRole,
@@ -76,7 +76,7 @@ export async function fetchStoreSalesChannelsViaApi({
   if (!mappedStoreId) return { storeId, channels: [] as ApiChannelRow[] };
 
   const search = new URLSearchParams({ status });
-  const payload = asApiPayload(await fetchApiJsonWithPrototypeContext(
+  const payload = asApiPayload(await fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${mappedStoreId}/sales-channels?${search.toString()}`,
     {
       organizationId,
@@ -104,7 +104,7 @@ export async function fetchOrganizationMembersViaApi({
 }: OrgConfigApiAuth & { status?: string }) {
   const { storeIdMap, userIdMap } = getMaps();
   const search = new URLSearchParams({ status });
-  const payload = asApiPayload(await fetchApiJsonWithPrototypeContext(`/api/v1/members?${search.toString()}`, {
+  const payload = asApiPayload(await fetchApiJsonWithRuntimeContext(`/api/v1/members?${search.toString()}`, {
     organizationId,
     actorUserId,
     actorRole,
@@ -131,7 +131,7 @@ export async function createOrganizationStoreViaApi({
   name,
   location = "",
 }: OrgConfigApiAuth & { name: string; location?: string }) {
-  const payload = asApiPayload(await fetchApiJsonWithPrototypeContext("/api/v1/stores", {
+  const payload = asApiPayload(await fetchApiJsonWithRuntimeContext("/api/v1/stores", {
     organizationId,
     actorUserId,
     actorRole,
@@ -163,10 +163,10 @@ export async function updateStoreOperationalSettingsViaApi({
   reason?: string;
 }) {
   assertProductionUuid(storeId, "production store operational settings update requires canonical store id.");
-  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  const context = resolveRuntimeApiContext({ organizationId, actorUserId, actorRole, storeId });
   if (!context) throw new Error("store operational settings api failed: missing store mapping");
 
-  const payload = asApiPayload(await fetchApiJsonWithPrototypeContext(
+  const payload = asApiPayload(await fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${context.storeId}/operational-settings`,
     {
       organizationId,
@@ -202,7 +202,7 @@ export async function updateOrganizationStoreViaApi({
 }) {
   assertProductionUuid(storeId, "production store update requires canonical store id.");
   const { storeIdMap } = getMaps();
-  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  const context = resolveRuntimeApiContext({ organizationId, actorUserId, actorRole, storeId });
   if (!context) throw new Error("store update api failed: missing store mapping");
 
   const body: Record<string, unknown> = {};
@@ -211,7 +211,7 @@ export async function updateOrganizationStoreViaApi({
   if (status === "active" || status === "archived") body.status = status;
   if (typeof reason === "string" && reason.trim()) body.reason = reason.trim();
 
-  const payload = asApiPayload(await fetchApiJsonWithPrototypeContext(`/api/v1/stores/${context.storeId}`, {
+  const payload = asApiPayload(await fetchApiJsonWithRuntimeContext(`/api/v1/stores/${context.storeId}`, {
     organizationId,
     actorUserId,
     actorRole,
@@ -244,11 +244,11 @@ export async function createStoreSalesChannelViaApi({
   reason?: string;
 }) {
   assertProductionUuid(storeId, "production sales channel create requires canonical store id.");
-  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  const context = resolveRuntimeApiContext({ organizationId, actorUserId, actorRole, storeId });
   if (!context) throw new Error("sales channel create api failed: missing store mapping");
   if (!name?.trim()) throw new Error("sales channel create api failed: missing channel name");
 
-  const payload = asApiPayload(await fetchApiJsonWithPrototypeContext(
+  const payload = asApiPayload(await fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${context.storeId}/sales-channels`,
     {
       organizationId,
@@ -285,11 +285,11 @@ export async function updateStoreSalesChannelViaApi({
   reason?: string;
 }) {
   assertProductionUuid(storeId, "production sales channel update requires canonical store id.");
-  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  const context = resolveRuntimeApiContext({ organizationId, actorUserId, actorRole, storeId });
   if (!context) throw new Error("sales channel update api failed: missing store mapping");
   if (!isUuid(salesChannelId)) throw new Error("sales channel update api failed: missing channel id");
 
-  const payload = asApiPayload(await fetchApiJsonWithPrototypeContext(
+  const payload = asApiPayload(await fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${context.storeId}/sales-channels`,
     {
       organizationId,
@@ -339,7 +339,7 @@ export async function createOrganizationMemberViaApi({
     body.loginPhone = loginPhone.trim();
   }
 
-  const payload = asApiPayload(await fetchApiJsonWithPrototypeContext("/api/v1/members", {
+  const payload = asApiPayload(await fetchApiJsonWithRuntimeContext("/api/v1/members", {
     organizationId,
     actorUserId,
     actorRole,
@@ -390,7 +390,7 @@ export async function updateOrganizationMemberViaApi({
   }
   if (typeof reason === "string" && reason.trim()) body.reason = reason.trim();
 
-  const payload = asApiPayload(await fetchApiJsonWithPrototypeContext(`/api/v1/members/${memberId}`, {
+  const payload = asApiPayload(await fetchApiJsonWithRuntimeContext(`/api/v1/members/${memberId}`, {
     organizationId,
     actorUserId,
     actorRole,
@@ -414,7 +414,7 @@ async function fetchStoresAndChannelsBundleViaApi({
   });
 
   try {
-    const payload = asApiPayload(await fetchApiJsonWithPrototypeContext(
+    const payload = asApiPayload(await fetchApiJsonWithRuntimeContext(
       `/api/v1/org-config/stores-channels-bundle?${search.toString()}`,
       {
         organizationId,

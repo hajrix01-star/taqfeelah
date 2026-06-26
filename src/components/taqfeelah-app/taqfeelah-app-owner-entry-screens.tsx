@@ -24,7 +24,7 @@ import {
   money,
   resolveStoreChannelConfig,
   text,
-} from "./taqfeelah-app-demo-data";
+} from "./taqfeelah-app-reference-data";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import { formatCalendarMonth,
   isoCalendarDate,
@@ -33,11 +33,11 @@ import { formatCalendarMonth,
 } from "./taqfeelah-app-notebook";
 import { resolveAttachmentPreviewSrc } from "@/features/employee-closeouts/daily-closeout-entry-helpers";
 import { appConfirm } from "@/lib/ui/app-dialog/app-dialog-bridge";
-import type { PrototypeBusiness, PrototypeLang } from "./taqfeelah-app-types";
+import type { AppBusiness, AppLang } from "./taqfeelah-app-types";
 import type { ReactNode } from "react";
 
 function EntryDatePicker({ lang, value, onChange, showSuggestion = false }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   value: string;
   onChange: (value: string) => void;
   showSuggestion?: boolean;
@@ -86,8 +86,8 @@ function SmallInfo({ label, value }: { label: ReactNode; value: ReactNode }) {
 }
 
 function StoreOperationPicker({ lang, businessesList = businesses, selectedId, onSelect }: {
-  lang: PrototypeLang;
-  businessesList?: PrototypeBusiness[];
+  lang: AppLang;
+  businessesList?: AppBusiness[];
   selectedId: string;
   onSelect: (id: string) => void;
 }) {
@@ -123,13 +123,13 @@ export function OwnerSummaryScreen({
   businessesList = businesses,
   storeChannelSettings = {},
 }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   onBack: () => void;
   onSave: (payload: import("@/features/entries/client/entries-client-types").OperationalEntryPayload) => void;
   saving?: boolean;
   selectedBusiness: string;
-  businessesList?: import("./taqfeelah-app-types").PrototypeBusiness[];
-  storeChannelSettings?: import("./taqfeelah-app-types").PrototypeStoreChannelSettings;
+  businessesList?: import("./taqfeelah-app-types").AppBusiness[];
+  storeChannelSettings?: import("./taqfeelah-app-types").AppStoreChannelSettings;
 }) {
   const [businessId, setBusinessId] = useState(() => {
     if (businessesList.length === 1) return businessesList[0].id;
@@ -235,13 +235,13 @@ export function OwnerExpenseScreen({
   businessesList = businesses,
   storeOperationalSettings = {},
 }: {
-  lang: PrototypeLang;
+  lang: AppLang;
   onBack: () => void;
   onSave: (payload: import("@/features/entries/client/entries-client-types").OperationalEntryPayload) => void;
   saving?: boolean;
   selectedBusiness: string;
-  businessesList?: import("./taqfeelah-app-types").PrototypeBusiness[];
-  storeOperationalSettings?: import("./taqfeelah-app-types").PrototypeStoreOperationalSettings;
+  businessesList?: import("./taqfeelah-app-types").AppBusiness[];
+  storeOperationalSettings?: import("./taqfeelah-app-types").AppStoreOperationalSettings;
 }) {
   const [businessId, setBusinessId] = useState(() => {
     if (businessesList.length === 1) return businessesList[0].id;

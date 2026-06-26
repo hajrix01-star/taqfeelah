@@ -1,10 +1,24 @@
-import { readLocalStorageJson, safeSetLocalStorageItem } from "./prototype-storage";
+import { readLocalStorageJson, safeSetLocalStorageItem } from "@/core/client/safe-local-storage";
 import { isProductionAppMode } from "@/core/config/app-mode";
 import type { AuthStaffMember } from "@/features/auth/client/auth-client-types";
-import type {
-  AuthBootState,
-  AuthSession,
-} from "@/features/demo/demo-types";
+
+export type AuthSessionOwner = {
+  role: "owner";
+};
+
+export type AuthSessionEmployee = {
+  role: "employee";
+  employeeId: string;
+};
+
+export type AuthSession = AuthSessionOwner | AuthSessionEmployee;
+
+export type AuthBootState = {
+  loggedIn: boolean;
+  employee: boolean;
+  loggedInEmployeeId: string | null;
+  employeeBusinessId: string;
+};
 
 const AUTH_SESSION_KEY = "taqfeelah_auth_session_v1";
 

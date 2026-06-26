@@ -19,7 +19,7 @@ import {
   ProofAttachmentPreview,
 } from "@/components/taqfeelah-app/taqfeelah-app-attachment-ui";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
-import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
 import { DateSelector } from "@/components/taqfeelah-app/taqfeelah-app-notebook";
 import { CloseoutEntryStorePicker } from "./closeout-entry-store-picker";
 

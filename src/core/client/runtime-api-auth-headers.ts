@@ -1,12 +1,12 @@
-import { isUuid, mapToUuid } from "@/core/client/api-id-utils";
-import type { PrototypeApiAuthHeadersInput } from "@/core/client/client-types";
+﻿import { isUuid, mapToUuid } from "@/core/client/api-id-utils";
+import type { RuntimeApiAuthHeadersInput } from "@/core/client/client-types";
 import { getRuntimeApiMaps } from "@/core/client/runtime-api-maps-state";
 
-export function buildPrototypeApiAuthHeaders({
+export function buildRuntimeApiAuthHeaders({
   organizationId = "",
   actorUserId = "",
   actorRole = "",
-}: PrototypeApiAuthHeadersInput = {}): Record<string, string> {
+}: RuntimeApiAuthHeadersInput = {}): Record<string, string> {
   const { userIdMap } = getRuntimeApiMaps();
   const mappedOrganizationId = isUuid(organizationId) ? organizationId : "";
   const mappedActorUserId = mapToUuid(actorUserId, userIdMap);

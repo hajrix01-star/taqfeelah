@@ -4,7 +4,7 @@ import React from "react";
 import { Mail, Phone } from "lucide-react";
 import { ownerPasswordInputProps } from "@/features/auth/client/auth-gate/owner-password-input-props";
 import { useOwnerPasswordChangeForm } from "@/features/auth/client/auth-gate/use-owner-password-change-form";
-import { text } from "./taqfeelah-app-demo-data";
+import { text } from "./taqfeelah-app-reference-data";
 import { SettingsPageHeader } from "./owner-settings-ui-primitives";
 import { SettingsSectionFrame } from "./owner-settings-section-frame";
 import type {

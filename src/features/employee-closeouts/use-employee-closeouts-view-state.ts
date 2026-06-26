@@ -7,7 +7,7 @@ import {
   isCloseoutWorkflowFailure,
   sortCloseoutsNewestFirst,
   withCloseoutTotals,
-} from "../daily-closeouts/daily-closeouts-demo-store";
+} from "../daily-closeouts/daily-closeouts-local-store";
 import { CLOSEOUT_STATUS } from "../daily-closeouts/closeout-status";
 import {
   closeoutBelongsToEmployee,
@@ -19,7 +19,7 @@ import { resolveEmployeeStoreName } from "./store-name-resolver";
 import { countSentCloseoutsByDate } from "../closeouts/client/closeout-day-label";
 import { isEmployeeCloseoutsListPending } from "./employee-closeouts-loading";
 import { resolveEmployeeCloseoutsViewGate } from "./employee-closeouts-view-gate";
-import { text } from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
 import { appAlert, appConfirm } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import { triggerSubmitSuccessHaptic } from "./submit-success-haptic";
 import type { DailyCloseoutRecord } from "../daily-closeouts/daily-closeouts-types";

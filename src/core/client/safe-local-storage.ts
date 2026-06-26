@@ -1,5 +1,15 @@
 import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
-import type { LocalStoragePolicyOptions, LocalStorageWriteResult } from "@/features/demo/demo-types";
+import type { BrowserPersistenceScope } from "@/core/config/browser-persistence-policy";
+
+export type LocalStoragePolicyOptions = {
+  scope?: BrowserPersistenceScope;
+  env?: Record<string, string | undefined>;
+};
+
+export type LocalStorageWriteResult = {
+  ok: boolean;
+  error?: string;
+};
 
 /** Safe localStorage helpers (Safari private mode, quota, corrupt JSON). */
 

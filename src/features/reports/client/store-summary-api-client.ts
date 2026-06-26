@@ -1,6 +1,6 @@
-import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+﻿import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import { setRuntimeApiIdMaps } from "@/core/client/runtime-api-maps-state";
-import { resolvePrototypeApiContext } from "@/core/client/prototype-api-context";
+import { resolveRuntimeApiContext } from "@/core/client/runtime-api-context";
 import type {
   ApiPeriodSummary,
   FetchStoreSummaryArgs,
@@ -12,9 +12,9 @@ export function setSummaryRuntimeApiIdMaps(overrides: ReportsRuntimeApiMapOverri
 }
 
 function assertSummaryApiContext(
-  context: ReturnType<typeof resolvePrototypeApiContext>,
+  context: ReturnType<typeof resolveRuntimeApiContext>,
   resource: string,
-): asserts context is NonNullable<ReturnType<typeof resolvePrototypeApiContext>> {
+): asserts context is NonNullable<ReturnType<typeof resolveRuntimeApiContext>> {
   if (!context) {
     throw new Error(`${resource} API context missing/invalid: organizationId, actorUserId, or storeId mapping.`);
   }
@@ -39,12 +39,12 @@ export async function fetchStoreDaySummaryViaApi({
   storeId,
   date = "",
 }: FetchStoreSummaryArgs): Promise<ApiPeriodSummary> {
-  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  const context = resolveRuntimeApiContext({ organizationId, actorUserId, actorRole, storeId });
   assertSummaryApiContext(context, "day summary");
   assertSummaryPeriodKey(date, "date", "day summary");
 
   const search = new URLSearchParams({ date });
-  const payload = await fetchApiJsonWithPrototypeContext(
+  const payload = await fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${context.storeId}/summary/day?${search.toString()}`,
     {
       organizationId,
@@ -65,12 +65,12 @@ export async function fetchStoreMonthSummaryViaApi({
   storeId,
   month = "",
 }: FetchStoreSummaryArgs): Promise<ApiPeriodSummary> {
-  const context = resolvePrototypeApiContext({ organizationId, actorUserId, actorRole, storeId });
+  const context = resolveRuntimeApiContext({ organizationId, actorUserId, actorRole, storeId });
   assertSummaryApiContext(context, "month summary");
   assertSummaryPeriodKey(month, "month", "month summary");
 
   const search = new URLSearchParams({ month });
-  const payload = await fetchApiJsonWithPrototypeContext(
+  const payload = await fetchApiJsonWithRuntimeContext(
     `/api/v1/stores/${context.storeId}/summary/month?${search.toString()}`,
     {
       organizationId,

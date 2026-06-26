@@ -57,7 +57,7 @@
 
 - [x] إنشاء مدخل واضح باسم `Taqfeelah App`.
 - [x] نقل تشغيل `/app` من `features/demo/AppRuntimePage` إلى مدخل إنتاجي واضح.
-- [x] إبقاء demo فقط خلف مسار أو flag منفصل، إن احتجناه.
+- [x] حذف مسار demo/reference القديم بعد الاستغناء عنه حتى لا يربك المطورين.
 - [x] منع demo من الدخول في مسار `/app` الإنتاجي.
 - [x] فصل أسماء loader/runtime التاريخية تدريجيًا بعد تثبيت مدخل `/app`: أصبح التحميل عبر `useTaqfeelahAppRuntime` و `loadTaqfeelahAppRuntime` و facade باسم `TaqfeelahAppRuntime`.
 - [x] حذف ملفات loader/hook القديمة `use-taqfeelah-prototype-runtime` و `load-taqfeelah-prototype-runtime` حتى لا تبقى واجهة تحميل مربكة.
@@ -75,7 +75,7 @@
 - [x] إعادة تسمية مجلد الواجهة من `prototype-runtime` إلى `taqfeelah-app`.
 - [x] إعادة تسمية shell الجذر من `TaqfeelahPrototypeRuntime` إلى `TaqfeelahAppRuntimeShell`.
 - [x] تحديث imports والاختبارات بشكل ميكانيكي ومنضبط.
-- [x] إبقاء route المرجعي `/prototype-runtime` للمقارنة فقط، مع بقاء `/app` هو مسار التطبيق الإنتاجي.
+- [x] حذف route المرجعي `/prototype-runtime` نهائيًا، مع بقاء `/app` هو مسار التطبيق الإنتاجي الوحيد.
 - [x] تشغيل lint/typecheck/test/build بعد الدفعة قبل إغلاق المرحلة.
 - [x] نشر المرحلة على staging باسم `نسخة مرحلة 4` والتحقق من أن build المنشور هو build المرحلة المعتمد.
 - [x] تأكيد تسجيل دخول المالك برقم `500000001` وظهور المحلات النشطة بعد الدخول.

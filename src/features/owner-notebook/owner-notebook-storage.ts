@@ -1,4 +1,4 @@
-import { readLocalStorageJson, safeSetLocalStorageItem } from "@/features/demo/prototype-storage";
+import { readLocalStorageJson, safeSetLocalStorageItem } from "@/core/client/safe-local-storage";
 import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 import { isValidNotebookTheme, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
 import {

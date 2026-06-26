@@ -1,4 +1,4 @@
-import type { StoreChannelConfig } from "./org-config-client-types";
+﻿import type { StoreChannelConfig } from "./org-config-client-types";
 
 export const EMPTY_STORE_CHANNEL_CONFIG: StoreChannelConfig = Object.freeze({
   channels: [],
@@ -45,14 +45,14 @@ export function ensureStoreChannelSettingsForBusinesses(
   current: Record<string, StoreChannelConfig>,
   businessIds: string[],
   defaultConfig: StoreChannelConfig,
-  { allowPrototypeDefaults = true }: { allowPrototypeDefaults?: boolean } = {},
+  { allowLocalDefaults = true }: { allowLocalDefaults?: boolean } = {},
 ) {
   let changed = false;
   const next = { ...current };
 
   businessIds.forEach((businessId) => {
     if (!next[businessId]) {
-      next[businessId] = allowPrototypeDefaults
+      next[businessId] = allowLocalDefaults
         ? {
           channels: defaultConfig.channels.map((channel) => ({ ...channel })),
           activeIds: [...defaultConfig.activeIds],

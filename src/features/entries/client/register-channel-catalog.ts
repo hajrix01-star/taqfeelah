@@ -8,7 +8,7 @@ import {
 import {
   channelName,
   channels,
-} from "@/components/taqfeelah-app/taqfeelah-app-demo-data";
+} from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
 import type { DisplayLang } from "@/core/i18n/display-locale";
 import type { OperationalEntrySalesChannelRow } from "./entries-client-types";
 

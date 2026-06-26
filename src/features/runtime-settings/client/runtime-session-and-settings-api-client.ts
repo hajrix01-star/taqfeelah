@@ -1,4 +1,4 @@
-import { fetchApiJson, fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+﻿import { fetchApiJson, fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import type { RuntimeSettingsAuth } from "@/features/runtime-settings/client/runtime-settings-client-types";
 
 export async function loginOwnerSessionViaApi({
@@ -161,7 +161,7 @@ async function fetchRuntimeSettingsViaApiImpl({
   actorUserId = "",
   actorRole = "",
 }: RuntimeSettingsAuth = {}): Promise<Record<string, unknown>> {
-  return fetchApiJsonWithPrototypeContext("/api/v1/runtime/settings", {
+  return fetchApiJsonWithRuntimeContext("/api/v1/runtime/settings", {
     organizationId,
     actorUserId,
     actorRole,
@@ -207,7 +207,7 @@ export async function saveRuntimeSettingsViaApi({
   settings?: Record<string, unknown>;
   reason?: string;
 } = {}): Promise<unknown> {
-  return fetchApiJsonWithPrototypeContext("/api/v1/runtime/settings", {
+  return fetchApiJsonWithRuntimeContext("/api/v1/runtime/settings", {
     organizationId,
     actorUserId,
     actorRole,

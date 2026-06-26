@@ -9,11 +9,11 @@ import {
   businessLocation,
   businessName,
   text,
-} from "./taqfeelah-app-demo-data";
+} from "./taqfeelah-app-reference-data";
 import { ThemePicker } from "./taqfeelah-app-notebook";
 import { ActionRow } from "./owner-settings-ui-primitives";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
-import type { EmployeeSettingsScreenProps, PrototypeBusiness } from "./taqfeelah-app-types";
+import type { EmployeeSettingsScreenProps, AppBusiness } from "./taqfeelah-app-types";
 
 function EmployeeStoreContext({
   lang,
@@ -23,8 +23,8 @@ function EmployeeStoreContext({
   dark = false,
 }: {
   lang: EmployeeSettingsScreenProps["lang"];
-  currentStore: PrototypeBusiness | null;
-  assignedStores: PrototypeBusiness[];
+  currentStore: AppBusiness | null;
+  assignedStores: AppBusiness[];
   onSelect: (storeId: string) => void;
   dark?: boolean;
 }) {

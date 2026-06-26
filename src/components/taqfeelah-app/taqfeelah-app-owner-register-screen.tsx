@@ -38,7 +38,7 @@ import {
   businesses,
   expenseCategories,
   text,
-} from "./taqfeelah-app-demo-data";
+} from "./taqfeelah-app-reference-data";
 import { ENTRIES_API_DB_SOURCE } from "./taqfeelah-app-boot";
 import {
   entryCategory,
@@ -59,7 +59,7 @@ import { OwnerRegisterOperationsList } from "./owner-register-operations-list";
 import { OwnerRegisterAttachmentsGallery } from "./owner-register-attachments-gallery";
 import { RegisterStoreChips } from "./owner-register-store-filter";
 import { RegisterDashboardCard, OwnerRegisterReportGranularityToggle } from "./owner-register-ui-primitives";
-import type { OwnerRegisterScreenProps, PrototypeAttachmentPreviewState, PrototypeChannel } from "./taqfeelah-app-types";
+import type { OwnerRegisterScreenProps, AppAttachmentPreviewState, AppChannel } from "./taqfeelah-app-types";
 
 export function OwnerRegisterScreen({
   lang,
@@ -99,7 +99,7 @@ export function OwnerRegisterScreen({
     resolveStoreSalesChannels,
     lang,
   });
-  const configuredChannels = rawConfiguredChannels as PrototypeChannel[];
+  const configuredChannels = rawConfiguredChannels as AppChannel[];
   const [period, setPeriod] = useState("month");
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
@@ -115,7 +115,7 @@ export function OwnerRegisterScreen({
   const [logView, setLogView] = useState("report");
   const [expandedEntryId, setExpandedEntryId] = useState<string | null>(null);
   const [expandedCloseoutKey, setExpandedCloseoutKey] = useState<string | null>(null);
-  const [registerAttachmentPreview, setRegisterAttachmentPreview] = useState<PrototypeAttachmentPreviewState>(null);
+  const [registerAttachmentPreview, setRegisterAttachmentPreview] = useState<AppAttachmentPreviewState>(null);
   const openRegisterAttachmentPreview = (src: string, shareContext: Record<string, unknown> | null = null) => {
     setRegisterAttachmentPreview({ src, shareContext });
   };

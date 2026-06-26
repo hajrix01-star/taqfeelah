@@ -1,6 +1,6 @@
 export const BROWSER_PERSISTENCE_SCOPES = [
-  "prototype-demo",
-  "prototype-auth",
+  "local-runtime",
+  "local-auth",
   "legacy-settings",
   "ui-preferences",
   "operational-fallback",

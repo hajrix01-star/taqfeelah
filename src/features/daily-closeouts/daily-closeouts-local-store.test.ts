@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { CLOSEOUT_STATUS } from "./closeout-status";
 import {
   findCloseoutForStoreDate,
@@ -6,7 +6,7 @@ import {
   isCloseoutWorkflowFailure,
   isLocalDraftCloseout,
   withCloseoutTotals,
-} from "./daily-closeouts-demo-store";
+} from "./daily-closeouts-local-store";
 
 describe("withCloseoutTotals status normalization", () => {
   it("promotes draft records with submit metadata to sent (reviewed)", () => {

@@ -1,4 +1,4 @@
-import { fetchApiJsonWithPrototypeContext } from "@/core/client/api-fetch";
+﻿import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import type { ResolvedOrganizationEntitlements } from "@/features/billing/types";
 
 export async function fetchOrganizationEntitlementsViaApi({
@@ -10,7 +10,7 @@ export async function fetchOrganizationEntitlementsViaApi({
   actorUserId: string;
   actorRole: string;
 }) {
-  return fetchApiJsonWithPrototypeContext("/api/v1/billing/entitlements", {
+  return fetchApiJsonWithRuntimeContext("/api/v1/billing/entitlements", {
     organizationId,
     actorUserId,
     actorRole,

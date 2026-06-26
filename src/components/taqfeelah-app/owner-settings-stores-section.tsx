@@ -2,14 +2,14 @@
 
 import { ChevronDown, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { canAddStore, resolveStoreLimitMessage } from "@/features/billing/client/entitlement-guards";
-import { text } from "./taqfeelah-app-demo-data";
+import { text } from "./taqfeelah-app-reference-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";
 import { SettingsPageHeader } from "./owner-settings-ui-primitives";
 import { SettingsSectionFrame } from "./owner-settings-section-frame";
 import type {
   OwnerSettingsDeleteDialogProps,
   OwnerSettingsSectionCommonProps,
-  PrototypeBusiness,
+  AppBusiness,
 } from "./taqfeelah-app-types";
 import type { ResolvedOrganizationEntitlements } from "@/features/billing/client/billing-client-types";
 
@@ -46,12 +46,12 @@ export function OwnerSettingsStoresSection({
   newStoreLocation: string;
   setNewStoreLocation: (value: string) => void;
   addStore: () => void | Promise<void>;
-  activeStoredBusinesses: PrototypeBusiness[];
-  archivedStoredBusinesses: PrototypeBusiness[];
+  activeStoredBusinesses: AppBusiness[];
+  archivedStoredBusinesses: AppBusiness[];
   showArchivedStores: boolean;
   setShowArchivedStores: (value: boolean) => void;
-  displayBusinessName: (business: PrototypeBusiness) => string;
-  displayLocation: (business: PrototypeBusiness) => string;
+  displayBusinessName: (business: AppBusiness) => string;
+  displayLocation: (business: AppBusiness) => string;
   openStore: (storeId: string) => void;
   deleteDialogProps: OwnerSettingsDeleteDialogProps;
   orgConfigLoading?: boolean;

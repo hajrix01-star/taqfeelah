@@ -1,10 +1,10 @@
-import {
+﻿import {
   applyEmployeeLoginSuccess,
   applyLogoutReset,
   applyOwnerLoginSuccess,
 } from "@/features/auth/client/auth-runtime-orchestrator";
 import type { AuthActiveBusiness, AuthRuntimeApply, AuthStaffMember } from "@/features/auth/client/auth-client-types";
-import { upsertPrototypeEmployeeRosterStaff } from "@/features/employee-closeouts/employee-portal-session";
+import { upsertRuntimeEmployeeRosterStaff } from "@/features/employee-closeouts/employee-portal-session";
 import { logoutViaSessionBridge } from "@/features/auth/client/session-bridge";
 import {
   APP_IN_PRODUCTION_MODE,
@@ -104,10 +104,10 @@ export function createTaqfeelahAppAuthHandlers({
       };
     }
     const loginStaff = resolvedRoster
-      ? upsertPrototypeEmployeeRosterStaff(staff, resolvedRoster) as AuthStaffMember[]
+      ? upsertRuntimeEmployeeRosterStaff(staff, resolvedRoster) as AuthStaffMember[]
       : staff;
     if (resolvedRoster) {
-      setStaff?.((current) => upsertPrototypeEmployeeRosterStaff(current, resolvedRoster) as AuthStaffMember[]);
+      setStaff?.((current) => upsertRuntimeEmployeeRosterStaff(current, resolvedRoster) as AuthStaffMember[]);
     }
     applyEmployeeLoginSuccess({
       personId,
