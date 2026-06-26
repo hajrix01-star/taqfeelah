@@ -33,6 +33,17 @@ export async function activateWaitingServiceWorker(): Promise<void> {
   registration?.waiting?.postMessage({ type: "SKIP_WAITING" });
 }
 
+export async function unregisterServiceWorker(): Promise<boolean> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return false;
+
+  try {
+    const registration = await navigator.serviceWorker.getRegistration();
+    return registration ? registration.unregister() : false;
+  } catch {
+    return false;
+  }
+}
+
 export function subscribeToServiceWorkerUpdates(onWaitingWorker: () => void): () => void {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
     return () => {};

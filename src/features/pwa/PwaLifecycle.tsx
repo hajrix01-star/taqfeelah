@@ -1,12 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { shouldShowPwaUpdatePrompt } from "@/features/pwa/pwa-update-policy";
+import {
+  shouldRecoverStalePwaClient,
+  shouldShowPwaUpdatePrompt,
+} from "@/features/pwa/pwa-update-policy";
 import {
   activateWaitingServiceWorker,
   readServiceWorkerRegistrationSnapshot,
   requestServiceWorkerUpdateCheck,
   subscribeToServiceWorkerUpdates,
+  unregisterServiceWorker,
 } from "@/features/pwa/pwa-service-worker";
 import {
   clearDismissedUpdateBuild,
@@ -21,6 +25,7 @@ import { shouldReloadAfterServiceWorkerControllerChange } from "@/features/pwa/p
 type UpdatePhase = "idle" | "available";
 
 const UPDATE_CHECK_COOLDOWN_MS = 5 * 60 * 1000;
+const STALE_CLIENT_RECOVERY_KEY = "taqfeelah:pwa-stale-client-recovery-build";
 
 async function fetchServerReleaseMeta(): Promise<ReleaseMeta | null> {
   try {
@@ -62,8 +67,36 @@ export default function PwaLifecycle() {
 
     if (serverBuild && serverBuild === clientBuild) {
       clearDismissedUpdateBuild();
+      try {
+        window.sessionStorage.removeItem(STALE_CLIENT_RECOVERY_KEY);
+      } catch {
+        // Best effort only.
+      }
       setPendingServerBuild(null);
       setUpdatePhase("idle");
+      return;
+    }
+
+    let attemptedRecoveryBuild: string | null = null;
+    try {
+      attemptedRecoveryBuild = window.sessionStorage.getItem(STALE_CLIENT_RECOVERY_KEY);
+    } catch {
+      attemptedRecoveryBuild = null;
+    }
+
+    if (shouldRecoverStalePwaClient({
+      clientBuild,
+      serverBuild,
+      hasWaitingServiceWorker: swSnapshot.hasWaitingServiceWorker,
+      attemptedRecoveryBuild,
+    })) {
+      try {
+        window.sessionStorage.setItem(STALE_CLIENT_RECOVERY_KEY, serverBuild || "");
+      } catch {
+        // Best effort only.
+      }
+      await unregisterServiceWorker();
+      window.location.reload();
       return;
     }
 
