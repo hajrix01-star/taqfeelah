@@ -15,5 +15,5 @@ export function formatDateTimeLabel(iso: string, lang: AppLang) {
     lang === "ar" ? "ar-SA-u-nu-latn" : "en-US",
     { hour: "2-digit", minute: "2-digit" },
   );
-  return `${formatCalendarDate(datePart, lang)} آ· ${time}`;
+  return `${formatCalendarDate(datePart, lang)} - ${time}`;
 }

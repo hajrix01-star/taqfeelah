@@ -71,7 +71,7 @@ const forbiddenPatterns = [
   },
   {
     label: "mojibake or replacement characters",
-    pattern: /\uFFFD|\u00E2|\u00EF|(?:\u0638[\u2020\u2026\u201E]\u0637)|(?:\u0637[\u00B3\u00AE\u00A9\u00A7\u00AD]\u0638)|(?:\u0637[\u00B3\u00AE\u00A9\u00A7\u00AD]\u0637)/,
+    pattern: /\uFFFD|\u00E2|\u00EF|(?:\u0638[\u2020\u2026\u201E]\u0637)|(?:\u0637[\u00B3\u00AE\u00A9\u00A7\u00AD\u06BE]\u0638)|(?:\u0637[\u00B3\u00AE\u00A9\u00A7\u00AD\u06BE]\u0637)|(?:\u0622\u00B7)/,
   },
 ];
 

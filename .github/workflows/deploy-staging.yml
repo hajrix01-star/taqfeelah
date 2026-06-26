@@ -66,8 +66,8 @@ jobs:
           RELEASE_VERSION: "2.0.0"
           NEXT_PUBLIC_RELEASE_VERSION: "2.0.0"
           NEXT_PUBLIC_RELEASE_BUILD: ${{ github.sha }}
-          RELEASE_LABEL: "نسخة مرحلة 4"
-          NEXT_PUBLIC_RELEASE_LABEL: "نسخة مرحلة 4"
+          RELEASE_LABEL: "phase-4"
+          NEXT_PUBLIC_RELEASE_LABEL: "phase-4"
           APP_PUBLIC_ORIGIN: https://staging.taqfeelah.com
           DATABASE_URL: postgresql://taqfeelah_staging:${{ secrets.STAGING_DB_PASSWORD }}@127.0.0.1:5434/taqfeelah_staging
           AUTH_SESSION_SECRET: ${{ secrets.STAGING_AUTH_SESSION_SECRET }}
@@ -188,8 +188,8 @@ jobs:
           NEXT_PUBLIC_RELEASE_VERSION=2.0.0
           RELEASE_BUILD=${GITHUB_SHA}
           NEXT_PUBLIC_RELEASE_BUILD=${GITHUB_SHA}
-          RELEASE_LABEL='نسخة مرحلة 4'
-          NEXT_PUBLIC_RELEASE_LABEL='نسخة مرحلة 4'
+          RELEASE_LABEL=phase-4
+          NEXT_PUBLIC_RELEASE_LABEL=phase-4
           EOF
           chmod 600 staging.env
 

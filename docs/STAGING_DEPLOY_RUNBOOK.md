@@ -56,8 +56,8 @@ $env:NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID="e8f3e35b-6051-4da3-8b10-979700c2f0
 $env:NEXT_PUBLIC_SUPPORT_WHATSAPP="966533507223"
 $env:RELEASE_VERSION="2.0.0"
 $env:NEXT_PUBLIC_RELEASE_VERSION="2.0.0"
-$env:RELEASE_LABEL="نسخة مرحلة 4"
-$env:NEXT_PUBLIC_RELEASE_LABEL="نسخة مرحلة 4"
+$env:RELEASE_LABEL="phase-4"
+$env:NEXT_PUBLIC_RELEASE_LABEL="phase-4"
 $env:RELEASE_BUILD=$head
 $env:NEXT_PUBLIC_RELEASE_BUILD=$head
 corepack pnpm build
@@ -90,6 +90,7 @@ cp -a /opt/taqfeelah-staging "/root/taqfeelah-backups/staging-before-$(date +%Y%
 
 - Extract artifact into `/opt/taqfeelah-staging.release`.
 - Write `.env.production` with explicit `RELEASE_VERSION`, `RELEASE_LABEL`, and `RELEASE_BUILD`.
+- Use `RELEASE_LABEL=phase-4`; the app maps it to `نسخة مرحلة 4` internally to avoid SSH/PM2 locale issues.
 - Source `.env.production` before migrations and before starting PM2.
 - Run migrations once.
 - Replace `/opt/taqfeelah-staging` only after install and migrations succeed.

@@ -1,5 +1,7 @@
+import { normalizeReleaseLabel } from "@/release/version";
+
 /**
- * Client bundle reads — Next.js only inlines direct `process.env.NEXT_PUBLIC_*` access.
+ * Client bundle reads - Next.js only inlines direct `process.env.NEXT_PUBLIC_*` access.
  */
 
 export function getClientReleaseVersion(): string {
@@ -7,7 +9,7 @@ export function getClientReleaseVersion(): string {
 }
 
 export function getClientReleaseLabel(): string {
-  return process.env.NEXT_PUBLIC_RELEASE_LABEL || "V0";
+  return normalizeReleaseLabel(process.env.NEXT_PUBLIC_RELEASE_LABEL || "V0");
 }
 
 export function getClientReleaseBuild(): string {

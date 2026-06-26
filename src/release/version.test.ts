@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { getReleaseMeta, releaseLabelFromVersion } from "@/release/version";
+import { getReleaseMeta, normalizeReleaseLabel, releaseLabelFromVersion } from "@/release/version";
 
 describe("releaseLabelFromVersion", () => {
   it("derives major release labels", () => {
@@ -34,9 +34,9 @@ describe("getReleaseMeta", () => {
     });
   });
 
-  it("keeps explicit runtime labels with spaces", () => {
+  it("normalizes safe release label aliases", () => {
     process.env.RELEASE_VERSION = "2.0.0";
-    process.env.RELEASE_LABEL = "نسخة مرحلة 4";
+    process.env.RELEASE_LABEL = "phase-4";
     process.env.RELEASE_BUILD = "commit456";
 
     expect(getReleaseMeta()).toEqual({
@@ -44,5 +44,9 @@ describe("getReleaseMeta", () => {
       label: "نسخة مرحلة 4",
       build: "commit456",
     });
+  });
+
+  it("keeps explicit runtime labels with spaces", () => {
+    expect(normalizeReleaseLabel("نسخة مرحلة 4")).toBe("نسخة مرحلة 4");
   });
 });
