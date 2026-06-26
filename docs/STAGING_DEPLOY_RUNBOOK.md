@@ -65,6 +65,7 @@ cp -a /opt/taqfeelah-staging "/root/taqfeelah-backups/staging-before-$(date +%Y%
 - Run migrations once.
 - Replace `/opt/taqfeelah-staging` only after install and migrations succeed.
 - Restart by deleting and starting `taqfeelah-staging` with the sourced environment.
+- Start PM2 with `node_modules/next/dist/bin/next -- start --hostname 127.0.0.1 --port 3011`; do not use `npx` because it can leave an orphaned `next-server` child on port `3011`.
 - Keep production process `taqfeelah-app` untouched.
 
 ## Required Verification
@@ -98,7 +99,6 @@ cd /opt/taqfeelah-staging
 set -a
 . ./.env.production
 set +a
-NODE_ENV=production pm2 start npx --name taqfeelah-staging -- next start --hostname 127.0.0.1 --port 3011
+NODE_ENV=production pm2 start node_modules/next/dist/bin/next --name taqfeelah-staging -- start --hostname 127.0.0.1 --port 3011
 pm2 save
 ```
-

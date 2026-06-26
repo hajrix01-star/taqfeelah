@@ -291,14 +291,14 @@ jobs:
           set -a
           . ./.env.production
           set +a
-          if ! NODE_ENV=production pm2 start npx --name "$PM2_APP" -- next start --hostname 127.0.0.1 --port "$APP_PORT"; then
+          if ! NODE_ENV=production pm2 start node_modules/next/dist/bin/next --name "$PM2_APP" -- start --hostname 127.0.0.1 --port "$APP_PORT"; then
             rm -rf "$APP_DIR"
             if [ -d "$PREVIOUS_DIR" ]; then mv "$PREVIOUS_DIR" "$APP_DIR"; fi
             cd "$APP_DIR"
             set -a
             . ./.env.production
             set +a
-            NODE_ENV=production pm2 start npx --name "$PM2_APP" -- next start --hostname 127.0.0.1 --port "$APP_PORT" || true
+            NODE_ENV=production pm2 start node_modules/next/dist/bin/next --name "$PM2_APP" -- start --hostname 127.0.0.1 --port "$APP_PORT" || true
             exit 1
           fi
           pm2 save
