@@ -47,7 +47,7 @@ export function OwnerCloseoutEditFlow({
   if (!editCloseout || typeof document === "undefined") return null;
 
   const editFlow = (
-    <div className="fixed inset-0 z-[220] flex touch-auto flex-col overflow-hidden">
+    <div className="taq-fixed-app-panel fixed inset-y-0 z-[220] flex touch-auto flex-col overflow-hidden">
       <DailyCloseoutEntryFlow
         key={`${editCloseout.id}-${storeId}-${salesChannelKey}`}
         lang={lang}

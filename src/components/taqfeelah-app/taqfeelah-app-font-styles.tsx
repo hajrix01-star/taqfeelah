@@ -30,6 +30,12 @@ export function AppFontStyles() {
       .taq-scroll { min-height: 0 !important; -webkit-overflow-scrolling: touch; }
       .taq-topbar { width: 100% !important; padding-inline: var(--taq-page-gutter) !important; }
       .taq-owner-nav { position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; transform: none !important; width: 100% !important; max-width: none !important; border-radius: 0 !important; box-shadow: none !important; }
+      .taq-fixed-app-panel {
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+      }
       .taq-notebook-surface .taq-notebook-content {
         box-sizing: border-box;
         padding-inline: var(--taq-page-gutter);
@@ -72,6 +78,15 @@ export function AppFontStyles() {
         }
         .taq-screen {
           width: 100% !important;
+        }
+        .taq-fixed-app-panel {
+          left: 50% !important;
+          right: auto !important;
+          width: 100% !important;
+          max-width: var(--taq-app-desktop-width) !important;
+          transform: translateX(-50%) !important;
+          border-inline: 1px solid rgba(17, 42, 70, 0.08);
+          box-shadow: 0 18px 42px rgba(17, 42, 70, 0.12);
         }
       }
     `}</style>

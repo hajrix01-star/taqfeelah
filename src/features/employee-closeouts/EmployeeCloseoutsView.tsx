@@ -165,7 +165,7 @@ export default function EmployeeCloseoutsView({
     <>
       {entryCloseout ? (
         <div
-          className="fixed inset-x-0 bottom-0 z-[50]"
+          className="taq-fixed-app-panel fixed bottom-0 z-[50] overflow-hidden"
           style={{ top: "calc(70px + env(safe-area-inset-top, 0px))" }}
         >
           <DailyCloseoutEntryFlow
