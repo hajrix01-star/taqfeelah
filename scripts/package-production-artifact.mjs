@@ -5,9 +5,9 @@
  *
  * Uses a staging directory so tar does not fail when build outputs change during read.
  */
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join, relative, sep } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const outputName = process.argv[2] || "taqfeelah-production-artifact.tar.gz";
@@ -18,6 +18,44 @@ if (!existsSync(".next/BUILD_ID")) {
 }
 
 const stageDir = mkdtempSync(join(tmpdir(), "taqfeelah-artifact-"));
+
+const excludedRoots = new Set([
+  ".codex-local",
+  ".git",
+  ".turbo",
+  "coverage",
+  "node_modules",
+]);
+
+function normalizePath(value) {
+  return value.split(sep).join("/");
+}
+
+function shouldCopy(sourcePath) {
+  const relativePath = normalizePath(relative(process.cwd(), sourcePath));
+  if (!relativePath) {
+    return true;
+  }
+
+  const [root] = relativePath.split("/");
+  if (excludedRoots.has(root)) {
+    return false;
+  }
+
+  if (relativePath === ".next/cache" || relativePath.startsWith(".next/cache/")) {
+    return false;
+  }
+
+  if (
+    relativePath === outputName ||
+    relativePath === basename(outputName) ||
+    relativePath.endsWith(".tar.gz")
+  ) {
+    return false;
+  }
+
+  return true;
+}
 
 try {
   const copy = spawnSync(
@@ -34,7 +72,16 @@ try {
     { stdio: "inherit" },
   );
   if (copy.status !== 0) {
-    process.exit(copy.status ?? 1);
+    if (copy.error?.code !== "ENOENT") {
+      process.exit(copy.status ?? 1);
+    }
+
+    console.log("rsync is not available; using Node copy fallback.");
+    cpSync(process.cwd(), stageDir, {
+      recursive: true,
+      dereference: false,
+      filter: shouldCopy,
+    });
   }
 
   const archive = spawnSync("tar", ["-czf", outputName, "-C", stageDir, "."], {
