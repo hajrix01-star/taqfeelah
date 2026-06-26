@@ -9,7 +9,10 @@ const configDir = dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(readFileSync(join(configDir, "package.json"), "utf8"));
 const releaseVersion = String(packageJson.version || "0.0.0");
 const releaseMajor = releaseVersion.split(".")[0]?.trim() || "0";
-const releaseLabel = `V${releaseMajor}`;
+const releaseLabel =
+  process.env.RELEASE_LABEL?.trim() ||
+  process.env.NEXT_PUBLIC_RELEASE_LABEL?.trim() ||
+  `V${releaseMajor}`;
 
 const revision =
   process.env.RELEASE_BUILD?.trim() ||
