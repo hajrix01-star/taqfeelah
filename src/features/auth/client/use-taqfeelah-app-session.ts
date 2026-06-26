@@ -9,7 +9,10 @@ import {
   patchRuntimeApiMapsForEmployeeSession,
   syncLoggedInEmployeeIdFromSession,
 } from "@/features/employee-closeouts/employee-portal-session";
-import { applyServerSessionBootstrap } from "@/features/auth/client/auth-runtime-orchestrator";
+import {
+  applyLogoutReset,
+  applyServerSessionBootstrap,
+} from "@/features/auth/client/auth-runtime-orchestrator";
 import type { Dispatch, SetStateAction } from "react";
 import type { OrgConfigRuntimeSetters } from "@/features/org-config/client/org-config-client-types";
 import type { AuthLang, AuthRuntimeApply, AuthStaffMember } from "@/features/auth/client/auth-client-types";
@@ -140,7 +143,7 @@ export function useTaqfeelahAppSessionSync({
     fetchServerSessionStatus()
       .then((session) => {
         if (cancelled) return;
-        applyServerSessionBootstrap(session as Parameters<typeof applyServerSessionBootstrap>[0], {
+        const applied = applyServerSessionBootstrap(session as Parameters<typeof applyServerSessionBootstrap>[0], {
           setSessionOrganizationId,
           setSessionUserId,
           setLoggedIn,
@@ -153,6 +156,32 @@ export function useTaqfeelahAppSessionSync({
           setMustChangePassword,
           setSessionDisplayName,
         });
+        if (!applied && BINDS_TO_SERVER_AUTH) {
+          applyLogoutReset({
+            bindsToServerAuth: true,
+            nextAuthScreen: "gateway",
+            apply: {
+              setSessionOrganizationId,
+              setSessionUserId,
+              setLoggedIn,
+              setAuthScreen,
+              setEmployee,
+              setLoggedInEmployeeId,
+              setEmployeePage,
+              setOwnerPage,
+              setOwnerProfile,
+              setMustChangePassword,
+              setSessionDisplayName,
+              setStaff,
+              setConfiguredBusinesses: (value) => {
+                setConfiguredBusinesses(Array.isArray(value) ? value as Array<Record<string, unknown>> : []);
+              },
+              setArchivedBusinessIds,
+            },
+          });
+          setStoreChannelSettings({});
+          setStoreOperationalSettings({});
+        }
       })
       .catch((error) => {
         if (cancelled) return;
@@ -175,6 +204,11 @@ export function useTaqfeelahAppSessionSync({
     setOwnerProfile,
     setMustChangePassword,
     setSessionDisplayName,
+    setStaff,
+    setConfiguredBusinesses,
+    setArchivedBusinessIds,
+    setStoreChannelSettings,
+    setStoreOperationalSettings,
   ]);
 
   useEffect(() => {
