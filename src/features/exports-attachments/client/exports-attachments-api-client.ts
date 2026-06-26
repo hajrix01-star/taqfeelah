@@ -22,9 +22,6 @@ export function setExportsAttachmentsRuntimeApiIdMaps(overrides: RuntimeApiIdMap
   setRuntimeApiIdMaps(overrides);
 }
 
-/** @deprecated Use setExportsAttachmentsRuntimeApiIdMaps */
-export const setPhase9RuntimeApiIdMaps = setExportsAttachmentsRuntimeApiIdMaps;
-
 function getMaps() {
   return getRuntimeApiMaps();
 }

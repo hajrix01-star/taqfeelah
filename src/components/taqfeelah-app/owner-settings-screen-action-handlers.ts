@@ -118,6 +118,9 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     setters.setNewCustomIncomeSourceName("");
     setters.setSettingsNotice("");
   };
+  const defaultEmployeePin = APP_IN_PRODUCTION_MODE
+    ? LOCAL_DEV_EMPLOYEE_PIN_DEFAULT
+    : (LOCAL_DEV_EMPLOYEE_PIN_DEFAULT || "1234");
 
   const closeStore = () => {
     resetStoreDrafts();
@@ -480,7 +483,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     const { staff: nextStaff, employeePins: nextPins } = prepareSavedTeamDraft(teamDraft, {
       draftAuthEmployeePins,
       authEmployeePins,
-      defaultPin: LOCAL_DEV_EMPLOYEE_PIN_DEFAULT || "1234",
+      defaultPin: defaultEmployeePin,
       pinsFromAuthIdentitiesOnly: isOrgConfigApiEnabled(),
     });
     const persistPins = employeePinsOverride ?? nextPins;
@@ -565,7 +568,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       name: newEmployeeName,
       mobile: newEmployeeMobile,
       storeIds: newEmployeeStoreIds,
-      defaultPin: LOCAL_DEV_EMPLOYEE_PIN_DEFAULT,
+      defaultPin: defaultEmployeePin,
     });
     setters.setDraftStaff((current: HandlerAny) => [...(current || staff), created.member]);
     setters.setDraftAuthEmployeePins((current: HandlerAny) => ({ ...(current || {}), ...created.employeePinsPatch }));

@@ -108,7 +108,7 @@ function TopBar({
       <div className="absolute left-1/2 top-[calc(12px+env(safe-area-inset-top,0px))] -translate-x-1/2 text-center">
         <Logo compact centered />
       </div>
-      <div className={`absolute top-[calc(22px+env(safe-area-inset-top,0px))] flex h-10 w-10 items-center justify-center ${lang === "ar" ? "right-[36px]" : "left-[36px]"}`}>
+      <div className={`absolute top-[calc(22px+env(safe-area-inset-top,0px))] flex h-10 w-10 items-center justify-center ${lang === "ar" ? "right-[14px]" : "left-[14px]"}`}>
         <div ref={accountMenuRef} className="relative">
           <button
             type="button"

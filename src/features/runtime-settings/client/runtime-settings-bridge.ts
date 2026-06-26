@@ -41,11 +41,6 @@ export function resolveOwnerSettingsApiAuth({
   };
 }
 
-/** @deprecated Use resolveOwnerSettingsApiAuth with explicit session context. */
-export function readOwnerSettingsApiAuth(): RuntimeSettingsAuth {
-  return resolveOwnerSettingsApiAuth();
-}
-
 export function buildRuntimeSettingsSnapshot({
   orgConfigApiEnabled,
   storeOperationalSettings,

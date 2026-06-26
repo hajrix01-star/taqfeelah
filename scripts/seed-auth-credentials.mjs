@@ -23,7 +23,9 @@ import process from "node:process";
 import { Client } from "pg";
 import { hashPassword } from "./lib/password-hash.mjs";
 import {
+  assertSafeAuthSeedEnv,
   canForceUpdateOwnerIdentity,
+  isProductionScriptEnv,
   shouldPreserveExistingOwnerIdentity,
 } from "./lib/auth-seed-policy.mjs";
 import { normalizeOptionalLoginPhone } from "./lib/normalize-login-phone.mjs";
@@ -47,6 +49,9 @@ function parseEmployeePinMap() {
       throw new Error("SEED_EMPLOYEE_PIN_MAP must be a JSON object.");
     }
     return parsed;
+  }
+  if (isProductionScriptEnv()) {
+    throw new Error("SEED_EMPLOYEE_PIN_MAP is required in production; default employee PINs are not allowed.");
   }
   return DEFAULT_EMPLOYEE_PINS;
 }
@@ -175,6 +180,7 @@ async function main() {
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is required.");
   }
+  assertSafeAuthSeedEnv();
 
   const ownerUserId = valueFromEnv("SEED_OWNER_USER_ID", valueFromEnv("AUTH_OWNER_USER_ID", DEFAULT_OWNER_USER_ID));
   const ownerUsername = valueFromEnv("AUTH_OWNER_USERNAME", "hajri");

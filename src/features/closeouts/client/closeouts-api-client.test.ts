@@ -189,13 +189,13 @@ describe("closeouts api client", () => {
   it("accepts legacy actor and store ids for mapping checks", async () => {
     setMapsEnv();
     const {
-      hasCloseoutApiActorMapping,
-      hasCloseoutApiStoreMapping,
+      hasRuntimeApiActorMapping,
+      hasRuntimeApiStoreMapping,
     } = await import("./closeouts-api-client");
-    expect(hasCloseoutApiActorMapping("ahmed")).toBe(true);
-    expect(hasCloseoutApiStoreMapping("shami")).toBe(true);
-    expect(hasCloseoutApiActorMapping("unknown")).toBe(false);
-    expect(hasCloseoutApiStoreMapping("unknown")).toBe(false);
+    expect(hasRuntimeApiActorMapping("ahmed")).toBe(true);
+    expect(hasRuntimeApiStoreMapping("shami")).toBe(true);
+    expect(hasRuntimeApiActorMapping("unknown")).toBe(false);
+    expect(hasRuntimeApiStoreMapping("unknown")).toBe(false);
   });
 
   it("submits outflows with legacy category labels", async () => {

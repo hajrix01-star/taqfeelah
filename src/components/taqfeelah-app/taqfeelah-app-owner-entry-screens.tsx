@@ -177,7 +177,7 @@ export function OwnerSummaryScreen({
     noteKey: "salesSummary",
   });
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px] lg:max-w-none">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px]">
       <BackTitle lang={lang} title={text(lang, "dailySummary")} onBack={onBack} />
       <div className="space-y-5 taq-page-gutter">
         {showStorePicker ? (
@@ -274,7 +274,7 @@ export function OwnerExpenseScreen({
   const categoryLabel = kind === "expense" ? text(lang, activeCategories.find((item) => item.id === category)?.label || "other") : text(lang, kind);
   const submit = () => canSave && !processing && !saving && onSave(payload());
   return (
-    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px] lg:max-w-none">
+    <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full pb-24 sm:max-w-[560px]">
       <BackTitle lang={lang} title={text(lang, "addOutflow")} onBack={onBack} />
       <div className="space-y-5 taq-page-gutter">
         {showStorePicker ? (

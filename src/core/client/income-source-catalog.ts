@@ -4,6 +4,7 @@ import rawIncomeSourceCatalog from "./income-source-catalog-data.json";
 export type IncomeSourceKind = "payment_method" | "sales_channel";
 
 export type CatalogIncomeSource = {
+  /** Stable catalog key kept as legacyId for persisted data/API compatibility. */
   legacyId: string;
   kind: IncomeSourceKind;
   nameAr: string;
@@ -17,9 +18,6 @@ export const INCOME_SOURCE_CATALOG: CatalogIncomeSource[] = rawIncomeSourceCatal
 export const DEFAULT_NEW_STORE_INCOME_SOURCE_IDS = INCOME_SOURCE_CATALOG
   .filter((entry) => entry.defaultActive)
   .map((entry) => entry.legacyId);
-
-/** @deprecated Use DEFAULT_NEW_STORE_INCOME_SOURCE_IDS */
-export const DEFAULT_NEW_STORE_SALES_CHANNEL_IDS = DEFAULT_NEW_STORE_INCOME_SOURCE_IDS;
 
 export const DEFAULT_SALES_CHANNEL_UUIDS: Record<string, string> = Object.fromEntries(
   INCOME_SOURCE_CATALOG.map((entry) => [entry.legacyId, entry.uuid]),

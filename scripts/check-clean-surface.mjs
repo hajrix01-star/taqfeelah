@@ -71,7 +71,15 @@ const forbiddenPatterns = [
   },
   {
     label: "mojibake or replacement characters",
-    pattern: /\uFFFD|\u00E2|\u00EF|(?:\u0638[\u2020\u2026\u201E]\u0637)|(?:\u0637[\u00B3\u00AE\u00A9\u00A7\u00AD\u06BE]\u0638)|(?:\u0637[\u00B3\u00AE\u00A9\u00A7\u00AD\u06BE]\u0637)|(?:\u0622\u00B7)/,
+    pattern: /\uFFFD|\u00E2|\u00EF|\u00C2|\u00D8|\u00D9|(?:[\u0637\u0638][\u00A1-\u00BF\u2020\u2021\u201A-\u201E\u06BE])/,
+  },
+  {
+    label: "unimplemented production auth placeholder",
+    pattern: new RegExp([
+      "\\bstub",
+      "_not_configured\\b|\\bpre-launch foundation ",
+      "stub\\b",
+    ].join(""), "i"),
   },
 ];
 

@@ -9,10 +9,9 @@ import { sanitizeCloseoutChannelDisplayName } from "@/features/daily-closeouts/c
 import { isUuidLike } from "@/features/org-config/client/sales-channel-display";
 import { normalizeCloseoutSubmitMode } from "@/features/closeouts/closeout-submit-mode";
 import {
-  getCloseoutApiMaps,
   getRuntimeApiMaps,
-  hasCloseoutApiActorMapping,
-  hasCloseoutApiStoreMapping,
+  hasRuntimeApiActorMapping,
+  hasRuntimeApiStoreMapping,
   setRuntimeApiIdMaps,
 } from "@/core/client/runtime-api-maps-state";
 import { isCloseoutSubmitDateAllowed } from "@/features/closeouts/closeout-submit-date";
@@ -22,10 +21,9 @@ import {
 } from "./resolve-closeout-sales-channels";
 
 export {
-  getCloseoutApiMaps,
   getRuntimeApiMaps,
-  hasCloseoutApiActorMapping,
-  hasCloseoutApiStoreMapping,
+  hasRuntimeApiActorMapping,
+  hasRuntimeApiStoreMapping,
   isUuid,
   setRuntimeApiIdMaps,
 };

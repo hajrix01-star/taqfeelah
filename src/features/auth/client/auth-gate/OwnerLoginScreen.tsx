@@ -10,6 +10,7 @@ import { APP_IN_PRODUCTION_MODE } from "@/components/taqfeelah-app/taqfeelah-app
 import { LanguageSwitch, Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
 import { AppLoginPhoneField } from "@/core/phone/AppLoginPhoneField";
 import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
+import { PasswordVisibilityInput } from "@/features/auth/client/PasswordVisibilityInput";
 import { ownerPasswordInputProps } from "@/features/auth/client/auth-gate/owner-password-input-props";
 import type { AuthLangProps, OwnerLoginCallback } from "@/features/auth/client/auth-client-types";
 
@@ -88,13 +89,14 @@ export function LoginScreen({ lang, setLang, onOwnerLogin, onBack }: OwnerLoginS
               <input dir="ltr" name="username" value={form.username} onChange={(event) => form.setUsername(event.target.value)} autoComplete="username" className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]" />
             )}
             <p className="mb-2 text-xs font-bold text-[#716753]">{text(lang, "password")}</p>
-            <input
+            <PasswordVisibilityInput
               dir="ltr"
               name="password"
-              type="password"
               value={form.password}
               onChange={(event) => form.setPassword(event.target.value)}
               autoComplete="current-password"
+              showLabel={lang === "ar" ? "إظهار كلمة المرور" : "Show password"}
+              hideLabel={lang === "ar" ? "إخفاء كلمة المرور" : "Hide password"}
               {...ownerPasswordInputProps}
               className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
             />

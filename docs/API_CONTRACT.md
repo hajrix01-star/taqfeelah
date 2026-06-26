@@ -560,7 +560,7 @@ Body:
 - Billing / subscriptions API
 - Marketing site CMS
 - Export PDF/Excel generation
-- Real OTP SMS webhooks (stub only until provider chosen)
+- Real OTP SMS webhooks (disabled until a delivery provider is chosen)
 
 ---
 

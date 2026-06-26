@@ -7,7 +7,8 @@ export function AppFontStyles() {
     <style>{`
       :root {
         --taq-page-gutter: 16px;
-        --taq-app-desktop-width: 430px;
+        --taq-app-desktop-width: 600px;
+        --taq-app-desktop-content-width: 560px;
       }
       @media (min-width: 640px) and (max-width: 1023px) {
         :root { --taq-page-gutter: 18px; }
@@ -41,14 +42,14 @@ export function AppFontStyles() {
         padding-inline: 0 !important;
       }
       @media (min-width: 640px) and (max-width: 1023px) {
-        .taq-topbar { max-width: 540px; margin-inline: auto; }
-        .taq-owner-page { max-width: 530px; margin-inline: auto; padding-inline: 0 !important; }
-        .taq-scroll > section:not(.taq-owner-page) { max-width: 560px; margin-inline: auto; }
+        .taq-topbar { max-width: var(--taq-app-desktop-width); margin-inline: auto; }
+        .taq-owner-page { max-width: var(--taq-app-desktop-content-width); margin-inline: auto; padding-inline: 0 !important; }
+        .taq-scroll > section:not(.taq-owner-page) { max-width: var(--taq-app-desktop-content-width); margin-inline: auto; }
       }
       @media (min-width: 1024px) {
-        .taq-topbar { max-width: 560px; margin-inline: auto; }
-        .taq-owner-page { max-width: 540px; margin-inline: auto; padding-inline: 0 !important; }
-        .taq-scroll > section:not(.taq-owner-page) { max-width: 560px; margin-inline: auto; }
+        .taq-topbar { max-width: var(--taq-app-desktop-width); margin-inline: auto; }
+        .taq-owner-page { max-width: var(--taq-app-desktop-content-width); margin-inline: auto; padding-inline: 0 !important; }
+        .taq-scroll > section:not(.taq-owner-page) { max-width: var(--taq-app-desktop-content-width); margin-inline: auto; }
       }
       @media (min-width: 768px) {
         .taq-app-root {

@@ -7,7 +7,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const PRODUCTION_SUPPORT_WHATSAPP = "966533507223";
-const LEGACY_NON_PRODUCTION_SUPPORT_WHATSAPP = "966501234567";
+const BLOCKED_NON_PRODUCTION_SUPPORT_WHATSAPP = "966501234567";
 const CHUNKS_DIR = ".next/static/chunks";
 
 function walkJsFiles(dir, files = []) {
@@ -36,7 +36,7 @@ const legacyFiles = [];
 
 for (const file of files) {
   const content = readFileSync(file, "utf8");
-  if (content.includes(LEGACY_NON_PRODUCTION_SUPPORT_WHATSAPP)) {
+  if (content.includes(BLOCKED_NON_PRODUCTION_SUPPORT_WHATSAPP)) {
     legacyHits += 1;
     legacyFiles.push(file);
   }
@@ -47,7 +47,7 @@ for (const file of files) {
 
 if (legacyHits > 0) {
   console.error(
-    `Support WhatsApp guard failed: legacy non-production number ${LEGACY_NON_PRODUCTION_SUPPORT_WHATSAPP} found in ${legacyHits} chunk(s).`,
+    `Support WhatsApp guard failed: blocked non-production number ${BLOCKED_NON_PRODUCTION_SUPPORT_WHATSAPP} found in ${legacyHits} chunk(s).`,
   );
   for (const file of legacyFiles.slice(0, 5)) {
     console.error(`  - ${file}`);

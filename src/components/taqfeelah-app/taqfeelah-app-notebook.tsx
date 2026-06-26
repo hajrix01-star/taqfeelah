@@ -177,9 +177,17 @@ function isoCalendarDate(year: number, month: number, day: number) {
 function todayIsoDate() {
   return todayBusinessDateIso();
 }
+function currentMonthIso() {
+  return todayIsoDate().slice(0, 7);
+}
+function currentYearValue() {
+  return todayIsoDate().slice(0, 4);
+}
+function monthStartIso(monthValue: string) {
+  return `${monthSelectionValue(monthValue)}-01`;
+}
 function monthSelectionValue(value: string) {
-  const legacyMonths: Record<string, string> = { may2026: "2026-05", april2026: "2026-04", march2026: "2026-03" };
-  return legacyMonths[value] || (/^[0-9]{4}-[0-9]{2}$/.test(value || "") ? value : "2026-05");
+  return /^[0-9]{4}-[0-9]{2}$/.test(value || "") ? value : currentMonthIso();
 }
 function monthSelectionParts(value: string) {
   const normalized = monthSelectionValue(value);
@@ -198,11 +206,11 @@ function DateSelector({
   fullCalendar: _fullCalendar = false,
   selectedMonth,
   setSelectedMonth,
-  selectedYear = "2026",
+  selectedYear = currentYearValue(),
   setSelectedYear = () => {},
-  customFrom = "2026-03-01",
+  customFrom = monthStartIso(selectedMonth),
   setCustomFrom = () => {},
-  customTo = "2026-05-31",
+  customTo = todayIsoDate(),
   setCustomTo = () => {},
   compact = false,
   maxDate = "",
@@ -282,6 +290,13 @@ function DateSelector({
     value: `${monthPickerYear}-${String(index + 1).padStart(2, "0")}`,
     label: String(index + 1).padStart(2, "0"),
   }));
+  const selectedYearNumber = Number(selectedYear);
+  const currentYearNumber = Number(currentYearValue());
+  const baseYear = Number.isFinite(selectedYearNumber) ? selectedYearNumber : currentYearNumber;
+  const yearOptions = Array.from(new Set([baseYear, currentYearNumber, currentYearNumber - 1, currentYearNumber + 1]))
+    .filter((year) => Number.isFinite(year))
+    .sort((a, b) => b - a)
+    .map(String);
   const previousMonth = () => setCalendarView((current) => current.month === 0 ? { year: current.year - 1, month: 11 } : { year: current.year, month: current.month - 1 });
   const nextMonth = () => setCalendarView((current) => current.month === 11 ? { year: current.year + 1, month: 0 } : { year: current.year, month: current.month + 1 });
   const handleSelectPeriod = (modeId: string) => {
@@ -357,7 +372,7 @@ function DateSelector({
                 {yearMonths.map((month) => <button key={month.value} onClick={() => { setSelectedMonth(month.value); setOpen(false); }} className={`rounded-xl px-1 py-2.5 text-taq-meta font-bold ${monthSelectionValue(selectedMonth) === month.value ? "bg-[#FFF0CB] text-[#B44747] ring-1 ring-[#B44747]/20" : "bg-white text-[#716753] ring-1 ring-black/[0.05]"}`}>{month.label}</button>)}
               </div>
             </div>}
-            {period === "year" && <div className="grid grid-cols-2 gap-2">{["2026", "2025"].map((year) => <button key={year} onClick={() => { setSelectedYear(year); setOpen(false); }} className={`rounded-xl py-3 text-xs font-bold ${selectedYear === year ? "bg-[#FFF0CB] text-[#B44747] ring-1 ring-[#B44747]/20" : "bg-white text-[#716753] ring-1 ring-black/[0.05]"}`}>{year}</button>)}</div>}
+            {period === "year" && <div className="grid grid-cols-2 gap-2">{yearOptions.map((year) => <button key={year} onClick={() => { setSelectedYear(year); setOpen(false); }} className={`rounded-xl py-3 text-xs font-bold ${selectedYear === year ? "bg-[#FFF0CB] text-[#B44747] ring-1 ring-[#B44747]/20" : "bg-white text-[#716753] ring-1 ring-black/[0.05]"}`}>{year}</button>)}</div>}
             {period === "custom" && <div><div className="grid grid-cols-2 gap-2"><label className="rounded-xl bg-[#F7F5EF] p-2 text-taq-nav font-bold text-[#806528]">{text(lang, "fromDate")}<input dir="ltr" type="date" value={draftCustomFrom} onChange={(event) => setDraftCustomFrom(event.target.value)} className="mt-1 block w-full bg-transparent text-taq-meta font-bold text-[#112A46] outline-none" /></label><label className="rounded-xl bg-[#F7F5EF] p-2 text-taq-nav font-bold text-[#806528]">{text(lang, "toDate")}<input dir="ltr" type="date" value={draftCustomTo} onChange={(event) => setDraftCustomTo(event.target.value)} className="mt-1 block w-full bg-transparent text-taq-meta font-bold text-[#112A46] outline-none" /></label></div>{invalidCustomRange && <p className="mt-2 rounded-lg bg-[#FFF1EE] p-2 text-taq-nav font-bold text-[#B44747]">{text(lang, "invalidDateRange")}</p>}<button disabled={invalidCustomRange} onClick={() => { if (!invalidCustomRange) { setCustomFrom(draftCustomFrom); setCustomTo(draftCustomTo); setOpen(false); } }} className={`mt-3 w-full rounded-xl py-2.5 text-taq-meta font-bold text-white ${invalidCustomRange ? "bg-[#B8C0B7]" : "bg-[#112A46]"}`}>{text(lang, "applyPeriod")}</button></div>}
           </motion.div>
         )}

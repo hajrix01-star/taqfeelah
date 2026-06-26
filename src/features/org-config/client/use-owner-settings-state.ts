@@ -64,7 +64,7 @@ function writeLocalLocalLastCloseoutDates(
   if (
     skipLocalBootstrap
     || typeof window === "undefined"
-    || !isBrowserPersistentStorageAllowed({ scope: "operational-fallback" })
+    || !isBrowserPersistentStorageAllowed({ scope: "local-closeout-events" })
   ) return;
   window.localStorage.setItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(lastCloseoutDates));
 }
@@ -163,12 +163,12 @@ export function useOwnerSettingsState({
   const [authOwnerUsername, setAuthOwnerUsername] = useState(
     () => (bindsToServerAuth
       ? String(initialAuthConfig.ownerUsername || "").trim()
-      : String(initialAuthConfig.ownerUsername || fallbackOwnerUsername || "hajri")),
+      : String(initialAuthConfig.ownerUsername || fallbackOwnerUsername || (skipLocalBootstrap ? "" : "owner"))),
   );
   const [authOwnerPassword, setAuthOwnerPassword] = useState(
     () => (bindsToServerAuth
       ? ""
-      : String(initialAuthConfig.ownerPassword || fallbackOwnerPassword || "123")),
+      : String(initialAuthConfig.ownerPassword || fallbackOwnerPassword || (skipLocalBootstrap ? "" : "local123"))),
   );
   const [authEmployeePins, setAuthEmployeePins] = useState<Record<string, string>>(
     () => (initialAuthConfig.employeePins && typeof initialAuthConfig.employeePins === "object"

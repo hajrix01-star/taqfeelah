@@ -19,7 +19,7 @@ export function createMigrateSavedSettings({
       !raw
       || typeof window === "undefined"
       || bindsToServerAuth
-      || !isBrowserPersistentStorageAllowed({ scope: "legacy-settings" })
+      || !isBrowserPersistentStorageAllowed({ scope: "local-settings-migration" })
     ) {
       return raw;
     }

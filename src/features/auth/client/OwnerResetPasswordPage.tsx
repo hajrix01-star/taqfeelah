@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
+import { PasswordVisibilityInput } from "@/features/auth/client/PasswordVisibilityInput";
 import { ownerPasswordInputProps } from "@/features/auth/client/auth-gate/owner-password-input-props";
 import { readPasswordResetTokenValid } from "@/features/auth/client/auth-api-response";
 import {
@@ -80,24 +81,26 @@ export default function OwnerResetPasswordPage({ token }: OwnerResetPasswordPage
         ) : null}
         {!loading && valid ? (
           <form onSubmit={handleSubmit} className="mt-8 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-black/[0.045]">
-            <input
+            <PasswordVisibilityInput
               dir="ltr"
-              type="password"
               required
               minLength={MIN_PASSWORD_LENGTH}
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
+              showLabel="إظهار كلمة المرور"
+              hideLabel="إخفاء كلمة المرور"
               placeholder="كلمة المرور الجديدة"
               {...ownerPasswordInputProps}
               className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
             />
-            <input
+            <PasswordVisibilityInput
               dir="ltr"
-              type="password"
               required
               minLength={MIN_PASSWORD_LENGTH}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
+              showLabel="إظهار كلمة المرور"
+              hideLabel="إخفاء كلمة المرور"
               placeholder="تأكيد كلمة المرور"
               {...ownerPasswordInputProps}
               className="mb-3 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"

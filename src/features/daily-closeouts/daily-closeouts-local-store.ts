@@ -93,7 +93,7 @@ export function readCloseoutEvents(): CloseoutEvent[] {
 export function writeCloseoutEvents(events: CloseoutEvent[]): void {
   if (typeof window === "undefined") return;
   safeSetLocalStorageItem(CLOSEOUT_EVENTS_STORAGE_KEY, JSON.stringify(events), {
-    scope: "operational-fallback",
+    scope: "local-closeout-events",
   });
 }
 
@@ -271,7 +271,7 @@ export function sortCloseoutsNewestFirst(closeouts: DailyCloseoutRecord[]): Dail
   });
 }
 
-/** Zero-review stub — owner closeout queue removed; always empty. */
+/** Owner review queue is retired; keep a stable empty adapter for old callers. */
 export function pendingOwnerCloseoutQueue(): DailyCloseoutRecord[] {
   return [];
 }

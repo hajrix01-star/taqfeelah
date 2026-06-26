@@ -1,6 +1,7 @@
 /** Pure helpers for operational entry filtering and totals (runtime + tests). */
 
 import { countProofsFromUiEntries } from "@/domain/attachment-stats/stats";
+import { todayBusinessDateIso } from "@/core/date/business-date";
 import {
   addUiAmounts,
   calculateDaySummary,
@@ -32,6 +33,22 @@ import type {
 export const OUTFLOW_ENTRY_TYPES = new Set(["purchases", "expense", "withdrawal"]);
 const EMPTY_ANALYTICS_TOTALS: AnalyticsTotals = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0 };
 
+function currentBusinessMonth(): string {
+  return todayBusinessDateIso().slice(0, 7);
+}
+
+function currentBusinessYear(): string {
+  return todayBusinessDateIso().slice(0, 4);
+}
+
+function currentBusinessYearStart(): string {
+  return `${currentBusinessYear()}-01-01`;
+}
+
+function currentBusinessYearEnd(): string {
+  return `${currentBusinessYear()}-12-31`;
+}
+
 export function entryHasAttachment(entry: AnalyticsEntry | null | undefined): boolean {
   if (Boolean(entry?.attachment)) return true;
   return Array.isArray(entry?.attachments) && entry.attachments.length > 0;
@@ -50,8 +67,7 @@ export function entryIsOutflow(entry: AnalyticsEntry | null | undefined): boolea
 }
 
 export function monthSelectionValue(value: string | null | undefined): string {
-  const legacyMonths: Record<string, string> = { may2026: "2026-05", april2026: "2026-04", march2026: "2026-03" };
-  return legacyMonths[value || ""] || (/^[0-9]{4}-[0-9]{2}$/.test(value || "") ? value! : "2026-05");
+  return /^[0-9]{4}-[0-9]{2}$/.test(value || "") ? value! : currentBusinessMonth();
 }
 
 export function entryDateMatches(
@@ -76,9 +92,9 @@ export function entriesInPeriod(
   period: string,
   selectedDate: string,
   selectedMonth: string,
-  selectedYear = "2026",
-  customFrom = "2026-01-01",
-  customTo = "2026-12-31",
+  selectedYear = currentBusinessYear(),
+  customFrom = currentBusinessYearStart(),
+  customTo = currentBusinessYearEnd(),
 ): AnalyticsEntry[] {
   return entries.filter(
     (entry) =>
@@ -126,7 +142,7 @@ export function summaryDayFromEntries(
     dayEn: format(date, "en"),
     fullAr: format(date, "ar"),
     fullEn: format(date, "en"),
-    ...summarizeEntries(entriesInPeriod(entries, businessId, "day", date, "2026-05")),
+    ...summarizeEntries(entriesInPeriod(entries, businessId, "day", date, date.slice(0, 7))),
   };
 }
 

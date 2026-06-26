@@ -1,10 +1,10 @@
 export const BROWSER_PERSISTENCE_SCOPES = [
   "local-runtime",
   "local-auth",
-  "legacy-settings",
+  "local-settings-migration",
   "ui-preferences",
-  "operational-fallback",
-  "attachments-fallback",
+  "local-closeout-events",
+  "local-attachment-cache",
 ] as const;
 
 export type BrowserPersistenceScope = (typeof BROWSER_PERSISTENCE_SCOPES)[number];

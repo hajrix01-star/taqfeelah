@@ -12,6 +12,7 @@ import { loginPlatformAdminSessionViaApi } from "@/features/saas-admin/client/sa
 import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import "@/features/saas-admin/components/admin-theme.css";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
+import { PasswordVisibilityInput } from "@/features/auth/client/PasswordVisibilityInput";
 
 type SaasAdminLoginPageProps = {
   initialLocale?: SaasAdminLocale;
@@ -70,14 +71,16 @@ function LoginForm({ nextPath }: { nextPath: string }) {
             </label>
             <label className="block space-y-1 text-sm">
               <span className="text-[var(--admin-muted)]">{t.auth.password}</span>
-              <input
+              <PasswordVisibilityInput
                 required
-                type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
                 dir="ltr"
                 autoComplete="current-password"
+                showLabel={locale === "ar" ? "إظهار كلمة المرور" : "Show password"}
+                hideLabel={locale === "ar" ? "إخفاء كلمة المرور" : "Hide password"}
+                toggleClassName="right-2 text-[var(--admin-muted)]"
               />
             </label>
             <button

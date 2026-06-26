@@ -75,6 +75,9 @@ export function OwnerHome({
   const [selectedDay, setSelectedDay] = useState(() => todayIsoDate());
   const [selectedDate, setSelectedDate] = useState(() => todayIsoDate());
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
+  const selectedYear = selectedMonth.slice(0, 4) || selectedDate.slice(0, 4) || todayIsoDate().slice(0, 4);
+  const selectedYearStart = `${selectedYear}-01-01`;
+  const selectedYearEnd = `${selectedYear}-12-31`;
   const [showReportDetails, setShowReportDetails] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
   const [homeAttachmentPreview, setHomeAttachmentPreview] = useState<AppAttachmentPreviewState>(null);
@@ -135,7 +138,7 @@ export function OwnerHome({
     selectedMonth,
   });
   const daySummary = summaryDayFromEntriesWithLabels(operationalEntries, currentBusiness?.id, selectedDate);
-  const localCombinedResult = summarizeEntries(operationalEntries.filter((entry) => businessesList.some((business) => business.id === entry.businessId) && entryDateMatches(entry, period, selectedDate, selectedMonth, "2026", "2026-01-01", "2026-12-31")));
+  const localCombinedResult = summarizeEntries(operationalEntries.filter((entry) => businessesList.some((business) => business.id === entry.businessId) && entryDateMatches(entry, period, selectedDate, selectedMonth, selectedYear, selectedYearStart, selectedYearEnd)));
   const apiStoreResult = currentBusiness?.id ? getStoreResult(currentBusiness.id) : null;
   const localMonthResult = summaryMonthFromEntries(operationalEntries, currentBusiness?.id, selectedMonth);
   const preferEntrySummaries = resolveOwnerPeriodSummaryPreference({
@@ -170,7 +173,7 @@ export function OwnerHome({
       ? resolveOwnerSingleStoreTotals(localMonthResult as AnalyticsTotals, apiStoreResult as AnalyticsTotals | null | undefined, preferEntrySummaries, { entriesDbSource: strictServerFinancialSource })
       : resolveOwnerSingleStoreTotals(daySummary as AnalyticsTotals, apiStoreResult as AnalyticsTotals | null | undefined, preferEntrySummaries, { entriesDbSource: strictServerFinancialSource });
   const netMarginRatio = formatNetMarginOfSalesRatio(result?.sales ?? 0, result?.net ?? 0);
-  const selectedBusinessEntries = currentBusiness ? operationalEntries.filter((entry) => entry.businessId === currentBusiness.id && entryDateMatches(entry, "day", selectedDate, selectedMonth, "2026", "2026-01-01", "2026-12-31")) : [];
+  const selectedBusinessEntries = currentBusiness ? operationalEntries.filter((entry) => entry.businessId === currentBusiness.id && entryDateMatches(entry, "day", selectedDate, selectedMonth, selectedYear, selectedYearStart, selectedYearEnd)) : [];
   const useApiDetailRows = summaryApiActive
     && showReportDetails
     && !summaryDetailsApiLoading

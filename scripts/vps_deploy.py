@@ -1380,7 +1380,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave2-reports-days.json "
                 f"-w '%{{http_code}}' "
                 f"'https://{shlex.quote(domain)}/api/v1/reports/days?"
-                f"storeId=$(cat {verify_store_id_file})&from=2026-01-01&to=2026-12-31' "
+                f"storeId=$(cat {verify_store_id_file})&from=$(date -u +%Y)-01-01&to=$(date -u +%Y)-12-31' "
                 f"{auth_flags}"
             ),
         ] if analytics_verify and not skip_authenticated_api else []),

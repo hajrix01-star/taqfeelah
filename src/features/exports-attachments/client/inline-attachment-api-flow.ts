@@ -50,6 +50,3 @@ export async function resolveInlineAttachmentPayloadForApi({
     return payload;
   }
 }
-
-/** @deprecated Use resolveInlineAttachmentPayloadForApi */
-export const resolvePayloadAttachmentForPhase9Api = resolveInlineAttachmentPayloadForApi;

@@ -1,6 +1,6 @@
 import { Wallet, CreditCard } from "lucide-react";
 import { formatDisplayMoneyLabel } from "@/core/money/format-display-money";
-import { DEFAULT_NEW_STORE_SALES_CHANNEL_IDS } from "@/core/client/sales-channel-catalog";
+import { DEFAULT_NEW_STORE_INCOME_SOURCE_IDS } from "@/core/client/sales-channel-catalog";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import {
   createDefaultStoreChannelConfig,
@@ -24,7 +24,7 @@ const channelCatalog: Record<string, AppChannel> = {
   card: { id: "card", text: "card", kind: "payment_method", icon: CreditCard },
 };
 
-const channels: AppChannel[] = DEFAULT_NEW_STORE_SALES_CHANNEL_IDS.map((id) => channelCatalog[id]);
+const channels: AppChannel[] = DEFAULT_NEW_STORE_INCOME_SOURCE_IDS.map((id) => channelCatalog[id]);
 const DEFAULT_STORE_CHANNEL_CONFIG = createDefaultStoreChannelConfig(channels);
 const resolveStoreChannelConfig = (
   settings: Record<string, StoreChannelConfig | undefined>,

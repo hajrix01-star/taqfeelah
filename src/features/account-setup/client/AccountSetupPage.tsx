@@ -2,6 +2,7 @@
 
 import { Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
 import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
+import { PasswordVisibilityInput } from "@/features/auth/client/PasswordVisibilityInput";
 import { useAccountSetupForm } from "@/features/account-setup/client/use-account-setup-form";
 
 type AccountSetupPageProps = {
@@ -66,23 +67,25 @@ export default function AccountSetupPage({ token }: AccountSetupPageProps) {
                 <p dir="ltr" className="mt-1 text-sm font-black">{preview.ownerEmail}</p>
               </div>
             ) : null}
-            <input
+            <PasswordVisibilityInput
               dir="ltr"
-              type="password"
               required
               minLength={8}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              showLabel="إظهار كلمة المرور"
+              hideLabel="إخفاء كلمة المرور"
               placeholder="كلمة المرور"
               className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
             />
-            <input
+            <PasswordVisibilityInput
               dir="ltr"
-              type="password"
               required
               minLength={8}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
+              showLabel="إظهار كلمة المرور"
+              hideLabel="إخفاء كلمة المرور"
               placeholder="تأكيد كلمة المرور"
               className="w-full rounded-2xl bg-[#F7F5EF] px-4 py-3.5 text-sm font-black outline-none ring-1 ring-[#E8E1D4]"
             />

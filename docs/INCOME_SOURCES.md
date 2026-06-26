@@ -1,71 +1,49 @@
-# Income Sources — طرق الدفع
+# طرق الدفع وقنوات البيع
 
-> آخر تحديث: 2026-06-14
+> آخر تحديث: 2026-06-26
 
-## Product model
+تقفيلة تعرض للعميل قائمة واحدة باسم **طرق الدفع**. داخليًا يحتفظ النظام بنوعين لخدمة التقارير والتكاملات:
 
-Taqfeelah records daily **incoming** amounts using a unified runtime model (`sales_channels`).
-
-**Customer-facing label (UI + Excel):** **طرق الدفع / Payment methods** — one flat list (نقد، بطاقة، مدى، جاهز، …).
-
-**Internal domain kind** (DB + code only — not shown to customers):
-
-| Kind | Examples |
-|------|----------|
+| النوع الداخلي | أمثلة |
+|---|---|
 | `payment_method` | نقد، بطاقة، مدى، بنك، Apple Pay، أونلاين |
 | `sales_channel` | جاهز، هنقرستيشن، كيتا |
 
-The split exists for future reports and integrations. Presentation layers merge both kinds under **طرق الدفع**.
+الواجهة تدمج النوعين تحت عنوان واحد: **طرق الدفع**.
 
-## Defaults for new stores
+## المصدر المعتمد
 
-| legacyId | Active by default |
-|----------|-------------------|
-| `cash` | yes |
-| `card` | yes |
+الكتالوج موجود في:
 
-All other catalog entries are optional and added by the owner from settings.
+```text
+src/core/client/income-source-catalog.ts
+src/core/client/income-source-catalog-data.json
+```
 
-## Catalog source of truth
+كل عنصر في الكتالوج له:
 
-`src/core/client/income-source-catalog.ts`
+- مفتاح كتالوج ثابت، مثل `cash` أو `jahez`.
+- UUID ثابت للكتابة في DB/API.
+- اسم عربي واسم إنجليزي.
+- نوع داخلي.
 
-- Stable UUIDs for every preset (`DEFAULT_SALES_CHANNEL_UUIDS`)
-- `buildCatalogUuidMap()` used during store provisioning
-- `keeta` UUID: `c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f`
+ملاحظة للمطور: الحقل الحالي اسمه `legacyId` لأسباب توافق بيانات. تعامل معه كمفتاح كتالوج ثابت، وليس كمصدر بيانات قديم. أي إعادة تسمية له يجب أن تتم بخطة توافق منفصلة.
 
-## Owner settings UI
+## الإعدادات
 
-Owner settings show **one unified list** labelled **طرق الدفع**. Each catalog preset appears with an on/off toggle; **cash** and **card** are active by default for new stores. Custom names can be added at the bottom of the same section.
+- المحل الجديد يبدأ بـ `cash` و`card` مفعلة.
+- باقي الطرق يضيفها أو يفعلها المالك من الإعدادات.
+- يجب بقاء طريقة دفع واحدة فعالة على الأقل.
+- الطريقة المتوقفة تختفي من الإدخالات الجديدة وتبقى في التقارير السابقة.
 
-## Employee closeout UI
+## API / DB
 
-One grid under **طرق الدفع** — no separate «قنوات بيع» section for customers.
+- الجدول: `sales_channels`.
+- المسار: `/api/v1/stores/:storeId/sales-channels`.
+- حمولة التقفيلة: `salesChannels[]`.
 
-## Register filters + export
+## العرض والتصدير
 
-- Filter section title: **طرق الدفع**
-- Filter options dedupe by canonical key (`cash`, `jahez`, …) so legacy UUID rows do not duplicate labels
-- Excel sheet name: **طرق الدفع** — flat rows matching UI labels
-
-## Owner rules
-
-1. At least **one** active payment method must remain.
-2. Default presets such as **cash** may be disabled when another source stays active.
-3. Retired channels disappear from new entries; historical snapshots are preserved.
-
-## API / DB (unchanged paths)
-
-- Table: `sales_channels` (column `kind`: `payment_method` | `sales_channel`)
-- Routes: `/api/v1/stores/:storeId/sales-channels`
-- Closeout payload: `salesChannels[]`
-
-## Terminology map
-
-| Before | Customer UI (Arabic) | Customer UI (English) |
-|--------|----------------------|-------------------------|
-| قنوات الداخل / Incoming channels | **طرق الدفع** | **Payment methods** |
-| قناة البيع (register filter) | **طرق الدفع** | **Payment methods** |
-| Split employee form sections | **قسم واحد: طرق الدفع** | **Single section** |
-
-Internal `kind` values are unchanged.
+- عنوان الفلتر: **طرق الدفع**.
+- عنوان ورقة Excel: **طرق الدفع**.
+- خيارات الفلتر تدمج الصفوف حسب مفتاح الكتالوج حتى لا تتكرر القنوات عند وجود UUID وقيمة كتالوج لنفس المصدر.

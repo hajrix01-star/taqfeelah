@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  DEFAULT_NEW_STORE_SALES_CHANNEL_IDS,
+  DEFAULT_NEW_STORE_INCOME_SOURCE_IDS,
   defaultSalesChannelDbName,
 } from "./sales-channel-catalog";
 
 describe("sales-channel-catalog defaults", () => {
   it("uses cash and card for new stores", () => {
-    expect(DEFAULT_NEW_STORE_SALES_CHANNEL_IDS).toEqual(["cash", "card"]);
+    expect(DEFAULT_NEW_STORE_INCOME_SOURCE_IDS).toEqual(["cash", "card"]);
   });
 
   it("stores Arabic names for built-in default channels", () => {

@@ -4,9 +4,6 @@ import { readPublicEnvString } from "@/core/config/public-env";
 /** Production support line (0533507223). Used when env is unset. */
 export const PRODUCTION_SUPPORT_WHATSAPP = "966533507223";
 
-/** @deprecated Legacy support fallback — do not use in new code; kept for grep-based deploy guards. */
-export const LEGACY_NON_PRODUCTION_SUPPORT_WHATSAPP = "966501234567";
-
 export function resolveSupportWhatsAppNumber(
   env?: { NEXT_PUBLIC_SUPPORT_WHATSAPP?: string },
 ): string {

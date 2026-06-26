@@ -57,7 +57,7 @@ export function persistOwnerSettingsToLocalStorage(
     storageKey?: string;
   } = {},
 ) {
-  if (!isBrowserPersistentStorageAllowed({ scope: "legacy-settings" })) return false;
+  if (!isBrowserPersistentStorageAllowed({ scope: "local-settings-migration" })) return false;
   if (!enabled || typeof window === "undefined") return false;
   window.localStorage.setItem(storageKey, JSON.stringify(payload));
   return true;

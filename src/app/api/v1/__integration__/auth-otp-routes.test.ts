@@ -51,7 +51,7 @@ describe("auth otp routes integration", () => {
   it("POST /auth/otp/request accepts whatsapp destination", async () => {
     requestAuthOtp.mockResolvedValueOnce({
       accepted: true,
-      deliveryStatus: "stub_not_configured",
+      deliveryStatus: "queued",
     });
 
     const { POST } = await import("../auth/otp/request/route");

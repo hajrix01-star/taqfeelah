@@ -7,8 +7,8 @@ import {
   diagnoseCloseoutSubmitFailure,
   deleteCloseoutViaApi,
   fetchStoreCloseoutsViaApi,
-  hasCloseoutApiActorMapping,
-  hasCloseoutApiStoreMapping,
+  hasRuntimeApiActorMapping,
+  hasRuntimeApiStoreMapping,
   isUuid,
   submitCloseoutViaApi,
 } from "@/features/closeouts/client/closeouts-api-client";
@@ -101,8 +101,8 @@ export function useTaqfeelahAppCloseoutsApi({
     }
     if (
       !isUuid(closeoutsApiOrganizationId)
-      || !hasCloseoutApiActorMapping(actorUserId ?? "")
-      || !hasCloseoutApiStoreMapping(closeout?.storeId ?? "")
+      || !hasRuntimeApiActorMapping(actorUserId ?? "")
+      || !hasRuntimeApiStoreMapping(closeout?.storeId ?? "")
     ) {
       throw new Error(lang === "ar"
         ? "تعذر إرسال التقفيلة: سياق API غير مكتمل (منظمة/مستخدم/محل)."
@@ -147,7 +147,7 @@ export function useTaqfeelahAppCloseoutsApi({
       );
     }
 
-    if (!hasCloseoutApiActorMapping(apiActorUserId ?? "")) {
+    if (!hasRuntimeApiActorMapping(apiActorUserId ?? "")) {
       throw new Error(
         lang === "ar"
           ? "تعذر تحميل التقفيلات: معرف المستخدم غير مربوط بالخادم."
@@ -214,8 +214,8 @@ export function useTaqfeelahAppCloseoutsApi({
     }
     if (
       !isUuid(closeoutsApiOrganizationId)
-      || !hasCloseoutApiActorMapping(apiActorUserId ?? "")
-      || !hasCloseoutApiStoreMapping(closeout?.storeId ?? "")
+      || !hasRuntimeApiActorMapping(apiActorUserId ?? "")
+      || !hasRuntimeApiStoreMapping(closeout?.storeId ?? "")
     ) {
       throw new Error(lang === "ar"
         ? "تعذر حذف التقفيلة: سياق API غير مكتمل (منظمة/مستخدم/محل)."

@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildSupportWhatsAppUrl,
-  LEGACY_NON_PRODUCTION_SUPPORT_WHATSAPP,
   PRODUCTION_SUPPORT_WHATSAPP,
   resolveSupportWhatsAppNumber,
 } from "./marketing-support";
@@ -38,6 +37,5 @@ describe("marketing support", () => {
     const url = buildSupportWhatsAppUrl("مرحبًا");
     expect(url).toContain(`https://wa.me/${PRODUCTION_SUPPORT_WHATSAPP}`);
     expect(url).toContain(encodeURIComponent("مرحبًا"));
-    expect(url).not.toContain(LEGACY_NON_PRODUCTION_SUPPORT_WHATSAPP);
   });
 });

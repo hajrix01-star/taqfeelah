@@ -8,7 +8,7 @@ import {
   storeAttachmentPayload,
 } from "@/features/attachments/client/attachment-payload-storage";
 import type { PreparedAttachment } from "@/features/attachments/client/attachments-client-types";
-import { hasCloseoutApiActorMapping, isUuid } from "@/features/closeouts/client/closeouts-api-client";
+import { hasRuntimeApiActorMapping, isUuid } from "@/features/closeouts/client/closeouts-api-client";
 import {
   createStoreEntryViaApi,
   fetchStoreEntriesViaApi,
@@ -89,7 +89,7 @@ export function useTaqfeelahAppOperationalEntries({
     && shouldDeferOwnerBulkEntriesLoad
     && runtimeApiStoresReady
     && isUuid(closeoutsApiOrganizationId)
-    && hasCloseoutApiActorMapping(apiActorUserId)
+    && hasRuntimeApiActorMapping(apiActorUserId)
     && Boolean(apiTargetStoreIdsKey);
 
   const duplicateWatchQuery = useQuery({
@@ -177,7 +177,7 @@ export function useTaqfeelahAppOperationalEntries({
       setOperationalEntriesSyncError(message);
       throw new Error(message);
     }
-    if (!hasCloseoutApiActorMapping(apiActorUserId)) {
+    if (!hasRuntimeApiActorMapping(apiActorUserId)) {
       const message = lang === "ar"
         ? "تعذر تحميل العمليات: معرف المستخدم غير مربوط بالخادم."
         : "Failed to load operations: actor user id is missing/invalid for entries API.";

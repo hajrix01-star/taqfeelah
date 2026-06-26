@@ -5,7 +5,7 @@ import type { ReadLocalSavedSettingsOptions } from "@/features/runtime-settings/
 export function readLocalSavedSettingsRaw(
   storageKey = OWNER_SETTINGS_STORAGE_KEY,
 ): Record<string, unknown> | null {
-  if (!isBrowserPersistentStorageAllowed({ scope: "legacy-settings" })) return null;
+  if (!isBrowserPersistentStorageAllowed({ scope: "local-settings-migration" })) return null;
   if (typeof window === "undefined") return null;
   try {
     return JSON.parse(window.localStorage.getItem(storageKey) || "null") as Record<string, unknown> | null;

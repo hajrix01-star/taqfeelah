@@ -70,7 +70,7 @@ function openAttachmentDatabase(): Promise<IDBDatabase> {
 }
 
 export async function storeAttachmentPayload(attachment: StoredAttachmentPayload): Promise<void> {
-  if (!isBrowserPersistentStorageAllowed({ scope: "attachments-fallback" })) return;
+  if (!isBrowserPersistentStorageAllowed({ scope: "local-attachment-cache" })) return;
   if (!attachment?.id || !attachment?.dataUrl) return;
   const database = await openAttachmentDatabase();
   await new Promise<void>((resolve, reject) => {
@@ -83,7 +83,7 @@ export async function storeAttachmentPayload(attachment: StoredAttachmentPayload
 }
 
 export async function deleteAttachmentPayload(attachmentId: string): Promise<void> {
-  if (!isBrowserPersistentStorageAllowed({ scope: "attachments-fallback" })) return;
+  if (!isBrowserPersistentStorageAllowed({ scope: "local-attachment-cache" })) return;
   if (!attachmentId) return;
   const database = await openAttachmentDatabase();
   await new Promise<void>((resolve, reject) => {
@@ -96,7 +96,7 @@ export async function deleteAttachmentPayload(attachmentId: string): Promise<voi
 }
 
 export async function readAttachmentPayload(attachmentId: string): Promise<string | null> {
-  if (!isBrowserPersistentStorageAllowed({ scope: "attachments-fallback" })) return null;
+  if (!isBrowserPersistentStorageAllowed({ scope: "local-attachment-cache" })) return null;
   if (!attachmentId) return null;
   try {
     const database = await openAttachmentDatabase();

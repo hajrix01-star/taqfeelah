@@ -17,6 +17,7 @@ import { AdminCard } from "@/features/saas-admin/components/AdminCard";
 import "@/features/saas-admin/components/admin-theme.css";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import { MIN_PASSWORD_LENGTH } from "@/core/auth/password-policy";
+import { PasswordVisibilityInput } from "@/features/auth/client/PasswordVisibilityInput";
 
 function ResetPasswordForm({ token }: { token: string }) {
   const { locale, t, dir } = useSaasAdminLocale();
@@ -96,28 +97,32 @@ function ResetPasswordForm({ token }: { token: string }) {
             <form onSubmit={(event) => { void handleSubmit(event); }} className="mt-6 space-y-4">
               <label className="block space-y-1 text-sm">
                 <span className="text-[var(--admin-muted)]">{t.auth.password}</span>
-                <input
+                <PasswordVisibilityInput
                   required
-                  type="password"
                   minLength={MIN_PASSWORD_LENGTH}
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
                   className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
                   dir="ltr"
                   autoComplete="new-password"
+                  showLabel={locale === "ar" ? "إظهار كلمة المرور" : "Show password"}
+                  hideLabel={locale === "ar" ? "إخفاء كلمة المرور" : "Hide password"}
+                  toggleClassName="right-2 text-[var(--admin-muted)]"
                 />
               </label>
               <label className="block space-y-1 text-sm">
                 <span className="text-[var(--admin-muted)]">{t.auth.confirmPassword}</span>
-                <input
+                <PasswordVisibilityInput
                   required
-                  type="password"
                   minLength={MIN_PASSWORD_LENGTH}
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   className="w-full rounded-lg border border-[var(--admin-border)] px-3 py-2"
                   dir="ltr"
                   autoComplete="new-password"
+                  showLabel={locale === "ar" ? "إظهار كلمة المرور" : "Show password"}
+                  hideLabel={locale === "ar" ? "إخفاء كلمة المرور" : "Hide password"}
+                  toggleClassName="right-2 text-[var(--admin-muted)]"
                 />
               </label>
               <button

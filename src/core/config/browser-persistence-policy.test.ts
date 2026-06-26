@@ -28,7 +28,7 @@ describe("browser persistence policy", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "local");
     vi.stubEnv("NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE", "true");
 
-    expect(isBrowserPersistentStorageAllowed({ scope: "legacy-settings" })).toBe(false);
-    expect(browserPersistenceBlockedReason({ scope: "legacy-settings" })).toBe("disabled-by-env");
+    expect(isBrowserPersistentStorageAllowed({ scope: "local-settings-migration" })).toBe(false);
+    expect(browserPersistenceBlockedReason({ scope: "local-settings-migration" })).toBe("disabled-by-env");
   });
 });

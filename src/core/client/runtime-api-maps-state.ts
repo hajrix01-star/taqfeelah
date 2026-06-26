@@ -46,29 +46,14 @@ export function getRuntimeApiMaps(): RuntimeApiMaps {
   return cachedMaps;
 }
 
-/** @deprecated Use getRuntimeApiMaps — kept for existing imports. */
-export function getCloseoutApiMaps(): RuntimeApiMaps {
-  return getRuntimeApiMaps();
-}
-
 export function hasRuntimeApiActorMapping(actorUserId: string): boolean {
   const { userIdMap } = getRuntimeApiMaps();
   return Boolean(mapToUuid(actorUserId, userIdMap));
 }
 
-/** @deprecated Use hasRuntimeApiActorMapping */
-export function hasCloseoutApiActorMapping(actorUserId: string): boolean {
-  return hasRuntimeApiActorMapping(actorUserId);
-}
-
 export function hasRuntimeApiStoreMapping(storeId: string): boolean {
   const { storeIdMap } = getRuntimeApiMaps();
   return Boolean(mapToUuid(storeId, storeIdMap));
-}
-
-/** @deprecated Use hasRuntimeApiStoreMapping */
-export function hasCloseoutApiStoreMapping(storeId: string): boolean {
-  return hasRuntimeApiStoreMapping(storeId);
 }
 
 export function mapOrganizationId(organizationId: string): string {

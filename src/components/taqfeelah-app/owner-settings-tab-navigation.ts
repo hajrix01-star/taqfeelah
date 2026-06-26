@@ -28,7 +28,7 @@ export function sectionFromSettingsTabs(mainTab: string) {
   return "stores-team";
 }
 
-/** @deprecated Org sub-tabs removed — kept for legacy store panel aliases only */
+/** Normalizes older persisted section values into the current settings layout. */
 export function resolveSettingsOrgSubTab(section: string) {
   if (section === "team") return "team";
   return "stores";

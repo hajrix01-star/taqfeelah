@@ -1,19 +1,25 @@
 #!/usr/bin/env node
 /**
- * Reset production owner login credentials.
+ * Rotate owner login credentials in auth_identities.
  *
- * 1) Writes AUTH_OWNER_USERNAME/PASSWORD into the latest runtime settings row.
- * 2) Inserts a fresh runtime_settings_saved row so it becomes the active source.
+ * This recovery script never writes plaintext passwords to runtime settings or
+ * audit metadata. It requires explicit credentials and a confirmation flag.
  *
- * Usage on VPS (uses the SAME DATABASE_URL as the running app):
+ * Usage on VPS:
  *   cd /opt/taqfeelah
  *   set -a && source .env.production && set +a
- *   AUTH_OWNER_USERNAME=hajri AUTH_OWNER_PASSWORD=123 node scripts/reset-owner-auth.mjs
+ *   AUTH_OWNER_RESET_CONFIRM=rotate-owner-auth \
+ *   AUTH_OWNER_USER_ID=<owner-user-uuid> \
+ *   AUTH_OWNER_USERNAME=<new-login> \
+ *   AUTH_OWNER_PASSWORD=<new-password> \
+ *   node scripts/reset-owner-auth.mjs
  *   pm2 restart taqfeelah-app
  */
 
 import process from "node:process";
 import { Client } from "pg";
+import { hashPassword } from "./lib/password-hash.mjs";
+import { assertOwnerCredentialResetEnv } from "./lib/auth-seed-policy.mjs";
 
 function valueFromEnv(name, fallback = "") {
   const value = process.env[name];
@@ -28,91 +34,71 @@ function databaseHost(databaseUrl) {
   }
 }
 
-const organizationId = valueFromEnv(
-  "AUTH_ORGANIZATION_ID",
-  valueFromEnv("NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID", "8f63cf87-f2e2-4e2a-a20e-8f637f0a9e1"),
-);
-const ownerUserId = valueFromEnv(
-  "AUTH_OWNER_USER_ID",
-  valueFromEnv("NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID", "e8f3e35b-6051-4da3-8b10-979700c2f00f"),
-);
-const ownerUsername = valueFromEnv("AUTH_OWNER_USERNAME", "hajri").toLowerCase();
-const ownerPassword = valueFromEnv("AUTH_OWNER_PASSWORD", "123");
-
 async function main() {
   const databaseUrl = valueFromEnv("DATABASE_URL");
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is required. Run: set -a && source .env.production && set +a");
   }
-  if (!ownerUsername || !ownerPassword) {
-    throw new Error("AUTH_OWNER_USERNAME and AUTH_OWNER_PASSWORD are required.");
-  }
+  assertOwnerCredentialResetEnv();
+
+  const ownerUserId = valueFromEnv("SEED_OWNER_USER_ID", valueFromEnv("AUTH_OWNER_USER_ID"));
+  const ownerUsername = valueFromEnv("AUTH_OWNER_USERNAME").toLowerCase();
+  const ownerPassword = valueFromEnv("AUTH_OWNER_PASSWORD");
+  const ownerLoginPhone = valueFromEnv("AUTH_OWNER_LOGIN_PHONE") || null;
+  const passwordHash = await hashPassword(ownerPassword);
 
   console.log("Connecting to database host:", databaseHost(databaseUrl));
-  console.log("Organization:", organizationId);
+  console.log("Owner user:", ownerUserId);
 
   const client = new Client({ connectionString: databaseUrl });
   await client.connect();
   try {
-    const current = await client.query(
+    await client.query("begin");
+    const existing = await client.query(
       `
-      select id, created_at, metadata
-      from audit_events
-      where organization_id = $1
-        and action = 'runtime_settings_saved'
-      order by created_at desc
+      select id, username
+      from auth_identities
+      where user_id = $1 and provider = 'username_password'
       limit 1
       `,
-      [organizationId],
+      [ownerUserId],
     );
 
-    if (current.rowCount === 0) {
-      throw new Error("No runtime_settings_saved row found. Run scripts/seed-closeouts-foundation.mjs first.");
+    if (existing.rowCount > 0) {
+      await client.query(
+        `
+        update auth_identities
+        set username = $2,
+            password_hash = $3,
+            login_phone = coalesce($4, login_phone),
+            phone_number = coalesce($4, phone_number),
+            must_change_password = false,
+            status = 'active',
+            updated_at = now()
+        where id = $1
+        `,
+        [existing.rows[0].id, ownerUsername, passwordHash, ownerLoginPhone],
+      );
+      console.log(`Updated owner identity for user ${ownerUserId} (username=${ownerUsername}).`);
+    } else {
+      await client.query(
+        `
+        insert into auth_identities (
+          user_id, provider, username, password_hash, login_phone, phone_number,
+          must_change_password, status
+        )
+        values ($1, 'username_password', $2, $3, $4, $4, false, 'active')
+        `,
+        [ownerUserId, ownerUsername, passwordHash, ownerLoginPhone],
+      );
+      console.log(`Created owner identity for user ${ownerUserId} (username=${ownerUsername}).`);
     }
 
-    const row = current.rows[0];
-    const envelope = row.metadata && typeof row.metadata === "object" ? row.metadata : {};
-    const settings = envelope.settings && typeof envelope.settings === "object" ? { ...envelope.settings } : {};
-    const previousAuth = settings.authConfig && typeof settings.authConfig === "object" ? settings.authConfig : {};
-
-    console.log("Previous ownerUsername:", previousAuth.ownerUsername || "<none>");
-    console.log("Previous ownerPassword:", previousAuth.ownerPassword ? "<set>" : "<none>");
-
-    const nextSettings = {
-      ...settings,
-      authConfig: {
-        ...previousAuth,
-        ownerUsername,
-        ownerPassword,
-      },
-    };
-
-    await client.query(
-      `
-      insert into audit_events (
-        organization_id,
-        store_id,
-        entry_id,
-        actor_user_id,
-        action,
-        reason,
-        metadata
-      )
-      values ($1, null, null, $2, 'runtime_settings_saved', 'reset_owner_auth', $3::jsonb)
-      `,
-      [organizationId, ownerUserId, JSON.stringify({ settings: nextSettings, schemaVersion: 1 })],
-    );
-
-    console.log("Inserted new runtime settings row with owner auth reset.");
-    console.log("New ownerUsername:", ownerUsername);
-    console.log("New ownerPassword: <set>");
-    console.log("");
-    console.log("Next steps on VPS:");
-    console.log("1) Ensure /opt/taqfeelah/.env.production contains:");
-    console.log(`   AUTH_OWNER_USERNAME=${ownerUsername}`);
-    console.log(`   AUTH_OWNER_PASSWORD=${ownerPassword}`);
-    console.log("2) Restart app: pm2 restart taqfeelah-app");
-    console.log("3) Login at https://www.taqfeelah.com");
+    await client.query("commit");
+    console.log("Owner credential rotation completed. Restart the app to clear any stale runtime state.");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
   } finally {
     await client.end();
   }
