@@ -224,7 +224,7 @@ export default function AttachmentLightbox({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[260] bg-black/75"
+        className="taq-fixed-app-panel fixed inset-y-0 z-[260] bg-black/75"
         onClick={onClose}
       >
         <motion.div
