@@ -5,7 +5,7 @@
  *
  * Uses a staging directory so tar does not fail when build outputs change during read.
  */
-import { cpSync, existsSync, mkdtempSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, relative, sep } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -14,6 +14,36 @@ const outputName = process.argv[2] || "taqfeelah-production-artifact.tar.gz";
 
 if (!existsSync(".next/BUILD_ID")) {
   console.error("Missing .next/BUILD_ID — run pnpm build before packaging.");
+  process.exit(1);
+}
+
+function readBuildMetadata() {
+  try {
+    const raw = readFileSync(".next/required-server-files.json", "utf8");
+    const parsed = JSON.parse(raw);
+    return parsed?.config?.env || {};
+  } catch {
+    return {};
+  }
+}
+
+function currentGitHead() {
+  return spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).stdout.trim();
+}
+
+const expectedBuild = process.env.RELEASE_BUILD?.trim()
+  || process.env.NEXT_PUBLIC_RELEASE_BUILD?.trim()
+  || currentGitHead();
+const builtEnv = readBuildMetadata();
+const builtBuild = String(builtEnv.RELEASE_BUILD || builtEnv.NEXT_PUBLIC_RELEASE_BUILD || "").trim();
+
+if (!expectedBuild || !builtBuild || builtBuild !== expectedBuild) {
+  console.error([
+    "Refusing to package a stale Next.js build.",
+    `Expected RELEASE_BUILD: ${expectedBuild || "(missing)"}`,
+    `Built RELEASE_BUILD: ${builtBuild || "(missing)"}`,
+    "Re-run the production build after the final commit with RELEASE_BUILD set to git HEAD.",
+  ].join("\n"));
   process.exit(1);
 }
 
