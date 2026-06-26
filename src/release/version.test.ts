@@ -26,4 +26,16 @@ describe("getReleaseMeta", () => {
       build: "commit123",
     });
   });
+
+  it("keeps explicit runtime labels with spaces", () => {
+    process.env.RELEASE_VERSION = "2.0.0";
+    process.env.RELEASE_LABEL = "نسخة مرحلة 4";
+    process.env.RELEASE_BUILD = "commit456";
+
+    expect(getReleaseMeta()).toEqual({
+      version: "2.0.0",
+      label: "نسخة مرحلة 4",
+      build: "commit456",
+    });
+  });
 });

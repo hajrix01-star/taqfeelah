@@ -5,15 +5,20 @@ export type ReleaseMeta = {
 };
 
 function readReleaseVersion(): string {
-  return process.env.RELEASE_VERSION || process.env.NEXT_PUBLIC_RELEASE_VERSION || "0.0.0";
+  return readRuntimeEnv("RELEASE_VERSION") || readRuntimeEnv("NEXT_PUBLIC_RELEASE_VERSION") || "0.0.0";
 }
 
 function readReleaseLabel(): string {
-  return process.env.RELEASE_LABEL || process.env.NEXT_PUBLIC_RELEASE_LABEL || "V0";
+  return readRuntimeEnv("RELEASE_LABEL") || readRuntimeEnv("NEXT_PUBLIC_RELEASE_LABEL") || "V0";
 }
 
 function readReleaseBuild(): string {
-  return process.env.RELEASE_BUILD || process.env.NEXT_PUBLIC_RELEASE_BUILD || "dev";
+  return readRuntimeEnv("RELEASE_BUILD") || readRuntimeEnv("NEXT_PUBLIC_RELEASE_BUILD") || "dev";
+}
+
+function readRuntimeEnv(name: string): string {
+  const value = process.env[name];
+  return typeof value === "string" ? value : "";
 }
 
 export function releaseLabelFromVersion(version: string): string {
