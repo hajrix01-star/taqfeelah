@@ -15,6 +15,13 @@ describe("getReleaseMeta", () => {
     process.env = { ...previous };
   });
 
+  it("defaults to the current package release version", () => {
+    delete process.env.RELEASE_VERSION;
+    delete process.env.NEXT_PUBLIC_RELEASE_VERSION;
+
+    expect(getReleaseMeta().version).toBe("2.0.0");
+  });
+
   it("reads unified release env values", () => {
     process.env.RELEASE_VERSION = "1.0.0";
     process.env.RELEASE_LABEL = "V1";

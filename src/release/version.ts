@@ -5,7 +5,7 @@ export type ReleaseMeta = {
 };
 
 function readReleaseVersion(): string {
-  return readRuntimeEnv("RELEASE_VERSION") || readRuntimeEnv("NEXT_PUBLIC_RELEASE_VERSION") || "0.0.0";
+  return readRuntimeEnv("RELEASE_VERSION") || readRuntimeEnv("NEXT_PUBLIC_RELEASE_VERSION") || "2.0.0";
 }
 
 function readReleaseLabel(): string {
