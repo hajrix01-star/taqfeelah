@@ -28,7 +28,7 @@ export function AppFontStyles() {
       .taq-shell { width: 100% !important; max-width: none !important; min-height: 100dvh !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; }
       .taq-screen { height: 100dvh !important; max-height: 100dvh !important; min-height: 100dvh !important; display: grid !important; grid-template-rows: auto 1fr auto !important; overflow: hidden !important; }
       .taq-scroll { min-height: 0 !important; -webkit-overflow-scrolling: touch; }
-      .taq-topbar { padding-inline: var(--taq-page-gutter) !important; }
+      .taq-topbar { width: 100% !important; padding-inline: var(--taq-page-gutter) !important; }
       .taq-owner-nav { position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; transform: none !important; width: 100% !important; max-width: none !important; border-radius: 0 !important; box-shadow: none !important; }
       .taq-notebook-surface .taq-notebook-content {
         box-sizing: border-box;
