@@ -220,7 +220,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       location: draftStoreLocation,
     });
 
-    if (isOrgConfigApiEnabled() && orgConfigApiContext?.enabled) {
+    if (isOrgConfigApiEnabled()) {
       if (!canFlushOrgConfig()) {
         setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
         return;
@@ -262,7 +262,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       draftStoreChannelConfig,
     );
 
-    if (isOrgConfigApiEnabled() && orgConfigApiContext?.enabled) {
+    if (isOrgConfigApiEnabled()) {
       if (!canFlushOrgConfig()) {
         setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
         return;
@@ -302,7 +302,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       draftStoreOperationalConfig,
     );
 
-    if (isOrgConfigApiEnabled() && orgConfigApiContext?.enabled) {
+    if (isOrgConfigApiEnabled()) {
       if (!canFlushOrgConfig()) {
         setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
         return;
@@ -405,8 +405,8 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     const location = newStoreLocation.trim();
     if (!name) return;
 
-    if (isOrgConfigApiEnabled() && orgConfigApiContext?.enabled) {
-      if (!orgConfigApiContext.hydrated || orgConfigApiContext.loading) {
+    if (isOrgConfigApiEnabled()) {
+      if (!orgConfigApiContext?.enabled || !orgConfigApiContext.hydrated || orgConfigApiContext.loading) {
         setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
         return;
       }
@@ -428,6 +428,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
         setters.setNewStoreLocation("");
         setters.setShowAddStore(false);
         showSettingsSaved();
+        return;
       } catch (failure) {
         setters.setSettingsNotice(
           failure instanceof Error ? failure.message : (lang === "ar" ? "تعذر إضافة المحل." : "Failed to add store."),
@@ -484,8 +485,13 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     });
     const persistPins = employeePinsOverride ?? nextPins;
 
-    if (isOrgConfigApiEnabled() && typeof orgConfigApiContext?.flushPersist === "function") {
-      if (!orgConfigApiContext.hydrated || orgConfigApiContext.loading) {
+    if (isOrgConfigApiEnabled()) {
+      if (
+        !orgConfigApiContext?.enabled
+        || typeof orgConfigApiContext.flushPersist !== "function"
+        || !orgConfigApiContext.hydrated
+        || orgConfigApiContext.loading
+      ) {
         setters.setSettingsNotice(resolveOrgConfigNotReadyMessage());
         return false;
       }
@@ -508,13 +514,13 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
           }));
         }
         showSettingsSaved();
+        return true;
       } catch (failure) {
         setters.setSettingsNotice(resolveTeamSaveFailureMessage(failure, lang));
         return false;
       } finally {
         setters.setTeamSaving(false);
       }
-      return true;
     }
 
     setters.setStaff(nextStaff);

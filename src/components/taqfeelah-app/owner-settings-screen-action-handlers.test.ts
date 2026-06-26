@@ -229,4 +229,102 @@ describe("owner settings screen action handlers", () => {
     expect(ctx.setters.setDraftStoreChannelConfig).toHaveBeenCalledWith(null);
     expect(ctx.showSettingsSaved).toHaveBeenCalled();
   });
+
+  it("does not create a local-only store while org config API is still loading", async () => {
+    process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED = "true";
+    const ctx = buildHandlerContext({
+      newStoreName: "فرع جديد",
+      newStoreLocation: "الرياض",
+      orgConfigApiContext: null,
+    });
+
+    const { addStore } = createOwnerSettingsScreenHandlers(ctx);
+    await addStore();
+
+    expect(ctx.setters.setConfiguredBusinesses).not.toHaveBeenCalled();
+    expect(ctx.setters.setNewStoreName).not.toHaveBeenCalled();
+    expect(ctx.setters.setShowAddStore).not.toHaveBeenCalled();
+    expect(ctx.showSettingsSaved).not.toHaveBeenCalled();
+    expect(ctx.setters.setSettingsNotice).toHaveBeenCalledWith(expect.any(String));
+  });
+
+  it("does not save store profile locally while org config API is still loading", async () => {
+    process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED = "true";
+    const ctx = buildHandlerContext({
+      settingsStoreId: "store-1",
+      draftStoreName: "فرع محدث",
+      draftStoreLocation: "جدة",
+      configuredBusinesses: [{ id: "store-1", nameAr: "قديم", locationAr: "" }],
+      orgConfigApiContext: null,
+    });
+
+    const { saveStoreProfile } = createOwnerSettingsScreenHandlers(ctx);
+    await saveStoreProfile();
+
+    expect(ctx.setters.setConfiguredBusinesses).not.toHaveBeenCalled();
+    expect(ctx.showSettingsSaved).not.toHaveBeenCalled();
+    expect(ctx.setters.setSettingsNotice).toHaveBeenCalledWith(expect.any(String));
+  });
+
+  it("does not save channel settings locally while org config API is still loading", async () => {
+    process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED = "true";
+    const ctx = buildHandlerContext({
+      settingsStoreId: "store-1",
+      draftStoreChannelConfig: {
+        channels: [{ id: "cash", legacyId: "cash", retired: false }],
+        activeIds: ["cash"],
+      },
+      orgConfigApiContext: null,
+    });
+
+    const { saveChannelSettings } = createOwnerSettingsScreenHandlers(ctx);
+    await saveChannelSettings();
+
+    expect(ctx.setters.setStoreChannelSettings).not.toHaveBeenCalled();
+    expect(ctx.showSettingsSaved).not.toHaveBeenCalled();
+    expect(ctx.setters.setSettingsNotice).toHaveBeenCalledWith(expect.any(String));
+  });
+
+  it("does not save operational settings locally while org config API is still loading", async () => {
+    process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED = "true";
+    const ctx = buildHandlerContext({
+      settingsStoreId: "store-1",
+      draftStoreOperationalConfig: {
+        activeCategories: ["sales"],
+        closeoutAlert: true,
+      },
+      orgConfigApiContext: null,
+    });
+
+    const { saveOperationalSettings } = createOwnerSettingsScreenHandlers(ctx);
+    await saveOperationalSettings();
+
+    expect(ctx.setters.setStoreOperationalSettings).not.toHaveBeenCalled();
+    expect(ctx.showSettingsSaved).not.toHaveBeenCalled();
+    expect(ctx.setters.setSettingsNotice).toHaveBeenCalledWith(expect.any(String));
+  });
+
+  it("does not save team changes locally while org config API is still loading", async () => {
+    process.env.NEXT_PUBLIC_ORG_CONFIG_API_ENABLED = "true";
+    const ctx = buildHandlerContext({
+      managingTeam: true,
+      draftStaff: [{
+        id: "member-1",
+        memberId: "member-1",
+        nameAr: "أحمد",
+        active: true,
+        removed: false,
+        storeIds: ["store-1"],
+      }],
+      orgConfigApiContext: null,
+    });
+
+    const { saveManagingTeam } = createOwnerSettingsScreenHandlers(ctx);
+    await saveManagingTeam();
+
+    expect(ctx.setters.setStaff).not.toHaveBeenCalled();
+    expect(ctx.setters.setAuthEmployeePins).not.toHaveBeenCalled();
+    expect(ctx.showSettingsSaved).not.toHaveBeenCalled();
+    expect(ctx.setters.setSettingsNotice).toHaveBeenCalledWith(expect.any(String));
+  });
 });
