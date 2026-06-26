@@ -7,7 +7,7 @@ import {
   TaqfeelahAppOrgLoadingGate,
 } from "./taqfeelah-app-auth-gates";
 
-const mojibakePattern = /ط¬|طھ|ط¨|ط§|ظٹ|ظ„|â|€/;
+const mojibakePattern = /\u0637\u00ac|\u0637\u062b|\u0637\u00a8|\u0637\u00a7|\u0638\u0679|\u0638\u201e|\u00e2|\u20ac/;
 
 describe("taqfeelah app auth gates", () => {
   it("renders Arabic organization loading copy without mojibake", () => {
@@ -26,4 +26,3 @@ describe("taqfeelah app auth gates", () => {
     expect(html).not.toMatch(mojibakePattern);
   });
 });
-
