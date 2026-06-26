@@ -2,7 +2,7 @@
 /**
  * Wipe ALL experimental tenant/customer data before first live launch.
  *
- * Does NOT re-seed demo data. Keeps plan_catalog (system plans from migrations).
+ * Does NOT re-seed tenant data. Keeps plan_catalog (system plans from migrations).
  *
  * Usage:
  *   node scripts/prelaunch-wipe-all-tenant-data.mjs              # dry-run

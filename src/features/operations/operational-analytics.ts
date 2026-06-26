@@ -1,4 +1,4 @@
-/** Pure helpers for operational entry filtering and totals (prototype + tests). */
+/** Pure helpers for operational entry filtering and totals (runtime + tests). */
 
 import { countProofsFromUiEntries } from "@/domain/attachment-stats/stats";
 import {

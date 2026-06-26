@@ -29,15 +29,6 @@ const eslintConfig = [
       }],
     },
   },
-  {
-    files: [
-      "src/components/TaqfeelahPrototypeRuntime.jsx",
-      "src/components/prototype-runtime/OwnerSettingsSection.jsx",
-    ],
-    rules: {
-      "no-undef": "error",
-    },
-  },
 ];
 
 export default eslintConfig;

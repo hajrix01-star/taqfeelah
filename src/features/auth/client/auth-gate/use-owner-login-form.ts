@@ -1,10 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { getEnabledOwnerLoginMethods, isOwnerLoginMethodEnabled } from "@/core/auth/owner-login-methods";
 import { loginOwnerViaSessionBridge } from "@/features/auth/client/session-bridge";
 import type { AuthLang, OwnerLoginCallback } from "@/features/auth/client/auth-client-types";
-import { text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-catalog-data";
 import {
   APP_IN_PRODUCTION_MODE,
   LOCAL_DEV_OTP,

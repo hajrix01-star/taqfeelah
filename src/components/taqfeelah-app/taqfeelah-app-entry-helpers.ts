@@ -1,4 +1,4 @@
-﻿import {
+import {
   filterSummaryChannelRows,
   summarySalesChannelLabel as buildSummarySalesChannelLabel,
 } from "@/features/entries/client/register-operation-display";
@@ -14,7 +14,7 @@ import {
   channels,
   expenseCategories,
   text,
-} from "./taqfeelah-app-reference-data";
+} from "./taqfeelah-app-catalog-data";
 import type { OperationalEntry, AppChannel, AppLang } from "./taqfeelah-app-types";
 
 const noteLabel = (entry: OperationalEntry, lang: AppLang) => {

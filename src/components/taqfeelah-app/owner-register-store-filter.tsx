@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
-import { businesses, businessLocation, businessName, text } from "./taqfeelah-app-reference-data";
+import { businesses, businessLocation, businessName, text } from "./taqfeelah-app-catalog-data";
 import { NotebookRow } from "./taqfeelah-app-notebook";
 import type { DisplayLang, AppBusiness } from "./taqfeelah-app-types";
 

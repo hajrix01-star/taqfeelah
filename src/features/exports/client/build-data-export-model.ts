@@ -15,7 +15,7 @@ import {
   businessName,
   text,
   outflowReportCategories,
-} from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
+} from "@/components/taqfeelah-app/taqfeelah-app-catalog-data";
 import {
   entryCategory,
   entryDateMatches,

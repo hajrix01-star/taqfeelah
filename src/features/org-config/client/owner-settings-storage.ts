@@ -1,6 +1,6 @@
 ﻿import { readLocalStorageJson } from "@/core/client/safe-local-storage";
 
-export const LAST_CLOSEOUT_STORAGE_KEY = "taqfeelah_last_closeout_dates_v4_month_demo";
+export const LAST_CLOSEOUT_STORAGE_KEY = "taqfeelah_last_closeout_dates_v5_local";
 
 export function readLocalLastCloseoutDates(skipLocalDefaults = false) {
   if (skipLocalDefaults) return {};

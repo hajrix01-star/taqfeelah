@@ -19,7 +19,7 @@ import { resolveEmployeeStoreName } from "./store-name-resolver";
 import { countSentCloseoutsByDate } from "../closeouts/client/closeout-day-label";
 import { isEmployeeCloseoutsListPending } from "./employee-closeouts-loading";
 import { resolveEmployeeCloseoutsViewGate } from "./employee-closeouts-view-gate";
-import { text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-catalog-data";
 import { appAlert, appConfirm } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import { triggerSubmitSuccessHaptic } from "./submit-success-haptic";
 import type { DailyCloseoutRecord } from "../daily-closeouts/daily-closeouts-types";

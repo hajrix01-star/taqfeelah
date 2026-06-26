@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 import NotebookScrollSurface from "@/features/daily-closeouts/NotebookScrollSurface";
 import { notebookCardBackground } from "@/features/daily-closeouts/notebook-themes";
 import { useOwnerNotebookNotes } from "@/features/owner-notebook/client/use-owner-notebook-notes";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import { NotebookHeading } from "./taqfeelah-app-notebook";
 import { OwnerNotebookShareModal } from "./taqfeelah-app-owner-notebook-share-modal";
 import {

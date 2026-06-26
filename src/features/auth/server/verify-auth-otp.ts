@@ -14,5 +14,5 @@ export async function verifyAuthOtp(rawInput: z.infer<typeof inputSchema>) {
     throw new ValidationError("Invalid OTP verify input.", parsed.error.flatten());
   }
 
-  throw new UnauthorizedError("OTP verification is not configured yet. Use password login during prototype period.");
+  throw new UnauthorizedError("OTP verification is not configured yet. Use password login.");
 }

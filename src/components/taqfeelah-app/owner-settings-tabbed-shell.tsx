@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { UserRound } from "lucide-react";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import { OwnerPlanChip } from "@/features/billing/client/OwnerPlanChip";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import { SettingsLink } from "./owner-settings-ui-primitives";
 import { renderOwnerSettingsSection } from "./owner-settings-section-views";
 import {

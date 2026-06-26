@@ -329,7 +329,6 @@ const copy = {
     closeoutInAppHint: "سجّلها من الموظف — افتح السجل",
     openCloseoutInRegister: "عرض في السجل",
     dismissAlert: "تجاهل",
-    dailyCloseoutAlertPrototype: "تنبيه داخل التطبيق للمالك عند إرسال الموظف للتقفيلة",
     helpCenterTitle: "مركز المساعدة",
     appBuildLabel: "نسخة التطبيق",
     helpCenterBody: "تطبيق تقفيلة يغطي: تقفيلة يومية، خارج، سجل، تقارير، ومشاركة الدفتر. للدعم استخدم واتساب من الإعدادات.",
@@ -590,8 +589,6 @@ const copy = {
     mobileFirstBadge: "مصمم للجوال أولًا",
     desktopOwnerLater: "لوحة المالك على الكمبيوتر ضمن التطوير اللاحق",
     closeLogin: "إغلاق الدخول",
-    desktopDemoStore: "مطعم النجاح",
-    desktopDemoLocation: "الفرع الرئيسي",
   },
   en: {
     appName: "Taqfeelah",
@@ -923,7 +920,6 @@ const copy = {
     closeoutInAppHint: "Submitted by staff — open the log",
     openCloseoutInRegister: "View in log",
     dismissAlert: "Dismiss",
-    dailyCloseoutAlertPrototype: "In-app owner alert when staff submit the daily summary",
     helpCenterTitle: "Help center",
     appBuildLabel: "App build",
     helpCenterBody: "Taqfeelah covers daily closeout, outflow, log, reports, and notebook sharing. Use WhatsApp in settings for support.",
@@ -1184,8 +1180,6 @@ const copy = {
     mobileFirstBadge: "Mobile-first",
     desktopOwnerLater: "Owner desktop dashboard is planned for later development",
     closeLogin: "Close sign in",
-    desktopDemoStore: "Al Najah Restaurant",
-    desktopDemoLocation: "Main branch",
   },
 };
 

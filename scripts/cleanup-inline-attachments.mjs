@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Delete prototype inline attachments (experimental image bytes embedded in storage_key).
+ * Delete legacy inline attachments (experimental image bytes embedded in storage_key).
  * Dry-run by default. Pass --apply to delete rows permanently.
  *
  * Targets:

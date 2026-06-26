@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildNotebookShareModel } from "./build-notebook-share-model";
-import { businesses } from "./taqfeelah-app-reference-data";
+import { businesses } from "./taqfeelah-app-catalog-data";
 
 const emptyApi = {
   apiEntries: null,

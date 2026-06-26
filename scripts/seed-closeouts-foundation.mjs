@@ -16,8 +16,8 @@ import { Client } from "pg";
 const INCOME_SOURCE_CATALOG = JSON.parse(
   readFileSync(new URL("../src/core/client/income-source-catalog-data.json", import.meta.url), "utf8"),
 );
-const DEMO_STAFF_CATALOG = JSON.parse(
-  readFileSync(new URL("../src/core/client/demo-staff-catalog-data.json", import.meta.url), "utf8"),
+const FOUNDATION_STAFF_CATALOG = JSON.parse(
+  readFileSync(new URL("../src/core/client/foundation-staff-catalog-data.json", import.meta.url), "utf8"),
 );
 
 function valueFromEnv(name, fallback = "") {
@@ -32,7 +32,7 @@ const DEFAULTS = {
   storeName: "مشويات المعلم الشامي",
   ownerUserId: "e8f3e35b-6051-4da3-8b10-979700c2f00f",
   ownerName: "Owner",
-  staff: DEMO_STAFF_CATALOG,
+  staff: FOUNDATION_STAFF_CATALOG,
   salesChannels: INCOME_SOURCE_CATALOG.map((entry) => ({
     legacyId: entry.legacyId,
     id: entry.uuid,

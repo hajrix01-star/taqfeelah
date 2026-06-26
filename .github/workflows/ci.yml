@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Clean surface guard
+        run: pnpm check:clean-surface
+
       - name: Lint
         run: pnpm lint
 

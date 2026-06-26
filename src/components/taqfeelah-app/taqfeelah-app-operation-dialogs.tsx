@@ -18,7 +18,7 @@ import {
   opDate,
   opTime,
   auditDateTime,
-} from "./taqfeelah-app-reference-data";
+} from "./taqfeelah-app-catalog-data";
 import {
   noteLabel,
   operationDisplayLabel,

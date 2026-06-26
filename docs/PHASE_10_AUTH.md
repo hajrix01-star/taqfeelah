@@ -1,38 +1,42 @@
-# Phase 10 — Auth foundations
+# Phase 10 — Auth Foundations
 
-> **الحالة (2026-06-12):** مفعّل — مسار الدخول الوحيد على `/app` هو auth حقيقي.
-> **ما قبل الإطلاق:** `docs/PRELAUNCH_CLEANUP.md` — لا وضع تجريبي.
+> آخر تحديث: 2026-06-26
 
-## Flags (production)
+المصادقة الحقيقية هي مسار الدخول الوحيد إلى `/app` في الإنتاج.
+
+## Production Flags
 
 | Flag | Production | Purpose |
-|------|------------|---------|
-| `NEXT_PUBLIC_AUTH_API_ENABLED` | `true` | Real auth UI + `/api/v1/auth/session` |
-| `AUTH_DB_CREDENTIALS_ENABLED` | `true` | Login reads `auth_identities` |
-| `ALLOW_HEADER_AUTH_CONTEXT` | `false` | Session cookies only |
+|---|---:|---|
+| `NEXT_PUBLIC_AUTH_API_ENABLED` | `true` | تفعيل واجهات auth |
+| `AUTH_DB_CREDENTIALS_ENABLED` | `true` | قراءة بيانات الدخول من `auth_identities` |
+| `ALLOW_HEADER_AUTH_CONTEXT` | `false` | منع تجاوز الجلسة بالهيدرز |
+| `AUTH_SESSION_SECRET` | مطلوب | توقيع الجلسات |
 
-> **Removed:** `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` — prototype role picker and its runtime flag code were deleted before launch.
+## Production Entry Path
 
-## What was added (foundations)
+1. الحساب ينشأ من SaaS Admin أو مسار signup المعتمد.
+2. المالك يفعّل الحساب أو يضبط كلمة المرور.
+3. المستخدم يدخل من `/app`.
+4. السيرفر ينشئ session cookie.
+5. كل API يشتق `organizationId` و`userId` من الجلسة والعضوية.
 
-- `auth_identities` service: hashed owner password + employee PIN storage (`scrypt`)
-- `POST /api/v1/members` and `PATCH /api/v1/members/:memberId`
-- OTP stubs: `POST /api/v1/auth/otp/request`, `POST /api/v1/auth/otp/verify`
-- `createAuthSession` supports DB credentials when `AUTH_DB_CREDENTIALS_ENABLED=true`
-- Client session helpers: `runtime-session-and-settings-api-client.js`
-- Member credentials via org-config: `org-config-api-client.js`
-- Seed scripts: `pnpm db:seed:auth`, `pnpm db:migrate:auth` (local dev optional)
+## Implemented Foundations
 
-## Production entry path
+- `auth_identities` لتخزين credentials بشكل hash.
+- `POST /api/v1/auth/session`.
+- `POST /api/v1/auth/change-password`.
+- password reset routes.
+- member credentials عبر org-config APIs.
+- employee PIN login.
+- session helpers للواجهة.
 
-1. Account created in SaaS Admin (not demo seed)
-2. Owner completes setup / sets password
-3. `/app` → owner phone/password or employee PIN portal
-4. Session cookie (`taqfeelah_session`) — no header auth bypass
+## Deferred
 
-## Not activated / deferred
+- OTP provider الحقيقي.
+- إرسال invite/setup تلقائي بالبريد أو SMS.
+- مزود بريد production عند تفعيل كل تدفقات الإرسال.
 
-- OTP SMS/email provider (`AUTH_OTP_ENABLED` off)
-- Password reset emails (needs `RESEND_API_KEY` or SMTP — code ready)
-- Automated invite/setup emails (manual WhatsApp/copy link from SaaS admin)
-- `/app` still uses approved taqfeelah app shell (visual baseline frozen)
+## Removed
+
+لا يوجد role picker أو access mode تجريبي في `/app` الإنتاجي. أي توثيق قديم عن ذلك موجود في `docs/archive/` كسجل تاريخي فقط.

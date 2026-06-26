@@ -24,7 +24,7 @@ import {
   money,
   resolveStoreChannelConfig,
   text,
-} from "./taqfeelah-app-reference-data";
+} from "./taqfeelah-app-catalog-data";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import { formatCalendarMonth,
   isoCalendarDate,

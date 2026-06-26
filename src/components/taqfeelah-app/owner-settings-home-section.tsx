@@ -5,7 +5,7 @@ import { Building2, ChevronLeft, ChevronRight, CreditCard, ReceiptText, Smartpho
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import { formatPlanSubscriptionHomeLabel } from "@/features/billing/client/subscription-display";
 import { countEmployeeSeats } from "@/features/billing/client/entitlement-guards";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import { SettingsLink } from "./owner-settings-ui-primitives";
 import type { OwnerSettingsSectionCommonProps, AppBusiness } from "./taqfeelah-app-types";
 import type { StaffMember } from "@/features/org-config/client/org-config-client-types";

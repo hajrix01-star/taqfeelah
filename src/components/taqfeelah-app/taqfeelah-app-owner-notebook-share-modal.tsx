@@ -14,7 +14,7 @@ import {
   ownerNotebookShareFilename,
   shareOwnerNotebookNoteImage,
 } from "@/features/owner-notebook/owner-notebook-share";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import type { OwnerNotebookShareModalProps } from "./taqfeelah-app-types";
 
 function downloadBlobFile(blob: Blob, filename: string) {

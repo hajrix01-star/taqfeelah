@@ -25,7 +25,7 @@ describe("closeouts api mode", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
     expect(isCloseoutsApiStrictMode()).toBe(true);
 
-    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "local");
     expect(isCloseoutsApiStrictMode()).toBe(false);
   });
 });

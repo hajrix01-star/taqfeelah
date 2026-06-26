@@ -1,137 +1,107 @@
 # تقفيلة — المعمارية الحالية
 
-> آخر تحديث: **2026-06-22**
-> الحالة: التطبيق التشغيلي والمصادقة ولوحة SaaS وواجهات البيانات منفذة. هذه الوثيقة تصف الواقع الحالي، لا خطة تأسيس مستقبلية.
+> آخر تحديث: 2026-06-26
 
-## 1. نطاق المنتج
+هذه الوثيقة تصف الوضع الحالي للتطبيق، وليست خطة تاريخية.
 
-تقفيلة تطبيق تشغيل يومي مبسط:
+## المنتج
+
+تقفيلة تطبيق تشغيل يومي:
 
 ```text
 المبيعات - الخارج = صافي الحركة
 ```
 
-ليس نظام محاسبة قانونيًا، ولا ERP أو POS أو نظام مخزون أو فواتير أو ضرائب. القواعد التفصيلية في `docs/CONVENTIONS.md`.
+ليس نظام محاسبة قانوني، ولا ERP، ولا POS، ولا نظام مخزون أو فواتير أو ضرائب.
 
-## 2. النموذج متعدد المنشآت
-
-`Organization` هي وحدة العميل والاشتراك والعزل:
+## النموذج متعدد المنظمات
 
 ```text
 Organization
-  ├── Stores
-  ├── Members and store access
-  ├── Subscription and entitlements
-  ├── Entries and daily closeouts
-  └── Attachments and audit events
+  ├─ Stores
+  ├─ Members
+  ├─ Member store access
+  ├─ Subscriptions
+  ├─ Entries
+  ├─ Daily closeouts
+  └─ Attachments
 ```
 
 المعرفات الرسمية:
 
-| المعرف | المعنى |
+- `organizationId`
+- `storeId`
+- `userId`
+- `salesChannelId`
+
+الخادم يشتق سياق المنظمة من الجلسة والعضوية، ولا يعتمد على body فقط.
+
+## التقنية
+
+| الطبقة | التقنية |
 |---|---|
-| `organizationId` | المنشأة/العميل |
-| `storeId` | المحل داخل المنشأة |
-| `userId` | المستخدم |
-
-لا يُنشأ اسم موازٍ مثل `tenantId`. الخادم يشتق سياق المنشأة من الجلسة والعضوية، ولا يعتمد على جسم الطلب وحده.
-
-## 3. التقنية
-
-| الطبقة | التقنية الحالية |
-|---|---|
-| الواجهة والخادم | Next.js 15 + React 19 + TypeScript |
-| قاعدة البيانات | PostgreSQL |
-| ORM والمهاجرات | Drizzle ORM + drizzle-kit |
-| التحقق | Zod |
-| اختبارات الوحدة | Vitest |
-| اختبارات المتصفح | Playwright |
-| السجل | Pino |
-| المزامنة | SSE مع تحديث احتياطي من العميل |
+| App | Next.js 15 + React 19 + TypeScript |
+| Database | PostgreSQL |
+| ORM | Drizzle ORM + drizzle-kit |
+| Validation | Zod |
+| Tests | Vitest + Playwright |
 | PWA | Serwist |
+| Logging | Pino |
+| Sync | SSE + React Query invalidation |
 
-لا يضاف ORM ثانٍ بجانب Drizzle.
+لا يضاف ORM ثان بجانب Drizzle.
 
-## 4. طبقات المستودع
+## بنية المستودع
 
 ```text
-src/app/          routes + API adapters
-src/components/   current UI composition
-src/features/     product use-cases grouped by feature
-src/domain/       pure business rules and calculations
-src/core/         auth, database, money, config, errors, sync
-src/lib/          shared UI utilities
+src/app/                  routes + API adapters
+src/components/taqfeelah-app/
+src/features/             feature-owned client/server logic
+src/domain/               pure business rules
+src/core/                 auth, db, config, money, errors, sync
+src/lib/                  shared UI utilities
 ```
 
-الاتجاه المفضل:
+الاتجاه المعتمد:
 
 ```text
 route/UI -> feature service -> domain/core -> PostgreSQL
 ```
 
-- `app` يربط الطلب بالخدمة ولا يحتوي قواعد عمل.
-- `features` تملك حالة الاستخدام وواجهات client/server الخاصة بها.
-- `domain/cash-movement` يملك الحسابات التشغيلية المركزية.
-- `core` لا يعتمد على شاشة أو ميزة منتج محددة.
+## المسارات
 
-مجلد `components/taqfeelah-app` يكوّن واجهة `/app` المعتمدة حاليًا بعد إزالة اسم `prototype-runtime` من تركيب التطبيق الحقيقي. الاسم ليس تصريحًا باستخدام بيانات تجريبية في الإنتاج، وأي تفكيك لاحق يجب أن يتم تدريجيًا فقط مع اختبارات تمنع تغيير السلوك.
-
-### تنظيم واجهة إعدادات المالك
-
-واجهة الإعدادات مقسمة حسب المسؤولية، ولا يحتوي ملف التوجيه على تفاصيل الأقسام:
-
-```text
-owner-settings-section-views.tsx
-  ├── owner-settings-home-section.tsx
-  ├── owner-settings-account-section.tsx
-  ├── owner-settings-stores-section.tsx
-  ├── owner-settings-team-section.tsx
-  ├── owner-settings-subscription-section.tsx
-  ├── owner-settings-appearance-section.tsx
-  └── owner-settings-support-section.tsx
-```
-
-`owner-settings-section-frame.tsx` يملك إطار الحركة والمسافات المشترك. اختبار `src/smoke.test.ts` يحمل كل وحدة مباشرة لمنع كسر حدود الاستيراد أثناء التفكيك التدريجي.
-
-### تنظيم واجهتي الرئيسية والسجل
-
-- `taqfeelah-app-owner-home-screen.tsx` ينسق ملخص المالك، بينما `owner-home-day-attachments.tsx` يملك عرض مرفقات اليوم وسياق فتحها ومشاركتها.
-- `taqfeelah-app-owner-register-screen.tsx` ينسق التقرير والسجل، بينما `taqfeelah-app-owner-register-connected.tsx` يربط التقفيلات المحفوظة بإجراءات التعديل والإلغاء المنطقي.
-- مكونات القوائم والفلاتر والمعارض تبقى في ملفات `owner-register-*` المتخصصة، ولا يعاد تنفيذها داخل شاشة السجل.
-- اختبار حدود الوحدات يحمل طبقات العرض والاتصال مباشرة حتى يظهر كسر الاستيراد قبل النشر.
-
-## 5. المسارات الفعلية
-
-| المسار | الوظيفة |
+| المسار | الغرض |
 |---|---|
 | `/` | الموقع العام |
 | `/signup` | طلب إنشاء حساب مالك |
-| `/app` | التطبيق التشغيلي المحمي |
-| `/saas-admin` | إدارة المنصة والعملاء والخطط |
-| `/api/v1/*` | API المصادقة والتشغيل والإدارة والتقارير |
+| `/app` | تطبيق العميل التشغيلي |
+| `/saas-admin` | إدارة المنصة والعملاء |
+| `/api/v1/*` | واجهات المصادقة والتشغيل والإدارة |
 
-العقد التفصيلي في `docs/API_CONTRACT.md`، والتنفيذ الفعلي في `src/app/api/v1`.
+`/app` هو مسار التطبيق التشغيلي الوحيد. لا يوجد route منفصل للتطبيق التجريبي.
 
-## 6. المصادقة والصلاحيات
+## المصادقة والصلاحيات
 
-- جلسة موقعة في cookie آمن هي السياق الأساسي.
-- دخول المالك بالجوال/كلمة المرور، ودخول الموظف بالجوال/PIN.
-- `ALLOW_HEADER_AUTH_CONTEXT` للاختبارات المعزولة فقط ويكون `false` في الإنتاج.
-- الوصول إلى المتجر يتحقق في الخادم من العضوية والدور.
-- تحديد السرعة يستخدم Redis عند ضبط Upstash، أو ذاكرة العملية للنسخة الواحدة.
+- الإنتاج يستخدم جلسة موقعة.
+- دخول المالك بالجوال/كلمة المرور.
+- دخول الموظف بالجوال/PIN.
+- `ALLOW_HEADER_AUTH_CONTEXT=false` في الإنتاج.
+- صلاحية الوصول للمحل تتحقق في السيرفر من العضوية و`member_store_access`.
 
-## 7. مصدر البيانات والمركزية
+## مصدر البيانات
 
 في الإنتاج:
 
 ```text
 UI memory/cache -> validated API -> PostgreSQL
-                                -> local VPS attachment storage
+attachments -> server-managed storage
 ```
 
-PostgreSQL هو المصدر الدائم للعمليات والتقفيلات والإعدادات والصلاحيات والجلسات. التخزين داخل المتصفح لا يُستخدم كمصدر بيانات إنتاجي. التفاصيل في `docs/DATA_SOURCE_UNIFICATION.md`.
+المتصفح ليس مصدرًا دائمًا لبيانات الأعمال. راجع `DATA_SOURCE_UNIFICATION.md`.
 
-## 8. المال والحساب
+## المال والحسابات
+
+المال يخزن ويحسب بالهللات:
 
 ```ts
 type Money = {
@@ -140,65 +110,41 @@ type Money = {
 };
 ```
 
-- التخزين والجمع والطرح بالهللات الصحيحة.
-- التحويل إلى الريال للعرض فقط.
-- `summary` يمثل المبيعات، و`purchases | expense | withdrawal` تمثل الخارج.
-- العمليات الملغاة لا تدخل في الإجماليات.
-- الحساب المرجعي في `src/domain/cash-movement` وتتحقق مساواته مع تقارير SQL بالاختبارات.
+الحسابات المرجعية في `domain/cash-movement`. الواجهة تعرض الناتج ولا تكون مصدر الحقيقة المالي.
 
-## 9. دورة العمليات والتقفيلات
+## العمليات والتقفيلات
 
-- إنشاء عملية وسطور القنوات والمرفقات وسجل التدقيق يتم داخل transaction.
-- `void` و`restore` يحافظان على العملية وسجلها.
-- التقفيلة تستخدم `clientCloseoutId` لمنع تكرار الطلب نفسه، و`daySequence` لترتيب تقفيلات اليوم.
-- تخصيص `daySequence` محمي بقفل transaction على `storeId + date` لمنع تعارض الطلبات المتزامنة.
-- تعديل التقفيلة يحوّل عمليات النسخة السابقة إلى `voided` ثم ينشئ النسخة الجديدة داخل transaction واحدة.
-- حذف التقفيلة إلغاء منطقي: تصبح التقفيلة وعملياتها `voided` وتبقى الصفوف والمرفقات وسجلات التدقيق محفوظة.
-- قيود PostgreSQL المركبة تمنع ربط عملية أو قناة أو مرفق بمتجر/منشأة لا تطابق الأصل المشار إليه.
+- إنشاء العملية والتقفيلة وسجل التدقيق يتم داخل transaction.
+- الحذف المالي يكون `void` وليس حذفًا فعليًا.
+- الاسترجاع يكون `restore`.
+- تعديل التقفيلة يحول النسخة السابقة إلى `voided` وينشئ النسخة الجديدة.
+- `daySequence` يحدد ترتيب تقفيلات اليوم لنفس المحل.
 
-## 10. المرفقات
+## المرفقات
 
-- جدول `attachments` يحفظ البيانات الوصفية و`storageKey` فقط.
-- وضع الإنتاج الافتراضي يحفظ الملف تحت جذر محلي معزول على VPS (`ATTACHMENT_STORAGE_MODE=local`).
-- inline متاح للاختبارات والتوافق مع بيانات قديمة، وليس هدف التوسع.
-- نقل الملفات إلى Object Storage/CDN مؤجل بقرار المالك إلى ما بعد الإطلاق وعند التوسع.
+جدول `attachments` يحفظ metadata و`storageKey`. الوضع الحالي يستخدم تخزينًا محليًا معزولًا على VPS. النقل إلى object storage خارجي مؤجل إلى حين الحاجة الفعلية.
 
-## 11. الأداء والتوسع
+## الأداء والتوسع
 
-- فهارس مركبة تبدأ بـ `organizationId` و`storeId`.
-- سجل العمليات والتقفيلات يستخدم keyset pagination.
-- التقارير تجمع داخل SQL ضمن تاريخ ومتجر محددين.
-- لا تُحمّل سنوات من العمليات إلى المتصفح.
-- Pool قاعدة البيانات مضبوط لنسخة التطبيق الحالية.
-- Redis وObject Storage وتشغيل عدة نسخ وجداول التجميع إجراءات توسع، وليست افتراضات مخفية في الإصدار الأول.
+- السجل والتقفيلات يستخدمان pagination.
+- التقارير تجمع في SQL ضمن نطاق تاريخ ومحل.
+- لا تحمل سنوات كاملة من العمليات إلى المتصفح.
+- Redis وobject storage وتشغيل عدة نسخ خطوات توسع لاحقة عند الحاجة.
 
-راجع `docs/PERFORMANCE_RULES.md` للحدود وبوابة اختبار الضغط.
+## النشر
 
-## 12. النشر والعزل
+- الإنتاج من `main`.
+- staging من فرع التجربة.
+- لكل بيئة قاعدة بيانات وخدمة وإعدادات مستقلة.
+- الإنتاج يستخدم migrations فقط، بدون seed أو reset.
+- `/api/v1/meta` يستخدم للتحقق من الإصدار المنشور.
 
-- الإنتاج من `main` عبر `deploy-production.yml`.
-- staging من فرع التجربة عبر `deploy-staging.yml`.
-- لكل بيئة خدمة ومنفذ وقاعدة بيانات وإعدادات مستقلة.
-- migrations فقط على الإنتاج؛ لا demo seed ولا reset.
-- `/api/v1/meta` يعرض رقم البناء للتحقق بعد النشر.
-
-## 13. قواعد التغيير
+## قاعدة التغيير
 
 أي تغيير معماري يجب أن:
 
-1. يحافظ على عزل المنشآت.
-2. يضيف migration جديدًا عند تغيير schema.
-3. يحدّث الاختبارات والوثيقة المتأثرة في التغيير نفسه.
-4. يمر عبر lint وtypecheck والاختبارات والبناء.
-5. يُختبر على staging قبل `main`.
-
-## 14. المراجع
-
-- `README.md`
-- `docs/README.md`
-- `docs/CONVENTIONS.md`
-- `docs/DATA_SOURCE_UNIFICATION.md`
-- `docs/DATABASE_SCHEMA.md`
-- `docs/API_CONTRACT.md`
-- `docs/PERFORMANCE_RULES.md`
-- `docs/PRODUCTION_STATUS.md`
+1. يحافظ على عزل المنظمات.
+2. يضيف migration عند تغيير schema.
+3. يحدث الاختبارات والوثيقة المتأثرة.
+4. يمر عبر lint/typecheck/test/build.
+5. يختبر على staging قبل الإنتاج.

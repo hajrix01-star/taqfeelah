@@ -3,7 +3,7 @@ type AuthApiEnv = {
   AUTH_DB_CREDENTIALS_ENABLED?: string;
 };
 
-/** Client/server gate for shipping real auth UI wiring without disabling prototype access. */
+/** Client/server gate for shipping real auth UI wiring while local development remains available. */
 export function isAuthApiEnabled(
   env: AuthApiEnv = process.env as AuthApiEnv,
 ): boolean {

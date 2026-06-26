@@ -1,10 +1,10 @@
-﻿"use client";
+"use client";
 
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { APP_BUILD_STAMP } from "@/app-build-stamp.mjs";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
-import { text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-catalog-data";
 import { APP_IN_PRODUCTION_MODE } from "@/components/taqfeelah-app/taqfeelah-app-boot";
 import { openWhatsAppSupport } from "@/components/taqfeelah-app/taqfeelah-app-support";
 import type { AuthLang } from "@/features/auth/client/auth-client-types";

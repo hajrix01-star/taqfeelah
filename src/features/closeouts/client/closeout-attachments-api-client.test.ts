@@ -21,7 +21,7 @@ describe("fetchStoreAttachmentViaApi", () => {
     vi.unstubAllGlobals();
   });
 
-  it("maps prototype store ids before requesting attachment bytes", async () => {
+  it("maps local store ids before requesting attachment bytes", async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({
       id: "22222222-2222-4222-8222-222222222222",
       dataUrl: "data:image/jpeg;base64,abc",

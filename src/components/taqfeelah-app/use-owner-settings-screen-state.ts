@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -19,7 +19,7 @@ import {
   businessLocation,
   text,
   DEFAULT_STORE_CHANNEL_CONFIG,
-} from "./taqfeelah-app-reference-data";
+} from "./taqfeelah-app-catalog-data";
 import {
   APP_IN_PRODUCTION_MODE,
   RUNTIME_SETTINGS_DB_SOURCE,

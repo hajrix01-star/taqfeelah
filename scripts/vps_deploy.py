@@ -48,7 +48,6 @@ PRODUCTION_ENV_KEYS = [
     "DEPLOYMENT_WAVE",
     "APP_MODE",
     "NEXT_PUBLIC_APP_MODE",
-    "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE",
     "ALLOW_HEADER_AUTH_CONTEXT",
     "RELEASE_VERSION",
     "RELEASE_LABEL",
@@ -120,7 +119,6 @@ WAVE_1_ENV_OVERRIDES: dict[str, str] = {
     "NEXT_PUBLIC_CLOSEOUTS_API_ENABLED": "true",
     "NEXT_PUBLIC_ENTRIES_API_ENABLED": "true",
     "ALLOW_HEADER_AUTH_CONTEXT": "true",
-    "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE": "true",
 }
 
 # Wave 2 enables SQL-backed home + reports (phases 4–6). Same API flags as wave 1;
@@ -158,7 +156,6 @@ WAVE_5_ENV_OVERRIDES: dict[str, str] = {
 WAVE_6_ENV_OVERRIDES: dict[str, str] = {
     **WAVE_5_ENV_OVERRIDES,
     "DEPLOYMENT_WAVE": "6",
-    "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE": "false",
     "ALLOW_HEADER_AUTH_CONTEXT": "false",
     "AUTH_DB_CREDENTIALS_ENABLED": "true",
     "NEXT_PUBLIC_AUTH_API_ENABLED": "true",
@@ -185,7 +182,6 @@ PRODUCTION_ENV_BOOTSTRAP_DEFAULTS: dict[str, str] = {
     "APP_MODE": "production",
     "APP_PUBLIC_ORIGIN": "https://taqfeelah.com",
     "NEXT_PUBLIC_APP_MODE": "production",
-    "NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE": "false",
     "ALLOW_HEADER_AUTH_CONTEXT": "false",
     "AUTH_SESSION_COOKIE_NAME": "taqfeelah_session",
     "AUTH_ORGANIZATION_ID": "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",
@@ -1169,7 +1165,7 @@ def run_tcp_connectivity_preflight(host: str, port: int, tcp_probe_timeout: floa
             "Re-run the workflow (a new runner may succeed) or set VPS_HOST to the VPS public IP.\n"
             "The site may still be online while SSH from CI is blocked.\n"
             "On VPS (root): bash scripts/vps-diagnose-ci-access.sh\n"
-            "See docs/DEPLOYMENT_WAVES.md (troubleshooting section)."
+            "See docs/archive/DEPLOYMENT_WAVES.md (troubleshooting section)."
         )
 
 
@@ -2016,7 +2012,7 @@ def cmd_deploy_pm2(
             safe_print("STDERR:")
             safe_print(canonical_channel_err.strip())
 
-        print_section("Repair sales channels for prototype/UI channel ids")
+        print_section("Repair sales channels for runtime/UI channel ids")
         _, channel_repair_out, channel_repair_err = vps.run(
             textwrap.dedent(
                 f"""

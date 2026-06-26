@@ -1,38 +1,38 @@
-﻿# APPROVED UI BASELINE
+# Approved UI Baseline
 
-> **Tag:** `APPROVED UI BASELINE`
-> **Checkpoint commit:** `checkpoint/approved-ui-baseline-before-backend` (see git log)
-> **Owner sign-off:** 2026-06 â€” visual acceptance on mobile and tablet
+> آخر تحديث: 2026-06-26
 
-## What is frozen
+هذه الوثيقة تحدد حدود تغيير واجهة تطبيق العميل في `/app`.
 
-After the checkpoint commit, **do not change** without explicit owner approval:
+## القاعدة
 
-- Visual design, layout, spacing, typography colors (except logo swap only if owner requests).
-- `src/components/TaqfeelahAppRuntimeShell.tsx` and `src/components/taqfeelah-app/*` screen flows.
-- App-visible CSS (`AppFontStyles`, Tailwind classes on app screens).
-- Mobile/tablet breakpoints and centered column layout (~530â€“560px on tablet).
+لا تغير التصميم المرئي أو تدفق الشاشات في `/app` بدون موافقة صريحة من مالك المنتج.
 
-## What the approved baseline includes
+يشمل ذلك:
 
-- The approved operational composition now serves `/app`; the old `/prototype-runtime` comparison route has been removed.
-- No fake phone frame; full viewport shell.
-- Owner: home (notebook), reports (notebook), register, settings, add flows.
-- Employee flows accepted visually.
-- Notebook ruled lines scroll with content; no vertical red margin line (removed 2026-06 per owner).
-- The visual checkpoint originally used demo auth; production `/app` now uses signed sessions and real credentials.
+- التخطيط والمسافات والألوان والخطوط.
+- تدفق شاشات المالك والموظف.
+- CSS الظاهر داخل تجربة العميل.
+- عرض العمود المركزي على الجوال والتابلت.
+- تجربة الدفتر والسجل والرئيسية والإعدادات.
 
-## Allowed without re-approval
+## المسموح بدون موافقة تصميم
 
-- Backend, database, API, domain code under `src/features`, `src/domain`, `src/core`.
-- New documentation.
-- Production routes (`/app`) that **match** this baseline visually.
+- إصلاحات backend/API/DB.
+- تحسينات الأداء التي لا تغير الشكل.
+- إصلاح أخطاء واضحة لا تغير تجربة الاستخدام.
+- تحديث الوثائق.
+- اختبارات وحراسات تمنع كسر السلوك.
 
-## Reference files
+## المرجع الحالي
 
-| File | Role |
-|------|------|
-| `src/components/TaqfeelahAppRuntimeShell.tsx` | Approved UX/behavior composition |
-| `src/components/taqfeelah-app/*` | Extracted approved screens and UI pieces |
-| `src/app-build-stamp.mjs` | Load verification on devices |
-| `docs/CONVENTIONS.md` | Product and engineering rules |
+| الملف | الدور |
+|---|---|
+| `src/components/TaqfeelahAppRuntimeShell.tsx` | تركيب تجربة `/app` |
+| `src/components/taqfeelah-app/*` | شاشات ومكونات التطبيق المعتمدة |
+| `src/app-build-stamp.mjs` | تحقق نسخة التحميل على الأجهزة |
+| `docs/CONVENTIONS.md` | قواعد المنتج والكود |
+
+## ملاحظة
+
+أي تفكيك أو تنظيف للواجهة يجب أن يحافظ على نفس الشكل والسلوك، ويثبت ذلك باختبار أو فحص بصري عند الحاجة.

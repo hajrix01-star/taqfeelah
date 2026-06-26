@@ -200,8 +200,8 @@ Progress:
   that do not have canonical `id` and `memberId`.
 - The manual staff repair script follows the same rule: removed/inactive staff
   deactivate the DB membership instead of being silently skipped.
-- Demo staff seed data now has one root file:
-  `src/core/client/demo-staff-catalog-data.json`. Local seed/reset scripts read
+- Foundation staff seed data now has one root file:
+  `src/core/client/foundation-staff-catalog-data.json`. Local seed/reset scripts read
   from it instead of redefining Ahmed/Sara in multiple places.
 
 Files to inspect/change:

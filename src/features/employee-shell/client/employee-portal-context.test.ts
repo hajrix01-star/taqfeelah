@@ -56,7 +56,7 @@ describe("employee portal context", () => {
     expect(context.currentEmployeeChannelConfig).toEqual(defaultStoreChannelConfig);
   });
 
-  it("resolves linked store after prototype employee hydration backfills storeIds", () => {
+  it("resolves linked store after local employee hydration backfills storeIds", () => {
     const storeUuid = "11111111-1111-4111-8111-111111111111";
     const employeeUuid = "22222222-2222-4222-8222-222222222222";
     const fallbackStaff = [{

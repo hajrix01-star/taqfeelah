@@ -80,10 +80,6 @@ const nextConfig = {
         headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" }],
       },
       {
-        source: "/prototype-runtime",
-        headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" }],
-      },
-      {
         source: "/",
         headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" }],
       },

@@ -69,9 +69,9 @@ describe("operational analytics summary helpers", () => {
 
   it("prefers API totals in DB source mode while entries are loading", () => {
     const empty = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0 };
-    const demo = { sales: 900, expense: 50, net: 850, ratio: "5.6%", proofs: 0 };
+    const localTotals = { sales: 900, expense: 50, net: 850, ratio: "5.6%", proofs: 0 };
     expect(resolveOwnerPeriodSummaryPreference({
-      localTotals: demo,
+      localTotals,
       apiTotals: empty,
       entriesLoading: true,
       entriesDbSource: true,

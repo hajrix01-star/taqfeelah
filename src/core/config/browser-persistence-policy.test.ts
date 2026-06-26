@@ -9,8 +9,8 @@ describe("browser persistence policy", () => {
     vi.unstubAllEnvs();
   });
 
-  it("allows browser persistence for prototype/demo mode", () => {
-    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+  it("allows browser persistence for local mode", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "local");
     vi.stubEnv("NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE", "false");
 
     expect(isBrowserPersistentStorageAllowed({ scope: "local-runtime" })).toBe(true);
@@ -25,7 +25,7 @@ describe("browser persistence policy", () => {
   });
 
   it("can be disabled explicitly outside production", () => {
-    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "local");
     vi.stubEnv("NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE", "true");
 
     expect(isBrowserPersistentStorageAllowed({ scope: "legacy-settings" })).toBe(false);

@@ -13,7 +13,7 @@ function isUuid(value: string): boolean {
 }
 
 /**
- * When env store maps are empty, map prototype custom store ids to the org's DB store.
+ * When env store maps are empty, map local custom store ids to the org's DB store.
  */
 export async function enrichRuntimeStoreIdMap(
   organizationId: string,

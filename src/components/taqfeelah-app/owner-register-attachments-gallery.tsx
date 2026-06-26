@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { businessName, money, opTime, text } from "./taqfeelah-app-reference-data";
+import { businessName, money, opTime, text } from "./taqfeelah-app-catalog-data";
 import { MoneyValue } from "./taqfeelah-app-notebook";
 import { AttachmentThumbButton } from "./taqfeelah-app-attachment-ui";
 import { RegisterStoreBadge } from "./owner-register-ui-primitives";

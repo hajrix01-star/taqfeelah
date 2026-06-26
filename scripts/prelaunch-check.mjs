@@ -49,10 +49,10 @@ function requireTrue(key) {
 }
 
 function requireProductionMode() {
-  if ((process.env.APP_MODE || "prototype") !== "production") {
+  if ((process.env.APP_MODE || "local") !== "production") {
     errors.push("APP_MODE=production");
   }
-  if ((process.env.NEXT_PUBLIC_APP_MODE || "prototype") !== "production") {
+  if ((process.env.NEXT_PUBLIC_APP_MODE || "local") !== "production") {
     errors.push("NEXT_PUBLIC_APP_MODE=production");
   }
 }

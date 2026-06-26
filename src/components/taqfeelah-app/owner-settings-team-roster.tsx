@@ -6,7 +6,7 @@ import { StandardLoginPhoneField } from "@/core/phone/StandardLoginPhoneField";
 import { formatLoginPhoneForDisplay } from "@/core/phone/split-login-phone";
 import { buildStaffDeleteTarget } from "@/features/org-config/client/owner-settings-team-actions";
 import { SettingToggle } from "./OwnerSettingsSection";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import type { OwnerSettingsTeamRosterProps } from "./taqfeelah-app-types";
 
 export function OwnerSettingsTeamRoster({

@@ -1,84 +1,70 @@
 # Feature Flags Matrix
 
-> مرجع تفعيل المراحل على VPS والتطوير المحلي. أي PR يغيّر سلوك علم يحدّث هذا الملف.
-> **ما قبل الإطلاق:** راجع `docs/PRELAUNCH_CLEANUP.md`.
+> آخر تحديث: 2026-06-26
 
-## Core runtime
+هذه الوثيقة تسجل متغيرات البيئة المعتمدة حاليًا. `/app` الإنتاجي يعمل عبر المصادقة ومصدر بيانات السيرفر فقط.
 
-| Variable | Default (unset) | Production required | Purpose |
-|----------|-----------------|---------------------|---------|
-| `APP_MODE` | `prototype` | `production` | Server runtime mode |
-| `NEXT_PUBLIC_APP_MODE` | `prototype` | `production` | Client-visible app mode |
-| `NODE_ENV` | `development` | `production` | Node runtime |
-| `DATABASE_URL` | — | required | PostgreSQL connection |
-| `AUTH_SESSION_SECRET` | — | min 16 chars | Signed session cookies |
+## Core Runtime
 
-## Auth (required for production / prelaunch)
+| Variable | Default | Production | Purpose |
+|---|---:|---:|---|
+| `APP_MODE` | `local` | `production` | وضع السيرفر |
+| `NEXT_PUBLIC_APP_MODE` | `local` | `production` | وضع التطبيق في العميل |
+| `NODE_ENV` | `development` | `production` | وضع Node/Next |
+| `DATABASE_URL` | غير موجود | مطلوب | اتصال PostgreSQL |
+| `AUTH_SESSION_SECRET` | غير موجود | مطلوب | توقيع الجلسات |
 
-| Variable | Default (unset) | Production (CI deploy) | Purpose |
-|----------|-----------------|------------------------|---------|
-| `ALLOW_HEADER_AUTH_CONTEXT` | `false` | `false` | Session cookies only — no header bypass |
-| `NEXT_PUBLIC_AUTH_API_ENABLED` | `false` | `true` | Auth API wired |
-| `AUTH_DB_CREDENTIALS_ENABLED` | `false` | `true` | `auth_identities` table |
+## Auth
 
-> **Removed:** `NEXT_PUBLIC_PROTOTYPE_ACCESS_MODE` — prototype role picker and its runtime flag code were deleted before launch.
+| Variable | Default | Production | Purpose |
+|---|---:|---:|---|
+| `NEXT_PUBLIC_AUTH_API_ENABLED` | `false` | `true` | تفعيل واجهات المصادقة |
+| `AUTH_DB_CREDENTIALS_ENABLED` | `false` | `true` | قراءة بيانات الدخول من DB |
+| `ALLOW_HEADER_AUTH_CONTEXT` | `false` | `false` | يمنع تجاوز الجلسة بالهيدرز |
 
-`assertProductionRuntimeEnv()` rules:
+مصدر الهوية في الإنتاج هو الجلسة الموقعة فقط. أي header auth يبقى للاختبارات أو أدوات داخلية مقيدة، وليس لمسار الإنتاج.
 
-- All DB data-source flags must be explicitly `true`.
-- `NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true` is required.
-- When auth is enabled: `NEXT_PUBLIC_AUTH_API_ENABLED=true`, `AUTH_DB_CREDENTIALS_ENABLED=true`, `ALLOW_HEADER_AUTH_CONTEXT=false`, and `AUTH_SESSION_SECRET` are required together.
+## Data Sources
 
-## Data source flags (cascade)
+| Variable | Default | Production | Purpose |
+|---|---:|---:|---|
+| `NEXT_PUBLIC_CLOSEOUTS_API_ENABLED` | `false` | `true` | التقفيلات من API/DB |
+| `NEXT_PUBLIC_ENTRIES_API_ENABLED` | يرث closeouts | `true` | العمليات من API/DB |
+| `NEXT_PUBLIC_ORG_CONFIG_API_ENABLED` | يرث entries | `true` | المحلات والقنوات والموظفين من API/DB |
+| `NEXT_PUBLIC_PHASE9_API_ENABLED` | يرث entries | `true` | التصدير والمرفقات وduplicate summary |
+| `NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED` | يرث entries | `true` | ترقيم السجل |
+| `NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE` | `false` | `true` | منع تخزين بيانات أعمال في المتصفح |
 
-| Variable | Default when unset | Inherits from | Enables |
-|----------|-------------------|---------------|---------|
-| `NEXT_PUBLIC_CLOSEOUTS_API_ENABLED` | `false` | — | Closeouts read/write from PostgreSQL |
-| `NEXT_PUBLIC_ENTRIES_API_ENABLED` | closeouts flag | `CLOSEOUTS_API` | Operational entries from PostgreSQL |
-| `NEXT_PUBLIC_ORG_CONFIG_API_ENABLED` | entries flag | `ENTRIES_API` | Stores/channels/team from org-config APIs |
-| `NEXT_PUBLIC_PHASE9_API_ENABLED` | entries flag | `ENTRIES_API` | Notebook export, inline attachments, duplicate-summary |
-| `NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED` | entries flag | `ENTRIES_API` | Cursor pagination in register |
-
-## Auth and SaaS
+## SaaS Admin
 
 | Variable | Default | Purpose |
-|----------|---------|---------|
-| `NEXT_PUBLIC_AUTH_API_ENABLED` | `false` | Wire real auth UI flows |
-| `AUTH_DB_CREDENTIALS_ENABLED` | `false` | Validate credentials in `auth_identities` |
-| `NEXT_PUBLIC_SAAS_ADMIN_ENABLED` | `false` | Shows `/saas-admin` shell |
-| `SAAS_ADMIN_API_ENABLED` | `false` | Platform admin APIs |
-| `USAGE_TRACKING_ENABLED` | `false` | Usage event recording |
-| `SAAS_PLATFORM_ADMIN_USER_IDS` | empty | Comma-separated platform admin UUIDs |
+|---|---:|---|
+| `NEXT_PUBLIC_SAAS_ADMIN_ENABLED` | `false` | إظهار واجهة `/saas-admin` |
+| `SAAS_ADMIN_API_ENABLED` | `false` | تفعيل APIs إدارة المنصة |
+| `USAGE_TRACKING_ENABLED` | `false` | تسجيل أحداث الاستخدام |
+| `SAAS_PLATFORM_ADMIN_USER_IDS` | فارغ | قائمة UUID لمسؤولي المنصة |
 
-## Legacy ID maps (optional)
-
-Required by `assertProductionRuntimeEnv()` **only when** `ALLOW_HEADER_AUTH_CONTEXT=true` (integration tests / legacy).
-Production launch uses session + org-config API — **no maps required**.
+## Optional Bootstrap / Tests
 
 | Variable | Purpose |
-|----------|---------|
-| `AUTH_ORGANIZATION_ID` / `NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID` | Org UUID (optional bootstrap) |
-| `AUTH_OWNER_USER_ID` / `NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID` | Owner UUID (optional bootstrap) |
-| `NEXT_PUBLIC_CLOSEOUTS_*_ID_MAP` | Local dev only — see `scripts/seed-closeouts-foundation.mjs` |
+|---|---|
+| `AUTH_ORGANIZATION_ID` | إدخال اختياري لبعض سكربتات bootstrap أو الاختبارات |
+| `AUTH_OWNER_USER_ID` | إدخال اختياري لبعض سكربتات bootstrap أو الاختبارات |
+| `NEXT_PUBLIC_CLOSEOUTS_*_ID_MAP` | تطوير محلي أو اختبارات توافق فقط |
 
-## Recommended launch path (post-cleanup)
+هذه المتغيرات ليست مطلوبة للمنظمات المنشأة عبر SaaS Admin.
 
-1. `DATABASE_URL` + `pnpm db:migrate` (no demo seed on production)
-2. Set all wave-7 flags (`deploy-production.yml` is source of truth)
-3. Create first customer via **SaaS Admin**
-4. Owner completes setup link → logs in at `/app`
+## Removed Flags
 
-Historical rollout waves: `docs/DEPLOYMENT_WAVES.md`.
+الأعلام القديمة الخاصة بمسارات الدخول غير الإنتاجية أزيلت من الكود النشط. تفاصيل الإزالة محفوظة في `docs/archive/` وخطة التحول فقط، وليست جزءًا من إعداد البيئة الحالي.
 
-## Code modules
+## Code Modules
 
-| Module | Reader |
-|--------|--------|
-| `core/config/closeouts-api-mode.ts` | `isCloseoutsApiEnabled` |
-| `core/config/entries-api-mode.ts` | `isEntriesApiEnabled` |
-| `core/config/org-config-api-mode.ts` | `isOrgConfigApiEnabled` |
-| `core/config/phase9-api-mode.ts` | `isPhase9ApiEnabled` |
-| `core/config/register-entries-pagination-mode.ts` | `isRegisterEntriesPaginationEnabled` |
-| `core/config/auth-api-mode.ts` | `isAuthApiEnabled` |
-| `core/config/saas-admin-api-mode.ts` | `isSaasAdminApiEnabled` |
-| `core/config/prototype-access-mode.ts` | Always `false` (removed feature) |
+| Module | Responsibility |
+|---|---|
+| `core/config/app-mode.ts` | `local` أو `production` |
+| `core/config/env.ts` | تحقق بيئة الإنتاج |
+| `core/config/auth-api-mode.ts` | تفعيل Auth API |
+| `core/config/closeouts-api-mode.ts` | تفعيل API التقفيلات |
+| `core/config/entries-api-mode.ts` | تفعيل API العمليات |
+| `core/config/browser-persistence-policy.ts` | منع التخزين المحلي في الإنتاج |

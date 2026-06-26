@@ -7,7 +7,7 @@ import {
   registerReportGranularityColumnLabel,
   REGISTER_REPORT_GRANULARITY,
 } from "@/features/reports/client/register-report-granularity";
-import { money, text } from "./taqfeelah-app-reference-data";
+import { money, text } from "./taqfeelah-app-catalog-data";
 import type { DisplayLang } from "./taqfeelah-app-types";
 import type { RegisterReportGranularity } from "@/features/reports/client/register-report-granularity";
 import { MoneyValue } from "./taqfeelah-app-notebook";

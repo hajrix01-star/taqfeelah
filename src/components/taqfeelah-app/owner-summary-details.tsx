@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import {
@@ -19,7 +19,7 @@ import {
   money,
   outflowReportCategories,
   text,
-} from "./taqfeelah-app-reference-data";
+} from "./taqfeelah-app-catalog-data";
 import { entryCategory } from "./taqfeelah-app-entry-helpers";
 import { NotebookRow, MoneyValue } from "./taqfeelah-app-notebook";
 import type {

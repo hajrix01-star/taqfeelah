@@ -14,9 +14,9 @@ import {
 } from "@/features/marketing/marketing-brand";
 
 const previewRows = [
-  { label: "كاش", value: "٤٬٢٥٠" },
-  { label: "شبكة", value: "٦٬١٠٠" },
-  { label: "توصيل", value: "١٬٨٤٠" },
+  { label: "كاش", value: "4,250" },
+  { label: "شبكة", value: "6,100" },
+  { label: "توصيل", value: "1,840" },
 ];
 
 export default function MarketingAppPreview() {
@@ -52,7 +52,7 @@ export default function MarketingAppPreview() {
               ملخص اليوم
             </p>
             <p className="mt-1 text-lg font-black" style={{ color: MARKETING_INK }}>
-              الداخل − الخارج = الناتج
+              الداخل - الخارج = الناتج
             </p>
 
             <div className="mt-4 space-y-2">
@@ -77,7 +77,7 @@ export default function MarketingAppPreview() {
                   داخل
                 </p>
                 <p className="mt-1 text-sm font-black" style={{ color: MARKETING_INK }} dir="ltr">
-                  ١٢٬١٩�
+                  12,190
                 </p>
               </div>
               <div className="rounded-2xl bg-white/80 px-2 py-3 ring-1 ring-black/[0.04]">
@@ -85,13 +85,13 @@ export default function MarketingAppPreview() {
                   خارج
                 </p>
                 <p className="mt-1 text-sm font-black" style={{ color: MARKETING_INK }} dir="ltr">
-                  ٣٬٤٥�
+                  3,450
                 </p>
               </div>
               <div className="rounded-2xl bg-[#112A46] px-2 py-3 text-white">
                 <p className="text-[0.65rem] font-bold text-white/75">ناتج</p>
                 <p className="mt-1 text-sm font-black" dir="ltr">
-                  ٨٬٧٤�
+                  8,740
                 </p>
               </div>
             </div>

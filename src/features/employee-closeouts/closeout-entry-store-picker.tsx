@@ -1,7 +1,7 @@
 "use client";
 
 import { resolveEmployeeStoreName } from "./store-name-resolver";
-import { businessName, text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
+import { businessName, text } from "@/components/taqfeelah-app/taqfeelah-app-catalog-data";
 import type { CloseoutSyncLang, StoreRef } from "@/features/daily-closeouts/daily-closeouts-types";
 
 function resolveStoreLabel(store: StoreRef, lang: CloseoutSyncLang): string {

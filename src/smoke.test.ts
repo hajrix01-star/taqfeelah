@@ -116,7 +116,7 @@ describe("taqfeelah app module boundary smoke", () => {
     expect(dialogs.SavedOutflowShareDialog).toBeTypeOf("function");
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
-  it("loads prototype attachment storage and UI exports", async () => {
+  it("loads attachment payload storage and UI exports", async () => {
     const storage = await import("@/features/attachments/client/attachment-payload-storage");
     const ui = await import("@/components/taqfeelah-app/taqfeelah-app-attachment-ui");
     expect(storage.storeAttachmentPayload).toBeTypeOf("function");
@@ -152,11 +152,11 @@ describe("taqfeelah app module boundary smoke", () => {
     expect(closeouts.OwnerCloseoutModals).toBeTypeOf("function");
   }, SMOKE_IMPORT_TIMEOUT_MS);
 
-  it("loads demo operational entry helpers", async () => {
-    const demo = await import("@/components/taqfeelah-app/taqfeelah-app-operational-entry-helpers");
-    expect(demo.readOperationalEntries).toBeTypeOf("function");
-    expect(demo.buildEntry).toBeTypeOf("function");
-    expect(demo.defaultOwnerActor.userId).toBe("owner");
+  it("loads operational entry helpers", async () => {
+    const helpers = await import("@/components/taqfeelah-app/taqfeelah-app-operational-entry-helpers");
+    expect(helpers.readOperationalEntries).toBeTypeOf("function");
+    expect(helpers.buildEntry).toBeTypeOf("function");
+    expect(helpers.defaultOwnerActor.userId).toBe("owner");
   });
 
   it("loads taqfeelah app orchestration hooks", async () => {

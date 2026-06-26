@@ -6,10 +6,10 @@ describe("app mode", () => {
     vi.unstubAllEnvs();
   });
 
-  it("honors explicit NEXT_PUBLIC_APP_MODE=prototype in production NODE_ENV", () => {
+  it("honors explicit NEXT_PUBLIC_APP_MODE=local in production NODE_ENV", () => {
     vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
-    expect(readPublicAppMode()).toBe("prototype");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "local");
+    expect(readPublicAppMode()).toBe("local");
   });
 
   it("defaults to production when NODE_ENV is production and mode is unset", () => {
@@ -18,9 +18,9 @@ describe("app mode", () => {
     expect(readPublicAppMode()).toBe("production");
   });
 
-  it("honors explicit APP_MODE=prototype on the server in production NODE_ENV", () => {
+  it("honors explicit APP_MODE=local on the server in production NODE_ENV", () => {
     vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("APP_MODE", "prototype");
-    expect(readServerAppMode()).toBe("prototype");
+    vi.stubEnv("APP_MODE", "local");
+    expect(readServerAppMode()).toBe("local");
   });
 });

@@ -31,7 +31,7 @@ import {
   REGISTER_ENTRIES_PAGINATION_ENABLED,
 } from "@/components/taqfeelah-app/taqfeelah-app-boot";
 import { entryIsActive } from "@/components/taqfeelah-app/taqfeelah-app-entry-helpers";
-import { text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-catalog-data";
 import { invalidateOperationalData } from "@/core/client/invalidate-operational-data";
 import { refreshOperationalDataAfterWrite } from "@/features/operations/client/refresh-operational-data-after-write";
 import { operationalQueryKeys } from "@/core/client/operational-query-keys";

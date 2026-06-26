@@ -2,7 +2,7 @@
 
 > **Status (2026-06-22):** Core auth, operational, reporting, organization-config, attachment/export, signup, billing-entitlement, and SaaS Admin routes are implemented under `src/app/api/v1`. Sections marked `planned` remain non-contractual. Closeout owner-review was intentionally removed under the zero-review policy.
 > **Auth:** A signed session cookie (`AUTH_SESSION_COOKIE_NAME`) is the production source of identity. Header context is test-only and must be disabled in production with `ALLOW_HEADER_AUTH_CONTEXT=false`.
-> **Source-unification period:** Until auth launch, Prototype Access Mode remains ON and server APIs may accept `x-organization-id` / `x-user-id` / `x-member-role` when `ALLOW_HEADER_AUTH_CONTEXT=true`. Signed session cookies become required only in the explicit auth launch phase.
+> **Source of truth:** Production APIs use signed sessions + DB-backed organization membership. Header context is limited to tests/internal tooling when explicitly enabled; it is not a production auth path.
 > **UI:** Must not require design changes — responses feed existing approved screens.
 
 Base path (proposal): `/api/v1`
@@ -196,7 +196,7 @@ The response retains `{ "deleted": true }` for client compatibility; no financia
 
 ### `POST /stores/:storeId/closeouts/:closeoutId/review` (removed)
 
-Legacy owner approve/return endpoint. **Not implemented** — every submit auto-approves in `POST /stores/:storeId/closeouts` (zero-review policy). Historical audit actions `closeout_approved` / `closeout_returned` may still appear in old demo data only.
+Legacy owner approve/return endpoint. **Not implemented** — every submit auto-approves in `POST /stores/:storeId/closeouts` (zero-review policy). Historical audit actions `closeout_approved` / `closeout_returned` may still appear in migrated legacy records only.
 
 ---
 
@@ -532,7 +532,7 @@ Amounts are returned in riyals (display units). Notebook share UI may still use 
 
 ### `POST /stores/:storeId/attachments/inline` (implemented)
 
-Registers a prototype inline image attachment and returns a stable `storageKey` (`inline:v1:{checksum}:...`) for entry creation.
+Registers an inline image attachment and returns a stable `storageKey` (`inline:v1:{checksum}:...`) for entry creation.
 
 Body:
 
@@ -758,7 +758,7 @@ Returns updated subscription snapshot plus resolved entitlements.
 
 Server-Sent Events (SSE) stream scoped to the authenticated session `organizationId`.
 
-Headers: same auth as other `/api/v1` routes (session cookie preferred; optional prototype headers when `ALLOW_HEADER_AUTH_CONTEXT=true`).
+Headers: same auth as other `/api/v1` routes. Production uses the signed session cookie.
 
 Events:
 
@@ -792,9 +792,9 @@ Client contract:
 
 ---
 
-## Prototype mapping
+## Legacy UI mapping
 
-| Prototype concept | API |
+| Legacy UI concept | API |
 |-------------------|-----|
 | `businessId` | `storeId` |
 | `operationalEntries` array in memory | paginated `GET /entries` + summary endpoints |

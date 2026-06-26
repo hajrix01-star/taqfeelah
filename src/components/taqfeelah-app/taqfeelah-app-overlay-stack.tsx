@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useMemo } from "react";
 import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProvider";
@@ -23,7 +23,7 @@ import { BottomNav } from "./taqfeelah-app-chrome";
 import { HelpCenterSheet } from "./AuthGateSection";
 import { NotebookShareModal } from "./taqfeelah-app-notebook-share-modal";
 import { OwnerCloseoutEditFlow, OwnerCloseoutModals } from "./taqfeelah-app-owner-closeout-modals";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import { alertCloseoutNotFoundForEntry, alertCloseoutNotFound } from "@/lib/ui/app-dialog/app-dialog-helpers";
 import type { OperationalEntry, AppBusiness, AppChannel, NotebookShareSnapshot } from "./taqfeelah-app-types";
 import type { TaqfeelahAppOverlayStackProps, AppCloseoutRecord } from "./taqfeelah-app-types";

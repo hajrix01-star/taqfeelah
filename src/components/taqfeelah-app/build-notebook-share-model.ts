@@ -19,7 +19,7 @@ import {
   opTime,
   text,
   outflowReportCategories,
-} from "./taqfeelah-app-reference-data";
+} from "./taqfeelah-app-catalog-data";
 import {
   entryHasAttachment,
   entryIsActive,

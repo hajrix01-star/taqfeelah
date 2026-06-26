@@ -208,7 +208,7 @@ describe("employee-portal-session", () => {
     expect(patch.employeeBusinessId).toBe(storeUuid);
   });
 
-  it("reactivates and merges existing roster row on prototype employee login", () => {
+  it("reactivates and merges existing roster row on local employee login", () => {
     const employeeUuid = "22222222-2222-4222-8222-222222222222";
     const staff = [{
       id: employeeUuid,

@@ -8,7 +8,7 @@ describe("safe local storage helpers", () => {
   beforeEach(() => {
     getItem.mockReset();
     setItem.mockReset();
-    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "local");
     vi.stubGlobal("window", {
       localStorage: { getItem, setItem },
     });

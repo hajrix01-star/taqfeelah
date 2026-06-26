@@ -1,15 +1,15 @@
 import { buildLanPageUrls } from "./lan-hosts.mjs";
-import { PROTOTYPE_BUILD_STAMP } from "../src/prototype-build-stamp.mjs";
+import { APP_BUILD_STAMP } from "../src/app-build-stamp.mjs";
 
 const port = Number(process.env.PORT) || 3000;
 const path = "/app";
-const urls = buildLanPageUrls(port, path, PROTOTYPE_BUILD_STAMP);
+const urls = buildLanPageUrls(port, path, APP_BUILD_STAMP);
 
 console.log("");
 console.log("  تقفيلة — روابط الشبكة المحلية (وضع التطوير)");
 console.log("  ─────────────────────────────────────────────");
-console.log(`  الكمبيوتر:  http://localhost:${port}${path}?b=${PROTOTYPE_BUILD_STAMP}`);
-console.log(`  نسخة النموذج:  ${PROTOTYPE_BUILD_STAMP}  (تحقق منها في مركز المساعدة على الجوال)`);
+console.log(`  الكمبيوتر:  http://localhost:${port}${path}?b=${APP_BUILD_STAMP}`);
+console.log(`  نسخة التطبيق:  ${APP_BUILD_STAMP}  (تحقق منها في مركز المساعدة على الجوال)`);
 if (urls.length === 0) {
   console.log("  الجوال:     (لم يُعثر على IP — اتصل بشبكة Wi‑Fi)");
 } else {

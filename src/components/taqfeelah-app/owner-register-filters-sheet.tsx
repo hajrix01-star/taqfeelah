@@ -8,7 +8,7 @@ import {
   DEFAULT_REGISTER_LOG_FILTERS,
   registerLogFilterCount,
 } from "@/features/entries/client/register-log-display";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import { LogFilterChip } from "./owner-register-ui-primitives";
 import { InkTab } from "./taqfeelah-app-shell-ui";
 import type { DisplayLang, RegisterLogFilters } from "./taqfeelah-app-types";

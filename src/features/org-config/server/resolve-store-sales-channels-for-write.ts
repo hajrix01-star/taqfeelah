@@ -17,7 +17,7 @@ function normalizeChannelName(value: string): string {
 /**
  * Map client channel ids to store-scoped sales_channels rows.
  * Production accepts canonical ids only. Name fallback is kept only for
- * non-production compatibility while the prototype/runtime cutover is completed.
+ * non-production compatibility while the runtime cutover is completed.
  */
 export async function resolveStoreSalesChannelsForWrite(
   db: ReturnType<typeof getDb>,

@@ -2,7 +2,7 @@
 import { readLocalLastCloseoutDates } from "./owner-settings-storage";
 
 describe("owner settings storage", () => {
-  it("does not read demo last closeout dates when demo defaults are skipped", () => {
+  it("does not read local last closeout dates when local defaults are skipped", () => {
     const getItem = vi.fn(() => JSON.stringify({ shami: "2026-06-10" }));
     vi.stubGlobal("window", {
       localStorage: { getItem },

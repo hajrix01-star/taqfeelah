@@ -1,36 +1,36 @@
 # فهرس وثائق تقفيلة
 
-> آخر تحديث: **2026-06-22**
+> آخر تحديث: 2026-06-26
 
-هذا الفهرس يحدد الوثائق الحالية التي يعتمد عليها التطوير، ويفصلها عن الخطط والسجلات التاريخية.
+هذا الفهرس يميز بين الوثائق المعتمدة حاليًا وبين الوثائق التاريخية. عند التعارض، المرجع الأول هو الكود الحالي، ثم الوثائق المعتمدة في هذا الملف.
 
-## المراجع الحالية المعتمدة
+## الوثائق المعتمدة
 
 | الوثيقة | الغرض |
 |---|---|
-| `../README.md` | نقطة البداية، التشغيل المحلي، خريطة المستودع |
-| `ARCHITECTURE.md` | المعمارية الفعلية وتدفق البيانات والطبقات |
+| `ARCHITECTURE.md` | معمارية التطبيق الحالية وتدفق البيانات |
 | `CONVENTIONS.md` | قواعد المنتج والكود الإلزامية |
-| `PRODUCTION_STATUS.md` | المنجز، أولويات ما قبل الإطلاق، والقرارات المؤجلة |
-| `DATA_SOURCE_UNIFICATION.md` | مصدر الحقيقة وسياسة التخزين في الإنتاج |
+| `API_CONTRACT.md` | عقود واجهات API الحالية والمخطط لها صراحة |
 | `DATABASE_SCHEMA.md` | جداول PostgreSQL والعلاقات والفهارس |
-| `API_CONTRACT.md` | عقود API الحالية والأقسام المخططة المعلّمة صراحة |
-| `PERFORMANCE_RULES.md` | قواعد الاستعلام والترقيم واختبار الضغط |
-| `FEATURE_FLAGS_MATRIX.md` | أعلام البيئة وسلوكها |
+| `DATA_SOURCE_UNIFICATION.md` | سياسة مصدر الحقيقة ومنع fallback الإنتاجي |
+| `FEATURE_FLAGS_MATRIX.md` | متغيرات البيئة والأعلام المعتمدة |
+| `PERFORMANCE_RULES.md` | قواعد الأداء والترقيم والاستعلامات الكبيرة |
+| `PRODUCTION_STATUS.md` | حالة الإنتاج والقرارات المؤجلة |
+| `transformation-plan-01.md` | سجل خطة التحول 01 وحالتها |
 | `APPROVED_UI_BASELINE.md` | حدود تغيير الواجهة المعتمدة |
 
-## أدلة التشغيل والإطلاق
+## التشغيل والنشر
 
 | الوثيقة | الغرض |
 |---|---|
-| `PRELAUNCH_MANUAL_SMOKE.md` | اختبار يدوي قبل اعتماد الإطلاق |
-| `PRELAUNCH_CLEANUP.md` | ما أزيل من مسارات التطوير والتجربة |
+| `STAGING_DEPLOY_RUNBOOK.md` | طريقة نشر staging |
 | `VPS_LAUNCH_RUNBOOK.md` | إجراءات إطلاق VPS |
-| `VPS_ENV_SETUP_FOR_OWNER.md` | إعداد البيئة والأسرار للمالك |
 | `LIVE_DEPLOY_BATCH_PLAN.md` | سياسة دفعات النشر |
-| `DEPLOYMENT_WAVES.md` | سجل موجات تفعيل الميزات |
+| `PRELAUNCH_MANUAL_SMOKE.md` | فحص يدوي قبل الاعتماد |
+| `VPS_ENV_SETUP_FOR_OWNER.md` | إعداد أسرار وبيئة المالك |
+| `DIRECT_PRODUCTION_DEPLOY_LOG.md` | سجل النشر المباشر |
 
-## وثائق ميزات متخصصة
+## وثائق ميزات
 
 - `PHASE_10_AUTH.md` — المصادقة والجلسات.
 - `PHASE_11_SAAS_ADMIN.md` — لوحة إدارة SaaS.
@@ -39,18 +39,20 @@
 - `INCOME_SOURCES.md` — قنوات الدخل.
 - `OWNER_SETTINGS_IA_PLAN.md` — تنظيم إعدادات المالك.
 
-## سجلات تاريخية وخطط
+## الأرشيف
 
-هذه الملفات مفيدة لفهم سبب القرارات، لكنها ليست وصفًا وحيدًا للحالة الحالية:
+الملفات داخل `docs/archive/` تاريخية فقط. لا تستخدمها كمرجع للتنفيذ الحالي إلا لفهم سبب قرار قديم.
 
-- `REFACTOR_ROADMAP.md`
-- `PRELAUNCH_AUDIT_AND_REMEDIATION.md`
-- `BATCH_4_JS_TS_MIGRATION.md`
-- `PROTOTYPE_ACCESS_MODE.md`
-- `SAAS_ADMIN_DASHBOARD_PLAN.md`
+أمثلة:
 
-عند التعارض، ارجع إلى الكود ثم `PRODUCTION_STATUS.md` و`ARCHITECTURE.md`.
+- `archive/removed-access-mode.md`
+- `archive/REFACTOR_ROADMAP.md`
+- `archive/DEPLOYMENT_WAVES.md`
+- `archive/PRELAUNCH_CLEANUP.md`
+- `archive/PRELAUNCH_AUDIT_AND_REMEDIATION.md`
+- `archive/SAAS_ADMIN_DASHBOARD_PLAN.md`
+- `archive/PRODUCTION_SOURCE_OF_TRUTH_CUTOVER_PLAN.md`
 
 ## قاعدة تحديث الوثائق
 
-أي تغيير يعدل schema أو API أو المصادقة أو مصدر البيانات أو النشر يجب أن يحدّث الوثيقة المعتمدة المرتبطة به في نفس commit. لا تُكتب حالة «منفذ» إلا إذا كان لها كود واختبار أو تحقق تشغيل واضح.
+أي تغيير يمس API أو قاعدة البيانات أو المصادقة أو مصدر البيانات أو النشر يجب أن يحدث الوثيقة المعتمدة المرتبطة به في نفس التغيير. لا تكتب "منفذ" إلا إذا كان معه كود واختبار أو تحقق تشغيل واضح.

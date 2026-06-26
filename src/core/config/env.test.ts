@@ -36,7 +36,7 @@ describe("allowHeaderAuthContext", () => {
 
   it("defaults to false when not explicitly enabled", () => {
     vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("APP_MODE", "prototype");
+    vi.stubEnv("APP_MODE", "local");
     __resetEnvCacheForTests();
 
     expect(allowHeaderAuthContext()).toBe(false);
@@ -76,7 +76,7 @@ describe("assertProductionRuntimeEnv", () => {
 
   it("no-ops outside production mode", () => {
     vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("APP_MODE", "prototype");
+    vi.stubEnv("APP_MODE", "local");
     __resetEnvCacheForTests();
 
     expect(() => assertProductionRuntimeEnv()).not.toThrow();

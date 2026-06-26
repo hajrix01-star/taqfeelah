@@ -16,7 +16,7 @@ type BrowserPersistencePolicyOptions = {
 
 function isProductionModeFromEnv(env: Record<string, string | undefined>) {
   if (env.NEXT_PUBLIC_APP_MODE === "production") return true;
-  if (env.NEXT_PUBLIC_APP_MODE === "prototype") return false;
+  if (env.NEXT_PUBLIC_APP_MODE === "local") return false;
   return env.NODE_ENV === "production";
 }
 

@@ -11,7 +11,7 @@ import {
   summaryMonthFromEntries,
 } from "@/features/operations/operational-analytics";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
-import { businesses, businessName, channelName, channels, money, text } from "./taqfeelah-app-reference-data";
+import { businesses, businessName, channelName, channels, money, text } from "./taqfeelah-app-catalog-data";
 import AttachmentLightbox from "../AttachmentLightbox";
 import {
   entryDateMatches,

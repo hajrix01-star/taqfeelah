@@ -1,6 +1,6 @@
 "use client";
 
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";
 import { SettingsPageHeader } from "./owner-settings-ui-primitives";
 import { OwnerSettingsTeamRoster } from "./owner-settings-team-roster";

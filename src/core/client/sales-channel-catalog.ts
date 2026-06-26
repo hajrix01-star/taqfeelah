@@ -8,14 +8,10 @@ export {
 } from "./income-source-catalog";
 
 import {
-  DEFAULT_NEW_STORE_SALES_CHANNEL_IDS,
   DEFAULT_SALES_CHANNEL_UUIDS,
   INCOME_SOURCE_CATALOG,
   isUuid,
 } from "./income-source-catalog";
-
-/** @deprecated Use DEFAULT_NEW_STORE_SALES_CHANNEL_IDS */
-export const PROTOTYPE_SALES_CHANNEL_IDS = DEFAULT_NEW_STORE_SALES_CHANNEL_IDS;
 
 const CHANNEL_LABELS: Record<string, string> = Object.fromEntries(
   INCOME_SOURCE_CATALOG.map((entry) => [entry.legacyId, entry.nameEn]),

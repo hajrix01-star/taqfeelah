@@ -9,7 +9,7 @@ import {
   businessLocation,
   businessName,
   text,
-} from "./taqfeelah-app-reference-data";
+} from "./taqfeelah-app-catalog-data";
 import { ThemePicker } from "./taqfeelah-app-notebook";
 import { ActionRow } from "./owner-settings-ui-primitives";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";

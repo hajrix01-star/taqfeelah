@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { canAddStore, resolveStoreLimitMessage } from "@/features/billing/client/entitlement-guards";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import { OwnerSettingsDeleteDialog } from "./owner-settings-delete-dialog-ui";
 import { SettingsPageHeader } from "./owner-settings-ui-primitives";
 import { SettingsSectionFrame } from "./owner-settings-section-frame";

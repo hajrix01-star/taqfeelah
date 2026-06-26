@@ -5,7 +5,7 @@ import { formatCloseoutDayLabel } from "@/features/closeouts/client/closeout-day
 import { summaryEntryDisplayAmount } from "@/features/entries/client/register-operation-display";
 import { employeeDisplayName } from "@/features/employee-closeouts/employee-entries-display";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
-import { businessName, money, opTime, text } from "./taqfeelah-app-reference-data";
+import { businessName, money, opTime, text } from "./taqfeelah-app-catalog-data";
 import {
   entryHasAttachment,
   entryIsVoided,

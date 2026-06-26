@@ -38,7 +38,7 @@ import {
   businesses,
   expenseCategories,
   text,
-} from "./taqfeelah-app-reference-data";
+} from "./taqfeelah-app-catalog-data";
 import { ENTRIES_API_DB_SOURCE } from "./taqfeelah-app-boot";
 import {
   entryCategory,

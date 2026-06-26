@@ -19,7 +19,7 @@ import {
   combinedTotals,
   money,
   text,
-} from "./taqfeelah-app-reference-data";
+} from "./taqfeelah-app-catalog-data";
 import { InkTab } from "./taqfeelah-app-shell-ui";
 import type { ReactNode } from "react";
 import type {

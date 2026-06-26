@@ -54,8 +54,8 @@ import {
 } from "@/features/billing/client/entitlement-guards";
 import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { isFlattenedStoreSettingsEnabled } from "@/core/config/owner-settings-store-layout-mode";
-import { emptyStoreRecord, text } from "./taqfeelah-app-reference-data";
-import { APP_IN_PRODUCTION_MODE, PROTOTYPE_EMPLOYEE_PIN_DEFAULT } from "./taqfeelah-app-boot";
+import { emptyStoreRecord, text } from "./taqfeelah-app-catalog-data";
+import { APP_IN_PRODUCTION_MODE, LOCAL_DEV_EMPLOYEE_PIN_DEFAULT } from "./taqfeelah-app-boot";
 import type { OwnerSettingsScreenHandlersContext } from "./taqfeelah-app-types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -480,7 +480,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     const { staff: nextStaff, employeePins: nextPins } = prepareSavedTeamDraft(teamDraft, {
       draftAuthEmployeePins,
       authEmployeePins,
-      defaultPin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT || "1234",
+      defaultPin: LOCAL_DEV_EMPLOYEE_PIN_DEFAULT || "1234",
       pinsFromAuthIdentitiesOnly: isOrgConfigApiEnabled(),
     });
     const persistPins = employeePinsOverride ?? nextPins;
@@ -565,7 +565,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       name: newEmployeeName,
       mobile: newEmployeeMobile,
       storeIds: newEmployeeStoreIds,
-      defaultPin: PROTOTYPE_EMPLOYEE_PIN_DEFAULT,
+      defaultPin: LOCAL_DEV_EMPLOYEE_PIN_DEFAULT,
     });
     setters.setDraftStaff((current: HandlerAny) => [...(current || staff), created.member]);
     setters.setDraftAuthEmployeePins((current: HandlerAny) => ({ ...(current || {}), ...created.employeePinsPatch }));

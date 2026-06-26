@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Ensure prototype/UI sales channels exist in sales_channels for each mapped store.
+ * Ensure runtime/UI sales channels exist in sales_channels for each mapped store.
  * Reads latest runtime_settings_saved storeChannelSettings when available.
  */
 
@@ -25,7 +25,7 @@ const CHANNEL_LABELS = Object.fromEntries(
   INCOME_SOURCE_CATALOG.map((entry) => [entry.legacyId, entry.nameAr || entry.nameEn]),
 );
 
-const DEFAULT_PROTOTYPE_CHANNELS = INCOME_SOURCE_CATALOG
+const DEFAULT_RUNTIME_CHANNELS = INCOME_SOURCE_CATALOG
   .filter((entry) => entry.defaultActive)
   .map((entry) => ({ id: entry.legacyId }));
 
@@ -155,15 +155,15 @@ function collectStoreChannelJobs(storeChannelSettings, configuredBusinesses, sto
     : configuredBusinesses.map((business) => [
       business.id,
       {
-        channels: DEFAULT_PROTOTYPE_CHANNELS,
-        activeIds: DEFAULT_PROTOTYPE_CHANNELS.map((channel) => channel.id),
+        channels: DEFAULT_RUNTIME_CHANNELS,
+        activeIds: DEFAULT_RUNTIME_CHANNELS.map((channel) => channel.id),
       },
     ]);
 
   for (const [legacyStoreId, config] of storeEntries) {
     const storeUuid = resolveStoreUuid(legacyStoreId, storeIdMap);
     if (!storeUuid) continue;
-    const channels = Array.isArray(config?.channels) ? config.channels : DEFAULT_PROTOTYPE_CHANNELS;
+    const channels = Array.isArray(config?.channels) ? config.channels : DEFAULT_RUNTIME_CHANNELS;
     const activeIds = Array.isArray(config?.activeIds)
       ? config.activeIds
       : channels.map((channel) => channel.id);

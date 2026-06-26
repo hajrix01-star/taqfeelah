@@ -13,7 +13,7 @@ import {
   shareEntryAttachmentImage,
 } from "@/features/entries/client/entry-attachment-share";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import type { EntryAttachmentApiContext, OperationalEntry, AppLang } from "./taqfeelah-app-types";
 
 type PreparedAttachment = Awaited<ReturnType<typeof prepareAttachment>>;

@@ -14,7 +14,7 @@ describe("runtime settings bridge", () => {
   });
 
   it("buildRuntimeSettingsSnapshot keeps shared settings outside production when org config API is enabled", () => {
-    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "local");
 
     const snapshot = buildRuntimeSettingsSnapshot({
       orgConfigApiEnabled: true,
@@ -98,7 +98,7 @@ describe("runtime settings bridge", () => {
 
   it("resolveOwnerSettingsApiAuth returns env UUID fallback when entries API is enabled without session", () => {
     vi.stubEnv("NEXT_PUBLIC_ENTRIES_API_ENABLED", "true");
-    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "local");
     vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID", "11111111-1111-4111-8111-111111111111");
     vi.stubEnv("NEXT_PUBLIC_CLOSEOUTS_API_OWNER_USER_ID", "22222222-2222-4222-8222-222222222222");
 

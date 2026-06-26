@@ -1,11 +1,11 @@
-﻿import { summaryDayFromEntries } from "@/features/operations/operational-analytics";
+import { summaryDayFromEntries } from "@/features/operations/operational-analytics";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import type { FormatDayLabelFn } from "@/features/operations/operations-types";
 import { buildOperationalEntry } from "@/features/entries/client/build-operational-entry";
 import { groupAttachmentsFromEntries } from "@/features/entries/client/attachments-from-entries";
 import { toAmount } from "./taqfeelah-app-entry-form-utils";
 import { noteLabel } from "./taqfeelah-app-entry-helpers";
-import { opTime } from "./taqfeelah-app-reference-data";
+import { opTime } from "./taqfeelah-app-catalog-data";
 import { isoCalendarDate } from "./taqfeelah-app-notebook";
 import type {
   OperationalEntry,

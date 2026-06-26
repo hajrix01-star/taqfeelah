@@ -1,7 +1,7 @@
 "use client";
 
 import { FileText, Smartphone } from "lucide-react";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import { SettingsLink, SettingsPageHeader } from "./owner-settings-ui-primitives";
 import { OwnerSettingsSubscriptionSection } from "./owner-settings-subscription-section";
 import { SettingsSectionFrame } from "./owner-settings-section-frame";

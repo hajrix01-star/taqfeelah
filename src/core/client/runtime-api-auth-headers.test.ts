@@ -6,7 +6,7 @@ describe("buildRuntimeApiAuthHeaders", () => {
     vi.unstubAllEnvs();
   });
 
-  it("maps prototype actor keys to UUID headers", () => {
+  it("maps local actor keys to UUID headers", () => {
     vi.stubEnv(
       "NEXT_PUBLIC_CLOSEOUTS_USER_ID_MAP",
       JSON.stringify({ owner: "e8f3e35b-6051-4da3-8b10-979700c2f00f" }),

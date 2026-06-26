@@ -1,6 +1,6 @@
 "use client";
 
-import { businesses, businessName, money, opTime, text } from "./taqfeelah-app-reference-data";
+import { businesses, businessName, money, opTime, text } from "./taqfeelah-app-catalog-data";
 import { AttachmentThumbButton } from "./taqfeelah-app-attachment-ui";
 import { signedEntryAmount } from "./taqfeelah-app-entry-helpers";
 import { MoneyValue, NotebookRow } from "./taqfeelah-app-notebook";

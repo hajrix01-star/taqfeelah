@@ -1,47 +1,46 @@
 # تقفيلة (Taqfeelah)
 
-تقفيلة تطبيق SaaS للتشغيل المالي اليومي المبسط:
+تقفيلة تطبيق SaaS للتشغيل اليومي المبسط:
 
 ```text
 المبيعات - الخارج = صافي الحركة
 ```
 
-التطبيق ليس نظام محاسبة قانونيًا أو ERP. مصدر الحقيقة في وضع الإنتاج هو PostgreSQL عبر واجهات API موثقة ومحمية بجلسات وصلاحيات.
+التطبيق ليس نظام محاسبة قانوني، ولا ERP، ولا POS. مصدر الحقيقة في الإنتاج هو PostgreSQL عبر API موثقة ومحمية بجلسات وصلاحيات.
 
 ## الحالة الحالية
 
-- التطبيق التشغيلي: `/app`
+- تطبيق العميل: `/app`
 - لوحة إدارة المنصة: `/saas-admin`
 - الموقع العام والتسجيل: `/` و`/signup`
 - قاعدة البيانات: PostgreSQL + Drizzle ORM
-- الإنتاج: يُنشر من `main` فقط عبر `.github/workflows/deploy-production.yml`
-- التجربة المعزولة: فرع التجربة عبر `.github/workflows/deploy-staging.yml`
-- حالة الجاهزية والقرارات المؤجلة: `docs/PRODUCTION_STATUS.md`
+- الإنتاج: من `main` فقط
+- staging: من فرع التجربة
+- حالة الإنتاج والقرارات المؤجلة: `docs/PRODUCTION_STATUS.md`
 
-لا تدمج إلى `main` ولا تشغّل أوامر seed/reset على الإنتاج دون موافقة صريحة وخطة تحقق.
+لا تدمج إلى `main` ولا تشغل seed/reset على الإنتاج بدون موافقة صريحة وخطة تحقق.
 
 ## ابدأ من هنا
 
-اقرأ الملفات بهذا الترتيب:
+اقرأ الوثائق بهذا الترتيب:
 
-1. `README.md` — التشغيل وخريطة المشروع.
-2. `docs/README.md` — فهرس الوثائق وتصنيف المرجع الحالي والتاريخي.
-3. `docs/ARCHITECTURE.md` — المعمارية الحالية وتدفق البيانات.
-4. `docs/CONVENTIONS.md` — قواعد المنتج والكود الإلزامية.
-5. `docs/DATA_SOURCE_UNIFICATION.md` — مصدر الحقيقة والمركزية.
-6. `docs/DATABASE_SCHEMA.md` — الجداول والعلاقات والفهارس.
-7. `docs/API_CONTRACT.md` — عقود واجهات API.
-8. `docs/PRODUCTION_STATUS.md` — المنجز والمخاطر والمؤجل.
-9. `docs/PRELAUNCH_MANUAL_SMOKE.md` — اختبار ما قبل الإطلاق.
+1. `docs/README.md`
+2. `docs/ARCHITECTURE.md`
+3. `docs/CONVENTIONS.md`
+4. `docs/DATA_SOURCE_UNIFICATION.md`
+5. `docs/DATABASE_SCHEMA.md`
+6. `docs/API_CONTRACT.md`
+7. `docs/PRODUCTION_STATUS.md`
+8. `docs/PRELAUNCH_MANUAL_SMOKE.md`
 
-عند اختلاف وثيقتين، تكون الأولوية للحالة الفعلية في الكود ثم `PRODUCTION_STATUS.md` ثم `ARCHITECTURE.md`. يجب تحديث الوثيقة المخالفة في نفس التغيير.
+عند التعارض، اتبع الكود الحالي ثم الوثائق المعتمدة في `docs/README.md`. وثائق `docs/archive/` تاريخية فقط.
 
 ## تشغيل محلي سريع
 
 المتطلبات:
 
 - Node.js 22 أو أحدث
-- pnpm 9.15.9 عبر Corepack
+- pnpm عبر Corepack
 - PostgreSQL
 
 ```bash
@@ -49,14 +48,14 @@ corepack prepare pnpm@9.15.9 --activate
 corepack pnpm install --frozen-lockfile
 ```
 
-انسخ `.env.example` إلى `.env.local` واضبط `DATABASE_URL` و`AUTH_SESSION_SECRET`. ثم:
+انسخ `.env.example` إلى `.env.local` واضبط `DATABASE_URL` و`AUTH_SESSION_SECRET`، ثم:
 
 ```bash
 corepack pnpm db:migrate
 corepack pnpm dev
 ```
 
-استخدم seed فقط في قاعدة محلية فارغة. لا تستخدم `db:push` أو أوامر reset/seed على الإنتاج.
+استخدم seed فقط على قاعدة محلية فارغة. لا تستخدم `db:push` أو reset/seed على الإنتاج.
 
 ## بوابات الجودة
 
@@ -77,20 +76,20 @@ corepack pnpm check:db-source
 corepack pnpm prelaunch:check:strict --env-file .env.example
 ```
 
-تُشغّل فحوصات CI وقاعدة PostgreSQL أيضًا على GitHub. نجاح الفحوصات لا يلغي الاختبار اليدوي على staging.
+نجاح الفحوصات لا يلغي الاختبار اليدوي على staging.
 
 ## خريطة المشروع
 
 ```text
-src/app/          صفحات Next.js ومسارات API فقط
-src/features/     ميزات المنتج؛ كل ميزة تجمع client/server/types الخاصة بها
-src/domain/       قواعد العمل والحسابات المستقلة عن الواجهة
-src/core/         البنية المشتركة: auth, db, config, money, errors, sync
-src/components/   تركيب الواجهة الحالية والمكوّنات المشتركة
-src/lib/          أدوات واجهة عامة محدودة
-drizzle/          migrations مرتبة وغير قابلة لإعادة الكتابة بعد النشر
+src/app/          صفحات Next.js ومسارات API
+src/components/   تركيب واجهة التطبيق الحالية
+src/features/     منطق الميزات client/server/types
+src/domain/       قواعد العمل والحسابات المستقلة
+src/core/         auth, db, config, money, errors, sync
+src/lib/          أدوات واجهة عامة
+drizzle/          migrations مرتبة
 e2e/              اختبارات المتصفح وقاعدة البيانات
-scripts/          تشغيل، تحقق، صيانة ونشر
+scripts/          تشغيل، تحقق، صيانة، نشر
 docs/             العقود والقرارات والتشغيل
 ```
 
@@ -99,6 +98,8 @@ docs/             العقود والقرارات والتشغيل
 ```text
 app/components -> features -> domain/core -> PostgreSQL
 ```
+
+قواعد مختصرة:
 
 - لا تضع قواعد العمل داخل `page.tsx`.
 - لا تكرر حسابات المال في الواجهة.
@@ -115,32 +116,20 @@ UI -> validated API -> PostgreSQL
 ```
 
 - PostgreSQL هو المصدر الدائم للعمليات والإعدادات والحسابات والجلسات.
-- المرفقات الجديدة تحفظ كملفات محلية معزولة على VPS، وتحفظ بياناتها الوصفية ومسارها في PostgreSQL.
-- التخزين الخارجي للمرفقات مؤجل إلى ما بعد الإطلاق وعند الحاجة للتوسع، بقرار المالك.
-- `localStorage` وIndexedDB مسموحان فقط لسلوك واجهة غير تجاري أو prototype خارج وضع الإنتاج.
-
-## المال وسلامة البيانات
-
-- كل مبلغ إنتاجي يخزن كعدد صحيح بالهللات: `amountHalalas`.
-- الحساب المركزي في `src/domain/cash-movement`.
-- العمليات متعددة الخطوات تستخدم transaction في PostgreSQL.
-- العمليات المالية العادية تستخدم `void` و`restore` مع `audit_events`.
-- تعديل التقفيلة يلغي نسختها السابقة ويحفظها، وحذف التقفيلة إلغاء منطقي يحفظ الصفوف والمرفقات وسجل التدقيق.
+- المرفقات الجديدة تحفظ كملفات محلية معزولة على VPS، وتحفظ بياناتها الوصفية في PostgreSQL.
+- التخزين الخارجي للمرفقات مؤجل إلى حين الحاجة للتوسع.
+- التخزين في المتصفح مسموح فقط لتفضيلات UI غير تشغيلية أو للتطوير المحلي.
 
 ## الفروع والنشر
 
-- `main`: الإنتاج فقط.
+- `main`: الإنتاج.
 - `codex/*`: تغييرات وتجارب معزولة.
-- staging والإنتاج لهما خدمة وقاعدة بيانات وإعدادات منفصلة.
-- أي تغيير في schema يجب أن يضيف migration جديدًا ولا يعدّل migration سبق نشره.
+- staging والإنتاج لهما خدمة وقاعدة بيانات وإعدادات مستقلة.
+- أي تغيير schema يضيف migration جديدًا ولا يعدل migration سبق نشره.
 
-## القرارات المؤجلة
+## قرارات مؤجلة
 
-هذه ليست مهام مطلوبة للإطلاق الأول ما لم تتغير الحاجة:
-
-- Object Storage/CDN للمرفقات — بعد الإطلاق وعند التوسع.
-- Redis مشترك — عند تشغيل أكثر من نسخة تطبيق أو زيادة ضغط الدخول.
-- جداول تجميع إضافية — بعد إثبات الحاجة باختبار ضغط فعلي.
-- النسخ الاحتياطي وخطة الاستعادة — آخر مرحلة قبل اعتماد التشغيل التجاري وفق ترتيب المالك.
-
-التفاصيل والحالة الدقيقة موجودة في `docs/PRODUCTION_STATUS.md`.
+- Object Storage/CDN للمرفقات.
+- Redis مشترك عند تعدد نسخ التطبيق أو ارتفاع ضغط الدخول.
+- جداول تجميع إضافية بعد إثبات الحاجة بقياس ضغط.
+- خطة backup/restore موثقة قبل التوسع التجاري الجاد.

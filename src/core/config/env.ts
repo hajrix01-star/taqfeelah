@@ -5,8 +5,8 @@ import { ServiceUnavailableError } from "@/core/errors/app-error";
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1).optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  APP_MODE: z.enum(["prototype", "production"]).optional(),
-  NEXT_PUBLIC_APP_MODE: z.enum(["prototype", "production"]).optional(),
+  APP_MODE: z.enum(["local", "production"]).optional(),
+  NEXT_PUBLIC_APP_MODE: z.enum(["local", "production"]).optional(),
   AUTH_SESSION_SECRET: z.string().min(16).optional(),
   AUTH_SESSION_COOKIE_NAME: z.string().min(1).default("taqfeelah_session"),
   AUTH_ORGANIZATION_ID: z.string().uuid().optional(),
@@ -118,10 +118,10 @@ export function assertProductionRuntimeEnv(env = readEnv()) {
   const authLaunchRequested = authApiEnabled || authDbCredentialsEnabled;
 
   if (!env.DATABASE_URL) missing.push("DATABASE_URL");
-  if ((env.APP_MODE || "prototype") !== "production") {
+  if ((env.APP_MODE || "local") !== "production") {
     missing.push("APP_MODE=production");
   }
-  if ((env.NEXT_PUBLIC_APP_MODE || "prototype") !== "production") {
+  if ((env.NEXT_PUBLIC_APP_MODE || "local") !== "production") {
     missing.push("NEXT_PUBLIC_APP_MODE=production");
   }
   if (env.NEXT_PUBLIC_CLOSEOUTS_API_ENABLED !== "true") {

@@ -10,7 +10,7 @@ import {
 } from "@/features/operations/operational-entry-mutation-helpers";
 import { canManageRegisterCloseoutSummary } from "@/features/operations/client/register-closeout-summary-actions";
 import { registerSalesChannelBadgeLabel } from "@/features/entries/client/register-log-display";
-import { businessName, money, opTime, text } from "./taqfeelah-app-reference-data";
+import { businessName, money, opTime, text } from "./taqfeelah-app-catalog-data";
 import {
   entryHasAttachment,
   entryIsVoided,

@@ -16,7 +16,7 @@ describe("runtime settings api client", () => {
     vi.unstubAllGlobals();
   });
 
-  it("sends prototype auth headers for runtime settings reads", async () => {
+  it("sends runtime auth headers for settings reads", async () => {
     const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
       async () => new Response(JSON.stringify({ settings: { staff: [] } }), { status: 200 }),
     );

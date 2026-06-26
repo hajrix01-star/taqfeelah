@@ -50,7 +50,7 @@ describe("buildRuntimeApiIdMaps", () => {
     expect(maps.salesChannelIdMap.cash).toBe("9bc40d4f-c773-4ba3-87db-b8bb1467dafb");
   });
 
-  it("maps prototype sales channels including mada", () => {
+  it("maps local sales channels including mada", () => {
     const maps = buildRuntimeApiIdMaps({
       envStoreIdMap,
       envUserIdMap,

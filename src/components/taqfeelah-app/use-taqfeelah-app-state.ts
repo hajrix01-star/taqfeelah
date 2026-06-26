@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { storeAttachmentPayload } from "@/features/attachments/client/attachment-payload-storage";
@@ -29,7 +29,7 @@ import {
   expenseCategories,
   businesses,
   text,
-} from "./taqfeelah-app-reference-data";
+} from "./taqfeelah-app-catalog-data";
 import {
   BINDS_TO_SERVER_AUTH,
   ENTRIES_API_DB_SOURCE,

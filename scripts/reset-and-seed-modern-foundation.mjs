@@ -8,8 +8,8 @@ const CONFIRMATION = "reset-modern-foundation";
 const INCOME_SOURCE_CATALOG = JSON.parse(
   readFileSync(new URL("../src/core/client/income-source-catalog-data.json", import.meta.url), "utf8"),
 );
-const DEMO_STAFF_CATALOG = JSON.parse(
-  readFileSync(new URL("../src/core/client/demo-staff-catalog-data.json", import.meta.url), "utf8"),
+const FOUNDATION_STAFF_CATALOG = JSON.parse(
+  readFileSync(new URL("../src/core/client/foundation-staff-catalog-data.json", import.meta.url), "utf8"),
 );
 
 const IDS = {
@@ -92,7 +92,7 @@ async function seedCore(client) {
 
   const users = [
     [IDS.owner, "محمد الهاجري", "owner"],
-    ...DEMO_STAFF_CATALOG.map((person) => [person.userId, person.nameAr || person.nameEn, person.role]),
+    ...FOUNDATION_STAFF_CATALOG.map((person) => [person.userId, person.nameAr || person.nameEn, person.role]),
   ];
 
   for (const [userId, name] of users) {
@@ -105,7 +105,7 @@ async function seedCore(client) {
 
   const members = [
     [IDS.owner, "owner"],
-    ...DEMO_STAFF_CATALOG.map((person) => [person.userId, person.role]),
+    ...FOUNDATION_STAFF_CATALOG.map((person) => [person.userId, person.role]),
   ];
 
   for (const [userId, role] of members) {
@@ -179,7 +179,7 @@ async function seedRuntimeSettings(client) {
         notebookTheme: null,
       },
     },
-    staff: DEMO_STAFF_CATALOG.map((person) => ({
+    staff: FOUNDATION_STAFF_CATALOG.map((person) => ({
       id: person.userId,
       legacyId: person.legacyId,
       apiUserId: person.userId,
@@ -194,7 +194,7 @@ async function seedRuntimeSettings(client) {
       ownerUsername: envValue("AUTH_OWNER_USERNAME", "hajri"),
       ownerPassword: envValue("AUTH_OWNER_PASSWORD", "123"),
       employeePins: Object.fromEntries(
-        DEMO_STAFF_CATALOG.flatMap((person) => [
+        FOUNDATION_STAFF_CATALOG.flatMap((person) => [
           [person.userId, person.pin],
           [person.legacyId, person.pin],
         ]),

@@ -4,7 +4,7 @@ import React from "react";
 import { CalendarDays, ChevronDown } from "lucide-react";
 import { resolveAppFontFamily } from "@/core/fonts/app-font-family";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
-import { businessName, money, opTime, text } from "./taqfeelah-app-reference-data";
+import { businessName, money, opTime, text } from "./taqfeelah-app-catalog-data";
 import {
   entryHasAttachment,
   operationDisplayLabel,

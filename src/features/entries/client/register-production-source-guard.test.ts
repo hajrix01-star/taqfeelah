@@ -136,13 +136,13 @@ describe("register production source guard", () => {
   it("does not persist operational entries to browser storage", () => {
     const source = readProjectFile("src/features/operations/client/use-taqfeelah-app-operational-entries.ts");
     const boot = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-boot.ts");
-    const demoEntries = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-operational-entry-helpers.ts");
+    const operationalEntryHelpers = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-operational-entry-helpers.ts");
 
     expect(source).not.toContain("safeSetLocalStorageItem");
     expect(source).not.toContain("operational-fallback");
     expect(source).not.toContain("OPERATIONAL_ENTRIES_STORAGE_KEY");
     expect(boot).not.toContain("OPERATIONAL_ENTRIES_STORAGE_KEY");
-    expect(demoEntries).not.toContain("readLocalStorageJson");
+    expect(operationalEntryHelpers).not.toContain("readLocalStorageJson");
   });
 
   it("does not expose duplicate subscription or invite-create UI roots in owner settings", () => {

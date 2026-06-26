@@ -18,7 +18,7 @@ import {
   isOwnerStandaloneOutflowPayload,
 } from "@/features/operations/client/build-owner-outflow-closeout-draft";
 import { buildCloseoutSubmitFailureMessage, diagnoseCloseoutSubmitFailure } from "@/features/closeouts/client/closeouts-api-client";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import {
   buildEntry,
 } from "./taqfeelah-app-operational-entry-helpers";
@@ -29,7 +29,7 @@ import type {
   UseTaqfeelahAppOwnerSaveActionsProps,
   OperationalEntry,
 } from "./taqfeelah-app-types";
-import { DEFAULT_STORE_CHANNEL_CONFIG } from "./taqfeelah-app-reference-data";
+import { DEFAULT_STORE_CHANNEL_CONFIG } from "./taqfeelah-app-catalog-data";
 
 export function useTaqfeelahAppOwnerSaveActions({
   lang,

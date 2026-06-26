@@ -80,7 +80,7 @@ export function buildRuntimeApiIdMaps({
       continue;
     }
 
-    // Prototype single-store fallback: owner renamed store keeps custom id in UI.
+    // Local single-store compatibility: owner renamed store keeps custom id in UI.
     if (businesses.length === 1 && seededStoreUuids.length === 1) {
       storeIdMap[legacyStoreId] = seededStoreUuids[0]!;
     }

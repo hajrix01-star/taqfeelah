@@ -1,76 +1,70 @@
-# دليل الإطلاق على VPS — خطوة بخطوة
+# VPS Launch Runbook
 
-> **متى:** بعد CI أخضر على PR #342 وقبل merge إلى `main`
-> **من ينفّذ:** مالك المنتج
-> **المدة:** ~45–60 دقيقة (env + wipe + smoke)
+> آخر تحديث: 2026-06-26
 
----
+هذا الدليل مختصر ومخصص لتشغيل الإنتاج على VPS. استخدمه بعد نجاح staging وبعد قرار المالك.
 
-## 1. ضبط `.env.production` على VPS
+## 1. فحص البيئة
 
-> **للمالك بدون خبرة برمجة:** راجع **`docs/VPS_ENV_SETUP_FOR_OWNER.md`** — خطوتان فقط (Upstash + GitHub Secrets).
-> لا حاجة لتحرير الملف يدويًا إذا أضفت الأسرار في GitHub قبل النشر.
+تأكد من وجود القيم الأساسية:
 
-تأكد من وجود القيم التالية (راجع `.env.example`):
-
-| المتغير | مطلوب |
-|---------|--------|
-| `DATABASE_URL` | ✅ |
-| `AUTH_SESSION_SECRET` | ≥16 حرف |
-| `SAAS_PLATFORM_ADMIN_USER_IDS` | UUIDs مفصولة بفاصلة |
-| `NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE` | `true` |
+| المتغير | المطلوب |
+|---|---|
+| `DATABASE_URL` | موجود |
+| `AUTH_SESSION_SECRET` | قوي |
 | `APP_MODE` | `production` |
-| `UPSTASH_*` | ⏸ اختياري (لاحقًا عند التوسع) |
+| `NEXT_PUBLIC_APP_MODE` | `production` |
+| `NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE` | `true` |
+| `ALLOW_HEADER_AUTH_CONTEXT` | `false` |
+| `SAAS_PLATFORM_ADMIN_USER_IDS` | UUIDs لمسؤولي المنصة |
+
+ثم شغل فحص البيئة إن كان متاحًا:
 
 ```bash
 pnpm prelaunch:check:strict --env-file .env.production
 ```
 
----
+## 2. قبل النشر
 
-## 2. merge و deploy (عند «جاهز للايف»)
+- staging ناجح.
+- commit المطلوب معروف.
+- backup جاهز إذا كان التغيير يمس DB أو مرفقات.
+- لا توجد migrations غير مفهومة.
+- قرار المالك واضح.
 
-1. تأكد CI أخضر على PR
-2. قل **«جاهز للايف»** → merge PR إلى `main`
-3. انتظر `deploy-production.yml` ينجح
+## 3. النشر
 
----
+الإنتاج ينشر من `main`. لا تنشر تغييرات فرع تجربة مباشرة إلى الإنتاج إلا إذا كان ذلك قرارًا استثنائيًا موثقًا.
 
-## 3. مسح البيانات التجريبية — **مؤجّل**
-
-> **قرار المالك:** نُبقي البيانات للتجربة — **لا wipe الآن**.
-> نفّذ `prelaunch:wipe:apply` **فقط** قبل أول عميل حقيقي (ليس قبل merge).
-
----
-
-## 4. بوابة الإطلاق الآلية
+بعد النشر:
 
 ```bash
-pnpm prelaunch:live-gate --env-file .env.production
-CHECK_BASE_URL=https://your-domain pnpm prelaunch:live-gate --env-file .env.production
+curl https://taqfeelah.com/api/v1/meta
 ```
 
----
+تحقق أن `build` يطابق commit المطلوب.
 
-## 5. اختبار يدوي + أول عميل
+## 4. فحص ما بعد النشر
 
-1. نفّذ `docs/PRELAUNCH_MANUAL_SMOKE.md` — كل البنود ☑
-2. أنشئ أول حساب من `/saas-admin/accounts/new`
-3. **لا** `seed-auth-credentials` بعد wipe
+1. افتح `/app`.
+2. سجل دخول مالك.
+3. اختبر قراءة المحلات والموظفين.
+4. اختبر السجل والرئيسية.
+5. اختبر SaaS Admin إن كان التغيير يمسه.
+6. راقب logs.
 
----
+## 5. متى نرجع
 
-## 6. قرار الإعلان
+ابدأ rollback أو إيقاف النشر إذا:
 
-| الحالة | الإجراء |
-|--------|---------|
-| كل ☑ | أعلن الإطلاق للعملاء |
-| أي ✗ حرج | fix → PR → redeploy → أعد الاختبار |
-
----
+- `/app` لا يفتح.
+- auth يفشل للمستخدمين الصحيحين.
+- API يرجع 500 بشكل متكرر.
+- `/api/v1/meta` لا يطابق النسخة المطلوبة.
+- ظهرت مشكلة بيانات إنتاجية.
 
 ## مراجع
 
 - `docs/LIVE_DEPLOY_BATCH_PLAN.md`
+- `docs/STAGING_DEPLOY_RUNBOOK.md`
 - `docs/PRELAUNCH_MANUAL_SMOKE.md`
-- `scripts/prelaunch-live-gate.mjs`

@@ -53,7 +53,7 @@ describe("provisionSalesChannels", () => {
     expect(insert).toHaveBeenCalled();
   });
 
-  it("upserts known prototype channels for active store config", async () => {
+  it("upserts known local channels for active store config", async () => {
     const { provisionSalesChannels } = await import("./provision-sales-channels");
     const result = await provisionSalesChannels(
       "8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1",

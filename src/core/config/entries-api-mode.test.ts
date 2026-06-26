@@ -32,7 +32,7 @@ describe("entries api mode", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
     expect(isEntriesApiStrictMode()).toBe(true);
 
-    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "local");
     expect(isEntriesApiStrictMode()).toBe(false);
   });
 });

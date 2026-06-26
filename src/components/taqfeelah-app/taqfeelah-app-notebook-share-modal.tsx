@@ -13,7 +13,7 @@ import {
 import { notebookThemes } from "@/features/daily-closeouts/notebook-themes";
 import { canFetchNotebookExportForSnapshot } from "@/features/exports-attachments/client/notebook-export-share-data";
 import { useNotebookExportShareData } from "@/features/exports-attachments/client/use-notebook-export-share-data";
-import { businesses, text } from "./taqfeelah-app-reference-data";
+import { businesses, text } from "./taqfeelah-app-catalog-data";
 import { todayIsoDate } from "./taqfeelah-app-notebook";
 import { buildDataExportModel } from "@/features/exports/client/build-data-export-model";
 import { buildNotebookShareModel } from "./build-notebook-share-model";

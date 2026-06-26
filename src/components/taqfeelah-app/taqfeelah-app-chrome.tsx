@@ -17,7 +17,7 @@ import type { LucideIcon } from "lucide-react";
 import EmployeeFooterNav from "@/features/employee-closeouts/EmployeeFooterNav";
 import { notebookLinesBackground } from "@/features/daily-closeouts/notebook-themes";
 import { AppBrandMark } from "@/lib/brand/AppBrandMark";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import { taqInteractive } from "@/core/ui/interactive-classes";
 import type { NotebookThemeId, AppLang } from "./taqfeelah-app-types";
 

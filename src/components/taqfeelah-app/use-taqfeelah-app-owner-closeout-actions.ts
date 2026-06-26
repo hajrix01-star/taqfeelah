@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { resolveStoreChannelConfig, EMPTY_STORE_CHANNEL_CONFIG } from "@/features/org-config/client/store-channel-config";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import { refreshOperationalEntriesBestEffort } from "@/features/operations/client/refresh-operational-entries-best-effort";
 import type {

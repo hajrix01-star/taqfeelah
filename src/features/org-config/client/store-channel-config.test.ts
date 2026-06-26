@@ -53,7 +53,7 @@ describe("store channel config", () => {
     expect(ensureStoreChannelSettingsForBusinesses(next, ["shami"], defaultConfig)).toBe(next);
   });
 
-  it("skips prototype defaults when DB org config is the source", () => {
+  it("skips local defaults when DB org config is the source", () => {
     const next = ensureStoreChannelSettingsForBusinesses(
       {},
       ["302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"],

@@ -8,7 +8,7 @@ import { useDailyCloseouts } from "@/features/daily-closeouts/DailyCloseoutsProv
 import { isCloseoutWorkflowFailure } from "@/features/daily-closeouts/daily-closeouts-local-store";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
 import { formatDateTimeLabel } from "./taqfeelah-app-date-helpers";
-import { text } from "./taqfeelah-app-reference-data";
+import { text } from "./taqfeelah-app-catalog-data";
 import { confirmCloseoutDelete } from "@/lib/ui/app-dialog/app-dialog-helpers";
 import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import type { SalesChannelConfig } from "@/features/daily-closeouts/daily-closeouts-types";

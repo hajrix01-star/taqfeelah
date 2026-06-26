@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { UserRound, Users } from "lucide-react";
 import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
-import { text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-catalog-data";
 import type { AuthLangProps } from "@/features/auth/client/auth-client-types";
 import { LanguageSwitch, Logo } from "@/components/taqfeelah-app/taqfeelah-app-chrome";
 

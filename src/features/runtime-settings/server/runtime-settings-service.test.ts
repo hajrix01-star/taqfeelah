@@ -70,8 +70,8 @@ describe("runtime settings production staff guard", () => {
   });
 
   it("keeps runtime settings unchanged outside production DB/API mode", async () => {
-    vi.stubEnv("APP_MODE", "prototype");
-    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "prototype");
+    vi.stubEnv("APP_MODE", "local");
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "local");
     vi.stubEnv("NEXT_PUBLIC_ORG_CONFIG_API_ENABLED", "true");
 
     const { stripProductionOperationalRuntimeSettings } = await import("./runtime-settings-service");

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Fail CI build if client bundles still embed the legacy demo support number
+ * Fail CI build if client bundles still embed the legacy non-production support number
  * or omit the production support line after build.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const PRODUCTION_SUPPORT_WHATSAPP = "966533507223";
-const LEGACY_DEMO_SUPPORT_WHATSAPP = "966501234567";
+const LEGACY_NON_PRODUCTION_SUPPORT_WHATSAPP = "966501234567";
 const CHUNKS_DIR = ".next/static/chunks";
 
 function walkJsFiles(dir, files = []) {
@@ -36,7 +36,7 @@ const legacyFiles = [];
 
 for (const file of files) {
   const content = readFileSync(file, "utf8");
-  if (content.includes(LEGACY_DEMO_SUPPORT_WHATSAPP)) {
+  if (content.includes(LEGACY_NON_PRODUCTION_SUPPORT_WHATSAPP)) {
     legacyHits += 1;
     legacyFiles.push(file);
   }
@@ -47,7 +47,7 @@ for (const file of files) {
 
 if (legacyHits > 0) {
   console.error(
-    `Support WhatsApp guard failed: legacy demo number ${LEGACY_DEMO_SUPPORT_WHATSAPP} found in ${legacyHits} chunk(s).`,
+    `Support WhatsApp guard failed: legacy non-production number ${LEGACY_NON_PRODUCTION_SUPPORT_WHATSAPP} found in ${legacyHits} chunk(s).`,
   );
   for (const file of legacyFiles.slice(0, 5)) {
     console.error(`  - ${file}`);
@@ -63,5 +63,5 @@ if (productionHits === 0) {
 }
 
 console.log(
-  `Support WhatsApp guard passed: ${PRODUCTION_SUPPORT_WHATSAPP} present in client bundles; legacy demo number absent.`,
+  `Support WhatsApp guard passed: ${PRODUCTION_SUPPORT_WHATSAPP} present in client bundles; legacy non-production number absent.`,
 );

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Seed demo SaaS billing/usage rows for Phase 11 activation prep.
+ * Seed SaaS billing/usage foundation rows for Phase 11 activation prep.
  * Safe to run multiple times — uses fixed UUIDs with upsert semantics.
  */
 

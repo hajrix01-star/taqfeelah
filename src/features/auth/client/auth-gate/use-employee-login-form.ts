@@ -15,10 +15,10 @@ import type {
   EmployeeLoginCallback,
 } from "@/features/auth/client/auth-client-types";
 import { fetchEmployeeLoginRosterViaApi } from "@/features/runtime-settings/client/runtime-session-and-settings-api-client";
-import { text } from "@/components/taqfeelah-app/taqfeelah-app-reference-data";
+import { text } from "@/components/taqfeelah-app/taqfeelah-app-catalog-data";
 import {
   APP_IN_PRODUCTION_MODE,
-  PROTOTYPE_EMPLOYEE_PIN_DEFAULT,
+  LOCAL_DEV_EMPLOYEE_PIN_DEFAULT,
 } from "@/components/taqfeelah-app/taqfeelah-app-boot";
 
 export function useEmployeeLoginForm({
@@ -134,7 +134,7 @@ export function useEmployeeLoginForm({
       return;
     }
 
-    if (!person || !employeePinMatches(person, pin, PROTOTYPE_EMPLOYEE_PIN_DEFAULT)) {
+    if (!person || !employeePinMatches(person, pin, LOCAL_DEV_EMPLOYEE_PIN_DEFAULT)) {
       setError(text(lang, "invalidEmployeePin"));
       return;
     }

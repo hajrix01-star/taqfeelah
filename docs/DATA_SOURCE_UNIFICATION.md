@@ -1,184 +1,100 @@
 # Data Source Unification Policy
 
-## Production source of truth
+> آخر تحديث: 2026-06-26
 
-PostgreSQL accessed through validated API routes is the only durable source of
-truth for production data.
+## القاعدة الأساسية
 
-This includes:
+مصدر الحقيقة في الإنتاج هو PostgreSQL عبر API فقط. الواجهة تعرض وتدخل البيانات، لكنها لا تكون مصدرًا دائمًا للبيانات التشغيلية.
 
-- operational entries, sales summaries, expenses, withdrawals, and reviews
-- daily closeouts and closeout workflow events
-- organization configuration, stores, channels, staff, and permissions
-- owner/runtime settings, notebook theme, and user-facing preferences
-- attachment metadata and server-managed object/inline storage references
-- authentication/session state through signed server sessions
-- attachment metadata and local-VPS storage keys
+يشمل ذلك:
 
-Browser storage is not a production source of truth.
+- العمليات والتقارير والتقفيلات.
+- المحلات وقنوات البيع والموظفين والصلاحيات.
+- إعدادات المالك التشغيلية المحفوظة في DB.
+- المرفقات ومفاتيح التخزين المدارة من السيرفر.
+- المصادقة والجلسات.
 
-## Source-of-truth cutover plan
+`localStorage` و`sessionStorage` وIndexedDB ليست مصادر حقيقة في الإنتاج.
 
-The controlled plan for removing the remaining production-reachable fallback
-paths is documented in:
+## وضع التطبيق الحالي
 
-- [`PRODUCTION_SOURCE_OF_TRUTH_CUTOVER_PLAN.md`](./PRODUCTION_SOURCE_OF_TRUTH_CUTOVER_PLAN.md)
+في `/app` الإنتاجي:
 
-That plan is the implementation guide for the sales-channel and employee
-cutover. Its target is:
+- Auth يعتمد على جلسة موقعة.
+- العمليات والتقفيلات والتقارير من API/DB.
+- المحلات وقنوات البيع والموظفون من org-config APIs.
+- السجل يستخدم pagination عند تفعيل API.
+- fallback المحلي ممنوع عندما تكون بيانات السيرفر مطلوبة.
+- browser persistence محجوب مركزيًا عند `APP_MODE=production`.
 
-```text
-Production = Database/API only
-Frontend = input/display only
-IDs = canonical links
-Names = display labels only
-No operational/financial fallback
-```
-
-Until the cutover is complete, production changes must not expand the legacy
-runtime/prototype paths. Any fallback removal must be done gradually, behind
-prelaunch/live-gate checks, and only after the matching DB/API path is verified.
-
-## Production readiness contract
-
-Production source-unification mode must be DB-backed with real auth on `/app`.
-Do not merge/deploy this mode until the environment is configured with:
+## متطلبات الإنتاج
 
 ```bash
 APP_MODE=production
 NEXT_PUBLIC_APP_MODE=production
 DATABASE_URL=...
+AUTH_SESSION_SECRET=...
+NEXT_PUBLIC_AUTH_API_ENABLED=true
+AUTH_DB_CREDENTIALS_ENABLED=true
+ALLOW_HEADER_AUTH_CONTEXT=false
 NEXT_PUBLIC_CLOSEOUTS_API_ENABLED=true
 NEXT_PUBLIC_ENTRIES_API_ENABLED=true
 NEXT_PUBLIC_ORG_CONFIG_API_ENABLED=true
 NEXT_PUBLIC_PHASE9_API_ENABLED=true
 NEXT_PUBLIC_REGISTER_ENTRIES_PAGINATION_ENABLED=true
 NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true
-# Prototype access mode removed — auth is the only entry path (see PRELAUNCH_CLEANUP.md)
-ALLOW_HEADER_AUTH_CONTEXT=false
-NEXT_PUBLIC_AUTH_API_ENABLED=true
-AUTH_DB_CREDENTIALS_ENABLED=true
-AUTH_SESSION_SECRET=...
-# AUTH_ORGANIZATION_ID and AUTH_OWNER_USER_ID are optional seed/script inputs,
-# not normal runtime requirements for organizations created through SaaS Admin.
 ```
 
-**CI production deploy** (`deploy-production.yml`) enables auth launch + wave 7 SaaS.
-Legacy env ID maps are required only while `ALLOW_HEADER_AUTH_CONTEXT=true` (integration tests).
+إذا غابت قيمة مطلوبة، يجب أن يفشل السيرفر بوضوح بدل الرجوع إلى مصدر محلي مضلل.
 
-For manual VPS rollout, auth-launch values:
+## سياسة التخزين في المتصفح
 
-```bash
-NEXT_PUBLIC_AUTH_API_ENABLED=true
-AUTH_DB_CREDENTIALS_ENABLED=true
-# Prototype access mode removed — auth is the only entry path (see PRELAUNCH_CLEANUP.md)
-ALLOW_HEADER_AUTH_CONTEXT=false
-AUTH_SESSION_SECRET=...
-```
+يسمح بالتخزين المحلي فقط لبيانات UI غير تشغيلية أو وضع التطوير المحلي. لا يسمح في الإنتاج بتخزين بيانات أعمال دائمة مثل:
 
-If any required value is missing, server APIs fail fast with a configuration
-error instead of silently falling back to prototype/demo/local sources. This is
-intentional: it prevents the previous class of issues where production appeared
-to boot but did not fetch stores, users, or operational data correctly.
+- عمليات مالية.
+- تقفيلات.
+- محلات أو موظفين أو صلاحيات.
+- مرفقات.
+- بيانات دخول.
 
-## Browser storage policy
-
-`localStorage`, `sessionStorage`, and IndexedDB are allowed only for
-prototype/demo fallback behavior. Production mode must not read or write durable
-business data, preferences, credentials, or attachments from browser storage.
-
-The central client-side guard is:
+الحارس المركزي:
 
 ```ts
 isBrowserPersistentStorageAllowed()
 ```
 
-Production app mode and `NEXT_PUBLIC_DISABLE_BROWSER_PERSISTENCE=true` both
-block browser persistence. This keeps the cutover safe while existing prototype
-paths are migrated in small, reversible steps.
+## الهوية canonical
 
-## Safe migration rule
+كل الكيانات التشغيلية تستخدم UUID من قاعدة البيانات:
 
-Do not delete legacy browser data as part of UI boot. Migration must be explicit,
-auditable, and repeatable:
+- `organizationId`
+- `storeId`
+- `userId`
+- `salesChannelId`
 
-1. inventory the legacy keys and IndexedDB stores
-2. export a backup/snapshot
-3. validate records before writing to DB
-4. use idempotent migration scripts with dry-run support
-5. compare record counts and financial totals before/after
-6. disable the fallback only after the DB copy is verified
+أي legacy id يبقى للتوافق أو العرض فقط، ولا يستخدم كهوية كتابة في API/DB.
 
-## Current production state
+## قاعدة الهجرة الآمنة
 
-- Entries, summaries, reports, closeouts, org config, auth, and runtime settings
-  use DB/API paths in production mode.
-- Production runtime settings are restricted to UI preferences. Operational
-  organization data (`configuredBusinesses`, `storeChannelSettings`, `staff`,
-  `authConfig`, and store operational settings) is stripped before saving when
-  the org-config API is enabled.
-- The production client snapshot follows the same rule and sends only UI
-  preferences to the runtime settings API.
-- Browser persistence is now centrally blocked for production app mode.
-- Sales channels and employees still have historical runtime/prototype overlap in
-  client compatibility code, but production persistence no longer treats runtime
-  settings as their source of truth.
-- Production org-config write paths require canonical UUID store IDs. Legacy
-  IDs are retained only for display/backward compatibility outside production
-  write paths.
-- Employee notebook-theme preferences are part of the runtime settings snapshot
-  and persist through the runtime settings API/DB path when enabled.
-- Owner shell notification preferences, including closeout alert state and
-  duplicate-sales acknowledgements, are part of the runtime settings snapshot
-  when the DB settings API is enabled.
-- New production attachments use a server-managed local VPS storage key by
-  default. Inline and legacy raw `data:` values remain readable for tests and
-  compatibility. Moving attachments to external object storage is explicitly
-  deferred until after launch and actual scaling demand.
-- Prototype/demo mode can still use local browser storage until each legacy
-  fallback has a DB-backed replacement and migration script.
+لا تحذف بيانات محلية أو legacy تلقائيًا أثناء boot. أي هجرة يجب أن تكون:
 
-## Target invariant
+1. inventory.
+2. backup/export.
+3. validation.
+4. script idempotent مع dry-run.
+5. مقارنة counts/totals.
+6. إيقاف fallback بعد إثبات نسخة DB.
+
+## المرفقات
+
+المسار الحالي يستخدم تخزينًا محليًا معزولًا على VPS ومفاتيح تخزين من السيرفر. النقل إلى object storage خارجي مؤجل إلى حين الحاجة الفعلية للتوسع.
+
+## Target Invariant
 
 ```text
 UI state: memory/cache only
 Durable business data: UI -> API -> PostgreSQL
-Attachment bytes: UI -> API -> isolated local VPS storage (current)
-Future scale option: external object storage (deferred by owner decision)
-Prototype fallback: allowed only outside production app mode
+Attachment bytes: UI -> API -> server-managed storage
+Production auth: signed session only
+No operational fallback in production
 ```
-
-## Canonical identity invariant
-
-DB-backed runtime objects use database UUIDs as their canonical `id`.
-
-- Stores: `business.id` is the `stores.id` UUID; old values such as `shami`
-  are kept only as `legacyId`.
-- Staff: `person.id` is the `users.id` UUID; old values such as `ahmed` are
-  kept only as `legacyId`.
-- Sales channels loaded from DB use the sales-channel UUID as `id`; legacy
-  labels such as `cash` stay in `legacyId` for icons, labels, and temporary
-  compatibility maps.
-
-This prevents UI/API comparisons between two identities for the same entity.
-
-## Modern foundation reset
-
-When all existing data is confirmed as non-production/demo data, reset through
-the guarded script:
-
-```bash
-RESET_FOUNDATION_CONFIRM=reset-modern-foundation pnpm db:reset:foundation
-```
-
-Production deploy can run the same reset exactly once when the pushed commit
-message includes `[reset-foundation]`. The script:
-
-- truncates the old demo data
-- seeds one canonical organization and store
-- seeds one owner and two employees
-- grants employee store access
-- seeds sales channels and outflow categories
-- writes canonical runtime settings using UUID `id` values and `legacyId` only
-  for temporary compatibility
-- verifies the resulting counts before committing the transaction

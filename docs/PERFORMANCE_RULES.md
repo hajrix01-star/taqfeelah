@@ -1,104 +1,74 @@
-# تقفيلة — Performance Rules
+# Performance Rules
 
-> Applies to production backend and `/app` client integration.
-> **Phase 1:** indexed `entries` + SQL aggregation — **no** `daily_store_summaries` table.
+> آخر تحديث: 2026-06-26
 
----
+هذه القواعد تطبق على backend الإنتاجي وتكامل `/app`.
 
-## 1. Principles
+## المبادئ
 
-| Rule | Rationale |
-|------|-----------|
-| Never load years of `entries` into the browser | Browser aggregation does not scale |
-| Every list API is paginated | Register, audit trails if exposed |
-| Summaries are computed for **one period** per request | Day or month or bounded range |
-| Money math in `domain/cash-movement` | Consistent + testable |
-| Store halalas as integers | Fast sums, no float drift |
+| القاعدة | السبب |
+|---|---|
+| لا تحمل سنوات من العمليات إلى المتصفح | التجميع في المتصفح لا يتوسع |
+| كل list API يجب أن يكون paginated | السجل والتدقيق قد يكبران بسرعة |
+| التقارير تطلب فترة محددة | day/month/custom range فقط |
+| الحسابات المرجعية في `domain/cash-movement` | توحيد الحساب والاختبار |
+| المال يخزن بالهللات | منع float drift وتسريع الجمع |
 
----
+## ملخص اليوم والشهر
 
-## 2. Phase 1: direct aggregation
+- الاستعلام يكون على `entries` مع `organization_id`, `store_id`, `date`, `status`.
+- التجميع يتم في SQL.
+- لا تستخدم full-history load لحساب كرت أو تقرير.
+- الهدف الأولي: p95 أقل من 500ms بعد وجود فهارس مناسبة وبيانات قياس.
 
-### Day / month home totals
+## السجل
 
-- Single SQL query (or small fixed set) over `entries`:
-  - `WHERE organization_id = ? AND store_id = ? AND date = ? AND status = 'active'`
-  - `SUM` filtered by `type` for sales vs outflow
-- Target: **< 500 ms** p95 on server for 50k+ rows per org with proper indexes (measure after seed tests).
+- استخدم keyset pagination على:
 
-### Register list
+```text
+date DESC, created_at DESC, id DESC
+```
 
-- Keyset pagination on `(date DESC, created_at DESC, id DESC)`.
-- Default `limit=50`, max `100`.
-- Return slim DTOs — no embedded attachment bytes.
+- default `limit=50`.
+- max `limit=100`.
+- لا ترجع bytes مرفقات داخل القائمة.
 
-### Channel reports
+## التقارير
 
-- Query `entry_sales_channels` joined to `entries` with `date BETWEEN from AND to`.
-- Do **not** pre-build extra rollup tables in phase 1.
+- تقارير القنوات تقرأ `entry_sales_channels` مع join على `entries`.
+- تقارير الخارج تجمع داخل SQL حسب النطاق.
+- لا تضف rollup table إلا بعد قياس حقيقي يثبت الحاجة.
 
----
+## الفهارس المطلوبة
 
-## 3. Required indexes (first migration)
-
-See `docs/DATABASE_SCHEMA.md` — minimum on `entries`:
+راجع `DATABASE_SCHEMA.md`. الحد الأدنى للاستعلامات الثقيلة:
 
 - `(organization_id, store_id, date, status)`
 - `(organization_id, store_id, date DESC, created_at DESC)`
 - `(organization_id, store_id, type, date, status)`
 
-Every query must include `organization_id` (from session) for tenant isolation and index use.
+كل استعلام إنتاجي يجب أن يتضمن `organization_id`.
 
----
+## قواعد الواجهة
 
-## 4. Client rules (`/app`)
+- الرئيسية تجلب ملخص يوم/شهر فقط.
+- السجل يستخدم cursor أو pages.
+- تفاصيل المرفق تجلب عند الطلب.
+- لا يوجد global state يحمل كل عمليات المنظمة.
 
-- Home screen: fetch **one day or month** summary endpoint — not full entry history.
-- Register: infinite scroll or pages via `cursor`.
-- Opening entry detail: fetch attachment URL on demand.
-- No global React state holding all organization entries.
+## مرفوض في المراجعة
 
----
+- `SELECT * FROM entries` بدون نطاق تاريخ لقوائم UI.
+- تجميع 10k+ صف داخل React.
+- تخزين صور داخل note أو JSON.
+- N+1 query لسطر كل قناة.
+- الاعتماد على totals مرسلة من العميل بدون تحقق server-side.
 
-## 5. `daily_store_summaries` (future only)
+## اختبار الضغط
 
-**Not implemented in phase 1.**
+قبل اعتماد توسع كبير:
 
-When/if added:
-
-| Requirement | Detail |
-|-------------|--------|
-| Trigger | Proven slow queries on real data |
-| Update | Same transaction as entry write + `audit_events` |
-| Source of truth | `entries` remains canonical |
-| Operations | Rebuild/reconcile job from `entries` |
-| Reads | Home/report may read rollup first, verify against `entries` periodically |
-
-Document any adoption in `docs/ARCHITECTURE.md` + owner approval.
-
----
-
-## 6. Anti-patterns (reject in code review)
-
-- `SELECT * FROM entries WHERE organization_id = ?` without date bound for UI lists
-- Aggregating in React from a prop with 10k+ rows
-- Storing images in `entries.note` or JSON blobs
-- N+1 queries for channel lines on summary create (batch insert `entry_sales_channels`)
-- Trusting client-sent totals for summary without server-side channel sum check
-
----
-
-## 7. Load testing (before production deploy)
-
-Seed script targets (suggested):
-
-- 1 org, 5 stores, 2 years, ~10 entries/day/store → ~36k rows
-- Verify day summary API and paginated register within agreed p95
-
-Results filed in repo or deployment checklist when available.
-
----
-
-## 8. Removed local reference route
-
-The old `/prototype-runtime` route was removed. `/app` must remain server/API-authoritative for production data.
+- seed لبيانات كبيرة واقعية.
+- قياس day/month/register/reports.
+- حفظ نتائج p95 و`EXPLAIN ANALYZE`.
+- القرار بإضافة rollup أو Redis أو object storage يكون مبنيًا على القياس.
