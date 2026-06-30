@@ -1,35 +1,30 @@
-import { fail, ok } from "@/core/http/api-response";
-import { ValidationError } from "@/core/errors/app-error";
+import { readJsonBody } from "@/core/http/api-route-handler";
 import { updateSaasAccountStore } from "@/features/saas-admin/server/update-saas-account-store";
-import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-admin-route-guard";
+import {
+  requireSaasAdminRouteParam,
+  withSaasAdminApiRoute,
+} from "@/features/saas-admin/server/saas-admin-api-route";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = {
-  params: Promise<{ id: string; storeId: string }>;
-};
+type Body = Record<string, unknown>;
 
-export async function PATCH(request: Request, context: RouteContext) {
-  try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request, "accounts:write");
-    const { id, storeId } = await context.params;
-    if (!id?.trim() || !storeId?.trim()) {
-      throw new ValidationError("Organization id and store id are required.");
-    }
+export const PATCH = withSaasAdminApiRoute<{ id: string; storeId: string }>("accounts:write", async ({
+  actor,
+  params,
+  request,
+}) => {
+  const organizationId = requireSaasAdminRouteParam(params.id, "Organization id");
+  const storeId = requireSaasAdminRouteParam(params.storeId, "Store id");
+  const body = await readJsonBody<Body>(request);
 
-    const body = await request.json();
-    const updated = await updateSaasAccountStore({
-      actorUserId,
-      organizationId: id.trim(),
-      storeId: storeId.trim(),
-      name: typeof body?.name === "string" ? body.name : undefined,
-      location: typeof body?.location === "string" ? body.location : undefined,
-      status: body?.status === "active" || body?.status === "archived" ? body.status : undefined,
-      reason: typeof body?.reason === "string" ? body.reason : undefined,
-    });
-
-    return ok(updated);
-  } catch (error) {
-    return fail(error);
-  }
-}
+  return updateSaasAccountStore({
+    actorUserId: actor.actorUserId,
+    organizationId,
+    storeId,
+    name: typeof body?.name === "string" ? body.name : undefined,
+    location: typeof body?.location === "string" ? body.location : undefined,
+    status: body?.status === "active" || body?.status === "archived" ? body.status : undefined,
+    reason: typeof body?.reason === "string" ? body.reason : undefined,
+  });
+});

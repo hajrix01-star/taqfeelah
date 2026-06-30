@@ -1,39 +1,34 @@
-import { fail, ok } from "@/core/http/api-response";
-import { ValidationError } from "@/core/errors/app-error";
+import { readJsonBody } from "@/core/http/api-route-handler";
 import { createSaasAccountMember } from "@/features/saas-admin/server/create-saas-account-member";
-import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-admin-route-guard";
+import {
+  requireSaasAdminRouteParam,
+  withSaasAdminApiRoute,
+} from "@/features/saas-admin/server/saas-admin-api-route";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = {
-  params: Promise<{ id: string }>;
-};
+type Body = Record<string, unknown>;
 
-export async function POST(request: Request, context: RouteContext) {
-  try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request, "accounts:members:write");
-    const { id: organizationId } = await context.params;
-    if (!organizationId?.trim()) {
-      throw new ValidationError("Organization id is required.");
-    }
+export const POST = withSaasAdminApiRoute<{ id: string }>("accounts:members:write", async ({
+  actor,
+  params,
+  request,
+}) => {
+  const organizationId = requireSaasAdminRouteParam(params.id, "Organization id");
+  const body = await readJsonBody<Body>(request);
+  const storeIds = Array.isArray(body?.storeIds)
+    ? body.storeIds.filter((value: unknown) => typeof value === "string")
+    : [];
 
-    const body = await request.json();
-    const storeIds = Array.isArray(body?.storeIds)
-      ? body.storeIds.filter((value: unknown) => typeof value === "string")
-      : [];
+  const created = await createSaasAccountMember({
+    actorUserId: actor.actorUserId,
+    organizationId,
+    name: typeof body?.name === "string" ? body.name : "",
+    role: body?.role === "manager" || body?.role === "employee" ? body.role : "employee",
+    pin: typeof body?.pin === "string" ? body.pin : "",
+    loginPhone: typeof body?.loginPhone === "string" ? body.loginPhone : undefined,
+    storeIds,
+  });
 
-    const created = await createSaasAccountMember({
-      actorUserId,
-      organizationId: organizationId.trim(),
-      name: typeof body?.name === "string" ? body.name : "",
-      role: body?.role === "manager" || body?.role === "employee" ? body.role : "employee",
-      pin: typeof body?.pin === "string" ? body.pin : "",
-      loginPhone: typeof body?.loginPhone === "string" ? body.loginPhone : undefined,
-      storeIds,
-    });
-
-    return ok(created, { status: 201 });
-  } catch (error) {
-    return fail(error);
-  }
-}
+  return { data: created, init: { status: 201 } };
+});

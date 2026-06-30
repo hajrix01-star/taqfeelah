@@ -1,9 +1,9 @@
-import { fail, ok } from "@/core/http/api-response";
+import { readJsonBody } from "@/core/http/api-route-handler";
 import { ValidationError } from "@/core/errors/app-error";
 import { DEFAULT_PLAN_CODE, parsePlanCode } from "@/features/billing/plan-codes";
 import { createSaasAccount } from "@/features/saas-admin/server/create-saas-account";
 import { getSaasAccounts } from "@/features/saas-admin/server/get-saas-accounts";
-import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-admin-route-guard";
+import { withSaasAdminApiRouteNoParams } from "@/features/saas-admin/server/saas-admin-api-route";
 
 export const dynamic = "force-dynamic";
 
@@ -17,51 +17,40 @@ function readOptionalString(value: unknown): string | undefined {
   return trimmed || undefined;
 }
 
-export async function GET(request: Request) {
-  try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request, "accounts:read");
-    const { searchParams } = new URL(request.url);
-    const pageRaw = Number(searchParams.get("page") || "1");
-    const pageSizeRaw = Number(searchParams.get("pageSize") || "25");
-    const statusRaw = searchParams.get("status") || "all";
+type Body = Record<string, unknown>;
 
-    if (!["all", "trial", "active", "inactive", "suspended", "archived"].includes(statusRaw)) {
-      throw new ValidationError("Query param 'status' is invalid.");
-    }
+export const GET = withSaasAdminApiRouteNoParams("accounts:read", ({ actor, searchParams }) => {
+  const pageRaw = Number(searchParams.get("page") || "1");
+  const pageSizeRaw = Number(searchParams.get("pageSize") || "25");
+  const statusRaw = searchParams.get("status") || "all";
 
-    const result = await getSaasAccounts({
-      actorUserId,
-      search: searchParams.get("search") || undefined,
-      status: statusRaw as "all" | "trial" | "active" | "inactive" | "suspended" | "archived",
-      plan: searchParams.get("plan") || undefined,
-      page: Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : 1,
-      pageSize: Number.isInteger(pageSizeRaw) && pageSizeRaw > 0 ? pageSizeRaw : 25,
-    });
-
-    return ok(result);
-  } catch (error) {
-    return fail(error);
+  if (!["all", "trial", "active", "inactive", "suspended", "archived"].includes(statusRaw)) {
+    throw new ValidationError("Query param 'status' is invalid.");
   }
-}
 
-export async function POST(request: Request) {
-  try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request, "accounts:write");
-    const body = await request.json();
+  return getSaasAccounts({
+    actorUserId: actor.actorUserId,
+    search: searchParams.get("search") || undefined,
+    status: statusRaw as "all" | "trial" | "active" | "inactive" | "suspended" | "archived",
+    plan: searchParams.get("plan") || undefined,
+    page: Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : 1,
+    pageSize: Number.isInteger(pageSizeRaw) && pageSizeRaw > 0 ? pageSizeRaw : 25,
+  });
+});
 
-    const planCode = body?.planCode;
-    const created = await createSaasAccount({
-      actorUserId,
-      organizationName: readRequiredString(body?.organizationName),
-      ownerName: readRequiredString(body?.ownerName),
-      ownerPhone: readRequiredString(body?.ownerPhone),
-      storeName: readOptionalString(body?.storeName),
-      storeLocation: readOptionalString(body?.storeLocation),
-      planCode: parsePlanCode(planCode) ?? DEFAULT_PLAN_CODE,
-    });
+export const POST = withSaasAdminApiRouteNoParams("accounts:write", async ({ actor, request }) => {
+  const body = await readJsonBody<Body>(request);
 
-    return ok(created, { status: 201 });
-  } catch (error) {
-    return fail(error);
-  }
-}
+  const planCode = body?.planCode;
+  const created = await createSaasAccount({
+    actorUserId: actor.actorUserId,
+    organizationName: readRequiredString(body?.organizationName),
+    ownerName: readRequiredString(body?.ownerName),
+    ownerPhone: readRequiredString(body?.ownerPhone),
+    storeName: readOptionalString(body?.storeName),
+    storeLocation: readOptionalString(body?.storeLocation),
+    planCode: parsePlanCode(planCode) ?? DEFAULT_PLAN_CODE,
+  });
+
+  return { data: created, init: { status: 201 } };
+});

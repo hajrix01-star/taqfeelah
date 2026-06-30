@@ -1,31 +1,28 @@
-import { fail, ok } from "@/core/http/api-response";
-import { ValidationError } from "@/core/errors/app-error";
+import { readJsonBody } from "@/core/http/api-route-handler";
 import { updateSaasAccountMember } from "@/features/saas-admin/server/update-saas-account-member";
-import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-admin-route-guard";
+import {
+  requireSaasAdminRouteParam,
+  withSaasAdminApiRoute,
+} from "@/features/saas-admin/server/saas-admin-api-route";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = {
-  params: Promise<{ id: string; memberId: string }>;
-};
+type Body = Record<string, unknown>;
 
-export async function PATCH(request: Request, context: RouteContext) {
-  try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request, "accounts:members:write");
-    const { id, memberId } = await context.params;
-    if (!id?.trim() || !memberId?.trim()) {
-      throw new ValidationError("Organization id and member id are required.");
-    }
-
-    const body = await request.json();
+export const PATCH = withSaasAdminApiRoute<{ id: string; memberId: string }>(
+  "accounts:members:write",
+  async ({ actor, params, request }) => {
+    const organizationId = requireSaasAdminRouteParam(params.id, "Organization id");
+    const memberId = requireSaasAdminRouteParam(params.memberId, "Member id");
+    const body = await readJsonBody<Body>(request);
     const storeIds = Array.isArray(body?.storeIds)
       ? body.storeIds.filter((value: unknown) => typeof value === "string")
       : undefined;
 
-    const updated = await updateSaasAccountMember({
-      actorUserId,
-      organizationId: id.trim(),
-      memberId: memberId.trim(),
+    return updateSaasAccountMember({
+      actorUserId: actor.actorUserId,
+      organizationId,
+      memberId,
       name: typeof body?.name === "string" ? body.name : undefined,
       role: body?.role === "manager" || body?.role === "employee" ? body.role : undefined,
       status: body?.status === "active" || body?.status === "inactive" ? body.status : undefined,
@@ -33,9 +30,5 @@ export async function PATCH(request: Request, context: RouteContext) {
       loginPhone: typeof body?.loginPhone === "string" ? body.loginPhone : undefined,
       storeIds,
     });
-
-    return ok(updated);
-  } catch (error) {
-    return fail(error);
-  }
-}
+  },
+);

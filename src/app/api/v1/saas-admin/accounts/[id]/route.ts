@@ -1,59 +1,40 @@
-import { fail, ok } from "@/core/http/api-response";
-import { ValidationError } from "@/core/errors/app-error";
+import { readJsonBody } from "@/core/http/api-route-handler";
 import { parsePlanCode } from "@/features/billing/plan-codes";
 import { getSaasAccountDetails } from "@/features/saas-admin/server/get-saas-account-details";
 import { updateSaasAccount } from "@/features/saas-admin/server/update-saas-account";
-import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-admin-route-guard";
+import {
+  requireSaasAdminRouteParam,
+  withSaasAdminApiRoute,
+} from "@/features/saas-admin/server/saas-admin-api-route";
 
 const LIFECYCLE_STATUSES = new Set(["active", "suspended", "archived"]);
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = {
-  params: Promise<{ id: string }>;
-};
+type Body = Record<string, unknown>;
 
-export async function GET(request: Request, context: RouteContext) {
-  try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request, "accounts:read");
-    const { id } = await context.params;
-    if (!id?.trim()) {
-      throw new ValidationError("Organization id is required.");
-    }
+export const GET = withSaasAdminApiRoute<{ id: string }>("accounts:read", ({ actor, params }) =>
+  getSaasAccountDetails({
+    actorUserId: actor.actorUserId,
+    organizationId: requireSaasAdminRouteParam(params.id, "Organization id"),
+  })
+);
 
-    const result = await getSaasAccountDetails({
-      actorUserId,
-      organizationId: id.trim(),
-    });
+export const PATCH = withSaasAdminApiRoute<{ id: string }>("accounts:write", async ({
+  actor,
+  params,
+  request,
+}) => {
+  const body = await readJsonBody<Body>(request);
+  const rawStatus = typeof body?.status === "string" ? body.status : undefined;
 
-    return ok(result);
-  } catch (error) {
-    return fail(error);
-  }
-}
-
-export async function PATCH(request: Request, context: RouteContext) {
-  try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request, "accounts:write");
-    const { id } = await context.params;
-    if (!id?.trim()) {
-      throw new ValidationError("Organization id is required.");
-    }
-
-    const body = await request.json();
-    const rawStatus = typeof body?.status === "string" ? body.status : undefined;
-    const updated = await updateSaasAccount({
-      actorUserId,
-      organizationId: id.trim(),
-      name: typeof body?.organizationName === "string" ? body.organizationName : undefined,
-      status: rawStatus && LIFECYCLE_STATUSES.has(rawStatus)
-        ? rawStatus as "active" | "suspended" | "archived"
-        : undefined,
-      planCode: parsePlanCode(body?.planCode) ?? undefined,
-    });
-
-    return ok(updated);
-  } catch (error) {
-    return fail(error);
-  }
-}
+  return updateSaasAccount({
+    actorUserId: actor.actorUserId,
+    organizationId: requireSaasAdminRouteParam(params.id, "Organization id"),
+    name: typeof body?.organizationName === "string" ? body.organizationName : undefined,
+    status: rawStatus && LIFECYCLE_STATUSES.has(rawStatus)
+      ? rawStatus as "active" | "suspended" | "archived"
+      : undefined,
+    planCode: parsePlanCode(body?.planCode) ?? undefined,
+  });
+});

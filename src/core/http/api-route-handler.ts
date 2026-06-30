@@ -7,7 +7,7 @@ type RouteHandlerContext<TParams = Record<string, string>> = {
   params: Promise<TParams>;
 };
 
-type ApiRouteContext<TParams = Record<string, string>> = {
+export type ApiRouteContext<TParams = Record<string, string>> = {
   request: Request;
   params: TParams;
   searchParams: URLSearchParams;
@@ -20,7 +20,7 @@ type AuthedApiRouteContext<TParams = Record<string, string>> = ApiRouteContext<T
   };
 };
 
-type ApiRouteResult<T> = T | Response | { data: T; init?: ResponseInit };
+export type ApiRouteResult<T> = T | Response | { data: T; init?: ResponseInit };
 
 type ApiRouteHandler<TParams extends Record<string, string>, TResult> = (
   context: ApiRouteContext<TParams>,

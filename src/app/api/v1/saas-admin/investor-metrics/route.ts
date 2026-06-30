@@ -1,15 +1,8 @@
-import { fail, ok } from "@/core/http/api-response";
 import { getInvestorMetrics } from "@/features/saas-admin/server/get-investor-metrics";
-import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-admin-route-guard";
+import { withSaasAdminApiRouteNoParams } from "@/features/saas-admin/server/saas-admin-api-route";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request, "investor-metrics:read");
-    const result = await getInvestorMetrics({ actorUserId });
-    return ok(result);
-  } catch (error) {
-    return fail(error);
-  }
-}
+export const GET = withSaasAdminApiRouteNoParams("investor-metrics:read", ({ actor }) =>
+  getInvestorMetrics({ actorUserId: actor.actorUserId })
+);

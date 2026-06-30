@@ -1,32 +1,28 @@
-import { fail, ok } from "@/core/http/api-response";
-import { ValidationError } from "@/core/errors/app-error";
+import { readJsonBody } from "@/core/http/api-route-handler";
 import { createSaasAccountStore } from "@/features/saas-admin/server/create-saas-account-store";
-import { assertSaasAdminRouteReady } from "@/features/saas-admin/server/saas-admin-route-guard";
+import {
+  requireSaasAdminRouteParam,
+  withSaasAdminApiRoute,
+} from "@/features/saas-admin/server/saas-admin-api-route";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = {
-  params: Promise<{ id: string }>;
-};
+type Body = Record<string, unknown>;
 
-export async function POST(request: Request, context: RouteContext) {
-  try {
-    const { actorUserId } = await assertSaasAdminRouteReady(request, "accounts:write");
-    const { id: organizationId } = await context.params;
-    if (!organizationId?.trim()) {
-      throw new ValidationError("Organization id is required.");
-    }
+export const POST = withSaasAdminApiRoute<{ id: string }>("accounts:write", async ({
+  actor,
+  params,
+  request,
+}) => {
+  const organizationId = requireSaasAdminRouteParam(params.id, "Organization id");
+  const body = await readJsonBody<Body>(request);
 
-    const body = await request.json();
-    const created = await createSaasAccountStore({
-      actorUserId,
-      organizationId: organizationId.trim(),
-      name: typeof body?.name === "string" ? body.name : "",
-      location: typeof body?.location === "string" ? body.location : undefined,
-    });
+  const created = await createSaasAccountStore({
+    actorUserId: actor.actorUserId,
+    organizationId,
+    name: typeof body?.name === "string" ? body.name : "",
+    location: typeof body?.location === "string" ? body.location : undefined,
+  });
 
-    return ok(created, { status: 201 });
-  } catch (error) {
-    return fail(error);
-  }
-}
+  return { data: created, init: { status: 201 } };
+});
