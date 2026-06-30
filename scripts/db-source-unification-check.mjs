@@ -11,6 +11,7 @@ const storeId = process.env.CHECK_STORE_ID || "302cf87a-b3cf-43f8-bb5d-afd2ab6d8
 const unauthorizedStoreId = process.env.CHECK_UNAUTHORIZED_STORE_ID || randomUUID();
 const archivedStoreId = process.env.CHECK_ARCHIVED_STORE_ID || "";
 const createArchivedStoreForCheck = process.env.CHECK_CREATE_ARCHIVED_STORE === "true";
+const archiveExistingStoreOnLimit = process.env.CHECK_ARCHIVE_EXISTING_STORE_ON_LIMIT === "true";
 const employeeUserId = process.env.CHECK_EMPLOYEE_USER_ID || "4cf1450d-08d8-4ca1-b180-1c2642174a79";
 const ownerUserId = process.env.CHECK_OWNER_USER_ID || "e8f3e35b-6051-4da3-8b10-979700c2f00f";
 const salesChannelId = process.env.CHECK_SALES_CHANNEL_ID || "9bc40d4f-c773-4ba3-87db-b8bb1467dafb";
@@ -315,7 +316,14 @@ async function resolveArchivedStoreForCheck() {
   if (archivedStoreId) return archivedStoreId;
   if (!createArchivedStoreForCheck) return "";
 
-  const created = await callJson(`${baseUrl}/api/v1/stores`, {
+  const archivedStores = await callJson(`${baseUrl}/api/v1/stores?status=archived`, {
+    method: "GET",
+    headers: requestHeaders("owner", ownerUserId),
+  });
+  const reusableArchivedStoreId = archivedStores?.stores?.find((store) => store?.id)?.id;
+  if (reusableArchivedStoreId) return reusableArchivedStoreId;
+
+  const createResponse = await fetch(`${baseUrl}/api/v1/stores`, {
     method: "POST",
     headers: requestHeaders("owner", ownerUserId),
     body: JSON.stringify({
@@ -323,6 +331,34 @@ async function resolveArchivedStoreForCheck() {
       location: "P0 smoke",
     }),
   });
+  const createRaw = await createResponse.text();
+  let created = null;
+  try {
+    created = createRaw ? JSON.parse(createRaw) : null;
+  } catch {
+    created = createRaw;
+  }
+
+  if (!createResponse.ok) {
+    const message = typeof created?.error?.message === "string" ? created.error.message : "";
+    if (createResponse.status !== 400 || !message.includes("Store limit reached") || !archiveExistingStoreOnLimit) {
+      throw new Error(`POST ${baseUrl}/api/v1/stores -> ${createResponse.status}: ${JSON.stringify(created)}`);
+    }
+
+    const allStores = await callJson(`${baseUrl}/api/v1/stores?status=all`, {
+      method: "GET",
+      headers: requestHeaders("owner", ownerUserId),
+    });
+    const fallbackStoreId = allStores?.stores?.find((store) => store?.id && store.id !== storeId)?.id;
+    assert(fallbackStoreId, "archived-store smoke could not find a non-primary store to archive after store limit was reached");
+    await callJson(`${baseUrl}/api/v1/stores/${fallbackStoreId}`, {
+      method: "PATCH",
+      headers: requestHeaders("owner", ownerUserId),
+      body: JSON.stringify({ status: "archived", reason: "p0_smoke_archived_write_guard_reuse" }),
+    });
+    return fallbackStoreId;
+  }
+
   const nextStoreId = created?.store?.id || created?.id;
   assert(nextStoreId, "archived-store smoke could not create a temporary store");
 

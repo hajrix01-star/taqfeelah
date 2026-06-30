@@ -441,6 +441,7 @@ jobs:
         env:
           CHECK_BASE_URL: https://staging.taqfeelah.com
           CHECK_CREATE_ARCHIVED_STORE: "true"
+          CHECK_ARCHIVE_EXISTING_STORE_ON_LIMIT: "true"
           CHECK_ORGANIZATION_ID: 8f63cf87-f2e2-4e2a-a20e-e8f637f0a9e1
           CHECK_STORE_ID: 302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c
           CHECK_EMPLOYEE_USER_ID: 4cf1450d-08d8-4ca1-b180-1c2642174a79

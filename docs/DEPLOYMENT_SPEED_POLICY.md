@@ -32,6 +32,8 @@ The fast profile does **not** skip:
 - production endpoint sanity check
 - P0 live gate on staging
 
+The staging live gate is repeatable. If the staging tenant has reached its store limit, the gate may reuse or archive a non-primary staging store for the archived-store write-guard check. This is enabled only by the staging workflow through `CHECK_ARCHIVE_EXISTING_STORE_ON_LIMIT=true`.
+
 ## Production Rule
 
 Production should remain conservative:
