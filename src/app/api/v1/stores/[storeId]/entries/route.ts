@@ -1,49 +1,26 @@
-import { fail, ok } from "@/core/http/api-response";
-import { ServiceUnavailableError, ValidationError } from "@/core/errors/app-error";
-import { readEnv } from "@/core/config/env";
-import { resolveRequestContext } from "@/core/auth/request-context";
+import {
+  parseEnumQuery,
+  parsePositiveIntQuery,
+  readJsonBody,
+  withAuthedApiRoute,
+} from "@/core/http/api-route-handler";
 import { createStoreEntry } from "@/features/entries/server/create-store-entry";
 import { listStoreEntries } from "@/features/entries/server/list-store-entries";
 import { publishOperationalSyncEventSafe } from "@/core/sync/publish-operational-sync-event";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = {
-  params: Promise<{ storeId: string }>;
-};
-
-export async function GET(request: Request, context: RouteContext) {
-  try {
-    const env = readEnv();
-    if (!env.DATABASE_URL) {
-      throw new ServiceUnavailableError("DATABASE_URL is not configured.");
-    }
-
-    const params = await context.params;
-    const requestContext = resolveRequestContext(request, { requireUser: true });
-    const { searchParams } = new URL(request.url);
-
-    const statusRaw = searchParams.get("status") || "all";
-    if (statusRaw !== "active" && statusRaw !== "voided" && statusRaw !== "all") {
-      throw new ValidationError("Query param 'status' must be one of: active, voided, all.");
-    }
-
-    const limitRaw = searchParams.get("limit");
-    const parsedLimit = limitRaw ? Number(limitRaw) : undefined;
-    if (typeof parsedLimit === "number" && (!Number.isInteger(parsedLimit) || parsedLimit <= 0)) {
-      throw new ValidationError("Query param 'limit' must be a positive integer.");
-    }
-    if (typeof parsedLimit === "number" && parsedLimit > 100) {
-      throw new ValidationError("Query param 'limit' must be less than or equal to 100.");
-    }
-
+export const GET = withAuthedApiRoute<{ storeId: string }>(
+  async ({ auth, params, searchParams }) => {
+    const statusRaw = parseEnumQuery(searchParams, "status", ["active", "voided", "all"], "all");
+    const parsedLimit = parsePositiveIntQuery(searchParams, "limit", { max: 100 });
     const cursor = searchParams.get("cursor") || undefined;
 
-    const result = await listStoreEntries({
-      organizationId: requestContext.organizationId,
+    return listStoreEntries({
+      organizationId: auth.organizationId,
       storeId: params.storeId,
-      actorUserId: requestContext.userId!,
-      actorRole: requestContext.role!,
+      actorUserId: auth.userId,
+      actorRole: auth.role,
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
       status: statusRaw,
@@ -51,54 +28,39 @@ export async function GET(request: Request, context: RouteContext) {
       cursor,
       paginated: true,
     });
+  },
+);
 
-    return ok(result);
-  } catch (error) {
-    return fail(error);
-  }
-}
+export const POST = withAuthedApiRoute<{ storeId: string }>(async ({ auth, params, request }) => {
+  const body = await readJsonBody(request);
 
-export async function POST(request: Request, context: RouteContext) {
-  try {
-    const env = readEnv();
-    if (!env.DATABASE_URL) {
-      throw new ServiceUnavailableError("DATABASE_URL is not configured.");
-    }
+  const result = await createStoreEntry({
+    organizationId: auth.organizationId,
+    storeId: params.storeId,
+    actorUserId: auth.userId,
+    actorRole: auth.role,
+    date: body?.date,
+    type: body?.type,
+    amountHalalas: body?.amountHalalas,
+    categoryId: body?.categoryId,
+    note: body?.note,
+    closeoutId: body?.closeoutId,
+    salesChannels: Array.isArray(body?.salesChannels) ? body.salesChannels : [],
+    attachment: body?.attachment,
+  });
 
-    const params = await context.params;
-    const requestContext = resolveRequestContext(request, { requireUser: true });
-    const body = await request.json();
+  publishOperationalSyncEventSafe({
+    type: "entry.created",
+    organizationId: auth.organizationId,
+    storeId: params.storeId,
+    actorUserId: auth.userId,
+    actorRole: auth.role,
+    payload: {
+      entryId: result.id,
+      date: result.date,
+      entryType: result.type,
+    },
+  });
 
-    const result = await createStoreEntry({
-      organizationId: requestContext.organizationId,
-      storeId: params.storeId,
-      actorUserId: requestContext.userId!,
-      actorRole: requestContext.role!,
-      date: body?.date,
-      type: body?.type,
-      amountHalalas: body?.amountHalalas,
-      categoryId: body?.categoryId,
-      note: body?.note,
-      closeoutId: body?.closeoutId,
-      salesChannels: Array.isArray(body?.salesChannels) ? body.salesChannels : [],
-      attachment: body?.attachment,
-    });
-
-    publishOperationalSyncEventSafe({
-      type: "entry.created",
-      organizationId: requestContext.organizationId,
-      storeId: params.storeId,
-      actorUserId: requestContext.userId!,
-      actorRole: requestContext.role!,
-      payload: {
-        entryId: result.id,
-        date: result.date,
-        entryType: result.type,
-      },
-    });
-
-    return ok(result, { status: 201 });
-  } catch (error) {
-    return fail(error);
-  }
-}
+  return { data: result, init: { status: 201 } };
+});

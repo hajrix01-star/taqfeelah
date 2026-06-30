@@ -8,24 +8,38 @@ import type {
   SystemHealthReport,
 } from "@/features/saas-admin/types";
 
+import { apiClientRequest } from "@/core/client/api-client";
 import { createSaasAdminApiError, type ApiErrorPayload } from "@/features/saas-admin/client/api-error";
 
 async function fetchSaasAdminJson<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(path, {
-    ...init,
-    credentials: "include",
+  return apiClientRequest<T>(path, {
+    method: init.method || "GET",
+    body: init.body,
     headers: {
       "content-type": "application/json",
       ...(init.headers || {}),
     },
+    unwrapData: true,
+    errorFactory: (payload, status) => createSaasAdminApiError(payload as ApiErrorPayload, status),
   });
+}
 
-  const payload = await response.json().catch(() => ({})) as ApiErrorPayload;
-  if (!response.ok) {
-    throw createSaasAdminApiError(payload, response.status);
-  }
-
-  return ((payload as { data?: T }).data ?? payload) as T;
+async function fetchAuthJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  return apiClientRequest<T>(path, {
+    method: init.method || "GET",
+    body: init.body,
+    headers: {
+      "content-type": "application/json",
+      ...(init.headers || {}),
+    },
+    unwrapData: true,
+    errorFactory: (payload) => {
+      const apiPayload = payload as { error?: { message?: string } };
+      return new Error(
+        typeof apiPayload?.error?.message === "string" ? apiPayload.error.message : "Request failed.",
+      );
+    },
+  });
 }
 
 export async function fetchSaasOverview() {
@@ -414,24 +428,6 @@ export async function repairSaasAccountFoundation(organizationId: string) {
     method: "POST",
     body: JSON.stringify({}),
   });
-}
-
-async function fetchAuthJson<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(path, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "content-type": "application/json",
-      ...(init.headers || {}),
-    },
-  });
-
-  const payload = await response.json().catch(() => ({})) as { data?: T; error?: { message?: string } };
-  if (!response.ok) {
-    throw new Error(typeof payload?.error?.message === "string" ? payload.error.message : "Request failed.");
-  }
-
-  return (payload.data ?? payload) as T;
 }
 
 export async function requestPlatformAdminPasswordResetViaApi({ email }: { email: string }) {

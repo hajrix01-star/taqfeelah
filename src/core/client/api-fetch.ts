@@ -1,4 +1,5 @@
-﻿import { buildRuntimeApiAuthHeaders } from "@/core/client/runtime-api-auth-headers";
+import { apiClientRequest } from "@/core/client/api-client";
+import { buildRuntimeApiAuthHeaders } from "@/core/client/runtime-api-auth-headers";
 
 export async function parseApiErrorMessage(response: Response, fallback: string): Promise<string> {
   try {
@@ -64,20 +65,14 @@ export async function fetchApiJson(
   }: FetchApiJsonOptions = {},
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentional open API boundary; callers narrow
 ): Promise<any> {
-  const init: RequestInit = {
+  return apiClientRequest(url, {
     method,
     headers,
-  };
-  if (body !== undefined) {
-    init.body = typeof body === "string" ? body : JSON.stringify(body);
-  }
-
-  const response = await fetch(url, { ...init, credentials: "include" });
-  if (!response.ok) {
-    throw new Error(await buildFetchError(response, errorMessage, errorStyle));
-  }
-  if (!parseBody) return response;
-  return response.json();
+    body,
+    parseBody,
+    errorFactory: async (_payload, _status, response) =>
+      new Error(await buildFetchError(response, errorMessage, errorStyle)),
+  });
 }
 
 export type fetchApiJsonWithRuntimeContextOptions = {
