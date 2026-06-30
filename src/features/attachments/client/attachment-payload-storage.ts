@@ -1,4 +1,8 @@
-import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
+import {
+  safeDeleteIndexedDbValue,
+  safeGetIndexedDbValue,
+  safePutIndexedDbValue,
+} from "@/core/client/safe-indexed-db";
 import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
 import type { PreparedAttachment, StoredAttachmentPayload } from "@/features/attachments/client/attachments-client-types";
 
@@ -9,6 +13,11 @@ const MIN_ATTACHMENT_QUALITY = 0.38;
 
 const ATTACHMENT_DB_NAME = "taqfeelah_attachment_store";
 const ATTACHMENT_STORE_NAME = "images";
+const ATTACHMENT_STORAGE_OPTIONS = { scope: "local-attachment-cache" } as const;
+const ATTACHMENT_STORE_CONFIG = {
+  databaseName: ATTACHMENT_DB_NAME,
+  storeName: ATTACHMENT_STORE_NAME,
+};
 
 export function approximateDataUrlBytes(value = ""): number {
   return Math.ceil((value.length * 3) / 4);
@@ -55,62 +64,24 @@ export async function prepareAttachment(file: File): Promise<PreparedAttachment>
   }
 }
 
-function openAttachmentDatabase(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    if (typeof indexedDB === "undefined") return reject(new Error("unsupported"));
-    const request = indexedDB.open(ATTACHMENT_DB_NAME, 1);
-    request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(ATTACHMENT_STORE_NAME)) {
-        request.result.createObjectStore(ATTACHMENT_STORE_NAME);
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
 export async function storeAttachmentPayload(attachment: StoredAttachmentPayload): Promise<void> {
-  if (!isBrowserPersistentStorageAllowed({ scope: "local-attachment-cache" })) return;
   if (!attachment?.id || !attachment?.dataUrl) return;
-  const database = await openAttachmentDatabase();
-  await new Promise<void>((resolve, reject) => {
-    const transaction = database.transaction(ATTACHMENT_STORE_NAME, "readwrite");
-    transaction.objectStore(ATTACHMENT_STORE_NAME).put(attachment.dataUrl, attachment.id);
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error);
-  });
-  database.close();
+  await safePutIndexedDbValue(
+    ATTACHMENT_STORE_CONFIG,
+    attachment.id,
+    attachment.dataUrl,
+    ATTACHMENT_STORAGE_OPTIONS,
+  );
 }
 
 export async function deleteAttachmentPayload(attachmentId: string): Promise<void> {
-  if (!isBrowserPersistentStorageAllowed({ scope: "local-attachment-cache" })) return;
   if (!attachmentId) return;
-  const database = await openAttachmentDatabase();
-  await new Promise<void>((resolve, reject) => {
-    const transaction = database.transaction(ATTACHMENT_STORE_NAME, "readwrite");
-    transaction.objectStore(ATTACHMENT_STORE_NAME).delete(attachmentId);
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error);
-  });
-  database.close();
+  await safeDeleteIndexedDbValue(ATTACHMENT_STORE_CONFIG, attachmentId, ATTACHMENT_STORAGE_OPTIONS);
 }
 
 export async function readAttachmentPayload(attachmentId: string): Promise<string | null> {
-  if (!isBrowserPersistentStorageAllowed({ scope: "local-attachment-cache" })) return null;
   if (!attachmentId) return null;
-  try {
-    const database = await openAttachmentDatabase();
-    const result = await new Promise<string | null>((resolve, reject) => {
-      const transaction = database.transaction(ATTACHMENT_STORE_NAME, "readonly");
-      const request = transaction.objectStore(ATTACHMENT_STORE_NAME).get(attachmentId);
-      request.onsuccess = () => resolve((request.result as string | undefined) || null);
-      request.onerror = () => reject(request.error);
-    });
-    database.close();
-    return result;
-  } catch {
-    return null;
-  }
+  return safeGetIndexedDbValue<string>(ATTACHMENT_STORE_CONFIG, attachmentId, ATTACHMENT_STORAGE_OPTIONS);
 }
 
 export function stripEmbeddedAttachmentImages(entries: OperationalEntry[]): OperationalEntry[] {
