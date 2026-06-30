@@ -102,6 +102,7 @@ jobs:
       STAGING_AUTH_SESSION_SECRET: ${{ secrets.STAGING_AUTH_SESSION_SECRET }}
       STAGING_OWNER_USERNAME: ${{ secrets.STAGING_OWNER_USERNAME }}
       STAGING_OWNER_PASSWORD: ${{ secrets.STAGING_OWNER_PASSWORD }}
+      STAGING_EMPLOYEE_PIN_MAP: ${{ secrets.STAGING_EMPLOYEE_PIN_MAP }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -117,6 +118,7 @@ jobs:
           test -n "$STAGING_AUTH_SESSION_SECRET"
           test -n "$STAGING_OWNER_USERNAME"
           test -n "$STAGING_OWNER_PASSWORD"
+          test -n "$STAGING_EMPLOYEE_PIN_MAP"
           port="${VPS_PORT:-22}"
           mkdir -p "$HOME/.ssh"
           chmod 700 "$HOME/.ssh"
@@ -176,6 +178,7 @@ jobs:
           AUTH_OWNER_PASSWORD=${STAGING_OWNER_PASSWORD}
           AUTH_OWNER_LOGIN_PHONE=+966500000001
           SEED_EMPLOYEE_LOGIN_PHONE_MAP='{"4cf1450d-08d8-4ca1-b180-1c2642174a79":"+966500000002","85f696d6-f655-4f2d-9f56-1f13c2f4c66c":"+966500000003"}'
+          SEED_EMPLOYEE_PIN_MAP=${STAGING_EMPLOYEE_PIN_MAP}
           SAAS_ADMIN_API_ENABLED=false
           NEXT_PUBLIC_SAAS_ADMIN_ENABLED=false
           AUTH_PASSWORD_RESET_ENABLED=false
