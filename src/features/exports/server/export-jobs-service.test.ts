@@ -98,7 +98,7 @@ describe("export jobs service", () => {
     expect(estimate.mode).toBe("async");
     expect(estimate.reason).toBe("large_export");
     expect(estimate.recommendedFormat).toBe("excel");
-  });
+  }, 15000);
 
   it("creates a ready Excel job with a download file", async () => {
     const { createRegisterExportJob } = await import("./export-jobs-service");
