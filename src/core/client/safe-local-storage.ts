@@ -67,6 +67,23 @@ export function safeRemoveLocalStorageItem(
   }
 }
 
+export function safeListLocalStorageKeys(
+  options: LocalStoragePolicyOptions = {},
+): string[] {
+  if (!isBrowserPersistentStorageAllowed(options)) return [];
+  if (typeof window === "undefined") return [];
+  try {
+    const keys: string[] = [];
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (key) keys.push(key);
+    }
+    return keys;
+  } catch {
+    return [];
+  }
+}
+
 export function safeGetSessionStorageItem(key: string): string | null {
   if (typeof window === "undefined") return null;
   try {

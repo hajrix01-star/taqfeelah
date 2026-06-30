@@ -1,4 +1,8 @@
-import { safeSetLocalStorageItem } from "@/core/client/safe-local-storage";
+import {
+  safeGetLocalStorageItem,
+  safeListLocalStorageKeys,
+  safeSetLocalStorageItem,
+} from "@/core/client/safe-local-storage";
 import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 import {
   OWNER_NOTEBOOK_STORAGE_KEY,
@@ -57,11 +61,10 @@ function collectOwnerNotebookStorageKeys({ organizationId = "", userId = "" }: O
     buildOwnerNotebookStorageKey("default-org", "default-user"),
   ]);
 
-  if (storageAllowed() && typeof window !== "undefined" && organizationId) {
+  if (organizationId) {
     const orgPrefix = `${OWNER_NOTEBOOK_STORAGE_KEY}:${organizationId}:`;
-    for (let index = 0; index < window.localStorage.length; index += 1) {
-      const key = window.localStorage.key(index);
-      if (key && key.startsWith(orgPrefix)) keys.add(key);
+    for (const key of safeListLocalStorageKeys({ scope: "ui-preferences" })) {
+      if (key.startsWith(orgPrefix)) keys.add(key);
     }
   }
 
@@ -83,10 +86,10 @@ export function readLegacyOwnerNotebookNotes({ organizationId = "", userId = "" 
 }
 
 export function isOwnerNotebookMigrationComplete({ organizationId = "", userId = "" }: OwnerNotebookStorageScope = {}) {
-  if (!storageAllowed() || typeof window === "undefined") return true;
-  const marker = window.localStorage.getItem(
-    buildOwnerNotebookMigrationMarkerKey(organizationId, userId),
-  );
+  if (!storageAllowed()) return true;
+  const marker = safeGetLocalStorageItem(buildOwnerNotebookMigrationMarkerKey(organizationId, userId), {
+    scope: "ui-preferences",
+  });
   return marker === "1";
 }
 
