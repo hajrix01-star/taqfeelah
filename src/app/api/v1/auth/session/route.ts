@@ -1,35 +1,22 @@
-import { failRequest, ok } from "@/core/http/api-response";
 import { readEnv, assertProductionRuntimeEnv, isServerProductionMode, isAuthSessionCookieSecure } from "@/core/config/env";
 import {
   buildClearAuthSessionCookieHeader,
   buildSetAuthSessionCookieHeader,
   resolveAuthSessionFromRequest,
 } from "@/core/auth/session-cookie";
-import {
-  buildLoginRateLimitKey,
-  checkLoginRateLimit,
-  clearLoginAttempts,
-  recordLoginFailure,
-} from "@/core/auth/login-rate-limiter";
 import { createAuthSession } from "@/features/auth/server/create-auth-session";
 import { getOwnerPasswordIdentityFlags } from "@/features/auth/server/auth-identities";
 import { resolveUserDisplayName } from "@/features/auth/server/resolve-user-display-name";
-import { AppError, ServiceUnavailableError, UnauthorizedError } from "@/core/errors/app-error";
+import { ServiceUnavailableError, UnauthorizedError } from "@/core/errors/app-error";
+import { readJsonBody, withApiRouteNoParams, withPublicApiRouteNoParams } from "@/core/http/api-route-handler";
 import { fireUsageEventSafe } from "@/features/usage/server/fire-usage-event-safe";
+import { runRateLimitedAuthRequest } from "@/features/auth/server/rate-limited-auth-request";
 import {
   TRUSTED_DEVICE_COOKIE_NAME,
   buildSetTrustedDeviceCookieHeader,
 } from "@/features/trusted-devices/server/trusted-device-cookie";
 
 export const dynamic = "force-dynamic";
-
-function resolveClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0]?.trim() || "unknown";
-  }
-  return request.headers.get("x-real-ip") || "unknown";
-}
 
 function resolveLoginIdentifier(payload: Record<string, unknown>): string {
   if (payload.mode === "platform_admin_password") {
@@ -57,139 +44,112 @@ function readCookieValue(request: Request, name: string): string | undefined {
   return undefined;
 }
 
-export async function GET(request: Request) {
-  try {
-    const env = readEnv();
-    if (isServerProductionMode(env)) {
-      assertProductionRuntimeEnv(env);
-    }
-    const session = resolveAuthSessionFromRequest(
-      request,
-      env.AUTH_SESSION_COOKIE_NAME,
-      env.AUTH_SESSION_SECRET,
-    );
-    if (!session) {
-      return ok({ authenticated: false });
-    }
-    const displayName = await resolveUserDisplayName(session.userId);
-    const ownerFlags = session.role === "owner"
-      ? await getOwnerPasswordIdentityFlags(session.userId)
-      : null;
-    return ok({
-      authenticated: true,
-      organizationId: session.organizationId,
-      userId: session.userId,
-      role: session.role,
-      displayName,
-      mustChangePassword: ownerFlags?.mustChangePassword === true,
-    });
-  } catch (error) {
-    return failRequest(error, request);
+export const GET = withPublicApiRouteNoParams(async ({ request }) => {
+  const env = readEnv();
+  if (isServerProductionMode(env)) {
+    assertProductionRuntimeEnv(env);
   }
-}
+  const session = resolveAuthSessionFromRequest(
+    request,
+    env.AUTH_SESSION_COOKIE_NAME,
+    env.AUTH_SESSION_SECRET,
+  );
+  if (!session) {
+    return { authenticated: false };
+  }
+  const displayName = await resolveUserDisplayName(session.userId);
+  const ownerFlags = session.role === "owner"
+    ? await getOwnerPasswordIdentityFlags(session.userId)
+    : null;
+  return {
+    authenticated: true,
+    organizationId: session.organizationId,
+    userId: session.userId,
+    role: session.role,
+    displayName,
+    mustChangePassword: ownerFlags?.mustChangePassword === true,
+  };
+});
 
-export async function POST(request: Request) {
-  let rateKey = "";
-  try {
-    const env = readEnv();
-    if (isServerProductionMode(env)) {
-      assertProductionRuntimeEnv(env);
-    }
-    if (!env.DATABASE_URL) {
-      throw new ServiceUnavailableError("DATABASE_URL is not configured.");
-    }
-
-    const payload = (await request.json()) as Record<string, unknown>;
-    rateKey = buildLoginRateLimitKey(resolveClientIp(request), resolveLoginIdentifier(payload));
-    const rateCheck = await checkLoginRateLimit(rateKey);
-    if (!rateCheck.allowed) {
-      throw new AppError(
-        "RATE_LIMITED",
-        "Too many login attempts. Try again later.",
-        429,
-        { retryAfterSeconds: rateCheck.retryAfterSeconds },
-      );
-    }
-
-    const sessionClaims = await createAuthSession({
+export const POST = withApiRouteNoParams(async ({ request }) => {
+  const env = readEnv();
+  const payload = await readJsonBody<Record<string, unknown>>(request);
+  const sessionClaims = await runRateLimitedAuthRequest({
+    request,
+    key: resolveLoginIdentifier(payload),
+    rateLimitedMessage: "Too many login attempts. Try again later.",
+    clearOnSuccess: true,
+    recordFailureFor: (error) => error instanceof UnauthorizedError,
+    action: () => createAuthSession({
       ...(payload as Parameters<typeof createAuthSession>[0]),
       trustedDeviceCookie: readCookieValue(request, TRUSTED_DEVICE_COOKIE_NAME),
-    });
-    await clearLoginAttempts(rateKey);
-    if (!env.AUTH_SESSION_SECRET || env.AUTH_SESSION_SECRET.length < 16) {
-      throw new ServiceUnavailableError("AUTH_SESSION_SECRET is not configured.");
-    }
+    }),
+  });
 
-    const secureCookie = isAuthSessionCookieSecure(env);
-    const setCookie = buildSetAuthSessionCookieHeader(
-      {
-        organizationId: sessionClaims.organizationId,
-        userId: sessionClaims.userId,
-        role: sessionClaims.role,
-        ttlSeconds: 60 * 60 * 12,
-      },
-      env.AUTH_SESSION_COOKIE_NAME,
-      env.AUTH_SESSION_SECRET,
-      { secure: secureCookie },
-    );
+  if (!env.AUTH_SESSION_SECRET || env.AUTH_SESSION_SECRET.length < 16) {
+    throw new ServiceUnavailableError("AUTH_SESSION_SECRET is not configured.");
+  }
 
-    const eventDate = new Date().toISOString().slice(0, 10);
-    void fireUsageEventSafe({
+  const secureCookie = isAuthSessionCookieSecure(env);
+  const setCookie = buildSetAuthSessionCookieHeader(
+    {
       organizationId: sessionClaims.organizationId,
       userId: sessionClaims.userId,
-      eventName: "login_success",
-      eventDate,
-      metadata: { role: sessionClaims.role },
-    });
+      role: sessionClaims.role,
+      ttlSeconds: 60 * 60 * 12,
+    },
+    env.AUTH_SESSION_COOKIE_NAME,
+    env.AUTH_SESSION_SECRET,
+    { secure: secureCookie },
+  );
 
-    const headers = new Headers({ "content-type": "application/json" });
-    headers.append("set-cookie", setCookie);
+  const eventDate = new Date().toISOString().slice(0, 10);
+  void fireUsageEventSafe({
+    organizationId: sessionClaims.organizationId,
+    userId: sessionClaims.userId,
+    eventName: "login_success",
+    eventDate,
+    metadata: { role: sessionClaims.role },
+  });
 
-    if ("trustedDevice" in sessionClaims && sessionClaims.trustedDevice) {
-      headers.append(
-        "set-cookie",
-        buildSetTrustedDeviceCookieHeader(
-          {
-            userId: sessionClaims.userId,
-            deviceId: sessionClaims.trustedDevice.deviceId,
-            secret: sessionClaims.trustedDevice.secret,
-          },
-          { secure: secureCookie },
-        ),
-      );
-    }
+  const headers = new Headers({ "content-type": "application/json" });
+  headers.append("set-cookie", setCookie);
 
-    return new Response(
-      JSON.stringify({
-        organizationId: sessionClaims.organizationId,
-        userId: sessionClaims.userId,
-        role: sessionClaims.role,
-        displayName: sessionClaims.displayName || "",
-        mustChangePassword: sessionClaims.mustChangePassword === true,
-      }),
-      { status: 200, headers },
-    );
-  } catch (error) {
-    if (error instanceof UnauthorizedError && rateKey) {
-      await recordLoginFailure(rateKey);
-    }
-    return failRequest(error, request);
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const env = readEnv();
-    const secureCookie = isAuthSessionCookieSecure(env);
-    return ok(
-      { success: true },
-      {
-        headers: {
-          "set-cookie": buildClearAuthSessionCookieHeader(env.AUTH_SESSION_COOKIE_NAME, secureCookie),
+  if ("trustedDevice" in sessionClaims && sessionClaims.trustedDevice) {
+    headers.append(
+      "set-cookie",
+      buildSetTrustedDeviceCookieHeader(
+        {
+          userId: sessionClaims.userId,
+          deviceId: sessionClaims.trustedDevice.deviceId,
+          secret: sessionClaims.trustedDevice.secret,
         },
-      },
+        { secure: secureCookie },
+      ),
     );
-  } catch (error) {
-    return failRequest(error, request);
   }
-}
+
+  return new Response(
+    JSON.stringify({
+      organizationId: sessionClaims.organizationId,
+      userId: sessionClaims.userId,
+      role: sessionClaims.role,
+      displayName: sessionClaims.displayName || "",
+      mustChangePassword: sessionClaims.mustChangePassword === true,
+    }),
+    { status: 200, headers },
+  );
+});
+
+export const DELETE = withPublicApiRouteNoParams(() => {
+  const env = readEnv();
+  const secureCookie = isAuthSessionCookieSecure(env);
+  return {
+    data: { success: true },
+    init: {
+      headers: {
+        "set-cookie": buildClearAuthSessionCookieHeader(env.AUTH_SESSION_COOKIE_NAME, secureCookie),
+      },
+    },
+  };
+});

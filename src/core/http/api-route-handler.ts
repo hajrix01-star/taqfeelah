@@ -1,7 +1,7 @@
 import { resolveRequestContext, type RequestContext } from "@/core/auth/request-context";
 import { assertProductionRuntimeEnv, isServerProductionMode, readEnv } from "@/core/config/env";
 import { ServiceUnavailableError, ValidationError } from "@/core/errors/app-error";
-import { fail, ok } from "@/core/http/api-response";
+import { fail, ok, type FailContext } from "@/core/http/api-response";
 
 type RouteHandlerContext<TParams = Record<string, string>> = {
   params: Promise<TParams>;
@@ -47,6 +47,12 @@ function toApiResponse<T>(result: ApiRouteResult<T>): Response {
   if (isResponse(result)) return result;
   if (isDataResult(result)) return ok(result.data, result.init);
   return ok(result);
+}
+
+function failRoute(error: unknown, request: Request): Response {
+  const requestId = request.headers.get("x-request-id")?.trim();
+  const context: FailContext | undefined = requestId ? { requestId } : undefined;
+  return fail(error, context);
 }
 
 export function requireDatabaseEnv() {
@@ -106,7 +112,7 @@ export function withApiRoute<TParams extends Record<string, string> = Record<str
       const { searchParams } = new URL(request.url);
       return toApiResponse(await handler({ request, params, searchParams }));
     } catch (error) {
-      return fail(error);
+      return failRoute(error, request);
     }
   };
 }
@@ -120,7 +126,20 @@ export function withApiRouteNoParams<TResult = unknown>(
       const { searchParams } = new URL(request.url);
       return toApiResponse(await handler({ request, params: {}, searchParams }));
     } catch (error) {
-      return fail(error);
+      return failRoute(error, request);
+    }
+  };
+}
+
+export function withPublicApiRouteNoParams<TResult = unknown>(
+  handler: ApiRouteHandler<Record<string, string>, TResult>,
+) {
+  return async function apiRoute(request: Request) {
+    try {
+      const { searchParams } = new URL(request.url);
+      return toApiResponse(await handler({ request, params: {}, searchParams }));
+    } catch (error) {
+      return failRoute(error, request);
     }
   };
 }
