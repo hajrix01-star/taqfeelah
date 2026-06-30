@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { storeAttachmentPayload } from "@/features/attachments/client/attachment-payload-storage";
 import { readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-local-store";
 import { applyNotebookThemeCssVariables } from "@/features/daily-closeouts/notebook-themes";
@@ -54,11 +54,11 @@ import {
 import { resolveOwnerActor } from "./resolve-owner-actor";
 import { nextDayIso } from "./taqfeelah-app-date-helpers";
 import { useTaqfeelahAppEmployeeThemeSync } from "./use-taqfeelah-app-employee-theme-sync";
+import { useTaqfeelahOperationalSyncState } from "./use-taqfeelah-operational-sync-state";
 import { useTaqfeelahAppOwnerSaveActions } from "./use-taqfeelah-app-owner-save-actions";
 import { useTaqfeelahAppOwnerCloseoutActions } from "./use-taqfeelah-app-owner-closeout-actions";
 import { useTaqfeelahAppRuntimeApiBundle } from "./use-taqfeelah-app-runtime-api-bundle";
-import type { NotifyOperationalSyncWriteFn } from "@/features/operations/client/operations-client-types";
-import type { OperationalSyncEventType } from "@/core/sync/operational-sync-event-types";
+import { useTaqfeelahSavingState } from "./use-taqfeelah-saving-state";
 import type { CreateOperationalEntryInApiParams } from "@/features/operations/client/operations-client-types";
 import type { NotebookThemeId } from "./taqfeelah-app-types";
 import type { StoreRef } from "@/features/daily-closeouts/daily-closeouts-types";
@@ -93,13 +93,11 @@ export function useTaqfeelahAppState() {
     setSessionDisplayName,
   } = session;
 
-  const [saving, setSaving] = useState(false);
-  const savingRef = useRef(false);
-  const [saved, setSaved] = useState(false);
-  const operationalSyncNotifyRef = useRef<NotifyOperationalSyncWriteFn | null>(null);
-  const notifyOperationalSyncWrite = useCallback((eventType: OperationalSyncEventType | string) => {
-    operationalSyncNotifyRef.current?.(eventType);
-  }, []);
+  const { saving, setSaving, savingRef, saved, setSaved } = useTaqfeelahSavingState();
+  const {
+    notifyRef: operationalSyncNotifyRef,
+    notifyOperationalSyncWrite,
+  } = useTaqfeelahOperationalSyncState();
 
   const ownerSettings = useOwnerSettingsState({
     bindsToServerAuth: BINDS_TO_SERVER_AUTH,

@@ -1,3 +1,5 @@
+import { apiClient } from "@/core/client/api-client";
+
 export type AccountSetupPreview = {
   purpose: "onboarding" | "password_reset";
   phoneNumber: string;
@@ -9,14 +11,14 @@ export type AccountSetupPreview = {
 
 export async function validateAccountSetupViaApi(token: string): Promise<AccountSetupPreview> {
   const search = new URLSearchParams({ token });
-  const response = await fetch(`/api/v1/auth/setup/validate?${search.toString()}`, {
-    credentials: "include",
-  });
-  const payload = await response.json().catch(() => ({})) as { data?: AccountSetupPreview; error?: { message?: string } };
-  if (!response.ok) {
-    throw new Error(payload?.error?.message || "Failed to validate setup link.");
+  const payload = await apiClient.get<AccountSetupPreview | { data?: AccountSetupPreview }>(
+    `/api/v1/auth/setup/validate?${search.toString()}`,
+    { errorMessage: "Failed to validate setup link." },
+  );
+  if (payload && typeof payload === "object" && "data" in payload && payload.data) {
+    return payload.data;
   }
-  return (payload.data ?? payload) as AccountSetupPreview;
+  return payload as AccountSetupPreview;
 }
 
 export async function confirmAccountSetupViaApi({
@@ -28,15 +30,7 @@ export async function confirmAccountSetupViaApi({
   password: string;
   confirmPassword: string;
 }) {
-  const response = await fetch("/api/v1/auth/setup/confirm", {
-    method: "POST",
-    credentials: "include",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ token, password, confirmPassword }),
+  return apiClient.post("/api/v1/auth/setup/confirm", { token, password, confirmPassword }, {
+    errorMessage: "Failed to complete account setup.",
   });
-  const payload = await response.json().catch(() => ({})) as { error?: { message?: string } };
-  if (!response.ok) {
-    throw new Error(payload?.error?.message || "Failed to complete account setup.");
-  }
-  return payload;
 }

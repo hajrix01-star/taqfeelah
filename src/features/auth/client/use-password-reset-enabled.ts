@@ -1,5 +1,6 @@
 "use client";
 
+import { apiClient } from "@/core/client/api-client";
 import { useEffect, useState } from "react";
 
 type PasswordResetStatus = {
@@ -14,8 +15,7 @@ export function usePasswordResetEnabled() {
   useEffect(() => {
     let cancelled = false;
 
-    fetch("/api/v1/auth/password-reset/status", { credentials: "include" })
-      .then((response) => response.json())
+    apiClient.get<PasswordResetStatus>("/api/v1/auth/password-reset/status")
       .then((payload: PasswordResetStatus) => {
         if (cancelled) return;
         setEnabled(payload?.enabled === true || payload?.data?.enabled === true);

@@ -5,8 +5,10 @@ export type ApiClientRequestOptions = {
   headers?: HeadersInit;
   body?: unknown;
   credentials?: RequestCredentials;
+  cache?: RequestCache;
   parseBody?: boolean;
   unwrapData?: boolean;
+  errorMessage?: string;
   errorFactory?: ApiClientErrorFactory;
 };
 
@@ -35,8 +37,10 @@ export async function apiClientRequest<T = unknown>(
     headers,
     body,
     credentials = "include",
+    cache,
     parseBody = true,
     unwrapData = false,
+    errorMessage,
     errorFactory,
   }: ApiClientRequestOptions = {},
 ): Promise<T> {
@@ -44,6 +48,7 @@ export async function apiClientRequest<T = unknown>(
     method,
     headers,
     credentials,
+    cache,
   };
   if (body !== undefined) {
     init.body = normalizeBody(body);
@@ -56,7 +61,15 @@ export async function apiClientRequest<T = unknown>(
     if (errorFactory) {
       throw await errorFactory(payload, response.status, response);
     }
-    throw new Error(`API request failed: ${response.status}`);
+    const payloadMessage = payload
+      && typeof payload === "object"
+      && "error" in payload
+      && payload.error
+      && typeof payload.error === "object"
+      && "message" in payload.error
+      ? String(payload.error.message)
+      : "";
+    throw new Error(payloadMessage || errorMessage || `API request failed: ${response.status}`);
   }
 
   if (!parseBody) return response as T;

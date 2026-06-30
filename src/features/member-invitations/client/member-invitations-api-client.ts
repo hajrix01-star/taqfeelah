@@ -1,10 +1,23 @@
-﻿import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
+import { apiClient } from "@/core/client/api-client";
+import { fetchApiJsonWithRuntimeContext } from "@/core/client/api-fetch";
 import type {
   ActivateMemberInvitationViaApiInput,
   CreateMemberInvitationViaApiInput,
   MemberInvitationsAuth,
   RevokeMemberInvitationViaApiInput,
 } from "@/features/member-invitations/client/member-invitations-client-types";
+
+type ApiDataPayload<T = unknown> = T | { data?: T };
+
+function unwrapApiData<T>(payload: ApiDataPayload<T>): T {
+  return (
+    payload
+    && typeof payload === "object"
+    && "data" in payload
+    ? payload.data
+    : payload
+  ) as T;
+}
 
 export async function createMemberInvitationViaApi({
   organizationId,
@@ -61,14 +74,11 @@ export async function revokeMemberInvitationViaApi({
 }
 
 export async function fetchPublicInvitationViaApi(token: string) {
-  const response = await fetch(`/api/v1/member-invitations/public/${encodeURIComponent(token)}`, {
-    credentials: "include",
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload?.error?.message || "Failed to load invitation.");
-  }
-  return payload?.data ?? payload;
+  const payload = await apiClient.get<ApiDataPayload>(
+    `/api/v1/member-invitations/public/${encodeURIComponent(token)}`,
+    { errorMessage: "Failed to load invitation." },
+  );
+  return unwrapApiData(payload);
 }
 
 export async function activateMemberInvitationViaApi({
@@ -77,15 +87,10 @@ export async function activateMemberInvitationViaApi({
   pin,
   trustDevice = true,
 }: ActivateMemberInvitationViaApiInput) {
-  const response = await fetch(`/api/v1/member-invitations/public/${encodeURIComponent(token)}/activate`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ phone, pin, trustDevice }),
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload?.error?.message || "Failed to activate invitation.");
-  }
-  return payload?.data ?? payload;
+  const payload = await apiClient.post<ApiDataPayload>(
+    `/api/v1/member-invitations/public/${encodeURIComponent(token)}/activate`,
+    { phone, pin, trustDevice },
+    { errorMessage: "Failed to activate invitation." },
+  );
+  return unwrapApiData(payload);
 }

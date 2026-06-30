@@ -26,6 +26,7 @@ import {
   safeRemoveSessionStorageItem,
   safeSetSessionStorageItem,
 } from "@/core/client/safe-local-storage";
+import { apiClient } from "@/core/client/api-client";
 
 type UpdatePhase = "idle" | "available";
 
@@ -34,9 +35,7 @@ const STALE_CLIENT_RECOVERY_KEY = "taqfeelah:pwa-stale-client-recovery-build";
 
 async function fetchServerReleaseMeta(): Promise<ReleaseMeta | null> {
   try {
-    const response = await fetch("/api/v1/meta", { cache: "no-store" });
-    if (!response.ok) return null;
-    const payload = (await response.json()) as ReleaseMeta;
+    const payload = await apiClient.get<ReleaseMeta>("/api/v1/meta", { cache: "no-store" });
     if (!payload?.build || !payload?.label || !payload?.version) return null;
     return payload;
   } catch {

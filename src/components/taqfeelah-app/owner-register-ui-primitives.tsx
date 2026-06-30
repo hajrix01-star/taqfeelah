@@ -5,13 +5,14 @@ import { SlidersHorizontal } from "lucide-react";
 import { isRegisterIndexTabsEnabled } from "@/core/config/register-dashboard-tabs-mode";
 import { REGISTER_REPORT_GRANULARITY } from "@/features/reports/client/register-report-granularity";
 import { buildIndexTabBorderClass } from "./index-tab-button-styles";
+import { taqUi } from "./taq-ui-classes";
 import { money, text } from "./taqfeelah-app-catalog-data";
 import { MoneyValue } from "./taqfeelah-app-notebook";
 import type { DisplayLang, RegisterViewCounts, SettingsTabItem } from "./taqfeelah-app-types";
 
 const REGISTER_INDEX_TABS_ENABLED = isRegisterIndexTabsEnabled();
 
-const REGISTER_VIEW_NEUTRAL_INACTIVE = "bg-[#F0ECE2] text-[#827762]";
+const REGISTER_VIEW_NEUTRAL_INACTIVE = `${taqUi.bg.inactive} ${taqUi.text.subtle}`;
 
 function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): SettingsTabItem[] {
   return [
@@ -20,9 +21,9 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       label: text(lang, "generalReportTab"),
       count: counts.report ?? 0,
       hideCount: true,
-      activeClass: "bg-[#E4B84A] text-[#112A46]",
+      activeClass: `${taqUi.bg.accent} ${taqUi.text.primary}`,
       inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[#957D43]/80`,
-      badgeActiveClass: "bg-[#112A46] text-white",
+      badgeActiveClass: `${taqUi.bg.primary} text-white`,
       badgeInactiveClass: "bg-[#112A46]/[0.08] text-[#827762]",
       contentSurfaceClass: "bg-[#FFFBF0]",
       contentAccentClass: "border-t-2 border-[#E4B84A]/45",
@@ -32,7 +33,7 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       label: lang === "ar" ? "التقفيلات" : "Closeouts",
       count: counts.closeouts ?? 0,
       hideCount: false,
-      activeClass: "bg-[#214B7B] text-white",
+      activeClass: `${taqUi.bg.blue} text-white`,
       inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[#214B7B]/75`,
       badgeActiveClass: "bg-white/20 text-white",
       badgeInactiveClass: "bg-[#214B7B]/10 text-[#214B7B]",
@@ -44,7 +45,7 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       label: lang === "ar" ? "العمليات" : "Operations",
       count: counts.operations ?? 0,
       hideCount: false,
-      activeClass: "bg-[#257844] text-white",
+      activeClass: `${taqUi.bg.success} text-white`,
       inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[#257844]/75`,
       badgeActiveClass: "bg-white/20 text-white",
       badgeInactiveClass: "bg-[#257844]/10 text-[#257844]",
@@ -56,7 +57,7 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       label: text(lang, "attachments"),
       count: counts.attachments ?? 0,
       hideCount: false,
-      activeClass: "bg-[#806528] text-white",
+      activeClass: `${taqUi.bg.amber} text-white`,
       inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[#806528]/80`,
       badgeActiveClass: "bg-white/20 text-white",
       badgeInactiveClass: "bg-[#806528]/10 text-[#806528]",
@@ -74,7 +75,7 @@ function resolveRegisterViewItem(lang: DisplayLang, counts: RegisterViewCounts, 
 export function RegisterStoreBadge({ label }: { label?: string | null }) {
   if (!label) return null;
   return (
-    <span className="max-w-[9.5rem] truncate rounded-full bg-[#112A46] px-2.5 py-1 text-taq-nav font-black text-white ring-1 ring-[#112A46]/15">
+    <span className={`max-w-[9.5rem] truncate rounded-full ${taqUi.bg.primary} px-2.5 py-1 text-taq-nav font-black text-white ring-1 ring-[#112A46]/15`}>
       {label}
     </span>
   );
@@ -82,11 +83,11 @@ export function RegisterStoreBadge({ label }: { label?: string | null }) {
 
 export function LogFilterChip({ active, children, onClick, tone = "default" }: { active: boolean; children: React.ReactNode; onClick: () => void; tone?: "default" | "accent" | "warn" | "danger" | "navy" }) {
   const toneClass = {
-    default: active ? "bg-[#112A46] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
-    accent: active ? "bg-[#E4B84A] text-[#112A46]" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
+    default: active ? `${taqUi.bg.primary} text-white` : `${taqUi.bg.paper} ${taqUi.text.muted} ${taqUi.ring.line}`,
+    accent: active ? `${taqUi.bg.accent} ${taqUi.text.primary}` : `${taqUi.bg.paper} ${taqUi.text.muted} ${taqUi.ring.line}`,
     warn: active ? "bg-[#B96725] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
-    danger: active ? "bg-[#B44747] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
-    navy: active ? "bg-[#214B7B] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
+    danger: active ? `${taqUi.bg.danger} text-white` : `${taqUi.bg.paper} ${taqUi.text.muted} ${taqUi.ring.line}`,
+    navy: active ? `${taqUi.bg.blue} text-white` : `${taqUi.bg.paper} ${taqUi.text.muted} ${taqUi.ring.line}`,
   }[tone];
   return <button type="button" onClick={onClick} className={`rounded-full px-2.5 py-1 text-taq-meta font-black ${toneClass}`}>{children}</button>;
 }
@@ -95,7 +96,7 @@ export function RegisterViewSwitch({ lang, value, onChange, counts }: { lang: Di
   const items = buildRegisterViewItems(lang, counts);
 
   return (
-    <div className="flex rounded-lg bg-[#F3F0E8] p-0.5" role="tablist" aria-label={text(lang, "operationsLog")}>
+    <div className={`flex rounded-lg ${taqUi.bg.softPaper} p-0.5`} role="tablist" aria-label={text(lang, "operationsLog")}>
       {items.map((item) => {
         const active = value === item.id;
         return (
@@ -106,7 +107,7 @@ export function RegisterViewSwitch({ lang, value, onChange, counts }: { lang: Di
             aria-selected={active}
             onClick={() => onChange(item.id)}
             className={`flex min-w-0 flex-1 items-center justify-center gap-1 rounded-[9px] px-1.5 py-1.5 text-[10px] font-black transition-all duration-200 ${
-              active ? "bg-white text-[#112A46] shadow-[0_1px_6px_rgba(17,42,70,0.07)]" : "text-[#8A8070]"
+              active ? `${taqUi.bg.white} ${taqUi.text.primary} ${taqUi.shadow.soft}` : "text-[#8A8070]"
             }`}
           >
             <span className="truncate">{item.label}</span>
@@ -167,7 +168,7 @@ export function RegisterIndexTabs({ lang, value, onChange, counts }: { lang: Dis
 
 function RegisterFilterToolbar({ lang, showFilters, activeFilterCount, onOpenFilters }: { lang: DisplayLang; showFilters: boolean; activeFilterCount: number; onOpenFilters: () => void }) {
   return (
-    <div className="flex h-12 shrink-0 items-center border-b border-[#F0EBE0] px-3">
+    <div className={`flex h-12 shrink-0 items-center border-b ${taqUi.border.soft} px-3`}>
       {showFilters ? (
         <RegisterFilterButton lang={lang} activeCount={activeFilterCount} onClick={onOpenFilters} />
       ) : (
@@ -185,8 +186,8 @@ export function RegisterFilterButton({ lang, activeCount, onClick }: { lang: Dis
       aria-label={text(lang, "logFilters")}
       className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-150 ${
         activeCount > 0
-          ? "bg-[#112A46] text-white shadow-[0_1px_6px_rgba(17,42,70,0.18)]"
-          : "bg-white text-[#112A46] ring-1 ring-[#E8E1D4]"
+          ? `${taqUi.bg.primary} text-white ${taqUi.shadow.active}`
+          : `${taqUi.bg.white} ${taqUi.text.primary} ${taqUi.ring.line}`
       }`}
     >
       <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={2.25} />
@@ -201,16 +202,16 @@ export function RegisterFilterButton({ lang, activeCount, onClick }: { lang: Dis
 
 export function RegisterMetricTile({ label, value, tone = "neutral", size = "md" }: { label: React.ReactNode; value: string; tone?: "neutral" | "in" | "out"; size?: "sm" | "md" | "lg" }) {
   const valueTone = {
-    neutral: "text-[#112A46]",
-    in: "text-[#257844]",
-    out: "text-[#B44747]",
-  }[tone] || "text-[#112A46]";
+    neutral: taqUi.text.primary,
+    in: taqUi.text.success,
+    out: taqUi.text.danger,
+  }[tone] || taqUi.text.primary;
 
   const valueSize = size === "lg" ? "text-lg" : size === "sm" ? "text-xs" : "text-base";
 
   return (
     <div className="min-w-0 px-1 text-center">
-      <p className="text-[9px] font-bold text-[#A99D87]">{label}</p>
+      <p className={`text-[9px] font-bold ${taqUi.text.meta}`}>{label}</p>
       <p className={`mt-1.5 tabular-nums font-black leading-none ${valueTone} ${valueSize}`}>
         <MoneyValue value={value} />
       </p>
