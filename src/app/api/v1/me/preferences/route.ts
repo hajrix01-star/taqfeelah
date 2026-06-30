@@ -1,7 +1,4 @@
-import { fail, ok } from "@/core/http/api-response";
-import { ServiceUnavailableError } from "@/core/errors/app-error";
-import { readEnv, assertProductionRuntimeEnv, isServerProductionMode } from "@/core/config/env";
-import { resolveRequestContext } from "@/core/auth/request-context";
+import { readJsonBody, withAuthedApiRouteNoParams } from "@/core/http/api-route-handler";
 import {
   getEmployeePreferences,
   saveEmployeePreferences,
@@ -9,53 +6,27 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  try {
-    const env = readEnv();
-    if (isServerProductionMode(env)) {
-      assertProductionRuntimeEnv(env);
-    }
-    if (!env.DATABASE_URL) {
-      throw new ServiceUnavailableError("DATABASE_URL is not configured.");
-    }
+export const GET = withAuthedApiRouteNoParams(async ({ auth }) => {
+  const preferences = await getEmployeePreferences({
+    organizationId: auth.organizationId,
+    actorUserId: auth.userId,
+    actorRole: auth.role,
+  });
+  return { preferences };
+});
 
-    const requestContext = resolveRequestContext(request, { requireUser: true });
-    const preferences = await getEmployeePreferences({
-      organizationId: requestContext.organizationId,
-      actorUserId: requestContext.userId!,
-      actorRole: requestContext.role!,
-    });
-    return ok({ preferences });
-  } catch (error) {
-    return fail(error);
-  }
-}
+export const PATCH = withAuthedApiRouteNoParams(async ({ auth, request }) => {
+  const body = await readJsonBody<Record<string, unknown>>(request);
+  const preferences = body?.preferences && typeof body.preferences === "object"
+    ? body.preferences
+    : body;
 
-export async function PATCH(request: Request) {
-  try {
-    const env = readEnv();
-    if (isServerProductionMode(env)) {
-      assertProductionRuntimeEnv(env);
-    }
-    if (!env.DATABASE_URL) {
-      throw new ServiceUnavailableError("DATABASE_URL is not configured.");
-    }
+  const saved = await saveEmployeePreferences({
+    organizationId: auth.organizationId,
+    actorUserId: auth.userId,
+    actorRole: auth.role,
+    preferences,
+  });
 
-    const requestContext = resolveRequestContext(request, { requireUser: true });
-    const body = await request.json();
-    const preferences = body?.preferences && typeof body.preferences === "object"
-      ? body.preferences
-      : body;
-
-    const saved = await saveEmployeePreferences({
-      organizationId: requestContext.organizationId,
-      actorUserId: requestContext.userId!,
-      actorRole: requestContext.role!,
-      preferences,
-    });
-
-    return ok({ preferences: saved });
-  } catch (error) {
-    return fail(error);
-  }
-}
+  return { preferences: saved };
+});

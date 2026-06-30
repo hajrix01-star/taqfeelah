@@ -1,7 +1,4 @@
-import { fail, ok } from "@/core/http/api-response";
-import { ServiceUnavailableError } from "@/core/errors/app-error";
-import { readEnv, assertProductionRuntimeEnv, isServerProductionMode } from "@/core/config/env";
-import { resolveRequestContext } from "@/core/auth/request-context";
+import { readJsonBody, withAuthedApiRouteNoParams } from "@/core/http/api-route-handler";
 import {
   getRuntimeSettings,
   saveRuntimeSettings,
@@ -9,57 +6,33 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  try {
-    const env = readEnv();
-    if (isServerProductionMode(env)) {
-      assertProductionRuntimeEnv(env);
-    }
-    if (!env.DATABASE_URL) {
-      throw new ServiceUnavailableError("DATABASE_URL is not configured.");
-    }
+export const GET = withAuthedApiRouteNoParams(({ auth }) =>
+  getRuntimeSettings({
+    organizationId: auth.organizationId,
+    actorUserId: auth.userId,
+    actorRole: auth.role,
+  })
+);
 
-    const requestContext = resolveRequestContext(request, { requireUser: true });
-    const result = await getRuntimeSettings({
-      organizationId: requestContext.organizationId,
-      actorUserId: requestContext.userId!,
-      actorRole: requestContext.role!,
-    });
-    return ok(result);
-  } catch (error) {
-    return fail(error);
-  }
-}
+export const PUT = withAuthedApiRouteNoParams(async ({ auth, request }) => {
+  const body = await readJsonBody<Record<string, unknown>>(request);
+  const settings =
+    body?.settings && typeof body.settings === "object"
+      ? (body.settings as Record<string, unknown>)
+      : {};
+  const reason = typeof body?.reason === "string" ? body.reason : undefined;
 
-export async function PUT(request: Request) {
-  try {
-    const env = readEnv();
-    if (isServerProductionMode(env)) {
-      assertProductionRuntimeEnv(env);
-    }
-    if (!env.DATABASE_URL) {
-      throw new ServiceUnavailableError("DATABASE_URL is not configured.");
-    }
+  const saved = await saveRuntimeSettings({
+    organizationId: auth.organizationId,
+    actorUserId: auth.userId,
+    actorRole: auth.role,
+    settings,
+    reason,
+  });
 
-    const requestContext = resolveRequestContext(request, { requireUser: true });
-    const body = await request.json();
-    const settings = body?.settings && typeof body.settings === "object" ? body.settings : {};
-    const reason = typeof body?.reason === "string" ? body.reason : undefined;
-
-    const saved = await saveRuntimeSettings({
-      organizationId: requestContext.organizationId,
-      actorUserId: requestContext.userId!,
-      actorRole: requestContext.role!,
-      settings,
-      reason,
-    });
-
-    return ok({
-      id: saved.id,
-      createdAt: saved.createdAt,
-      settings: saved.settings,
-    });
-  } catch (error) {
-    return fail(error);
-  }
-}
+  return {
+    id: saved.id,
+    createdAt: saved.createdAt,
+    settings: saved.settings,
+  };
+});

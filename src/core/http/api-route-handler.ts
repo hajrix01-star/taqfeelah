@@ -1,5 +1,5 @@
 import { resolveRequestContext, type RequestContext } from "@/core/auth/request-context";
-import { readEnv } from "@/core/config/env";
+import { assertProductionRuntimeEnv, isServerProductionMode, readEnv } from "@/core/config/env";
 import { ServiceUnavailableError, ValidationError } from "@/core/errors/app-error";
 import { fail, ok } from "@/core/http/api-response";
 
@@ -51,6 +51,9 @@ function toApiResponse<T>(result: ApiRouteResult<T>): Response {
 
 export function requireDatabaseEnv() {
   const env = readEnv();
+  if (isServerProductionMode(env)) {
+    assertProductionRuntimeEnv(env);
+  }
   if (!env.DATABASE_URL) {
     throw new ServiceUnavailableError("DATABASE_URL is not configured.");
   }
