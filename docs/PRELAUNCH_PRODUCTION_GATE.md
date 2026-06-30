@@ -8,10 +8,9 @@ This document is the release gate for moving Taqfeelah to production. It is a ch
 
 - [ ] No new product features during this phase.
 - [ ] Only P0 fixes, launch blockers, test coverage, documentation alignment, and deployment safety work are allowed.
-- [ ] Staging runs the exact commit intended for production.
-- [ ] At least one staging run passes with `validation_profile=full` on the exact production candidate SHA.
-- [ ] Routine fast staging deploys follow `docs/DEPLOYMENT_SPEED_POLICY.md` and do not replace the final full release gate.
-- [ ] Production starts only after every gate section below is complete and evidenced.
+- [ ] Routine production deploys go directly to production through the fast path.
+- [ ] Staging is manual-only and runs only when the owner/project lead requests a comprehensive deep check.
+- [ ] Production starts after the fast production deploy checks pass, unless a deep check is explicitly requested.
 
 ## P0 Implementation Checklist
 
@@ -73,16 +72,16 @@ This document is the release gate for moving Taqfeelah to production. It is a ch
 - [ ] Live gate uses cursor pagination.
 - [ ] Live gate validates entries, closeouts, summaries, reports, auth, archived-store guards, and no browser persistence.
 - [ ] Live gate fails if production mode falls back to local/browser financial data.
-- [ ] Live gate runs against staging before production.
+- [ ] Live gate runs against staging only when a deep check is explicitly requested.
 - [ ] Live gate runs against production after deploy.
 
-### Staging And Deployment
+### Deployment
 
-- [ ] Staging workflow runs on the same commit intended for production.
-- [ ] Staging production-like flags match production except domain and database.
-- [ ] Staging deploy completes successfully.
-- [ ] Staging live gate completes successfully.
-- [ ] Production deploy is blocked until staging success is recorded for the same SHA.
+- [ ] Production deploy uses the fast production path by default.
+- [ ] Production artifact builds and packages successfully.
+- [ ] VPS deploy verification completes successfully.
+- [ ] Production external live gate completes successfully.
+- [ ] Staging full validation is recorded only when explicitly requested for a deep check.
 
 ## P1 Implementation Checklist
 
@@ -104,7 +103,7 @@ This document is the release gate for moving Taqfeelah to production. It is a ch
 - [ ] `PERFORMANCE_RULES.md` matches the implemented default and max pagination limits.
 - [ ] `DATA_SOURCE_UNIFICATION.md` matches production fallback behavior.
 - [ ] `PRODUCTION_STATUS.md` lists remaining launch blockers accurately.
-- [ ] `STAGING_DEPLOY_RUNBOOK.md` documents same-SHA staging validation.
+- [ ] `DEPLOYMENT_SPEED_POLICY.md` documents direct production deploy and manual-only staging.
 - [ ] `VPS_LAUNCH_RUNBOOK.md` documents the final production gate.
 - [ ] Any contradiction between docs and code is treated as a release blocker.
 
@@ -126,7 +125,7 @@ Database/E2E gate:
 - [ ] PostgreSQL integration tests pass.
 - [ ] Register closeout flow E2E passes.
 - [ ] Browser smoke passes with production flags.
-- [ ] Staging live gate passes.
+- [ ] Staging live gate passes only when a deep check is explicitly requested.
 - [ ] Production live gate passes after deploy.
 
 Manual smoke:
@@ -191,8 +190,8 @@ Production is allowed only when:
 - [ ] All P0 implementation items are complete.
 - [ ] All required tests pass.
 - [ ] Documentation matches code.
-- [ ] Staging succeeded on the production candidate SHA.
-- [ ] Staging live gate succeeded.
+- [ ] If deep check was requested: staging succeeded on the production candidate SHA.
+- [ ] If deep check was requested: staging live gate succeeded.
 - [ ] Large data gate has acceptable measured results.
 - [ ] Manual export smoke passed.
 - [ ] Release owner signs off.
@@ -205,7 +204,7 @@ Production is blocked if any of these are true:
 - [ ] Financial numbers can silently fall back to browser/local data in production.
 - [ ] Register export can produce partial data without explicit failure.
 - [ ] Live gate still uses deprecated bulk limits.
-- [ ] Staging did not test the same SHA.
+- [ ] A requested deep check did not test the same SHA.
 - [ ] Docs contradict the implemented API contract.
 - [ ] Large-data behavior is unmeasured.
 

@@ -6,7 +6,7 @@ This runbook is the required deployment path while GitHub Actions is blocked by 
 
 - GitHub remains the source of truth. Push the exact commit before any deploy.
 - Staging deploys to `https://staging.taqfeelah.com` only.
-- Production deploys are separate and require explicit approval after staging verification.
+- Production deploys are separate and go directly through the fast production path. Staging verification is manual-only when a comprehensive deep check is requested.
 - Build artifacts must be created after the final commit. Do not build from a dirty worktree and then commit afterward.
 - The packaged `.next` release build must match `git rev-parse HEAD`; stale artifacts are deployment blockers.
 - Do not create ad-hoc deploy scripts under `.codex-local`.

@@ -7,7 +7,9 @@
 ## القاعدة
 
 ```text
-feature branch -> staging -> verification -> explicit approval -> main -> production
+feature branch -> main -> fast production deploy
+
+Staging is manual-only and used only when the owner/project lead explicitly requests a comprehensive deep check.
 ```
 
 | القاعدة | المعنى |

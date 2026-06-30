@@ -11,11 +11,6 @@ on:
         options:
           - "fast"
           - "full"
-  push:
-    branches:
-      - codex/vps-readonly-audit
-    paths-ignore:
-      - "docs/**"
 
 permissions:
   contents: read

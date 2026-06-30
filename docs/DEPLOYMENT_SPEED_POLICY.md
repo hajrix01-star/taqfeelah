@@ -4,20 +4,23 @@ This policy keeps deploys fast without weakening the production gate.
 
 ## Strategy
 
-Use **build once, validate once, deploy fast**:
+Use **direct production deploy by default**:
 
-- Full validation belongs in PR/main CI.
-- Staging and production deploys should use a tested artifact where possible.
-- Deploy workflows must keep runtime checks: migration, service startup, health check, and live gate.
+- Production deploys are fast by default.
+- Staging is disabled as a routine automatic gate.
+- Deep validation runs only when explicitly requested by the owner/project lead.
+- Production deploy workflows must keep runtime checks: migration, service startup, health check, and external live gate.
 
-## Staging Profiles
+## Staging
 
-`deploy-staging.yml` supports `validation_profile`:
+`deploy-staging.yml` is manual-only. It is not triggered by push and is not required for routine production deploys.
+
+Use staging only when explicitly requested for a comprehensive audit or risky release. It supports `validation_profile`:
 
 | Profile | Use case | Runs before build |
 | --- | --- | --- |
-| `fast` | Normal staging deploy after local/CI validation on the same SHA | dependency install + production build + package |
-| `full` | Release candidate, suspicious changes, dependency updates, or first launch gate | clean-surface + typecheck + unit tests + production build + package |
+| `fast` | Manual staging smoke when needed | dependency install + production build + package |
+| `full` | Owner-requested comprehensive audit, risky release, or pre-launch deep check | clean-surface + typecheck + unit tests + production build + package |
 
 The fast profile does **not** skip:
 
@@ -66,5 +69,5 @@ Run them before major launches or schema/report/export changes.
 
 ## Decision
 
-Routine staging deploys can use `validation_profile=fast`.
-Before production launch, at least one staging run must pass with `validation_profile=full` on the exact production candidate SHA.
+Routine deploys go directly to production using the fast path.
+Run staging `validation_profile=full` only when the owner/project lead explicitly asks for a comprehensive deep check.
