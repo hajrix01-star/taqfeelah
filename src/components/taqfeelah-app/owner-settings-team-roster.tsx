@@ -58,8 +58,8 @@ export function OwnerSettingsTeamRoster({
     <>
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-taq-meta font-bold text-[#806528]">{text(lang, "employeeEntryOnly")}</p>
-          <p className="mt-1 text-[10px] font-bold text-[#827762]">
+          <p className="text-taq-meta font-bold text-[var(--taq-color-806528)]">{text(lang, "employeeEntryOnly")}</p>
+          <p className="mt-1 text-[10px] font-bold text-[var(--taq-color-827762)]">
             {visibleStaff.length} {lang === "ar" ? "موظف" : "employees"}
             {" · "}
             {activeStaffCount} {text(lang, "active")}
@@ -69,7 +69,7 @@ export function OwnerSettingsTeamRoster({
         <button
           type="button"
           onClick={() => (managingTeam ? cancelManagingTeam() : startManagingTeam())}
-          className="shrink-0 text-taq-meta font-black text-[#9A823E]"
+          className="shrink-0 text-taq-meta font-black text-[var(--taq-color-9a823e)]"
         >
           {text(lang, managingTeam ? "cancelChanges" : "configure")}
         </button>
@@ -82,7 +82,7 @@ export function OwnerSettingsTeamRoster({
           const assignedStoreCount = employeeStoreIds(person).length;
 
           return (
-            <div key={person.id} className={`p-4 ${index < visibleStaff.length - 1 || managingTeam ? "border-b border-[#F0ECE2]" : ""}`}>
+            <div key={person.id} className={`p-4 ${index < visibleStaff.length - 1 || managingTeam ? "border-b border-[var(--taq-color-f0ece2)]" : ""}`}>
               <div className="flex items-center justify-between gap-3">
                 <button
                   type="button"
@@ -90,16 +90,16 @@ export function OwnerSettingsTeamRoster({
                   className="min-w-0 flex-1 text-start"
                 >
                   <p className="truncate text-sm font-black">{lang === "ar" ? person.nameAr : person.nameEn}</p>
-                  <p className="mt-1 text-taq-meta font-bold text-[#827762]">
+                  <p className="mt-1 text-taq-meta font-bold text-[var(--taq-color-827762)]">
                     {person.active ? text(lang, "active") : text(lang, "stopChannel")} · {assignedStoreCount} {lang === "ar" ? "محل" : "shop(s)"}
                   </p>
                   {!expanded ? (
                     person.mobile ? (
-                      <p className="mt-1 text-taq-meta font-bold text-[#716753]" dir="ltr">
+                      <p className="mt-1 text-taq-meta font-bold text-[var(--taq-color-716753)]" dir="ltr">
                         {text(lang, "employeeMobile")}: {formatLoginPhoneForDisplay(person.mobile)}
                       </p>
                     ) : (
-                      <p className="mt-1 text-taq-meta font-bold text-[#B8A98E]">
+                      <p className="mt-1 text-taq-meta font-bold text-[var(--taq-color-b8a98e)]">
                         {text(lang, "employeeMobileMissing")}
                       </p>
                     )
@@ -112,7 +112,7 @@ export function OwnerSettingsTeamRoster({
                     <button
                       type="button"
                       onClick={() => setDeleteTarget(buildStaffDeleteTarget(person) as Parameters<typeof setDeleteTarget>[0])}
-                      className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFF1EE] text-[#B44747]"
+                      className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--taq-color-fff1ee)] text-[var(--taq-color-b44747)]"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -120,7 +120,7 @@ export function OwnerSettingsTeamRoster({
                   <button
                     type="button"
                     onClick={() => setExpandedStaffId(expanded ? "" : personId)}
-                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#F7F5EF] text-[#806528]"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--taq-color-f7f5ef)] text-[var(--taq-color-806528)]"
                     aria-label={expanded ? "Collapse employee" : "Expand employee"}
                   >
                     <ChevronDown className={`h-4 w-4 transition ${expanded ? "rotate-180" : ""}`} />
@@ -129,9 +129,9 @@ export function OwnerSettingsTeamRoster({
               </div>
 
               {expanded ? (
-                <div className="mt-3 rounded-2xl bg-[#F7F5EF] p-3">
+                <div className="mt-3 rounded-2xl bg-[var(--taq-color-f7f5ef)] p-3">
                   {!managingTeam ? (
-                    <div className="text-taq-meta font-bold text-[#716753]">
+                    <div className="text-taq-meta font-bold text-[var(--taq-color-716753)]">
                       <p>
                         {text(lang, "employeeMobile")}:{" "}
                         {person.mobile ? formatLoginPhoneForDisplay(person.mobile) : text(lang, "employeeMobileMissing")}
@@ -146,14 +146,14 @@ export function OwnerSettingsTeamRoster({
                             key={business.id}
                             type="button"
                             onClick={() => toggleEmployeeStore(person.id, business.id)}
-                            className={`rounded-full px-3 py-2 text-taq-meta font-bold ${employeeStoreIds(person).includes(business.id) ? "bg-[#112A46] text-white" : "bg-white text-[#827762] ring-1 ring-[#E8E1D4]"}`}
+                            className={`rounded-full px-3 py-2 text-taq-meta font-bold ${employeeStoreIds(person).includes(business.id) ? "bg-[var(--taq-color-112a46)] text-white" : "bg-white text-[var(--taq-color-827762)] ring-1 ring-[var(--taq-color-e8e1d4)]"}`}
                           >
                             {displayBusinessName(business)}
                           </button>
                         ))}
                       </div>
                       <div className="mt-3">
-                        <p className="mb-2 text-xs font-black text-[#716753]">{text(lang, "employeeMobile")}</p>
+                        <p className="mb-2 text-xs font-black text-[var(--taq-color-716753)]">{text(lang, "employeeMobile")}</p>
                         <StandardLoginPhoneField
                           surface="owner"
                           value={person.mobile || ""}
@@ -161,7 +161,7 @@ export function OwnerSettingsTeamRoster({
                         />
                       </div>
                       <div className="mt-3">
-                        <p className="mb-2 text-xs font-black text-[#716753]">{lang === "ar" ? "الرقم السري للموظف" : "Employee PIN"}</p>
+                        <p className="mb-2 text-xs font-black text-[var(--taq-color-716753)]">{lang === "ar" ? "الرقم السري للموظف" : "Employee PIN"}</p>
                         <input
                           dir="ltr"
                           value={draftAuthEmployeePins?.[person.id] || ""}
@@ -171,7 +171,7 @@ export function OwnerSettingsTeamRoster({
                               ? (lang === "ar" ? "مُعرّف — أدخل PIN جديدًا للتغيير" : "Set — enter a new PIN to change")
                               : (lang === "ar" ? "PIN أو كلمة مرور قصيرة" : "PIN or short passcode")
                           }
-                          className="w-full rounded-2xl bg-white px-4 py-3 text-xs font-black outline-none ring-1 ring-[#E8E1D4]"
+                          className="w-full rounded-2xl bg-white px-4 py-3 text-xs font-black outline-none ring-1 ring-[var(--taq-color-e8e1d4)]"
                         />
                       </div>
                     </>
@@ -181,7 +181,7 @@ export function OwnerSettingsTeamRoster({
             </div>
           );
         }) : (
-          <p className="p-5 text-center text-xs font-bold text-[#827762]">
+          <p className="p-5 text-center text-xs font-bold text-[var(--taq-color-827762)]">
             {lang === "ar" ? "لا يوجد موظفون بعد." : "No employees yet."}
           </p>
         )}
@@ -189,9 +189,9 @@ export function OwnerSettingsTeamRoster({
         {managingTeam ? (
           <div className="p-4">
             <p className="mb-3 text-xs font-black">{text(lang, "addEmployee")}</p>
-            <input value={newEmployeeName} onChange={(event) => setNewEmployeeName(event.target.value)} placeholder={text(lang, "newEmployeeName")} className="mb-2 w-full rounded-2xl bg-[#F7F5EF] px-4 py-3 text-xs font-bold outline-none" />
+            <input value={newEmployeeName} onChange={(event) => setNewEmployeeName(event.target.value)} placeholder={text(lang, "newEmployeeName")} className="mb-2 w-full rounded-2xl bg-[var(--taq-color-f7f5ef)] px-4 py-3 text-xs font-bold outline-none" />
             <div className="mb-3">
-              <p className="mb-2 text-xs font-black text-[#716753]">{text(lang, "employeeMobile")}</p>
+              <p className="mb-2 text-xs font-black text-[var(--taq-color-716753)]">{text(lang, "employeeMobile")}</p>
               <StandardLoginPhoneField
                 surface="owner"
                 value={newEmployeeMobile}
@@ -200,12 +200,12 @@ export function OwnerSettingsTeamRoster({
             </div>
             <div className="mb-3 flex flex-wrap gap-2">
               {activeStoredBusinesses.map((business) => (
-                <button key={business.id} type="button" onClick={() => toggleNewEmployeeStore(business.id)} className={`rounded-full px-3 py-2 text-taq-meta font-bold ${newEmployeeStoreIds.includes(business.id) ? "bg-[#112A46] text-white" : "bg-[#F0ECE2] text-[#827762]"}`}>
+                <button key={business.id} type="button" onClick={() => toggleNewEmployeeStore(business.id)} className={`rounded-full px-3 py-2 text-taq-meta font-bold ${newEmployeeStoreIds.includes(business.id) ? "bg-[var(--taq-color-112a46)] text-white" : "bg-[var(--taq-color-f0ece2)] text-[var(--taq-color-827762)]"}`}>
                   {displayBusinessName(business)}
                 </button>
               ))}
             </div>
-            <button type="button" disabled={!newEmployeeName.trim() || !newEmployeeStoreIds.length} onClick={addStaff} className={`w-full rounded-2xl py-3 text-xs font-black text-white ${newEmployeeName.trim() && newEmployeeStoreIds.length ? "bg-[#112A46]" : "bg-[#B8C0B7]"}`}>
+            <button type="button" disabled={!newEmployeeName.trim() || !newEmployeeStoreIds.length} onClick={addStaff} className={`w-full rounded-2xl py-3 text-xs font-black text-white ${newEmployeeName.trim() && newEmployeeStoreIds.length ? "bg-[var(--taq-color-112a46)]" : "bg-[var(--taq-color-b8c0b7)]"}`}>
               {text(lang, "addEmployee")}
             </button>
           </div>

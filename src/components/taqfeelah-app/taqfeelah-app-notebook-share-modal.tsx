@@ -79,7 +79,7 @@ export function NotebookShareModal({
     }
     const captureToken = ++preCaptureTokenRef.current;
     let cancelled = false;
-    const paperColor = (notebookThemes[(snapshot.theme || "yellow") as NotebookThemeId] || notebookThemes.yellow).paper || "#FFFDF7";
+    const paperColor = (notebookThemes[(snapshot.theme || "yellow") as NotebookThemeId] || notebookThemes.yellow).paper || "var(--taq-color-fffdf7)";
     const filename = `${lang === "ar" ? "تقفيلة" : "Taqfeelah"}-${snapshot.screen}-${snapshot.selectedDate || todayIsoDate()}.png`;
     let timeoutId = 0;
     const frameId = requestAnimationFrame(() => {
@@ -163,17 +163,17 @@ export function NotebookShareModal({
   if (!snapshot) return null;
   if (apiDataRequired && (shouldWaitForApi || apiDataUnavailable)) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 flex flex-col justify-end bg-[#112A46]/45 sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0">
-        <div className="max-h-[92%] overflow-y-auto rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:w-full sm:max-w-[700px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 flex flex-col justify-end bg-[var(--taq-color-112a46)]/45 sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0">
+        <div className="max-h-[92%] overflow-y-auto rounded-t-[30px] bg-[var(--taq-color-f8f6f0)] p-5 pb-8 sm:w-full sm:max-w-[700px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <p className="text-taq-meta font-bold text-[#827762]">{text(lang, "shareOptions")}</p>
+              <p className="text-taq-meta font-bold text-[var(--taq-color-827762)]">{text(lang, "shareOptions")}</p>
               <h3 className="text-base font-black">{format === "image" ? text(lang, "notebookImagePreview") : text(lang, "professionalReportPreview")}</h3>
             </div>
             <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white"><X className="h-4 w-4" /></button>
           </div>
-          <div className={`rounded-2xl px-4 py-5 text-center ring-1 ${apiDataUnavailable ? "bg-[#FFF7F5] ring-[#F0C7C1]" : "bg-white ring-[#ECE6DA]"}`}>
-            <p className={`text-sm font-black ${apiDataUnavailable ? "text-[#B44747]" : "text-[#112A46]"}`}>
+          <div className={`rounded-2xl px-4 py-5 text-center ring-1 ${apiDataUnavailable ? "bg-[var(--taq-color-fff7f5)] ring-[var(--taq-color-f0c7c1)]" : "bg-white ring-[var(--taq-color-ece6da)]"}`}>
+            <p className={`text-sm font-black ${apiDataUnavailable ? "text-[var(--taq-color-b44747)]" : "text-[var(--taq-color-112a46)]"}`}>
               {apiDataUnavailable
                 ? (lang === "ar" ? "تعذر تجهيز التصدير من الخادم. لم يتم استخدام بيانات محلية بديلة." : "Failed to prepare the export from the server. No local fallback data is used.")
                 : (lang === "ar" ? "جاري تجهيز التصدير من الخادم..." : "Preparing export from the server...")}
@@ -199,7 +199,7 @@ export function NotebookShareModal({
 
   const buildNotebookImageFile = async () => {
     if (!previewRef.current) throw new Error("missing-preview");
-    const blob = await captureNotebookPreviewBlob(previewRef.current, activeTheme.paper || "#FFFDF7");
+    const blob = await captureNotebookPreviewBlob(previewRef.current, activeTheme.paper || "var(--taq-color-fffdf7)");
     return new File([blob], imageFilename, { type: "image/png" });
   };
   const resolveNotebookImageFile = async () => {
@@ -251,11 +251,11 @@ export function NotebookShareModal({
   const exportPdf = () => exportNotebookSharePdf({ ...exportModel, lang });
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 flex flex-col justify-end bg-[#112A46]/45 sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0">
-      <div className="max-h-[92%] overflow-y-auto rounded-t-[30px] bg-[#F8F6F0] p-5 pb-8 sm:w-full sm:max-w-[700px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 z-50 flex flex-col justify-end bg-[var(--taq-color-112a46)]/45 sm:items-center sm:justify-center sm:p-6 lg:items-stretch lg:justify-end lg:p-0">
+      <div className="max-h-[92%] overflow-y-auto rounded-t-[30px] bg-[var(--taq-color-f8f6f0)] p-5 pb-8 sm:w-full sm:max-w-[700px] sm:rounded-[30px] sm:p-6 lg:max-w-none lg:rounded-t-[30px] lg:rounded-b-none lg:p-5 lg:pb-8">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-taq-meta font-bold text-[#827762]">{text(lang, "shareOptions")}</p>
+            <p className="text-taq-meta font-bold text-[var(--taq-color-827762)]">{text(lang, "shareOptions")}</p>
             <h3 className="text-base font-black">{format === "image" ? text(lang, "notebookImagePreview") : text(lang, "professionalReportPreview")}</h3>
           </div>
           <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white"><X className="h-4 w-4" /></button>
@@ -265,7 +265,7 @@ export function NotebookShareModal({
             const Icon = item.icon;
             const active = format === item.id;
             return (
-              <button type="button" key={item.id} onClick={() => setFormat(item.id)} className={`flex flex-col items-center gap-2 rounded-2xl px-2 py-3 text-taq-meta font-black transition ${active ? "bg-[#112A46] text-white" : "bg-white text-[#716753] ring-1 ring-black/[0.045]"}`}>
+              <button type="button" key={item.id} onClick={() => setFormat(item.id)} className={`flex flex-col items-center gap-2 rounded-2xl px-2 py-3 text-taq-meta font-black transition ${active ? "bg-[var(--taq-color-112a46)] text-white" : "bg-white text-[var(--taq-color-716753)] ring-1 ring-black/[0.045]"}`}>
                 <Icon className="h-5 w-5" />{text(lang, item.label)}
               </button>
             );
@@ -279,43 +279,43 @@ export function NotebookShareModal({
               snapshot={snapshot}
               model={model}
             />
-            {shareHint && <p className="mb-3 rounded-xl bg-[#E6F5E9] px-3 py-2 text-center text-taq-meta font-bold text-[#257844]">{shareHint}</p>}
-            {imageError && <p className="mb-3 rounded-xl bg-[#FFF1EE] px-3 py-2 text-center text-taq-meta font-bold text-[#B44747]">{imageError}</p>}
+            {shareHint && <p className="mb-3 rounded-xl bg-[var(--taq-color-e6f5e9)] px-3 py-2 text-center text-taq-meta font-bold text-[var(--taq-color-257844)]">{shareHint}</p>}
+            {imageError && <p className="mb-3 rounded-xl bg-[var(--taq-color-fff1ee)] px-3 py-2 text-center text-taq-meta font-bold text-[var(--taq-color-b44747)]">{imageError}</p>}
           </>
         ) : (
           <div className="mb-5 overflow-hidden rounded-[22px] bg-white ring-1 ring-black/[0.055]">
-            <div className="bg-[#112A46] p-4 text-white">
-              <div className="flex items-start justify-between gap-2"><div><p className="text-taq-meta font-medium text-white/65">{text(lang, "reportFor")}</p><h4 className="mt-1 text-sm font-extrabold">{exportStoreTitle}</h4></div><span className={`rounded-lg px-2 py-1 text-taq-meta font-black ${format === "pdf" ? "bg-[#B44747]" : "bg-[#217346]"}`}>{format === "pdf" ? "PDF" : "Excel"}</span></div>
+            <div className="bg-[var(--taq-color-112a46)] p-4 text-white">
+              <div className="flex items-start justify-between gap-2"><div><p className="text-taq-meta font-medium text-white/65">{text(lang, "reportFor")}</p><h4 className="mt-1 text-sm font-extrabold">{exportStoreTitle}</h4></div><span className={`rounded-lg px-2 py-1 text-taq-meta font-black ${format === "pdf" ? "bg-[var(--taq-color-b44747)]" : "bg-[var(--taq-color-217346)]"}`}>{format === "pdf" ? "PDF" : "Excel"}</span></div>
               <div className="mt-3 flex items-center justify-between text-taq-meta font-medium text-white/70"><span>{text(lang, "selectedPeriod")}</span><span>{exportPeriodLabel}</span></div>
             </div>
             <div className="p-3">
-              <div className="grid rounded-t-lg bg-[#F4F2ED] px-3 py-2 text-taq-meta font-bold text-[#716753]" style={{ gridTemplateColumns: `repeat(${previewTable.headers.length}, minmax(0, 1fr))` }}>
+              <div className="grid rounded-t-lg bg-[var(--taq-color-f4f2ed)] px-3 py-2 text-taq-meta font-bold text-[var(--taq-color-716753)]" style={{ gridTemplateColumns: `repeat(${previewTable.headers.length}, minmax(0, 1fr))` }}>
                 {previewTable.headers.map((header, index) => <span key={`export-head-${index}`} className={index > 0 ? "text-end" : ""}>{header}</span>)}
               </div>
               {previewTable.rows.map((row, index) => (
-                <div key={`export-row-${index}`} className={`grid px-3 py-3 text-taq-meta ${index < previewTable.rows.length - 1 ? "border-b border-[#ECE6DA]" : ""} font-bold`} style={{ gridTemplateColumns: `repeat(${previewTable.headers.length}, minmax(0, 1fr))` }}>
-                  {previewTable.headers.map((_, cellIndex) => <span key={`export-cell-${index}-${cellIndex}`} className={`${cellIndex > 0 ? "text-end tabular-nums" : "text-[#112A46]"} truncate`}>{row[cellIndex] || ""}</span>)}
+                <div key={`export-row-${index}`} className={`grid px-3 py-3 text-taq-meta ${index < previewTable.rows.length - 1 ? "border-b border-[var(--taq-color-ece6da)]" : ""} font-bold`} style={{ gridTemplateColumns: `repeat(${previewTable.headers.length}, minmax(0, 1fr))` }}>
+                  {previewTable.headers.map((_, cellIndex) => <span key={`export-cell-${index}-${cellIndex}`} className={`${cellIndex > 0 ? "text-end tabular-nums" : "text-[var(--taq-color-112a46)]"} truncate`}>{row[cellIndex] || ""}</span>)}
                 </div>
               ))}
             </div>
-            <div className="flex items-center justify-between border-t border-[#ECE6DA] px-4 py-3 text-taq-meta font-bold text-[#827762]"><span>{text(lang, "appName")}</span><span>{text(lang, "preparedForExport")}</span></div>
+            <div className="flex items-center justify-between border-t border-[var(--taq-color-ece6da)] px-4 py-3 text-taq-meta font-bold text-[var(--taq-color-827762)]"><span>{text(lang, "appName")}</span><span>{text(lang, "preparedForExport")}</span></div>
           </div>
         )}
         {format === "image" ? (
           <div className="grid grid-cols-3 gap-2">
-            <button type="button" onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">{lang === "ar" ? "إغلاق" : "Close"}</button>
-            <button type="button" disabled={imageBusy} onClick={downloadNotebookImage} className="flex items-center justify-center gap-1.5 rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-60">
+            <button type="button" onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[var(--taq-color-112a46)] ring-1 ring-black/[0.06]">{lang === "ar" ? "إغلاق" : "Close"}</button>
+            <button type="button" disabled={imageBusy} onClick={downloadNotebookImage} className="flex items-center justify-center gap-1.5 rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[var(--taq-color-112a46)] ring-1 ring-black/[0.06] disabled:opacity-60">
               <Download className="h-3.5 w-3.5" />{text(lang, "downloadNotebookImage")}
             </button>
-            <button type="button" disabled={imageBusy} onClick={shareImageViaWhatsApp} className="flex items-center justify-center gap-1.5 rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-60">
+            <button type="button" disabled={imageBusy} onClick={shareImageViaWhatsApp} className="flex items-center justify-center gap-1.5 rounded-2xl bg-[var(--taq-color-25d366)] py-3.5 text-taq-meta font-black text-white disabled:opacity-60">
               <Send className="h-3.5 w-3.5" />{imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…") : text(lang, "shareViaWhatsApp")}
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-[0.7fr_1.3fr] gap-3">
-            <button onClick={onClose} className="rounded-2xl bg-white py-3.5 text-xs font-black text-[#112A46] ring-1 ring-black/[0.06]">{lang === "ar" ? "إغلاق" : "Close"}</button>
-            {format === "pdf" && <button type="button" onClick={exportPdf} className="flex items-center justify-center gap-2 rounded-2xl bg-[#B44747] py-3.5 text-xs font-black text-white"><FileText className="h-4 w-4" />{text(lang, "exportPdf")}</button>}
-            {format === "excel" && <button type="button" onClick={() => { void exportExcel(); }} className="flex items-center justify-center gap-2 rounded-2xl bg-[#217346] py-3.5 text-xs font-black text-white"><FileSpreadsheet className="h-4 w-4" />{text(lang, "exportExcel")}</button>}
+            <button onClick={onClose} className="rounded-2xl bg-white py-3.5 text-xs font-black text-[var(--taq-color-112a46)] ring-1 ring-black/[0.06]">{lang === "ar" ? "إغلاق" : "Close"}</button>
+            {format === "pdf" && <button type="button" onClick={exportPdf} className="flex items-center justify-center gap-2 rounded-2xl bg-[var(--taq-color-b44747)] py-3.5 text-xs font-black text-white"><FileText className="h-4 w-4" />{text(lang, "exportPdf")}</button>}
+            {format === "excel" && <button type="button" onClick={() => { void exportExcel(); }} className="flex items-center justify-center gap-2 rounded-2xl bg-[var(--taq-color-217346)] py-3.5 text-xs font-black text-white"><FileSpreadsheet className="h-4 w-4" />{text(lang, "exportExcel")}</button>}
           </div>
         )}
       </div>

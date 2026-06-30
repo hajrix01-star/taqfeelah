@@ -38,7 +38,7 @@ function summaryDayFromEntriesWithLabels(
 }
 
 export function RatioBadge({ value }: { value: string }) {
-  return <span className="rounded-full bg-[#E6EFEF] px-1.5 py-0.5 text-taq-nav font-bold tabular-nums text-[#316C73]">{value}</span>;
+  return <span className="rounded-full bg-[var(--taq-color-e6efef)] px-1.5 py-0.5 text-taq-nav font-bold tabular-nums text-[var(--taq-color-316c73)]">{value}</span>;
 }
 
 type SummaryReportDetailsProps = {
@@ -103,10 +103,10 @@ export function SummaryReportDetails({
         <NotebookRow key={channel.id}>
           <div className="flex w-full items-end justify-between ps-3 text-xs">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-[#716753]">{channelName(channel, lang)}</span>
+              <span className="font-medium text-[var(--taq-color-716753)]">{channelName(channel, lang)}</span>
               <RatioBadge value={percentageOfSales(channel.amount)} />
             </div>
-            <strong className="tabular-nums font-bold text-[#112A46]">
+            <strong className="tabular-nums font-bold text-[var(--taq-color-112a46)]">
               <MoneyValue value={money(channel.amount, lang)} />
             </strong>
           </div>
@@ -116,10 +116,10 @@ export function SummaryReportDetails({
         <NotebookRow key={String(item.id)}>
           <div className="flex w-full items-end justify-between ps-3 text-xs">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-[#716753]">{text(lang, item.label)}</span>
+              <span className="font-medium text-[var(--taq-color-716753)]">{text(lang, item.label)}</span>
               <RatioBadge value={percentageOfSales(item.amount ?? 0)} />
             </div>
-            <strong className="tabular-nums font-bold text-[#B44747]">
+            <strong className="tabular-nums font-bold text-[var(--taq-color-b44747)]">
               <MoneyValue value={money(item.amount ?? 0, lang)} />
             </strong>
           </div>

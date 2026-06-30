@@ -74,20 +74,20 @@ export function OwnerSettingsIncomeSourcesEditor({
   };
 
   return (
-    <div className="mb-4 overflow-hidden rounded-3xl bg-[#F7F5EF] ring-1 ring-black/[0.03]">
+    <div className="mb-4 overflow-hidden rounded-3xl bg-[var(--taq-color-f7f5ef)] ring-1 ring-black/[0.03]">
       {rows.length === 0 ? (
-        <p className="px-4 py-4 text-taq-meta font-bold text-[#827762]">
+        <p className="px-4 py-4 text-taq-meta font-bold text-[var(--taq-color-827762)]">
           {lang === "ar" ? "لا توجد طرق دفع مفعلة." : "No active payment methods."}
         </p>
       ) : (
         rows.map((row, index) => (
           <div
             key={row.rowId}
-            className={`flex items-center justify-between gap-3 bg-white px-4 py-4 ${index < rows.length - 1 ? "border-b border-[#F0ECE2]" : ""}`}
+            className={`flex items-center justify-between gap-3 bg-white px-4 py-4 ${index < rows.length - 1 ? "border-b border-[var(--taq-color-f0ece2)]" : ""}`}
           >
             <div className="min-w-0">
               <p className="text-xs font-black">{channelName(row.channel, lang)}</p>
-              <p className="mt-1 text-taq-meta font-bold text-[#827762]">
+              <p className="mt-1 text-taq-meta font-bold text-[var(--taq-color-827762)]">
                 {row.isActive ? text(lang, "active") : text(lang, "stopChannel")}
               </p>
             </div>
@@ -99,18 +99,18 @@ export function OwnerSettingsIncomeSourcesEditor({
         ))
       )}
 
-      <div className="border-t border-[#F0ECE2] bg-white px-4 py-4">
+      <div className="border-t border-[var(--taq-color-f0ece2)] bg-white px-4 py-4">
         <button
           type="button"
           onClick={() => setShowAddMenu((current) => !current)}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--taq-color-112a46)] py-3 text-xs font-black text-white"
         >
           {showAddMenu ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           {lang === "ar" ? "إضافة طريقة دفع" : "Add payment method"}
         </button>
 
         {showAddMenu ? (
-          <div className="mt-4 rounded-2xl bg-[#F7F5EF] p-3">
+          <div className="mt-4 rounded-2xl bg-[var(--taq-color-f7f5ef)] p-3">
             {inactiveIncomeSources.length ? (
               <div className="mb-4 grid gap-2">
                 {inactiveIncomeSources.map((row) => (
@@ -118,7 +118,7 @@ export function OwnerSettingsIncomeSourcesEditor({
                     <button
                       type="button"
                       onClick={() => restoreIncomeSource(row)}
-                      className="min-w-0 flex-1 rounded-lg px-2 py-2 text-taq-meta font-black text-[#112A46]"
+                      className="min-w-0 flex-1 rounded-lg px-2 py-2 text-taq-meta font-black text-[var(--taq-color-112a46)]"
                     >
                       {lang === "ar" ? row.nameAr : row.nameEn}
                     </button>
@@ -126,7 +126,7 @@ export function OwnerSettingsIncomeSourcesEditor({
                       <button
                         type="button"
                         onClick={() => deleteInactiveCustom(row)}
-                        className="rounded-lg bg-[#FFF1EE] px-2 py-2 text-[10px] font-black text-[#B44747]"
+                        className="rounded-lg bg-[var(--taq-color-fff1ee)] px-2 py-2 text-[10px] font-black text-[var(--taq-color-b44747)]"
                       >
                         {lang === "ar" ? "حذف نهائي" : "Delete"}
                       </button>
@@ -136,7 +136,7 @@ export function OwnerSettingsIncomeSourcesEditor({
               </div>
             ) : null}
 
-            <p className="mb-2 text-taq-meta font-black text-[#827762]">
+            <p className="mb-2 text-taq-meta font-black text-[var(--taq-color-827762)]">
               {lang === "ar" ? "إضافة طريقة دفع مخصصة" : "Add a custom payment method"}
             </p>
             <div className="grid gap-2">
@@ -156,7 +156,7 @@ export function OwnerSettingsIncomeSourcesEditor({
                 type="button"
                 onClick={addCustom}
                 disabled={!newCustomIncomeSourceName.trim() && !customNameEn.trim()}
-                className="rounded-2xl bg-[#E4B84A] py-3 text-xs font-black text-[#112A46] disabled:opacity-50"
+                className="rounded-2xl bg-[var(--taq-color-e4b84a)] py-3 text-xs font-black text-[var(--taq-color-112a46)] disabled:opacity-50"
               >
                 {lang === "ar" ? "إضافة" : "Add"}
               </button>
@@ -165,7 +165,7 @@ export function OwnerSettingsIncomeSourcesEditor({
         ) : null}
 
         {actionNotice ? (
-          <p className="mt-3 rounded-2xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">
+          <p className="mt-3 rounded-2xl bg-[var(--taq-color-e6f5e9)] p-3 text-center text-taq-meta font-black text-[var(--taq-color-257844)]">
             {actionNotice}
           </p>
         ) : null}

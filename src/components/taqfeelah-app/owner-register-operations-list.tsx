@@ -60,13 +60,13 @@ export function OwnerRegisterOperationsList({
 }) {
   if (loadError) {
     return (
-      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10">{loadErrorMessage}</div>
+      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[var(--taq-color-b44747)] ring-1 ring-[var(--taq-color-b44747)]/10">{loadErrorMessage}</div>
     );
   }
 
   if (visibleEntries.length === 0) {
     return (
-      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">{text(lang, "noOperationsMatch")}</div>
+      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[var(--taq-color-827762)] ring-1 ring-[var(--taq-color-e8e1d4)]">{text(lang, "noOperationsMatch")}</div>
     );
   }
 
@@ -93,36 +93,36 @@ export function OwnerRegisterOperationsList({
         });
         const storeLabel = businessName(store, lang, true) || businessName(store, lang);
         return (
-          <article id={`register-entry-${entry.id}`} key={entry.id} className="overflow-hidden rounded-[18px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
+          <article id={`register-entry-${entry.id}`} key={entry.id} className="overflow-hidden rounded-[18px] border border-[var(--taq-color-e8e1d4)]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
             <button type="button" onClick={() => setExpandedEntryId((current) => (current === entry.id ? null : entry.id ?? null))} className="flex w-full items-start gap-2.5 px-3.5 py-3 text-start">
-              <span className={`mt-0.5 h-8 w-1 shrink-0 rounded-full ${isSale ? "bg-[#39A160]" : "bg-[#E4B84A]"}`} />
+              <span className={`mt-0.5 h-8 w-1 shrink-0 rounded-full ${isSale ? "bg-[var(--taq-color-39a160)]" : "bg-[var(--taq-color-e4b84a)]"}`} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
                   {showStoreBadge ? <RegisterStoreBadge label={storeLabel} /> : null}
-                  <p className="truncate text-taq-meta font-black text-[#112A46]">{operationDisplayLabel(entry, lang, logFilters.salesChannel, configuredChannels)}</p>
+                  <p className="truncate text-taq-meta font-black text-[var(--taq-color-112a46)]">{operationDisplayLabel(entry, lang, logFilters.salesChannel, configuredChannels)}</p>
                   {entryIsVoided(entry) && <Badge tone="warning">{text(lang, "voided")}</Badge>}
                   {entryHasAttachment(entry) && <Badge tone="navy">{text(lang, "attachmentExists")}</Badge>}
                 </div>
-                <p className="mt-1 truncate text-taq-nav font-bold text-[#827762]">
+                <p className="mt-1 truncate text-taq-nav font-bold text-[var(--taq-color-827762)]">
                   {registerDateLabel} {opTime(entry, lang)}
                   {!showStoreBadge && storeLabel ? ` ${storeLabel}` : ""}
                   {` ${actorLabel}`}
                 </p>
               </div>
               <div className="shrink-0 text-end">
-                <strong className={`block tabular-nums text-taq-meta font-black ${entryIsVoided(entry) ? "text-[#A99D87] line-through" : isSale ? "text-[#257844]" : "text-[#B44747]"}`}>
+                <strong className={`block tabular-nums text-taq-meta font-black ${entryIsVoided(entry) ? "text-[var(--taq-color-a99d87)] line-through" : isSale ? "text-[var(--taq-color-257844)]" : "text-[var(--taq-color-b44747)]"}`}>
                   <MoneyValue value={money(signedAmount, lang)} />
                 </strong>
-                <span className="mt-1 block text-taq-meta font-black text-[#806528]">{isExpanded ? (lang === "ar" ? "إخفاء" : "Hide") : (lang === "ar" ? "تفاصيل" : "Details")}</span>
+                <span className="mt-1 block text-taq-meta font-black text-[var(--taq-color-806528)]">{isExpanded ? (lang === "ar" ? "إخفاء" : "Hide") : (lang === "ar" ? "تفاصيل" : "Details")}</span>
               </div>
             </button>
             {isExpanded && (
-              <div className="border-t border-[#E8E1D4] bg-white px-3.5 py-3">
-                {entry.note ? <p className="mb-2 text-taq-meta font-bold text-[#716753]">{entry.note}</p> : null}
-                {entryIsVoided(entry) && entry.voidReason ? <p className="mb-2 text-taq-meta font-bold text-[#B44747]">{text(lang, "voidReason")}: {entry.voidReason}</p> : null}
+              <div className="border-t border-[var(--taq-color-e8e1d4)] bg-white px-3.5 py-3">
+                {entry.note ? <p className="mb-2 text-taq-meta font-bold text-[var(--taq-color-716753)]">{entry.note}</p> : null}
+                {entryIsVoided(entry) && entry.voidReason ? <p className="mb-2 text-taq-meta font-bold text-[var(--taq-color-b44747)]">{text(lang, "voidReason")}: {entry.voidReason}</p> : null}
                 {entryHasAttachment(entry) ? (
                   <div className="mb-3">
-                    <p className="mb-2 text-taq-nav font-black text-[#806528]">{text(lang, "attachmentExists")}</p>
+                    <p className="mb-2 text-taq-nav font-black text-[var(--taq-color-806528)]">{text(lang, "attachmentExists")}</p>
                     <AttachmentThumbButton
                       attachment={entry.attachment}
                       storeId={entry.businessId}
@@ -139,11 +139,11 @@ export function OwnerRegisterOperationsList({
                     />
                   </div>
                 ) : null}
-                <div className="grid grid-cols-2 gap-2 text-taq-meta font-bold text-[#716753]">
-                  <div className="rounded-xl bg-[#F7F5EF] px-2.5 py-2 ring-1 ring-[#E8E1D4]">{lang === "ar" ? "المدخل" : "Entered by"}: {actorLabel}</div>
-                  <div className="rounded-xl bg-[#F7F5EF] px-2.5 py-2 ring-1 ring-[#E8E1D4]">{lang === "ar" ? "المحل" : "Store"}: {businessName(store, lang, true) || businessName(store, lang)}</div>
+                <div className="grid grid-cols-2 gap-2 text-taq-meta font-bold text-[var(--taq-color-716753)]">
+                  <div className="rounded-xl bg-[var(--taq-color-f7f5ef)] px-2.5 py-2 ring-1 ring-[var(--taq-color-e8e1d4)]">{lang === "ar" ? "المدخل" : "Entered by"}: {actorLabel}</div>
+                  <div className="rounded-xl bg-[var(--taq-color-f7f5ef)] px-2.5 py-2 ring-1 ring-[var(--taq-color-e8e1d4)]">{lang === "ar" ? "المحل" : "Store"}: {businessName(store, lang, true) || businessName(store, lang)}</div>
                 </div>
-                <button type="button" onClick={() => onOpenOperation(entry)} className="mt-2.5 w-full rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{lang === "ar" ? "عرض العملية" : "Open operation"}</button>
+                <button type="button" onClick={() => onOpenOperation(entry)} className="mt-2.5 w-full rounded-xl bg-[var(--taq-color-112a46)] py-2.5 text-taq-meta font-black text-white">{lang === "ar" ? "عرض العملية" : "Open operation"}</button>
               </div>
             )}
           </article>

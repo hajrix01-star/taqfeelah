@@ -126,7 +126,7 @@ export function TaqfeelahAppPageContent({
     <>
       {employee && !activeEmployee && (
         <section className="taq-page-gutter pb-24">
-          <div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[#827762] ring-1 ring-black/[0.045]">
+          <div className="rounded-3xl bg-white p-8 text-center text-sm font-bold text-[var(--taq-color-827762)] ring-1 ring-black/[0.045]">
             {text(lang, "noActiveEmployee")}
           </div>
         </section>
@@ -355,7 +355,7 @@ export function TaqfeelahAppPageContent({
         />
       )}
       {saved && (
-        <div className="sticky bottom-4 left-4 right-4 z-30 mx-auto max-w-md rounded-2xl bg-[#112A46] p-4 text-xs font-bold text-white">
+        <div className="sticky bottom-4 left-4 right-4 z-30 mx-auto max-w-md rounded-2xl bg-[var(--taq-color-112a46)] p-4 text-xs font-bold text-white">
           {text(lang, "savedNotice")}
         </div>
       )}

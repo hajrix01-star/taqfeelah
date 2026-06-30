@@ -24,7 +24,7 @@ export function OwnerSettingsDeleteDialog({ lang, deleteTarget, onCancel, onConf
         onCancel={onCancel}
       >
         {deleteTarget?.affectedStaff?.length ? (
-          <div className="mt-3 rounded-2xl bg-[#FFF1EE] p-3 text-taq-meta font-bold leading-5 text-[#B44747]">
+          <div className="mt-3 rounded-2xl bg-[var(--taq-color-fff1ee)] p-3 text-taq-meta font-bold leading-5 text-[var(--taq-color-b44747)]">
             <p>{translate("archiveStaffWarning")}</p>
             <p className="mt-1">
               {deleteTarget.affectedStaff.map((person) => (lang === "ar" ? person.nameAr : person.nameEn)).join(" · ")}

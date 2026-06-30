@@ -36,7 +36,7 @@ export function OwnerHomeDayAttachments({
   if (loading) {
     return (
       <NotebookRow>
-        <p className="text-xs font-bold text-[#806528]">
+        <p className="text-xs font-bold text-[var(--taq-color-806528)]">
           {lang === "ar" ? "جاري تحميل المرفقات…" : "Loading attachments…"}
         </p>
       </NotebookRow>
@@ -45,7 +45,7 @@ export function OwnerHomeDayAttachments({
   if (!group?.items?.length) {
     return (
       <NotebookRow>
-        <p className="text-xs font-bold text-[#806528]">
+        <p className="text-xs font-bold text-[var(--taq-color-806528)]">
           {loadFailed && proofsCount > 0
             ? (lang === "ar" ? "تعذر تحميل المرفقات من الخادم." : "Failed to load attachments from the server.")
             : text(lang, "noAttachmentsDay")}
@@ -95,7 +95,7 @@ export function OwnerHomeDayAttachments({
             </div>
             <button type="button" onClick={() => onOpenOperation(attachmentItem.entry)} className="w-full text-center">
               <p className="truncate text-taq-meta font-bold">{lang === "ar" ? attachmentItem.title : attachmentItem.titleEn}</p>
-              <p className={`mt-0.5 text-taq-meta font-black ${attachmentItem.entry.type === "summary" ? "text-[#257844]" : "text-[#B44747]"}`}>
+              <p className={`mt-0.5 text-taq-meta font-black ${attachmentItem.entry.type === "summary" ? "text-[var(--taq-color-257844)]" : "text-[var(--taq-color-b44747)]"}`}>
                 <MoneyValue value={money(signedEntryAmount(attachmentItem.entry), lang)} />
               </p>
             </button>

@@ -68,16 +68,16 @@ export function ProofThumb({ paper = false, loading = false, unavailable = false
   unavailable?: boolean;
 }) {
   return (
-    <div className={`${paper ? "h-12 w-10" : "h-14 w-14 bg-[#E8E1D4]"} flex shrink-0 items-center justify-center rounded-xl`}>
+    <div className={`${paper ? "h-12 w-10" : "h-14 w-14 bg-[var(--taq-color-e8e1d4)]"} flex shrink-0 items-center justify-center rounded-xl`}>
       {loading ? (
-        <span className="text-[10px] font-bold text-[#827762]">…</span>
+        <span className="text-[10px] font-bold text-[var(--taq-color-827762)]">…</span>
       ) : unavailable ? (
-        <span className="px-1 text-center text-[9px] font-black leading-3 text-[#B44747]">!</span>
+        <span className="px-1 text-center text-[9px] font-black leading-3 text-[var(--taq-color-b44747)]">!</span>
       ) : (
-        <div className={`${paper ? "w-9 border border-[#CFBC82]" : "w-9"} rotate-[-3deg] rounded bg-white p-1.5 shadow-sm`}>
-          <div className="mb-1 h-1 w-5 rounded bg-[#D8D1C4]" />
-          <div className="mb-1 h-1 w-full rounded bg-[#E9E2D6]" />
-          <div className="h-1 w-7 rounded bg-[#E9E2D6]" />
+        <div className={`${paper ? "w-9 border border-[var(--taq-color-cfbc82)]" : "w-9"} rotate-[-3deg] rounded bg-white p-1.5 shadow-sm`}>
+          <div className="mb-1 h-1 w-5 rounded bg-[var(--taq-color-d8d1c4)]" />
+          <div className="mb-1 h-1 w-full rounded bg-[var(--taq-color-e9e2d6)]" />
+          <div className="h-1 w-7 rounded bg-[var(--taq-color-e9e2d6)]" />
         </div>
       )}
     </div>
@@ -106,7 +106,7 @@ export function AttachmentThumbButton({
   attachment,
   onOpen,
   className = "h-14 w-14",
-  buttonClassName = "shrink-0 overflow-hidden rounded-xl ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50 disabled:opacity-70",
+  buttonClassName = "shrink-0 overflow-hidden rounded-xl ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--taq-color-112a46)]/50 disabled:opacity-70",
   storeId = "",
   attachmentApiContext = null,
   lang = "ar",
@@ -219,7 +219,7 @@ export function EntryAttachmentShareButton({
       type="button"
       onClick={handleShare}
       disabled={!source || sharing}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] text-white ring-1 ring-[#1DA851]/30 transition enabled:hover:bg-[#1EBE5D] disabled:cursor-not-allowed disabled:opacity-60 ${compact ? "h-9 w-9" : "px-3 py-2 text-taq-nav font-black"} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--taq-color-25d366)] text-white ring-1 ring-[var(--taq-color-1da851)]/30 transition enabled:hover:bg-[var(--taq-color-1ebe5d)] disabled:cursor-not-allowed disabled:opacity-60 ${compact ? "h-9 w-9" : "px-3 py-2 text-taq-nav font-black"} ${className}`}
       aria-label={text(lang, "shareAttachmentWhatsApp")}
       title={text(lang, "shareAttachmentWhatsApp")}
     >
@@ -229,8 +229,8 @@ export function EntryAttachmentShareButton({
   );
 }
 
-const attachmentSourceButtonClass = "flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-3 py-3 text-xs font-extrabold text-[#112A46] ring-1 ring-black/[0.05] transition enabled:hover:bg-[#FFF4D2] disabled:cursor-not-allowed disabled:opacity-60";
-const proofSourceCardClass = "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-black/[0.06] transition enabled:hover:bg-[#FFF4D2] disabled:cursor-not-allowed disabled:opacity-60";
+const attachmentSourceButtonClass = "flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-3 py-3 text-xs font-extrabold text-[var(--taq-color-112a46)] ring-1 ring-black/[0.05] transition enabled:hover:bg-[var(--taq-color-fff4d2)] disabled:cursor-not-allowed disabled:opacity-60";
+const proofSourceCardClass = "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-black/[0.06] transition enabled:hover:bg-[var(--taq-color-fff4d2)] disabled:cursor-not-allowed disabled:opacity-60";
 
 export function ProofAddButton({
   lang,
@@ -282,7 +282,7 @@ export function ProofAddButton({
         type="button"
         disabled={disabled || processing}
         onClick={() => setOpen((current) => !current)}
-        className="inline-flex items-center gap-1 rounded-xl bg-[#FFF4D2] px-2.5 py-1.5 text-taq-nav font-black text-[#806528] ring-1 ring-[#E4B84A]/40 transition enabled:hover:bg-[#FFE9A8] disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center gap-1 rounded-xl bg-[var(--taq-color-fff4d2)] px-2.5 py-1.5 text-taq-nav font-black text-[var(--taq-color-806528)] ring-1 ring-[var(--taq-color-e4b84a)]/40 transition enabled:hover:bg-[var(--taq-color-ffe9a8)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
         <span>{text(lang, "addProof")}</span>
@@ -297,7 +297,7 @@ export function ProofAddButton({
             aria-label={text(lang, "openCamera")}
             title={text(lang, "openCamera")}
           >
-            <Camera className="h-5 w-5 text-[#B99844]" />
+            <Camera className="h-5 w-5 text-[var(--taq-color-b99844)]" />
           </button>
           <button
             type="button"
@@ -307,7 +307,7 @@ export function ProofAddButton({
             aria-label={text(lang, "openGallery")}
             title={text(lang, "openGallery")}
           >
-            <ImageIcon className="h-5 w-5 text-[#806528]" />
+            <ImageIcon className="h-5 w-5 text-[var(--taq-color-806528)]" />
           </button>
         </div>
       )}
@@ -356,7 +356,7 @@ export function ProofAttachmentPreview({
         <button
           type="button"
           onClick={() => onOpen(src)}
-          className="overflow-hidden rounded-xl ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50"
+          className="overflow-hidden rounded-xl ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--taq-color-112a46)]/50"
         >
           {image}
         </button>
@@ -364,7 +364,7 @@ export function ProofAttachmentPreview({
         <div className="overflow-hidden rounded-xl ring-1 ring-black/[0.06]">{image}</div>
       )}
       {onRemove ? (
-        <button type="button" onClick={onRemove} className="text-taq-nav font-black text-[#B44747]">
+        <button type="button" onClick={onRemove} className="text-taq-nav font-black text-[var(--taq-color-b44747)]">
           {text(lang, "removePhoto")}
         </button>
       ) : null}
@@ -402,7 +402,7 @@ export function AttachmentImageSourcePicker({
           onClick={() => cameraInputRef.current?.click()}
           className={attachmentSourceButtonClass}
         >
-          <Camera className="h-5 w-5 text-[#B99844]" />
+          <Camera className="h-5 w-5 text-[var(--taq-color-b99844)]" />
           <span>{text(lang, "openCamera")}</span>
         </button>
         <button
@@ -411,7 +411,7 @@ export function AttachmentImageSourcePicker({
           onClick={() => galleryInputRef.current?.click()}
           className={attachmentSourceButtonClass}
         >
-          <ImageIcon className="h-5 w-5 text-[#806528]" />
+          <ImageIcon className="h-5 w-5 text-[var(--taq-color-806528)]" />
           <span>{text(lang, "openGallery")}</span>
         </button>
       </div>
@@ -457,20 +457,20 @@ export function AttachmentCapture({
 
   return (
     <div>
-      <div className={`relative flex w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-3xl border-2 border-dashed border-[#D7CBAF] bg-[#FFFDF7] ${tall ? "h-40 px-4 py-4" : "min-h-24 px-4 py-3"}`}>
+      <div className={`relative flex w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-3xl border-2 border-dashed border-[var(--taq-color-d7cbaf)] bg-[var(--taq-color-fffdf7)] ${tall ? "h-40 px-4 py-4" : "min-h-24 px-4 py-3"}`}>
         {attachment ? (
           <>
             <AttachmentPreview attachment={attachment} className="absolute inset-0 h-full w-full opacity-25" />
-            <Check className={`${iconSize} relative text-[#39A160]`} />
+            <Check className={`${iconSize} relative text-[var(--taq-color-39a160)]`} />
           </>
         ) : (
-          <Camera className={`${iconSize} text-[#B99844]`} />
+          <Camera className={`${iconSize} text-[var(--taq-color-b99844)]`} />
         )}
         <div className={`relative w-full ${tall ? "text-center" : "text-start"}`}>
           <p className="text-sm font-extrabold">
             {processing ? text(lang, "processingPhoto") : attachment ? text(lang, "replacePhoto") : text(lang, "cameraOrGallery")}
           </p>
-          <p className="text-taq-meta text-[#827762]">
+          <p className="text-taq-meta text-[var(--taq-color-827762)]">
             {attachment ? text(lang, "attachmentStoredLocally") : text(lang, "optional")}
           </p>
         </div>
@@ -484,11 +484,11 @@ export function AttachmentCapture({
         )}
       </div>
       {attachment && (
-        <button type="button" onClick={onClear} className="mt-2 text-taq-meta font-bold text-[#B44747]">
+        <button type="button" onClick={onClear} className="mt-2 text-taq-meta font-bold text-[var(--taq-color-b44747)]">
           {text(lang, "removePhoto")}
         </button>
       )}
-      {error && <p className="mt-2 text-taq-meta font-bold text-[#B44747]">{error}</p>}
+      {error && <p className="mt-2 text-taq-meta font-bold text-[var(--taq-color-b44747)]">{error}</p>}
     </div>
   );
 }

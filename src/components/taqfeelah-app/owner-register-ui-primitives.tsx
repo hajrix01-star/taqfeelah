@@ -22,11 +22,11 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       count: counts.report ?? 0,
       hideCount: true,
       activeClass: `${taqUi.bg.accent} ${taqUi.text.primary}`,
-      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[#957D43]/80`,
+      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-957d43)]/80`,
       badgeActiveClass: `${taqUi.bg.primary} text-white`,
-      badgeInactiveClass: "bg-[#112A46]/[0.08] text-[#827762]",
-      contentSurfaceClass: "bg-[#FFFBF0]",
-      contentAccentClass: "border-t-2 border-[#E4B84A]/45",
+      badgeInactiveClass: "bg-[var(--taq-color-112a46)]/[0.08] text-[var(--taq-color-827762)]",
+      contentSurfaceClass: "bg-[var(--taq-color-fffbf0)]",
+      contentAccentClass: "border-t-2 border-[var(--taq-color-e4b84a)]/45",
     },
     {
       id: "closeouts",
@@ -34,11 +34,11 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       count: counts.closeouts ?? 0,
       hideCount: false,
       activeClass: `${taqUi.bg.blue} text-white`,
-      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[#214B7B]/75`,
+      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-214b7b)]/75`,
       badgeActiveClass: "bg-white/20 text-white",
-      badgeInactiveClass: "bg-[#214B7B]/10 text-[#214B7B]",
-      contentSurfaceClass: "bg-[#F5F8FC]",
-      contentAccentClass: "border-t-2 border-[#214B7B]/40",
+      badgeInactiveClass: "bg-[var(--taq-color-214b7b)]/10 text-[var(--taq-color-214b7b)]",
+      contentSurfaceClass: "bg-[var(--taq-color-f5f8fc)]",
+      contentAccentClass: "border-t-2 border-[var(--taq-color-214b7b)]/40",
     },
     {
       id: "operations",
@@ -46,11 +46,11 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       count: counts.operations ?? 0,
       hideCount: false,
       activeClass: `${taqUi.bg.success} text-white`,
-      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[#257844]/75`,
+      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-257844)]/75`,
       badgeActiveClass: "bg-white/20 text-white",
-      badgeInactiveClass: "bg-[#257844]/10 text-[#257844]",
-      contentSurfaceClass: "bg-[#F4FAF6]",
-      contentAccentClass: "border-t-2 border-[#257844]/40",
+      badgeInactiveClass: "bg-[var(--taq-color-257844)]/10 text-[var(--taq-color-257844)]",
+      contentSurfaceClass: "bg-[var(--taq-color-f4faf6)]",
+      contentAccentClass: "border-t-2 border-[var(--taq-color-257844)]/40",
     },
     {
       id: "attachments",
@@ -58,11 +58,11 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       count: counts.attachments ?? 0,
       hideCount: false,
       activeClass: `${taqUi.bg.amber} text-white`,
-      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[#806528]/80`,
+      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-806528)]/80`,
       badgeActiveClass: "bg-white/20 text-white",
-      badgeInactiveClass: "bg-[#806528]/10 text-[#806528]",
-      contentSurfaceClass: "bg-[#FFFBF7]",
-      contentAccentClass: "border-t-2 border-[#806528]/40",
+      badgeInactiveClass: "bg-[var(--taq-color-806528)]/10 text-[var(--taq-color-806528)]",
+      contentSurfaceClass: "bg-[var(--taq-color-fffbf7)]",
+      contentAccentClass: "border-t-2 border-[var(--taq-color-806528)]/40",
     },
   ];
 }
@@ -75,7 +75,7 @@ function resolveRegisterViewItem(lang: DisplayLang, counts: RegisterViewCounts, 
 export function RegisterStoreBadge({ label }: { label?: string | null }) {
   if (!label) return null;
   return (
-    <span className={`max-w-[9.5rem] truncate rounded-full ${taqUi.bg.primary} px-2.5 py-1 text-taq-nav font-black text-white ring-1 ring-[#112A46]/15`}>
+    <span className={`max-w-[9.5rem] truncate rounded-full ${taqUi.bg.primary} px-2.5 py-1 text-taq-nav font-black text-white ring-1 ring-[var(--taq-color-112a46)]/15`}>
       {label}
     </span>
   );
@@ -85,7 +85,7 @@ export function LogFilterChip({ active, children, onClick, tone = "default" }: {
   const toneClass = {
     default: active ? `${taqUi.bg.primary} text-white` : `${taqUi.bg.paper} ${taqUi.text.muted} ${taqUi.ring.line}`,
     accent: active ? `${taqUi.bg.accent} ${taqUi.text.primary}` : `${taqUi.bg.paper} ${taqUi.text.muted} ${taqUi.ring.line}`,
-    warn: active ? "bg-[#B96725] text-white" : "bg-[#F7F5EF] text-[#716753] ring-1 ring-[#E8E1D4]",
+    warn: active ? "bg-[var(--taq-color-b96725)] text-white" : "bg-[var(--taq-color-f7f5ef)] text-[var(--taq-color-716753)] ring-1 ring-[var(--taq-color-e8e1d4)]",
     danger: active ? `${taqUi.bg.danger} text-white` : `${taqUi.bg.paper} ${taqUi.text.muted} ${taqUi.ring.line}`,
     navy: active ? `${taqUi.bg.blue} text-white` : `${taqUi.bg.paper} ${taqUi.text.muted} ${taqUi.ring.line}`,
   }[tone];
@@ -107,13 +107,13 @@ export function RegisterViewSwitch({ lang, value, onChange, counts }: { lang: Di
             aria-selected={active}
             onClick={() => onChange(item.id)}
             className={`flex min-w-0 flex-1 items-center justify-center gap-1 rounded-[9px] px-1.5 py-1.5 text-[10px] font-black transition-all duration-200 ${
-              active ? `${taqUi.bg.white} ${taqUi.text.primary} ${taqUi.shadow.soft}` : "text-[#8A8070]"
+              active ? `${taqUi.bg.white} ${taqUi.text.primary} ${taqUi.shadow.soft}` : "text-[var(--taq-color-8a8070)]"
             }`}
           >
             <span className="truncate">{item.label}</span>
             {!item.hideCount ? (
               <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-                active ? "bg-[#112A46] text-white" : "bg-[#112A46]/[0.07] text-[#827762]"
+                active ? "bg-[var(--taq-color-112a46)] text-white" : "bg-[var(--taq-color-112a46)]/[0.07] text-[var(--taq-color-827762)]"
               }`}
               >
                 {item.count}
@@ -147,7 +147,7 @@ export function RegisterIndexTabs({ lang, value, onChange, counts }: { lang: Dis
             className={`flex h-9 min-w-0 flex-1 items-center justify-center gap-1 px-1.5 text-[10px] font-black transition-all duration-200 ${
               active ? item.activeClass : item.inactiveClass
             } ${buildIndexTabBorderClass(index, items.length, active)} ${
-              index > 0 ? "border-s border-[#E8E1D4]/80" : ""
+              index > 0 ? "border-s border-[var(--taq-color-e8e1d4)]/80" : ""
             }`}
           >
             <span className="truncate leading-4">{item.label}</span>
@@ -192,7 +192,7 @@ export function RegisterFilterButton({ lang, activeCount, onClick }: { lang: Dis
     >
       <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={2.25} />
       {activeCount > 0 ? (
-        <span className="absolute -end-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-[#E4B84A] px-0.5 text-[8px] font-black text-[#112A46] ring-1 ring-white">
+        <span className="absolute -end-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-[var(--taq-color-e4b84a)] px-0.5 text-[8px] font-black text-[var(--taq-color-112a46)] ring-1 ring-white">
           {activeCount}
         </span>
       ) : null}
@@ -232,11 +232,11 @@ function RegisterPeriodSummary({
 
   if (summary.mode === "channel") {
     return (
-      <div className="rounded-2xl bg-gradient-to-b from-white to-[#FDFBF7] px-4 py-3 ring-1 ring-[#ECE6DA]/90">
-        <p className="text-center text-[10px] font-bold text-[#A99D87]">{periodLabel}</p>
-        <div className="mt-3 flex items-end justify-between gap-3 border-t border-[#F0EBE0] pt-3">
-          <p className="min-w-0 truncate text-[11px] font-bold text-[#716753]">{summary.label}</p>
-          <p className="shrink-0 tabular-nums text-lg font-black leading-none text-[#257844]">
+      <div className="rounded-2xl bg-gradient-to-b from-white to-[var(--taq-color-fdfbf7)] px-4 py-3 ring-1 ring-[var(--taq-color-ece6da)]/90">
+        <p className="text-center text-[10px] font-bold text-[var(--taq-color-a99d87)]">{periodLabel}</p>
+        <div className="mt-3 flex items-end justify-between gap-3 border-t border-[var(--taq-color-f0ebe0)] pt-3">
+          <p className="min-w-0 truncate text-[11px] font-bold text-[var(--taq-color-716753)]">{summary.label}</p>
+          <p className="shrink-0 tabular-nums text-lg font-black leading-none text-[var(--taq-color-257844)]">
             <MoneyValue value={money(Number(summary.amount ?? 0), lang)} />
           </p>
         </div>
@@ -245,9 +245,9 @@ function RegisterPeriodSummary({
   }
 
   return (
-    <div className="rounded-2xl bg-gradient-to-b from-white to-[#FDFBF7] px-3 py-3 ring-1 ring-[#ECE6DA]/90">
-      <p className="text-center text-[10px] font-bold text-[#A99D87]">{periodLabel}</p>
-      <div className="mt-3 grid grid-cols-3 divide-x divide-[#E8E1D4]/80">
+    <div className="rounded-2xl bg-gradient-to-b from-white to-[var(--taq-color-fdfbf7)] px-3 py-3 ring-1 ring-[var(--taq-color-ece6da)]/90">
+      <p className="text-center text-[10px] font-bold text-[var(--taq-color-a99d87)]">{periodLabel}</p>
+      <div className="mt-3 grid grid-cols-3 divide-x divide-[var(--taq-color-e8e1d4)]/80">
         <RegisterMetricTile
           label={lang === "ar" ? "الداخل" : "In"}
           value={money(Number(summary.sales ?? 0), lang)}
@@ -261,8 +261,8 @@ function RegisterPeriodSummary({
           size="lg"
         />
         <div className="min-w-0 px-1 text-center">
-          <p className="text-[9px] font-bold text-[#A99D87]">{lang === "ar" ? "الناتج" : "Net"}</p>
-          <p className={`mt-1.5 tabular-nums text-lg font-black leading-none ${netPositive ? "text-[#257844]" : "text-[#B44747]"}`}>
+          <p className="text-[9px] font-bold text-[var(--taq-color-a99d87)]">{lang === "ar" ? "الناتج" : "Net"}</p>
+          <p className={`mt-1.5 tabular-nums text-lg font-black leading-none ${netPositive ? "text-[var(--taq-color-257844)]" : "text-[var(--taq-color-b44747)]"}`}>
             <MoneyValue value={money(Number(summary.net ?? 0), lang)} />
           </p>
         </div>
@@ -300,13 +300,13 @@ export function RegisterDashboardCard({
   const activeView = resolveRegisterViewItem(lang, tabCounts, logView);
 
   const summaryBody = summaryLoading ? (
-    <div className="rounded-2xl bg-gradient-to-b from-white to-[#FDFBF7] px-4 py-5 text-center ring-1 ring-[#ECE6DA]/90">
-      <p className="text-[10px] font-bold text-[#A99D87]">{periodLabel}</p>
-      <p className="mt-2 text-xs font-black text-[#112A46]">{lang === "ar" ? "جاري تحميل الأرقام من الخادم..." : "Loading figures from the server..."}</p>
+    <div className="rounded-2xl bg-gradient-to-b from-white to-[var(--taq-color-fdfbf7)] px-4 py-5 text-center ring-1 ring-[var(--taq-color-ece6da)]/90">
+      <p className="text-[10px] font-bold text-[var(--taq-color-a99d87)]">{periodLabel}</p>
+      <p className="mt-2 text-xs font-black text-[var(--taq-color-112a46)]">{lang === "ar" ? "جاري تحميل الأرقام من الخادم..." : "Loading figures from the server..."}</p>
     </div>
   ) : summaryErrorMessage ? (
-    <div className="rounded-2xl bg-[#FFF7F5] px-4 py-5 text-center ring-1 ring-[#F0C7C1]">
-      <p className="text-xs font-black text-[#B44747]">{summaryErrorMessage}</p>
+    <div className="rounded-2xl bg-[var(--taq-color-fff7f5)] px-4 py-5 text-center ring-1 ring-[var(--taq-color-f0c7c1)]">
+      <p className="text-xs font-black text-[var(--taq-color-b44747)]">{summaryErrorMessage}</p>
     </div>
   ) : (
     <RegisterPeriodSummary
@@ -334,7 +334,7 @@ export function RegisterDashboardCard({
     return (
       <article className="mb-3">
         <RegisterIndexTabs lang={lang} value={logView} onChange={setLogView} counts={tabCounts} />
-        <div className="overflow-hidden rounded-b-[16px] border border-[#E8E1D4]/90 border-t-0 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
+        <div className="overflow-hidden rounded-b-[16px] border border-[var(--taq-color-e8e1d4)]/90 border-t-0 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
           {cardBody}
         </div>
       </article>
@@ -342,8 +342,8 @@ export function RegisterDashboardCard({
   }
 
   return (
-    <article className="mb-3 overflow-hidden rounded-[16px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
-      <div className="border-b border-[#F0EBE0] px-3 py-2">
+    <article className="mb-3 overflow-hidden rounded-[16px] border border-[var(--taq-color-e8e1d4)]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
+      <div className="border-b border-[var(--taq-color-f0ebe0)] px-3 py-2">
         <div className="flex items-center gap-1.5">
           <div className="min-w-0 flex-1">
             <RegisterViewSwitch lang={lang} value={logView} onChange={setLogView} counts={tabCounts} />

@@ -38,11 +38,11 @@ export function OwnerSettingsAppearanceSection({
         <ThemePicker lang={lang} theme={draftNotebookTheme} onChange={(nextTheme) => { setDraftNotebookTheme(nextTheme); setThemeDirty(isNotebookThemeDirty(nextTheme, notebookTheme)); }} />
         {themeDirty && (
           <div className="mt-4 grid grid-cols-[0.9fr_1.35fr] gap-3">
-            <button onClick={() => { setDraftNotebookTheme(notebookTheme); setThemeDirty(false); }} className="rounded-2xl bg-[#F7F5EF] py-3 text-xs font-black">{text(lang, "cancelChanges")}</button>
-            <button onClick={() => { setNotebookTheme(draftNotebookTheme); setThemeDirty(false); showSettingsSaved(); }} className="rounded-2xl bg-[#112A46] py-3 text-xs font-black text-white">{text(lang, "saveSettings")}</button>
+            <button onClick={() => { setDraftNotebookTheme(notebookTheme); setThemeDirty(false); }} className="rounded-2xl bg-[var(--taq-color-f7f5ef)] py-3 text-xs font-black">{text(lang, "cancelChanges")}</button>
+            <button onClick={() => { setNotebookTheme(draftNotebookTheme); setThemeDirty(false); showSettingsSaved(); }} className="rounded-2xl bg-[var(--taq-color-112a46)] py-3 text-xs font-black text-white">{text(lang, "saveSettings")}</button>
           </div>
         )}
-        {settingsSuccess && <div className="mt-4 rounded-xl bg-[#E6F5E9] p-3 text-center text-taq-meta font-black text-[#257844]">{text(lang, "changesSaved")}</div>}
+        {settingsSuccess && <div className="mt-4 rounded-xl bg-[var(--taq-color-e6f5e9)] p-3 text-center text-taq-meta font-black text-[var(--taq-color-257844)]">{text(lang, "changesSaved")}</div>}
       </div>
     </SettingsSectionFrame>
   );

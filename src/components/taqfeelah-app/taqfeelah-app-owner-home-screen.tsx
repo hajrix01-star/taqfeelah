@@ -238,7 +238,7 @@ export function OwnerHome({
           />
         </div>
       ) : null}
-      {closeoutAlerts.length > 0 && firstCloseoutAlert && <div className="mx-2 mb-3 rounded-2xl bg-[#E6F5E9] p-3 ring-1 ring-[#39A160]/15"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[#257844]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[#257844]">{text(lang, "closeoutInAppAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[#716753]">{businessName(businessesList.find((business) => business.id === firstAlertBusinessId), lang)} · {formatCalendarDate(firstAlertDate, lang)} · {lang === "ar" ? firstAlertEmployeeNameAr : firstAlertEmployeeNameEn}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onOpenCloseoutAlertInRegister(firstCloseoutAlert)} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[#257844] ring-1 ring-[#39A160]/15">{text(lang, "openCloseoutInRegister")}</button><button type="button" onClick={() => onDismissCloseout(firstCloseoutAlert)} className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white">{text(lang, "dismissAlert")}</button></div></div>}
+      {closeoutAlerts.length > 0 && firstCloseoutAlert && <div className="mx-2 mb-3 rounded-2xl bg-[var(--taq-color-e6f5e9)] p-3 ring-1 ring-[var(--taq-color-39a160)]/15"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[var(--taq-color-257844)]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[var(--taq-color-257844)]">{text(lang, "closeoutInAppAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[var(--taq-color-716753)]">{businessName(businessesList.find((business) => business.id === firstAlertBusinessId), lang)} · {formatCalendarDate(firstAlertDate, lang)} · {lang === "ar" ? firstAlertEmployeeNameAr : firstAlertEmployeeNameEn}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onOpenCloseoutAlertInRegister(firstCloseoutAlert)} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[var(--taq-color-257844)] ring-1 ring-[var(--taq-color-39a160)]/15">{text(lang, "openCloseoutInRegister")}</button><button type="button" onClick={() => onDismissCloseout(firstCloseoutAlert)} className="rounded-xl bg-[var(--taq-color-112a46)] py-2.5 text-taq-meta font-black text-white">{text(lang, "dismissAlert")}</button></div></div>}
       {homeBillingLayoutReady ? (
       <Notebook fullPage theme={notebookTheme} lang={lang}>
         <NotebookHeading lang={lang} label={monthly ? text(lang, "monthlySummary") : text(lang, "dailySummary")} onShare={() => onShareNotebook({
@@ -284,20 +284,20 @@ export function OwnerHome({
         {isCombined ? (
           <div>
             {summaryLoadFailedWithoutFallback ? (
-              <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{summaryLoadErrorMessage}</p></NotebookRow>
+              <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[var(--taq-color-b44747)]">{summaryLoadErrorMessage}</p></NotebookRow>
             ) : summaryPending ? (
               <SummaryLoadingRow lang={lang} />
             ) : (
               <>
                 <StoreComparison lang={lang} monthly={monthly} businessesList={comparisonBusinesses} />
-                <NotebookRow lines={2}><p className="w-full text-taq-meta font-bold text-[#806528]">{text(lang, "chooseStoreForDetails")}</p></NotebookRow>
+                <NotebookRow lines={2}><p className="w-full text-taq-meta font-bold text-[var(--taq-color-806528)]">{text(lang, "chooseStoreForDetails")}</p></NotebookRow>
               </>
             )}
           </div>
         ) : (
           <div>
             {summaryLoadFailedWithoutFallback ? (
-              <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[#B44747]">{summaryLoadErrorMessage}</p></NotebookRow>
+              <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[var(--taq-color-b44747)]">{summaryLoadErrorMessage}</p></NotebookRow>
             ) : summaryPending ? (
               <SummaryLoadingRow lang={lang} />
             ) : (
@@ -322,7 +322,7 @@ export function OwnerHome({
                     salesBaseOverride={result?.sales ?? 0}
                   />
                 )}
-                <NotebookRow><NumberLine label={text(lang, "purchasesExpenses")} value={money(result?.expense ?? 0, lang)} valueClassName="text-[#B44747]" /></NotebookRow>
+                <NotebookRow><NumberLine label={text(lang, "purchasesExpenses")} value={money(result?.expense ?? 0, lang)} valueClassName="text-[var(--taq-color-b44747)]" /></NotebookRow>
                 {showReportDetails && !detailsLoading && (
                   <SummaryReportDetails
                     lang={lang}
@@ -340,7 +340,7 @@ export function OwnerHome({
                 )}
                 {detailsLoading && (
                   <NotebookRow lines={2}>
-                    <p className="w-full text-taq-meta font-bold text-[#806528]">
+                    <p className="w-full text-taq-meta font-bold text-[var(--taq-color-806528)]">
                       {lang === "ar" ? "جاري تحميل تفاصيل التقرير…" : "Loading report details…"}
                     </p>
                   </NotebookRow>
@@ -348,10 +348,10 @@ export function OwnerHome({
                 <NotebookRow strong lines={2}>
                   <div className="flex w-full items-end justify-between gap-3">
                     <span className="text-sm font-extrabold">{text(lang, "result")}</span>
-                    <strong className={`inline-flex items-baseline gap-2 tabular-nums text-2xl font-extrabold ${(result?.net ?? 0) < 0 ? "text-[#B44747]" : "text-[#257844]"}`}>
+                    <strong className={`inline-flex items-baseline gap-2 tabular-nums text-2xl font-extrabold ${(result?.net ?? 0) < 0 ? "text-[var(--taq-color-b44747)]" : "text-[var(--taq-color-257844)]"}`}>
                       <MoneyValue value={money(result?.net ?? 0, lang)} />
                       {netMarginRatio !== "—" ? (
-                        <span className="text-sm font-bold text-[#827762]">
+                        <span className="text-sm font-bold text-[var(--taq-color-827762)]">
                           ({netMarginRatio})
                         </span>
                       ) : null}
@@ -360,10 +360,10 @@ export function OwnerHome({
                 </NotebookRow>
                 {!monthly && (
                   <NotebookRow>
-                    <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[#806528]">
+                    <button onClick={() => setShowAttachments(!showAttachments)} className="flex w-full items-end justify-between text-xs font-bold text-[var(--taq-color-806528)]">
                       <span className="relative pb-1">
                         {text(lang, "attachments")}
-                        {showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[#C28A30]" />}
+                        {showAttachments && <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] rounded-full bg-[var(--taq-color-c28a30)]" />}
                       </span>
                       <span>{displayedProofCount}</span>
                     </button>
@@ -404,8 +404,8 @@ export function OwnerHome({
       ) : (
         <div className="px-5 pt-2" aria-busy="true" aria-hidden="true">
           <div className="flex h-[102px] flex-col items-center justify-end pb-1">
-            <div className="h-[18px] w-[120px] rounded-full bg-[#112A46]/10" />
-            <span className="mt-2 block h-[2px] w-[120px] rounded-full bg-[#C28A30]/35" />
+            <div className="h-[18px] w-[120px] rounded-full bg-[var(--taq-color-112a46)]/10" />
+            <span className="mt-2 block h-[2px] w-[120px] rounded-full bg-[var(--taq-color-c28a30)]/35" />
           </div>
         </div>
       )}

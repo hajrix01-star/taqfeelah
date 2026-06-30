@@ -593,8 +593,8 @@ export function OwnerRegisterScreen({
         />
 
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-taq-meta font-black text-[#112A46]">{text(lang, "logResults")}</span>
-          <span className="rounded-lg bg-white px-2.5 py-1 text-[10px] font-black tabular-nums text-[#827762] ring-1 ring-[#E8E1D4]">
+          <span className="text-taq-meta font-black text-[var(--taq-color-112a46)]">{text(lang, "logResults")}</span>
+          <span className="rounded-lg bg-white px-2.5 py-1 text-[10px] font-black tabular-nums text-[var(--taq-color-827762)] ring-1 ring-[var(--taq-color-e8e1d4)]">
             {logView === "operations"
               ? `${visibleEntries.length} ${text(lang, "operations")}`
               : logView === "attachments"

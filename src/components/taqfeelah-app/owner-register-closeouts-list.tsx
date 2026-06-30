@@ -51,7 +51,7 @@ function RegisterCloseoutOperationActions({
       <button
         type="button"
         onClick={() => onOpenOperation(item)}
-        className="rounded-lg bg-[#F7F5EF] px-2 py-1 text-[10px] font-black text-[#112A46] ring-1 ring-[#E8E1D4]"
+        className="rounded-lg bg-[var(--taq-color-f7f5ef)] px-2 py-1 text-[10px] font-black text-[var(--taq-color-112a46)] ring-1 ring-[var(--taq-color-e8e1d4)]"
       >
         {lang === "ar" ? "تفاصيل" : "Details"}
       </button>
@@ -59,7 +59,7 @@ function RegisterCloseoutOperationActions({
         <button
           type="button"
           onClick={() => onVoidOperation(String(item.id))}
-          className="rounded-lg bg-[#FFF1EE] px-2 py-1 text-[10px] font-black text-[#B44747] ring-1 ring-[#F0C8C2]"
+          className="rounded-lg bg-[var(--taq-color-fff1ee)] px-2 py-1 text-[10px] font-black text-[var(--taq-color-b44747)] ring-1 ring-[var(--taq-color-f0c8c2)]"
         >
           {lang === "ar" ? "إلغاء" : "Void"}
         </button>
@@ -68,13 +68,13 @@ function RegisterCloseoutOperationActions({
         <button
           type="button"
           onClick={() => onRestoreOperation(String(item.id))}
-          className="rounded-lg bg-[#E6F5E9] px-2 py-1 text-[10px] font-black text-[#257844] ring-1 ring-[#C8E8D2]"
+          className="rounded-lg bg-[var(--taq-color-e6f5e9)] px-2 py-1 text-[10px] font-black text-[var(--taq-color-257844)] ring-1 ring-[var(--taq-color-c8e8d2)]"
         >
           {lang === "ar" ? "استعادة" : "Restore"}
         </button>
       ) : null}
       {voided ? (
-        <span className="rounded-full bg-[#FFF4D2] px-2 py-0.5 text-[9px] font-black text-[#806528]">
+        <span className="rounded-full bg-[var(--taq-color-fff4d2)] px-2 py-0.5 text-[9px] font-black text-[var(--taq-color-806528)]">
           {text(lang, "voided")}
         </span>
       ) : null}
@@ -125,13 +125,13 @@ export function OwnerRegisterCloseoutsList({
 }) {
   if (loadError) {
     return (
-      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10">{loadErrorMessage}</div>
+      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[var(--taq-color-b44747)] ring-1 ring-[var(--taq-color-b44747)]/10">{loadErrorMessage}</div>
     );
   }
 
   if (loading) {
     return (
-      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">
+      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[var(--taq-color-827762)] ring-1 ring-[var(--taq-color-e8e1d4)]">
         {lang === "ar" ? "جاري تحميل التقفيلات من الخادم..." : "Loading closeouts from the server..."}
       </div>
     );
@@ -139,7 +139,7 @@ export function OwnerRegisterCloseoutsList({
 
   if (closeoutSummaries.length === 0) {
     return (
-      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">{text(lang, "noCloseoutsPeriod")}</div>
+      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[var(--taq-color-827762)] ring-1 ring-[var(--taq-color-e8e1d4)]">{text(lang, "noCloseoutsPeriod")}</div>
     );
   }
 
@@ -160,13 +160,13 @@ export function OwnerRegisterCloseoutsList({
           : `Show operations (${operationRows.length})`;
 
         return (
-          <article id={`register-closeout-${registerScrollId(summary.key)}`} key={summary.key} className="overflow-hidden rounded-[18px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
+          <article id={`register-closeout-${registerScrollId(summary.key)}`} key={summary.key} className="overflow-hidden rounded-[18px] border border-[var(--taq-color-e8e1d4)]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
             <button type="button" onClick={() => setExpandedCloseoutKey((current) => (current === summary.key ? null : summary.key))} className="flex w-full items-start gap-2.5 px-3.5 py-3 text-start">
-              <ChevronDown className={`mt-0.5 h-5 w-5 shrink-0 text-[#112A46] transition ${isExpanded ? "rotate-180" : ""}`} />
+              <ChevronDown className={`mt-0.5 h-5 w-5 shrink-0 text-[var(--taq-color-112a46)] transition ${isExpanded ? "rotate-180" : ""}`} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                   <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                    <p className="text-taq-meta font-black text-[#112A46]">{formatCloseoutDayLabel({ formattedDate: formatCalendarDate(String(summary.date ?? ""), lang), daySequence: summary.daySequence ?? undefined, sameDayCloseoutCount: summary.sameDayCloseoutCount ?? undefined })}</p>
+                    <p className="text-taq-meta font-black text-[var(--taq-color-112a46)]">{formatCloseoutDayLabel({ formattedDate: formatCalendarDate(String(summary.date ?? ""), lang), daySequence: summary.daySequence ?? undefined, sameDayCloseoutCount: summary.sameDayCloseoutCount ?? undefined })}</p>
                     {showStoreBadge ? <RegisterStoreBadge label={storeLabel} /> : null}
                   </div>
                   <div className="flex flex-wrap items-center justify-end gap-1.5">
@@ -174,52 +174,52 @@ export function OwnerRegisterCloseoutsList({
                       closeoutId: summary.closeoutId ?? summary.key,
                       businessId: summaryBusinessId,
                     }} />
-                    <p className="rounded-full border border-[#8EA1C4] px-2.5 py-1 text-taq-meta font-black text-[#214B7B]">{lang === "ar" ? `بواسطة ${summary.actorLabel}` : `By ${summary.actorLabel}`}</p>
+                    <p className="rounded-full border border-[var(--taq-color-8ea1c4)] px-2.5 py-1 text-taq-meta font-black text-[var(--taq-color-214b7b)]">{lang === "ar" ? `بواسطة ${summary.actorLabel}` : `By ${summary.actorLabel}`}</p>
                   </div>
                 </div>
-                <p className="mt-1 text-taq-meta font-bold text-[#716753]">
+                <p className="mt-1 text-taq-meta font-bold text-[var(--taq-color-716753)]">
                   {formatRegisterCloseoutTypeLabel(String(summary.date ?? ""), lang)}
                   {!showStoreBadge && storeLabel ? ` ${storeLabel}` : ""}
                 </p>
-                <div className="mt-2 grid grid-cols-3 gap-2 border-t border-dashed border-[#DDD3C0] pt-2">
-                  <p className="text-taq-meta font-black text-[#112A46]">{lang === "ar" ? "الدخل" : "In"} <span className="tabular-nums"><MoneyValue value={money(summary.displaySales, lang)} /></span></p>
-                  <p className="text-taq-meta font-black text-[#B44747]">{lang === "ar" ? "الخارج" : "Out"} <span className="tabular-nums"><MoneyValue value={money(-summary.totals.expense, lang)} /></span></p>
-                  <p className={`text-taq-meta font-black ${summary.totals.net < 0 ? "text-[#B44747]" : "text-[#257844]"}`}>{lang === "ar" ? "الناتج" : "Net"} <span className="tabular-nums"><MoneyValue value={money(summary.totals.net, lang)} /></span></p>
+                <div className="mt-2 grid grid-cols-3 gap-2 border-t border-dashed border-[var(--taq-color-ddd3c0)] pt-2">
+                  <p className="text-taq-meta font-black text-[var(--taq-color-112a46)]">{lang === "ar" ? "الدخل" : "In"} <span className="tabular-nums"><MoneyValue value={money(summary.displaySales, lang)} /></span></p>
+                  <p className="text-taq-meta font-black text-[var(--taq-color-b44747)]">{lang === "ar" ? "الخارج" : "Out"} <span className="tabular-nums"><MoneyValue value={money(-summary.totals.expense, lang)} /></span></p>
+                  <p className={`text-taq-meta font-black ${summary.totals.net < 0 ? "text-[var(--taq-color-b44747)]" : "text-[var(--taq-color-257844)]"}`}>{lang === "ar" ? "الناتج" : "Net"} <span className="tabular-nums"><MoneyValue value={money(summary.totals.net, lang)} /></span></p>
                 </div>
                 {isExpanded && (
                   summary.salesChannels.length > 0 ? (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {summary.salesChannels.map((channel) => (
-                        <span key={channel.channelId} className="rounded-full bg-[#E6F5E9] px-2 py-0.5 text-taq-nav font-bold text-[#257844]">
+                        <span key={channel.channelId} className="rounded-full bg-[var(--taq-color-e6f5e9)] px-2 py-0.5 text-taq-nav font-bold text-[var(--taq-color-257844)]">
                           {registerSalesChannelBadgeLabel(channel, text(lang, "summary"))} <span className="tabular-nums"><MoneyValue value={money(channel.amount, lang)} /></span>
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <p className="mt-2 text-taq-nav font-bold text-[#8B8274]">{text(lang, "noPaymentMethodsPeriod")}</p>
+                    <p className="mt-2 text-taq-nav font-bold text-[var(--taq-color-8b8274)]">{text(lang, "noPaymentMethodsPeriod")}</p>
                   )
                 )}
-                <p className="mt-2 text-taq-meta font-black text-[#806528]">
+                <p className="mt-2 text-taq-meta font-black text-[var(--taq-color-806528)]">
                   {isExpanded ? (lang === "ar" ? "إخفاء العمليات" : "Hide operations") : operationsCountLabel}
                 </p>
               </div>
             </button>
             {isExpanded && (
-              <div className="border-t border-[#E8E1D4] bg-white px-3.5 py-2.5">
-                <div className="divide-y divide-[#F0EBE0]">
+              <div className="border-t border-[var(--taq-color-e8e1d4)] bg-white px-3.5 py-2.5">
+                <div className="divide-y divide-[var(--taq-color-f0ebe0)]">
                   {operationRows.map((row) => (
                     <div key={row.key} className="py-2.5 text-taq-meta first:pt-0 last:pb-0">
                       <div className="flex items-start justify-between gap-2">
-                        <span className="min-w-0 flex-1 font-bold text-[#112A46]">{row.label}</span>
+                        <span className="min-w-0 flex-1 font-bold text-[var(--taq-color-112a46)]">{row.label}</span>
                         <strong
                           dir="ltr"
-                          className={`shrink-0 tabular-nums text-end font-black ${entryIsVoided(row.item) ? "text-[#A99D87] line-through" : row.isSale ? "text-[#257844]" : "text-[#B44747]"}`}
+                          className={`shrink-0 tabular-nums text-end font-black ${entryIsVoided(row.item) ? "text-[var(--taq-color-a99d87)] line-through" : row.isSale ? "text-[var(--taq-color-257844)]" : "text-[var(--taq-color-b44747)]"}`}
                         >
                           <MoneyValue value={money(row.amount, lang)} />
                         </strong>
                       </div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                        <span className="text-taq-nav font-bold text-[#8A816F]">{opTime(row.item, lang)}</span>
+                        <span className="text-taq-nav font-bold text-[var(--taq-color-8a816f)]">{opTime(row.item, lang)}</span>
                         {entryHasAttachment(row.item) ? (
                           <AttachmentThumbButton
                             attachment={row.item.attachment}
@@ -227,7 +227,7 @@ export function OwnerRegisterCloseoutsList({
                             lang={lang}
                             attachmentApiContext={entryAttachmentApiContext}
                             className="h-8 w-8"
-                            buttonClassName="shrink-0 overflow-hidden rounded-lg ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50 disabled:opacity-70"
+                            buttonClassName="shrink-0 overflow-hidden rounded-lg ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--taq-color-112a46)]/50 disabled:opacity-70"
                             onOpen={(src) => onPreviewAttachment?.(src, {
                               entry: row.item,
                               storeName: storeLabel,
@@ -238,7 +238,7 @@ export function OwnerRegisterCloseoutsList({
                             })}
                           />
                         ) : (
-                          <span className="text-taq-nav font-bold text-[#C8BCA4]">—</span>
+                          <span className="text-taq-nav font-bold text-[var(--taq-color-c8bca4)]">—</span>
                         )}
                         <div className="ms-auto min-w-0">
                           <RegisterCloseoutOperationActions
@@ -255,18 +255,18 @@ export function OwnerRegisterCloseoutsList({
                   ))}
                 </div>
                 {canManageCloseout ? (
-                  <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[#E8E1D4] pt-3">
+                  <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[var(--taq-color-e8e1d4)] pt-3">
                     <button
                       type="button"
                       onClick={() => onEditCloseout(summary)}
-                      className="rounded-xl bg-[#112A46] py-2.5 text-taq-meta font-black text-white"
+                      className="rounded-xl bg-[var(--taq-color-112a46)] py-2.5 text-taq-meta font-black text-white"
                     >
                       {lang === "ar" ? "تعديل التقفيلة" : "Edit closeout"}
                     </button>
                     <button
                       type="button"
                       onClick={() => onDeleteCloseout(summary)}
-                      className="rounded-xl bg-[#FFF1EE] py-2.5 text-taq-meta font-black text-[#B44747] ring-1 ring-[#F0C8C2]"
+                      className="rounded-xl bg-[var(--taq-color-fff1ee)] py-2.5 text-taq-meta font-black text-[var(--taq-color-b44747)] ring-1 ring-[var(--taq-color-f0c8c2)]"
                     >
                       {lang === "ar" ? "حذف التقفيلة" : "Delete closeout"}
                     </button>

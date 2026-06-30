@@ -79,10 +79,10 @@ export function OwnerSettingsTeamSection({
         />
       ) : null}
       {settingsNotice ? (
-        <div className="mb-4 rounded-xl bg-[#FFF1EE] p-2.5 text-center text-taq-meta font-bold text-[#B44747]">{settingsNotice}</div>
+        <div className="mb-4 rounded-xl bg-[var(--taq-color-fff1ee)] p-2.5 text-center text-taq-meta font-bold text-[var(--taq-color-b44747)]">{settingsNotice}</div>
       ) : null}
       {orgConfigLoading ? (
-        <div className="rounded-3xl bg-white p-5 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-black/[0.045]">
+        <div className="rounded-3xl bg-white p-5 text-center text-taq-meta font-bold text-[var(--taq-color-827762)] ring-1 ring-black/[0.045]">
           {lang === "ar" ? "جارٍ تحميل الفريق من السيرفر..." : "Loading team from server..."}
         </div>
       ) : (
@@ -113,7 +113,7 @@ export function OwnerSettingsTeamSection({
       {managingTeam && (
         <div className="grid grid-cols-[0.9fr_1.35fr] gap-3">
           <button onClick={cancelManagingTeam} className="rounded-2xl bg-white py-3.5 text-xs font-black ring-1 ring-black/[0.05]">{text(lang, "cancelChanges")}</button>
-          <button type="button" disabled={teamSaving} onClick={() => { void saveManagingTeam(); }} className={`rounded-2xl py-3.5 text-xs font-black text-white ${teamSaving ? "bg-[#B8C0B7]" : "bg-[#112A46]"}`}>{text(lang, "saveTeamChanges")}</button>
+          <button type="button" disabled={teamSaving} onClick={() => { void saveManagingTeam(); }} className={`rounded-2xl py-3.5 text-xs font-black text-white ${teamSaving ? "bg-[var(--taq-color-b8c0b7)]" : "bg-[var(--taq-color-112a46)]"}`}>{text(lang, "saveTeamChanges")}</button>
         </div>
       )}
         </>

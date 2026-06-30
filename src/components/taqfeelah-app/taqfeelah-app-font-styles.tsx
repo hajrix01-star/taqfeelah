@@ -23,7 +23,7 @@ export function AppFontStyles() {
       .taq-notch { display: none !important; }
       .taq-app-root {
         min-height: 100dvh;
-        background: #F8F6F0;
+        background: var(--taq-color-f8f6f0);
       }
       .taq-shell { width: 100% !important; max-width: none !important; min-height: 100dvh !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; }
       .taq-screen { height: 100dvh !important; max-height: 100dvh !important; min-height: 100dvh !important; display: grid !important; grid-template-rows: auto 1fr auto !important; overflow: hidden !important; }
@@ -65,14 +65,14 @@ export function AppFontStyles() {
           overflow-x: hidden;
           background:
             linear-gradient(90deg, rgba(17, 42, 70, 0.04), transparent 18%, transparent 82%, rgba(17, 42, 70, 0.04)),
-            #EDE6D7;
+            var(--taq-color-ede6d7);
         }
         .taq-app-root > .taq-shell,
         .taq-app-root > section {
           width: 100% !important;
           max-width: var(--taq-app-desktop-width) !important;
           min-height: 100dvh !important;
-          background: #F8F6F0;
+          background: var(--taq-color-f8f6f0);
           border-inline: 1px solid rgba(17, 42, 70, 0.08) !important;
           box-shadow: 0 18px 42px rgba(17, 42, 70, 0.12) !important;
         }

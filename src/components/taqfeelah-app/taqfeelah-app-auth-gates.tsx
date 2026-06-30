@@ -36,7 +36,7 @@ export function TaqfeelahAppLoggedOutGate({
   onEmployeeLogin,
 }: TaqfeelahAppLoggedOutGateProps) {
   return (
-    <div dir={lang === "ar" ? "rtl" : "ltr"} className="taq-app-root min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
+    <div dir={lang === "ar" ? "rtl" : "ltr"} className="taq-app-root min-h-[100dvh] bg-[var(--taq-color-f8f6f0)] font-sans text-[var(--taq-color-112a46)]">
       <AppFontStyles />
       {authScreen === "gateway" ? (
         <AuthGatewayScreen
@@ -67,9 +67,9 @@ export function TaqfeelahAppLoggedOutGate({
 
 export function TaqfeelahAppOrgLoadingGate({ lang }: { lang: AppLang }) {
   return (
-    <div dir={lang === "ar" ? "rtl" : "ltr"} className="taq-page-gutter flex min-h-[100dvh] items-center justify-center bg-[#F8F6F0] font-sans text-[#112A46]">
+    <div dir={lang === "ar" ? "rtl" : "ltr"} className="taq-page-gutter flex min-h-[100dvh] items-center justify-center bg-[var(--taq-color-f8f6f0)] font-sans text-[var(--taq-color-112a46)]">
       <AppFontStyles />
-      <p className="text-center text-sm font-bold text-[#827762]">
+      <p className="text-center text-sm font-bold text-[var(--taq-color-827762)]">
         {lang === "ar" ? "جاري تحميل بيانات المنشأة من قاعدة البيانات..." : "Loading organization data from database..."}
       </p>
     </div>
@@ -90,7 +90,7 @@ export function TaqfeelahAppOwnerPasswordGate({
   onLogout,
 }: TaqfeelahAppOwnerPasswordGateProps) {
   return (
-    <div dir={lang === "ar" ? "rtl" : "ltr"} className="taq-app-root min-h-[100dvh] bg-[#F8F6F0] font-sans text-[#112A46]">
+    <div dir={lang === "ar" ? "rtl" : "ltr"} className="taq-app-root min-h-[100dvh] bg-[var(--taq-color-f8f6f0)] font-sans text-[var(--taq-color-112a46)]">
       <AppFontStyles />
       <OwnerPasswordChangeScreen
         lang={lang}
@@ -110,13 +110,13 @@ export function TaqfeelahAppOrgErrorGate({
   orgConfigSyncError?: string | null;
 }) {
   return (
-    <div dir={lang === "ar" ? "rtl" : "ltr"} className="taq-page-gutter flex min-h-[100dvh] items-center justify-center bg-[#F8F6F0] font-sans text-[#112A46]">
+    <div dir={lang === "ar" ? "rtl" : "ltr"} className="taq-page-gutter flex min-h-[100dvh] items-center justify-center bg-[var(--taq-color-f8f6f0)] font-sans text-[var(--taq-color-112a46)]">
       <AppFontStyles />
       <div className="max-w-sm rounded-3xl bg-white p-6 text-center ring-1 ring-black/[0.045]">
-        <p className="text-sm font-black text-[#B44747]">
+        <p className="text-sm font-black text-[var(--taq-color-b44747)]">
           {lang === "ar" ? "تعذر تحميل بيانات المنشأة" : "Failed to load organization data"}
         </p>
-        <p className="mt-2 text-taq-meta font-bold text-[#827762]">{orgConfigSyncError}</p>
+        <p className="mt-2 text-taq-meta font-bold text-[var(--taq-color-827762)]">{orgConfigSyncError}</p>
       </div>
     </div>
   );

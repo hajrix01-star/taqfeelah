@@ -165,7 +165,7 @@ export function OwnerNotebookShareModal({ lang, note, onClose }: OwnerNotebookSh
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[220] flex items-center justify-center bg-[#112A46]/45 p-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        className="fixed inset-0 z-[220] flex items-center justify-center bg-[var(--taq-color-112a46)]/45 p-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]"
         onClick={onClose}
       >
         <motion.div
@@ -173,14 +173,14 @@ export function OwnerNotebookShareModal({ lang, note, onClose }: OwnerNotebookSh
           initial={{ scale: 0.97, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.97, opacity: 0 }}
-          className="relative z-10 flex max-h-[min(88dvh,640px)] w-full max-w-[400px] flex-col overflow-hidden rounded-[24px] bg-[#F8F6F0] shadow-[0_18px_48px_rgba(17,42,70,0.22)] sm:max-w-[700px] sm:rounded-[30px]"
+          className="relative z-10 flex max-h-[min(88dvh,640px)] w-full max-w-[400px] flex-col overflow-hidden rounded-[24px] bg-[var(--taq-color-f8f6f0)] shadow-[0_18px_48px_rgba(17,42,70,0.22)] sm:max-w-[700px] sm:rounded-[30px]"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div className="min-w-0 text-start">
-              <p className="text-taq-meta font-bold text-[#827762]">{text(lang, "shareOptions")}</p>
-              <h3 className="text-base font-black text-[#112A46]">{text(lang, "ownerNotebookSharePreview")}</h3>
+              <p className="text-taq-meta font-bold text-[var(--taq-color-827762)]">{text(lang, "shareOptions")}</p>
+              <h3 className="text-base font-black text-[var(--taq-color-112a46)]">{text(lang, "ownerNotebookSharePreview")}</h3>
             </div>
             <button type="button" onClick={onClose} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05]" aria-label={text(lang, "close")}>
               <X className="h-4 w-4" />
@@ -193,36 +193,36 @@ export function OwnerNotebookShareModal({ lang, note, onClose }: OwnerNotebookSh
                 <OwnerNotebookNoteSharePreview {...previewData} fluid />
               </div>
             ) : (
-              <div className="flex h-[280px] w-full items-center justify-center rounded-[24px] bg-white text-xs font-bold text-[#827762] ring-1 ring-black/[0.055]">
+              <div className="flex h-[280px] w-full items-center justify-center rounded-[24px] bg-white text-xs font-bold text-[var(--taq-color-827762)] ring-1 ring-black/[0.055]">
                 {text(lang, "ownerNotebookEmpty")}
               </div>
             )}
             {imageBusy ? (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#F8F6F0]/92 text-xs font-bold text-[#827762]">
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--taq-color-f8f6f0)]/92 text-xs font-bold text-[var(--taq-color-827762)]">
                 {lang === "ar" ? "جاري تجهيز الصورة…" : "Preparing image…"}
               </div>
             ) : null}
           </div>
 
           {shareHint ? (
-            <p className="mb-3 rounded-xl bg-[#E6F5E9] px-3 py-2 text-center text-taq-meta font-bold text-[#257844]">{shareHint}</p>
+            <p className="mb-3 rounded-xl bg-[var(--taq-color-e6f5e9)] px-3 py-2 text-center text-taq-meta font-bold text-[var(--taq-color-257844)]">{shareHint}</p>
           ) : null}
           {imageError ? (
-            <p className="mb-3 rounded-xl bg-[#FFF1EE] px-3 py-2 text-center text-taq-meta font-bold text-[#B44747]">{imageError}</p>
+            <p className="mb-3 rounded-xl bg-[var(--taq-color-fff1ee)] px-3 py-2 text-center text-taq-meta font-bold text-[var(--taq-color-b44747)]">{imageError}</p>
           ) : null}
 
           </div>
 
-          <div className="shrink-0 border-t border-[#ECE6DA] p-4 sm:p-5">
+          <div className="shrink-0 border-t border-[var(--taq-color-ece6da)] p-4 sm:p-5">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              <button type="button" onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06]">
+              <button type="button" onClick={onClose} className="rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[var(--taq-color-112a46)] ring-1 ring-black/[0.06]">
                 {text(lang, "close")}
               </button>
-              <button type="button" onClick={downloadImage} disabled={imageBusy || !previewData} className="flex items-center justify-center gap-1.5 rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-50">
+              <button type="button" onClick={downloadImage} disabled={imageBusy || !previewData} className="flex items-center justify-center gap-1.5 rounded-2xl bg-white py-3.5 text-taq-meta font-black text-[var(--taq-color-112a46)] ring-1 ring-black/[0.06] disabled:opacity-50">
                 <Download className="h-3.5 w-3.5" />
                 {text(lang, "downloadNotebookImage")}
               </button>
-              <button type="button" onClick={shareImage} disabled={imageBusy || !previewData} className="flex items-center justify-center gap-1.5 rounded-2xl bg-[#25D366] py-3.5 text-taq-meta font-black text-white disabled:opacity-50">
+              <button type="button" onClick={shareImage} disabled={imageBusy || !previewData} className="flex items-center justify-center gap-1.5 rounded-2xl bg-[var(--taq-color-25d366)] py-3.5 text-taq-meta font-black text-white disabled:opacity-50">
                 <Send className="h-3.5 w-3.5" />
                 {imageBusy ? (lang === "ar" ? "جاري التجهيز…" : "Preparing…") : text(lang, "shareViaWhatsApp")}
               </button>

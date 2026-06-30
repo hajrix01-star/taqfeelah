@@ -52,8 +52,8 @@ export function OwnerSettingsTabbedShell({ state, callbacks }: OwnerSettingsTabb
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-page-gutter pb-24">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-black text-[#112A46]">{text(lang, "settings")}</h1>
-          <p className="mt-1 text-[11px] font-bold text-[#827762]">
+          <h1 className="text-xl font-black text-[var(--taq-color-112a46)]">{text(lang, "settings")}</h1>
+          <p className="mt-1 text-[11px] font-bold text-[var(--taq-color-827762)]">
             {lang === "ar" ? "إدارة المنشأة والحساب" : "Organization and account management"}
           </p>
         </div>
@@ -97,7 +97,7 @@ export function OwnerSettingsTabbedShell({ state, callbacks }: OwnerSettingsTabb
       </SettingsTabbedPanel>
 
       <ReleaseVersionLine
-        className="text-center text-taq-meta font-bold text-[#A99D87]"
+        className="text-center text-taq-meta font-bold text-[var(--taq-color-a99d87)]"
         lang={lang}
         showBuild
       />

@@ -105,15 +105,15 @@ export function OwnerNotebookScreen({
             <button
               type="button"
               onClick={openComposer}
-              className="flex w-full items-center gap-3 rounded-[22px] border border-[#E8E1D4] px-4 py-3.5 text-start shadow-[0_8px_18px_rgba(17,42,70,0.05)] ring-1 ring-transparent transition-[box-shadow,background-color] duration-150 hover:ring-[#112A46]/10"
+              className="flex w-full items-center gap-3 rounded-[22px] border border-[var(--taq-color-e8e1d4)] px-4 py-3.5 text-start shadow-[0_8px_18px_rgba(17,42,70,0.05)] ring-1 ring-transparent transition-[box-shadow,background-color] duration-150 hover:ring-[var(--taq-color-112a46)]/10"
               style={cardStyle}
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#112A46] text-white">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--taq-color-112a46)] text-white">
                 <Plus className="h-4 w-4" />
               </span>
               <span>
-                <span className="block text-taq-meta font-black text-[#112A46]">{text(lang, "ownerNotebookNew")}</span>
-                <span className="mt-0.5 block text-[10px] font-bold text-[#827762]">{text(lang, "ownerNotebookPlaceholder")}</span>
+                <span className="block text-taq-meta font-black text-[var(--taq-color-112a46)]">{text(lang, "ownerNotebookNew")}</span>
+                <span className="mt-0.5 block text-[10px] font-bold text-[var(--taq-color-827762)]">{text(lang, "ownerNotebookPlaceholder")}</span>
               </span>
             </button>
           )}
@@ -127,26 +127,26 @@ export function OwnerNotebookScreen({
             />
 
             <div
-              className={`overflow-hidden rounded-b-[16px] border border-[#E8E1D4]/90 border-t-0 px-2.5 py-2.5 shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)] ${activeView.contentSurfaceClass} ${activeView.contentAccentClass}`}
+              className={`overflow-hidden rounded-b-[16px] border border-[var(--taq-color-e8e1d4)]/90 border-t-0 px-2.5 py-2.5 shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)] ${activeView.contentSurfaceClass} ${activeView.contentAccentClass}`}
               role="tabpanel"
             >
               {!hydrated ? (
-                <div className="px-2 py-8 text-center text-taq-meta font-bold text-[#827762]">
+                <div className="px-2 py-8 text-center text-taq-meta font-bold text-[var(--taq-color-827762)]">
                   {text(lang, "loading")}
                 </div>
               ) : showError ? (
                 <div className="px-3 py-8 text-center">
-                  <p className="text-taq-meta font-black text-[#B44747]">
+                  <p className="text-taq-meta font-black text-[var(--taq-color-b44747)]">
                     {lang === "ar" ? "تعذر تحميل الدفتري من الخادم." : "Could not load notebook from the server."}
                   </p>
-                  <p className="mt-1 text-[10px] font-bold text-[#827762]">
+                  <p className="mt-1 text-[10px] font-bold text-[var(--taq-color-827762)]">
                     {lang === "ar" ? "أعد المحاولة بعد التأكد من الاتصال." : "Check the connection and try again."}
                   </p>
                 </div>
               ) : showGlobalEmpty ? (
                 <NotebookEmptyState lang={lang} onAddNew={openComposer} />
               ) : showTabEmpty ? (
-                <div className="px-2 py-10 text-center text-taq-meta font-bold text-[#827762]">
+                <div className="px-2 py-10 text-center text-taq-meta font-bold text-[var(--taq-color-827762)]">
                   {text(lang, "ownerNotebookEmpty")}
                 </div>
               ) : (
@@ -177,7 +177,7 @@ export function OwnerNotebookScreen({
                       type="button"
                       disabled={loadingMore}
                       onClick={() => { void loadMore(); }}
-                      className="w-full rounded-2xl bg-white py-3 text-taq-meta font-black text-[#112A46] ring-1 ring-black/[0.06] disabled:opacity-60"
+                      className="w-full rounded-2xl bg-white py-3 text-taq-meta font-black text-[var(--taq-color-112a46)] ring-1 ring-black/[0.06] disabled:opacity-60"
                     >
                       {loadingMore
                         ? (lang === "ar" ? "جارٍ التحميل..." : "Loading...")

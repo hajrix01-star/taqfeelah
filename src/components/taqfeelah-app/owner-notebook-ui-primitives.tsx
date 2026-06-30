@@ -35,7 +35,7 @@ export const OWNER_NOTEBOOK_VIEW_TABS = [
   { id: "done", label: "ownerNotebookDone" },
 ];
 
-const NOTEBOOK_VIEW_NEUTRAL_INACTIVE = "bg-[#F0ECE2] text-[#827762]";
+const NOTEBOOK_VIEW_NEUTRAL_INACTIVE = "bg-[var(--taq-color-f0ece2)] text-[var(--taq-color-827762)]";
 
 function buildNotebookViewTabItems(lang: DisplayLang, counts: SettingsTabCounts) {
   return [
@@ -43,45 +43,45 @@ function buildNotebookViewTabItems(lang: DisplayLang, counts: SettingsTabCounts)
       id: "active",
       label: text(lang, "ownerNotebookActive"),
       count: counts.active ?? 0,
-      activeClass: "bg-[#E4B84A] text-[#112A46]",
-      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[#957D43]/80`,
-      badgeActiveClass: "bg-[#112A46] text-white",
-      badgeInactiveClass: "bg-[#112A46]/[0.08] text-[#827762]",
-      contentSurfaceClass: "bg-[#FFFBF0]",
-      contentAccentClass: "border-t-2 border-[#E4B84A]/45",
+      activeClass: "bg-[var(--taq-color-e4b84a)] text-[var(--taq-color-112a46)]",
+      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-957d43)]/80`,
+      badgeActiveClass: "bg-[var(--taq-color-112a46)] text-white",
+      badgeInactiveClass: "bg-[var(--taq-color-112a46)]/[0.08] text-[var(--taq-color-827762)]",
+      contentSurfaceClass: "bg-[var(--taq-color-fffbf0)]",
+      contentAccentClass: "border-t-2 border-[var(--taq-color-e4b84a)]/45",
     },
     {
       id: "tasks",
       label: text(lang, "ownerNotebookTasks"),
       count: counts.tasks ?? 0,
-      activeClass: "bg-[#257844] text-white",
-      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[#257844]/75`,
+      activeClass: "bg-[var(--taq-color-257844)] text-white",
+      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-257844)]/75`,
       badgeActiveClass: "bg-white/20 text-white",
-      badgeInactiveClass: "bg-[#257844]/10 text-[#257844]",
-      contentSurfaceClass: "bg-[#F4FAF6]",
-      contentAccentClass: "border-t-2 border-[#257844]/40",
+      badgeInactiveClass: "bg-[var(--taq-color-257844)]/10 text-[var(--taq-color-257844)]",
+      contentSurfaceClass: "bg-[var(--taq-color-f4faf6)]",
+      contentAccentClass: "border-t-2 border-[var(--taq-color-257844)]/40",
     },
     {
       id: "notes",
       label: text(lang, "ownerNotebookNotes"),
       count: counts.notes ?? 0,
-      activeClass: "bg-[#214B7B] text-white",
-      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[#214B7B]/75`,
+      activeClass: "bg-[var(--taq-color-214b7b)] text-white",
+      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-214b7b)]/75`,
       badgeActiveClass: "bg-white/20 text-white",
-      badgeInactiveClass: "bg-[#214B7B]/10 text-[#214B7B]",
-      contentSurfaceClass: "bg-[#F5F8FC]",
-      contentAccentClass: "border-t-2 border-[#214B7B]/40",
+      badgeInactiveClass: "bg-[var(--taq-color-214b7b)]/10 text-[var(--taq-color-214b7b)]",
+      contentSurfaceClass: "bg-[var(--taq-color-f5f8fc)]",
+      contentAccentClass: "border-t-2 border-[var(--taq-color-214b7b)]/40",
     },
     {
       id: "done",
       label: text(lang, "ownerNotebookDone"),
       count: counts.done ?? 0,
-      activeClass: "bg-[#806528] text-white",
-      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[#806528]/75`,
+      activeClass: "bg-[var(--taq-color-806528)] text-white",
+      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-806528)]/75`,
       badgeActiveClass: "bg-white/20 text-white",
-      badgeInactiveClass: "bg-[#806528]/10 text-[#806528]",
-      contentSurfaceClass: "bg-[#FAF7F0]",
-      contentAccentClass: "border-t-2 border-[#806528]/40",
+      badgeInactiveClass: "bg-[var(--taq-color-806528)]/10 text-[var(--taq-color-806528)]",
+      contentSurfaceClass: "bg-[var(--taq-color-faf7f0)]",
+      contentAccentClass: "border-t-2 border-[var(--taq-color-806528)]/40",
     },
   ];
 }
@@ -112,7 +112,7 @@ export function NotebookViewTabs({ lang, active, onChange, tabCounts = {} }: { l
             className={`flex h-9 min-w-0 flex-1 items-center justify-center gap-1 px-1.5 text-[10px] font-black transition-all duration-200 ${
               isActive ? item.activeClass : item.inactiveClass
             } ${buildIndexTabBorderClass(index, items.length, isActive)} ${
-              index > 0 ? "border-s border-[#E8E1D4]/80" : ""
+              index > 0 ? "border-s border-[var(--taq-color-e8e1d4)]/80" : ""
             }`}
           >
             <span className="truncate leading-4">{item.label}</span>
@@ -136,7 +136,7 @@ function KindSegment({ lang, value, onChange, compact = false }: { lang: Display
     { id: "task", label: "ownerNotebookTask" },
   ];
   return (
-    <div className={`inline-flex shrink-0 rounded-full bg-[#F0ECE2]/80 ring-1 ring-[#E8E1D4] ${compact ? "p-0.5" : "p-1"}`}>
+    <div className={`inline-flex shrink-0 rounded-full bg-[var(--taq-color-f0ece2)]/80 ring-1 ring-[var(--taq-color-e8e1d4)] ${compact ? "p-0.5" : "p-1"}`}>
       {options.map((option) => (
         <button
           key={option.id}
@@ -144,7 +144,7 @@ function KindSegment({ lang, value, onChange, compact = false }: { lang: Display
           onClick={() => onChange(option.id)}
           className={`rounded-full font-black transition-colors duration-150 ${
             compact ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-taq-meta"
-          } ${value === option.id ? "bg-white text-[#112A46] shadow-sm" : "text-[#827762]"}`}
+          } ${value === option.id ? "bg-white text-[var(--taq-color-112a46)] shadow-sm" : "text-[var(--taq-color-827762)]"}`}
         >
           {text(lang, option.label)}
         </button>
@@ -222,7 +222,7 @@ function NoteTextFieldWithColorPicker({
         aria-label={text(lang, "notebookAppearance")}
         title={text(lang, color)}
         onClick={() => setPickerOpen((open) => !open)}
-        className={`absolute top-2 left-2 z-10 h-7 w-7 rounded-full border border-[#D9D1C1] shadow-sm ring-2 ring-white/80 transition-transform active:scale-95 ${
+        className={`absolute top-2 left-2 z-10 h-7 w-7 rounded-full border border-[var(--taq-color-d9d1c1)] shadow-sm ring-2 ring-white/80 transition-transform active:scale-95 ${
           pickerOpen ? "pointer-events-none opacity-0" : ""
         }`}
         style={{ backgroundColor: notebookThemes[color as NotebookThemeId]?.paper }}
@@ -231,7 +231,7 @@ function NoteTextFieldWithColorPicker({
         <div
           role="listbox"
           aria-label={text(lang, "notebookAppearance")}
-          className="absolute inset-0 z-20 flex min-h-[72px] items-center gap-1.5 overflow-x-auto rounded-lg bg-white/94 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] ring-1 ring-[#E8E1D4]/90 backdrop-blur-[2px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="absolute inset-0 z-20 flex min-h-[72px] items-center gap-1.5 overflow-x-auto rounded-lg bg-white/94 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] ring-1 ring-[var(--taq-color-e8e1d4)]/90 backdrop-blur-[2px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {NOTEBOOK_THEME_IDS.map((id) => {
             const active = color === id;
@@ -246,14 +246,14 @@ function NoteTextFieldWithColorPicker({
                 title={label}
                 onClick={() => handleSelect(id)}
                 className={`relative shrink-0 rounded-full border transition-transform active:scale-95 ${
-                  active ? "border-[#112A46] ring-2 ring-[#112A46]/15" : "border-[#D9D1C1]"
+                  active ? "border-[var(--taq-color-112a46)] ring-2 ring-[var(--taq-color-112a46)]/15" : "border-[var(--taq-color-d9d1c1)]"
                 }`}
               >
                 <span
                   className="block h-7 w-7 rounded-full"
                   style={{ backgroundColor: notebookThemes[id]?.paper }}
                 />
-                {active ? <Check className="absolute inset-0 m-auto h-3.5 w-3.5 text-[#112A46]" strokeWidth={3} /> : null}
+                {active ? <Check className="absolute inset-0 m-auto h-3.5 w-3.5 text-[var(--taq-color-112a46)]" strokeWidth={3} /> : null}
               </button>
             );
           })}
@@ -267,7 +267,7 @@ function NoteTextFieldWithColorPicker({
         rows={2}
         placeholder={placeholder}
         dir={lang === "ar" ? "rtl" : "ltr"}
-        className="min-h-[72px] w-full resize-none overflow-hidden bg-transparent py-2 pl-11 pr-3 text-taq-body-sm font-bold leading-6 text-[#112A46] outline-none placeholder:font-bold placeholder:text-[#A99D87]"
+        className="min-h-[72px] w-full resize-none overflow-hidden bg-transparent py-2 pl-11 pr-3 text-taq-body-sm font-bold leading-6 text-[var(--taq-color-112a46)] outline-none placeholder:font-bold placeholder:text-[var(--taq-color-a99d87)]"
       />
     </div>
   );
@@ -306,7 +306,7 @@ function TaskChecklistEditor({
     <div className="space-y-1.5">
       {items.map((item, index) => (
         <div key={item.id} className="flex items-center gap-1.5">
-          <span className="mt-0.5 h-4 w-4 shrink-0 rounded border border-[#D9D0C0] bg-white" />
+          <span className="mt-0.5 h-4 w-4 shrink-0 rounded border border-[var(--taq-color-d9d0c0)] bg-white" />
           <input
             type="text"
             value={item.text}
@@ -314,14 +314,14 @@ function TaskChecklistEditor({
             onKeyDown={(event) => handleKeyDown(event, item.id, index)}
             placeholder={text(lang, "ownerNotebookItemPlaceholder")}
             dir={lang === "ar" ? "rtl" : "ltr"}
-            className="min-w-0 flex-1 bg-transparent py-1 text-taq-body-sm font-bold text-[#112A46] outline-none placeholder:font-bold placeholder:text-[#A99D87]"
+            className="min-w-0 flex-1 bg-transparent py-1 text-taq-body-sm font-bold text-[var(--taq-color-112a46)] outline-none placeholder:font-bold placeholder:text-[var(--taq-color-a99d87)]"
           />
           {items.length > 1 ? (
             <button
               type="button"
               onClick={() => removeItem(item.id)}
               aria-label={text(lang, "delete")}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[#B44747]/80 hover:bg-[#FFF1EE]"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--taq-color-b44747)]/80 hover:bg-[var(--taq-color-fff1ee)]"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -331,7 +331,7 @@ function TaskChecklistEditor({
       <button
         type="button"
         onClick={onEnterOnLast}
-        className="inline-flex items-center gap-1 rounded-lg px-1 py-1 text-[10px] font-black text-[#827762] hover:text-[#112A46]"
+        className="inline-flex items-center gap-1 rounded-lg px-1 py-1 text-[10px] font-black text-[var(--taq-color-827762)] hover:text-[var(--taq-color-112a46)]"
       >
         <Plus className="h-3 w-3" />
         {text(lang, "ownerNotebookAddItem")}
@@ -352,13 +352,13 @@ function TaskChecklistDisplay({ lang, note, onToggleItem }: { lang: DisplayLang;
             aria-pressed={item.done}
             onClick={() => onToggleItem?.(item.id)}
             className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md ring-1 transition-colors duration-150 ${
-              item.done ? "bg-[#257844] text-white ring-[#257844]" : "bg-white text-transparent ring-[#D9D0C0] hover:ring-[#257844]/40"
+              item.done ? "bg-[var(--taq-color-257844)] text-white ring-[var(--taq-color-257844)]" : "bg-white text-transparent ring-[var(--taq-color-d9d0c0)] hover:ring-[var(--taq-color-257844)]/40"
             }`}
           >
             <Check className="h-3 w-3" />
           </button>
           <span className={`text-taq-body-sm font-bold leading-6 ${
-            item.done ? "text-[#A99D87] line-through" : "text-[#112A46]"
+            item.done ? "text-[var(--taq-color-a99d87)] line-through" : "text-[var(--taq-color-112a46)]"
           }`}
           >
             {item.text}
@@ -445,7 +445,7 @@ export function NoteComposerPanel({
 
   return (
     <article
-      className="overflow-hidden rounded-[18px] border border-[#E8E1D4] px-3 py-2.5 shadow-[0_6px_14px_rgba(17,42,70,0.05)]"
+      className="overflow-hidden rounded-[18px] border border-[var(--taq-color-e8e1d4)] px-3 py-2.5 shadow-[0_6px_14px_rgba(17,42,70,0.05)]"
       style={cardStyle}
     >
       <NoteTextFieldWithColorPicker
@@ -459,7 +459,7 @@ export function NoteComposerPanel({
         textareaRef={textareaRef}
       />
       {kind === "task" ? (
-        <div className="mt-2 border-t border-[#E8E1D4]/80 pt-2">
+        <div className="mt-2 border-t border-[var(--taq-color-e8e1d4)]/80 pt-2">
           <TaskChecklistEditor
             lang={lang}
             items={checklistItems}
@@ -476,7 +476,7 @@ export function NoteComposerPanel({
           type="button"
           onClick={submit}
           disabled={!canSubmitComposer({ kind, draft, checklistItems })}
-          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#112A46] px-3 py-2 text-[11px] font-black text-white disabled:opacity-45"
+          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--taq-color-112a46)] px-3 py-2 text-[11px] font-black text-white disabled:opacity-45"
         >
           <Plus className="h-3.5 w-3.5" />
           {text(lang, "ownerNotebookAdd")}
@@ -485,7 +485,7 @@ export function NoteComposerPanel({
           <button
             type="button"
             onClick={onCancel}
-            className="shrink-0 rounded-xl bg-white px-3 py-2 text-[11px] font-black text-[#827762] ring-1 ring-[#E8E1D4]"
+            className="shrink-0 rounded-xl bg-white px-3 py-2 text-[11px] font-black text-[var(--taq-color-827762)] ring-1 ring-[var(--taq-color-e8e1d4)]"
           >
             {text(lang, "cancel")}
           </button>
@@ -529,7 +529,7 @@ function NoteEditPanel({ lang, note, onSave, onCancel, onDelete }: {
   const canSave = canSubmitComposer({ kind, draft, checklistItems: kind === "task" ? checklistItems : [] });
 
   return (
-    <div className="border-t border-[#E8E1D4] px-3 py-2.5" style={cardStyle}>
+    <div className="border-t border-[var(--taq-color-e8e1d4)] px-3 py-2.5" style={cardStyle}>
       <NoteTextFieldWithColorPicker
         lang={lang}
         value={draft}
@@ -540,7 +540,7 @@ function NoteEditPanel({ lang, note, onSave, onCancel, onDelete }: {
         placeholder={kind === "task" ? text(lang, "ownerNotebookTaskTitle") : text(lang, "ownerNotebookPlaceholder")}
       />
       {kind === "task" ? (
-        <div className="mt-2 border-t border-[#E8E1D4]/80 pt-2">
+        <div className="mt-2 border-t border-[var(--taq-color-e8e1d4)]/80 pt-2">
           <TaskChecklistEditor
             lang={lang}
             items={checklistItems}
@@ -562,14 +562,14 @@ function NoteEditPanel({ lang, note, onSave, onCancel, onDelete }: {
             ...(kind === "task" ? { checklist } : { checklist: [] }),
           })}
           disabled={!canSave}
-          className="flex-1 rounded-xl bg-[#112A46] px-3 py-2 text-[11px] font-black text-white disabled:opacity-45"
+          className="flex-1 rounded-xl bg-[var(--taq-color-112a46)] px-3 py-2 text-[11px] font-black text-white disabled:opacity-45"
         >
           {text(lang, "save")}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="shrink-0 rounded-xl bg-white px-3 py-2 text-[11px] font-black text-[#827762] ring-1 ring-[#E8E1D4]"
+          className="shrink-0 rounded-xl bg-white px-3 py-2 text-[11px] font-black text-[var(--taq-color-827762)] ring-1 ring-[var(--taq-color-e8e1d4)]"
         >
           {text(lang, "cancel")}
         </button>
@@ -577,7 +577,7 @@ function NoteEditPanel({ lang, note, onSave, onCancel, onDelete }: {
           type="button"
           onClick={onDelete}
           aria-label={text(lang, "delete")}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#FFF1EE] text-[#B44747] ring-1 ring-[#B44747]/10"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--taq-color-fff1ee)] text-[var(--taq-color-b44747)] ring-1 ring-[var(--taq-color-b44747)]/10"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
@@ -615,12 +615,12 @@ export function NoteCard({
     boxShadow: notebookThemes[(note.color ?? "shami") as NotebookThemeId]?.shadow || undefined,
   };
   const accentColor = note.kind === "task"
-    ? (note.done ? "#A99D87" : "#257844")
-    : (notebookThemes[(note.color ?? "shami") as NotebookThemeId]?.margin || "#C28A30");
+    ? (note.done ? "var(--taq-color-a99d87)" : "var(--taq-color-257844)")
+    : (notebookThemes[(note.color ?? "shami") as NotebookThemeId]?.margin || "var(--taq-color-c28a30)");
 
   return (
     <article
-      className={`overflow-hidden rounded-[19px] border border-[#E8E1D4] shadow-[0_8px_18px_rgba(17,42,70,0.06)] transition-opacity duration-150 ${
+      className={`overflow-hidden rounded-[19px] border border-[var(--taq-color-e8e1d4)] shadow-[0_8px_18px_rgba(17,42,70,0.06)] transition-opacity duration-150 ${
         note.done && !hasChecklist ? "opacity-90" : ""
       }`}
       style={cardStyle}
@@ -633,7 +633,7 @@ export function NoteCard({
             aria-pressed={note.done}
             onClick={onToggleDone}
             className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1 transition-colors duration-150 ${
-              note.done ? "bg-[#257844] text-white ring-[#257844]" : "bg-white text-transparent ring-[#D9D0C0] hover:ring-[#257844]/40"
+              note.done ? "bg-[var(--taq-color-257844)] text-white ring-[var(--taq-color-257844)]" : "bg-white text-transparent ring-[var(--taq-color-d9d0c0)] hover:ring-[var(--taq-color-257844)]/40"
             }`}
           >
             <Check className="h-4 w-4" />
@@ -647,7 +647,7 @@ export function NoteCard({
               <Badge tone={note.kind === "task" ? (note.done ? "neutral" : "success") : "navy"}>
                 {note.kind === "task" ? text(lang, "ownerNotebookTask") : text(lang, "ownerNotebookNote")}
               </Badge>
-              <span className="text-[10px] font-bold text-[#A99D87]">{formatNoteTime(note.updatedAt, lang)}</span>
+              <span className="text-[10px] font-bold text-[var(--taq-color-a99d87)]">{formatNoteTime(note.updatedAt, lang)}</span>
             </div>
             {!editing ? (
               <div className="flex shrink-0 items-center gap-1">
@@ -655,7 +655,7 @@ export function NoteCard({
                   type="button"
                   onClick={() => onShare(note)}
                   aria-label={text(lang, "ownerNotebookShare")}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl text-[#827762] transition-colors duration-150 hover:bg-white/70 hover:text-[#112A46]"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl text-[var(--taq-color-827762)] transition-colors duration-150 hover:bg-white/70 hover:text-[var(--taq-color-112a46)]"
                 >
                   <Send className="h-3.5 w-3.5" />
                 </button>
@@ -663,7 +663,7 @@ export function NoteCard({
                   type="button"
                   onClick={onEdit}
                   aria-label={text(lang, "manage")}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl text-[#827762] transition-colors duration-150 hover:bg-white/70 hover:text-[#112A46]"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl text-[var(--taq-color-827762)] transition-colors duration-150 hover:bg-white/70 hover:text-[var(--taq-color-112a46)]"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
@@ -671,7 +671,7 @@ export function NoteCard({
                   type="button"
                   onClick={onDelete}
                   aria-label={text(lang, "delete")}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl text-[#B44747]/80 transition-colors duration-150 hover:bg-[#FFF1EE] hover:text-[#B44747]"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl text-[var(--taq-color-b44747)]/80 transition-colors duration-150 hover:bg-[var(--taq-color-fff1ee)] hover:text-[var(--taq-color-b44747)]"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -680,7 +680,7 @@ export function NoteCard({
           </div>
           {note.text ? (
             <p className={`whitespace-pre-wrap text-taq-body-sm font-bold leading-6 ${
-              note.done && !hasChecklist ? "text-[#A99D87] line-through" : "text-[#112A46]"
+              note.done && !hasChecklist ? "text-[var(--taq-color-a99d87)] line-through" : "text-[var(--taq-color-112a46)]"
             }`}
             >
               {note.text}
@@ -709,17 +709,17 @@ export function NoteCard({
 export function NotebookEmptyState({ lang, onAddNew }: { lang: DisplayLang; onAddNew: () => void }) {
   return (
     <div className="px-3 py-10 text-center">
-      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F7F5EF] text-[#806528] ring-1 ring-[#E8E1D4]">
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--taq-color-f7f5ef)] text-[var(--taq-color-806528)] ring-1 ring-[var(--taq-color-e8e1d4)]">
         <BookMarked className="h-5 w-5" />
       </div>
-      <p className="text-taq-body-sm font-black text-[#112A46]">{text(lang, "ownerNotebookEmpty")}</p>
-      <p className="mx-auto mt-2 max-w-[240px] text-taq-meta font-bold leading-5 text-[#827762]">
+      <p className="text-taq-body-sm font-black text-[var(--taq-color-112a46)]">{text(lang, "ownerNotebookEmpty")}</p>
+      <p className="mx-auto mt-2 max-w-[240px] text-taq-meta font-bold leading-5 text-[var(--taq-color-827762)]">
         {text(lang, "ownerNotebookEmptyCta")}
       </p>
       <button
         type="button"
         onClick={onAddNew}
-        className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-[#112A46] px-4 py-2.5 text-taq-meta font-black text-white"
+        className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-[var(--taq-color-112a46)] px-4 py-2.5 text-taq-meta font-black text-white"
       >
         <Plus className="h-4 w-4" />
         {text(lang, "ownerNotebookNew")}

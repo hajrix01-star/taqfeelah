@@ -70,7 +70,7 @@ function GalleryTile({
           attachmentApiContext={entryAttachmentApiContext}
           onOpen={(src) => onPreviewAttachment(src, shareContext)}
           className="aspect-square h-auto w-full rounded-xl"
-          buttonClassName="w-full overflow-hidden rounded-xl ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#112A46]/50 disabled:opacity-70"
+          buttonClassName="w-full overflow-hidden rounded-xl ring-1 ring-black/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--taq-color-112a46)]/50 disabled:opacity-70"
         />
       </div>
       <button
@@ -83,10 +83,10 @@ function GalleryTile({
             <RegisterStoreBadge label={storeLabel} />
           </div>
         ) : null}
-        <p className={`truncate text-[10px] font-bold leading-4 ${item.voided ? "text-[#A99D87] line-through" : "text-[#716753]"}`}>
+        <p className={`truncate text-[10px] font-bold leading-4 ${item.voided ? "text-[var(--taq-color-a99d87)] line-through" : "text-[var(--taq-color-716753)]"}`}>
           {operationLabel}
         </p>
-        <p className={`mt-0.5 text-[10px] font-black tabular-nums ${item.voided ? "text-[#A99D87] line-through" : "text-[#B44747]"}`}>
+        <p className={`mt-0.5 text-[10px] font-black tabular-nums ${item.voided ? "text-[var(--taq-color-a99d87)] line-through" : "text-[var(--taq-color-b44747)]"}`}>
           <MoneyValue value={money(-Number(item.amount || 0), lang)} />
         </p>
       </button>
@@ -116,7 +116,7 @@ function LazyGallerySection({ children, rootMargin = "320px" }: { children: Reac
 
   return (
     <section ref={ref} className="[content-visibility:auto] [contain-intrinsic-size:320px]">
-      {visible ? children : <div className="h-40 rounded-[18px] bg-white/70 ring-1 ring-[#E8E1D4]/70" aria-hidden="true" />}
+      {visible ? children : <div className="h-40 rounded-[18px] bg-white/70 ring-1 ring-[var(--taq-color-e8e1d4)]/70" aria-hidden="true" />}
     </section>
   );
 }
@@ -170,7 +170,7 @@ export function OwnerRegisterAttachmentsGallery({
 }) {
   if (loadError) {
     return (
-      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#B44747] ring-1 ring-[#B44747]/10">
+      <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[var(--taq-color-b44747)] ring-1 ring-[var(--taq-color-b44747)]/10">
         {loadErrorMessage}
       </div>
     );
@@ -179,13 +179,13 @@ export function OwnerRegisterAttachmentsGallery({
   if (!sections.length) {
     return (
       <div className="space-y-3">
-        <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[#827762] ring-1 ring-[#E8E1D4]">
+        <div className="rounded-[18px] bg-white px-4 py-8 text-center text-taq-meta font-bold text-[var(--taq-color-827762)] ring-1 ring-[var(--taq-color-e8e1d4)]">
           {registerEntriesApiEnabled && apiRegisterEntriesHasMore
             ? (lang === "ar" ? "جاري تحميل المرفقات…" : "Loading attachments…")
             : (emptyMessage || text(lang, "noOperationsMatch"))}
         </div>
         {registerEntriesApiEnabled && apiRegisterEntriesHasMore ? (
-          <div ref={registerLoadMoreRef} className="flex justify-center py-1 text-[10px] font-bold text-[#827762]">
+          <div ref={registerLoadMoreRef} className="flex justify-center py-1 text-[10px] font-bold text-[var(--taq-color-827762)]">
             {loadingMore
               ? (lang === "ar" ? "جاري تحميل المزيد…" : "Loading more…")
               : (lang === "ar" ? "جاري البحث في السجل…" : "Searching the log…")}
@@ -199,15 +199,15 @@ export function OwnerRegisterAttachmentsGallery({
     <div className="space-y-4">
       {sections.map((section) => (
         <LazyGallerySection key={section.id}>
-          <div className="overflow-hidden rounded-[18px] border border-[#E8E1D4]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
-            <div className="border-b border-[#F0EBE0] px-3.5 py-2.5">
-              <p className="text-taq-meta font-black text-[#112A46]">{section.heading}</p>
+          <div className="overflow-hidden rounded-[18px] border border-[var(--taq-color-e8e1d4)]/90 bg-white shadow-[0_2px_4px_rgba(17,42,70,0.04),0_8px_20px_rgba(17,42,70,0.06)]">
+            <div className="border-b border-[var(--taq-color-f0ebe0)] px-3.5 py-2.5">
+              <p className="text-taq-meta font-black text-[var(--taq-color-112a46)]">{section.heading}</p>
             </div>
             <div className="space-y-4 px-3.5 py-3.5">
               {section.days.map((day) => (
                 <div key={day.date}>
                   {section.days.length > 1 ? (
-                    <p className="mb-2 text-[10px] font-black text-[#806528]">{day.dateLabel}</p>
+                    <p className="mb-2 text-[10px] font-black text-[var(--taq-color-806528)]">{day.dateLabel}</p>
                   ) : null}
                   <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
                     {day.items.map((item) => (
@@ -232,7 +232,7 @@ export function OwnerRegisterAttachmentsGallery({
         </LazyGallerySection>
       ))}
       {registerEntriesApiEnabled && apiRegisterEntriesHasMore ? (
-        <div ref={registerLoadMoreRef} className="flex justify-center py-3 text-[10px] font-bold text-[#827762]">
+        <div ref={registerLoadMoreRef} className="flex justify-center py-3 text-[10px] font-bold text-[var(--taq-color-827762)]">
           {loadingMore
             ? (lang === "ar" ? "جاري تحميل المزيد…" : "Loading more…")
             : (lang === "ar" ? "مرر لتحميل المزيد" : "Scroll to load more")}
