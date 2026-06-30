@@ -1,12 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { storeAttachmentPayload } from "@/features/attachments/client/attachment-payload-storage";
 import { readDailyCloseouts } from "@/features/daily-closeouts/daily-closeouts-local-store";
-import { applyNotebookThemeCssVariables } from "@/features/daily-closeouts/notebook-themes";
 import { readEmployeeNotebookTheme } from "@/features/employee-closeouts/employee-theme-storage";
-import { isUuid } from "@/core/client/api-id-utils";
-import { resolveRuntimeApiActorContext, appendStoreIdsToApiKey, usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
+import { appendStoreIdsToApiKey, usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
 import { useEmployeeEntryActions } from "@/features/employee-shell/client/use-employee-entry-actions";
 import { useEmployeePortalState } from "@/features/employee-shell/client/use-employee-portal-state";
 import { useOwnerSettingsState } from "@/features/org-config/client/use-owner-settings-state";
@@ -19,9 +17,7 @@ import {
   useTaqfeelahAppSessionState,
   useTaqfeelahAppSessionSync,
 } from "@/features/auth/client/use-taqfeelah-app-session";
-import { createTaqfeelahAppAuthHandlers } from "@/features/auth/client/taqfeelah-app-auth-handlers";
 import { formatCalendarDate } from "@/features/reports/client/report-period-labels";
-import { resolveOwnerSettingsApiAuth } from "@/features/runtime-settings/client/runtime-settings-bridge";
 import { EMPTY_STORE_CHANNEL_CONFIG } from "@/features/org-config/client/store-channel-config";
 import {
   DEFAULT_STORE_CHANNEL_CONFIG,
@@ -59,6 +55,9 @@ import { useTaqfeelahAppOwnerSaveActions } from "./use-taqfeelah-app-owner-save-
 import { useTaqfeelahAppOwnerCloseoutActions } from "./use-taqfeelah-app-owner-closeout-actions";
 import { useTaqfeelahAppRuntimeApiBundle } from "./use-taqfeelah-app-runtime-api-bundle";
 import { useTaqfeelahSavingState } from "./use-taqfeelah-saving-state";
+import { useTaqfeelahRuntimeApiContext } from "./use-taqfeelah-runtime-api-context";
+import { useTaqfeelahAuthActions } from "./use-taqfeelah-auth-actions";
+import { useTaqfeelahNotebookThemeEffect } from "./use-taqfeelah-notebook-theme-effect";
 import type { CreateOperationalEntryInApiParams } from "@/features/operations/client/operations-client-types";
 import type { NotebookThemeId } from "./taqfeelah-app-types";
 import type { StoreRef } from "@/features/daily-closeouts/daily-closeouts-types";
@@ -211,45 +210,36 @@ export function useTaqfeelahAppState() {
     setEmployeeThemeOverride: setEmployeeThemeOverride as import("@/features/entries/client/entries-client-types").SetState<string | null>,
   });
 
+  const runtimeApiContext = useTaqfeelahRuntimeApiContext({
+    bindsToServerAuth: BINDS_TO_SERVER_AUTH,
+    orgConfigApiEnabled: ORG_CONFIG_API_ENABLED,
+    employee,
+    loggedIn,
+    employeeRuntimeReady,
+    sessionOrganizationId,
+    sessionUserId,
+    activeEmployee,
+    assignedEmployeeBusinesses,
+    activeBusinesses,
+    ownerOrgConfigReady,
+  });
+
   const {
     closeoutsApiEnabled,
     closeoutsApiStrictMode,
     entriesApiEnabled,
     entriesApiStrictMode,
     phase9ApiEnabled,
-    organizationId: closeoutsApiOrganizationId,
+    closeoutsApiOrganizationId,
     ownerApiUserId,
     apiActorRole,
     apiActorUserId,
     apiTargetStoreIdsKey,
-  } = resolveRuntimeApiActorContext({
-    employee,
-    sessionOrganizationId,
-    sessionUserId,
-    activeEmployee,
-    assignedEmployeeBusinesses,
-    operationalBusinesses: activeBusinesses,
-  });
-
-  const runtimeApiStoresReady = useMemo(
-    () => {
-      if (!ORG_CONFIG_API_ENABLED) return true;
-      if (employee) {
-        return employeeRuntimeReady && Boolean(apiTargetStoreIdsKey);
-      }
-      return ownerOrgConfigReady && Boolean(apiTargetStoreIdsKey);
-    },
-    [apiTargetStoreIdsKey, employee, employeeRuntimeReady, ownerOrgConfigReady],
-  );
-
-  const runtimeApiAuth = useMemo(
-    () => resolveOwnerSettingsApiAuth({
-      sessionOrganizationId,
-      sessionUserId,
-      actorRole: employee ? "employee" : "owner",
-    }),
-    [employee, sessionOrganizationId, sessionUserId],
-  );
+    runtimeApiStoresReady,
+    runtimeApiAuth,
+    ownerNotebookApiEnabled,
+    operationalSyncEnabled,
+  } = runtimeApiContext;
 
   const registerSelection = useRegisterSelectionState({
     archivedBusinessIds: archivedBusinessIds as never,
@@ -372,78 +362,41 @@ export function useTaqfeelahAppState() {
     storeChannelSettings,
   });
 
-  const authHandlers = useMemo(
-    () => createTaqfeelahAppAuthHandlers({
-      staff: staff as import("@/features/auth/client/auth-client-types").AuthStaffMember[],
-      setStaff,
-      activeBusinesses: activeBusinesses as import("@/features/auth/client/auth-client-types").AuthActiveBusiness[],
-      setSessionOrganizationId,
-      setSessionUserId,
-      setLoggedIn,
-      setEmployee,
-      setLoggedInEmployeeId,
-      setAuthScreen,
-      setEmployeeBusinessId,
-      setEmployeeThemeOverride,
-      setEmployeePage,
-      setOwnerPage,
-      setOwnerManageCloseout,
-      setSelected,
-      setVoidTarget,
-      setRestoreTarget,
-      setSavedOutflowShareTarget,
-      setPendingDuplicateSummary,
-      setDuplicateSummaryFocus,
-      setShareSnapshot,
-      setQuickAddOpen,
-      setArchivedReadOnlyBusinessId,
-      setSelectedBusiness,
-      setOperationalEntries,
-      setConfiguredBusinesses,
-      setArchivedBusinessIds,
-      setAuthOwnerUsername,
-      setAuthOwnerPassword,
-      setAuthEmployeePins,
-      setOwnerProfile,
-      setMustChangePassword,
-      setSessionDisplayName,
-    } as import("@/features/auth/client/taqfeelah-app-auth-handlers").TaqfeelahAppAuthHandlerDeps),
-    [
-      activeBusinesses,
-      setArchivedBusinessIds,
-      setArchivedReadOnlyBusinessId,
-      setAuthEmployeePins,
-      setAuthOwnerPassword,
-      setAuthOwnerUsername,
-      setAuthScreen,
-      setConfiguredBusinesses,
-      setDuplicateSummaryFocus,
-      setEmployee,
-      setEmployeeBusinessId,
-      setEmployeePage,
-      setEmployeeThemeOverride,
-      setLoggedIn,
-      setLoggedInEmployeeId,
-      setOperationalEntries,
-      setOwnerPage,
-      setOwnerProfile,
-      setMustChangePassword,
-      setSessionDisplayName,
-      setOwnerManageCloseout,
-      setPendingDuplicateSummary,
-      setQuickAddOpen,
-      setSavedOutflowShareTarget,
-      setSelected,
-      setSelectedBusiness,
-      setSessionOrganizationId,
-      setSessionUserId,
-      setShareSnapshot,
-      setStaff,
-      setVoidTarget,
-      setRestoreTarget,
-      staff,
-    ],
-  );
+  const authHandlers = useTaqfeelahAuthActions({
+    staff: staff as import("@/features/auth/client/auth-client-types").AuthStaffMember[],
+    setStaff,
+    activeBusinesses: activeBusinesses as import("@/features/auth/client/auth-client-types").AuthActiveBusiness[],
+    setSessionOrganizationId,
+    setSessionUserId,
+    setLoggedIn,
+    setEmployee,
+    setLoggedInEmployeeId,
+    setAuthScreen,
+    setEmployeeBusinessId,
+    setEmployeeThemeOverride,
+    setEmployeePage,
+    setOwnerPage,
+    setOwnerManageCloseout,
+    setSelected,
+    setVoidTarget,
+    setRestoreTarget,
+    setSavedOutflowShareTarget,
+    setPendingDuplicateSummary,
+    setDuplicateSummaryFocus,
+    setShareSnapshot,
+    setQuickAddOpen,
+    setArchivedReadOnlyBusinessId,
+    setSelectedBusiness,
+    setOperationalEntries,
+    setConfiguredBusinesses,
+    setArchivedBusinessIds,
+    setAuthOwnerUsername,
+    setAuthOwnerPassword,
+    setAuthEmployeePins,
+    setOwnerProfile,
+    setMustChangePassword,
+    setSessionDisplayName,
+  } as import("@/features/auth/client/taqfeelah-app-auth-handlers").TaqfeelahAppAuthHandlerDeps);
 
   const {
     completeOwnerLogin,
@@ -477,9 +430,7 @@ export function useTaqfeelahAppState() {
   const activeBusinessIds = activeBusinesses.map((business) => business.id);
   const todayDate = todayIsoDate();
 
-  useEffect(() => {
-    applyNotebookThemeCssVariables(employee ? employeeNotebookTheme : notebookTheme);
-  }, [employee, employeeNotebookTheme, notebookTheme]);
+  useTaqfeelahNotebookThemeEffect({ employee, employeeNotebookTheme, notebookTheme });
 
   const closeoutsApi = useTaqfeelahAppCloseoutsApi({
     lang,
@@ -587,13 +538,6 @@ export function useTaqfeelahAppState() {
     notifyOperationalSyncWrite,
   });
 
-  const ownerNotebookApiEnabled = useMemo(
-    () => BINDS_TO_SERVER_AUTH
-      && isUuid(closeoutsApiOrganizationId)
-      && isUuid(ownerApiUserId),
-    [closeoutsApiOrganizationId, ownerApiUserId],
-  );
-
   const apiBundle = useTaqfeelahAppRuntimeApiBundle({
     closeoutsApiDbSource: CLOSEOUTS_API_DB_SOURCE,
     closeoutsApiEnabled,
@@ -613,20 +557,6 @@ export function useTaqfeelahAppState() {
     runtimeSettingsSyncError,
     orgConfigSyncError,
   });
-
-  const operationalSyncEnabled = useMemo(
-    () => loggedIn
-      && runtimeApiStoresReady
-      && isUuid(closeoutsApiOrganizationId)
-      && (closeoutsApiEnabled || entriesApiEnabled),
-    [
-      closeoutsApiEnabled,
-      closeoutsApiOrganizationId,
-      entriesApiEnabled,
-      loggedIn,
-      runtimeApiStoresReady,
-    ],
-  );
 
   return {
     lang,
