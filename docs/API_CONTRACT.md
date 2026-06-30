@@ -215,13 +215,16 @@ Query (optional):
 - `dateFrom=YYYY-MM-DD`
 - `dateTo=YYYY-MM-DD`
 - `status=active|voided|all` (default: `all`)
-- `limit` (default 500, max 1000)
+- `limit` (default 50, max 100)
+- `cursor` opaque pagination cursor
 
 Behavior:
 
 - Returns scoped operational entries for one store ordered by date/time desc.
 - Hydrates summary channels from `entry_sales_channels`.
 - Includes closeout linkage when entries were created from closeout submission audit metadata.
+- Always returns `{ items, nextCursor }`; it never returns a bare array.
+- `limit > 100` is rejected with `400`.
 
 ### `POST /stores/:storeId/entries` (implemented)
 
@@ -366,17 +369,11 @@ Query:
 | `dateFrom` | date |
 | `dateTo` | date |
 | `status` | `active` \| `voided` \| `all` |
-| `limit` | default 500 (bulk) or 50 when paginated |
+| `limit` | default 50, max 100 |
 | `cursor` | opaque (Phase 6) |
-| `paginated` | `1` to return `{ items, nextCursor }` |
+| `paginated` | legacy no-op; response is always `{ items, nextCursor }` |
 
-Response (bulk — default):
-
-```json
-[ { "id", "type", "date", "amount", "status", "note", ... } ]
-```
-
-Response (paginated — `paginated=1` or `cursor` present):
+Response:
 
 ```json
 {
@@ -385,7 +382,7 @@ Response (paginated — `paginated=1` or `cursor` present):
 }
 ```
 
-**Never** return unbounded arrays in paginated mode.
+**Never** return unbounded arrays from this endpoint.
 
 ### `GET /entries` (planned — org-wide register)
 
@@ -525,6 +522,69 @@ Response:
 ```
 
 Amounts are returned in riyals (display units). Notebook share UI may still use loaded entries until wired behind `NEXT_PUBLIC_PHASE9_API_ENABLED`.
+
+### `POST /exports/estimate` (implemented)
+
+Estimates whether a register operations export should be direct or link-based.
+
+Body:
+
+```json
+{
+  "storeId": "uuid",
+  "period": "year",
+  "from": "2026-01-01",
+  "to": "2026-12-31",
+  "format": "excel"
+}
+```
+
+Response:
+
+```json
+{
+  "type": "register_operations",
+  "estimatedRows": 19000,
+  "mode": "async",
+  "recommendedFormat": "excel",
+  "reason": "large_export",
+  "maxRows": 20000
+}
+```
+
+### `POST /exports/jobs` (implemented)
+
+Creates a server-side register operations export job and returns a download URL when ready. Large register exports currently support Excel only.
+
+Rules:
+
+- direct export threshold: `2000` rows
+- link-based Excel threshold: up to `20000` rows
+- above `20000` rows returns validation error
+- generated files expire after 72 hours
+
+Response:
+
+```json
+{
+  "job": {
+    "id": "uuid",
+    "type": "register_operations",
+    "format": "excel",
+    "status": "ready",
+    "rowCount": 19000,
+    "downloadUrl": "/api/v1/exports/jobs/uuid/download"
+  }
+}
+```
+
+### `GET /exports/jobs/:jobId` (implemented)
+
+Returns export job status for an authorized user.
+
+### `GET /exports/jobs/:jobId/download` (implemented)
+
+Downloads a ready export file. Requires organization/store access and refuses expired or non-ready jobs.
 
 ---
 

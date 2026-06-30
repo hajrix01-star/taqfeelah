@@ -41,7 +41,7 @@ describe("entries route integration", () => {
     expect(listStoreEntries).not.toHaveBeenCalled();
   });
 
-  it("GET returns entry items for non-paginated list", async () => {
+  it("GET returns paginated entry payload by default", async () => {
     listStoreEntries.mockResolvedValueOnce({
       items: [{ id: "entry-1", type: "summary", status: "active" }],
       nextCursor: null,
@@ -54,13 +54,14 @@ describe("entries route integration", () => {
     );
 
     expect(response.status).toBe(200);
-    const body = await readJsonBody<Array<{ id: string }>>(response);
-    expect(body).toHaveLength(1);
-    expect(body[0].id).toBe("entry-1");
+    const body = await readJsonBody<{ items: Array<{ id: string }>; nextCursor: string | null }>(response);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0].id).toBe("entry-1");
+    expect(body.nextCursor).toBeNull();
     expect(listStoreEntries).toHaveBeenCalledWith(expect.objectContaining({
       status: "active",
-      paginated: false,
-      limit: 500,
+      paginated: true,
+      limit: 50,
     }));
   });
 
@@ -84,6 +85,17 @@ describe("entries route integration", () => {
       paginated: true,
       limit: 25,
     }));
+  });
+
+  it("GET rejects limits above 100", async () => {
+    const { GET } = await import("../stores/[storeId]/entries/route");
+    const response = await GET(
+      ownerRequest(`http://localhost/api/v1/stores/${TEST_STORE_ID}/entries?status=active&limit=101`),
+      routeStoreContext(),
+    );
+
+    expect(response.status).toBe(400);
+    expect(listStoreEntries).not.toHaveBeenCalled();
   });
 
   it("POST creates store entry when closeoutId is provided", async () => {

@@ -1,11 +1,11 @@
-import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/core/db/client";
 import { entries } from "@/core/db/schema";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { type MemberRole } from "@/core/auth/roles";
 import { ValidationError } from "@/core/errors/app-error";
-import { calculateDaySummary } from "@/domain/cash-movement/calculations";
+import { formatOutflowRatio } from "@/core/money/halalas";
 import { queryAttachmentStatsForStoreScope } from "@/features/reports/server/attachment-stats-query";
 import { assertBoundedReportRange } from "@/features/reports/server/report-date-range";
 import { mergeEntryScopeWithCloseoutLink } from "@/features/entries/server/closeout-linked-entry-filter";
@@ -52,19 +52,20 @@ export async function getStorePeriodSummary(rawInput: z.infer<typeof inputSchema
     ),
   );
 
-  const rows = await db
+  const [totals] = await db
     .select({
-      type: entries.type,
-      amountHalalas: entries.amountHalalas,
+      salesHalalas: sql<number>`coalesce(sum(case when ${entries.type} = 'summary' then ${entries.amountHalalas} else 0 end), 0)::int`,
+      outflowHalalas: sql<number>`coalesce(sum(case when ${entries.type} in ('purchases', 'expense', 'withdrawal') then ${entries.amountHalalas} else 0 end), 0)::int`,
     })
     .from(entries)
     .where(entryScope);
 
-  const result = calculateDaySummary(
-    rows.map((row) => ({
-      type: row.type as (typeof ALLOWED_TYPES)[number],
-      amountHalalas: row.amountHalalas,
-    })),
+  const totalSalesHalalas = Number(totals?.salesHalalas || 0);
+  const totalOutflowHalalas = Number(totals?.outflowHalalas || 0);
+  const netMovementHalalas = totalSalesHalalas - totalOutflowHalalas;
+  const { ratio: outflowRatio, status: outflowRatioStatus } = formatOutflowRatio(
+    totalSalesHalalas,
+    totalOutflowHalalas,
   );
 
   const attachmentStats = await queryAttachmentStatsForStoreScope(
@@ -78,11 +79,11 @@ export async function getStorePeriodSummary(rawInput: z.infer<typeof inputSchema
     storeId: input.storeId,
     from: range.from,
     to: range.to,
-    totalSales: { amountHalalas: result.totalSalesHalalas, currency: "SAR" as const },
-    totalOutflow: { amountHalalas: result.totalOutflowHalalas, currency: "SAR" as const },
-    netMovement: { amountHalalas: result.netMovementHalalas, currency: "SAR" as const },
-    outflowRatio: result.outflowRatio,
-    outflowRatioStatus: result.outflowRatioStatus,
+    totalSales: { amountHalalas: totalSalesHalalas, currency: "SAR" as const },
+    totalOutflow: { amountHalalas: totalOutflowHalalas, currency: "SAR" as const },
+    netMovement: { amountHalalas: netMovementHalalas, currency: "SAR" as const },
+    outflowRatio,
+    outflowRatioStatus,
     attachmentCount: attachmentStats.attachmentCount,
   };
 }

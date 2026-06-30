@@ -55,8 +55,12 @@ vi.mock("@/core/db/client", () => ({
             return Promise.resolve([{ entryId: "11111111-1111-4111-8111-111111111111" }]);
           }
           return {
-            orderBy: async () => entryRows,
-            limit: limitSpy,
+            orderBy: () => ({
+              limit: async (value: number) => {
+                limitSpy(value);
+                return entryRows;
+              },
+            }),
           };
         },
       }),
@@ -91,6 +95,6 @@ describe("getNotebookExport", () => {
     }]);
     expect(result.operations).toHaveLength(2);
     expect(result.operations[0].hasAttachment).toBe(true);
-    expect(limitSpy).not.toHaveBeenCalled();
+    expect(limitSpy).toHaveBeenCalledWith(20001);
   }, 15_000);
 });

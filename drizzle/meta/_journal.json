@@ -176,6 +176,13 @@
       "when": 1782327600000,
       "tag": "0025_organization_member_soft_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1782925200000,
+      "tag": "0026_export_jobs",
+      "breakpoints": true
     }
   ]
 }

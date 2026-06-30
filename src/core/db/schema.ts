@@ -866,3 +866,54 @@ export const ownerNotebookNotes = pgTable(
     ),
   }),
 );
+
+export const exportJobs = pgTable(
+  "export_jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id, { onDelete: "cascade" }),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    type: text("type").notNull(),
+    format: text("format").notNull(),
+    status: text("status").notNull().default("pending"),
+    filters: jsonb("filters").notNull().default({}),
+    rowCount: integer("row_count").notNull().default(0),
+    filePath: text("file_path"),
+    fileName: text("file_name"),
+    mimeType: text("mime_type"),
+    errorMessage: text("error_message"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt,
+    updatedAt,
+  },
+  (table) => ({
+    orgUserStatusIdx: index("export_jobs_org_user_status_idx").on(
+      table.organizationId,
+      table.createdByUserId,
+      table.status,
+      table.createdAt,
+    ),
+    orgStoreCreatedIdx: index("export_jobs_org_store_created_idx").on(
+      table.organizationId,
+      table.storeId,
+      table.createdAt,
+    ),
+    statusExpiresIdx: index("export_jobs_status_expires_idx").on(table.status, table.expiresAt),
+    storeTenantFk: foreignKey({
+      name: "export_jobs_org_store_fk",
+      columns: [table.organizationId, table.storeId],
+      foreignColumns: [stores.organizationId, stores.id],
+    }).onDelete("cascade"),
+    statusCheck: check("export_jobs_status_chk", sql`${table.status} in ('pending', 'processing', 'ready', 'failed')`),
+    formatCheck: check("export_jobs_format_chk", sql`${table.format} in ('excel', 'csv')`),
+    typeCheck: check("export_jobs_type_chk", sql`${table.type} in ('register_operations')`),
+    rowCountCheck: check("export_jobs_row_count_nonnegative_chk", sql`${table.rowCount} >= 0`),
+  }),
+);

@@ -33,9 +33,11 @@ export async function GET(request: Request, context: RouteContext) {
     if (typeof parsedLimit === "number" && (!Number.isInteger(parsedLimit) || parsedLimit <= 0)) {
       throw new ValidationError("Query param 'limit' must be a positive integer.");
     }
+    if (typeof parsedLimit === "number" && parsedLimit > 100) {
+      throw new ValidationError("Query param 'limit' must be less than or equal to 100.");
+    }
 
     const cursor = searchParams.get("cursor") || undefined;
-    const paginated = searchParams.get("paginated") === "1" || Boolean(cursor);
 
     const result = await listStoreEntries({
       organizationId: requestContext.organizationId,
@@ -45,16 +47,12 @@ export async function GET(request: Request, context: RouteContext) {
       dateFrom: searchParams.get("dateFrom") || undefined,
       dateTo: searchParams.get("dateTo") || undefined,
       status: statusRaw,
-      limit: parsedLimit ?? (paginated ? 50 : 500),
+      limit: parsedLimit ?? 50,
       cursor,
-      paginated,
+      paginated: true,
     });
 
-    if (paginated) {
-      return ok(result);
-    }
-
-    return ok(result.items);
+    return ok(result);
   } catch (error) {
     return fail(error);
   }

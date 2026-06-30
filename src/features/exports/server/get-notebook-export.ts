@@ -19,6 +19,7 @@ const inputSchema = z.object({
 });
 
 const ALLOWED_TYPES = ["summary", "purchases", "expense", "withdrawal"] as const;
+const MAX_NOTEBOOK_EXPORT_OPERATIONS = 20_000;
 
 function toRiyals(halalas: number): number {
   return Number((halalas / 100).toFixed(2));
@@ -71,7 +72,12 @@ export async function getNotebookExport(rawInput: z.infer<typeof inputSchema>) {
         inArray(entries.type, ALLOWED_TYPES),
       ),
     )
-    .orderBy(desc(entries.date), desc(entries.createdAt));
+    .orderBy(desc(entries.date), desc(entries.createdAt))
+    .limit(MAX_NOTEBOOK_EXPORT_OPERATIONS + 1);
+
+  if (entryRows.length > MAX_NOTEBOOK_EXPORT_OPERATIONS) {
+    throw new ValidationError(`Notebook export cannot exceed ${MAX_NOTEBOOK_EXPORT_OPERATIONS} operations. Narrow the date range and retry.`);
+  }
 
   const entryIds = entryRows.map((row) => row.id);
   const channelRows = entryIds.length

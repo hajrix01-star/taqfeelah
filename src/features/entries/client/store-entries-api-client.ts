@@ -42,18 +42,12 @@ function assertEntriesApiContext(
   }
 }
 
-function resolveEntriesItemsPayload(payload: unknown, resource: string): OperationalEntry[] {
-  if (Array.isArray(payload)) return payload as OperationalEntry[];
-  if (payload && typeof payload === "object" && Array.isArray((payload as { items?: unknown }).items)) {
-    return (payload as { items: OperationalEntry[] }).items;
-  }
-  throw new Error(`${resource} API returned invalid payload.`);
-}
-
 type EntriesPagePayload = {
   items: OperationalEntry[];
   nextCursor?: string | null;
 };
+
+const MAX_FETCH_ALL_ENTRY_PAGES = 500;
 
 function assertEntriesPagePayload(payload: unknown): asserts payload is EntriesPagePayload {
   if (!payload || typeof payload !== "object" || Array.isArray(payload) || !Array.isArray((payload as EntriesPagePayload).items)) {
@@ -104,31 +98,33 @@ export async function fetchStoreEntriesViaApi({
   dateFrom = "",
   dateTo = "",
   status = "all",
-  limit = 800,
+  limit = 50,
 }: FetchStoreEntriesParams): Promise<OperationalEntry[]> {
-  const context = resolveRuntimeApiContext({ organizationId, actorUserId, actorRole, storeId });
-  assertEntriesApiContext(context, "entries fetch");
-
-  const search = new URLSearchParams();
-  if (typeof dateFrom === "string" && dateFrom) search.set("dateFrom", dateFrom);
-  if (typeof dateTo === "string" && dateTo) search.set("dateTo", dateTo);
-  if (status === "active" || status === "voided" || status === "all") search.set("status", status);
-  if (Number.isInteger(limit) && limit > 0) search.set("limit", String(limit));
-
-  const payload = await fetchApiJsonWithRuntimeContext(
-    `/api/v1/stores/${context.storeId}/entries?${search.toString()}`,
-    {
+  const items: OperationalEntry[] = [];
+  const totalLimit = Number.isInteger(limit) && limit > 0 ? limit : 50;
+  const pageLimit = Math.min(totalLimit, 100);
+  let cursor = "";
+  let pageCount = 0;
+  do {
+    pageCount += 1;
+    if (pageCount > MAX_FETCH_ALL_ENTRY_PAGES) {
+      throw new Error("entries fetch exceeded the maximum page safety bound.");
+    }
+    const page = await fetchStoreEntriesPageViaApi({
       organizationId,
       actorUserId,
       actorRole,
-      errorMessage: "entries fetch api failed",
-      errorStyle: "status",
-    },
-  );
-
-  const { storeIdMap, salesChannelIdMap } = getMaps();
-  const items = resolveEntriesItemsPayload(payload, "entries fetch");
-  return mapEntryItems(items, { storeId, storeIdMap, salesChannelIdMap });
+      storeId,
+      dateFrom,
+      dateTo,
+      status,
+      limit: pageLimit,
+      cursor,
+    });
+    items.push(...page.items);
+    cursor = page.nextCursor || "";
+  } while (cursor && items.length < totalLimit);
+  return items.slice(0, totalLimit);
 }
 
 export async function fetchStoreEntriesPageViaApi({
@@ -145,7 +141,7 @@ export async function fetchStoreEntriesPageViaApi({
   const context = resolveRuntimeApiContext({ organizationId, actorUserId, actorRole, storeId });
   assertEntriesApiContext(context, "entries page");
 
-  const search = new URLSearchParams({ paginated: "1" });
+  const search = new URLSearchParams();
   if (typeof dateFrom === "string" && dateFrom) search.set("dateFrom", dateFrom);
   if (typeof dateTo === "string" && dateTo) search.set("dateTo", dateTo);
   if (status === "active" || status === "voided" || status === "all") search.set("status", status);

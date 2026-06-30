@@ -251,10 +251,46 @@ async function getOutflowReport(from, to) {
 }
 
 async function getRegisterEntries(date) {
-  return callJson(`${baseUrl}/api/v1/stores/${storeId}/entries?status=active&limit=500&dateFrom=${date}&dateTo=${date}`, {
-    method: "GET",
-    headers: requestHeaders("owner", ownerUserId),
+  return listEntries({
+    status: "active",
+    dateFrom: date,
+    dateTo: date,
+    role: "owner",
+    userId: ownerUserId,
   });
+}
+
+async function listEntries({
+  targetStoreId = storeId,
+  status = "active",
+  dateFrom = "",
+  dateTo = "",
+  role = "owner",
+  userId = ownerUserId,
+  limit = 100,
+} = {}) {
+  const items = [];
+  let cursor = "";
+  let pageCount = 0;
+  do {
+    pageCount += 1;
+    assert(pageCount <= 500, "entries pagination exceeded safety bound");
+    const query = new URLSearchParams({
+      status,
+      limit: String(limit),
+    });
+    if (dateFrom) query.set("dateFrom", dateFrom);
+    if (dateTo) query.set("dateTo", dateTo);
+    if (cursor) query.set("cursor", cursor);
+    const page = await callJson(`${baseUrl}/api/v1/stores/${targetStoreId}/entries?${query}`, {
+      method: "GET",
+      headers: requestHeaders(role, userId),
+    });
+    assert(page && typeof page === "object" && Array.isArray(page.items), "entries list must return { items, nextCursor }");
+    items.push(...page.items);
+    cursor = typeof page.nextCursor === "string" ? page.nextCursor : "";
+  } while (cursor);
+  return items;
 }
 
 function summarizeRegisterEntries(entries) {
@@ -452,11 +488,8 @@ async function main() {
   assert(standaloneResponse.status === 400, `expected 400 for standalone entry, got ${standaloneResponse.status}`);
 
   console.log("14) Active entries list excludes orphan rows without closeoutId...");
-  const activeEntries = await callJson(`${baseUrl}/api/v1/stores/${storeId}/entries?status=active&limit=500`, {
-    method: "GET",
-    headers: requestHeaders("owner", ownerUserId),
-  });
-  const orphanLike = (Array.isArray(activeEntries) ? activeEntries : activeEntries?.items || []).filter((item) => !item?.closeoutId);
+  const activeEntries = await listEntries({ status: "active", role: "owner", userId: ownerUserId });
+  const orphanLike = activeEntries.filter((item) => !item?.closeoutId);
   assert(orphanLike.length === 0, `expected no active list entries without closeoutId, got ${orphanLike.length}`);
 
   console.log("\n✅ DB source-unification P0 smoke passed.");

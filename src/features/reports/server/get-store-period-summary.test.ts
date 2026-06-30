@@ -1,30 +1,34 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/core/auth/assert-store-access", () => ({
   assertStoreAccess: vi.fn(async () => undefined),
 }));
 
-const movementRows = [
-  { type: "summary", amountHalalas: 200000 },
-  { type: "purchases", amountHalalas: 15000 },
-  { type: "expense", amountHalalas: 10000 },
-];
+const periodTotals = [{ salesHalalas: 200000, outflowHalalas: 25000 }];
 const attachmentStats = [{ attachmentCount: 3 }];
+const selectedFieldKeys: string[][] = [];
 
 vi.mock("@/core/db/client", () => ({
   getDb: () => ({
-    select: () => ({
+    select: (fields: Record<string, unknown>) => {
+      selectedFieldKeys.push(Object.keys(fields));
+      return {
       from: () => ({
-        where: async () => movementRows,
+        where: async () => periodTotals,
         leftJoin: () => ({
           where: async () => attachmentStats,
         }),
       }),
-    }),
+    };
+    },
   }),
 }));
 
 describe("getStorePeriodSummary", () => {
+  beforeEach(() => {
+    selectedFieldKeys.length = 0;
+  });
+
   it("returns SQL period totals with attachment counts", async () => {
     const { getStorePeriodSummary } = await import("./get-store-period-summary");
     const summary = await getStorePeriodSummary({
@@ -41,5 +45,7 @@ describe("getStorePeriodSummary", () => {
     expect(summary.netMovement.amountHalalas).toBe(175000);
     expect(summary.attachmentCount).toBe(3);
     expect(summary).not.toHaveProperty("pendingReviewCount");
+    expect(selectedFieldKeys).toContainEqual(["salesHalalas", "outflowHalalas"]);
+    expect(selectedFieldKeys).not.toContainEqual(["type", "amountHalalas"]);
   });
 });
