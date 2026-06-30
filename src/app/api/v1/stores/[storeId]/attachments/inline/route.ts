@@ -1,43 +1,30 @@
-import { fail, ok } from "@/core/http/api-response";
-import { ServiceUnavailableError } from "@/core/errors/app-error";
-import { readEnv } from "@/core/config/env";
-import { resolveRequestContext } from "@/core/auth/request-context";
 import { assertStoreAccess } from "@/core/auth/assert-store-access";
 import { registerAttachment } from "@/core/attachments/register-attachment";
+import { readJsonBody, withAuthedApiRoute } from "@/core/http/api-route-handler";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = {
-  params: Promise<{ storeId: string }>;
-};
+type RegisterAttachmentInput = Parameters<typeof registerAttachment>[0];
 
-export async function POST(request: Request, context: RouteContext) {
-  try {
-    const env = readEnv();
-    if (!env.DATABASE_URL) {
-      throw new ServiceUnavailableError("DATABASE_URL is not configured.");
-    }
+export const POST = withAuthedApiRoute<{ storeId: string }>(async ({ auth, params, request }) => {
+  const body = await readJsonBody<Record<string, unknown>>(request);
 
-    const params = await context.params;
-    const requestContext = resolveRequestContext(request, { requireUser: true });
-    const body = await request.json();
-
-    await assertStoreAccess({
-      organizationId: requestContext.organizationId,
-      storeId: params.storeId,
-      actorUserId: requestContext.userId!,
-      actorRole: requestContext.role!,
-      minimumRole: "employee",
+  await assertStoreAccess({
+    organizationId: auth.organizationId,
+    storeId: params.storeId,
+    actorUserId: auth.userId,
+    actorRole: auth.role,
+    minimumRole: "employee",
     scope: "read",
-    });
+  });
 
-    const registered = await registerAttachment({
-      ...(body?.attachment || body),
-      organizationId: requestContext.organizationId,
-      storeId: params.storeId,
-    });
-    return ok(registered, { status: 201 });
-  } catch (error) {
-    return fail(error);
-  }
-}
+  const attachmentPayload = (
+    body?.attachment && typeof body.attachment === "object" ? body.attachment : body
+  ) as Omit<RegisterAttachmentInput, "organizationId" | "storeId">;
+  const registered = await registerAttachment({
+    ...attachmentPayload,
+    organizationId: auth.organizationId,
+    storeId: params.storeId,
+  });
+  return { data: registered, init: { status: 201 } };
+});

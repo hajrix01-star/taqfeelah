@@ -1,49 +1,31 @@
-import { fail, ok } from "@/core/http/api-response";
-import { ServiceUnavailableError } from "@/core/errors/app-error";
-import { readEnv } from "@/core/config/env";
-import { resolveRequestContext } from "@/core/auth/request-context";
+import { readJsonBody, withAuthedApiRoute } from "@/core/http/api-route-handler";
 import { restoreStoreEntry } from "@/features/entries/server/restore-store-entry";
 import { publishOperationalSyncEventSafe } from "@/core/sync/publish-operational-sync-event";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = {
-  params: Promise<{ storeId: string; entryId: string }>;
-};
+export const POST = withAuthedApiRoute<{ storeId: string; entryId: string }>(async ({ auth, params, request }) => {
+  const body = await readJsonBody<Record<string, unknown>>(request);
 
-export async function POST(request: Request, context: RouteContext) {
-  try {
-    const env = readEnv();
-    if (!env.DATABASE_URL) {
-      throw new ServiceUnavailableError("DATABASE_URL is not configured.");
-    }
+  const result = await restoreStoreEntry({
+    organizationId: auth.organizationId,
+    storeId: params.storeId,
+    entryId: params.entryId,
+    actorUserId: auth.userId,
+    actorRole: auth.role,
+    reason: typeof body?.reason === "string" ? body.reason : undefined,
+  });
 
-    const params = await context.params;
-    const requestContext = resolveRequestContext(request, { requireUser: true });
-    const body = await request.json();
-
-    const result = await restoreStoreEntry({
-      organizationId: requestContext.organizationId,
-      storeId: params.storeId,
+  publishOperationalSyncEventSafe({
+    type: "entry.restored",
+    organizationId: auth.organizationId,
+    storeId: params.storeId,
+    actorUserId: auth.userId,
+    actorRole: auth.role,
+    payload: {
       entryId: params.entryId,
-      actorUserId: requestContext.userId!,
-      actorRole: requestContext.role!,
-      reason: typeof body?.reason === "string" ? body.reason : undefined,
-    });
+    },
+  });
 
-    publishOperationalSyncEventSafe({
-      type: "entry.restored",
-      organizationId: requestContext.organizationId,
-      storeId: params.storeId,
-      actorUserId: requestContext.userId!,
-      actorRole: requestContext.role!,
-      payload: {
-        entryId: params.entryId,
-      },
-    });
-
-    return ok(result);
-  } catch (error) {
-    return fail(error);
-  }
-}
+  return result;
+});

@@ -1,37 +1,26 @@
-import { fail, ok } from "@/core/http/api-response";
-import { ServiceUnavailableError } from "@/core/errors/app-error";
-import { readEnv } from "@/core/config/env";
-import { resolveRequestContext } from "@/core/auth/request-context";
+import { readJsonBody, withAuthedApiRoute } from "@/core/http/api-route-handler";
 import { approveDuplicateSummary } from "@/features/entries/server/approve-duplicate-summary";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = {
-  params: Promise<{ storeId: string }>;
-};
+type ApproveDuplicateSummaryInput = Parameters<typeof approveDuplicateSummary>[0];
 
-export async function POST(request: Request, context: RouteContext) {
-  try {
-    const env = readEnv();
-    if (!env.DATABASE_URL) {
-      throw new ServiceUnavailableError("DATABASE_URL is not configured.");
-    }
+export const POST = withAuthedApiRoute<{ storeId: string }>(async ({ auth, params, request }) => {
+  const body = await readJsonBody<Record<string, unknown>>(request);
+  const payload = (
+    body?.payload && typeof body.payload === "object"
+      ? body.payload
+      : { type: "summary", salesChannels: [] }
+  ) as ApproveDuplicateSummaryInput["payload"];
 
-    const params = await context.params;
-    const requestContext = resolveRequestContext(request, { requireUser: true });
-    const body = await request.json();
+  const created = await approveDuplicateSummary({
+    organizationId: auth.organizationId,
+    storeId: params.storeId,
+    actorUserId: auth.userId,
+    actorRole: auth.role,
+    date: typeof body?.date === "string" ? body.date : "",
+    payload,
+  });
 
-    const created = await approveDuplicateSummary({
-      organizationId: requestContext.organizationId,
-      storeId: params.storeId,
-      actorUserId: requestContext.userId!,
-      actorRole: requestContext.role!,
-      date: typeof body?.date === "string" ? body.date : "",
-      payload: body?.payload && typeof body.payload === "object" ? body.payload : { type: "summary" },
-    });
-
-    return ok(created, { status: 201 });
-  } catch (error) {
-    return fail(error);
-  }
-}
+  return { data: created, init: { status: 201 } };
+});
