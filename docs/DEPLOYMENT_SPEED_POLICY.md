@@ -36,18 +36,21 @@ The staging live gate is repeatable. If the staging tenant has reached its store
 
 ## Production Rule
 
-Production should remain conservative:
+Production deploys use a Noorix-style fast path by default:
 
 - Deploy from `main`.
-- Use a CI-built artifact.
-- Keep production health and live gate.
+- Build and package the production artifact.
+- Deploy to VPS.
+- Keep deploy verification and production live gate.
 - Do not run large load/export benchmarks inside every deploy.
 
-`deploy-production.yml` supports the same `validation_profile` input for manual runs:
+`deploy-production.yml` validation policy:
 
-- Push-triggered production deploys run full validation.
-- Manual `validation_profile=fast` is for retrying deployment after the same commit has already passed full validation.
-- Fast production retries still build/package the artifact and still run deploy verification plus production live gate.
+- Push-triggered production deploys are fast by default.
+- Add `[full-validate]` to the push commit message to run lint, typecheck, unit tests, and browser smoke inside the production deploy workflow.
+- Manual `validation_profile=fast` runs the same fast path.
+- Manual `validation_profile=full` runs lint, typecheck, unit tests, browser smoke, build, package, deploy, and live gate.
+- Fast production deploys still build/package the artifact and still run deploy verification plus production live gate.
 
 ## Load And Export Gate
 
