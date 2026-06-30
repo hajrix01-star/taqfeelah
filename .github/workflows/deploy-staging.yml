@@ -2,6 +2,15 @@ name: Deploy staging
 
 on:
   workflow_dispatch:
+    inputs:
+      validation_profile:
+        description: "Validation before staging deploy"
+        required: false
+        default: "fast"
+        type: choice
+        options:
+          - "fast"
+          - "full"
   push:
     branches:
       - codex/vps-readonly-audit
@@ -39,12 +48,15 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Clean surface guard
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.validation_profile == 'full' }}
         run: pnpm check:clean-surface
 
       - name: Typecheck
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.validation_profile == 'full' }}
         run: pnpm typecheck
 
       - name: Unit tests
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.validation_profile == 'full' }}
         run: pnpm test -- --reporter=dot --maxWorkers=2
 
       - name: Build

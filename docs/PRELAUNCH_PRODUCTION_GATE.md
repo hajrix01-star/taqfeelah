@@ -9,6 +9,8 @@ This document is the release gate for moving Taqfeelah to production. It is a ch
 - [ ] No new product features during this phase.
 - [ ] Only P0 fixes, launch blockers, test coverage, documentation alignment, and deployment safety work are allowed.
 - [ ] Staging runs the exact commit intended for production.
+- [ ] At least one staging run passes with `validation_profile=full` on the exact production candidate SHA.
+- [ ] Routine fast staging deploys follow `docs/DEPLOYMENT_SPEED_POLICY.md` and do not replace the final full release gate.
 - [ ] Production starts only after every gate section below is complete and evidenced.
 
 ## P0 Implementation Checklist
