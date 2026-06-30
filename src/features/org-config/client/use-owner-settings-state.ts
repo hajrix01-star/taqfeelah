@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
+import { safeGetLocalStorageItem, safeSetLocalStorageItem } from "@/core/client/safe-local-storage";
 import { isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
 import { useOrgConfigRuntimeBridge } from "./org-config-runtime-bridge";
 import {
@@ -43,30 +43,22 @@ function readBusinessList(
 
 function readLocalLocalNotebookTheme(skipLocalBootstrap: boolean) {
   if (skipLocalBootstrap) return "yellow";
-  if (!isBrowserPersistentStorageAllowed({ scope: "ui-preferences" })) return "yellow";
-  if (typeof window === "undefined") return "yellow";
-  return window.localStorage.getItem("taqfeelah_notebook_theme") || "yellow";
+  return safeGetLocalStorageItem("taqfeelah_notebook_theme", { scope: "ui-preferences" }) || "yellow";
 }
 
 function writeLocalLocalNotebookTheme(notebookTheme: string, skipLocalBootstrap: boolean) {
-  if (
-    skipLocalBootstrap
-    || typeof window === "undefined"
-    || !isBrowserPersistentStorageAllowed({ scope: "ui-preferences" })
-  ) return;
-  window.localStorage.setItem("taqfeelah_notebook_theme", notebookTheme);
+  if (skipLocalBootstrap) return;
+  safeSetLocalStorageItem("taqfeelah_notebook_theme", notebookTheme, { scope: "ui-preferences" });
 }
 
 function writeLocalLocalLastCloseoutDates(
   lastCloseoutDates: Partial<Record<string, string>>,
   skipLocalBootstrap: boolean,
 ) {
-  if (
-    skipLocalBootstrap
-    || typeof window === "undefined"
-    || !isBrowserPersistentStorageAllowed({ scope: "local-closeout-events" })
-  ) return;
-  window.localStorage.setItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(lastCloseoutDates));
+  if (skipLocalBootstrap) return;
+  safeSetLocalStorageItem(LAST_CLOSEOUT_STORAGE_KEY, JSON.stringify(lastCloseoutDates), {
+    scope: "local-closeout-events",
+  });
 }
 
 export function useOwnerSettingsState({

@@ -48,8 +48,8 @@ describe("register production source guard", () => {
 
   it("does not read or write notebook theme local storage in server-authoritative settings modes", () => {
     const settingsState = readProjectFile("src/features/org-config/client/use-owner-settings-state.ts");
-    const themeReadIndex = settingsState.indexOf("window.localStorage.getItem(\"taqfeelah_notebook_theme\")");
-    const themeWriteIndex = settingsState.indexOf("window.localStorage.setItem(\"taqfeelah_notebook_theme\", notebookTheme)");
+    const themeReadIndex = settingsState.indexOf("safeGetLocalStorageItem(\"taqfeelah_notebook_theme\"");
+    const themeWriteIndex = settingsState.indexOf("safeSetLocalStorageItem(\"taqfeelah_notebook_theme\", notebookTheme");
     const skipReadIndex = settingsState.indexOf("function readLocalLocalNotebookTheme(skipLocalBootstrap: boolean)");
     const skipWriteIndex = settingsState.indexOf("function writeLocalLocalNotebookTheme(notebookTheme: string, skipLocalBootstrap: boolean)");
 
@@ -57,6 +57,8 @@ describe("register production source guard", () => {
     expect(themeReadIndex).toBeGreaterThan(skipReadIndex);
     expect(skipWriteIndex).toBeGreaterThan(-1);
     expect(themeWriteIndex).toBeGreaterThan(skipWriteIndex);
+    expect(settingsState).not.toContain("window.localStorage.getItem(\"taqfeelah_notebook_theme\")");
+    expect(settingsState).not.toContain("window.localStorage.setItem(\"taqfeelah_notebook_theme\", notebookTheme)");
   });
 
   it("does not keep stale register entry pages as financial placeholder data", () => {

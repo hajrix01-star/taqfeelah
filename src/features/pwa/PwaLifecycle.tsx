@@ -21,6 +21,11 @@ import { getClientReleaseBuild } from "@/release/client-release";
 import type { ReleaseMeta } from "@/release/version";
 import PwaInstallPrompt from "@/features/pwa/PwaInstallPrompt";
 import { shouldReloadAfterServiceWorkerControllerChange } from "@/features/pwa/pwa-controller-change-reload";
+import {
+  safeGetSessionStorageItem,
+  safeRemoveSessionStorageItem,
+  safeSetSessionStorageItem,
+} from "@/core/client/safe-local-storage";
 
 type UpdatePhase = "idle" | "available";
 
@@ -67,22 +72,13 @@ export default function PwaLifecycle() {
 
     if (serverBuild && serverBuild === clientBuild) {
       clearDismissedUpdateBuild();
-      try {
-        window.sessionStorage.removeItem(STALE_CLIENT_RECOVERY_KEY);
-      } catch {
-        // Best effort only.
-      }
+      safeRemoveSessionStorageItem(STALE_CLIENT_RECOVERY_KEY);
       setPendingServerBuild(null);
       setUpdatePhase("idle");
       return;
     }
 
-    let attemptedRecoveryBuild: string | null = null;
-    try {
-      attemptedRecoveryBuild = window.sessionStorage.getItem(STALE_CLIENT_RECOVERY_KEY);
-    } catch {
-      attemptedRecoveryBuild = null;
-    }
+    const attemptedRecoveryBuild = safeGetSessionStorageItem(STALE_CLIENT_RECOVERY_KEY);
 
     if (shouldRecoverStalePwaClient({
       clientBuild,
@@ -90,11 +86,7 @@ export default function PwaLifecycle() {
       hasWaitingServiceWorker: swSnapshot.hasWaitingServiceWorker,
       attemptedRecoveryBuild,
     })) {
-      try {
-        window.sessionStorage.setItem(STALE_CLIENT_RECOVERY_KEY, serverBuild || "");
-      } catch {
-        // Best effort only.
-      }
+      safeSetSessionStorageItem(STALE_CLIENT_RECOVERY_KEY, serverBuild || "");
       await unregisterServiceWorker();
       window.location.reload();
       return;
