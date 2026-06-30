@@ -24,14 +24,27 @@ function runNodeScript(script, extraArgs = []) {
   }
 }
 
+async function expectHttpOk(url) {
+  const response = await fetch(url, { headers: { accept: "application/json" } });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`${url} returned HTTP ${response.status}: ${body.slice(0, 240)}`);
+  }
+}
+
 console.log("=== Taqfeelah Pre-Launch Live Gate ===");
 console.log("");
 
-console.log("Step 1/3: strict environment check");
-runNodeScript("scripts/prelaunch-check.mjs", [
-  "--strict",
-  ...(envFile ? ["--env-file", envFile] : []),
-]);
+const skipEnvGate = process.env.CHECK_ENV_GATE_MODE === "skip";
+if (skipEnvGate) {
+  console.log("Step 1/3: strict environment check skipped (external production gate)");
+} else {
+  console.log("Step 1/3: strict environment check");
+  runNodeScript("scripts/prelaunch-check.mjs", [
+    "--strict",
+    ...(envFile ? ["--env-file", envFile] : []),
+  ]);
+}
 
 const baseUrl = process.env.CHECK_BASE_URL?.replace(/\/$/, "");
 const productionGate = process.env.APP_MODE === "production" || process.env.NEXT_PUBLIC_APP_MODE === "production";
@@ -39,7 +52,18 @@ if (!baseUrl && productionGate) {
   console.error("CHECK_BASE_URL is required for the production live gate.");
   process.exit(1);
 }
-if (baseUrl) {
+const skipDbSourceSmoke = process.env.CHECK_DB_SOURCE_SMOKE === "skip";
+if (baseUrl && skipDbSourceSmoke) {
+  console.log("");
+  console.log(`Step 2/3: external HTTPS smoke (${baseUrl})`);
+  try {
+    await expectHttpOk(`${baseUrl}/api/v1/meta`);
+    await expectHttpOk(`${baseUrl}/api/v1/auth/session`);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
+} else if (baseUrl) {
   console.log("");
   console.log(`Step 2/3: DB source API smoke (${baseUrl})`);
   runNodeScript("scripts/db-source-unification-check.mjs");

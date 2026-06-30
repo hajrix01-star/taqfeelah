@@ -51,6 +51,7 @@ Production deploys use a Noorix-style fast path by default:
 - Manual `validation_profile=fast` runs the same fast path.
 - Manual `validation_profile=full` runs lint, typecheck, unit tests, browser smoke, build, package, deploy, and live gate.
 - Fast production deploys still build/package the artifact and still run deploy verification plus production live gate.
+- Production live gate runs as an external HTTPS smoke because production DB/session secrets are intentionally not required in GitHub Actions. Deep DB-source checks remain in staging full and the VPS deploy verifier.
 
 ## Load And Export Gate
 

@@ -330,6 +330,8 @@ jobs:
       - name: Production live gate
         env:
           CHECK_BASE_URL: "https://taqfeelah.com"
+          CHECK_ENV_GATE_MODE: "skip"
+          CHECK_DB_SOURCE_SMOKE: "skip"
           CHECK_ORGANIZATION_ID: ${{ secrets.NEXT_PUBLIC_CLOSEOUTS_API_ORGANIZATION_ID }}
           CHECK_STORE_ID: "302cf87a-b3cf-43f8-bb5d-afd2ab6d8a4c"
           CHECK_EMPLOYEE_USER_ID: "4cf1450d-08d8-4ca1-b180-1c2642174a79"
