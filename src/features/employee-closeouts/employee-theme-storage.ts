@@ -1,7 +1,11 @@
 import type { NotebookThemeId } from "@/features/daily-closeouts/daily-closeouts-types";
 
 import { usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
-import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
+import {
+  safeGetLocalStorageItem,
+  safeRemoveLocalStorageItem,
+  safeSetLocalStorageItem,
+} from "@/core/client/safe-local-storage";
 
 const prefix = "taqfeelah_employee_notebook_theme_";
 
@@ -11,9 +15,8 @@ function usesServerEmployeePreferences(): boolean {
 
 export function readEmployeeNotebookTheme(employeeId: string | null | undefined): string | null {
   if (usesServerEmployeePreferences()) return null;
-  if (!isBrowserPersistentStorageAllowed({ scope: "ui-preferences" })) return null;
-  if (typeof window === "undefined" || !employeeId) return null;
-  return window.localStorage.getItem(`${prefix}${employeeId}`);
+  if (!employeeId) return null;
+  return safeGetLocalStorageItem(`${prefix}${employeeId}`, { scope: "ui-preferences" });
 }
 
 export function writeEmployeeNotebookTheme(
@@ -21,8 +24,7 @@ export function writeEmployeeNotebookTheme(
   theme: NotebookThemeId | string | null | undefined,
 ): void {
   if (usesServerEmployeePreferences()) return;
-  if (!isBrowserPersistentStorageAllowed({ scope: "ui-preferences" })) return;
-  if (typeof window === "undefined" || !employeeId) return;
-  if (!theme) window.localStorage.removeItem(`${prefix}${employeeId}`);
-  else window.localStorage.setItem(`${prefix}${employeeId}`, theme);
+  if (!employeeId) return;
+  if (!theme) safeRemoveLocalStorageItem(`${prefix}${employeeId}`, { scope: "ui-preferences" });
+  else safeSetLocalStorageItem(`${prefix}${employeeId}`, theme, { scope: "ui-preferences" });
 }

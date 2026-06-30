@@ -40,16 +40,66 @@ export function safeSetLocalStorageItem(
   }
 }
 
+export function safeGetLocalStorageItem(
+  key: string,
+  options: LocalStoragePolicyOptions = {},
+): string | null {
+  if (!isBrowserPersistentStorageAllowed(options)) return null;
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export function safeRemoveLocalStorageItem(
+  key: string,
+  options: LocalStoragePolicyOptions = {},
+): LocalStorageWriteResult {
+  if (!isBrowserPersistentStorageAllowed(options)) return { ok: false, error: "disabled" };
+  if (typeof window === "undefined") return { ok: false, error: "no-window" };
+  try {
+    window.localStorage.removeItem(key);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "blocked" };
+  }
+}
+
+export function safeGetSessionStorageItem(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export function safeSetSessionStorageItem(key: string, value: string): LocalStorageWriteResult {
+  if (typeof window === "undefined") return { ok: false, error: "no-window" };
+  try {
+    window.sessionStorage.setItem(key, value);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "blocked" };
+  }
+}
+
+export function safeRemoveSessionStorageItem(key: string): LocalStorageWriteResult {
+  if (typeof window === "undefined") return { ok: false, error: "no-window" };
+  try {
+    window.sessionStorage.removeItem(key);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "blocked" };
+  }
+}
+
 export function readLocalStorageJson<T>(
   key: string,
   fallback: T,
   options: LocalStoragePolicyOptions = {},
 ): T {
-  if (!isBrowserPersistentStorageAllowed(options)) return fallback;
-  if (typeof window === "undefined") return fallback;
-  try {
-    return safeParseJson(window.localStorage.getItem(key), fallback);
-  } catch {
-    return fallback;
-  }
+  return safeParseJson(safeGetLocalStorageItem(key, options), fallback);
 }

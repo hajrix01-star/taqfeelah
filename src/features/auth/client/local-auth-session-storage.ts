@@ -1,4 +1,8 @@
-import { readLocalStorageJson, safeSetLocalStorageItem } from "@/core/client/safe-local-storage";
+import {
+  readLocalStorageJson,
+  safeRemoveLocalStorageItem,
+  safeSetLocalStorageItem,
+} from "@/core/client/safe-local-storage";
 import { isProductionAppMode } from "@/core/config/app-mode";
 import type { AuthStaffMember } from "@/features/auth/client/auth-client-types";
 
@@ -53,12 +57,7 @@ export function saveAuthSession(session: AuthSession | null | undefined): boolea
 
 export function clearAuthSession(): void {
   if (isProductionAppMode()) return;
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.removeItem(AUTH_SESSION_KEY);
-  } catch {
-    /* ignore */
-  }
+  safeRemoveLocalStorageItem(AUTH_SESSION_KEY);
 }
 
 /** Restore login UI state after reload; clears session if employee no longer valid. */
