@@ -115,6 +115,7 @@ jobs:
       STAGING_OWNER_USERNAME: ${{ secrets.STAGING_OWNER_USERNAME }}
       STAGING_OWNER_PASSWORD: ${{ secrets.STAGING_OWNER_PASSWORD }}
       STAGING_EMPLOYEE_PIN_MAP: ${{ secrets.STAGING_EMPLOYEE_PIN_MAP }}
+      STAGING_CHECK_EMPLOYEE_PIN: ${{ secrets.STAGING_CHECK_EMPLOYEE_PIN }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -131,6 +132,7 @@ jobs:
           test -n "$STAGING_OWNER_USERNAME"
           test -n "$STAGING_OWNER_PASSWORD"
           test -n "$STAGING_EMPLOYEE_PIN_MAP"
+          test -n "$STAGING_CHECK_EMPLOYEE_PIN"
           port="${VPS_PORT:-22}"
           mkdir -p "$HOME/.ssh"
           chmod 700 "$HOME/.ssh"
@@ -446,6 +448,7 @@ jobs:
           CHECK_SALES_CHANNEL_ID: 9bc40d4f-c773-4ba3-87db-b8bb1467dafb
           CHECK_OWNER_USERNAME: ${{ secrets.STAGING_OWNER_USERNAME }}
           CHECK_OWNER_PASSWORD: ${{ secrets.STAGING_OWNER_PASSWORD }}
+          CHECK_EMPLOYEE_PIN: ${{ secrets.STAGING_CHECK_EMPLOYEE_PIN }}
           APP_MODE: production
           NEXT_PUBLIC_APP_MODE: production
           APP_PUBLIC_ORIGIN: https://staging.taqfeelah.com
