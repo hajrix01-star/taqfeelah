@@ -1276,7 +1276,7 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
     full_verify = verify_profile == "full"
     verify_store_id_file = "/tmp/taqfeelah-verify-store-id"
     verify_store_ref = f"$(cat {verify_store_id_file})"
-    store_url = lambda path: f"'https://{domain}/api/v1/stores/{verify_store_ref}{path}'"
+    store_url = lambda path: f"\"https://{domain}/api/v1/stores/{verify_store_ref}{path}\""
     resolve_verify_store_script = (
         "const fs=require('fs');"
         "const p=JSON.parse(fs.readFileSync('/tmp/taqfeelah-verify-stores.json','utf8'));"
@@ -1379,8 +1379,8 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave2-reports-days.json "
                 f"-w '%{{http_code}}' "
-                f"'https://{shlex.quote(domain)}/api/v1/reports/days?"
-                f"storeId=$(cat {verify_store_id_file})&from=$(date -u +%Y)-01-01&to=$(date -u +%Y)-12-31' "
+                f"\"https://{domain}/api/v1/reports/days?"
+                f"storeId=$(cat {verify_store_id_file})&from=$(date -u +%Y)-01-01&to=$(date -u +%Y)-12-31\" "
                 f"{auth_flags}"
             ),
         ] if analytics_verify and not skip_authenticated_api else []),
@@ -1416,8 +1416,8 @@ def cmd_verify(vps: VPS, domain: str, www_domain: str) -> None:
             (
                 f"curl -sS --max-time 20 -o /tmp/taqfeelah-wave5-notebook-export.json "
                 f"-w '%{{http_code}}' "
-                f"'https://{domain}/api/v1/exports/notebook?"
-                f"storeId=$(cat {verify_store_id_file})&period=day&date=$(date -u +%Y-%m-%d)' "
+                f"\"https://{domain}/api/v1/exports/notebook?"
+                f"storeId=$(cat {verify_store_id_file})&period=day&date=$(date -u +%Y-%m-%d)\" "
                 f"{auth_flags}"
             ),
             (

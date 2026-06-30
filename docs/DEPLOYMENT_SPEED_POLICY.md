@@ -43,6 +43,12 @@ Production should remain conservative:
 - Keep production health and live gate.
 - Do not run large load/export benchmarks inside every deploy.
 
+`deploy-production.yml` supports the same `validation_profile` input for manual runs:
+
+- Push-triggered production deploys run full validation.
+- Manual `validation_profile=fast` is for retrying deployment after the same commit has already passed full validation.
+- Fast production retries still build/package the artifact and still run deploy verification plus production live gate.
+
 ## Load And Export Gate
 
 Large checks are release gates, not routine deploy checks:

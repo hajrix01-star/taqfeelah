@@ -5,6 +5,14 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      validation_profile:
+        description: "Validation before production deploy"
+        required: false
+        default: "fast"
+        type: choice
+        options:
+          - "fast"
+          - "full"
       preflight_wait_minutes:
         description: "Minutes to wait before SSH probe (use after fail2ban blocks)"
         required: false
@@ -75,18 +83,23 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.validation_profile == 'full' }}
         run: pnpm lint
 
       - name: Typecheck
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.validation_profile == 'full' }}
         run: pnpm typecheck
 
       - name: Test
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.validation_profile == 'full' }}
         run: pnpm test
 
       - name: Install Playwright Chromium
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.validation_profile == 'full' }}
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Browser smoke
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.validation_profile == 'full' }}
         run: pnpm smoke:browser
 
       - name: Build
