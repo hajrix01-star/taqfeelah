@@ -1,4 +1,8 @@
 import { readLocalSavedSettings } from "@/features/runtime-settings/client/read-local-saved-settings";
+import {
+  safeRemoveLocalStorageItem,
+  safeSetLocalStorageItem,
+} from "@/core/client/safe-local-storage";
 import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
 
 export function createMigrateSavedSettings({
@@ -17,7 +21,6 @@ export function createMigrateSavedSettings({
   return function migrateSavedSettings(raw: unknown) {
     if (
       !raw
-      || typeof window === "undefined"
       || bindsToServerAuth
       || !isBrowserPersistentStorageAllowed({ scope: "local-settings-migration" })
     ) {
@@ -26,10 +29,12 @@ export function createMigrateSavedSettings({
     return applyMigration(raw, {
       skip: false,
       persistMigrated: (migrated: unknown) => {
-        window.localStorage.setItem(storageKey, JSON.stringify(migrated));
+        safeSetLocalStorageItem(storageKey, JSON.stringify(migrated), {
+          scope: "local-settings-migration",
+        });
       },
       clearCloseoutAlerts: () => {
-        window.localStorage.removeItem(closeoutAlertsKey);
+        safeRemoveLocalStorageItem(closeoutAlertsKey, { scope: "local-settings-migration" });
       },
       resolveCloseouts: () => {
         autoResolveCloseouts(() => false);

@@ -1,5 +1,5 @@
 import { OWNER_SETTINGS_STORAGE_KEY } from "@/features/runtime-settings/client/migrate-local-saved-settings";
-import { isBrowserPersistentStorageAllowed } from "@/core/config/browser-persistence-policy";
+import { safeSetLocalStorageItem } from "@/core/client/safe-local-storage";
 import type { StaffMember, StoreChannelConfig } from "./org-config-client-types";
 
 export function buildOwnerSettingsLocalStoragePayload({
@@ -57,10 +57,10 @@ export function persistOwnerSettingsToLocalStorage(
     storageKey?: string;
   } = {},
 ) {
-  if (!isBrowserPersistentStorageAllowed({ scope: "local-settings-migration" })) return false;
-  if (!enabled || typeof window === "undefined") return false;
-  window.localStorage.setItem(storageKey, JSON.stringify(payload));
-  return true;
+  if (!enabled) return false;
+  return safeSetLocalStorageItem(storageKey, JSON.stringify(payload), {
+    scope: "local-settings-migration",
+  }).ok;
 }
 
 export function normalizeTeamEmployeePins({
