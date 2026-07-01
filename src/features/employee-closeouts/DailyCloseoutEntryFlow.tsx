@@ -8,7 +8,7 @@ import { notebookLinesBackground } from "../daily-closeouts/notebook-themes";
 import AttachmentLightbox from "../../components/AttachmentLightbox";
 import { text } from "../../components/taqfeelah-app/taqfeelah-app-catalog-data";
 import { DailyCloseoutEntryFormBody } from "./daily-closeout-entry-form-body";
-import { useDailyCloseoutEntryState } from "./use-daily-closeout-entry-state";
+import { closeoutHasAnyAmount, useDailyCloseoutEntryState } from "./use-daily-closeout-entry-state";
 import type {
   CloseoutSyncLang,
   DailyCloseoutRecord,
@@ -119,7 +119,7 @@ export default function DailyCloseoutEntryFlow({
       <div className="shrink-0 border-t border-[#ECE6DA]/80 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
-          disabled={saving || !formEnabled || (totals.totalSales || 0) <= 0}
+          disabled={saving || !formEnabled || !closeoutHasAnyAmount(totals)}
           onClick={handleSubmit}
           className="w-full rounded-2xl bg-[#257844] py-3.5 text-xs font-black text-white transition active:scale-[0.98] disabled:opacity-50"
         >

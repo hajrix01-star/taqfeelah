@@ -12,7 +12,7 @@ import {
   normalizeCloseoutSalesToArray,
 } from "../daily-closeouts/closeout-sales-normalize";
 import { withCloseoutTotals } from "../daily-closeouts/daily-closeouts-local-store";
-import { appAlert } from "@/lib/ui/app-dialog/app-dialog-bridge";
+import { appAlert, appConfirm } from "@/lib/ui/app-dialog/app-dialog-bridge";
 import { confirmCloseoutSubmit } from "@/lib/ui/app-dialog/app-dialog-helpers";
 import type {
   CloseoutTotals,
@@ -30,6 +30,33 @@ import {
 } from "./daily-closeout-entry-helpers";
 
 type PreparedAttachment = { dataUrl?: string } | string;
+
+export function closeoutHasAnyAmount(totals: Pick<CloseoutTotals, "totalSales" | "totalOutflow"> | null | undefined): boolean {
+  return Number(totals?.totalSales || 0) > 0 || Number(totals?.totalOutflow || 0) > 0;
+}
+
+export function resolvePartialCloseoutWarning(
+  lang: CloseoutSyncLang,
+  totals: Pick<CloseoutTotals, "totalSales" | "totalOutflow"> | null | undefined,
+): { title: string; description: string } | null {
+  const hasSales = Number(totals?.totalSales || 0) > 0;
+  const hasOutflow = Number(totals?.totalOutflow || 0) > 0;
+  if (hasSales === hasOutflow) return null;
+  if (hasSales) {
+    return {
+      title: lang === "ar" ? "تم إدخال الداخل بدون الخارج" : "Incoming entered without outflow",
+      description: lang === "ar"
+        ? "سيتم حفظ التقفيلة وفيها داخل فقط. تأكد أن عدم وجود خارج لهذا اليوم صحيح."
+        : "This closeout will be saved with incoming only. Confirm that there is no outflow for this day.",
+    };
+  }
+  return {
+    title: lang === "ar" ? "تم إدخال الخارج بدون الداخل" : "Outflow entered without incoming",
+    description: lang === "ar"
+      ? "سيتم حفظ التقفيلة وفيها خارج فقط. تأكد أن عدم وجود داخل لهذا اليوم صحيح."
+      : "This closeout will be saved with outflow only. Confirm that there is no incoming for this day.",
+  };
+}
 
 export function buildInitialCloseoutSalesValues(
   initialCloseout: DailyCloseoutRecord | null | undefined,
@@ -230,17 +257,22 @@ export function useDailyCloseoutEntryState({
       await appAlert({ lang, title: text(lang, "waitForImageProcessing"), variant: "warning" });
       return;
     }
-    if (salesChannels.length === 0) {
-      await appAlert({ lang, title: text(lang, "noSalesChannels"), variant: "info" });
-      return;
-    }
     const closeout = buildCloseout();
-    if ((closeout.totals?.totalSales || 0) <= 0) {
+    if (!closeoutHasAnyAmount(closeout.totals)) {
       await appAlert({ lang, title: text(lang, "enterSalesAmount"), variant: "warning" });
       return;
     }
     submitInFlightRef.current = true;
     try {
+      const partialWarning = resolvePartialCloseoutWarning(lang, closeout.totals);
+      if (partialWarning && !(await appConfirm({
+        lang,
+        title: partialWarning.title,
+        description: partialWarning.description,
+        confirmLabel: text(lang, isOwnerEdit ? "saveCloseoutChanges" : "saveAndSend"),
+        cancelLabel: text(lang, "cancel"),
+        variant: "warning",
+      }))) return;
       if (!(await confirmCloseoutSubmit(lang, text, { isOwnerEdit }))) return;
       setOutAmount("");
       setOutNote("");
@@ -256,7 +288,6 @@ export function useDailyCloseoutEntryState({
     lang,
     onSubmit,
     outflowAttachmentProcessingId,
-    salesChannels.length,
     validateDate,
   ]);
 
