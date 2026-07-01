@@ -18,6 +18,14 @@ export function shouldOpenOwnerCloseoutEntryForQuickExpense({
   return entriesApiDbSource;
 }
 
+export function shouldOpenOwnerCloseoutEntryForQuickAdd({
+  entriesApiDbSource,
+}: {
+  entriesApiDbSource: boolean;
+}) {
+  return entriesApiDbSource;
+}
+
 export function useTaqfeelahAppOwnerCloseoutActions({
   lang,
   entriesApiDbSource,
@@ -116,8 +124,12 @@ export function useTaqfeelahAppOwnerCloseoutActions({
   }, [entriesApiDbSource, openOwnerCloseoutEntry, openQuickAddExpense]);
 
   const handleOwnerQuickAddOpen = useCallback(() => {
+    if (shouldOpenOwnerCloseoutEntryForQuickAdd({ entriesApiDbSource })) {
+      openOwnerCloseoutEntry();
+      return;
+    }
     setQuickAddOpen(true);
-  }, [setQuickAddOpen]);
+  }, [entriesApiDbSource, openOwnerCloseoutEntry, setQuickAddOpen]);
 
   const handleOwnerCloseoutUpdated = useCallback(async (closeout: AppCloseoutRecord) => {
     if (!closeout) return;
