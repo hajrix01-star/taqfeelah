@@ -173,6 +173,8 @@ export function OwnerHome({
     : monthly
       ? resolveOwnerSingleStoreTotals(localMonthResult as AnalyticsTotals, apiStoreResult as AnalyticsTotals | null | undefined, preferEntrySummaries, { entriesDbSource: strictServerFinancialSource })
       : resolveOwnerSingleStoreTotals(daySummary as AnalyticsTotals, apiStoreResult as AnalyticsTotals | null | undefined, preferEntrySummaries, { entriesDbSource: strictServerFinancialSource });
+  const financialSummaryUnavailable = summaryLoadFailedWithoutFallback
+    || (strictServerFinancialSource && !summaryPending && result == null);
   const netMarginRatio = formatNetMarginOfSalesRatio(result?.sales ?? 0, result?.net ?? 0);
   const selectedBusinessEntries = currentBusiness ? operationalEntries.filter((entry) => entry.businessId === currentBusiness.id && entryDateMatches(entry, "day", selectedDate, selectedMonth, selectedYear, selectedYearStart, selectedYearEnd)) : [];
   const useApiDetailRows = summaryApiActive
@@ -189,10 +191,10 @@ export function OwnerHome({
     fetchError: attachmentsFetchError,
     itemCount: attachmentItemCount,
   } = useHomeDayAttachments({
-    enabled: showAttachments && !monthly && !isCombined,
+    enabled: showAttachments && !monthly && !isCombined && result != null,
     localDayEntries: selectedBusinessEntries,
     selectedDate,
-    proofsCount: Number(result.proofs) || 0,
+    proofsCount: Number(result?.proofs) || 0,
     entriesApiEnabled: summaryApiEnabled,
     organizationId: summaryApiOrganizationId,
     actorUserId: summaryApiActorUserId,
@@ -201,7 +203,7 @@ export function OwnerHome({
   });
   const displayedProofCount = attachmentItemCount > 0
     ? attachmentItemCount
-    : (Number(result.proofs) || 0);
+    : (Number(result?.proofs) || 0);
   const changePeriod = (nextPeriod: string) => {
     setPeriod(nextPeriod);
     setShowReportDetails(false);
@@ -242,7 +244,9 @@ export function OwnerHome({
       {closeoutAlerts.length > 0 && firstCloseoutAlert && <div className="mx-2 mb-3 rounded-2xl bg-[var(--taq-color-e6f5e9)] p-3 ring-1 ring-[var(--taq-color-39a160)]/15"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[var(--taq-color-257844)]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[var(--taq-color-257844)]">{text(lang, "closeoutInAppAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[var(--taq-color-716753)]">{businessName(businessesList.find((business) => business.id === firstAlertBusinessId), lang)} · {formatCalendarDate(firstAlertDate, lang)} · {lang === "ar" ? firstAlertEmployeeNameAr : firstAlertEmployeeNameEn}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onOpenCloseoutAlertInRegister(firstCloseoutAlert)} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[var(--taq-color-257844)] ring-1 ring-[var(--taq-color-39a160)]/15">{text(lang, "openCloseoutInRegister")}</button><button type="button" onClick={() => onDismissCloseout(firstCloseoutAlert)} className="rounded-xl bg-[var(--taq-color-112a46)] py-2.5 text-taq-meta font-black text-white">{text(lang, "dismissAlert")}</button></div></div>}
       {homeBillingLayoutReady ? (
       <Notebook fullPage theme={notebookTheme} pattern={notebookPattern} lang={lang}>
-        <NotebookHeading lang={lang} label={monthly ? text(lang, "monthlySummary") : text(lang, "dailySummary")} onShare={() => onShareNotebook({
+        <NotebookHeading lang={lang} label={monthly ? text(lang, "monthlySummary") : text(lang, "dailySummary")} onShare={() => {
+          if (!result) return;
+          onShareNotebook({
           theme: notebookTheme,
           pattern: notebookPattern,
           period,
@@ -281,11 +285,12 @@ export function OwnerHome({
             }))
             : undefined,
           snapshotOutflowCategories: useApiDetailRows ? apiOutflowCategories : undefined,
-        })} dateSelector={<DateSelector compact lang={lang} period={period} setPeriod={changePeriod} selectedDay={selectedDay} setSelectedDay={(id) => { setSelectedDay(id); setShowAttachments(false); }} selectedDate={selectedDate} setSelectedDate={(date) => { setSelectedDate(date); setShowAttachments(false); }} fullCalendar selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />} />
+          });
+        }} dateSelector={<DateSelector compact lang={lang} period={period} setPeriod={changePeriod} selectedDay={selectedDay} setSelectedDay={(id) => { setSelectedDay(id); setShowAttachments(false); }} selectedDate={selectedDate} setSelectedDate={(date) => { setSelectedDate(date); setShowAttachments(false); }} fullCalendar selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />} />
         <StoreScopeTabs lang={lang} businessesList={businessesList} selectedBusiness={selectedBusiness} setSelectedBusiness={(id) => { setSelectedBusiness(id); setShowReportDetails(false); setShowAttachments(false); }} />
         {isCombined ? (
           <div>
-            {summaryLoadFailedWithoutFallback ? (
+            {financialSummaryUnavailable ? (
               <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[var(--taq-color-b44747)]">{summaryLoadErrorMessage}</p></NotebookRow>
             ) : summaryPending ? (
               <SummaryLoadingRow lang={lang} />
@@ -298,7 +303,7 @@ export function OwnerHome({
           </div>
         ) : (
           <div>
-            {summaryLoadFailedWithoutFallback ? (
+            {financialSummaryUnavailable ? (
               <NotebookRow lines={3}><p className="w-full text-taq-meta font-bold text-[var(--taq-color-b44747)]">{summaryLoadErrorMessage}</p></NotebookRow>
             ) : summaryPending ? (
               <SummaryLoadingRow lang={lang} />
@@ -378,7 +383,7 @@ export function OwnerHome({
                     businessesList={businessesList}
                     loading={attachmentsLoading}
                     loadFailed={attachmentsFetchError}
-                    proofsCount={Number(result.proofs) || 0}
+                    proofsCount={Number(result?.proofs) || 0}
                     onOpenOperation={onOpenOperation}
                     onPreviewAttachment={openHomeAttachmentPreview}
                     entryAttachmentsApiEnabled={entryAttachmentsApiEnabled}

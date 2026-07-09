@@ -31,7 +31,6 @@ import type {
 } from "@/features/operations/operations-types";
 
 export const OUTFLOW_ENTRY_TYPES = new Set(["purchases", "expense", "withdrawal"]);
-const EMPTY_ANALYTICS_TOTALS: AnalyticsTotals = { sales: 0, expense: 0, net: 0, ratio: "0.0%", proofs: 0 };
 
 function currentBusinessMonth(): string {
   return todayBusinessDateIso().slice(0, 7);
@@ -226,15 +225,11 @@ export function entryTotalsHaveActivity(totals: AnalyticsTotals | null | undefin
     || (Number(totals.proofs) || 0) > 0;
 }
 
-export function preferLocalTotalsOverEmptyApi(
-  localTotals: AnalyticsTotals,
+export function resolveApiTotalsWithoutFinancialFallback(
+  _localTotals: AnalyticsTotals,
   apiTotals: AnalyticsTotals | null | undefined,
-): AnalyticsTotals {
-  if (!apiTotals) return localTotals;
-  if (entryTotalsHaveFinancialActivity(localTotals) && !entryTotalsHaveFinancialActivity(apiTotals)) {
-    return localTotals;
-  }
-  return apiTotals;
+): AnalyticsTotals | null {
+  return apiTotals ?? null;
 }
 
 export function resolveOwnerPeriodSummaryPreference({
@@ -246,9 +241,9 @@ export function resolveOwnerPeriodSummaryPreference({
   if (entriesDbSource) {
     return false;
   }
-  if (entryTotalsHaveFinancialActivity(localTotals)) return true;
+  if (apiTotals != null) return false;
   if (entriesLoading) return true;
-  return !entryTotalsHaveFinancialActivity(apiTotals);
+  return entryTotalsHaveFinancialActivity(localTotals);
 }
 
 export function resolveOwnerSingleStoreTotals(
@@ -256,14 +251,13 @@ export function resolveOwnerSingleStoreTotals(
   apiTotals: AnalyticsTotals | null | undefined,
   preferEntryDerived: boolean,
   { entriesDbSource = isEntriesApiDbSourceMode() }: ResolveOwnerSingleStoreTotalsOptions = {},
-): AnalyticsTotals {
+): AnalyticsTotals | null {
   if (entriesDbSource) {
-    if (apiTotals != null) return apiTotals;
-    return { ...EMPTY_ANALYTICS_TOTALS };
+    return apiTotals ?? null;
   }
   return preferEntryDerived
     ? localTotals
-    : preferLocalTotalsOverEmptyApi(localTotals, apiTotals);
+    : resolveApiTotalsWithoutFinancialFallback(localTotals, apiTotals);
 }
 
 export function buildBusinessesWithEntrySummaries({
