@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { motion } from "framer-motion";
@@ -29,6 +29,8 @@ import type {
   OwnerSettingsStoreOverviewPanelProps,
   OwnerSettingsStoreProfilePanelProps,
   OwnerSettingsViewState,
+  AppBusiness,
+  AppChannel,
 } from "./taqfeelah-app-types";
 
 export function OwnerSettingsStoreProfilePanel({
@@ -304,7 +306,7 @@ export function OwnerSettingsStoreFlattenedPanel({
               <OwnerSettingsIncomeSourcesEditor
                 lang={lang}
                 channelConfig={channelConfig}
-                retiredChannels={retiredChannels}
+                retiredChannels={retiredChannels as AppChannel[]}
                 newCustomIncomeSourceName={newCustomIncomeSourceName}
                 setNewCustomIncomeSourceName={setNewCustomIncomeSourceName}
                 toggleChannel={toggleChannel}
@@ -407,7 +409,7 @@ export function renderOwnerSettingsStorePanel(storePanel: string, state: OwnerSe
       <OwnerSettingsStoreChannelsPanel
         {...common}
         channelConfig={state.channelConfig}
-        retiredChannels={state.retiredChannels}
+        retiredChannels={state.retiredChannels as AppChannel[]}
         newCustomIncomeSourceName={state.newCustomIncomeSourceName}
         setNewCustomIncomeSourceName={state.setNewCustomIncomeSourceName}
         toggleChannel={state.toggleChannel}
@@ -449,7 +451,7 @@ export function renderOwnerSettingsStorePanel(storePanel: string, state: OwnerSe
   return (
     <OwnerSettingsStoreOverviewPanel
       {...common}
-      selectedStore={state.selectedStore}
+      selectedStore={state.selectedStore as AppBusiness}
       displayBusinessName={state.displayBusinessName}
       displayLocation={state.displayLocation}
       archived={state.archived}

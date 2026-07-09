@@ -69,7 +69,7 @@ describe("duplicate summary approve route integration", () => {
 
     expect(response.status).toBe(201);
     expect(approveDuplicateSummary).toHaveBeenCalledWith(expect.objectContaining({
-      payload: { type: "summary" },
+      payload: { type: "summary", salesChannels: [] },
     }));
   });
 

@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { __resetEnvCacheForTests } from "@/core/config/env";
 
 const { resolveRequestContext, assertOrganizationAccess, resolveOwnerAccountSummary } = vi.hoisted(() => ({
   resolveRequestContext: vi.fn(),
@@ -31,6 +32,8 @@ import { GET } from "@/app/api/v1/owner/account/route";
 
 describe("GET /api/v1/owner/account", () => {
   beforeEach(() => {
+    process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
+    __resetEnvCacheForTests();
     resolveRequestContext.mockReset();
     assertOrganizationAccess.mockClear();
     resolveOwnerAccountSummary.mockClear();
@@ -39,6 +42,11 @@ describe("GET /api/v1/owner/account", () => {
       userId: "11111111-1111-4111-8111-111111111111",
       role: "owner",
     });
+  });
+
+  afterEach(() => {
+    delete process.env.DATABASE_URL;
+    __resetEnvCacheForTests();
   });
 
   it("returns owner account summary for authenticated owner", async () => {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
   DEFAULT_REGISTER_LOG_FILTERS,
   applyRegisterReportGranularity,
@@ -14,6 +14,7 @@ import {
   summarizeRegisterPeriod,
 } from "./register-log-display";
 import { REGISTER_REPORT_GRANULARITY } from "@/features/reports/client/register-report-granularity";
+import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
 
 describe("register-log-display", () => {
   it("counts active register log filters", () => {
@@ -60,8 +61,7 @@ describe("register-log-display", () => {
       filteredEntries: [
         { id: "e1", closeoutId: "c1", businessId: "b1", date: "2026-06-06", type: "summary", status: "active", amount: 100, salesChannels: [{ channelId: "cash", amount: 100 }] },
         { id: "e2", closeoutId: "c1", businessId: "b1", date: "2026-06-06", type: "expense", status: "active", amount: 10, categoryId: "other" },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fixture
-      ] as any[],
+      ] as unknown as OperationalEntry[],
       resolveChannelName: (row) => String((row as { channelId: string }).channelId),
       resolveStore: (businessId: string) => ({ id: businessId }),
       resolveActorLabel: () => "Owner",
@@ -86,8 +86,7 @@ describe("register-log-display", () => {
           salesChannels: [{ channelId: "card", amount: 5000 }],
           closeoutOwnerEditedAt: "2026-06-17T15:51:00.000Z",
         },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fixture
-      ] as any[],
+      ] as OperationalEntry[],
       resolveChannelName: () => "بطاقة",
       resolveStore: (businessId: string) => ({ id: businessId }),
       resolveActorLabel: () => "محمد خالد",
@@ -115,8 +114,7 @@ describe("register-log-display", () => {
           ],
           closeoutOwnerEditedAt: "2026-06-21T10:00:00.000Z",
         },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fixture
-      ] as any[],
+      ] as unknown as OperationalEntry[],
       resolveChannelName: (row) => String((row as { channelId: string }).channelId),
       resolveStore: (businessId: string) => ({ id: businessId }),
       resolveActorLabel: () => "محمد خالد",
@@ -140,8 +138,7 @@ describe("register-log-display", () => {
           salesChannels: [{ channelId: "cash", amount: 5000 }],
           closeoutOwnerEditedAt: "2026-06-21T10:00:00.000Z",
         },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fixture
-      ] as any[],
+      ] as OperationalEntry[],
       resolveChannelName: () => "نقد",
       resolveStore: (businessId: string) => ({ id: businessId }),
       resolveActorLabel: () => "محمد خالد",
@@ -328,8 +325,7 @@ describe("register-log-display", () => {
           closeoutOwnerEditedAt: "2026-06-11T10:00:00.000Z",
           closeoutOwnerEditedByName: "Owner",
         },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fixture
-      ] as any[],
+      ] as unknown as OperationalEntry[],
       resolveChannelName: (row) => String((row as { channelId: string }).channelId),
       resolveStore: (businessId: string) => ({ id: businessId }),
       resolveActorLabel: () => "Ahmed",

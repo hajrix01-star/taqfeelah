@@ -8,12 +8,19 @@ function normalizeHex(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function tokenToCssVariable(token: string): string {
+  if (token.startsWith("color")) {
+    return `--taq-color-${token.slice("color".length).toLowerCase()}`;
+  }
+  return `--taq-${token.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`)}`;
+}
+
 describe("taq-brand design tokens", () => {
   it("keeps TS palette aligned with taq-brand.css", () => {
     const css = readFileSync(resolve(process.cwd(), "src/core/design-tokens/taq-brand.css"), "utf8");
 
     for (const [token, hex] of Object.entries(TAQ_BRAND)) {
-      const cssVar = `--taq-${token.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`)}`;
+      const cssVar = tokenToCssVariable(token);
       expect(css, `missing ${cssVar}`).toContain(`${cssVar}: ${normalizeHex(hex)}`);
     }
   });

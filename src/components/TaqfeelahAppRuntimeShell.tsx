@@ -250,7 +250,9 @@ export default function TaqfeelahAppRuntimeShell() {
       ownerName={ownerDisplayName}
       onSyncToOperationalEntries={syncCloseoutToOperationalEntries as (closeout: import("@/features/daily-closeouts/daily-closeouts-types").DailyCloseoutRecord) => void | Promise<void>}
       onSubmitCloseoutToApi={syncSubmitCloseoutToApi}
-      onDeleteCloseoutToApi={syncDeleteCloseoutToApi}
+      onDeleteCloseoutToApi={async (params) => {
+        await syncDeleteCloseoutToApi(params);
+      }}
       loadCloseoutsFromApi={
         closeoutsApiEnabled
         && closeoutsApiOrganizationId

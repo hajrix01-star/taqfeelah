@@ -1,4 +1,4 @@
-import { CreditCard } from "lucide-react";
+﻿import { CreditCard } from "lucide-react";
 import { createOrganizationStoreViaApi } from "@/features/org-config/client/org-config-api-client";
 import {
   buildOwnerProfileUpdate,
@@ -56,12 +56,113 @@ import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { isFlattenedStoreSettingsEnabled } from "@/core/config/owner-settings-store-layout-mode";
 import { emptyStoreRecord, text } from "./taqfeelah-app-catalog-data";
 import { APP_IN_PRODUCTION_MODE, LOCAL_DEV_EMPLOYEE_PIN_DEFAULT } from "./taqfeelah-app-boot";
-import type { OwnerSettingsScreenHandlersContext } from "./taqfeelah-app-types";
+import type {
+  AppBusiness,
+  AppChannel,
+  AppSetState,
+  DisplayLang,
+  OwnerSettingsApiContext,
+  OwnerSettingsScreenHandlersContext,
+} from "./taqfeelah-app-types";
+import type { ResolvedOrganizationEntitlements } from "@/features/billing/client/billing-client-types";
+import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
+import type {
+  OwnerSettingsDeleteTarget,
+  StaffMember,
+  StoreChannelConfig,
+  StoreOperationalDraft,
+} from "@/features/org-config/client/org-config-client-types";
+import type { StoreOperationalSettings } from "@/domain/store-operational-settings/types";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type HandlerAny = any;
+type StoreSettingsMap = Record<string, StoreOperationalSettings>;
+type LastCloseoutDates = Record<string, string>;
+type DeleteTargetDraft = OwnerSettingsDeleteTarget | null;
+
+type HandlerSetters = Record<string, AppSetState> & {
+  setOwnerProfile: (value: unknown) => void;
+  setSettingsNotice: (value: unknown) => void;
+  setDraftStoreName: (value: unknown) => void;
+  setDraftStoreLocation: (value: unknown) => void;
+  setDraftStoreChannelConfig: (value: unknown) => void;
+  setDraftStoreOperationalConfig: (value: unknown) => void;
+  setNewCustomIncomeSourceName: (value: unknown) => void;
+  setSettingsStoreId: (value: unknown) => void;
+  setStorePanel: (value: unknown) => void;
+  setConfiguredBusinesses: (value: unknown) => void;
+  setStoreChannelSettings: (value: unknown) => void;
+  setStoreOperationalSettings: (value: unknown) => void;
+  setArchivedBusinessIds: (value: unknown) => void;
+  setDeleteTarget: (value: unknown) => void;
+  setNewStoreName: (value: unknown) => void;
+  setNewStoreLocation: (value: unknown) => void;
+  setShowAddStore: (value: unknown) => void;
+  setDraftStaff: (value: unknown) => void;
+  setManagingTeam: (value: unknown) => void;
+  setNewEmployeeName: (value: unknown) => void;
+  setNewEmployeeMobile: (value: unknown) => void;
+  setNewEmployeeStoreIds: (value: unknown) => void;
+  setStaff: (value: unknown) => void;
+  setAuthOwnerUsername: (value: unknown) => void;
+  setAuthOwnerPassword: (value: unknown) => void;
+  setAuthEmployeePins: (value: unknown) => void;
+  setDraftAuthEmployeePins: (value: unknown) => void;
+  setTeamSaving: (value: unknown) => void;
+  setStoreSaving: (value: unknown) => void;
+  setSelectedBusiness: (value: unknown) => void;
+  setArchivedReadOnlyBusinessId: (value: unknown) => void;
+  setLastCloseoutDates: (value: unknown) => void;
+};
+
+type HandlerContext = {
+  lang: DisplayLang;
+  settingsStoreId: string | null;
+  selectedStore: AppBusiness | null;
+  selectedBusiness: string;
+  displayBusinessName: (business: AppBusiness | Record<string, unknown>) => string;
+  displayLocation: (business: AppBusiness | Record<string, unknown>) => string;
+  savedChannelConfig: StoreChannelConfig;
+  savedOperationalConfig: StoreOperationalDraft;
+  channelConfig: StoreChannelConfig;
+  operationalConfig: StoreOperationalSettings;
+  draftStaff: StaffMember[] | null;
+  staff: StaffMember[];
+  managingTeam: boolean;
+  teamSaving: boolean;
+  newEmployeeName: string;
+  newEmployeeMobile: string;
+  newEmployeeStoreIds: string[];
+  draftOwnerName: string;
+  draftAuthOwnerUsername: string;
+  draftAuthOwnerPassword: string;
+  draftAuthEmployeePins: Record<string, string>;
+  authOwnerUsername: string;
+  authOwnerPassword: string;
+  authEmployeePins: Record<string, string>;
+  ownerProfile: Record<string, unknown>;
+  newStoreName: string;
+  newStoreLocation: string;
+  newCustomIncomeSourceName: string;
+  draftStoreName: string;
+  draftStoreLocation: string;
+  draftStoreChannelConfig: StoreChannelConfig | null;
+  draftStoreOperationalConfig: StoreOperationalDraft | null;
+  configuredBusinesses: AppBusiness[];
+  storeChannelSettings: Record<string, StoreChannelConfig>;
+  storeOperationalSettings: StoreSettingsMap;
+  operationalEntries: OperationalEntry[];
+  activeStoredBusinesses: AppBusiness[];
+  visibleStaff: StaffMember[];
+  deleteTarget: DeleteTargetDraft;
+  entitlements: ResolvedOrganizationEntitlements | null;
+  reloadEntitlements: () => void | Promise<void>;
+  orgConfigApiContext: OwnerSettingsApiContext;
+  onPersistSettingsNow: ((payload?: Record<string, unknown>) => void | Promise<void>) | null;
+  setters: HandlerSetters;
+  showSettingsSaved: () => void;
+};
 
 export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandlersContext) {
+  const dynamicCtx = ctx as HandlerContext;
   const {
     lang,
     settingsStoreId,
@@ -108,7 +209,11 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     onPersistSettingsNow,
     setters,
     showSettingsSaved,
-  } = ctx;
+  } = dynamicCtx;
+
+  const toChannelTarget = (channel: AppChannel | Record<string, unknown> | string): { id: string } => (
+    typeof channel === "string" ? { id: channel } : { id: String(channel.id || "") }
+  );
 
   const resetStoreDrafts = () => {
     setters.setDraftStoreName("");
@@ -128,21 +233,21 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     setters.setStorePanel("overview");
   };
 
-  const updateChannelDraft = (updater: HandlerAny) => {
-    setters.setDraftStoreChannelConfig((current: HandlerAny) => updater(current || savedChannelConfig));
+  const updateChannelDraft = (updater: (config: StoreChannelConfig) => StoreChannelConfig) => {
+    setters.setDraftStoreChannelConfig((current: StoreChannelConfig | null) => updater(current || savedChannelConfig));
   };
 
-  const updateOperationalDraft = (updates: HandlerAny) => {
-    setters.setDraftStoreOperationalConfig((current: HandlerAny) => mergeOperationalDraft(current || savedOperationalConfig, updates));
+  const updateOperationalDraft = (updates: Partial<StoreOperationalSettings>) => {
+    setters.setDraftStoreOperationalConfig((current: StoreOperationalDraft | null) => mergeOperationalDraft(current || savedOperationalConfig, updates));
   };
 
   const staffWithoutActiveStoreAfterArchive = (businessId: string) => listStaffWithoutActiveStoreAfterArchive({
     staff: visibleStaff,
     businessId,
-    activeBusinessIds: activeStoredBusinesses.map((business: HandlerAny) => business.id),
+    activeBusinessIds: activeStoredBusinesses.map((business) => business.id),
   });
 
-  const storeHasRecords = (business: HandlerAny) => storeHasOperationalRecords(operationalEntries, business.id);
+  const storeHasRecords = (business: AppBusiness | Record<string, unknown>) => storeHasOperationalRecords(operationalEntries, String(business.id));
 
   const saveOwnerProfile = () => {
     const nextProfile = buildOwnerProfileUpdate(ownerProfile, draftOwnerName);
@@ -231,7 +336,9 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       setters.setStoreSaving(true);
       setters.setSettingsNotice("");
       try {
-        await orgConfigApiContext.flushPersist({
+        const flushPersist = orgConfigApiContext?.flushPersist;
+        if (!flushPersist) throw new Error("org config persistence unavailable");
+        await flushPersist({
           configuredBusinesses: nextConfiguredBusinesses,
         });
       } catch {
@@ -273,8 +380,10 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       try {
         setters.setStoreSaving(true);
         setters.setSettingsNotice("");
-        await orgConfigApiContext.flushPersist({
-          storeChannelSettings: nextStoreChannelSettings,
+        const flushPersist = orgConfigApiContext?.flushPersist;
+        if (!flushPersist) throw new Error("org config persistence unavailable");
+        await flushPersist({
+          storeChannelSettings: nextStoreChannelSettings as Record<string, StoreChannelConfig>,
         });
       } catch {
         setters.setSettingsNotice(
@@ -313,7 +422,9 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       setters.setStoreSaving(true);
       setters.setSettingsNotice("");
       try {
-        await orgConfigApiContext.flushPersist({
+        const flushPersist = orgConfigApiContext?.flushPersist;
+        if (!flushPersist) throw new Error("org config persistence unavailable");
+        await flushPersist({
           storeOperationalSettings: nextStoreOperationalSettings,
         });
       } catch {
@@ -347,16 +458,17 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     updateChannelDraft(() => result.config);
   };
 
-  const requestRetireChannel = (channel: HandlerAny) => {
-    if (!canRequestRetireSalesChannel(channelConfig, channel)) {
+  const requestRetireChannel = (channel: AppChannel | Record<string, unknown> | string) => {
+    const channelTarget = toChannelTarget(channel);
+    if (!canRequestRetireSalesChannel(channelConfig, channelTarget)) {
       setters.setSettingsNotice(text(lang, "atLeastOneChannel"));
       return;
     }
-    setters.setDeleteTarget({ type: "channel", item: channel });
+    setters.setDeleteTarget({ type: "channel", item: channelTarget });
   };
 
-  const restoreSalesChannel = (channel: HandlerAny) => updateChannelDraft((config: HandlerAny) => restoreRetiredSalesChannel(config, channel));
-  const deleteCustomIncomeSource = (channel: HandlerAny) => updateChannelDraft((config: HandlerAny) => deleteCustomSalesChannelInDraft(config, channel));
+  const restoreSalesChannel = (channel: AppChannel | Record<string, unknown> | string) => updateChannelDraft((config) => restoreRetiredSalesChannel(config, toChannelTarget(channel)));
+  const deleteCustomIncomeSource = (channel: AppChannel | Record<string, unknown> | string) => updateChannelDraft((config) => deleteCustomSalesChannelInDraft(config, toChannelTarget(channel)));
 
   const addCustomIncomeSource = (names?: { nameAr?: string; nameEn?: string }) => {
     const result = addCustomSalesChannel(channelConfig, {
@@ -381,13 +493,13 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
     setters.setDraftStoreOperationalConfig(result.config);
   };
 
-  const toggleArchive = (id: string) => setters.setArchivedBusinessIds((current: HandlerAny) => toggleArchivedBusinessId(current, id));
+  const toggleArchive = (id: string) => setters.setArchivedBusinessIds((current: string[]) => toggleArchivedBusinessId(current, id));
 
-  const requestArchiveStore = (business: HandlerAny) => setters.setDeleteTarget(
+  const requestArchiveStore = (business: AppBusiness) => setters.setDeleteTarget(
     buildArchiveStoreDeleteTarget(business, staffWithoutActiveStoreAfterArchive(business.id)),
   );
 
-  const openStoreDelete = (business: HandlerAny) => {
+  const openStoreDelete = (business: AppBusiness) => {
     const hasRecords = storeHasRecords(business);
     setters.setDeleteTarget(buildRemoveStoreDeleteTarget(business, {
       hasRecords,
@@ -417,13 +529,13 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       setters.setSettingsNotice("");
       try {
         await createOrganizationStoreViaApi({
-          organizationId: orgConfigApiContext.organizationId,
-          actorUserId: orgConfigApiContext.actorUserId,
+          organizationId: orgConfigApiContext.organizationId || "",
+          actorUserId: orgConfigApiContext.actorUserId || "",
           actorRole: orgConfigApiContext.actorRole || "owner",
           name,
           location,
         });
-        await orgConfigApiContext.reload();
+        await orgConfigApiContext.reload?.();
         if (typeof reloadEntitlements === "function") {
           await reloadEntitlements();
         }
@@ -448,7 +560,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       emptyStoreRecord,
     });
     if (!business) return;
-    setters.setConfiguredBusinesses((current: HandlerAny) => [...current, business]);
+    setters.setConfiguredBusinesses((current: AppBusiness[]) => [...current, business]);
     setters.setNewStoreName("");
     setters.setNewStoreLocation("");
     setters.setShowAddStore(false);
@@ -469,7 +581,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
   };
 
   const persistTeamDraft = async (
-    teamDraft: HandlerAny,
+    teamDraft: StaffMember[],
     {
       persistRuntimeFallback = true,
       clearLocalPins = true,
@@ -501,7 +613,7 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       setters.setTeamSaving(true);
       setters.setSettingsNotice("");
       try {
-        await orgConfigApiContext.flushPersist({ staff: nextStaff }, { employeePins: persistPins });
+        await orgConfigApiContext?.flushPersist?.({ staff: nextStaff }, { employeePins: persistPins });
         if (clearLocalPins) setters.setAuthEmployeePins({});
         cancelManagingTeam();
         if (typeof reloadEntitlements === "function") {
@@ -570,46 +682,46 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       storeIds: newEmployeeStoreIds,
       defaultPin: defaultEmployeePin,
     });
-    setters.setDraftStaff((current: HandlerAny) => [...(current || staff), created.member]);
-    setters.setDraftAuthEmployeePins((current: HandlerAny) => ({ ...(current || {}), ...created.employeePinsPatch }));
+    setters.setDraftStaff((current: StaffMember[] | null) => [...(current || staff), created.member]);
+    setters.setDraftAuthEmployeePins((current: Record<string, string>) => ({ ...(current || {}), ...created.employeePinsPatch }));
     setters.setNewEmployeeName("");
     setters.setNewEmployeeMobile("");
     setters.setNewEmployeeStoreIds([]);
   };
 
   const updateDraftEmployeePin = (personId: string, value: string) => {
-    setters.setDraftAuthEmployeePins((current: HandlerAny) => ({ ...(current || {}), [personId]: value }));
+    setters.setDraftAuthEmployeePins((current: Record<string, string>) => ({ ...(current || {}), [personId]: value }));
   };
 
   const updateEmployeeMobile = (personId: string, value: string) => {
     if (!managingTeam) return;
-    setters.setDraftStaff((current: HandlerAny) => updateEmployeeMobileInDraft(current || staff, personId, value));
+    setters.setDraftStaff((current: StaffMember[] | null) => updateEmployeeMobileInDraft(current || staff, personId, value));
   };
 
   const toggleEmployeeActive = (personId: string) => {
     if (!managingTeam) return;
-    setters.setDraftStaff((current: HandlerAny) => toggleEmployeeActiveInDraft(current || staff, personId));
+    setters.setDraftStaff((current: StaffMember[] | null) => toggleEmployeeActiveInDraft(current || staff, personId));
   };
 
   const toggleEmployeeStore = (personId: string, storeId: string) => {
     if (!managingTeam) return;
-    setters.setDraftStaff((current: HandlerAny) => toggleEmployeeStoreInDraft(current || staff, personId, storeId));
+    setters.setDraftStaff((current: StaffMember[] | null) => toggleEmployeeStoreInDraft(current || staff, personId, storeId));
   };
 
   const toggleNewEmployeeStore = (storeId: string) => {
-    setters.setNewEmployeeStoreIds((current: HandlerAny) => toggleStoreSelection(current, storeId));
+    setters.setNewEmployeeStoreIds((current: string[]) => toggleStoreSelection(current, storeId));
   };
 
   const confirmDelete = async () => {
     if (deleteTarget?.type === "staff") {
       const personId = String(deleteTarget.item.id);
-      const removePerson = (current: HandlerAny) => current.map((person: HandlerAny) => (
+      const removePerson = (current: StaffMember[]) => current.map((person) => (
         person.id === personId ? { ...person, active: false, removed: true, deleted: true } : person
       ));
       const nextDraft = removePerson(managingTeam ? (draftStaff || staff) : staff);
 
-      setters.setDraftAuthEmployeePins((current: HandlerAny) => removeEmployeePinForPerson(current, personId));
-      setters.setAuthEmployeePins((current: HandlerAny) => removeEmployeePinForPerson(current, personId));
+      setters.setDraftAuthEmployeePins((current: Record<string, string>) => removeEmployeePinForPerson(current, personId));
+      setters.setAuthEmployeePins((current: Record<string, string>) => removeEmployeePinForPerson(current, personId));
       setters.setDeleteTarget(null);
       setters.setDraftStaff(nextDraft);
       if (!managingTeam) setters.setManagingTeam(true);
@@ -624,22 +736,22 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
       selectedBusiness,
       apply: {
         appendArchivedBusinessId: (businessId: string) => {
-          setters.setArchivedBusinessIds((current: HandlerAny) => (current.includes(businessId) ? current : [...current, businessId]));
+          setters.setArchivedBusinessIds((current: string[]) => (current.includes(businessId) ? current : [...current, businessId]));
         },
         removeConfiguredBusiness: (businessId: string) => {
-          setters.setConfiguredBusinesses((current: HandlerAny) => current.filter((business: HandlerAny) => business.id !== businessId));
+          setters.setConfiguredBusinesses((current: AppBusiness[]) => current.filter((business) => business.id !== businessId));
         },
         removeArchivedBusinessId: (businessId: string) => {
-          setters.setArchivedBusinessIds((current: HandlerAny) => current.filter((id: string) => id !== businessId));
+          setters.setArchivedBusinessIds((current: string[]) => current.filter((id: string) => id !== businessId));
         },
         removeStaffStoreId: (businessId: string) => {
-          setters.setStaff((current: HandlerAny) => current.map((person: HandlerAny) => ({
+          setters.setStaff((current: StaffMember[]) => current.map((person) => ({
             ...person,
             storeIds: (person.storeIds || []).filter((id: string) => id !== businessId),
           })));
         },
         removeLastCloseoutDate: (businessId: string) => {
-          setters.setLastCloseoutDates((current: HandlerAny) => {
+          setters.setLastCloseoutDates((current: LastCloseoutDates) => {
             const next = { ...current };
             delete next[businessId];
             return next;
@@ -648,33 +760,33 @@ export function createOwnerSettingsScreenHandlers(ctx: OwnerSettingsScreenHandle
         setSelectedBusiness: setters.setSelectedBusiness,
         clearArchivedReadOnlyBusinessId: () => setters.setArchivedReadOnlyBusinessId(null),
         removeStoreChannelSettings: (businessId: string) => {
-          setters.setStoreChannelSettings((current: HandlerAny) => {
+          setters.setStoreChannelSettings((current: Record<string, StoreChannelConfig>) => {
             const next = { ...current };
             delete next[businessId];
             return next;
           });
         },
         removeStoreOperationalSettings: (businessId: string) => {
-          setters.setStoreOperationalSettings((current: HandlerAny) => {
+          setters.setStoreOperationalSettings((current: StoreSettingsMap) => {
             const next = { ...current };
             delete next[businessId];
             return next;
           });
         },
         closeStore,
-        retireChannel: (channel: HandlerAny) => {
-          updateChannelDraft((config: HandlerAny) => retireSalesChannelInDraft(config, channel));
+        retireChannel: (channel: AppChannel | Record<string, unknown> | string) => {
+          updateChannelDraft((config) => retireSalesChannelInDraft(config, toChannelTarget(channel)));
         },
         removeStaffMember: (personId: string) => {
-          const removePerson = (current: HandlerAny) => current.map((person: HandlerAny) => (
+          const removePerson = (current: StaffMember[]) => current.map((person) => (
             person.id === personId ? { ...person, active: false, removed: true, deleted: true } : person
           ));
-          if (managingTeam) setters.setDraftStaff((current: HandlerAny) => removePerson(current || staff));
+          if (managingTeam) setters.setDraftStaff((current: StaffMember[] | null) => removePerson(current || staff));
           else setters.setStaff(removePerson);
         },
         removeEmployeePin: (personId: string) => {
-          setters.setDraftAuthEmployeePins((current: HandlerAny) => removeEmployeePinForPerson(current, personId));
-          setters.setAuthEmployeePins((current: HandlerAny) => removeEmployeePinForPerson(current, personId));
+          setters.setDraftAuthEmployeePins((current: Record<string, string>) => removeEmployeePinForPerson(current, personId));
+          setters.setAuthEmployeePins((current: Record<string, string>) => removeEmployeePinForPerson(current, personId));
         },
       },
     });

@@ -15,7 +15,12 @@ import { OwnerNotebookScreen } from "./taqfeelah-app-owner-notebook-screen";
 import { OwnerHomeConnected } from "./taqfeelah-app-owner-home-screen";
 import { OwnerRegisterConnected } from "./taqfeelah-app-owner-register-connected";
 import type { SalesChannelConfig } from "@/features/daily-closeouts/daily-closeouts-types";
-import type { TaqfeelahAppPageContentProps, AppBusiness, AppChannel } from "./taqfeelah-app-types";
+import type {
+  TaqfeelahAppPageContentProps,
+  AppBusiness,
+  AppChannel,
+  OwnerSettingsApiContext,
+} from "./taqfeelah-app-types";
 
 export function TaqfeelahAppPageContent({
   lang,
@@ -347,8 +352,8 @@ export function TaqfeelahAppPageContent({
                 actorRole: "owner",
                 loading: orgConfigLoading,
                 hydrated: orgConfigHydrated,
-                reload: reloadOrgConfig,
-                flushPersist: flushOrgConfigPersist,
+                reload: reloadOrgConfig as OwnerSettingsApiContext extends { reload?: infer Reload } ? Reload : never,
+                flushPersist: flushOrgConfigPersist as OwnerSettingsApiContext extends { flushPersist?: infer FlushPersist } ? FlushPersist : never,
               }
               : null
           }

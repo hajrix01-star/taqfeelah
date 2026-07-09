@@ -53,7 +53,7 @@ export type FetchApiJsonOptions = {
 };
 
 /** Low-level JSON fetch. Throws Error with API message or fallback on non-OK. */
-export async function fetchApiJson(
+export async function fetchApiJson<T = unknown>(
   url: string,
   {
     method = "GET",
@@ -63,9 +63,8 @@ export async function fetchApiJson(
     errorStyle = "message",
     parseBody = true,
   }: FetchApiJsonOptions = {},
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentional open API boundary; callers narrow
-): Promise<any> {
-  return apiClientRequest(url, {
+): Promise<T> {
+  return apiClientRequest<T>(url, {
     method,
     headers,
     body,
@@ -86,7 +85,7 @@ export type fetchApiJsonWithRuntimeContextOptions = {
   contentType?: string;
 };
 
-export async function fetchApiJsonWithRuntimeContext(
+export async function fetchApiJsonWithRuntimeContext<T = unknown>(
   url: string,
   {
     organizationId = "",
@@ -98,9 +97,8 @@ export async function fetchApiJsonWithRuntimeContext(
     errorStyle = "message",
     contentType = method === "GET" || method === "DELETE" ? "" : "application/json",
   }: fetchApiJsonWithRuntimeContextOptions = {},
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentional open API boundary; callers narrow
-): Promise<any> {
-  return fetchApiJson(url, {
+): Promise<T> {
+  return fetchApiJson<T>(url, {
     method,
     body,
     errorMessage,

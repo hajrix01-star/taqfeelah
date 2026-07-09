@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
   buildLocalReportDaysFromEntries,
   buildOutflowByCategoryFromEntries,
@@ -6,6 +6,7 @@ import {
   filterOutflowEntriesForPeriod,
   percentageOfSalesAmount,
 } from "./operational-reports-display";
+import type { OperationalEntry } from "@/features/entries/client/entries-client-types";
 
 describe("operational-reports-display", () => {
   it("builds local report day rows for a month", () => {
@@ -23,8 +24,7 @@ describe("operational-reports-display", () => {
       entries: [
         { id: "1", type: "expense", status: "active", date: "2026-06-06", amount: 10, businessId: "b1", categoryId: "other" },
         { id: "2", type: "expense", status: "active", date: "2026-06-06", amount: 5, businessId: "b2", categoryId: "other" },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test fixture
-      ] as any[],
+      ] as OperationalEntry[],
       selectedBusiness: "b1",
       category: "other",
       period: "day",

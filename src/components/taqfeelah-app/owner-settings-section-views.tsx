@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { OwnerSettingsAccountSection } from "./owner-settings-account-section";
@@ -14,14 +14,62 @@ import {
   SettingsTabbedPanel,
 } from "./owner-settings-tab-primitives";
 import type {
+  AppBusiness,
+  OwnerSettingsApiContext,
   OwnerSettingsSectionCommonProps,
   OwnerSettingsSectionRenderOptions,
   OwnerSettingsTabbedShellCallbacks,
   OwnerSettingsViewState,
 } from "./taqfeelah-app-types";
 import type { StaffMember } from "@/features/org-config/client/org-config-client-types";
+import type { ResolvedOrganizationEntitlements } from "@/features/billing/client/billing-client-types";
 
-export function OwnerSettingsStoresTeamSection(props: OwnerSettingsViewState & OwnerSettingsSectionCommonProps) {
+type OwnerSettingsStoresTeamSectionProps = OwnerSettingsSectionCommonProps & {
+  section: string;
+  visibleStaff: StaffMember[];
+  employeeStoreIds: (person: StaffMember) => string[];
+  activeStoredBusinesses: AppBusiness[];
+  showAddStore: boolean;
+  setShowAddStore: (value: boolean) => void;
+  newStoreName: string;
+  setNewStoreName: (value: string) => void;
+  newStoreLocation: string;
+  setNewStoreLocation: (value: string) => void;
+  addStore: () => void | Promise<void>;
+  archivedStoredBusinesses: AppBusiness[];
+  showArchivedStores: boolean;
+  setShowArchivedStores: (value: boolean) => void;
+  displayBusinessName: (business: AppBusiness) => string;
+  displayLocation: (business: AppBusiness) => string;
+  openStore: (storeId: string) => void;
+  deleteDialogProps: OwnerSettingsViewState["deleteDialogProps"];
+  orgConfigLoading?: boolean;
+  storeSaving: boolean;
+  settingsNotice: string;
+  settingsSuccess: boolean;
+  entitlements: ResolvedOrganizationEntitlements | null;
+  managingTeam: boolean;
+  startManagingTeam: () => void;
+  cancelManagingTeam: () => void;
+  toggleEmployeeActive: (personId: string) => void;
+  setDeleteTarget: OwnerSettingsViewState["setDeleteTarget"];
+  toggleEmployeeStore: (personId: string, storeId: string) => void;
+  draftAuthEmployeePins: Record<string, string>;
+  updateDraftEmployeePin: (personId: string, pin: string) => void;
+  updateEmployeeMobile: (personId: string, mobile: string) => void;
+  newEmployeeName: string;
+  setNewEmployeeName: (value: string) => void;
+  newEmployeeMobile: string;
+  setNewEmployeeMobile: (value: string) => void;
+  newEmployeeStoreIds: string[];
+  toggleNewEmployeeStore: (storeId: string) => void;
+  addStaff: () => void;
+  teamSaving: boolean;
+  saveManagingTeam: () => void | Promise<void>;
+  inviteApiContext?: OwnerSettingsApiContext;
+};
+
+export function OwnerSettingsStoresTeamSection(props: OwnerSettingsStoresTeamSectionProps) {
   const {
     section,
     setSection,
@@ -122,6 +170,7 @@ export function renderOwnerSettingsSection(
     return (
       <OwnerSettingsStoresTeamSection
         {...common}
+        section={section}
         showAddStore={state.showAddStore}
         setShowAddStore={state.setShowAddStore}
         newStoreName={state.newStoreName}
@@ -191,7 +240,7 @@ export function renderOwnerSettingsSection(
         entitlementsLoading={state.entitlementsLoading}
         entitlementsError={state.entitlementsError}
         reloadEntitlements={state.reloadEntitlements}
-        ownerProfile={state.ownerProfile}
+        ownerProfile={state.ownerProfile as Record<string, unknown>}
       />
     );
   }
@@ -205,7 +254,7 @@ export function renderOwnerSettingsSection(
         entitlementsLoading={state.entitlementsLoading}
         entitlementsError={state.entitlementsError}
         reloadEntitlements={state.reloadEntitlements}
-        ownerProfile={state.ownerProfile}
+        ownerProfile={state.ownerProfile as Record<string, unknown>}
       />
     );
   }
@@ -213,7 +262,7 @@ export function renderOwnerSettingsSection(
     return (
       <OwnerSettingsHomeSection
         {...common}
-        ownerProfile={state.ownerProfile}
+        ownerProfile={state.ownerProfile as Record<string, unknown>}
         activeStoredBusinesses={state.activeStoredBusinesses}
         visibleStaff={state.visibleStaff}
         notebookTheme={state.notebookTheme}
@@ -226,7 +275,7 @@ export function renderOwnerSettingsSection(
   return (
     <OwnerSettingsHomeSection
       {...common}
-      ownerProfile={state.ownerProfile}
+      ownerProfile={state.ownerProfile as Record<string, unknown>}
       activeStoredBusinesses={state.activeStoredBusinesses}
       visibleStaff={state.visibleStaff}
       notebookTheme={state.notebookTheme}

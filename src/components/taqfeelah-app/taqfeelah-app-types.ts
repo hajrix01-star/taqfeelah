@@ -27,6 +27,7 @@ import type {
   StaffMember,
   StoreChannelConfig,
 } from "@/features/org-config/client/org-config-client-types";
+import type { ResolvedOrganizationEntitlements } from "@/features/billing/client/billing-client-types";
 import type { StoreOperationalSettings } from "@/domain/store-operational-settings/types";
 
 export type { DisplayLang, OperationalEntry, OperationalEntryActor, OperationalEntryPayload, NotebookThemeId, RegisterLogFilters };
@@ -131,11 +132,13 @@ export type AppFormatCalendarDateFn = (
   lang: AppLang,
 ) => string;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type TaqfeelahAppCallback = (...args: any[]) => any;
+export type TaqfeelahAppCallback = {
+  bivarianceHack(...args: unknown[]): void;
+}["bivarianceHack"];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AppSetState<T = any> = Dispatch<SetStateAction<T>>;
+export type AppSetState<T = unknown> = {
+  bivarianceHack(value: SetStateAction<T>): void;
+}["bivarianceHack"];
 
 export type AppRef<T> = MutableRefObject<T | null>;
 
@@ -398,7 +401,7 @@ export type OwnerSettingsStoreFlattenedPanelProps = {
   setDraftStoreLocation: (value: string) => void;
   saveStoreProfile: () => void;
   channelConfig: StoreChannelConfig;
-  retiredChannels: AppChannel[];
+  retiredChannels: Array<AppChannel | Record<string, unknown>>;
   newCustomIncomeSourceName: string;
   setNewCustomIncomeSourceName: (value: string) => void;
   toggleChannel: (channelId: string) => void;
@@ -418,7 +421,7 @@ export type OwnerSettingsStoreFlattenedPanelProps = {
   setSelectedBusiness: (value: string) => void;
   setOwnerPage: (value: string) => void;
   toggleArchive: (storeId: string) => void;
-  requestArchiveStore: (store?: AppBusiness) => void;
+  requestArchiveStore: (store: AppBusiness) => void;
   openStoreDelete: (store: AppBusiness) => void;
   settingsSuccess: boolean;
   settingsNotice: string;
@@ -433,8 +436,7 @@ export type OwnerSettingsTabbedShellCallbacks = {
   onOpenHelp?: () => void;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- hook bundle state
-export type OwnerSettingsTabbedShellState = Record<string, any> & {
+export type OwnerSettingsTabbedShellState = Record<string, unknown> & {
   lang: DisplayLang;
   section: string;
   setSection: (value: string) => void;
@@ -535,10 +537,109 @@ export type IndexTabBorderOptions = {
 
 export type IconComponent = LucideIcon;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- hook bundle state
-export type OwnerSettingsViewState = Record<string, any> & {
+export type OwnerSettingsViewState = Record<string, unknown> & {
   lang: DisplayLang;
+  section: string;
+  setSection: (value: string) => void;
   deleteDialogProps: OwnerSettingsDeleteDialogProps;
+  draftOwnerName: string;
+  setDraftOwnerName: (value: string) => void;
+  draftAuthOwnerUsername: string;
+  setDraftAuthOwnerUsername: (value: string) => void;
+  draftAuthOwnerPassword: string;
+  setDraftAuthOwnerPassword: (value: string) => void;
+  ownerProfileDirty: boolean;
+  authDirty: boolean;
+  saveOwnerProfile: () => void;
+  saveAuthCredentials: () => void;
+  settingsNotice: string;
+  settingsSuccess: boolean;
+  serverAuthMode?: boolean;
+  ownerAccount: Record<string, unknown> | null;
+  ownerAccountLoading: boolean;
+  ownerAccountError: string;
+  reloadOwnerAccount: () => void;
+  showAddStore: boolean;
+  setShowAddStore: (value: boolean) => void;
+  newStoreName: string;
+  setNewStoreName: (value: string) => void;
+  newStoreLocation: string;
+  setNewStoreLocation: (value: string) => void;
+  addStore: () => void | Promise<void>;
+  activeStoredBusinesses: AppBusiness[];
+  archivedStoredBusinesses: AppBusiness[];
+  showArchivedStores: boolean;
+  setShowArchivedStores: (value: boolean) => void;
+  displayBusinessName: (business: AppBusiness) => string;
+  displayLocation: (business: AppBusiness) => string;
+  openStore: (storeId: string) => void;
+  orgConfigApiContext?: OwnerSettingsApiContext;
+  storeSaving: boolean;
+  entitlements: ResolvedOrganizationEntitlements | null;
+  entitlementsLoading: boolean;
+  entitlementsError: string;
+  reloadEntitlements: () => void | Promise<void>;
+  managingTeam: boolean;
+  startManagingTeam: () => void;
+  cancelManagingTeam: () => void;
+  visibleStaff: StaffMember[];
+  employeeStoreIds: (person: StaffMember) => string[];
+  toggleEmployeeActive: (personId: string) => void;
+  setDeleteTarget: (target: OwnerSettingsDeleteTarget | null) => void;
+  toggleEmployeeStore: (personId: string, storeId: string) => void;
+  draftAuthEmployeePins: Record<string, string>;
+  updateDraftEmployeePin: (personId: string, pin: string) => void;
+  updateEmployeeMobile: (personId: string, mobile: string) => void;
+  newEmployeeName: string;
+  setNewEmployeeName: (value: string) => void;
+  newEmployeeMobile: string;
+  setNewEmployeeMobile: (value: string) => void;
+  newEmployeeStoreIds: string[];
+  toggleNewEmployeeStore: (storeId: string) => void;
+  addStaff: () => void;
+  teamSaving: boolean;
+  saveManagingTeam: () => void | Promise<void>;
+  inviteApiContext?: OwnerSettingsApiContext;
+  draftNotebookTheme: NotebookThemeId | string;
+  setDraftNotebookTheme: (value: NotebookThemeId | string) => void;
+  notebookTheme: NotebookThemeId | string;
+  themeDirty: boolean;
+  setThemeDirty: (value: boolean) => void;
+  setNotebookTheme: (value: NotebookThemeId | string) => void;
+  showSettingsSaved: () => void;
+  selectedStore: AppBusiness | null;
+  storePanel: string;
+  draftStoreName: string;
+  setDraftStoreName: (value: string) => void;
+  draftStoreLocation: string;
+  setDraftStoreLocation: (value: string) => void;
+  saveStoreProfile: () => void | Promise<void>;
+  backFromStorePanel: () => void;
+  channelConfig: StoreChannelConfig;
+  retiredChannels: Array<AppChannel | Record<string, unknown>>;
+  newCustomIncomeSourceName: string;
+  setNewCustomIncomeSourceName: (value: string) => void;
+  toggleChannel: (channelId: string) => void;
+  requestRetireChannel: (channel: AppChannel | Record<string, unknown> | string) => void;
+  restoreSalesChannel: (channel: AppChannel | Record<string, unknown> | string) => void;
+  deleteCustomIncomeSource: (channel: AppChannel | Record<string, unknown> | string) => void;
+  addCustomIncomeSource: (names?: { nameAr?: string; nameEn?: string }) => void;
+  saveChannelSettings: () => void | Promise<void>;
+  operationalConfig: StoreOperationalSettings;
+  toggleCategory: (categoryId: string) => void;
+  saveOperationalSettings: () => void | Promise<void>;
+  updateOperationalDraft: (patch: Partial<StoreOperationalSettings>) => void;
+  archived: boolean;
+  activeChannelCount: number;
+  activeCategoryCount: number;
+  openStorePanel: (panel: string) => void;
+  setArchivedReadOnlyBusinessId: (value: string | null) => void;
+  setSelectedBusiness: (value: string) => void;
+  setOwnerPage: (value: string) => void;
+  toggleArchive: (storeId: string) => void;
+  requestArchiveStore: (store: AppBusiness) => void;
+  openStoreDelete: (store: AppBusiness) => void;
+  closeStore: () => void;
 };
 
 type StorePanelLangProps = { lang: DisplayLang };
@@ -598,7 +699,7 @@ export type OwnerSettingsStoreOverviewPanelProps = StorePanelLangProps & {
   setSelectedBusiness: (value: string) => void;
   setOwnerPage: (value: string) => void;
   toggleArchive: (storeId: string) => void;
-  requestArchiveStore: (store?: AppBusiness) => void;
+  requestArchiveStore: (store: AppBusiness) => void;
   openStoreDelete: (store: AppBusiness) => void;
   settingsSuccess: boolean;
   closeStore: () => void;
@@ -615,8 +716,10 @@ export type OwnerSettingsSectionCommonProps = {
   embedded?: boolean;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- screen handler bundle from hook state
-export type OwnerSettingsScreenHandlersContext = any;
+export type OwnerSettingsScreenHandlersContext = Record<string, unknown> & {
+  setters: Record<string, AppSetState>;
+  showSettingsSaved: () => void;
+};
 
 export type OwnerSettingsIncomeSourcesEditorProps = {
   lang: DisplayLang;
