@@ -176,7 +176,7 @@ export function useOwnerSettingsState({
   const [authOwnerPassword, setAuthOwnerPassword] = useState(
     () => (bindsToServerAuth
       ? ""
-      : String(initialAuthConfig.ownerPassword || fallbackOwnerPassword || (skipLocalBootstrap ? "" : "local123"))),
+      : String(initialAuthConfig.ownerPassword || fallbackOwnerPassword || (skipLocalBootstrap ? "" : "12345678"))),
   );
   const [authEmployeePins, setAuthEmployeePins] = useState<Record<string, string>>(
     () => (initialAuthConfig.employeePins && typeof initialAuthConfig.employeePins === "object"
