@@ -1,4 +1,4 @@
-import type { NotebookThemeId } from "./daily-closeouts-types";
+import type { NotebookPatternId, NotebookThemeId } from "./daily-closeouts-types";
 
 export type NotebookThemeStyle = {
   paper: string;
@@ -61,6 +61,7 @@ export const notebookThemes: Record<NotebookThemeId, NotebookThemeStyle> = {
 };
 
 export const NOTEBOOK_THEME_IDS = Object.freeze(Object.keys(notebookThemes) as NotebookThemeId[]);
+export const NOTEBOOK_PATTERN_IDS = Object.freeze(["lined", "grid"] as const);
 
 function blendHex(hex: string, targetHex: string, ratio: number): string {
   const parse = (value: string) => {
@@ -78,14 +79,32 @@ function blendHex(hex: string, targetHex: string, ratio: number): string {
   return `#${channel(mix(r1, r2))}${channel(mix(g1, g2))}${channel(mix(b1, b2))}`;
 }
 
-export function notebookLinesBackground(theme: NotebookThemeId | string): {
+function resolveNotebookPattern(pattern: NotebookPatternId | string | undefined): NotebookPatternId {
+  return pattern === "grid" ? "grid" : "lined";
+}
+
+function notebookPatternBackgroundImage(activeTheme: NotebookThemeStyle, pattern: NotebookPatternId): string {
+  if (pattern === "grid") {
+    return [
+      `repeating-linear-gradient(180deg, transparent 0px, transparent 21px, ${activeTheme.line} 21px, ${activeTheme.line} 22px)`,
+      `repeating-linear-gradient(90deg, transparent 0px, transparent 21px, ${activeTheme.line} 21px, ${activeTheme.line} 22px)`,
+    ].join(", ");
+  }
+  return `repeating-linear-gradient(180deg, transparent 0px, transparent 43px, ${activeTheme.line} 43px, ${activeTheme.line} 44px)`;
+}
+
+export function notebookLinesBackground(
+  theme: NotebookThemeId | string,
+  pattern: NotebookPatternId | string = "lined",
+): {
   backgroundColor: string;
   backgroundImage: string;
 } {
   const activeTheme = notebookThemes[theme as NotebookThemeId] || notebookThemes.yellow;
+  const activePattern = resolveNotebookPattern(pattern);
   return {
     backgroundColor: activeTheme.paper,
-    backgroundImage: `repeating-linear-gradient(180deg, transparent 0px, transparent 43px, ${activeTheme.line} 43px, ${activeTheme.line} 44px)`,
+    backgroundImage: notebookPatternBackgroundImage(activeTheme, activePattern),
   };
 }
 
@@ -105,6 +124,10 @@ export function applyNotebookThemeCssVariables(themeKey: NotebookThemeId | strin
 
 export function isValidNotebookTheme(themeKey: unknown): themeKey is NotebookThemeId {
   return typeof themeKey === "string" && Object.prototype.hasOwnProperty.call(notebookThemes, themeKey);
+}
+
+export function isValidNotebookPattern(patternKey: unknown): patternKey is NotebookPatternId {
+  return patternKey === "lined" || patternKey === "grid";
 }
 
 export function resolveNotebookTheme({

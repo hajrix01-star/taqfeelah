@@ -36,6 +36,7 @@ export default function EmployeeCloseoutsView({
   onSelectStore,
   salesChannels,
   notebookTheme,
+  notebookPattern = "lined",
   employeeHistoryVisibility = "month",
   formatCalendarDate,
   channelLabel,
@@ -172,6 +173,7 @@ export default function EmployeeCloseoutsView({
             key={`${entryCloseout.id}-${entryCloseout.storeId || "pending"}`}
             lang={lang}
             notebookTheme={notebookTheme}
+            notebookPattern={notebookPattern}
             closeout={entryCloseout}
             salesChannels={entrySalesChannelsResolved}
             storeName={entryStoreLabel}
@@ -189,7 +191,7 @@ export default function EmployeeCloseoutsView({
           />
         </div>
       ) : (
-        <NotebookScrollSurface theme={notebookTheme} lang={lang}>
+        <NotebookScrollSurface theme={notebookTheme} pattern={notebookPattern} lang={lang}>
           {showSettings && settingsPanel ? (
             settingsPanel({ onBack: () => setShowSettings(false) })
           ) : (

@@ -13,6 +13,8 @@ export type NotebookThemeId =
   | "pinkTint"
   | "blueTint";
 
+export type NotebookPatternId = "lined" | "grid";
+
 export type CloseoutStatusValue = "draft" | "submitted" | "reviewed" | "returned";
 
 export type OutflowType = "purchases" | "expense" | "withdrawal";

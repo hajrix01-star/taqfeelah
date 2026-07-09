@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  isValidNotebookPattern,
   isValidNotebookTheme,
   NOTEBOOK_THEME_IDS,
+  notebookLinesBackground,
   notebookThemePaperColor,
   notebookThemes,
   resolveShareNotebookTheme,
@@ -42,5 +44,22 @@ describe("notebookThemes", () => {
     expect(isValidNotebookTheme("blueTint")).toBe(true);
     expect(notebookThemes.pinkTint.paper).toMatch(/^#[0-9A-Fa-f]{6}$/);
     expect(notebookThemes.blueTint.paper).toMatch(/^#[0-9A-Fa-f]{6}$/);
+  });
+});
+
+describe("notebookLinesBackground", () => {
+  it("uses lined paper by default", () => {
+    expect(notebookLinesBackground("yellow").backgroundImage).toContain("43px");
+    expect(notebookLinesBackground("yellow").backgroundImage).not.toContain("90deg");
+  });
+
+  it("uses both axes for grid paper", () => {
+    const grid = notebookLinesBackground("yellow", "grid");
+
+    expect(isValidNotebookPattern("grid")).toBe(true);
+    expect(isValidNotebookPattern("unknown")).toBe(false);
+    expect(grid.backgroundColor).toBe(notebookThemes.yellow.paper);
+    expect(grid.backgroundImage).toContain("180deg");
+    expect(grid.backgroundImage).toContain("90deg");
   });
 });

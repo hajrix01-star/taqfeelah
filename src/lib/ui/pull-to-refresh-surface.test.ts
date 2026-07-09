@@ -9,6 +9,12 @@ describe("resolvePullToRefreshSurfaceStyle", () => {
     );
   });
 
+  it("passes notebook paper pattern through for notebook pages", () => {
+    expect(resolvePullToRefreshSurfaceStyle(true, "yellow", "grid")).toEqual(
+      notebookLinesBackground("yellow", "grid"),
+    );
+  });
+
   it("returns shell background for non-notebook pages", () => {
     expect(resolvePullToRefreshSurfaceStyle(false, "yellow")).toEqual({
       backgroundColor: "#F8F6F0",

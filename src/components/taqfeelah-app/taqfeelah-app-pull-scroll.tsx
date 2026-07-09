@@ -12,6 +12,7 @@ import { resolvePullToRefreshSurfaceStyle } from "@/lib/ui/pull-to-refresh-surfa
 import { usePullToRefresh } from "@/lib/ui/use-pull-to-refresh";
 import type {
   NotebookThemeId,
+  NotebookPatternId,
   AppChildrenProps,
   AppEmployeePage,
   AppLang,
@@ -29,6 +30,7 @@ type TaqfeelahAppPullScrollProps = AppChildrenProps & {
   ownerEditActive: boolean;
   hasActiveEmployee: boolean;
   notebookTheme?: NotebookThemeId | string;
+  notebookPattern?: NotebookPatternId | string;
   onRefreshOperationalEntries: AppReloadOperationalEntriesFn;
 };
 
@@ -42,6 +44,7 @@ export function TaqfeelahAppPullScroll({
   ownerEditActive,
   hasActiveEmployee,
   notebookTheme = "yellow",
+  notebookPattern = "lined",
   onRefreshOperationalEntries,
   children,
 }: TaqfeelahAppPullScrollProps) {
@@ -103,7 +106,7 @@ export function TaqfeelahAppPullScroll({
   });
 
   const surfaceStyle = enabled
-    ? resolvePullToRefreshSurfaceStyle(usesNotebookSurface, notebookTheme)
+    ? resolvePullToRefreshSurfaceStyle(usesNotebookSurface, notebookTheme, notebookPattern)
     : undefined;
   const indicatorVisible = isActive || refreshing;
   const contentOffset = slotHeight > 0 ? slotHeight : 0;

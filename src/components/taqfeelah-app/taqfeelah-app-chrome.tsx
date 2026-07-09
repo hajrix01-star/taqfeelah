@@ -19,7 +19,7 @@ import { notebookLinesBackground } from "@/features/daily-closeouts/notebook-the
 import { AppBrandMark } from "@/lib/brand/AppBrandMark";
 import { text } from "./taqfeelah-app-catalog-data";
 import { taqInteractive } from "@/core/ui/interactive-classes";
-import type { NotebookThemeId, AppLang } from "./taqfeelah-app-types";
+import type { NotebookPatternId, NotebookThemeId, AppLang } from "./taqfeelah-app-types";
 
 function Logo({ compact = false, centered = false, showTagline = false }: {
   compact?: boolean;
@@ -66,6 +66,7 @@ function TopBar({
   hasNotificationBadge = false,
   notebookMode = false,
   notebookTheme = "yellow",
+  notebookPattern = "lined",
 }: {
   lang: AppLang;
   setLang: (lang: AppLang) => void;
@@ -77,6 +78,7 @@ function TopBar({
   hasNotificationBadge?: boolean;
   notebookMode?: boolean;
   notebookTheme?: NotebookThemeId | string;
+  notebookPattern?: NotebookPatternId | string;
 }) {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
@@ -88,7 +90,7 @@ function TopBar({
     document.addEventListener("keydown", closeEscape);
     return () => { document.removeEventListener("pointerdown", closeOutside); document.removeEventListener("keydown", closeEscape); };
   }, [accountMenuOpen]);
-  const headerSurfaceStyle = notebookMode ? notebookLinesBackground(notebookTheme) : { backgroundColor: "var(--taq-color-f8f6f0)" };
+  const headerSurfaceStyle = notebookMode ? notebookLinesBackground(notebookTheme, notebookPattern) : { backgroundColor: "var(--taq-color-f8f6f0)" };
   const headerStyle = {
     ...headerSurfaceStyle,
     minHeight: "calc(70px + env(safe-area-inset-top, 0px))",

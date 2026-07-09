@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { safeGetLocalStorageItem, safeSetLocalStorageItem } from "@/core/client/safe-local-storage";
-import { isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
+import { isValidNotebookPattern, isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
 import { useOrgConfigRuntimeBridge } from "./org-config-runtime-bridge";
 import {
   applyRuntimeSettingsSnapshotPatch,
@@ -46,9 +46,20 @@ function readLocalLocalNotebookTheme(skipLocalBootstrap: boolean) {
   return safeGetLocalStorageItem("taqfeelah_notebook_theme", { scope: "ui-preferences" }) || "yellow";
 }
 
+function readLocalLocalNotebookPattern(skipLocalBootstrap: boolean) {
+  if (skipLocalBootstrap) return "lined";
+  const savedPattern = safeGetLocalStorageItem("taqfeelah_notebook_pattern", { scope: "ui-preferences" });
+  return isValidNotebookPattern(savedPattern) ? savedPattern : "lined";
+}
+
 function writeLocalLocalNotebookTheme(notebookTheme: string, skipLocalBootstrap: boolean) {
   if (skipLocalBootstrap) return;
   safeSetLocalStorageItem("taqfeelah_notebook_theme", notebookTheme, { scope: "ui-preferences" });
+}
+
+function writeLocalLocalNotebookPattern(notebookPattern: string, skipLocalBootstrap: boolean) {
+  if (skipLocalBootstrap) return;
+  safeSetLocalStorageItem("taqfeelah_notebook_pattern", notebookPattern, { scope: "ui-preferences" });
 }
 
 function writeLocalLocalLastCloseoutDates(
@@ -142,6 +153,11 @@ export function useOwnerSettingsState({
     if (isValidNotebookTheme(savedTheme)) return String(savedTheme);
     return readLocalLocalNotebookTheme(skipLocalBootstrap);
   });
+  const [notebookPattern, setNotebookPattern] = useState<string>(() => {
+    const savedPattern = initialSettings?.notebookPattern;
+    if (isValidNotebookPattern(savedPattern)) return savedPattern;
+    return readLocalLocalNotebookPattern(skipLocalBootstrap);
+  });
   const [employeePreferences, setEmployeePreferences] = useState<Record<string, unknown>>(
     () => (initialSettings?.employeePreferences && typeof initialSettings.employeePreferences === "object"
       ? initialSettings.employeePreferences as Record<string, unknown>
@@ -196,6 +212,7 @@ export function useOwnerSettingsState({
       orgConfigApiEnabled,
       storeOperationalSettings,
       notebookTheme,
+      notebookPattern,
       employeePreferences,
       ownerShellPreferences,
       ownerProfile,
@@ -216,6 +233,7 @@ export function useOwnerSettingsState({
       authOwnerUsername,
       configuredBusinesses,
       employeePreferences,
+      notebookPattern,
       notebookTheme,
       orgConfigApiEnabled,
       ownerShellPreferences,
@@ -240,6 +258,7 @@ export function useOwnerSettingsState({
         setStaff: setStaff as (value: unknown) => void,
         setStoreOperationalSettings: setStoreOperationalSettings as (value: unknown) => void,
         setNotebookTheme: setNotebookTheme as (value: unknown) => void,
+        setNotebookPattern: setNotebookPattern as (value: unknown) => void,
         setEmployeePreferences: setEmployeePreferences as (value: unknown) => void,
         setOwnerShellPreferences: setOwnerShellPreferences as (value: unknown) => void,
         setOwnerProfile: setOwnerProfile as (value: unknown) => void,
@@ -309,6 +328,10 @@ export function useOwnerSettingsState({
   }, [notebookTheme, skipLocalBootstrap]);
 
   useEffect(() => {
+    writeLocalLocalNotebookPattern(notebookPattern, skipLocalBootstrap);
+  }, [notebookPattern, skipLocalBootstrap]);
+
+  useEffect(() => {
     const businessIds = configuredBusinesses.map((business) => String(business.id));
     setStoreChannelSettings((current) => ensureStoreChannelSettingsForBusinesses(
       current,
@@ -341,6 +364,8 @@ export function useOwnerSettingsState({
     setStoreOperationalSettings,
     notebookTheme,
     setNotebookTheme,
+    notebookPattern,
+    setNotebookPattern,
     employeePreferences,
     setEmployeePreferences,
     ownerShellPreferences,

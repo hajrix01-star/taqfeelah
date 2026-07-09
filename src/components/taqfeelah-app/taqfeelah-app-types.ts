@@ -1,7 +1,7 @@
 ﻿import type { Dispatch, MutableRefObject, ReactNode, RefObject, SetStateAction } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { DisplayLang } from "@/core/i18n/display-locale";
-import type { NotebookThemeId } from "@/features/daily-closeouts/daily-closeouts-types";
+import type { NotebookPatternId, NotebookThemeId } from "@/features/daily-closeouts/daily-closeouts-types";
 import type { NotebookThemeStyle } from "@/features/daily-closeouts/notebook-themes";
 import type {
   OperationalEntry,
@@ -30,7 +30,7 @@ import type {
 import type { ResolvedOrganizationEntitlements } from "@/features/billing/client/billing-client-types";
 import type { StoreOperationalSettings } from "@/domain/store-operational-settings/types";
 
-export type { DisplayLang, OperationalEntry, OperationalEntryActor, OperationalEntryPayload, NotebookThemeId, RegisterLogFilters };
+export type { DisplayLang, OperationalEntry, OperationalEntryActor, OperationalEntryPayload, NotebookPatternId, NotebookThemeId, RegisterLogFilters };
 
 export type AppOperationalEntry = OperationalEntry & {
   closeoutOwnerEditedByUserId?: string;
@@ -162,6 +162,7 @@ export type AppLangProps = {
 
 export type AppNotebookThemeProps = {
   notebookTheme?: NotebookThemeId | string;
+  notebookPattern?: NotebookPatternId | string;
 };
 
 export type AppOperationalEntryList = OperationalEntry[];
@@ -352,6 +353,8 @@ export type OwnerSettingsScreenProps = {
   lang: DisplayLang;
   notebookTheme: NotebookThemeId | string;
   setNotebookTheme: (value: NotebookThemeId | string) => void;
+  notebookPattern: NotebookPatternId | string;
+  setNotebookPattern: (value: NotebookPatternId | string) => void;
   employeePreferences?: Record<string, unknown>;
   ownerShellPreferences?: Record<string, unknown>;
   storeChannelSettings: Record<string, StoreChannelConfig>;
@@ -515,6 +518,7 @@ export type EmployeeSettingsScreenProps = {
 export type OwnerNotebookScreenProps = {
   lang: AppLang;
   notebookTheme?: NotebookThemeId | string;
+  notebookPattern?: NotebookPatternId | string;
   organizationId?: string;
   userId?: string;
   apiEnabled?: boolean;
@@ -603,9 +607,13 @@ export type OwnerSettingsViewState = Record<string, unknown> & {
   draftNotebookTheme: NotebookThemeId | string;
   setDraftNotebookTheme: (value: NotebookThemeId | string) => void;
   notebookTheme: NotebookThemeId | string;
+  draftNotebookPattern: NotebookPatternId | string;
+  setDraftNotebookPattern: (value: NotebookPatternId | string) => void;
+  notebookPattern: NotebookPatternId | string;
   themeDirty: boolean;
   setThemeDirty: (value: boolean) => void;
   setNotebookTheme: (value: NotebookThemeId | string) => void;
+  setNotebookPattern: (value: NotebookPatternId | string) => void;
   showSettingsSaved: () => void;
   selectedStore: AppBusiness | null;
   storePanel: string;
@@ -779,6 +787,7 @@ export type TaqfeelahAppPageContentProps = {
   setEmployeeBusinessId: (id: string) => void;
   currentEmployeeChannelConfig: StoreChannelConfig;
   employeeNotebookTheme: NotebookThemeId | string;
+  notebookPattern: NotebookPatternId | string;
   employeeThemeOverride: NotebookThemeId | string | null;
   currentEmployeeOperationalConfig: StoreOperationalSettings;
   handleEmployeeNotebookThemeSave: (theme: NotebookThemeId | string) => void;
@@ -850,6 +859,7 @@ export type TaqfeelahAppPageContentProps = {
   employeePreferences: Record<string, unknown>;
   ownerShellPreferences: Record<string, unknown>;
   setNotebookTheme: (theme: NotebookThemeId | string) => void;
+  setNotebookPattern: (pattern: NotebookPatternId | string) => void;
   setStoreChannelSettings: AppSetState<AppStoreChannelSettings>;
   setStoreOperationalSettings: AppSetState<AppStoreOperationalSettings>;
   setArchivedReadOnlyBusinessId: (value: string | null) => void;
@@ -936,6 +946,7 @@ export type OwnerRegisterScreenProps = {
   archivedReadOnlyBusinessId?: string | null;
   duplicateSummaryFocus?: Record<string, unknown> | null;
   notebookTheme?: NotebookThemeId | string;
+  notebookPattern?: NotebookPatternId | string;
   registerEntriesApiEnabled?: boolean;
   closeoutsApiEnabled?: boolean;
   registerEntriesApiOrganizationId?: string;
@@ -963,6 +974,7 @@ export type OwnerHomeProps = {
   onOpenOperation?: (entry: OperationalEntry) => void;
   onShareNotebook?: (snapshot: Record<string, unknown>) => void;
   notebookTheme?: NotebookThemeId | string;
+  notebookPattern?: NotebookPatternId | string;
   selectedBusiness?: string;
   setSelectedBusiness?: (value: string) => void;
   businessesList?: AppBusiness[];

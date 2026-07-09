@@ -18,6 +18,7 @@ export type RuntimeSettingsSnapshotInput = {
   orgConfigApiEnabled?: boolean;
   storeOperationalSettings?: Record<string, unknown>;
   notebookTheme?: string;
+  notebookPattern?: string;
   employeePreferences?: Record<string, unknown>;
   ownerShellPreferences?: Record<string, unknown>;
   ownerProfile?: Record<string, unknown>;

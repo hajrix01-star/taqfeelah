@@ -3,7 +3,7 @@ import { isCloseoutsApiDbSourceMode } from "@/core/config/closeouts-api-mode";
 import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { readPublicAppMode } from "@/core/config/app-mode";
 import { bindsToServerAuth, usesRuntimeSettingsApi } from "@/core/config/runtime-capabilities";
-import { isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
+import { isValidNotebookPattern, isValidNotebookTheme } from "@/features/daily-closeouts/notebook-themes";
 import { isUuid } from "@/core/client/api-id-utils";
 import type {
   ApplyRuntimeSettingsSnapshotPatchInput,
@@ -45,6 +45,7 @@ export function buildRuntimeSettingsSnapshot({
   orgConfigApiEnabled,
   storeOperationalSettings,
   notebookTheme,
+  notebookPattern,
   employeePreferences,
   ownerShellPreferences,
   ownerProfile,
@@ -56,6 +57,7 @@ export function buildRuntimeSettingsSnapshot({
 }: RuntimeSettingsSnapshotInput): Record<string, unknown> {
   const uiPreferences = {
     notebookTheme,
+    notebookPattern,
     employeePreferences,
     ownerShellPreferences,
     ownerProfile,
@@ -135,6 +137,9 @@ export function applyRuntimeSettingsSnapshotPatch({
   }
   if (typeof migrated.notebookTheme === "string" && isValidNotebookTheme(migrated.notebookTheme) && apply.setNotebookTheme) {
     apply.setNotebookTheme(migrated.notebookTheme);
+  }
+  if (typeof migrated.notebookPattern === "string" && isValidNotebookPattern(migrated.notebookPattern) && apply.setNotebookPattern) {
+    apply.setNotebookPattern(migrated.notebookPattern);
   }
   if (migrated.employeePreferences && typeof migrated.employeePreferences === "object" && apply.setEmployeePreferences) {
     apply.setEmployeePreferences(migrated.employeePreferences);

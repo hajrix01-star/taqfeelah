@@ -12,6 +12,7 @@ import { closeoutHasAnyAmount, useDailyCloseoutEntryState } from "./use-daily-cl
 import type {
   CloseoutSyncLang,
   DailyCloseoutRecord,
+  NotebookPatternId,
   NotebookThemeId,
   SalesChannelConfig,
   StoreRef,
@@ -20,6 +21,7 @@ import type {
 export default function DailyCloseoutEntryFlow({
   lang,
   notebookTheme,
+  notebookPattern = "lined",
   closeout: initialCloseout,
   salesChannels,
   storeName,
@@ -38,6 +40,7 @@ export default function DailyCloseoutEntryFlow({
 }: {
   lang: CloseoutSyncLang;
   notebookTheme?: NotebookThemeId | string;
+  notebookPattern?: NotebookPatternId | string;
   closeout: DailyCloseoutRecord;
   salesChannels: SalesChannelConfig[];
   storeName?: string;
@@ -89,10 +92,10 @@ export default function DailyCloseoutEntryFlow({
   const formEnabled = !storeSelectionRequired || Boolean(selectedStoreId);
 
   return (
-    <div className={`${rootClassName}${sharePreviewOpen ? " pointer-events-none" : ""}`} style={notebookLinesBackground(notebookTheme || "yellow")}>
+    <div className={`${rootClassName}${sharePreviewOpen ? " pointer-events-none" : ""}`} style={notebookLinesBackground(notebookTheme || "yellow", notebookPattern)}>
       <header
         className={headerClassName}
-        style={notebookLinesBackground(notebookTheme || "yellow")}
+        style={notebookLinesBackground(notebookTheme || "yellow", notebookPattern)}
       >
         <button type="button" disabled={saving} onClick={onCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-black/[0.05] disabled:opacity-40">
           <X className="h-4 w-4" />
@@ -101,7 +104,7 @@ export default function DailyCloseoutEntryFlow({
         <span className="w-9" />
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-        <NotebookScrollSurface theme={notebookTheme || "yellow"} lang={lang}>
+        <NotebookScrollSurface theme={notebookTheme || "yellow"} pattern={notebookPattern} lang={lang}>
           <div className="taq-owner-page taq-notebook-body pb-36 pt-2">
             <DailyCloseoutEntryFormBody
               lang={lang}

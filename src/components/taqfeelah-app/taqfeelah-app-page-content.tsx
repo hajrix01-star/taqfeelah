@@ -37,6 +37,7 @@ export function TaqfeelahAppPageContent({
   setEmployeeBusinessId,
   currentEmployeeChannelConfig,
   employeeNotebookTheme,
+  notebookPattern,
   employeeThemeOverride,
   currentEmployeeOperationalConfig,
   handleEmployeeNotebookThemeSave,
@@ -108,6 +109,7 @@ export function TaqfeelahAppPageContent({
   employeePreferences,
   ownerShellPreferences,
   setNotebookTheme,
+  setNotebookPattern,
   setStoreChannelSettings,
   setStoreOperationalSettings,
   setArchivedReadOnlyBusinessId,
@@ -171,6 +173,7 @@ export function TaqfeelahAppPageContent({
           saving={saving}
           trustServerDaySequenceOnly={closeoutsApiDbSource}
           storeChannelSettings={storeChannelSettings}
+          notebookPattern={notebookPattern}
           {...closeoutAttachmentsApiProps}
         />
       )}
@@ -200,11 +203,12 @@ export function TaqfeelahAppPageContent({
           pageTitle={lang === "ar" ? "تسجيل تقفيلة" : "Record closeout"}
           onCloseoutSubmitted={() => setOwnerPage("home")}
           storeChannelSettings={storeChannelSettings}
+          notebookPattern={notebookPattern}
           {...closeoutAttachmentsApiProps}
         />
       )}
       {!employee && ownerPage === "home" && (
-        <NotebookScrollSurface theme={notebookTheme} lang={lang}>
+        <NotebookScrollSurface theme={notebookTheme} pattern={notebookPattern} lang={lang}>
           <OwnerHomeConnected
             lang={lang}
             ownerProfile={ownerProfile}
@@ -220,6 +224,7 @@ export function TaqfeelahAppPageContent({
             onOpenOperation={handleOpenOwnerOperation}
             onShareNotebook={(snapshot) => setShareSnapshot(snapshot as import("./taqfeelah-app-types").AppShareSnapshot)}
             notebookTheme={notebookTheme}
+            notebookPattern={notebookPattern}
             selectedBusiness={activeViewBusiness}
             setSelectedBusiness={setSelectedBusiness}
             businessesList={activeBusinesses as AppBusiness[]}
@@ -258,6 +263,7 @@ export function TaqfeelahAppPageContent({
         <OwnerNotebookScreen
           lang={lang}
           notebookTheme={notebookTheme}
+          notebookPattern={notebookPattern}
           organizationId={closeoutsApiOrganizationId ?? undefined}
           userId={ownerApiUserId ?? undefined}
           apiEnabled={ownerNotebookApiEnabled}
@@ -280,6 +286,7 @@ export function TaqfeelahAppPageContent({
           businessesList={reportingBusinesses as AppBusiness[]}
           archivedBusinessIds={archivedBusinessIds}
           notebookTheme={notebookTheme}
+          notebookPattern={notebookPattern}
           resolveStoreSalesChannels={resolveStoreSalesChannels}
           registerEntriesApiEnabled={entriesApiEnabled && registerEntriesPaginationEnabled}
           closeoutsApiEnabled={closeoutsApiEnabled}
@@ -301,6 +308,8 @@ export function TaqfeelahAppPageContent({
           setLastCloseoutDates={setLastCloseoutDates}
           notebookTheme={notebookTheme}
           setNotebookTheme={setNotebookTheme}
+          notebookPattern={notebookPattern}
+          setNotebookPattern={setNotebookPattern}
           employeePreferences={employeePreferences}
           ownerShellPreferences={ownerShellPreferences}
           storeChannelSettings={storeChannelSettings}

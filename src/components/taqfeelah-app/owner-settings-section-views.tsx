@@ -222,9 +222,13 @@ export function renderOwnerSettingsSection(
         draftNotebookTheme={state.draftNotebookTheme}
         setDraftNotebookTheme={state.setDraftNotebookTheme}
         notebookTheme={state.notebookTheme}
+        draftNotebookPattern={state.draftNotebookPattern}
+        setDraftNotebookPattern={state.setDraftNotebookPattern}
+        notebookPattern={state.notebookPattern}
         themeDirty={state.themeDirty}
         setThemeDirty={state.setThemeDirty}
         setNotebookTheme={state.setNotebookTheme}
+        setNotebookPattern={state.setNotebookPattern}
         showSettingsSaved={state.showSettingsSaved}
         settingsSuccess={state.settingsSuccess}
       />

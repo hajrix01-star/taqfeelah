@@ -5,6 +5,7 @@ import type {
   CloseoutShareTotalsInput,
   CloseoutSyncLang,
   DailyCloseoutRecord,
+  NotebookPatternId,
   NotebookThemeId,
   SalesChannelConfig,
   StoreRef,
@@ -66,6 +67,7 @@ export type EmployeeCloseoutsViewProps = {
   onSelectStore?: (storeId: string) => void | Promise<void>;
   salesChannels?: SalesChannelConfig[];
   notebookTheme?: NotebookThemeId | string;
+  notebookPattern?: NotebookPatternId | string;
   employeeHistoryVisibility?: EmployeeHistoryVisibility | string;
   formatCalendarDate?: (date: string, lang: CloseoutSyncLang) => string;
   channelLabel?: (channel: SalesChannelConfig, lang: CloseoutSyncLang) => string;

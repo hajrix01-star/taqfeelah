@@ -22,6 +22,7 @@ import type { OwnerNotebookFilter, OwnerNotebookNote, OwnerNotebookNoteInput } f
 export function OwnerNotebookScreen({
   lang,
   notebookTheme = "yellow",
+  notebookPattern = "lined",
   organizationId = "",
   userId = "",
   apiEnabled = false,
@@ -89,7 +90,7 @@ export function OwnerNotebookScreen({
   const showTabEmpty = hydrated && visibleNotes.length === 0 && !showGlobalEmpty && !showError;
 
   return (
-    <NotebookScrollSurface theme={notebookTheme} lang={lang}>
+    <NotebookScrollSurface theme={notebookTheme} pattern={notebookPattern} lang={lang}>
       <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-28 pt-1">
         <NotebookHeading lang={lang} label={text(lang, "ownerNotebook")} />
 

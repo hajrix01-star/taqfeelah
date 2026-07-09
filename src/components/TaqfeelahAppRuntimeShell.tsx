@@ -66,6 +66,8 @@ export default function TaqfeelahAppRuntimeShell() {
     archivedBusinessIds,
     notebookTheme,
     setNotebookTheme,
+    notebookPattern,
+    setNotebookPattern,
     employeePreferences,
     ownerShellPreferences,
     persistRuntimeSettingsNow,
@@ -289,6 +291,7 @@ export default function TaqfeelahAppRuntimeShell() {
               employee={employee}
               notebookMode={employee || (!employee && (ownerPage === "home" || ownerPage === "register" || ownerPage === "notebook" || ownerPage === "closeouts"))}
               notebookTheme={employee ? employeeNotebookTheme : notebookTheme}
+              notebookPattern={notebookPattern}
               onLogout={auth.logout}
               onEmployeeSettings={() => employeeSettingsOpenerRef.current?.()}
               onNotifications={openNotifications}
@@ -305,6 +308,7 @@ export default function TaqfeelahAppRuntimeShell() {
               ownerEditActive={Boolean(ownerEditCloseout)}
               hasActiveEmployee={Boolean(activeEmployee)}
               notebookTheme={employee ? employeeNotebookTheme : notebookTheme}
+              notebookPattern={notebookPattern}
               onRefreshOperationalEntries={loadOperationalEntriesFromApi}
             >
               <TaqfeelahAppPageContent
@@ -322,6 +326,7 @@ export default function TaqfeelahAppRuntimeShell() {
                 setEmployeeBusinessId={setEmployeeBusinessId}
                 currentEmployeeChannelConfig={currentEmployeeChannelConfig}
                 employeeNotebookTheme={employeeNotebookTheme}
+                notebookPattern={notebookPattern}
                 employeeThemeOverride={employeeThemeOverride}
                 currentEmployeeOperationalConfig={currentEmployeeOperationalConfig}
                 handleEmployeeNotebookThemeSave={handleEmployeeNotebookThemeSave}
@@ -393,6 +398,7 @@ export default function TaqfeelahAppRuntimeShell() {
                 employeePreferences={employeePreferences}
                 ownerShellPreferences={ownerShellPreferences}
                 setNotebookTheme={setNotebookTheme}
+                setNotebookPattern={setNotebookPattern}
                 setStoreChannelSettings={setStoreChannelSettings}
                 setStoreOperationalSettings={setStoreOperationalSettings}
                 setArchivedReadOnlyBusinessId={setArchivedReadOnlyBusinessId}

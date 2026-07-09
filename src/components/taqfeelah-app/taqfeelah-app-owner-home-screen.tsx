@@ -56,6 +56,7 @@ export function OwnerHome({
   onOpenOperation = () => {},
   onShareNotebook = () => {},
   notebookTheme = "yellow",
+  notebookPattern = "lined",
   selectedBusiness = "all",
   setSelectedBusiness = () => {},
   businessesList = businesses,
@@ -240,9 +241,10 @@ export function OwnerHome({
       ) : null}
       {closeoutAlerts.length > 0 && firstCloseoutAlert && <div className="mx-2 mb-3 rounded-2xl bg-[var(--taq-color-e6f5e9)] p-3 ring-1 ring-[var(--taq-color-39a160)]/15"><div className="flex items-start gap-2"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[var(--taq-color-257844)]" /><div className="min-w-0 flex-1"><p className="text-taq-meta font-black text-[var(--taq-color-257844)]">{text(lang, "closeoutInAppAlert")}</p><p className="mt-1 text-taq-meta font-bold text-[var(--taq-color-716753)]">{businessName(businessesList.find((business) => business.id === firstAlertBusinessId), lang)} · {formatCalendarDate(firstAlertDate, lang)} · {lang === "ar" ? firstAlertEmployeeNameAr : firstAlertEmployeeNameEn}</p></div></div><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onOpenCloseoutAlertInRegister(firstCloseoutAlert)} className="rounded-xl bg-white py-2.5 text-taq-meta font-black text-[var(--taq-color-257844)] ring-1 ring-[var(--taq-color-39a160)]/15">{text(lang, "openCloseoutInRegister")}</button><button type="button" onClick={() => onDismissCloseout(firstCloseoutAlert)} className="rounded-xl bg-[var(--taq-color-112a46)] py-2.5 text-taq-meta font-black text-white">{text(lang, "dismissAlert")}</button></div></div>}
       {homeBillingLayoutReady ? (
-      <Notebook fullPage theme={notebookTheme} lang={lang}>
+      <Notebook fullPage theme={notebookTheme} pattern={notebookPattern} lang={lang}>
         <NotebookHeading lang={lang} label={monthly ? text(lang, "monthlySummary") : text(lang, "dailySummary")} onShare={() => onShareNotebook({
           theme: notebookTheme,
+          pattern: notebookPattern,
           period,
           selectedBusiness,
           includedBusinessIds: businessesList.map((business) => business.id),

@@ -77,6 +77,7 @@ export function OwnerRegisterScreen({
   archivedReadOnlyBusinessId = null,
   duplicateSummaryFocus = null,
   notebookTheme = "yellow",
+  notebookPattern = "lined",
   registerEntriesApiEnabled = false,
   closeoutsApiEnabled = false,
   registerEntriesApiOrganizationId = "",
@@ -497,6 +498,7 @@ export function OwnerRegisterScreen({
     screen: "register",
     registerView: logView,
     theme: notebookTheme,
+    pattern: notebookPattern,
     period,
     selectedBusiness: safeBusinessId,
     includedBusinessIds: registerTargetStoreIds,
@@ -519,7 +521,7 @@ export function OwnerRegisterScreen({
   });
 
   return (
-    <NotebookScrollSurface theme={notebookTheme} lang={lang}>
+    <NotebookScrollSurface theme={notebookTheme} pattern={notebookPattern} lang={lang}>
       <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="taq-owner-page taq-notebook-body pb-28 pt-1">
         {archivedReadOnlyBusiness && <div className="mx-2 mb-2 flex justify-center"><Badge tone="warning">{text(lang, "archivedReadOnly")}</Badge></div>}
         <NotebookHeading

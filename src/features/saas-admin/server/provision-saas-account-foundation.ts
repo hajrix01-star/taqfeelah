@@ -32,6 +32,7 @@ export async function provisionSaasAccountFoundation(
       name: input.ownerName.trim(),
     },
     notebookTheme: "yellow",
+    notebookPattern: "lined",
     employeePreferences: {},
     ownerShellPreferences: {},
     storeOperationalSettings: {

@@ -29,6 +29,7 @@ describe("owner settings local persistence", () => {
       storeChannelSettings: {},
       storeOperationalSettings: {},
       notebookTheme: "yellow",
+      notebookPattern: "grid",
       staff: [{ id: "ahmed" }],
       ownerProfile: { name: "Owner" },
       authOwnerUsername: "owner",
@@ -41,6 +42,7 @@ describe("owner settings local persistence", () => {
       ownerPassword: "demo",
       employeePins: { ahmed: "1234" },
     });
+    expect(payload.notebookPattern).toBe("grid");
   });
 
   it("persists payload to local storage when enabled", () => {

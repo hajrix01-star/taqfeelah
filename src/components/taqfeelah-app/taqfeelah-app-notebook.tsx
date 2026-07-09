@@ -7,6 +7,7 @@ import { resolveAppFontFamily } from "@/core/fonts/app-font-family";
 import { todayBusinessDateIso } from "@/core/date/business-date";
 import {
   NOTEBOOK_THEME_IDS,
+  notebookLinesBackground,
   notebookThemes,
 } from "@/features/daily-closeouts/notebook-themes";
 import { formatCalendarDate, formatCalendarMonth, formatSelectedMonth } from "@/features/reports/client/report-period-labels";
@@ -24,6 +25,7 @@ import { InkTab } from "./taqfeelah-app-shell-ui";
 import type { ReactNode } from "react";
 import type {
   NotebookThemeId,
+  NotebookPatternId,
   AppBusiness,
   AppLang,
 } from "./taqfeelah-app-types";
@@ -32,18 +34,17 @@ function resolveNotebookTheme(theme: NotebookThemeId | string): NotebookThemeId 
   return (theme in notebookThemes ? theme : "yellow") as NotebookThemeId;
 }
 
-function Notebook({ children, theme = "yellow", lang = "ar", fullPage = false }: {
+function Notebook({ children, theme = "yellow", pattern = "lined", lang = "ar", fullPage = false }: {
   children: ReactNode;
   theme?: NotebookThemeId | string;
+  pattern?: NotebookPatternId | string;
   lang?: AppLang;
   fullPage?: boolean;
 }) {
   const isArabic = lang === "ar";
   const themeKey = resolveNotebookTheme(theme);
   const activeTheme = notebookThemes[themeKey] || notebookThemes.yellow;
-  const lines = {
-    backgroundImage: `repeating-linear-gradient(180deg, transparent 0px, transparent 43px, ${activeTheme.line} 43px, ${activeTheme.line} 44px)`,
-  };
+  const lines = notebookLinesBackground(themeKey, pattern);
 
   return (
     <div

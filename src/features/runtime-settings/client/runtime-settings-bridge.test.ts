@@ -20,6 +20,7 @@ describe("runtime settings bridge", () => {
       orgConfigApiEnabled: true,
       storeOperationalSettings: { shami: { reviewEnabled: true } },
       notebookTheme: "yellow",
+      notebookPattern: "grid",
       employeePreferences: { ahmed: { notebookTheme: "classic" } },
       ownerShellPreferences: { acknowledgedDuplicateSales: { shami: true } },
       ownerProfile: { nameAr: "مالك" },
@@ -33,6 +34,7 @@ describe("runtime settings bridge", () => {
     expect(snapshot).toEqual({
       storeOperationalSettings: { shami: { reviewEnabled: true } },
       notebookTheme: "yellow",
+      notebookPattern: "grid",
       employeePreferences: { ahmed: { notebookTheme: "classic" } },
       ownerShellPreferences: { acknowledgedDuplicateSales: { shami: true } },
       ownerProfile: { nameAr: "مالك" },
@@ -49,6 +51,7 @@ describe("runtime settings bridge", () => {
       orgConfigApiEnabled: true,
       storeOperationalSettings: { shami: { reviewEnabled: true } },
       notebookTheme: "yellow",
+      notebookPattern: "grid",
       employeePreferences: { ahmed: { notebookTheme: "classic" } },
       ownerShellPreferences: { acknowledgedDuplicateSales: { shami: true } },
       ownerProfile: { nameAr: "مالك" },
@@ -61,6 +64,7 @@ describe("runtime settings bridge", () => {
 
     expect(snapshot).toEqual({
       notebookTheme: "yellow",
+      notebookPattern: "grid",
       employeePreferences: { ahmed: { notebookTheme: "classic" } },
       ownerShellPreferences: { acknowledgedDuplicateSales: { shami: true } },
       ownerProfile: { nameAr: "مالك" },
@@ -74,6 +78,7 @@ describe("runtime settings bridge", () => {
       orgConfigApiEnabled: false,
       storeOperationalSettings: {},
       notebookTheme: "ivory",
+      notebookPattern: "grid",
       employeePreferences: { ahmed: { notebookTheme: "ivory" } },
       ownerShellPreferences: { closeoutAlerts: [] },
       ownerProfile: {},
@@ -142,6 +147,7 @@ describe("runtime settings bridge", () => {
       setConfiguredBusinesses: vi.fn(),
       setStoreOperationalSettings: vi.fn(),
       setNotebookTheme: vi.fn(),
+      setNotebookPattern: vi.fn(),
       setEmployeePreferences: vi.fn(),
       setOwnerShellPreferences: vi.fn(),
       setAuthOwnerUsername: vi.fn(),
@@ -153,6 +159,7 @@ describe("runtime settings bridge", () => {
         configuredBusinesses: [{ id: "shami" }],
         storeOperationalSettings: { shami: { reviewEnabled: true } },
         notebookTheme: "yellow",
+        notebookPattern: "grid",
         employeePreferences: { ahmed: { notebookTheme: "classic" } },
         ownerShellPreferences: { closeoutAlerts: [] },
         authConfig: { ownerUsername: "  hajri  " },
@@ -163,6 +170,7 @@ describe("runtime settings bridge", () => {
     expect(apply.setConfiguredBusinesses).not.toHaveBeenCalled();
     expect(apply.setStoreOperationalSettings).toHaveBeenCalledWith({ shami: { reviewEnabled: true } });
     expect(apply.setNotebookTheme).toHaveBeenCalledWith("yellow");
+    expect(apply.setNotebookPattern).toHaveBeenCalledWith("grid");
     expect(apply.setEmployeePreferences).toHaveBeenCalledWith({ ahmed: { notebookTheme: "classic" } });
     expect(apply.setOwnerShellPreferences).toHaveBeenCalledWith({ closeoutAlerts: [] });
     expect(apply.setAuthOwnerUsername).toHaveBeenCalledWith("hajri");

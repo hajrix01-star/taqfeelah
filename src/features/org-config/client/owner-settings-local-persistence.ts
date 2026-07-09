@@ -8,6 +8,7 @@ export function buildOwnerSettingsLocalStoragePayload({
   storeChannelSettings,
   storeOperationalSettings,
   notebookTheme,
+  notebookPattern = "lined",
   employeePreferences = {},
   ownerShellPreferences = {},
   staff,
@@ -21,6 +22,7 @@ export function buildOwnerSettingsLocalStoragePayload({
   storeChannelSettings: Record<string, StoreChannelConfig>;
   storeOperationalSettings: Record<string, unknown>;
   notebookTheme: string;
+  notebookPattern?: string;
   employeePreferences?: Record<string, unknown>;
   ownerShellPreferences?: Record<string, unknown>;
   staff: Array<Record<string, unknown>>;
@@ -35,6 +37,7 @@ export function buildOwnerSettingsLocalStoragePayload({
     storeChannelSettings,
     storeOperationalSettings,
     notebookTheme,
+    notebookPattern,
     employeePreferences,
     ownerShellPreferences,
     staff,

@@ -39,6 +39,8 @@ export function useOwnerSettingsScreenState({
   lang,
   notebookTheme,
   setNotebookTheme,
+  notebookPattern,
+  setNotebookPattern,
   employeePreferences = {},
   ownerShellPreferences = {},
   storeChannelSettings,
@@ -126,6 +128,7 @@ export function useOwnerSettingsScreenState({
   const [draftStoreOperationalConfig, setDraftStoreOperationalConfig] = useState<StoreOperationalSettings | null>(null);
   const [newCustomIncomeSourceName, setNewCustomIncomeSourceName] = useState("");
   const [draftNotebookTheme, setDraftNotebookTheme] = useState(notebookTheme);
+  const [draftNotebookPattern, setDraftNotebookPattern] = useState(notebookPattern);
   const [themeDirty, setThemeDirty] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
   const [managingTeam, setManagingTeam] = useState(false);
@@ -201,6 +204,7 @@ export function useOwnerSettingsScreenState({
         storeChannelSettings,
         storeOperationalSettings,
         notebookTheme,
+        notebookPattern,
         employeePreferences,
         ownerShellPreferences,
         staff,
@@ -211,8 +215,9 @@ export function useOwnerSettingsScreenState({
       }),
       { enabled: !APP_IN_PRODUCTION_MODE && !RUNTIME_SETTINGS_DB_SOURCE },
     );
-  }, [configuredBusinesses, archivedBusinessIds, employeePreferences, ownerShellPreferences, storeChannelSettings, storeOperationalSettings, notebookTheme, staff, ownerProfile, authOwnerUsername, authOwnerPassword, authEmployeePins]);
+  }, [configuredBusinesses, archivedBusinessIds, employeePreferences, ownerShellPreferences, storeChannelSettings, storeOperationalSettings, notebookTheme, notebookPattern, staff, ownerProfile, authOwnerUsername, authOwnerPassword, authEmployeePins]);
   useEffect(() => { setDraftNotebookTheme(notebookTheme); setThemeDirty(false); }, [notebookTheme]);
+  useEffect(() => { setDraftNotebookPattern(notebookPattern); setThemeDirty(false); }, [notebookPattern]);
   useEffect(() => { setDraftOwnerName(typeof ownerProfile?.name === "string" ? ownerProfile.name : ""); }, [ownerProfile?.name]);
   useEffect(() => { setDraftAuthOwnerUsername(authOwnerUsername || ""); }, [authOwnerUsername]);
   useEffect(() => { setDraftAuthOwnerPassword(authOwnerPassword || ""); }, [authOwnerPassword]);
@@ -394,6 +399,8 @@ export function useOwnerSettingsScreenState({
     setNewCustomIncomeSourceName,
     draftNotebookTheme,
     setDraftNotebookTheme,
+    draftNotebookPattern,
+    setDraftNotebookPattern,
     themeDirty,
     setThemeDirty,
     settingsSuccess,
@@ -436,6 +443,8 @@ export function useOwnerSettingsScreenState({
     showSettingsSaved,
     setNotebookTheme,
     notebookTheme,
+    setNotebookPattern,
+    notebookPattern,
     ownerProfile,
     setOwnerPage,
     setArchivedReadOnlyBusinessId,

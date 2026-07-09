@@ -25,6 +25,7 @@ export async function buildDefaultRuntimeSettingsForOrganization(organizationId:
       name: owner?.name?.trim() || "",
     },
     notebookTheme: "yellow",
+    notebookPattern: "lined",
     employeePreferences: {},
     ownerShellPreferences: {},
     storeOperationalSettings: {},
