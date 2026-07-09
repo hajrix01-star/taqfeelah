@@ -40,10 +40,13 @@ describe("notebookThemes", () => {
   it("includes pink and blue tint themes with required fields", () => {
     expect(NOTEBOOK_THEME_IDS).toContain("pinkTint");
     expect(NOTEBOOK_THEME_IDS).toContain("blueTint");
+    expect(NOTEBOOK_THEME_IDS).toContain("pureWhite");
     expect(isValidNotebookTheme("pinkTint")).toBe(true);
     expect(isValidNotebookTheme("blueTint")).toBe(true);
+    expect(isValidNotebookTheme("pureWhite")).toBe(true);
     expect(notebookThemes.pinkTint.paper).toMatch(/^#[0-9A-Fa-f]{6}$/);
     expect(notebookThemes.blueTint.paper).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    expect(notebookThemes.pureWhite.paper).toBe("#FFFFFF");
   });
 });
 

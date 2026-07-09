@@ -37,6 +37,13 @@ export const notebookThemes: Record<NotebookThemeId, NotebookThemeStyle> = {
     shadow: "0 12px 24px rgba(17,42,70,0.08)",
     ring: true,
   },
+  pureWhite: {
+    paper: "#FFFFFF",
+    line: "rgba(84,116,154,0.16)",
+    margin: "rgba(204,105,96,0.45)",
+    shadow: "0 12px 24px rgba(17,42,70,0.08)",
+    ring: true,
+  },
   greenTint: {
     paper: "#EEF2DF",
     line: "rgba(62,91,84,0.13)",

@@ -9,6 +9,7 @@ export type NotebookThemeId =
   | "softYellow"
   | "ivory"
   | "white"
+  | "pureWhite"
   | "greenTint"
   | "pinkTint"
   | "blueTint";
