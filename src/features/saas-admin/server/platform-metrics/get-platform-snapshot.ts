@@ -131,7 +131,7 @@ export async function getPlatformSnapshot(): Promise<PlatformSnapshot> {
 
   const snapshotDate = latestSnapshot?.snapshotDate ?? null;
   let snapshotRows: EngagementSnapshotRow[] = [];
-  let inactiveAccountsCount = 0;
+  let inactiveAccountsCount: number | null = null;
   let retentionProxy: number | null = null;
   let usageIntensity: number | null = null;
 
@@ -248,7 +248,7 @@ export async function getPlatformSnapshot(): Promise<PlatformSnapshot> {
       dataAvailable: Boolean(snapshotDate),
       inactiveAccountsCount: snapshotDate
         ? aggregatedMetric(inactiveAccountsCount)
-        : unavailableMetric(0),
+        : unavailableMetric(null),
       retentionProxy: retentionMetric,
       usageIntensity: usageIntensityMetric,
       snapshotRows,

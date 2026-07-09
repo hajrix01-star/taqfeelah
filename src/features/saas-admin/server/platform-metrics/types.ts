@@ -36,7 +36,7 @@ export type PlatformSnapshot = {
   engagement: {
     snapshotDate: string | null;
     dataAvailable: boolean;
-    inactiveAccountsCount: PlatformMetric<number>;
+    inactiveAccountsCount: PlatformMetric<number | null>;
     retentionProxy: PlatformMetric<number | null>;
     usageIntensity: PlatformMetric<number | null>;
     snapshotRows: EngagementSnapshotRow[];

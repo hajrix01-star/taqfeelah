@@ -200,7 +200,7 @@ export type InvestorMetrics = {
   estimatedArr: InvestorMetricField<number | null>;
   potentialMrr: InvestorMetricField<number | null>;
   growthRate: InvestorMetricField<number | null>;
-  inactiveAccounts: InvestorMetricField<number>;
+  inactiveAccounts: InvestorMetricField<number | null>;
   retentionProxy: InvestorMetricField<number | null>;
   usageIntensity: InvestorMetricField<number | null>;
   currency: string;

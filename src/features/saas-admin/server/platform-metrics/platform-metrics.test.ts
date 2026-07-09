@@ -63,6 +63,22 @@ describe("platform metric helpers", () => {
     expect(metricAvailability({ value: null, source: "estimated" })).toBe("unavailable");
   });
 
+  it("keeps missing engagement metrics unavailable instead of converting them to zero", () => {
+    const unavailableSnapshot: PlatformSnapshot = {
+      ...mockSnapshot,
+      engagement: {
+        ...mockSnapshot.engagement,
+        snapshotDate: null,
+        dataAvailable: false,
+        inactiveAccountsCount: { value: null, source: "live" },
+      },
+    };
+
+    const core = extractSharedCoreMetrics(unavailableSnapshot);
+    expect(core.inactiveAccounts).toBeNull();
+    expect(metricAvailability(unavailableSnapshot.engagement.inactiveAccountsCount)).toBe("unavailable");
+  });
+
   it("toInvestorField preserves value and source", () => {
     const field = toInvestorField({ value: 180, source: "live" });
     expect(field).toEqual({

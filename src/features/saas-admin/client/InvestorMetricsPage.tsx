@@ -67,7 +67,7 @@ export default function InvestorMetricsPage() {
       value: data.inactiveAccounts.value,
       color: ADMIN_CHART_COLORS.tertiary,
     },
-  ].filter((row) => row.value > 0);
+  ].flatMap((row) => (row.value !== null && row.value > 0 ? [row as { name: string; value: number; color: string }] : []));
 
   const revenueOutlook = [
     { label: t.investor.estimatedMrr, value: data.estimatedMrr.value },
@@ -169,7 +169,11 @@ export default function InvestorMetricsPage() {
             value={formatInvestorKpi(data.growthRate, locale, metricLabels, "%")}
             source={data.growthRate.source}
           />
-          <KpiCard title={t.investor.inactiveAccounts} value={formatNumber(data.inactiveAccounts.value, locale)} source={data.inactiveAccounts.source} />
+          <KpiCard
+            title={t.investor.inactiveAccounts}
+            value={formatInvestorKpi(data.inactiveAccounts, locale, metricLabels)}
+            source={data.inactiveAccounts.source}
+          />
           <KpiCard
             title={t.investor.retentionProxy}
             value={formatInvestorKpi(
