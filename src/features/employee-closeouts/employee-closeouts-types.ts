@@ -117,6 +117,7 @@ export type CloseoutShareModalProps = {
   storeName?: string;
   employeeName?: string;
   notebookTheme?: NotebookThemeId | string;
+  notebookPattern?: NotebookPatternId | string;
   formatCalendarDate?: (date: string, lang: CloseoutSyncLang) => string;
   newlySubmitted?: boolean;
   onClose: () => void;

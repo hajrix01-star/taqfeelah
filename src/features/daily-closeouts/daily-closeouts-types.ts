@@ -259,6 +259,7 @@ export type NotebookSharePreviewRecord = CloseoutShareTotals;
 export type NotebookSharePreviewProps = {
   lang?: CloseoutSyncLang;
   theme?: NotebookThemeId | string;
+  pattern?: NotebookPatternId | string;
   fluid?: boolean;
   periodLabel: string;
   title: string;

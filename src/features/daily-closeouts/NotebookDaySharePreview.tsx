@@ -42,6 +42,7 @@ function SummaryGridRow({
 export default function NotebookDaySharePreview({
   lang = "ar",
   theme = "yellow",
+  pattern = "lined",
   fluid = false,
   periodLabel,
   title,
@@ -54,7 +55,7 @@ export default function NotebookDaySharePreview({
   showOutflowRatio = false,
 }: NotebookSharePreviewProps) {
   const activeTheme = notebookThemes[theme as keyof typeof notebookThemes] || notebookThemes.yellow;
-  const lines = notebookLinesBackground(theme);
+  const lines = notebookLinesBackground(theme, pattern);
   const fontFamily = resolveAppFontFamily(lang);
   const captionLines = captionFooter ? captionFooter.split("\n").filter(Boolean) : [];
   const operationRows: CloseoutShareOperationRow[] = operations;

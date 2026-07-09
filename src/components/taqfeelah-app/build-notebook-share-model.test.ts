@@ -89,4 +89,25 @@ describe("buildNotebookShareModel", () => {
     expect(model.salesDetailRows).toHaveLength(1);
     expect(model.salesDetailRows[0].label).toBe("فيزا");
   });
+
+  it("uses the selected paper pattern for share exports", () => {
+    const model = buildNotebookShareModel({
+      snapshot: {
+        theme: "yellow",
+        pattern: "grid",
+        period: "day",
+        selectedBusiness: "shami",
+        selectedDate: "2026-06-07",
+        screen: "home",
+      },
+      lang: "ar",
+      businessesList: businesses,
+      operationalEntries: [],
+      archivedBusinessIds: [],
+      ...emptyApi,
+    });
+
+    expect(model.lines.backgroundImage).toContain("90deg");
+    expect(model.lines.backgroundImage).toContain("21px");
+  });
 });

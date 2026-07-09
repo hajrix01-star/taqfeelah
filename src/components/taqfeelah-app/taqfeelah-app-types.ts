@@ -241,6 +241,7 @@ export type NotebookShareSnapshot = Record<string, unknown> & {
   includedBusinessIds?: string[];
   outflowCategory?: string;
   theme?: NotebookThemeId | string;
+  pattern?: NotebookPatternId | string;
   showSummaryDetails?: boolean;
   showDetails?: boolean;
   showOutflowTransactions?: boolean;
@@ -299,7 +300,7 @@ export type NotebookShareModel = {
   periodLabel: string;
   outflowCategoryLabel: string;
   activeTheme: NotebookThemeStyle;
-  lines: { backgroundImage: string };
+  lines: { backgroundColor?: string; backgroundImage: string };
   shareCaption: string;
   detailedSummary: boolean;
   showOutflowOperations: boolean;

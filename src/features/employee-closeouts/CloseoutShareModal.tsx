@@ -31,6 +31,7 @@ export default function CloseoutShareModal({
   storeName,
   employeeName = "",
   notebookTheme = "yellow",
+  notebookPattern = "lined",
   formatCalendarDate,
   newlySubmitted = false,
   onClose,
@@ -80,6 +81,7 @@ export default function CloseoutShareModal({
     return {
       lang,
       theme: selectedTheme,
+      pattern: notebookPattern,
       periodLabel: resolvedPeriodLabel,
       title: labels.myCloseout,
       storeName: resolvedStoreName,
@@ -89,7 +91,7 @@ export default function CloseoutShareModal({
       operations,
       showOutflowRatio: false,
     };
-  }, [totals, closeout, lang, resolvedPeriodLabel, labels, resolvedStoreName, resolvedEmployeeName, operations, selectedTheme]);
+  }, [totals, closeout, lang, resolvedPeriodLabel, labels, resolvedStoreName, resolvedEmployeeName, operations, selectedTheme, notebookPattern]);
 
   useEffect(() => {
     if (!open || !closeoutId) {

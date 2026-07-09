@@ -1,4 +1,4 @@
-import { notebookThemes } from "@/features/daily-closeouts/notebook-themes";
+import { notebookLinesBackground, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
 import {
   aggregateChannels,
   entryDateMatches,
@@ -131,9 +131,7 @@ export function buildNotebookShareModel({
   const outflowCategoryLabel = outflowCategory === "all" ? text(lang, "allCategories") : text(lang, outflowReportCategories.find((item) => item.id === outflowCategory)?.label || "other");
   const themeId = (snapshot.theme || "yellow") as NotebookThemeId;
   const activeTheme = notebookThemes[themeId] || notebookThemes.yellow;
-  const lines = {
-    backgroundImage: `repeating-linear-gradient(180deg, transparent 0px, transparent 43px, ${activeTheme.line} 43px, ${activeTheme.line} 44px)`,
-  };
+  const lines = notebookLinesBackground(themeId, snapshot.pattern);
   const detailedSummary = !combined && (
     (snapshot.screen === "reports" && snapshot.tab === "summary" && snapshot.showSummaryDetails)
     || (snapshot.screen === "home" && snapshot.showDetails)

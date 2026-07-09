@@ -156,6 +156,7 @@ export default function EmployeeCloseoutsView({
           || "",
       )}
       notebookTheme={notebookTheme}
+      notebookPattern={notebookPattern}
       formatCalendarDate={formatCalendarDate}
       newlySubmitted={shareNewlySubmitted}
       onClose={closeShareModal}
