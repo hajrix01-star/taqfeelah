@@ -7,7 +7,7 @@ import { notebookCardBackground, notebookThemes } from "@/features/daily-closeou
 import { updateStoreOperationalSettingsViaApi } from "@/features/org-config/client/org-config-api-client";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { businessName, money, text } from "./taqfeelah-app-catalog-data";
-import { NotebookHeading, NotebookRow, StoreScopeTabs, todayIsoDate } from "./taqfeelah-app-notebook";
+import { DateSelector, NotebookHeading, NotebookRow, StoreScopeTabs, todayIsoDate } from "./taqfeelah-app-notebook";
 import type { CSSProperties } from "react";
 import type { AppBusiness, AppLang, AppSetState, AppStoreOperationalSettings, NotebookThemeId } from "./taqfeelah-app-types";
 
@@ -244,12 +244,14 @@ export function OwnerTargetHeatmapScreen({
         lang={lang}
         label={text(lang, "targetHeatmapTitle")}
         dateSelector={(
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(event) => setSelectedMonth(event.target.value || todayIsoDate().slice(0, 7))}
-            className="h-9 rounded-xl px-3 text-taq-meta font-black ring-1 ring-black/[0.06]"
-            style={{ backgroundColor: palette.surface, color: palette.text }}
+          <DateSelector
+            lang={lang}
+            period="month"
+            setPeriod={() => {}}
+            allowedPeriods={["month"]}
+            selectedMonth={selectedMonth}
+            setSelectedMonth={setSelectedMonth}
+            compact
           />
         )}
       />
