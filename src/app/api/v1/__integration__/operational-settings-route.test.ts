@@ -88,4 +88,27 @@ describe("operational settings route integration", () => {
       actorRole: "owner",
     }));
   });
+
+  it("PATCH persists daily sales target through operational settings", async () => {
+    updateStoreOperationalSettings.mockResolvedValueOnce({
+      storeId: TEST_STORE_ID,
+      operationalSettings: { dailySalesTarget: 5000 },
+      updatedAt: "2026-06-05T10:00:00.000Z",
+    });
+
+    const { PATCH } = await import("../stores/[storeId]/operational-settings/route");
+    const response = await PATCH(
+      ownerRequest(`http://localhost/api/v1/stores/${TEST_STORE_ID}/operational-settings`, {
+        method: "PATCH",
+        body: JSON.stringify({ dailySalesTarget: 5000 }),
+      }),
+      routeStoreContext(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateStoreOperationalSettings).toHaveBeenCalledWith(expect.objectContaining({
+      patch: { dailySalesTarget: 5000 },
+      actorRole: "owner",
+    }));
+  });
 });

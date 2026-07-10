@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, CheckCircle2, Flame, Save, TrendingUp } from "lucide-react";
 import { defaultStoreOperationalSettings } from "@/domain/store-operational-settings/normalize";
+import { updateStoreOperationalSettingsViaApi } from "@/features/org-config/client/org-config-api-client";
 import { useStoreReports } from "@/features/reports/client/use-store-reports";
 import { businessName, money, text } from "./taqfeelah-app-catalog-data";
 import { NotebookHeading, NotebookRow, StoreScopeTabs, todayIsoDate } from "./taqfeelah-app-notebook";
@@ -15,7 +16,6 @@ type OwnerTargetHeatmapScreenProps = {
   setSelectedBusiness: (value: string) => void;
   storeOperationalSettings: AppStoreOperationalSettings;
   setStoreOperationalSettings: AppSetState<AppStoreOperationalSettings>;
-  onPersistSettingsNow?: () => void;
   reportsApiEnabled: boolean;
   reportsApiOrganizationId?: string | null;
   reportsApiActorUserId?: string | null;
@@ -77,7 +77,6 @@ export function OwnerTargetHeatmapScreen({
   setSelectedBusiness,
   storeOperationalSettings,
   setStoreOperationalSettings,
-  onPersistSettingsNow = () => {},
   reportsApiEnabled,
   reportsApiOrganizationId = "",
   reportsApiActorUserId = "",
@@ -87,11 +86,14 @@ export function OwnerTargetHeatmapScreen({
   const initialStore = selectedBusiness !== "all" ? selectedBusiness : activeStores[0]?.id || "";
   const [storeId, setStoreId] = useState(initialStore);
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
+  const [targetSaving, setTargetSaving] = useState(false);
+  const [targetNotice, setTargetNotice] = useState<"saved" | "failed" | "backend-required" | null>(null);
   const currentSettings = storeOperationalSettings[storeId] || defaultStoreOperationalSettings();
   const target = typeof currentSettings.dailySalesTarget === "number" ? currentSettings.dailySalesTarget : null;
   const [targetDraft, setTargetDraft] = useState(() => (target ? String(target) : ""));
   const selectedStore = activeStores.find((store) => store.id === storeId) || activeStores[0] || null;
   const apiReady = Boolean(reportsApiEnabled && reportsApiOrganizationId && reportsApiActorUserId && storeId);
+  const targetBackendReady = Boolean(reportsApiOrganizationId && reportsApiActorUserId && storeId);
 
   const report = useStoreReports({
     enabled: apiReady,
@@ -125,16 +127,40 @@ export function OwnerTargetHeatmapScreen({
   const showLoading = apiReady && report.loading;
   const targetMissing = !target || target <= 0;
 
-  const saveTarget = () => {
+  useEffect(() => {
+    setTargetDraft(target ? String(target) : "");
+  }, [storeId, target]);
+
+  const saveTarget = async () => {
+    if (!targetBackendReady || targetSaving) {
+      setTargetNotice("backend-required");
+      return;
+    }
     const nextTarget = parseTarget(targetDraft);
-    setStoreOperationalSettings((current) => ({
-      ...current,
-      [storeId]: {
-        ...(current[storeId] || defaultStoreOperationalSettings()),
-        dailySalesTarget: nextTarget,
-      },
-    }));
-    onPersistSettingsNow();
+    setTargetSaving(true);
+    setTargetNotice(null);
+    try {
+      const savedSettings = await updateStoreOperationalSettingsViaApi({
+        organizationId: reportsApiOrganizationId || "",
+        actorUserId: reportsApiActorUserId || "",
+        actorRole: reportsApiActorRole,
+        storeId,
+        patch: { dailySalesTarget: nextTarget },
+        reason: "target_heatmap_daily_sales_target_saved",
+      });
+      setStoreOperationalSettings((current) => ({
+        ...current,
+        [storeId]: {
+          ...(current[storeId] || defaultStoreOperationalSettings()),
+          ...savedSettings,
+        },
+      }));
+      setTargetNotice("saved");
+    } catch {
+      setTargetNotice("failed");
+    } finally {
+      setTargetSaving(false);
+    }
   };
 
   const handleStoreChange = (nextStoreId: string) => {
@@ -189,13 +215,24 @@ export function OwnerTargetHeatmapScreen({
             <button
               type="button"
               onClick={saveTarget}
-              disabled={!storeId}
+              disabled={!storeId || targetSaving || !targetBackendReady}
               className="mt-5 flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#112A46] px-3 text-taq-meta font-black text-white disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
-              {text(lang, "saveTarget")}
+              {targetSaving ? text(lang, "loading") : text(lang, "saveTarget")}
             </button>
           </div>
+          {targetNotice ? (
+            <p className={`rounded-xl px-3 py-2 text-center text-taq-meta font-black ${
+              targetNotice === "saved" ? "bg-[#EAF7EE] text-[#257844]" : "bg-[#FFF1EE] text-[#B44747]"
+            }`}>
+              {text(lang, targetNotice === "saved"
+                ? "targetSaved"
+                : targetNotice === "backend-required"
+                  ? "targetBackendRequired"
+                  : "targetSaveFailed")}
+            </p>
+          ) : null}
         </div>
       </NotebookRow>
 

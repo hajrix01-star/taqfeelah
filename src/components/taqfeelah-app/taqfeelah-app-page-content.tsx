@@ -279,9 +279,6 @@ export function TaqfeelahAppPageContent({
             setSelectedBusiness={setSelectedBusiness}
             storeOperationalSettings={storeOperationalSettings}
             setStoreOperationalSettings={setStoreOperationalSettings}
-            onPersistSettingsNow={() => {
-              void persistRuntimeSettingsNow();
-            }}
             reportsApiEnabled={entriesApiEnabled}
             reportsApiOrganizationId={closeoutsApiOrganizationId ?? undefined}
             reportsApiActorUserId={ownerApiUserId ?? undefined}

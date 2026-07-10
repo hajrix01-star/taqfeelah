@@ -96,6 +96,8 @@ describe("register production source guard", () => {
     const source = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-owner-target-heatmap-screen.tsx");
 
     expect(source).toContain("@/features/reports/client/use-store-reports");
+    expect(source).toContain("@/features/org-config/client/org-config-api-client");
+    expect(source).toContain("updateStoreOperationalSettingsViaApi");
     expect(source).toContain("targetServerOnly");
     expect(source).toContain("includeDetails: true");
     expect(source).not.toContain("operationalEntries");

@@ -29,6 +29,7 @@ export const PATCH = withAuthedApiRoute<{ storeId: string }>(async ({ auth, para
     employeeHistoryVisibility,
     closeoutAlert,
     notebookTheme,
+    dailySalesTarget,
     reason,
   } = body;
 
@@ -37,6 +38,7 @@ export const PATCH = withAuthedApiRoute<{ storeId: string }>(async ({ auth, para
     ...(employeeHistoryVisibility !== undefined ? { employeeHistoryVisibility } : {}),
     ...(closeoutAlert !== undefined ? { closeoutAlert } : {}),
     ...(notebookTheme !== undefined ? { notebookTheme } : {}),
+    ...(dailySalesTarget !== undefined ? { dailySalesTarget } : {}),
   };
   const parsedPatch = storeOperationalSettingsPatchSchema.safeParse(patchCandidate);
   if (!parsedPatch.success) {
