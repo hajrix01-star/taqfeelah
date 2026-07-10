@@ -10,6 +10,7 @@ describe("normalizeStoreOperationalSettings", () => {
   it("returns product defaults for empty input", () => {
     expect(defaultStoreOperationalSettings()).toMatchObject({
       closeoutAlert: false,
+      dailySalesTarget: null,
       employeeHistoryVisibility: "month",
     });
   });
@@ -48,11 +49,19 @@ describe("normalizeStoreOperationalSettings", () => {
     expect(normalized).toEqual({
       activeCategories: expect.any(Array),
       closeoutAlert: true,
+      dailySalesTarget: null,
       employeeHistoryVisibility: "week",
       notebookTheme: null,
     });
     expect(normalized).not.toHaveProperty("reviewEnabled");
     expect(normalized).not.toHaveProperty("closeoutReviewEnabled");
     expect(normalized).not.toHaveProperty("attachmentAlert");
+  });
+
+  it("keeps a per-store daily sales target in patches", () => {
+    expect(diffStoreOperationalSettingsPatch(
+      { dailySalesTarget: null },
+      { dailySalesTarget: 5000 },
+    )).toEqual({ dailySalesTarget: 5000 });
   });
 });

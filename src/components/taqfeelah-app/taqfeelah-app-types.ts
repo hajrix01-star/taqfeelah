@@ -54,6 +54,7 @@ export type AppOwnerPage =
   | "home"
   | "register"
   | "closeouts"
+  | "targets"
   | "notebook"
   | "settings"
   | (string & {});

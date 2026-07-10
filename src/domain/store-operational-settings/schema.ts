@@ -6,6 +6,7 @@ const storeOperationalSettingsFieldSchemas = {
   employeeHistoryVisibility: z.enum(["week", "month", "all"]),
   closeoutAlert: z.boolean(),
   notebookTheme: z.string().trim().min(1).nullable(),
+  dailySalesTarget: z.number().finite().nonnegative().nullable(),
 };
 
 export const storeOperationalSettingsSchema = z.object({
@@ -13,6 +14,7 @@ export const storeOperationalSettingsSchema = z.object({
   employeeHistoryVisibility: storeOperationalSettingsFieldSchemas.employeeHistoryVisibility.default("month"),
   closeoutAlert: storeOperationalSettingsFieldSchemas.closeoutAlert.default(false),
   notebookTheme: storeOperationalSettingsFieldSchemas.notebookTheme.default(null),
+  dailySalesTarget: storeOperationalSettingsFieldSchemas.dailySalesTarget.default(null),
 });
 
 export const storeOperationalSettingsPatchSchema = z.object({
@@ -20,6 +22,7 @@ export const storeOperationalSettingsPatchSchema = z.object({
   employeeHistoryVisibility: storeOperationalSettingsFieldSchemas.employeeHistoryVisibility.optional(),
   closeoutAlert: storeOperationalSettingsFieldSchemas.closeoutAlert.optional(),
   notebookTheme: storeOperationalSettingsFieldSchemas.notebookTheme.optional(),
+  dailySalesTarget: storeOperationalSettingsFieldSchemas.dailySalesTarget.optional(),
 });
 
 export type StoreOperationalSettingsInput = z.infer<typeof storeOperationalSettingsSchema>;

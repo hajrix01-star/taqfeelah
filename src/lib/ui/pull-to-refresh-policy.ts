@@ -5,7 +5,7 @@ import type {
 } from "@/lib/ui/pull-to-refresh-types";
 
 /** Owner main pages that support pull-to-refresh. */
-export const OWNER_PULL_TO_REFRESH_PAGES = new Set(["home", "notebook", "register", "closeouts"]);
+export const OWNER_PULL_TO_REFRESH_PAGES = new Set(["home", "targets", "notebook", "register", "closeouts"]);
 
 /** Employee main pages that support pull-to-refresh. */
 export const EMPLOYEE_PULL_TO_REFRESH_PAGES = new Set(["closeouts"]);
@@ -39,5 +39,5 @@ export function resolvePullToRefreshUsesNotebookSurface({
   if (employee) {
     return employeePage === "closeouts";
   }
-  return ownerPage === "home" || ownerPage === "notebook" || ownerPage === "register" || ownerPage === "closeouts";
+  return ownerPage === "home" || ownerPage === "targets" || ownerPage === "notebook" || ownerPage === "register" || ownerPage === "closeouts";
 }

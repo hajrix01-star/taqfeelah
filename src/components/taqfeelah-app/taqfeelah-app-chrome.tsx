@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
   BookMarked,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Home,
@@ -185,6 +186,7 @@ function BottomNav({ lang, employee, active, onChange, onAdd = () => {} }: {
     { id: "register", key: "register", icon: ReceiptText },
   ];
   const rightItems: NavItem[] = [
+    { id: "targets", key: "targetHeatmap", icon: CalendarDays },
     { id: "notebook", key: "ownerNotebook", icon: BookMarked },
     { id: "settings", key: "settings", icon: Settings },
   ];

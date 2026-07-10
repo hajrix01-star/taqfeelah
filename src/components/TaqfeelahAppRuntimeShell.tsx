@@ -289,7 +289,7 @@ export default function TaqfeelahAppRuntimeShell() {
               lang={lang}
               setLang={setLang}
               employee={employee}
-              notebookMode={employee || (!employee && (ownerPage === "home" || ownerPage === "register" || ownerPage === "notebook" || ownerPage === "closeouts"))}
+              notebookMode={employee || (!employee && (ownerPage === "home" || ownerPage === "register" || ownerPage === "targets" || ownerPage === "notebook" || ownerPage === "closeouts"))}
               notebookTheme={employee ? employeeNotebookTheme : notebookTheme}
               notebookPattern={notebookPattern}
               onLogout={auth.logout}

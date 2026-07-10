@@ -12,6 +12,7 @@ import { openWhatsAppSupport } from "./taqfeelah-app-support";
 import { OwnerSettingsScreen } from "./OwnerSettingsSection";
 import { isOrgConfigApiEnabled } from "@/core/config/org-config-api-mode";
 import { OwnerNotebookScreen } from "./taqfeelah-app-owner-notebook-screen";
+import { OwnerTargetHeatmapScreen } from "./taqfeelah-app-owner-target-heatmap-screen";
 import { OwnerHomeConnected } from "./taqfeelah-app-owner-home-screen";
 import { OwnerRegisterConnected } from "./taqfeelah-app-owner-register-connected";
 import type { SalesChannelConfig } from "@/features/daily-closeouts/daily-closeouts-types";
@@ -268,6 +269,25 @@ export function TaqfeelahAppPageContent({
           userId={ownerApiUserId ?? undefined}
           apiEnabled={ownerNotebookApiEnabled}
         />
+      )}
+      {!employee && ownerPage === "targets" && (
+        <NotebookScrollSurface theme={notebookTheme} pattern={notebookPattern} lang={lang}>
+          <OwnerTargetHeatmapScreen
+            lang={lang}
+            businessesList={activeBusinesses as AppBusiness[]}
+            selectedBusiness={selectedBusiness}
+            setSelectedBusiness={setSelectedBusiness}
+            storeOperationalSettings={storeOperationalSettings}
+            setStoreOperationalSettings={setStoreOperationalSettings}
+            onPersistSettingsNow={() => {
+              void persistRuntimeSettingsNow();
+            }}
+            reportsApiEnabled={entriesApiEnabled}
+            reportsApiOrganizationId={closeoutsApiOrganizationId ?? undefined}
+            reportsApiActorUserId={ownerApiUserId ?? undefined}
+            reportsApiActorRole="owner"
+          />
+        </NotebookScrollSurface>
       )}
       {!employee && ownerPage === "register" && (
         <OwnerRegisterConnected

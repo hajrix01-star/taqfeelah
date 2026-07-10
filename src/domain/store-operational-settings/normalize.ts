@@ -61,6 +61,9 @@ export function diffStoreOperationalSettingsPatch(
   if (!valuesEqual(previous.notebookTheme, next.notebookTheme)) {
     patch.notebookTheme = next.notebookTheme;
   }
+  if (!valuesEqual(previous.dailySalesTarget, next.dailySalesTarget)) {
+    patch.dailySalesTarget = next.dailySalesTarget;
+  }
 
   return patch;
 }

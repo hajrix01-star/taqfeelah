@@ -92,6 +92,16 @@ describe("register production source guard", () => {
     expect(source).toContain("entriesDbSource: strictServerFinancialSource");
   });
 
+  it("keeps target heatmap sales figures server-only", () => {
+    const source = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-owner-target-heatmap-screen.tsx");
+
+    expect(source).toContain("@/features/reports/client/use-store-reports");
+    expect(source).toContain("targetServerOnly");
+    expect(source).toContain("includeDetails: true");
+    expect(source).not.toContain("operationalEntries");
+    expect(source).not.toContain("summaryDayFromEntries");
+  });
+
   it("keeps register server reads behind a single read-model adapter", () => {
     const screen = readProjectFile("src/components/taqfeelah-app/taqfeelah-app-owner-register-screen.tsx");
     const adapter = readProjectFile("src/features/entries/client/use-register-server-read-model.ts");

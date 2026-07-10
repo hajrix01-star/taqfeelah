@@ -14,4 +14,5 @@ export type StoreOperationalSettings = {
   employeeHistoryVisibility: EmployeeHistoryVisibility;
   closeoutAlert: boolean;
   notebookTheme: string | null;
+  dailySalesTarget: number | null;
 };
