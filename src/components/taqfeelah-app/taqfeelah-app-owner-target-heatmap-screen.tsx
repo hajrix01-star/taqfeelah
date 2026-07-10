@@ -236,7 +236,7 @@ export function OwnerTargetHeatmapScreen({
         </div>
       </NotebookRow>
 
-      <NotebookRow lines={9}>
+      <NotebookRow lines={10}>
         <div className="w-full">
           {showServerUnavailable ? (
             <p className="rounded-xl bg-[#FFF1EE] px-3 py-3 text-center text-taq-meta font-black text-[#B44747]">
@@ -246,41 +246,40 @@ export function OwnerTargetHeatmapScreen({
             <p className="rounded-xl bg-white px-3 py-3 text-center text-taq-meta font-black text-[#827762]">
               {text(lang, "loading")}
             </p>
-          ) : (
-            <>
-              {targetMissing ? (
-                <p className="mb-3 rounded-xl bg-[#FFF8E4] px-3 py-2 text-center text-taq-meta font-black text-[#806528]">
-                  {text(lang, "targetNotSet")}
-                </p>
-              ) : null}
-              <div className="grid grid-cols-7 gap-1.5">
-                {WEEKDAY_LABELS[lang].map((day, index) => (
-                  <div key={`${day}-${index}`} className="text-center text-[10px] font-black text-[#827762]">
-                    {day}
-                  </div>
-                ))}
-                {visibleDays.map((day, index) => {
-                  const sales = day.date && salesByDate.has(day.date) ? salesByDate.get(day.date)! : null;
-                  return (
-                    <div
-                      key={`${day.date || "empty"}-${index}`}
-                      className={`aspect-square rounded-xl p-1.5 ring-1 ${day.inMonth ? targetTone(sales, target) : "bg-transparent text-transparent ring-transparent"}`}
-                      title={sales === null ? text(lang, "targetNoData") : `${day.date}: ${money(sales, lang)}`}
-                    >
-                      {day.inMonth ? (
-                        <div className="flex h-full flex-col justify-between">
-                          <span className="text-[10px] font-black leading-none">{day.day}</span>
-                          <span className="truncate text-[10px] font-black tabular-nums leading-none">
-                            {sales === null ? "-" : money(sales, lang).replace(/\s/g, "")}
-                          </span>
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
+          ) : null}
+          {!showServerUnavailable && !showLoading && targetMissing ? (
+            <p className="mt-3 rounded-xl bg-[#FFF8E4] px-3 py-2 text-center text-taq-meta font-black text-[#806528]">
+              {text(lang, "targetNotSet")}
+            </p>
+          ) : null}
+          <div className="mt-3 grid grid-cols-7 gap-1.5">
+            {WEEKDAY_LABELS[lang].map((day, index) => (
+              <div key={`${day}-${index}`} className="text-center text-[10px] font-black text-[#827762]">
+                {day}
               </div>
-            </>
-          )}
+            ))}
+            {visibleDays.map((day, index) => {
+              const sales = !showServerUnavailable && day.date && salesByDate.has(day.date)
+                ? salesByDate.get(day.date)!
+                : null;
+              return (
+                <div
+                  key={`${day.date || "empty"}-${index}`}
+                  className={`aspect-square rounded-xl p-1.5 ring-1 ${day.inMonth ? targetTone(sales, target) : "bg-transparent text-transparent ring-transparent"}`}
+                  title={sales === null ? text(lang, "targetNoData") : `${day.date}: ${money(sales, lang)}`}
+                >
+                  {day.inMonth ? (
+                    <div className="flex h-full flex-col justify-between">
+                      <span className="text-[10px] font-black leading-none">{day.day}</span>
+                      <span className="truncate text-[10px] font-black tabular-nums leading-none">
+                        {sales === null ? "-" : money(sales, lang).replace(/\s/g, "")}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </NotebookRow>
     </section>
