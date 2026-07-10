@@ -203,29 +203,27 @@ export function OwnerTargetHeatmapScreen({
         </div>
       </NotebookRow>
 
-      <NotebookRow lines={4}>
+      <div className="px-[5px] py-2">
         <div className="grid w-full grid-cols-3 gap-2">
-          <div className="rounded-xl bg-white p-3 ring-1 ring-black/[0.05]">
-            <CheckCircle2 className="mb-2 h-4 w-4 text-[#257844]" />
-            <p className="text-taq-nav font-bold text-[#827762]">{text(lang, "targetAchievedDays")}</p>
-            <p className="mt-1 text-lg font-black tabular-nums text-[#112A46]">{achievedDays}</p>
+          <div className="rounded-xl bg-white p-2.5 ring-1 ring-black/[0.05]">
+            <CheckCircle2 className="mb-1.5 h-4 w-4 text-[#257844]" />
+            <p className="text-taq-nav font-bold leading-4 text-[#827762]">{text(lang, "targetAchievedDays")}</p>
+            <p className="mt-0.5 text-base font-black tabular-nums text-[#112A46]">{achievedDays}</p>
           </div>
-          <div className="rounded-xl bg-white p-3 ring-1 ring-black/[0.05]">
-            <TrendingUp className="mb-2 h-4 w-4 text-[#C28A30]" />
-            <p className="text-taq-nav font-bold text-[#827762]">{text(lang, "targetAverageSales")}</p>
-            <p className="mt-1 text-sm font-black tabular-nums text-[#112A46]">{money(averageSales, lang)}</p>
+          <div className="rounded-xl bg-white p-2.5 ring-1 ring-black/[0.05]">
+            <TrendingUp className="mb-1.5 h-4 w-4 text-[#C28A30]" />
+            <p className="text-taq-nav font-bold leading-4 text-[#827762]">{text(lang, "targetAverageSales")}</p>
+            <p className="mt-0.5 text-sm font-black tabular-nums text-[#112A46]">{money(averageSales, lang)}</p>
           </div>
-          <div className="rounded-xl bg-white p-3 ring-1 ring-black/[0.05]">
-            <CalendarDays className="mb-2 h-4 w-4 text-[#112A46]" />
-            <p className="text-taq-nav font-bold text-[#827762]">{text(lang, "targetBestDay")}</p>
-            <p className="mt-1 text-sm font-black tabular-nums text-[#112A46]">{bestDay.date ? money(bestDay.sales, lang) : "-"}</p>
+          <div className="rounded-xl bg-white p-2.5 ring-1 ring-black/[0.05]">
+            <CalendarDays className="mb-1.5 h-4 w-4 text-[#112A46]" />
+            <p className="text-taq-nav font-bold leading-4 text-[#827762]">{text(lang, "targetBestDay")}</p>
+            <p className="mt-0.5 text-sm font-black tabular-nums text-[#112A46]">{bestDay.date ? money(bestDay.sales, lang) : "-"}</p>
           </div>
         </div>
-      </NotebookRow>
 
-      <NotebookRow lines={10}>
-        <div className="w-full">
-          <div className="mb-2 flex items-center justify-end gap-2">
+        <div className="mt-3 w-full">
+          <div className="mb-1.5 flex items-center justify-end gap-2">
             <label className="flex items-center gap-2 rounded-xl bg-white px-2 py-1.5 ring-1 ring-black/[0.05]">
               <span className="text-taq-nav font-black text-[#806528]">{lang === "ar" ? "الهدف" : "Target"}</span>
               <input
@@ -248,7 +246,7 @@ export function OwnerTargetHeatmapScreen({
             </button>
           </div>
           {targetNotice ? (
-            <p className={`mb-2 rounded-xl px-3 py-2 text-center text-taq-meta font-black ${
+            <p className={`mb-1.5 rounded-xl px-3 py-2 text-center text-taq-meta font-black ${
               targetNotice === "saved" ? "bg-[#EAF7EE] text-[#257844]" : "bg-[#FFF1EE] text-[#B44747]"
             }`}>
               {text(lang, targetNotice === "saved"
@@ -264,11 +262,11 @@ export function OwnerTargetHeatmapScreen({
             </p>
           ) : null}
           {!showServerUnavailable && !showLoading && targetMissing ? (
-            <p className="mt-3 rounded-xl bg-[#FFF8E4] px-3 py-2 text-center text-taq-meta font-black text-[#806528]">
+            <p className="mb-1.5 rounded-xl bg-[#FFF8E4] px-3 py-2 text-center text-taq-meta font-black text-[#806528]">
               {text(lang, "targetNotSet")}
             </p>
           ) : null}
-          <div className="mt-3 grid grid-cols-7 gap-1.5">
+          <div className="grid grid-cols-7 gap-1.5">
             {WEEKDAY_LABELS[lang].map((day, index) => (
               <div key={`${day}-${index}`} className="text-center text-[10px] font-black text-[#827762]">
                 {day}
@@ -297,7 +295,7 @@ export function OwnerTargetHeatmapScreen({
             })}
           </div>
         </div>
-      </NotebookRow>
+      </div>
 
       <NotebookRow lines={1}>
         <div className="flex w-full flex-wrap gap-1.5 text-[10px] font-black">
