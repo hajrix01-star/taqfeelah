@@ -192,47 +192,14 @@ export function OwnerTargetHeatmapScreen({
         setSelectedBusiness={handleStoreChange}
       />
 
-      <NotebookRow lines={3}>
+      <NotebookRow lines={1}>
         <div className="grid w-full gap-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-taq-meta font-black text-[#112A46]">{businessName(selectedStore, lang)}</p>
-              <p className="mt-1 text-taq-nav font-bold leading-relaxed text-[#827762]">{text(lang, "targetHeatmapHint")}</p>
             </div>
             <Flame className="h-5 w-5 shrink-0 text-[#C28A30]" />
           </div>
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="w-[132px] max-w-[48vw]">
-              <span className="mb-1 block text-taq-nav font-black text-[#806528]">{text(lang, "dailyTarget")}</span>
-              <input
-                inputMode="decimal"
-                value={targetDraft}
-                onChange={(event) => setTargetDraft(event.target.value)}
-                placeholder="5000"
-                className="h-10 w-full rounded-xl bg-white px-3 text-center text-sm font-black tabular-nums text-[#112A46] ring-1 ring-black/[0.06]"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={saveTarget}
-              disabled={!storeId || targetSaving || !targetBackendReady}
-              className="flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#112A46] px-3 text-taq-meta font-black text-white disabled:opacity-50"
-            >
-              <Save className="h-4 w-4" />
-              {targetSaving ? text(lang, "loading") : text(lang, "saveTarget")}
-            </button>
-          </div>
-          {targetNotice ? (
-            <p className={`rounded-xl px-3 py-2 text-center text-taq-meta font-black ${
-              targetNotice === "saved" ? "bg-[#EAF7EE] text-[#257844]" : "bg-[#FFF1EE] text-[#B44747]"
-            }`}>
-              {text(lang, targetNotice === "saved"
-                ? "targetSaved"
-                : targetNotice === "backend-required"
-                  ? "targetBackendRequired"
-                  : "targetSaveFailed")}
-            </p>
-          ) : null}
         </div>
       </NotebookRow>
 
@@ -258,6 +225,39 @@ export function OwnerTargetHeatmapScreen({
 
       <NotebookRow lines={10}>
         <div className="w-full">
+          <div className="mb-2 flex items-center justify-end gap-2">
+            <label className="flex items-center gap-2 rounded-xl bg-white px-2 py-1.5 ring-1 ring-black/[0.05]">
+              <span className="text-taq-nav font-black text-[#806528]">{lang === "ar" ? "الهدف" : "Target"}</span>
+              <input
+                inputMode="decimal"
+                value={targetDraft}
+                onChange={(event) => setTargetDraft(event.target.value)}
+                placeholder="5000"
+                className="h-8 w-20 bg-transparent text-center text-sm font-black tabular-nums text-[#112A46] outline-none"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={saveTarget}
+              disabled={!storeId || targetSaving || !targetBackendReady}
+              title={text(lang, "saveTarget")}
+              aria-label={text(lang, "saveTarget")}
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#112A46] text-white disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" />
+            </button>
+          </div>
+          {targetNotice ? (
+            <p className={`mb-2 rounded-xl px-3 py-2 text-center text-taq-meta font-black ${
+              targetNotice === "saved" ? "bg-[#EAF7EE] text-[#257844]" : "bg-[#FFF1EE] text-[#B44747]"
+            }`}>
+              {text(lang, targetNotice === "saved"
+                ? "targetSaved"
+                : targetNotice === "backend-required"
+                  ? "targetBackendRequired"
+                  : "targetSaveFailed")}
+            </p>
+          ) : null}
           {showLoading ? (
             <p className="rounded-xl bg-white px-3 py-3 text-center text-taq-meta font-black text-[#827762]">
               {text(lang, "loading")}
