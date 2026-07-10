@@ -76,6 +76,34 @@ describe("runtime settings route integration", () => {
     }));
   });
 
+  it("PUT saves blank notebook pattern in runtime settings", async () => {
+    saveRuntimeSettings.mockResolvedValueOnce({
+      id: "settings-1",
+      createdAt: "2026-06-06T10:00:00.000Z",
+      settings: { notebookTheme: "pureWhite", notebookPattern: "blank" },
+    });
+
+    const { PUT } = await import("../runtime/settings/route");
+    const response = await PUT(
+      ownerRequest("http://localhost/api/v1/runtime/settings", {
+        method: "PUT",
+        body: JSON.stringify({
+          settings: { notebookTheme: "pureWhite", notebookPattern: "blank" },
+          reason: "owner_settings_explicit_save",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const body = await readJsonBody<{ settings: { notebookPattern: string } }>(response);
+    expect(body.settings.notebookPattern).toBe("blank");
+    expect(saveRuntimeSettings).toHaveBeenCalledWith(expect.objectContaining({
+      settings: { notebookTheme: "pureWhite", notebookPattern: "blank" },
+      reason: "owner_settings_explicit_save",
+      actorRole: "owner",
+    }));
+  });
+
   it("PUT defaults to empty settings object when body.settings is missing", async () => {
     saveRuntimeSettings.mockResolvedValueOnce({
       id: "settings-1",

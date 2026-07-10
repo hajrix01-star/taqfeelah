@@ -71,6 +71,30 @@ describe("runtime settings bridge", () => {
     });
   });
 
+  it("keeps blank notebook pattern in the backend runtime settings snapshot", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_MODE", "production");
+
+    const snapshot = buildRuntimeSettingsSnapshot({
+      orgConfigApiEnabled: true,
+      storeOperationalSettings: {},
+      notebookTheme: "pureWhite",
+      notebookPattern: "blank",
+      employeePreferences: {},
+      ownerShellPreferences: {},
+      ownerProfile: {},
+      authConfig: { ownerUsername: "owner", ownerPassword: "demo", employeePins: {} },
+      configuredBusinesses: [],
+      archivedBusinessIds: [],
+      storeChannelSettings: {},
+      staff: [],
+    });
+
+    expect(snapshot).toEqual(expect.objectContaining({
+      notebookTheme: "pureWhite",
+      notebookPattern: "blank",
+    }));
+  });
+
   it("buildRuntimeSettingsSnapshot includes org entities when org config API is disabled", () => {
     const businesses = [{ id: "shami" }];
     const staff = [{ id: "ahmed" }];
@@ -217,5 +241,17 @@ describe("runtime settings bridge", () => {
     });
 
     expect(apply.setNotebookTheme).not.toHaveBeenCalled();
+  });
+
+  it("applyRuntimeSettingsSnapshotPatch accepts blank notebook pattern from runtime settings", () => {
+    const apply = { setNotebookPattern: vi.fn() };
+
+    applyRuntimeSettingsSnapshotPatch({
+      orgConfigApiEnabled: true,
+      migrated: { notebookPattern: "blank" },
+      apply,
+    });
+
+    expect(apply.setNotebookPattern).toHaveBeenCalledWith("blank");
   });
 });
