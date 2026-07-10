@@ -201,22 +201,22 @@ export function OwnerTargetHeatmapScreen({
             </div>
             <Flame className="h-5 w-5 shrink-0 text-[#C28A30]" />
           </div>
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-            <label className="min-w-0">
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="w-[132px] max-w-[48vw]">
               <span className="mb-1 block text-taq-nav font-black text-[#806528]">{text(lang, "dailyTarget")}</span>
               <input
                 inputMode="decimal"
                 value={targetDraft}
                 onChange={(event) => setTargetDraft(event.target.value)}
                 placeholder="5000"
-                className="h-11 w-full rounded-xl bg-white px-3 text-sm font-black tabular-nums text-[#112A46] ring-1 ring-black/[0.06]"
+                className="h-10 w-full rounded-xl bg-white px-3 text-center text-sm font-black tabular-nums text-[#112A46] ring-1 ring-black/[0.06]"
               />
             </label>
             <button
               type="button"
               onClick={saveTarget}
               disabled={!storeId || targetSaving || !targetBackendReady}
-              className="mt-5 flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#112A46] px-3 text-taq-meta font-black text-white disabled:opacity-50"
+              className="flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#112A46] px-3 text-taq-meta font-black text-white disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
               {targetSaving ? text(lang, "loading") : text(lang, "saveTarget")}
@@ -256,30 +256,9 @@ export function OwnerTargetHeatmapScreen({
         </div>
       </NotebookRow>
 
-      <NotebookRow lines={1}>
-        <div className="flex w-full flex-wrap gap-1.5 text-[10px] font-black">
-          {[
-            ["bg-[#F0ECE2]", text(lang, "targetLegendNoData")],
-            ["bg-[#FFE1DE]", text(lang, "targetLegendLow")],
-            ["bg-[#FFE0C2]", text(lang, "targetLegendMedium")],
-            ["bg-[#FFF3BF]", text(lang, "targetLegendNear")],
-            ["bg-[#DFF3E4]", text(lang, "targetLegendMet")],
-          ].map(([className, label]) => (
-            <span key={label} className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 ring-1 ring-black/[0.04]">
-              <span className={`h-2.5 w-2.5 rounded-sm ${className}`} />
-              {label}
-            </span>
-          ))}
-        </div>
-      </NotebookRow>
-
       <NotebookRow lines={10}>
         <div className="w-full">
-          {showServerUnavailable ? (
-            <p className="rounded-xl bg-[#FFF1EE] px-3 py-3 text-center text-taq-meta font-black text-[#B44747]">
-              {text(lang, "targetServerOnly")}
-            </p>
-          ) : showLoading ? (
+          {showLoading ? (
             <p className="rounded-xl bg-white px-3 py-3 text-center text-taq-meta font-black text-[#827762]">
               {text(lang, "loading")}
             </p>
@@ -317,6 +296,23 @@ export function OwnerTargetHeatmapScreen({
               );
             })}
           </div>
+        </div>
+      </NotebookRow>
+
+      <NotebookRow lines={1}>
+        <div className="flex w-full flex-wrap gap-1.5 text-[10px] font-black">
+          {[
+            ["bg-[#F0ECE2]", text(lang, "targetLegendNoData")],
+            ["bg-[#FFE1DE]", text(lang, "targetLegendLow")],
+            ["bg-[#FFE0C2]", text(lang, "targetLegendMedium")],
+            ["bg-[#FFF3BF]", text(lang, "targetLegendNear")],
+            ["bg-[#DFF3E4]", text(lang, "targetLegendMet")],
+          ].map(([className, label]) => (
+            <span key={label} className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 ring-1 ring-black/[0.04]">
+              <span className={`h-2.5 w-2.5 rounded-sm ${className}`} />
+              {label}
+            </span>
+          ))}
         </div>
       </NotebookRow>
     </section>
