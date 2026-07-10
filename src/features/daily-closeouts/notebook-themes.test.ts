@@ -65,4 +65,12 @@ describe("notebookLinesBackground", () => {
     expect(grid.backgroundImage).toContain("180deg");
     expect(grid.backgroundImage).toContain("90deg");
   });
+
+  it("supports blank paper without line gradients", () => {
+    const blank = notebookLinesBackground("yellow", "blank");
+
+    expect(isValidNotebookPattern("blank")).toBe(true);
+    expect(blank.backgroundColor).toBe(notebookThemes.yellow.paper);
+    expect(blank.backgroundImage).toBe("none");
+  });
 });

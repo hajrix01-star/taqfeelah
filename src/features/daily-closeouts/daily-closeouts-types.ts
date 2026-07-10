@@ -14,7 +14,7 @@ export type NotebookThemeId =
   | "pinkTint"
   | "blueTint";
 
-export type NotebookPatternId = "lined" | "grid";
+export type NotebookPatternId = "lined" | "grid" | "blank";
 
 export type CloseoutStatusValue = "draft" | "submitted" | "reviewed" | "returned";
 

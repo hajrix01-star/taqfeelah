@@ -68,7 +68,7 @@ export const notebookThemes: Record<NotebookThemeId, NotebookThemeStyle> = {
 };
 
 export const NOTEBOOK_THEME_IDS = Object.freeze(Object.keys(notebookThemes) as NotebookThemeId[]);
-export const NOTEBOOK_PATTERN_IDS = Object.freeze(["lined", "grid"] as const);
+export const NOTEBOOK_PATTERN_IDS = Object.freeze(["lined", "grid", "blank"] as const);
 
 function blendHex(hex: string, targetHex: string, ratio: number): string {
   const parse = (value: string) => {
@@ -87,10 +87,14 @@ function blendHex(hex: string, targetHex: string, ratio: number): string {
 }
 
 function resolveNotebookPattern(pattern: NotebookPatternId | string | undefined): NotebookPatternId {
+  if (pattern === "blank") return "blank";
   return pattern === "grid" ? "grid" : "lined";
 }
 
 function notebookPatternBackgroundImage(activeTheme: NotebookThemeStyle, pattern: NotebookPatternId): string {
+  if (pattern === "blank") {
+    return "none";
+  }
   if (pattern === "grid") {
     return [
       `repeating-linear-gradient(180deg, transparent 0px, transparent 21px, ${activeTheme.line} 21px, ${activeTheme.line} 22px)`,
@@ -134,7 +138,7 @@ export function isValidNotebookTheme(themeKey: unknown): themeKey is NotebookThe
 }
 
 export function isValidNotebookPattern(patternKey: unknown): patternKey is NotebookPatternId {
-  return patternKey === "lined" || patternKey === "grid";
+  return patternKey === "lined" || patternKey === "grid" || patternKey === "blank";
 }
 
 export function resolveNotebookTheme({

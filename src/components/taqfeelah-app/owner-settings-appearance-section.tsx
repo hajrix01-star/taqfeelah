@@ -12,6 +12,7 @@ import type { OwnerSettingsSectionCommonProps } from "./taqfeelah-app-types";
 const NOTEBOOK_PATTERN_OPTIONS: Array<{ id: NotebookPatternId; labelAr: string; labelEn: string }> = [
   { id: "lined", labelAr: "مخطط", labelEn: "Lined" },
   { id: "grid", labelAr: "مربعات", labelEn: "Grid" },
+  { id: "blank", labelAr: "فاضي", labelEn: "Blank" },
 ];
 
 export function OwnerSettingsAppearanceSection({
@@ -64,7 +65,7 @@ export function OwnerSettingsAppearanceSection({
           <div className="mb-2 text-xs font-black text-[var(--taq-color-827762)]">
             {lang === "ar" ? "نوع الورق" : "Paper pattern"}
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {NOTEBOOK_PATTERN_OPTIONS.map((option) => {
               const active = draftNotebookPattern === option.id;
               return (
