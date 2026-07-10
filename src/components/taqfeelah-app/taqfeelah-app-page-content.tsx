@@ -283,6 +283,7 @@ export function TaqfeelahAppPageContent({
             reportsApiOrganizationId={closeoutsApiOrganizationId ?? undefined}
             reportsApiActorUserId={ownerApiUserId ?? undefined}
             reportsApiActorRole="owner"
+            notebookTheme={notebookTheme}
           />
         </NotebookScrollSurface>
       )}
