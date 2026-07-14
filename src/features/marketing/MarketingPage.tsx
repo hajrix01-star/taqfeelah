@@ -9,8 +9,10 @@ import { ReleaseVersionLine } from "@/release/ReleaseVersionLine";
 import { TAQFEELAH_LOGO_SRC } from "@/lib/brand/taqfeelah-logo";
 import MarketingAppPreview from "@/features/marketing/MarketingAppPreview";
 import {
+  MARKETING_AUDIENCES,
   MARKETING_FAQ,
   MARKETING_FEATURES,
+  MARKETING_OUTCOMES,
   MARKETING_PLANS,
 } from "@/features/marketing/marketing-content";
 import {
@@ -49,6 +51,9 @@ export default function MarketingPage() {
             <nav className="hidden items-center gap-6 md:flex" style={{ color: marketingColors.muted }}>
               <a href="#features" className={marketingNavLinkClassName()}>
                 المميزات
+              </a>
+              <a href="#audience" className={marketingNavLinkClassName()}>
+                لمن؟
               </a>
               <a href="#pricing" className={marketingNavLinkClassName()}>
                 الباقات
@@ -117,14 +122,14 @@ export default function MarketingPage() {
             className="inline-flex rounded-full bg-white px-3 py-1 text-taq-meta font-black ring-1 ring-black/[0.05]"
             style={{ color: marketingColors.gold }}
           >
-            تشغيل يومي للمحلات - ليس محاسبة
+            متابعة مبيعات ومصروفات المحلات
           </p>
           <h1 className="text-3xl font-black leading-[1.15] sm:text-4xl lg:text-[2.65rem]">
-            الداخل - الخارج = الناتج
+            تقفيلة محلك اليومية من الجوال
           </h1>
           <p className={`max-w-xl ${marketingMutedTextClassName()} sm:text-base`} style={{ color: marketingColors.soft }}>
-            {PWA_APP_NAME} يحوّل يومك في المحل إلى صورة واضحة: داخل، خارج، تقفيلات،
-            موظفين، وتقارير - بنفس روح الدفتر المعتمدة في التطبيق.
+            {PWA_APP_NAME} يساعد أصحاب المحلات على تسجيل الداخل والخارج، متابعة المصروفات،
+            ومراجعة تقفيلة اليوم بتقارير واضحة: الداخل - الخارج = الناتج.
           </p>
           <div className="flex flex-wrap gap-3">
             <MarketingCta href={PUBLIC_SIGNUP_ENABLED ? SIGNUP_HREF : APP_LOGIN_HREF}>
@@ -139,9 +144,9 @@ export default function MarketingPage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              { label: "واجهة دفتر", value: "مألوفة وسريعة" },
-              { label: "PWA", value: "تثبيت على الجوال" },
-              { label: "تعدد محلات", value: "منشأة واحدة" },
+              { label: "تقفيل يومي", value: "أسرع وأوضح" },
+              { label: "مبيعات ومصروفات", value: "في مكان واحد" },
+              { label: "PWA", value: "يعمل من الجوال" },
             ].map((item) => (
               <div
                 key={item.label}
@@ -159,13 +164,45 @@ export default function MarketingPage() {
         <MarketingAppPreview />
       </section>
 
+      <section id="audience" className="border-y border-[#ECE6DA] bg-white/70 py-14">
+        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+          <MarketingFadeIn>
+            <MarketingSectionIntro
+              eyebrow="For stores"
+              title="مصمم لطريقة عمل المحلات"
+              description="تقفيلة يركز على اليوم التشغيلي: من باع، كم دخل، أين خرجت المصاريف، وما نتيجة اليوم."
+            />
+            <div className="mt-6 flex flex-wrap gap-3">
+              <MarketingCta href={PUBLIC_SIGNUP_ENABLED ? SIGNUP_HREF : APP_LOGIN_HREF}>
+                {PUBLIC_SIGNUP_ENABLED ? "ابدأ الآن" : "افتح التطبيق"}
+              </MarketingCta>
+              <MarketingCta href="#contact" variant="secondary">
+                اسألنا على واتساب
+              </MarketingCta>
+            </div>
+          </MarketingFadeIn>
+          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+            {MARKETING_AUDIENCES.map((item, index) => (
+              <MarketingFadeIn key={item.title} delay={index * 0.04}>
+                <MarketingCard className="h-full">
+                  <h3 className="text-base font-black">{item.title}</h3>
+                  <p className={`mt-2 ${marketingMutedTextClassName()}`} style={{ color: marketingColors.soft }}>
+                    {item.description}
+                  </p>
+                </MarketingCard>
+              </MarketingFadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="features" className="border-y border-[#ECE6DA] bg-white/70 py-14">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <MarketingFadeIn>
             <MarketingSectionIntro
               eyebrow="Features"
               title="ميزات تناسب يومك في المحل"
-              description="كل ما تحتاجه لمتابعة التشغيل - بدون فواتير ضريبية أو مخزون معقد."
+              description="كل ما تحتاجه لمتابعة مبيعات المحل ومصروفاته وتقفيلاته، بدون فواتير ضريبية أو مخزون معقد."
             />
           </MarketingFadeIn>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -183,6 +220,18 @@ export default function MarketingPage() {
                     {feature.description}
                   </p>
                 </MarketingCard>
+              </MarketingFadeIn>
+            ))}
+          </div>
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            {MARKETING_OUTCOMES.map((item, index) => (
+              <MarketingFadeIn key={item.title} delay={index * 0.04}>
+                <div className="border-t border-[#ECE6DA] pt-5">
+                  <h3 className="text-base font-black">{item.title}</h3>
+                  <p className={`mt-2 ${marketingMutedTextClassName()}`} style={{ color: marketingColors.soft }}>
+                    {item.description}
+                  </p>
+                </div>
               </MarketingFadeIn>
             ))}
           </div>
@@ -250,7 +299,7 @@ export default function MarketingPage() {
             <MarketingSectionIntro
               eyebrow="Try the app"
               title="جرّب التطبيق مباشرة"
-              description="بعد إنشاء الحساب أو الدخول تنتقل إلى التطبيق التشغيلي - نفس التجربة على الجوال والكمبيوتر."
+              description="ابدأ من تسجيل التقفيلة اليومية، ثم راجع التقارير والأهداف من نفس التجربة على الجوال والكمبيوتر."
             />
             <div className="mt-6 flex flex-wrap gap-3">
               {PUBLIC_SIGNUP_ENABLED ? (
