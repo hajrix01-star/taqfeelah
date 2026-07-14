@@ -19,6 +19,7 @@
 | `APPROVED_UI_BASELINE.md` | حدود تعديل الواجهة المعتمدة |
 | `INCOME_SOURCES.md` | نموذج طرق الدفع ومصادر الدخل |
 | `OWNER_SETTINGS_IA_PLAN.md` | تنظيم إعدادات المالك الحالي |
+| `SEO_MARKETING_LAUNCH_PLAN.md` | خطة SEO والتسويق قبل الإطلاق مع مستهدفات وقائمة تحقق |
 | `MAINTENANCE_SCRIPTS.md` | تصنيف سكربتات الصيانة والهجرة والتشخيص |
 | `transformation-plan-01.md` | سجل خطة التحول 01 |
 
