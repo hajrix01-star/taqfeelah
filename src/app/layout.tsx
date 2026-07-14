@@ -2,20 +2,72 @@ import type { Metadata, Viewport } from "next";
 import { connection } from "next/server";
 import {
   PWA_APP_NAME,
-  PWA_DESCRIPTION,
   PWA_THEME_COLOR,
 } from "@/core/config/pwa";
+import {
+  SEO_DESCRIPTION,
+  SEO_OG_IMAGE,
+  SEO_SITE_NAME,
+  SEO_SITE_URL,
+  SEO_TITLE,
+  absoluteSiteUrl,
+} from "@/core/config/seo";
 import { appFontClassNames } from "@/core/fonts/app-fonts";
 import PwaLifecycle from "@/features/pwa/PwaLifecycle";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SEO_SITE_URL),
   applicationName: PWA_APP_NAME,
   title: {
-    default: PWA_APP_NAME,
-    template: `%s — ${PWA_APP_NAME}`,
+    default: SEO_TITLE,
+    template: `%s — ${SEO_SITE_NAME}`,
   },
-  description: PWA_DESCRIPTION,
+  description: SEO_DESCRIPTION,
+  keywords: [
+    "تقفيلة",
+    "تقفيل يومية محل",
+    "متابعة مبيعات يومية",
+    "مصاريف محل",
+    "تقرير مبيعات يومي",
+    "دفتر مبيعات",
+  ],
+  alternates: {
+    canonical: absoluteSiteUrl("/"),
+  },
+  openGraph: {
+    type: "website",
+    locale: "ar_SA",
+    url: absoluteSiteUrl("/"),
+    siteName: SEO_SITE_NAME,
+    title: SEO_TITLE,
+    description: SEO_DESCRIPTION,
+    images: [
+      {
+        url: SEO_OG_IMAGE,
+        width: 1280,
+        height: 720,
+        alt: "واجهة تقفيلة لمتابعة تشغيل المحلات اليومية",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SEO_TITLE,
+    description: SEO_DESCRIPTION,
+    images: [SEO_OG_IMAGE],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

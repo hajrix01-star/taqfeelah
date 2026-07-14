@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { NO_INDEX_ROBOTS } from "@/core/config/seo";
 
 export const metadata: Metadata = {
-  title: "التطبيق",
   robots: NO_INDEX_ROBOTS,
 };
 
-export { default } from "@/features/taqfeelah-app/TaqfeelahAppPage";
+export default function AuthLayout({ children }: { children: ReactNode }) {
+  return children;
+}
