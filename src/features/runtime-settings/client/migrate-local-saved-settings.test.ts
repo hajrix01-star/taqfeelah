@@ -35,6 +35,7 @@ describe("migrate local saved settings", () => {
           employeeHistoryVisibility: "all",
           activeCategories: ["fuel", "maintenance", "supplies", "other"],
           notebookTheme: null,
+          dailySalesTarget: null,
         },
       },
     };
