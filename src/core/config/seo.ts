@@ -20,7 +20,7 @@ export const SEO_SITE_NAME = "تقفيلة";
 export const SEO_TITLE = "تقفيلة | متابعة تشغيل يومية للمحلات";
 export const SEO_DESCRIPTION =
   "تقفيلة تساعد أصحاب المحلات على متابعة الداخل والخارج والتقفيلات اليومية والتقارير من الجوال ببساطة، بدون تعقيد محاسبي.";
-export const SEO_OG_IMAGE = "/screenshots/app-wide.png";
+export const SEO_OG_IMAGE = "/opengraph-image";
 
 export const SEO_PUBLIC_ROUTES = ["/"] as const;
 
