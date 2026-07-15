@@ -15,7 +15,7 @@ export function resolveAppPublicOrigin(request?: Request): string {
     return window.location.origin.replace(/\/$/, "");
   }
 
-  return "https://taqfeelah.app";
+  return "https://taqfeelah.com";
 }
 
 export function buildInviteUrl(token: string, request?: Request): string {

@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = "https://taqfeelah.app";
+const DEFAULT_SITE_URL = "https://taqfeelah.com";
 
 function normalizeSiteUrl(value: string | undefined): string {
   const rawValue = value?.trim();

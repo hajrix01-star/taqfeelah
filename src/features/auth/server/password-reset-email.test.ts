@@ -7,13 +7,13 @@ import {
 describe("password reset email helpers", () => {
   it("builds owner reset urls under /auth", () => {
     expect(buildPasswordResetUrl("token-123", "owner", undefined)).toBe(
-      "https://taqfeelah.app/auth/reset-password?token=token-123",
+      "https://taqfeelah.com/auth/reset-password?token=token-123",
     );
   });
 
   it("builds platform admin reset urls under /saas-admin", () => {
     expect(buildPasswordResetUrl("token-456", "platform_admin", undefined)).toBe(
-      "https://taqfeelah.app/saas-admin/reset-password?token=token-456",
+      "https://taqfeelah.com/saas-admin/reset-password?token=token-456",
     );
   });
 

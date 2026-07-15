@@ -121,7 +121,7 @@
 | البند | المخطط | المنفذ فعليًا | النتيجة | الدليل |
 | --- | --- | --- | --- | --- |
 | robots | منع الصفحات الداخلية وفهرسة العامة | تمت إضافة `src/app/robots.ts` | مكتمل | build أنتج `.next/server/app/robots.txt.body` وفيه Disallow للمسارات الحساسة |
-| sitemap | عرض الصفحات العامة فقط | تمت إضافة `src/app/sitemap.ts` | مكتمل | build أنتج `.next/server/app/sitemap.xml.body` وفيه `https://taqfeelah.app/` فقط |
+| sitemap | عرض الصفحات العامة فقط | تمت إضافة `src/app/sitemap.ts` | مكتمل | build ينتج `.next/server/app/sitemap.xml.body` وفيه `https://taqfeelah.com/` فقط |
 | metadata | عنوان ووصف وOG وcanonical | تم ضبط metadata العامة في `src/app/layout.tsx` | مكتمل | title/description/canonical/Open Graph/Twitter موجودة في metadata |
 | Schema | SoftwareApplication/WebApplication | تمت إضافة JSON-LD في الصفحة الرئيسية | مكتمل | `src/app/page.tsx` يحقن `application/ld+json` بنوع `SoftwareApplication` |
 | منع فهرسة التطبيق | noindex للصفحات الحساسة | تمت إضافة noindex للتطبيق وauth وsaas-admin وsignup وinvite | مكتمل | `NO_INDEX_ROBOTS` مستخدم في layouts/pages الحساسة |
