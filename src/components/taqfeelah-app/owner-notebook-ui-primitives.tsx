@@ -35,7 +35,7 @@ export const OWNER_NOTEBOOK_VIEW_TABS = [
   { id: "done", label: "ownerNotebookDone" },
 ];
 
-const NOTEBOOK_VIEW_ACTIVE = "bg-white text-[var(--taq-color-112a46)] shadow-[inset_0_-3px_0_var(--taq-color-112a46)]";
+const NOTEBOOK_VIEW_ACTIVE = "bg-[rgba(17,42,70,0.07)] text-[var(--taq-color-112a46)] backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]";
 const NOTEBOOK_VIEW_INACTIVE = "bg-white text-[var(--taq-color-716753)]";
 
 function buildNotebookViewTabItems(lang: DisplayLang, counts: SettingsTabCounts) {
