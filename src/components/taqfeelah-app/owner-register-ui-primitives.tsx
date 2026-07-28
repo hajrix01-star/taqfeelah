@@ -21,12 +21,12 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       label: text(lang, "generalReportTab"),
       count: counts.report ?? 0,
       hideCount: true,
-      activeClass: `${taqUi.bg.accent} ${taqUi.text.primary}`,
-      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-957d43)]/80`,
-      badgeActiveClass: `${taqUi.bg.primary} text-white`,
+      activeClass: "bg-[var(--taq-color-112a46)] text-white shadow-[0_4px_12px_rgba(17,42,70,0.18)]",
+      inactiveClass: "bg-white/65 text-[var(--taq-color-716753)] backdrop-blur-sm",
+      badgeActiveClass: "bg-white/20 text-white",
       badgeInactiveClass: "bg-[var(--taq-color-112a46)]/[0.08] text-[var(--taq-color-827762)]",
-      contentSurfaceClass: "bg-[var(--taq-color-fffbf0)]",
-      contentAccentClass: "border-t-2 border-[var(--taq-color-e4b84a)]/45",
+      contentSurfaceClass: "bg-white/72 backdrop-blur-sm",
+      contentAccentClass: "border-t-2 border-[var(--taq-color-112a46)]/18",
     },
     {
       id: "closeouts",
@@ -131,7 +131,7 @@ export function RegisterIndexTabs({ lang, value, onChange, counts }: { lang: Dis
 
   return (
     <div
-      className="flex overflow-hidden rounded-t-[14px] shadow-[0_-1px_0_rgba(17,42,70,0.06)]"
+      className="flex overflow-hidden rounded-t-[14px] bg-white/72 ring-1 ring-inset ring-[var(--taq-color-112a46)]/[0.08] backdrop-blur-md shadow-[0_-1px_0_rgba(17,42,70,0.06)]"
       role="tablist"
       aria-label={text(lang, "operationsLog")}
     >
