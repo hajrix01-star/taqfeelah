@@ -439,7 +439,7 @@ export function OwnerTargetHeatmapScreen({
 
       {selectedDay ? (
         <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-[#112A46]/25 px-5 py-8 backdrop-blur-[2px]"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-[var(--taq-color-112a46)]/45 px-5 py-8 backdrop-blur-[2px]"
           role="presentation"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setSelectedDay(null);
@@ -449,38 +449,38 @@ export function OwnerTargetHeatmapScreen({
             role="dialog"
             aria-modal="true"
             aria-labelledby="target-day-details-title"
-            className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-[0_24px_70px_rgba(17,42,70,0.22)] ring-1 ring-black/[0.06]"
+            className="w-full max-w-sm overflow-hidden rounded-[24px] bg-[var(--taq-color-f8f6f0)] shadow-[0_18px_48px_rgba(17,42,70,0.22)]"
           >
-            <div className="flex items-center justify-between border-b border-[#ECE6DA] px-4 py-3">
+            <div className="flex items-center justify-between border-b border-[var(--taq-color-ece6da)] px-5 py-4">
               <div>
-                <h2 id="target-day-details-title" className="text-sm font-black text-[#112A46]">
+                <h2 id="target-day-details-title" className="text-base font-black text-[var(--taq-color-112a46)]">
                   {lang === "ar" ? "تفاصيل اليوم" : "Day details"}
                 </h2>
-                <p className="mt-0.5 text-[11px] font-bold tabular-nums text-[#827762]">
+                <p className="mt-0.5 text-taq-meta font-bold tabular-nums text-[var(--taq-color-827762)]">
                   {calendarDateLabel(selectedDay.date)}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedDay(null)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F3F0E8] text-[#112A46]"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[var(--taq-color-112a46)] ring-1 ring-black/[0.05]"
                 aria-label={lang === "ar" ? "إغلاق" : "Close"}
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 p-4">
+            <div className="grid grid-cols-2 gap-2 px-5 py-4">
               {[
                 {
                   label: lang === "ar" ? "المبيعات" : "Sales",
                   value: selectedDay.sales === null ? "-" : money(selectedDay.sales, lang),
-                  tone: "text-[#257844]",
+                  tone: "text-[var(--taq-color-257844)]",
                 },
                 {
                   label: text(lang, "dailyTarget"),
                   value: target && target > 0 ? money(target, lang) : "-",
-                  tone: "text-[#112A46]",
+                  tone: "text-[var(--taq-color-112a46)]",
                 },
                 {
                   label: lang === "ar" ? "الفرق" : "Difference",
@@ -488,25 +488,25 @@ export function OwnerTargetHeatmapScreen({
                     ? "-"
                     : `${selectedDayDifference > 0 ? "+" : ""}${money(selectedDayDifference, lang)}`,
                   tone: selectedDayDifference !== null && selectedDayDifference >= 0
-                    ? "text-[#257844]"
-                    : "text-[#B44747]",
+                    ? "text-[var(--taq-color-257844)]"
+                    : "text-[var(--taq-color-b44747)]",
                 },
                 {
                   label: lang === "ar" ? "نسبة التحقيق" : "Achievement",
                   value: selectedDayPercentage === null ? "-" : `${selectedDayPercentage}%`,
                   tone: selectedDayPercentage !== null && selectedDayPercentage >= 100
-                    ? "text-[#257844]"
-                    : "text-[#112A46]",
+                    ? "text-[var(--taq-color-257844)]"
+                    : "text-[var(--taq-color-112a46)]",
                 },
               ].map((item) => (
-                <div key={item.label} className="rounded-2xl bg-[#F7F5EF] px-3 py-3 text-center">
-                  <p className="text-[10px] font-bold text-[#827762]">{item.label}</p>
+                <div key={item.label} className="rounded-2xl bg-white px-3 py-3 text-center ring-1 ring-black/[0.04]">
+                  <p className="text-[10px] font-bold text-[var(--taq-color-957d43)]">{item.label}</p>
                   <p className={`mt-1.5 text-sm font-black tabular-nums ${item.tone}`}>{item.value}</p>
                 </div>
               ))}
             </div>
 
-            <div className="px-4 pb-4">
+            <div className="px-5 pb-5">
               <p className={`rounded-2xl px-3 py-3 text-center text-xs font-black ${
                 selectedDay.sales === null
                   ? "bg-[#F3F0E8] text-[#716753]"
