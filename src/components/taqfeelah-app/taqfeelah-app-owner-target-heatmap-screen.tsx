@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, CheckCircle2, Flame, Save, TrendingUp } from "lucide-react";
+import { CalendarDays, CheckCircle2, Flame, Save, TrendingUp, X } from "lucide-react";
 import { defaultStoreOperationalSettings } from "@/domain/store-operational-settings/normalize";
 import { notebookCardBackground, notebookThemes } from "@/features/daily-closeouts/notebook-themes";
 import { updateStoreOperationalSettingsViaApi } from "@/features/org-config/client/org-config-api-client";
@@ -29,6 +29,12 @@ type CalendarDay = {
   date: string;
   day: number;
   inMonth: boolean;
+};
+
+type SelectedCalendarDay = {
+  date: string;
+  day: number;
+  sales: number | null;
 };
 
 const WEEKDAY_LABELS = {
@@ -128,6 +134,15 @@ function targetTone(sales: number | null, target: number | null): HeatmapTone {
   return "low";
 }
 
+function targetAchievementPercentage(sales: number | null, target: number | null): number | null {
+  if (sales === null || !target || target <= 0) return null;
+  return Math.round((sales / target) * 100);
+}
+
+function calendarDateLabel(date: string): string {
+  return date.split("-").reverse().join("-");
+}
+
 function parseTarget(value: string): number | null {
   const normalized = value.replace(/[^\d.]/g, "");
   if (!normalized) return null;
@@ -152,6 +167,7 @@ export function OwnerTargetHeatmapScreen({
   const initialStore = selectedBusiness !== "all" ? selectedBusiness : activeStores[0]?.id || "";
   const [storeId, setStoreId] = useState(initialStore);
   const [selectedMonth, setSelectedMonth] = useState(() => todayIsoDate().slice(0, 7));
+  const [selectedDay, setSelectedDay] = useState<SelectedCalendarDay | null>(null);
   const [targetSaving, setTargetSaving] = useState(false);
   const [targetNotice, setTargetNotice] = useState<"saved" | "failed" | "backend-required" | null>(null);
   const currentSettings = storeOperationalSettings[storeId] || defaultStoreOperationalSettings();
@@ -193,10 +209,29 @@ export function OwnerTargetHeatmapScreen({
   const showServerUnavailable = !apiReady || Boolean(report.error);
   const showLoading = apiReady && report.loading;
   const targetMissing = !target || target <= 0;
+  const selectedDayPercentage = selectedDay
+    ? targetAchievementPercentage(selectedDay.sales, target)
+    : null;
+  const selectedDayDifference = selectedDay?.sales !== null && selectedDay?.sales !== undefined && target && target > 0
+    ? selectedDay.sales - target
+    : null;
 
   useEffect(() => {
     setTargetDraft(target ? String(target) : "");
   }, [storeId, target]);
+
+  useEffect(() => {
+    setSelectedDay(null);
+  }, [selectedMonth, storeId]);
+
+  useEffect(() => {
+    if (!selectedDay) return undefined;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedDay(null);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [selectedDay]);
 
   const saveTarget = async () => {
     if (!targetBackendReady || targetSaving) {
@@ -347,22 +382,38 @@ export function OwnerTargetHeatmapScreen({
               const sales = !showServerUnavailable && day.date && salesByDate.has(day.date)
                 ? salesByDate.get(day.date)!
                 : null;
+              const percentage = targetAchievementPercentage(sales, target);
+              const daySummary = sales === null
+                ? text(lang, "targetNoData")
+                : percentage === null
+                  ? money(sales, lang)
+                  : `${percentage}%`;
+              if (!day.inMonth) {
+                return (
+                  <div
+                    key={`${day.date || "empty"}-${index}`}
+                    className="aspect-square rounded-xl border border-transparent bg-transparent"
+                    aria-hidden="true"
+                  />
+                );
+              }
               return (
-                <div
+                <button
+                  type="button"
                   key={`${day.date || "empty"}-${index}`}
-                  className={`aspect-square rounded-xl border p-1.5 ${day.inMonth ? "" : "bg-transparent text-transparent border-transparent"}`}
-                  style={day.inMonth ? palette.tones[targetTone(sales, target)] : undefined}
-                  title={sales === null ? text(lang, "targetNoData") : `${day.date}: ${money(sales, lang)}`}
+                  onClick={() => setSelectedDay({ date: day.date, day: day.day, sales })}
+                  className="aspect-square rounded-xl border p-1.5 text-start transition-transform duration-150 active:scale-[0.97]"
+                  style={palette.tones[targetTone(sales, target)]}
+                  title={`${calendarDateLabel(day.date)}: ${daySummary}`}
+                  aria-label={`${calendarDateLabel(day.date)}: ${daySummary}`}
                 >
-                  {day.inMonth ? (
-                    <div className="flex h-full flex-col justify-between">
-                      <span className="text-[10px] font-black leading-none">{day.day}</span>
-                      <span className="truncate text-[10px] font-black tabular-nums leading-none">
-                        {sales === null ? "-" : money(sales, lang).replace(/\s/g, "")}
-                      </span>
-                    </div>
-                  ) : null}
-                </div>
+                  <span className="flex h-full flex-col justify-between">
+                    <span className="text-[10px] font-black leading-none">{day.day}</span>
+                    <span className="text-center text-[11px] font-black tabular-nums leading-none">
+                      {percentage === null ? "-" : `${percentage}%`}
+                    </span>
+                  </span>
+                </button>
               );
             })}
           </div>
@@ -385,6 +436,100 @@ export function OwnerTargetHeatmapScreen({
           ))}
         </div>
       </NotebookRow>
+
+      {selectedDay ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-[#112A46]/25 px-5 py-8 backdrop-blur-[2px]"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedDay(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="target-day-details-title"
+            className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-[0_24px_70px_rgba(17,42,70,0.22)] ring-1 ring-black/[0.06]"
+          >
+            <div className="flex items-center justify-between border-b border-[#ECE6DA] px-4 py-3">
+              <div>
+                <h2 id="target-day-details-title" className="text-sm font-black text-[#112A46]">
+                  {lang === "ar" ? "تفاصيل اليوم" : "Day details"}
+                </h2>
+                <p className="mt-0.5 text-[11px] font-bold tabular-nums text-[#827762]">
+                  {calendarDateLabel(selectedDay.date)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDay(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F3F0E8] text-[#112A46]"
+                aria-label={lang === "ar" ? "إغلاق" : "Close"}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 p-4">
+              {[
+                {
+                  label: lang === "ar" ? "المبيعات" : "Sales",
+                  value: selectedDay.sales === null ? "-" : money(selectedDay.sales, lang),
+                  tone: "text-[#257844]",
+                },
+                {
+                  label: text(lang, "dailyTarget"),
+                  value: target && target > 0 ? money(target, lang) : "-",
+                  tone: "text-[#112A46]",
+                },
+                {
+                  label: lang === "ar" ? "الفرق" : "Difference",
+                  value: selectedDayDifference === null
+                    ? "-"
+                    : `${selectedDayDifference > 0 ? "+" : ""}${money(selectedDayDifference, lang)}`,
+                  tone: selectedDayDifference !== null && selectedDayDifference >= 0
+                    ? "text-[#257844]"
+                    : "text-[#B44747]",
+                },
+                {
+                  label: lang === "ar" ? "نسبة التحقيق" : "Achievement",
+                  value: selectedDayPercentage === null ? "-" : `${selectedDayPercentage}%`,
+                  tone: selectedDayPercentage !== null && selectedDayPercentage >= 100
+                    ? "text-[#257844]"
+                    : "text-[#112A46]",
+                },
+              ].map((item) => (
+                <div key={item.label} className="rounded-2xl bg-[#F7F5EF] px-3 py-3 text-center">
+                  <p className="text-[10px] font-bold text-[#827762]">{item.label}</p>
+                  <p className={`mt-1.5 text-sm font-black tabular-nums ${item.tone}`}>{item.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="px-4 pb-4">
+              <p className={`rounded-2xl px-3 py-3 text-center text-xs font-black ${
+                selectedDay.sales === null
+                  ? "bg-[#F3F0E8] text-[#716753]"
+                  : selectedDayPercentage === null
+                    ? "bg-[#FFF8E4] text-[#806528]"
+                    : selectedDayPercentage >= 100
+                      ? "bg-[#EAF7EE] text-[#257844]"
+                      : "bg-[#FFF1EE] text-[#B44747]"
+              }`}>
+                {selectedDay.sales === null
+                  ? text(lang, "targetNoData")
+                  : selectedDayPercentage === null
+                    ? text(lang, "targetNotSet")
+                    : selectedDayPercentage >= 100
+                      ? text(lang, "targetLegendMet")
+                      : lang === "ar"
+                        ? `متبقٍ ${money(Math.abs(selectedDayDifference || 0), lang)}`
+                        : `${money(Math.abs(selectedDayDifference || 0), lang)} remaining`}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
