@@ -12,7 +12,8 @@ import type { DisplayLang, RegisterViewCounts, SettingsTabItem } from "./taqfeel
 
 const REGISTER_INDEX_TABS_ENABLED = isRegisterIndexTabsEnabled();
 
-const REGISTER_VIEW_NEUTRAL_INACTIVE = `${taqUi.bg.inactive} ${taqUi.text.subtle}`;
+const REGISTER_VIEW_ACTIVE = "bg-white text-[var(--taq-color-112a46)] shadow-[inset_0_-3px_0_var(--taq-color-112a46)]";
+const REGISTER_VIEW_INACTIVE = "bg-white text-[var(--taq-color-716753)]";
 
 function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): SettingsTabItem[] {
   return [
@@ -21,9 +22,9 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       label: text(lang, "generalReportTab"),
       count: counts.report ?? 0,
       hideCount: true,
-      activeClass: "bg-[var(--taq-color-112a46)] text-white shadow-[0_4px_12px_rgba(17,42,70,0.18)]",
-      inactiveClass: "bg-white/65 text-[var(--taq-color-716753)] backdrop-blur-sm",
-      badgeActiveClass: "bg-white/20 text-white",
+      activeClass: REGISTER_VIEW_ACTIVE,
+      inactiveClass: REGISTER_VIEW_INACTIVE,
+      badgeActiveClass: "bg-[var(--taq-color-112a46)] text-white",
       badgeInactiveClass: "bg-[var(--taq-color-112a46)]/[0.08] text-[var(--taq-color-827762)]",
       contentSurfaceClass: "bg-white/72 backdrop-blur-sm",
       contentAccentClass: "border-t-2 border-[var(--taq-color-112a46)]/18",
@@ -33,9 +34,9 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       label: lang === "ar" ? "التقفيلات" : "Closeouts",
       count: counts.closeouts ?? 0,
       hideCount: false,
-      activeClass: `${taqUi.bg.blue} text-white`,
-      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-214b7b)]/75`,
-      badgeActiveClass: "bg-white/20 text-white",
+      activeClass: REGISTER_VIEW_ACTIVE,
+      inactiveClass: REGISTER_VIEW_INACTIVE,
+      badgeActiveClass: "bg-[var(--taq-color-112a46)] text-white",
       badgeInactiveClass: "bg-[var(--taq-color-214b7b)]/10 text-[var(--taq-color-214b7b)]",
       contentSurfaceClass: "bg-[var(--taq-color-f5f8fc)]",
       contentAccentClass: "border-t-2 border-[var(--taq-color-214b7b)]/40",
@@ -45,9 +46,9 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       label: lang === "ar" ? "العمليات" : "Operations",
       count: counts.operations ?? 0,
       hideCount: false,
-      activeClass: `${taqUi.bg.success} text-white`,
-      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-257844)]/75`,
-      badgeActiveClass: "bg-white/20 text-white",
+      activeClass: REGISTER_VIEW_ACTIVE,
+      inactiveClass: REGISTER_VIEW_INACTIVE,
+      badgeActiveClass: "bg-[var(--taq-color-112a46)] text-white",
       badgeInactiveClass: "bg-[var(--taq-color-257844)]/10 text-[var(--taq-color-257844)]",
       contentSurfaceClass: "bg-[var(--taq-color-f4faf6)]",
       contentAccentClass: "border-t-2 border-[var(--taq-color-257844)]/40",
@@ -57,9 +58,9 @@ function buildRegisterViewItems(lang: DisplayLang, counts: RegisterViewCounts): 
       label: text(lang, "attachments"),
       count: counts.attachments ?? 0,
       hideCount: false,
-      activeClass: `${taqUi.bg.amber} text-white`,
-      inactiveClass: `${REGISTER_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-806528)]/80`,
-      badgeActiveClass: "bg-white/20 text-white",
+      activeClass: REGISTER_VIEW_ACTIVE,
+      inactiveClass: REGISTER_VIEW_INACTIVE,
+      badgeActiveClass: "bg-[var(--taq-color-112a46)] text-white",
       badgeInactiveClass: "bg-[var(--taq-color-806528)]/10 text-[var(--taq-color-806528)]",
       contentSurfaceClass: "bg-[var(--taq-color-fffbf7)]",
       contentAccentClass: "border-t-2 border-[var(--taq-color-806528)]/40",
@@ -131,7 +132,7 @@ export function RegisterIndexTabs({ lang, value, onChange, counts }: { lang: Dis
 
   return (
     <div
-      className="flex overflow-hidden rounded-t-[14px] bg-white/72 ring-1 ring-inset ring-[var(--taq-color-112a46)]/[0.08] backdrop-blur-md shadow-[0_-1px_0_rgba(17,42,70,0.06)]"
+      className="flex overflow-hidden rounded-t-[14px] bg-white ring-1 ring-inset ring-[var(--taq-color-112a46)]/[0.08] shadow-[0_-1px_0_rgba(17,42,70,0.06)]"
       role="tablist"
       aria-label={text(lang, "operationsLog")}
     >

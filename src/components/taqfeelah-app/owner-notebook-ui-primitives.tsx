@@ -35,7 +35,8 @@ export const OWNER_NOTEBOOK_VIEW_TABS = [
   { id: "done", label: "ownerNotebookDone" },
 ];
 
-const NOTEBOOK_VIEW_NEUTRAL_INACTIVE = "bg-[var(--taq-color-f0ece2)] text-[var(--taq-color-827762)]";
+const NOTEBOOK_VIEW_ACTIVE = "bg-white text-[var(--taq-color-112a46)] shadow-[inset_0_-3px_0_var(--taq-color-112a46)]";
+const NOTEBOOK_VIEW_INACTIVE = "bg-white text-[var(--taq-color-716753)]";
 
 function buildNotebookViewTabItems(lang: DisplayLang, counts: SettingsTabCounts) {
   return [
@@ -43,8 +44,8 @@ function buildNotebookViewTabItems(lang: DisplayLang, counts: SettingsTabCounts)
       id: "active",
       label: text(lang, "ownerNotebookActive"),
       count: counts.active ?? 0,
-      activeClass: "bg-[var(--taq-color-e4b84a)] text-[var(--taq-color-112a46)]",
-      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-957d43)]/80`,
+      activeClass: NOTEBOOK_VIEW_ACTIVE,
+      inactiveClass: NOTEBOOK_VIEW_INACTIVE,
       badgeActiveClass: "bg-[var(--taq-color-112a46)] text-white",
       badgeInactiveClass: "bg-[var(--taq-color-112a46)]/[0.08] text-[var(--taq-color-827762)]",
       contentSurfaceClass: "bg-[var(--taq-color-fffbf0)]",
@@ -54,9 +55,9 @@ function buildNotebookViewTabItems(lang: DisplayLang, counts: SettingsTabCounts)
       id: "tasks",
       label: text(lang, "ownerNotebookTasks"),
       count: counts.tasks ?? 0,
-      activeClass: "bg-[var(--taq-color-257844)] text-white",
-      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-257844)]/75`,
-      badgeActiveClass: "bg-white/20 text-white",
+      activeClass: NOTEBOOK_VIEW_ACTIVE,
+      inactiveClass: NOTEBOOK_VIEW_INACTIVE,
+      badgeActiveClass: "bg-[var(--taq-color-112a46)] text-white",
       badgeInactiveClass: "bg-[var(--taq-color-257844)]/10 text-[var(--taq-color-257844)]",
       contentSurfaceClass: "bg-[var(--taq-color-f4faf6)]",
       contentAccentClass: "border-t-2 border-[var(--taq-color-257844)]/40",
@@ -65,9 +66,9 @@ function buildNotebookViewTabItems(lang: DisplayLang, counts: SettingsTabCounts)
       id: "notes",
       label: text(lang, "ownerNotebookNotes"),
       count: counts.notes ?? 0,
-      activeClass: "bg-[var(--taq-color-214b7b)] text-white",
-      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-214b7b)]/75`,
-      badgeActiveClass: "bg-white/20 text-white",
+      activeClass: NOTEBOOK_VIEW_ACTIVE,
+      inactiveClass: NOTEBOOK_VIEW_INACTIVE,
+      badgeActiveClass: "bg-[var(--taq-color-112a46)] text-white",
       badgeInactiveClass: "bg-[var(--taq-color-214b7b)]/10 text-[var(--taq-color-214b7b)]",
       contentSurfaceClass: "bg-[var(--taq-color-f5f8fc)]",
       contentAccentClass: "border-t-2 border-[var(--taq-color-214b7b)]/40",
@@ -76,9 +77,9 @@ function buildNotebookViewTabItems(lang: DisplayLang, counts: SettingsTabCounts)
       id: "done",
       label: text(lang, "ownerNotebookDone"),
       count: counts.done ?? 0,
-      activeClass: "bg-[var(--taq-color-806528)] text-white",
-      inactiveClass: `${NOTEBOOK_VIEW_NEUTRAL_INACTIVE} text-[var(--taq-color-806528)]/75`,
-      badgeActiveClass: "bg-white/20 text-white",
+      activeClass: NOTEBOOK_VIEW_ACTIVE,
+      inactiveClass: NOTEBOOK_VIEW_INACTIVE,
+      badgeActiveClass: "bg-[var(--taq-color-112a46)] text-white",
       badgeInactiveClass: "bg-[var(--taq-color-806528)]/10 text-[var(--taq-color-806528)]",
       contentSurfaceClass: "bg-[var(--taq-color-faf7f0)]",
       contentAccentClass: "border-t-2 border-[var(--taq-color-806528)]/40",
@@ -96,7 +97,7 @@ export function NotebookViewTabs({ lang, active, onChange, tabCounts = {} }: { l
 
   return (
     <div
-      className="flex overflow-hidden rounded-t-[14px] shadow-[0_-1px_0_rgba(17,42,70,0.06)]"
+      className="flex overflow-hidden rounded-t-[14px] bg-white ring-1 ring-inset ring-[var(--taq-color-112a46)]/[0.08] shadow-[0_-1px_0_rgba(17,42,70,0.06)]"
       role="tablist"
       aria-label={text(lang, "ownerNotebook")}
     >
