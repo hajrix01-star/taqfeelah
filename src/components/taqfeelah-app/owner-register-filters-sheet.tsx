@@ -40,7 +40,7 @@ export function RegisterFiltersSheet({ lang, open, onClose, onApply, draft, setD
     <AnimatePresence>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[220] flex items-center justify-center bg-[var(--taq-color-112a46)]/45 p-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <button type="button" onClick={onClose} className="absolute inset-0" aria-label={text(lang, "close")} />
-        <motion.div dir={lang === "ar" ? "rtl" : "ltr"} initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.97, opacity: 0 }} className="relative z-10 flex max-h-[min(72dvh,520px)] w-full max-w-[400px] flex-col overflow-hidden rounded-[24px] bg-[var(--taq-color-f8f6f0)] shadow-[0_18px_48px_rgba(17,42,70,0.22)]">
+        <motion.div dir={lang === "ar" ? "rtl" : "ltr"} initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.97, opacity: 0 }} className="relative z-10 flex max-h-[min(72dvh,520px)] w-full max-w-[400px] flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_18px_48px_rgba(17,42,70,0.22)]">
           <div className="flex shrink-0 items-center justify-between border-b border-[var(--taq-color-ece6da)] px-5 py-4 text-start">
             <div>
               <p className="text-taq-meta font-bold text-[var(--taq-color-827762)]">{lang === "ar" ? "تصفية السجل" : "Log filters"}</p>
