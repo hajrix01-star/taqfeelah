@@ -4,7 +4,6 @@ import React from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { isRegisterIndexTabsEnabled } from "@/core/config/register-dashboard-tabs-mode";
 import { REGISTER_REPORT_GRANULARITY } from "@/features/reports/client/register-report-granularity";
-import { buildIndexTabBorderClass } from "./index-tab-button-styles";
 import { taqUi } from "./taq-ui-classes";
 import { money, text } from "./taqfeelah-app-catalog-data";
 import { MoneyValue } from "./taqfeelah-app-notebook";
@@ -132,7 +131,7 @@ export function RegisterIndexTabs({ lang, value, onChange, counts }: { lang: Dis
 
   return (
     <div
-      className="flex overflow-hidden rounded-t-[14px] bg-white ring-1 ring-inset ring-[var(--taq-color-112a46)]/[0.08] shadow-[0_-1px_0_rgba(17,42,70,0.06)]"
+      className="flex overflow-hidden rounded-t-[14px] bg-white ring-1 ring-inset ring-[var(--taq-color-e8e1d4)]/80 shadow-[0_-1px_0_rgba(17,42,70,0.06)]"
       role="tablist"
       aria-label={text(lang, "operationsLog")}
     >
@@ -147,9 +146,7 @@ export function RegisterIndexTabs({ lang, value, onChange, counts }: { lang: Dis
             onClick={() => onChange(item.id)}
             className={`flex h-9 min-w-0 flex-1 items-center justify-center gap-1 px-1.5 text-[10px] font-black transition-all duration-200 ${
               active ? item.activeClass : item.inactiveClass
-            } ${buildIndexTabBorderClass(index, items.length, active)} ${
-              index > 0 ? "border-s border-[var(--taq-color-e8e1d4)]/80" : ""
-            }`}
+            } ${index > 0 ? "border-s border-[var(--taq-color-e8e1d4)]/80" : ""}`}
           >
             <span className="truncate leading-4">{item.label}</span>
             {!item.hideCount ? (

@@ -10,7 +10,6 @@ import {
   normalizeChecklist,
 } from "@/features/owner-notebook/owner-notebook-checklist";
 import { text } from "./taqfeelah-app-catalog-data";
-import { buildIndexTabBorderClass } from "./index-tab-button-styles";
 import { Badge } from "./taqfeelah-app-shell-ui";
 import type { DisplayLang, SettingsTabCounts } from "./taqfeelah-app-types";
 
@@ -97,7 +96,7 @@ export function NotebookViewTabs({ lang, active, onChange, tabCounts = {} }: { l
 
   return (
     <div
-      className="flex overflow-hidden rounded-t-[14px] bg-white ring-1 ring-inset ring-[var(--taq-color-112a46)]/[0.08] shadow-[0_-1px_0_rgba(17,42,70,0.06)]"
+      className="flex overflow-hidden rounded-t-[14px] bg-white ring-1 ring-inset ring-[var(--taq-color-e8e1d4)]/80 shadow-[0_-1px_0_rgba(17,42,70,0.06)]"
       role="tablist"
       aria-label={text(lang, "ownerNotebook")}
     >
@@ -112,9 +111,7 @@ export function NotebookViewTabs({ lang, active, onChange, tabCounts = {} }: { l
             onClick={() => onChange(item.id)}
             className={`flex h-9 min-w-0 flex-1 items-center justify-center gap-1 px-1.5 text-[10px] font-black transition-all duration-200 ${
               isActive ? item.activeClass : item.inactiveClass
-            } ${buildIndexTabBorderClass(index, items.length, isActive)} ${
-              index > 0 ? "border-s border-[var(--taq-color-e8e1d4)]/80" : ""
-            }`}
+            } ${index > 0 ? "border-s border-[var(--taq-color-e8e1d4)]/80" : ""}`}
           >
             <span className="truncate leading-4">{item.label}</span>
             <span
